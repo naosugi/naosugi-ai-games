@@ -1,0 +1,13 @@
+[
+  {
+    "id": "infinite-shot-3d",
+    "title": "INFINITE SHOT 3D",
+    "description": "自動で前進する3Dシューティング。敵を倒して経験値を集め、強化を選びながら5分間を生き抜く。4体のボスを倒せばクリア。",
+    "path": "games/infinite-shot-3d/",
+    "thumbnail": "games/infinite-shot-3d/thumb.jpg",
+    "tags": ["シューティング", "3D", "スコアアタック"],
+    "controls": "ドラッグ / WASD・矢印キー",
+    "playtime": "約5分",
+    "added": "2026-10-24"
+  }
+]
