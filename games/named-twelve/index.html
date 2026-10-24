@@ -741,7 +741,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
 </dialog>
 <dialog id="dlg-lore" class="lore">
   <div class="dlg-h"><b>手がかりの記録</b><button id="lore-close">閉じる</button></div>
-  <p class="help-line" style="margin:0 0 8px">見つけた手がかりは、ゲームオーバーになっても残ります。あるシナリオの手がかりが、別のシナリオの手がかりへの扉を開きます。</p>
+  <p class="help-line" style="margin:0 0 8px">見つけた手がかりは、ゲームオーバーになっても残ります。あるシナリオの手がかりが、別のシナリオの手がかりへの扉を開きます。<br><b>真相（トゥルーエンド）には、そのシナリオの手がかりを1回の育成ですべて見つける必要があります。</b>前の育成で見つけた手がかりは、扉を開く役には立ちますが、数には入りません。</p>
   <div id="lore-list"></div>
 </dialog>
 <dialog id="dlg-ask" class="ask">
@@ -1218,7 +1218,7 @@ const impl=st=>SCN_IMPL[st.scn];
 // ----- 手がかり（記録はシナリオをまたいで残る。st.lore は開始時点の写し、st.found はこの育成で見つけたもの）-----
 const CLUES={
   F1:{scn:'freelance',name:'養殖場の事故',text:'王立協会の「家畜研究所」の事故現場で、瀕死の幹部がつぶやいた。「幹部にまで上り詰めて、養殖場のくだらん事故で死ぬのか」。モンスターは、誰かに育てられている。'},
-  F2:{scn:'freelance',name:'古文書の写し',text:'古い情報紙の束に紛れていた古文書の写し。「魔王」という言葉が初めて記録に現れるのは、王立協会の設立と同じ年だった。'},
+  F2:{scn:'freelance',name:'古文書の写し',text:'公文書を買った商人が持ち込んだ古文書の写し。「魔王」という言葉が初めて記録に現れるのは、王立協会の設立と同じ年だった。'},
   F3:{scn:'freelance',name:'幹部の打ち明け話（剣）',text:'協会の幹部は言った。「養殖は備えだ。いつか来るものに対して、民に剣を握らせておくための」。'},
   E1:{scn:'entrepreneur',name:'流出した公文書',text:'元役人が売りに来た公文書。モンスター討伐の報酬の大半は、王立協会の「民間防衛育成基金」から出ている。'},
   E2:{scn:'entrepreneur',name:'元冒険者の証言',text:'雇った元冒険者が話した。協会の「家畜研究所」で、檻の中のモンスターを見たと。討伐依頼の数は、そこで調整されている。'},
@@ -1335,6 +1335,7 @@ function endingText(st){
     const k=TRUE_AB[st.scn];if(k&&!st.unit.ab.includes(k)){st.unit.ab.push(k);st.log.push({k:'gain',t:`隠された力に目覚めた：特殊能力「${AB[k].name}」`});}
   }
   I.ending(st);
+  {const ids=clueIdsOf(st.scn),n=ids.filter(k=>st.found[k]).length;if(!st.trueEnd&&n>0)sys(st,`この育成で見つけた手がかりは ${n}/${ids.length}。真相にたどり着くには、ひとつの育成で手がかりをすべて見つける必要がある。`);}
   narr(st,storyBio(st));sys(st,`最終の総合力 ${r2(storyPower(st))}。名前をつけてユニットとして保存できます。`);
 }
 // ----- 保存済みの育成ユニットが訪ねてくる（どのシナリオでも起きる）-----
@@ -1361,7 +1362,7 @@ const FL={
   eventRate:0.5, blackShow:0.6,
   shopAbs:['stdrain','spdatk','counter','charge'],// フリーランスの店に並ぶ能力（限定能力は並ばない）
   farmRank:3, farmRate:0.6,                    // 手がかり：養殖場の事故の依頼（ランクC以上）
-  oldPaperRate:0.65, assocRate:0.75, assocMul:0.75, assocFloor:0.85,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
+  oldPaperRate:0.65, oldDocRank:3, assocRate:0.75, assocMul:0.75, assocFloor:0.85,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
   npcAllyRate:0.4, npcShopRank:4, npcShopRate:0.5,
 };
 // 難しい枠ほど上乗せ（特に金）
@@ -1405,11 +1406,13 @@ function rollShop(st){
     const nm={hp:'鋼の胸当て',atk:'研ぎ澄まされた剣',spd:'軽量のブーツ',as:'手に馴染む柄巻き',rng:'長めの刀身'}[s]||'装備';
     items.push({label:`${nm}（${STAT_NAME[s]}+${n}）`,eff:{stat:{[s]:n}},mul:disc});
   }
-  // 手がかり：古い情報紙の束に古文書の写しが紛れている（要 起業家1）
-  if(has(st,'E1')&&!st.found.F2&&r()<FL.oldPaperRate){const n=6+rank*3;items[2]={label:`古い情報紙の束（ギルドポイント+${n}）`,eff:{gp:n,clue:'F2'},price:Math.round(n*3),desc:'何年分もまとめて縛ってある。妙に重い'};}
-  // 保存済みの起業家が、自分の商会で開発した品を持ってくる
+  // 手がかり（要 起業家1）：公文書を買った商人が、束の底にあった古文書の写しを持ち込む。
+  // 起業家1を見つけた保存済みユニットがいれば本人、いなければ商人エルザ（起業家の育成で番頭だった人）
   const merch=npcsOf(st,'entrepreneur');
-  if(merch.length&&rank>=FL.npcShopRank&&r()<FL.npcShopRate){const m=pick(r,merch);
+  if(has(st,'E1')&&!st.found.F2&&rank>=FL.oldDocRank&&r()<FL.oldPaperRate){const m=npcsOf(st,'entrepreneur','E1')[0]||merch[0]||{name:'商人エルザ',stranger:true};
+    items.push({label:`${m.name}が持ち込んだ封蝋つきの古文書の写し`,eff:{pt:3,clue:'F2'},price:30+rank*6,desc:'「売り物じゃないんだが、あんたには見せておきたい」',npc:m.name,doc:true,stranger:!!m.stranger});}
+  // 保存済みの起業家が、自分の商会で開発した品を持ってくる
+  else if(merch.length&&rank>=FL.npcShopRank&&r()<FL.npcShopRate){const m=pick(r,merch);
     const rare=['killhp','magres'].filter(k=>abEligible(st.unit,k)&&!st.unit.ab.includes(k));
     if(rare.length&&r()<0.6){const k=pick(r,rare);items.push({label:`${m.name}商会の${AB[k].name}の秘薬`,eff:{ab:k},mul:0.9,desc:AB[k].desc,npc:m.name});}
     else{const s=pick(r,stats.length?stats:['hp']);items.push({label:`${m.name}商会の特注品（${STAT_NAME[s]}+2）`,eff:{stat:{[s]:2}},mul:0.8,npc:m.name});}
@@ -1419,6 +1422,8 @@ function rollShop(st){
 function rebuildShopPrices(st){for(const it of st.shop){if(it.eff.pt||it.eff.gp)continue;if(!it.sold)it.price=shopPrice(st,it.eff,it.mul);}}
 function toShop(st){st.stage='shop';rollShop(st);scene(st,'道具屋');const rk=rankOf(st.gp),top=rk>=RANKS.length-1;
   say(st,CAST.shop,pick(srng(st.seed,'shopl',st.turn),top?['Sランク様のご来店だ。いい品は全部出してあるぜ。','あんたにはもう、教えることも売ることも少なくなってきたな。','うちの店から伝説が出るとはな。ゆっくり見ていってくれ。']:['いらっしゃい。今日の目玉はこれだ。','冷やかしでも構わんよ。冷やかしでも。',rk>=4?'ランク'+RANKS[rk].n+'か。いい品が回ってくるようになったのは、あんたのおかげだ。':'ギルドの評判が上がると、いい品を回してやれるんだがな。']));
+  const d=st.shop.find(it=>it.doc);if(d){const met=metNpc(st,d.npc);say(st,d.npc,met?'また来たよ。……今日は商売の話じゃないんだ。':d.stranger?'はじめまして。商人のエルザ。前は小さな店で番頭をしていた。今日は商売の話じゃないんだ。':'やあ。……初めて会った気がしないな。今日は商売の話じゃないんだ。');
+    say(st,d.npc,'昔、役所から流れた公文書をまとめて買ったことがある。束の底に、もっと古い写しが一枚あった。……剣で協会の仕事をしているあんたなら、意味がわかるかもしれない。');return;}
   const m=st.shop.find(it=>it.npc);if(m){say(st,m.npc,metNpc(st,m.npc)?'また来たよ。今季も、うちの商会の品を持ってきた。':'やあ。……なんだろう、初めて会った気がしない。うちの商会の品、見ていくかい？');}}
 SCN_IMPL.freelance={
   eventRate:FL.eventRate,
@@ -1469,9 +1474,10 @@ SCN_IMPL.freelance={
       if(id==='leave'){st.shop=null;return toAlloc(st);}
       const it=st.shop[+id.slice(3)];if(!it||it.sold||st.gold<it.price)return;st.gold-=it.price;it.sold=true;
       const {clue,...eff}=it.eff;gain(st,eff,`${it.label}（金-${it.price}）`);
-      if(clue==='F2'){narr(st,'束をほどくと、情報紙の間から古い紙が一枚落ちた。古文書の写しだ。');
+      if(clue==='F2'){narr(st,'封蝋を割ると、黄ばんだ写しが出てきた。王国の古い年代記の一部だ。');
         narr(st,'「魔王」という言葉が初めて記録に現れるのは、王立協会が設立されたのと同じ年。それより前の記録に、魔王は一度も出てこない。');
-        say(st,CAST.shop,'ん？ そんなもん挟まってたか。……俺は何も見てないぞ。');findClue(st,'F2');}
+        say(st,it.npc,'帳簿と同じさ。数字が急に現れる所には、たいてい誰かの都合がある。……あんたの剣の向け先が、間違ってないといいんだが。');
+        say(st,CAST.shop,'……俺の店で、物騒な話はやめてくれよ。');findClue(st,'F2');}
       rebuildShopPrices(st);return;}
   },
   afterBattle(st,p){
@@ -1644,9 +1650,9 @@ const EVENTS=[
       {label:'あたりを調べる',go:(st)=>{narr(st,'荷車の轍が、王都の方角へ続いていた。轍の幅は、協会の輸送車と同じだった。');say(st,CAST.guild,'あ、それ……ギルドでは「回収済み」として処理されてますね。誰が回収したかは、書いてないですけど。');gain(st,{pt:3});}},
       {label:'気にしない',go:(st)=>{narr(st,'魔物の死骸が消えるのは、よくあることだ。たぶん。');gain(st,{pt:1});}}]},
   {id:'f_gard',title:'ガルドの古傷',w:1.5,when:st=>rankOf(st.gp)>=3,once:true,
-    lines:()=>[[CAST.senior,'この傷か？ ……二十年前だ。空が割れた夜があってな。見たこともない化け物が、街道を埋め尽くした。'],[CAST.senior,'翌朝、協会の発表は「魔王軍の大攻勢を撃退」。……魔王軍、ねえ。あれは、魔王軍の顔じゃなかったよ。']],
+    lines:()=>[[CAST.senior,'この傷か？ ……若い頃、協会の古い砦の地下を片付ける仕事を受けてな。百年以上前の戦の跡だって話だった。'],[CAST.senior,'棚に、干からびた化け物の標本が並んでた。見たこともない形だ。一体だけ、まだ動きやがった。……札には「魔王軍の残党」とあったが、あれは魔王軍の顔じゃなかったよ。']],
     choices:()=>[
-      {label:'続きを聞く',go:(st)=>{say(st,CAST.senior,'それ以来、俺は鍛えるのをやめられねえ。理由は聞くな。俺にもうまく言えねえんだ。');gain(st,{pt:4,stat:{hp:1}});}},
+      {label:'続きを聞く',go:(st)=>{say(st,CAST.senior,'それ以来、俺は鍛えるのをやめられねえ。あんなのが百年に一度でも来るなら、と思っちまうんだ。');gain(st,{pt:4,stat:{hp:1}});}},
       {label:'酒をおごる',need:st=>st.gold>=10,go:(st)=>{say(st,CAST.senior,'へっ、気が利くじゃねえか。……忘れろ、今の話は。');gain(st,{gold:-10,gp:6});}}]},
   {id:'f_joint',title:'カイルとの共闘',w:1.2,when:st=>rankOf(st.gp)>=2&&st.hist.duels>=1,
     prep:(st,r)=>evBattle(st,'f_joint',[{fam:'wolf'},{fam:'wolf'},{fam:'wolf'}],T=>[famUnit('merc',Math.max(6,T*0.8),srng(st.seed,'kyle',st.turn),'ライバルのカイル')],QG.evMul.ambush,'カイルとの共闘'),
@@ -3087,6 +3093,7 @@ function renderSySide(){if($('nv-hud'))renderHud();
       <div class="sy-pow"><span class="muted" style="font-size:13px">総合力</span><b class="num">${fmt(storyPower(SY))}</b></div>
       <div class="sy-res"><div><small>ポイント</small><b class="num">${fmt(SY.pt)}</b></div><div><small>金</small><b class="num">${SY.gold}</b></div><div><small>${sd.label}</small><b style="font-size:${String(sd.val).length>3?14:20}px">${esc(sd.val)}</b></div></div>
       <div><div class="rankbar"><i style="width:${Math.round(sd.prog*100)}%"></i></div><div class="muted num" style="font-size:11px;margin-top:3px">${esc(sd.note)}</div></div>
+      ${(()=>{const ids=clueIdsOf(SY.scn),n=ids.filter(k=>SY.found[k]).length;return n||ids.some(k=>LORE[k])?`<div class="muted num" style="font-size:12px">この育成で見つけた手がかり <b>${n}/${ids.length}</b>${n===ids.length?'（真相に届く）':''}</div>`:'';})()}
     </div>
     <div class="sy-card more"><h4>ステータス</h4><div class="sy-stats">${rows}</div>
       <div class="muted" style="font-size:12px">HP ${val.hp}・攻撃 ${val.atk}・速度 ${val.spd}・射程 ${val.rng}・間隔 ${val.as}</div>
