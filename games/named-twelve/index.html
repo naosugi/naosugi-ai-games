@@ -1193,6 +1193,11 @@ function makeQuest(scn,rank,turn,slot,seed,you,opt){
   const units=build(lam);
   return {id:tpl.id,title:tpl.title,text:tpl.text,war:!!tpl.war,special:tpl.special||null,aspec:aspec.map(a=>({...a})),gen:{seed,turn,slot},black,hint:black?pick(r,BLACK_HINTS):'',T:Math.round(Tq),T0:Math.round(T),tOver,adj,winEst,rm,allies,enemies:units,slot,seed:hashSeed(seed,'battle',turn,slot)};
 }
+// 断れない（または最後の）戦闘で、勝率が floor を割るとき敵を1体ずつ減らす。相性の悪い敵から外す（外したとき一番勝ちやすくなる敵）
+function liftWin(you,allies,enemies,floor,seed){let es=[...enemies],w=winRate(you,allies,es,QG.estN,seed);
+  while(w<floor&&es.length>1){let bj=0,bw=-1;es.forEach((e,j)=>{const x=winRate(you,allies,es.filter((_,k)=>k!==j),40,seed+j);if(x>bw){bw=x;bj=j;}});
+    es=es.filter((_,k)=>k!==bj);w=winRate(you,allies,es,QG.estN,seed);}
+  return{enemies:es,win:w};}
 // 味方の強さを mul 倍にして作り直す（起業家の予算など。依頼の調整の後に変えるので、そのぶん勝率が変わる）
 function alliesScaled(q,mul){return(q.aspec||[]).map((a,j)=>famUnit(a.fam,Math.max(0,(a.p*a.f+a.add)*mul),srng(q.gen.seed,'ally',q.gen.turn,q.gen.slot,j),a.name));}
 // ===== ストーリー進行：全シナリオ共通 =====
@@ -1287,6 +1292,7 @@ function afterBattle(st){
 function turnStart(st){st.powT=storyPower(st);scene(st,`第${st.turn}ターン　${dateStr(st.turn)}`);if(impl(st).turnStart)impl(st).turnStart(st);}
 function eventPool(st){return(impl(st).events||[]);}
 function turnEnd(st){
+  if(st.flags.finale==='run'){st.flags.finale='done';return toAlloc(st);}   // 最後の場面の後は、イベントや買い物を挟まずに結末へ
   const r=srng(st.seed,'evt',st.turn);
   const pool=eventPool(st).filter(e=>!(e.once&&st.seen[e.id])&&(!e.when||e.when(st)));
   const forced=pool.filter(e=>e.force&&e.force(st));
@@ -1298,9 +1304,11 @@ function turnEnd(st){
   return afterEvents(st);
 }
 function evChoices(st){const ev=eventPool(st).find(e=>e.id===st.event.id);return ev.choices(st,st.event.data);}
-function afterEvents(st){if(impl(st).afterEvents)return impl(st).afterEvents(st);return toAlloc(st);}
+function afterEvents(st){if(st.flags.finale==='run'){st.flags.finale='done';return toAlloc(st);}if(impl(st).afterEvents)return impl(st).afterEvents(st);return toAlloc(st);}
 function toAlloc(st){st.stage='alloc';st.allocBase={lv:{...st.unit.lv},pt:st.pt};}
+// 最後の季節の終わり：最後の手がかりの条件を満たしているのにまだ起きていなければ、ここで必ず起こす（impl.finale が場面を始めたら true）
 function nextTurn(st){
+  if(st.turn>=STORY_TURNS&&!st.flags.finale&&impl(st).finale){st.flags.finale='run';if(impl(st).finale(st))return;st.flags.finale='done';}
   if(st.turn>=STORY_TURNS){st.stage='ending';scene(st,'4年後');endingText(st);return;}
   st.turn++;st.stage='action';turnStart(st);
 }
@@ -1352,8 +1360,8 @@ const FL={
   mpp:8,rewardCap:1.5,                          // 買い物：総合力1あたりの値段。報酬の基準はあなたの総合力の rewardCap 倍まで
   eventRate:0.5, blackShow:0.6,
   shopAbs:['stdrain','spdatk','counter','charge'],// フリーランスの店に並ぶ能力（限定能力は並ばない）
-  farmRank:3, farmRate:0.35,                    // 手がかり：養殖場の事故の依頼（ランクC以上）
-  oldPaperRate:0.4, assocRate:0.5,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
+  farmRank:3, farmRate:0.6,                    // 手がかり：養殖場の事故の依頼（ランクC以上）
+  oldPaperRate:0.65, assocRate:0.75, assocMul:0.75, assocFloor:0.85,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
   npcAllyRate:0.4, npcShopRank:4, npcShopRate:0.5,
 };
 // 難しい枠ほど上乗せ（特に金）
@@ -1364,14 +1372,15 @@ function rollOffers(st){
   // 手がかりの依頼は決まった枠に差し込む
   const special={};
   if(rank>=FL.farmRank&&!st.found.F1&&r()<FL.farmRate)special[1]='farm';
-  if(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3&&r()<FL.assocRate)special[2]='assoc';
+  if(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3&&r()<FL.assocRate)special[special[1]?2:1]='assoc';
   let rb=-1;
   st.offers=[0,1,2].map(slot=>{
-    const q=makeQuest(st.scn,rank,st.turn,slot,st.seed,st.unit,special[slot]?{tpl:SPECIAL_QUESTS[special[slot]]}:null);
+    const q=makeQuest(st.scn,rank,st.turn,slot,st.seed,st.unit,special[slot]?{tpl:SPECIAL_QUESTS[special[slot]],mul:special[slot]==='assoc'?FL.assocMul:1}:null);
     const shownT=q.black?Math.round(q.T*FL.blackShow):q.T;
     const tr=Math.min(q.T,FL.rewardCap*(storyPower(st)+4));
     rb=rb<0?tr:Math.max(tr,rb+Math.max(1,rb*0.25));
     const rw=qReward(rb,q.rm,slot);if(q.special)rw.gp=Math.round(rw.gp*1.3);
+    if(q.special==='assoc'){const L=liftWin(st.unit,q.allies,q.enemies,FL.assocFloor,hashSeed(st.seed,'assocw',st.turn));q.enemies=L.enemies;q.winEst=L.win;}
     return{...q,shownT,reward:rw,win:q.winEst==null?null:q.winEst};
   });
   // 保存済みのフリーランスが同行を申し出る（依頼の調整の後に加えるので、そのぶん勝ちやすくなる）
@@ -1486,6 +1495,14 @@ SCN_IMPL.freelance={
     gain(st,rw,'報酬');return turnEnd(st);
   },
   afterEvents(st){return toShop(st);},
+  // 最後の季節の終わり：Sランクで組織人2があり、まだ協会の指名依頼を受けていなければ、ここで必ず届く
+  finale(st){const rank=rankOf(st.gp);if(!(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3))return false;
+    const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'finale'),st.unit,{tpl:SPECIAL_QUESTS.assoc,mul:FL.assocMul});
+    const rw=qReward(Math.min(q.T,FL.rewardCap*(storyPower(st)+4)),q.rm,1);rw.gp=Math.round(rw.gp*1.3);q.reward=rw;
+    {const L=liftWin(st.unit,q.allies,q.enemies,FL.assocFloor,hashSeed(st.seed,'finalew'));q.enemies=L.enemies;q.winEst=L.win;}
+    scene(st,q.title);say(st,CAST.guild,'最後の季節の終わりに、王立協会から指名の依頼が届きました。……あなたに、だそうです。');
+    q.text.forEach(t=>narr(st,t));narr(st,`味方${q.allies.length}人とともに、敵${q.enemies.length}体に挑む。あなたの勝率はおよそ${pct(q.winEst)}。`);
+    storyBattle(st,{kind:'quest',q,b:battleOf(st,q,q.title)});return true;},
   title(st){const h=st.hist,rk=rankOf(st.gp);
     if(st.trueEnd)return'真実を知る剣';
     if(h.bosses.includes('dragon'))return'竜殺しの剣士';if(h.bosses.includes('vampire'))return'夜明けの剣';
@@ -1724,6 +1741,9 @@ function enRnd(st){
 SCN_IMPL.entrepreneur={
   eventRate:EN.eventRate,
   get events(){return EVENTS_E;},
+  // 最後の季節の終わり：最高ランクで組織人2があり、まだ幹部が来ていなければ、ここで必ず来る
+  finale(st){const ev=EVENTS_E.find(e=>e.id==='e_exec');if(!ev.force(st))return false;
+    st.seen[ev.id]=true;scene(st,ev.title);ev.lines(st).forEach(([w,t])=>w?say(st,w,t):narr(st,t));st.event={id:ev.id,data:null};st.stage='event';return true;},
   start(st){st.pt=EN.startPt;st.gold=EN.startGold;st.jx=0;st.offers=null;
     scene(st,'プロローグ');
     narr(st,'弓の腕と、なけなしの貯金。それだけを元手に、店を開いた。看板はまだ手書きだ。');
@@ -1850,7 +1870,7 @@ const EVENTS_E=[
     choices:(st)=>{const ex=npcsOf(st,'bureau','B2')[0];const nm=ex?ex.name:'協会幹部ヴァレリア';return[
       {label:'茶を出して話を聞く',go:(st)=>{say(st,nm,'基金の評価項目は一つだけだ。民が戦えるようになったかどうか。討伐の報酬は、民に剣と弓を握らせ続けるための授業料なんだよ。');
         say(st,nm,'いつか空が裂けて、本物の敵が来る。そのとき、君のような商人が補給を支えてくれると助かる。');if(ex)narr(st,`${nm}とは、昔からの知り合いのように話が弾んだ。`);findClue(st,'E3');}},
-      {label:'帳簿を閉じて追い返す',go:(st)=>{say(st,nm,'……そうか。また来るよ。');}}];}},
+      {label:'帳簿を閉じて追い返す',go:(st)=>{say(st,nm,st.flags.finale==='run'?'……そうか。君なら、と思ったんだがね。':'……そうか。また来るよ。');}}];}},
   {id:'e_parts',title:'魔物素材の買い付け',w:1.5,once:true,when:st=>rankE(st.jx)>=1,
     lines:()=>[['','魔物の素材を卸しに行くと、いつもの問屋が首を振った。'],['問屋','すまんね、今季から素材は全部「協会指定業者」が買い取ることになった。値段？ 向こうの言い値さ。']],
     choices:()=>[
@@ -1889,7 +1909,7 @@ const BU={
   q:{exp:0.8,pt:[1.0,0.23],gold:[4,0.9],rep:[4,1.0]},
   goldRank:0.3, repRank:0.25,                   // 階級が上がるほど金は増え、評判は増えにくい
   study:{cost:t=>25+3*t,pt:t=>Math.round(7+0.35*t),rep:-3,rare:0.15},
-  transferRep:0.6, secretRank:3,
+  transferRep:0.6, secretRank:3, riftFloor:0.85,
   rareAbs:['killsta','bomb'],                   // 自己研鑽の稀な出来事でしか手に入らない能力
   bonusAbs:['pct','knock','counter','charge'],
 };
@@ -1930,7 +1950,7 @@ function buDuty(st,dept,repMul,label){
   // 安全な部署は、合わせた後に敵を1体減らして余裕を持たせる（職務は断れないので、ここで倒れることのないように）
   if(D.safe&&q.enemies.length>1){q.enemies=q.enemies.slice(0,-1);q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'safe',st.turn));}
   // 職務は断れない。相性が悪くて勝率が部署の下限を割るときは、敵を減らして送り出す（強くなるほど楽になるのは変わらない）
-  while(q.winEst<(D.floor||0)&&q.enemies.length>1){q.enemies=q.enemies.slice(0,-1);q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'floor',st.turn,q.enemies.length));}
+  if(q.winEst<(D.floor||0)){const L=liftWin(st.unit,q.allies,q.enemies,D.floor,hashSeed(st.seed,'floor',st.turn));q.enemies=L.enemies;q.winEst=L.win;}
   const tr=Math.min(q.T0/(D.mul||1),1.5*(storyPower(st)+4));const rw=buReward(tr,q.rm,dept,rank);   // 報酬は部署の危険度ではなく、階級の標準の強さで決まる（部署の差は rw で付ける）rw.rep=Math.max(1,Math.round(rw.rep*(repMul||1)));
   scene(st,q.title);q.text.forEach(t=>narr(st,t));
   narr(st,`${D.name}の任務。味方${q.allies.length}人とともに、敵${q.enemies.length}体に挑む。あなたの勝率はおよそ${pct(q.winEst)}。`);
@@ -1938,11 +1958,11 @@ function buDuty(st,dept,repMul,label){
 }
 function buRift(st){
   const rank=rankB(st.rep);const fl=npcsOf(st,'freelance','F1')[0]||npcsOf(st,'freelance')[0],en=npcsOf(st,'entrepreneur','E1')[0]||npcsOf(st,'entrepreneur')[0];
-  const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'rift'),st.unit,{tpl:RIFT_QUEST,band:[0.75,0.92,0.85],mul:1.1,noBlack:true,allyK:4,allyFams:['mercMage','merc','mercArcher'],allyTitle:buColleague});
+  const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'rift'),st.unit,{tpl:RIFT_QUEST,band:[0.75,0.92,0.85],mul:0.8,noBlack:true,allyK:4,allyFams:['mercMage','merc','mercArcher'],allyTitle:buColleague});
   // 共同任務の仲間（保存済みの育成ユニットがいれば本人）。依頼の調整の後に加える
   const fu=fl?npcUnit(fl):famUnit('merc',Math.max(10,storyPower(st)*0.9),srng(st.seed,'riftF'),'剣士カイル');
   const eu=en?npcUnit(en):famUnit('mercArcher',Math.max(10,storyPower(st)*0.9),srng(st.seed,'riftE'),'商人エルザ');
-  q.allies=[...q.allies,fu,eu];q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'riftw'));
+  q.allies=[...q.allies,fu,eu];{const L=liftWin(st.unit,q.allies,q.enemies,BU.riftFloor,hashSeed(st.seed,'riftw'));q.enemies=L.enemies;q.winEst=L.win;}
   const rw=buReward(Math.min(q.T,1.5*(storyPower(st)+4)),q.rm,'henkyo',rank);
   scene(st,q.title);q.text.forEach(t=>narr(st,t));
   say(st,fu.name,fl?'協会の人と組むのは初めてだが……あんたとは、なぜか初めての気がしない。':'ギルドから来た剣士のカイルだ。話は聞いてる。');
@@ -1966,6 +1986,8 @@ function buBonus(st){ // 昇格ボーナス：フリーランスの買い物に�
   st.bonus=items;st.stage='bonus';
 }
 SCN_IMPL.bureau={
+  // 最後の季節の終わり：部長でフリーランス1と起業家1があり、まだ共同任務に出ていなければ、ここで必ず空が裂ける
+  finale(st){if(!riftReady(st))return false;narr(st,'四年目の冬の終わり。観測所の鐘が、聞いたことのない鳴り方をした。');return buRift(st),true;},
   eventRate:BU.eventRate,
   get events(){return EVENTS_B;},
   start(st){st.pt=BU.startPt;st.gold=BU.startGold;st.rep=0;st.dept='somu';
