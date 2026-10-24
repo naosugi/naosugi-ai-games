@@ -2311,10 +2311,11 @@ const costIn=u=>unitCost(u)*(u.story?STORY_RATE:1); // 編成でかかるコス�
 const armyTotal=a=>a.reduce((t,u)=>t+costIn(u),0)+BASE_UNIT*a.length;
 const isUnique=r=>!!r.story||power(r)>=CFG.UNIQUE-1e-9;
 const CROWN='<span class="crown" title="ユニーク：編成に1体まで">♛ ユニーク</span>';
-// 同じユニットを2体以上入れていて、そのどれかが総合力50以上（上乗せ込み）なら違反
+// 同じユニットのうち、ユニーク（上乗せ込みで総合力50以上、または育成ユニット）が2体以上なら違反。
+// 1体だけ上乗せしてユニークにしても、上乗せしていない同じユニットは並べられる
 function uniqueProblems(sl){
   const by={};sl.forEach(s=>{(by[s.uid]=by[s.uid]||[]).push(s);});
-  return Object.entries(by).filter(([id,g])=>g.length>1&&g.some(s=>isUnique(resolve(s)))).map(([id,g])=>rosterById(id).name);
+  return Object.entries(by).filter(([id,g])=>g.filter(s=>isUnique(resolve(s))).length>1).map(([id,g])=>rosterById(id).name);
 }
 const usage=id=>slots.filter(s=>s.uid===id).length;
 function freshRosterName(){const used=new Set(allUnits().map(r=>r.name));const f=NAME_POOL.filter(n=>!used.has(n));return f.length?f[Math.floor(Math.random()*f.length)]:'ユニット'+(roster.length+1);}
