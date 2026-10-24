@@ -5,9 +5,29 @@
     "description": "自動で前進する3Dシューティング。敵を倒して経験値を集め、強化を選びながら5分間を生き抜く。4体のボスを倒せばクリア。",
     "path": "games/infinite-shot-3d/",
     "thumbnail": "games/infinite-shot-3d/thumb.jpg",
-    "tags": ["シューティング", "3D", "スコアアタック"],
+    "tags": [
+      "シューティング",
+      "3D",
+      "スコアアタック"
+    ],
     "controls": "ドラッグ / WASD・矢印キー",
     "playtime": "約5分",
+    "added": "2026-10-24"
+  },
+  {
+    "id": "named-twelve",
+    "title": "名を持つ十二の兵",
+    "description": "TRPG風軍団戦。会話と選択で1人の戦士を5年かけて育て、名前と経歴を持ったまま軍団に迎える。12体を編成したら、戦いは見守るだけ。3つの立場から、魔王と王立協会の謎に近づく。",
+    "path": "games/named-twelve/",
+    "thumbnail": "games/named-twelve/thumb.jpg",
+    "tags": [
+      "育成",
+      "戦略",
+      "オートバトル",
+      "ノベル"
+    ],
+    "controls": "クリック・タップ",
+    "playtime": "育成1回 約30分〜",
     "added": "2026-10-24"
   }
 ]
