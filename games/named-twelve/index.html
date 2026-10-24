@@ -1214,6 +1214,8 @@ function findClue(st,id){if(st.found[id])return;st.found[id]=true;st.log.push({k
 // 保存済みの育成ユニット（開始時点の写し）。他人の気がしない
 const npcsOf=(st,scn,clue)=>(st.npcs||[]).filter(n=>(!scn||n.scn===scn)&&(!clue||(n.clues||[]).includes(clue)));
 const npcUnit=n=>({type:n.unit.type,lv:{...n.unit.lv},ab:[...(n.unit.ab||[])],name:n.name});
+// この育成で、その人物に会ったことがあるか（呼ぶと「会った」ことにする）
+function metNpc(st,name){st.flags.met=st.flags.met||{};const was=!!st.flags.met[name];st.flags.met[name]=true;return was;}
 function gain(st,o,why){ // 報酬や損失をまとめて反映して記録
   const parts=[];
   if(o.pt){st.pt=Math.max(0,r2(st.pt+o.pt));parts.push(`ポイント${o.pt>0?'+':''}${o.pt}`);}
@@ -1322,8 +1324,9 @@ const NPC_LINES={
   bureau:['協会の記録で君の名前を見た。……妙だな、自分の名前を見たときと同じ気持ちになった。','余計なことは考えないのが協会の流儀だが……君のことは、なぜか考えてしまう。'],
 };
 const npcVisit=(scnOwn)=>({id:'npc_visit',title:'見知らぬはずの客',w:2.5,when:st=>npcsOf(st).length>0,
-  prep:(st,r)=>{const n=pick(r,npcsOf(st));return{name:n.name,scn:n.scn,line:pick(r,NPC_LINES[n.scn]||NPC_LINES.freelance)};},
-  lines:(st,d)=>[['','見覚えのない人物が、親しげに声をかけてきた。'],[d.name,d.line]],
+  prep:(st,r)=>{const met=(st.flags.met||{}),fresh=npcsOf(st).filter(n=>!met[n.name]);const n=pick(r,fresh.length?fresh:npcsOf(st));const again=!!met[n.name];
+    return{name:n.name,scn:n.scn,again,line:again?pick(r,['また会ったな。……いや、会うたびに思うんだ。あんたとは、他人の気がしない。','近くまで来たから寄ったよ。前に話したこと、覚えてるかい？']):pick(r,NPC_LINES[n.scn]||NPC_LINES.freelance)};},
+  lines:(st,d)=>{metNpc(st,d.name);return[['',d.again?`${d.name}が、また訪ねてきた。`:'見覚えのない人物が、親しげに声をかけてきた。'],[d.name,d.line]];},
   choices:(st,d)=>[
     {label:'話し込む',go:(st)=>{say(st,d.name,'あんたなら大丈夫だ。……根拠はないけど、そう思う。');narr(st,'別れ際、相手はなぜか自分の得意な戦い方を教えてくれた。');
       const sp=storySpec(st);const best=STATS.filter(s=>statOk(sp,st.unit,s)).sort((a,b)=>(st.npcs.find(n=>n.name===d.name).unit.lv[b]||0)-(st.npcs.find(n=>n.name===d.name).unit.lv[a]||0))[0]||'hp';gain(st,{stat:{[best]:1},pt:2});}},
@@ -1393,8 +1396,9 @@ function rollShop(st){
   st.shop=items;rebuildShopPrices(st);
 }
 function rebuildShopPrices(st){for(const it of st.shop){if(it.eff.pt||it.eff.gp)continue;if(!it.sold)it.price=shopPrice(st,it.eff,it.mul);}}
-function toShop(st){st.stage='shop';rollShop(st);scene(st,'道具屋');say(st,CAST.shop,pick(srng(st.seed,'shopl',st.turn),['いらっしゃい。今日の目玉はこれだ。','冷やかしでも構わんよ。冷やかしでも。','ギルドの評判が上がると、いい品を回してやれるんだがな。']));
-  const m=st.shop.find(it=>it.npc);if(m){say(st,m.npc,'やあ。……なんだろう、初めて会った気がしない。うちの商会の品、見ていくかい？');}}
+function toShop(st){st.stage='shop';rollShop(st);scene(st,'道具屋');const rk=rankOf(st.gp),top=rk>=RANKS.length-1;
+  say(st,CAST.shop,pick(srng(st.seed,'shopl',st.turn),top?['Sランク様のご来店だ。いい品は全部出してあるぜ。','あんたにはもう、教えることも売ることも少なくなってきたな。','うちの店から伝説が出るとはな。ゆっくり見ていってくれ。']:['いらっしゃい。今日の目玉はこれだ。','冷やかしでも構わんよ。冷やかしでも。',rk>=4?'ランク'+RANKS[rk].n+'か。いい品が回ってくるようになったのは、あんたのおかげだ。':'ギルドの評判が上がると、いい品を回してやれるんだがな。']));
+  const m=st.shop.find(it=>it.npc);if(m){say(st,m.npc,metNpc(st,m.npc)?'また来たよ。今季も、うちの商会の品を持ってきた。':'やあ。……なんだろう、初めて会った気がしない。うちの商会の品、見ていくかい？');}}
 SCN_IMPL.freelance={
   eventRate:FL.eventRate,
   get events(){return EVENTS;},
@@ -1436,7 +1440,7 @@ SCN_IMPL.freelance={
       const q=st.offers[+id.slice(4)];
       scene(st,q.title);q.text.forEach(t=>narr(st,t));
       if(q.black)say(st,'依頼主','いやあ助かるよ！ 味方？ もちろん精鋭をそろえてある。たぶん。');
-      if(q.npc){say(st,q.npc,'よろしく。……不思議だな。あんたの剣の振り方、昔の自分を見てるみたいだ。');}
+      if(q.npc){say(st,q.npc,metNpc(st,q.npc)?'また一緒だな。あんたと組むと、妙に背中が軽い。':'よろしく。……不思議だな。あんたの剣の振り方、昔の自分を見てるみたいだ。');}
       narr(st,`味方${q.allies.length}人とともに、敵${q.enemies.length}体に挑む。`);
       storyBattle(st,{kind:'quest',q,b:battleOf(st,q,q.title)});return;
     }
@@ -1525,7 +1529,7 @@ function evBattle(st,tag,specs,allies,goal,label){
 const pct=x=>Math.round(x*100)+'%';
 const EVENTS=[
   {id:'armwrestle',title:'酒場の腕相撲',w:2,
-    lines:()=>[[CAST.senior,'よう新入り！ 一勝負どうだ。負けたら一杯おごり、勝ったら俺の秘蔵の稽古法を教えてやる。'],['','酒場の視線が集まる。']],
+    lines:(st)=>{const rk=rankOf(st.gp),call=rk<=1?'よう新入り！':rk>=RANKS.length-1?'よう、Sランク様！':`よう、ランク${RANKS[rk].n}！`;return[[CAST.senior,`${call} 一勝負どうだ。負けたら一杯おごり、勝ったら俺の秘蔵の稽古法を教えてやる。`],['','酒場の視線が集まる。']];},
     choices:()=>[
       {label:'受けて立つ',sub:'五分五分の勝負',go:(st,r)=>{if(r()<0.5){say(st,CAST.senior,'ぐぬぬ……約束だ。腰の入れ方が違うんだよ、腰の。');gain(st,{pt:4,gp:3});}else{say(st,CAST.senior,'がっはっは、まだまだだな！ ごちそうさん！');gain(st,{gold:-12});}}},
       {label:'丁重に断る',go:(st)=>{say(st,CAST.senior,'なんだ、つれないねえ。まあ、冷静なのはいいことだ。');gain(st,{pt:1});}}]},
@@ -1561,12 +1565,12 @@ const EVENTS=[
     choices:(st,d)=>[
       {label:'戦う',sub:`勝率およそ${pct(d.win)}`,go:(st,r,d2)=>({battle:d2.battle,win:{gold:30,gp:4}})},
       {label:'財布を投げて逃げる',sub:'金の半分を失う',go:(st)=>{narr(st,'財布を放り投げ、全力で走った。命あっての物種だ。');gain(st,{gold:-Math.floor(st.gold/2)});}}]},
-  {id:'duel',title:'決闘の申し込み',w:1.2,when:st=>rankOf(st.gp)>=2,
+  {id:'duel',title:'決闘の申し込み',w:1.2,when:st=>rankOf(st.gp)>=2&&st.hist.duels<2, // 2回目は「鍛え直して戻ってきた」カイル。それで決着
     prep:(st,r)=>evBattle(st,'duel',[{fam:'merc',name:'ライバルのカイル'}],[],QG.evGoal.duel,'決闘'),
-    lines:(st,d)=>[['ライバルのカイル','ギルドで噂の剣士ってのはお前か。一対一で勝負しろ。負けたほうがこの街を出ていく。'],['',`一騎打ち。勝てる見込みはおよそ${pct(d.win)}。`]],
+    lines:(st,d)=>[['ライバルのカイル',st.hist.duels>=1?'……戻ってきたぞ。お前に負けて街を出てから、一日も休まず鍛え直した。もう一度だ。今度負けたら、二度と剣は握らない。':st.seen.duelLost?'前の決闘から逃げた臆病者が、まだこの街にいたとはな。今度こそ勝負しろ。':'ギルドで噂の剣士ってのはお前か。一対一で勝負しろ。負けたほうがこの街を出ていく。'],['',`一騎打ち。勝てる見込みはおよそ${pct(d.win)}。`]],
     choices:(st,d)=>[
-      {label:'受ける',sub:`勝率およそ${pct(d.win)}`,go:(st,r,d2)=>{st.hist.duels++;return{battle:d2.battle,win:{gp:15,pt:5}};}},
-      {label:'受けない',sub:'ギルドポイント-5',go:(st)=>{say(st,'ライバルのカイル','臆病者め。');gain(st,{gp:-5});}}]},
+      {label:'受ける',sub:`勝率およそ${pct(d.win)}`,go:(st,r,d2)=>{st.hist.duels++;if(st.hist.duels===1)st.flags.kyleGone=true;return{battle:d2.battle,win:{gp:15,pt:5}};}},
+      {label:'受けない',sub:'ギルドポイント-5',go:(st)=>{say(st,'ライバルのカイル','臆病者め。');st.seen.duelLost=true;gain(st,{gp:-5});}}]},
   {id:'oldman',title:'雨宿りの老人',w:1.2,
     lines:()=>[['','軒先で雨宿りをしていると、隣の老人が話しかけてきた。'],['老人','若いの。わしも昔は剣を振っておった。聞くかね、昔話を。']],
     choices:()=>[
@@ -1612,7 +1616,7 @@ const EVENTS=[
       {label:'酒をおごる',need:st=>st.gold>=10,go:(st)=>{say(st,CAST.senior,'へっ、気が利くじゃねえか。……忘れろ、今の話は。');gain(st,{gold:-10,gp:6});}}]},
   {id:'f_joint',title:'カイルとの共闘',w:1.2,when:st=>rankOf(st.gp)>=2&&st.hist.duels>=1,
     prep:(st,r)=>evBattle(st,'f_joint',[{fam:'wolf'},{fam:'wolf'},{fam:'wolf'}],[famUnit('merc',Math.max(6,storyPower(st)*0.8),srng(st.seed,'kyle',st.turn),'ライバルのカイル')],QG.evGoal.ambush,'カイルとの共闘'),
-    lines:(st,d)=>[['ライバルのカイル','おい、手を貸せ。狼の群れが村に向かってる。……勘違いするなよ、お前の腕を認めたわけじゃない。'],['',`勝てる見込みはおよそ${pct(d.win)}。`]],
+    lines:(st,d)=>[['','街を出たはずのカイルが、息を切らして駆け込んできた。'],['ライバルのカイル','おい、手を貸せ。狼の群れが村に向かってる。……勘違いするなよ、約束を破って戻ったわけじゃない。村を見捨てられなかっただけだ。'],['',`勝てる見込みはおよそ${pct(d.win)}。`]],
     choices:(st,d)=>[
       {label:'一緒に戦う',sub:`勝率およそ${pct(d.win)}`,go:(st,r,d2)=>({battle:d2.battle,win:{gp:10,pt:3}})},
       {label:'断る',go:(st)=>{say(st,'ライバルのカイル','ちっ、一人でやる。');gain(st,{gp:-3});}}]},
@@ -1830,7 +1834,7 @@ const EVENTS_E=[
       {label:'茶を出して話を聞く',go:(st)=>{say(st,nm,'基金の評価項目は一つだけだ。民が戦えるようになったかどうか。討伐の報酬は、民に剣と弓を握らせ続けるための授業料なんだよ。');
         say(st,nm,'いつか空が裂けて、本物の敵が来る。そのとき、君のような商人が補給を支えてくれると助かる。');if(ex)narr(st,`${nm}とは、昔からの知り合いのように話が弾んだ。`);findClue(st,'E3');}},
       {label:'帳簿を閉じて追い返す',go:(st)=>{say(st,nm,'……そうか。また来るよ。');}}];}},
-  {id:'e_parts',title:'魔物素材の買い付け',w:1.5,when:st=>rankE(st.jx)>=1,
+  {id:'e_parts',title:'魔物素材の買い付け',w:1.5,once:true,when:st=>rankE(st.jx)>=1,
     lines:()=>[['','魔物の素材を卸しに行くと、いつもの問屋が首を振った。'],['問屋','すまんね、今季から素材は全部「協会指定業者」が買い取ることになった。値段？ 向こうの言い値さ。']],
     choices:()=>[
       {label:'指定業者を調べる',go:(st)=>{narr(st,'指定業者の登記簿を取り寄せた。代表者の欄には、王立協会の家畜研究部の名前があった。');say(st,CAST_E.clerk,'……社長、これ、深入りしないほうがいいやつです。');gain(st,{pt:3,jx:4});}},
@@ -2061,7 +2065,7 @@ const EVENTS_B=[
       {label:'迎え撃つ',sub:`勝率およそ${pct(d.win)}`,go:(st,r,d2)=>({battle:d2.battle,win:{rep:5,gold:15}})},
       {label:'外套を脱いで逃げる',sub:'金の半分を失う',go:(st)=>{narr(st,'外套の内ポケットに、財布を入れっぱなしだった。');gain(st,{gold:-Math.floor(st.gold/2)});}}]},
   {id:'b_mentor',title:'局長の気まぐれ',w:1,when:st=>rankB(st.rep)>=2,
-    lines:()=>[[CAST_B.chief,'君か、最近よく名前を聞くのは。少し稽古をつけてやろう。何を伸ばしたい？']],
+    lines:(st)=>[[CAST_B.chief,st.hist.events.includes('b_mentor')?'また君か。前の稽古は役に立ったようだな。今日は何を伸ばしたい？':'君か、最近よく名前を聞くのは。少し稽古をつけてやろう。何を伸ばしたい？']],
     choices:()=>[
       {label:'術の威力（攻撃）',go:(st)=>{gain(st,{stat:{atk:1}});}},
       {label:'魔力の量（スタミナ）',go:(st)=>{gain(st,{stat:{sta:1}});}},
@@ -2074,7 +2078,11 @@ const EVENTS_B=[
   {id:'b_observatory',title:'観測所の夜番',w:1.5,when:st=>rankB(st.rep)>=2,
     lines:()=>[['','王都の外れの観測所で夜番をした。星の位置を記録するだけの、退屈な仕事だ。'],['観測員','ああ、空に「ひび」が見えたら、記録だけして報告はしなくていい。上が知ってるから。']],
     choices:()=>[
-      {label:'「ひび」について聞く',go:(st)=>{say(st,'観測員','……君、何等協会員だっけ。じゃあまだ知らなくていい。');gain(st,{pt:3,rep:-1});}},
+      {label:'「ひび」について聞く',go:(st)=>{const rk=rankB(st.rep);
+        if(has(st,'B2'))say(st,'観測員','君はもう、裂け目の向こうを見たんだったな。……次がいつ来るかは、私にもわからない。だから毎晩、空を見ている。');
+        else if(rk>=BU.secretRank)say(st,'観測員',`${RANKS_B[rk].n}なら、家畜研究部のことは知っているね。……その資料に載っていない「ひび」が、本物だよ。`);
+        else say(st,'観測員','……君、何等協会員だっけ。じゃあまだ知らなくていい。');
+        gain(st,{pt:3,rep:-1});}},
       {label:'黙って記録を続ける',go:(st)=>{narr(st,'その夜、空は静かだった。');gain(st,{rep:4});}}]},
   {id:'b_exam',title:'昇格試験',w:1.5,when:st=>rankB(st.rep)>=1&&rankB(st.rep)<RANKS_B.length-1,
     lines:()=>[[CAST_B.boss,'昇格試験の季節だ。筆記と実技。筆記の範囲は「協会規則」全二百条だ。']],
