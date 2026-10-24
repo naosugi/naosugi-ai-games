@@ -302,6 +302,25 @@ dialog textarea{width:100%;height:200px;background:var(--bg);border:1px solid va
 .qcard .npc{font-size:12px;color:var(--green-deep);font-weight:700}
 dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);overflow:auto}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.finale{position:fixed;inset:0;z-index:200;background:#07080c;color:#e9e4d6;overflow:hidden;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
+.finale.hidden{display:none}
+.fin-text{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:0 max(16px,12vw);transition:opacity 1.5s}
+.fin-text p{margin:0;font-size:clamp(15px,2.3vw,21px);line-height:1.8;opacity:0;animation:finIn 1.6s forwards}
+.finale.rolling .fin-text{opacity:0;pointer-events:none}
+.fin-rollwrap{position:absolute;inset:0;opacity:0;transition:opacity 1.5s 1s}
+.finale.rolling .fin-rollwrap{opacity:1}
+.fin-roll{position:absolute;left:0;right:0;top:100%;text-align:center;padding:0 16px}
+.finale.rolling .fin-roll{animation:finRoll 70s linear 1s forwards}
+.fin-h{font-size:13px;letter-spacing:.2em;color:#b9a46a;margin:26px 0 8px}
+.fin-t{font-size:clamp(26px,5vw,40px);letter-spacing:.15em;margin:6px 0 10px}
+.fin-n{font-size:18px;margin:6px 0}.fin-n small{display:block;font-size:12px;color:#9a9486;margin-top:2px}
+.fin-gap{height:90px}.fin-e{font-size:28px;letter-spacing:.4em;margin:60px 0 40vh}
+.fin-btns{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
+.fin-btns button{background:rgba(255,255,255,.08);color:#e9e4d6;border:1px solid rgba(255,255,255,.25)}
+.finale.rolling #fin-skip{display:none}
+@keyframes finIn{to{opacity:1}}
+@keyframes finRoll{to{transform:translateY(calc(-100% - 10vh))}}
+@media (prefers-reduced-motion:reduce){.fin-text p{animation:none;opacity:1}.finale.rolling .fin-roll{animation:none;top:0;overflow:auto;max-height:100%}.fin-rollwrap{overflow:auto}}
 .lore-h{margin:14px 0 6px;padding:4px 10px;border-radius:8px;background:var(--green-soft);color:var(--green-deep);font-size:15px}
 .lore-h .te{margin-left:8px;font-size:12px;background:var(--green);color:#fff;border-radius:8px;padding:1px 8px}
 .lore-it{border-left:3px solid var(--green-mid);padding:4px 10px;margin:6px 0}
@@ -661,8 +680,14 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
       <div class="tr-units" id="tr-units"></div>
       <div class="formation" id="tr-form" style="margin-top:10px"></div></div>
     <div class="cards" id="tr-stages"></div>
+    <div style="margin-top:14px"><button class="btn-primary hidden" id="tr-finale">エンディングをもう一度見る</button></div>
   </div>
 </section>
+<div id="finale" class="finale hidden" role="dialog" aria-modal="true" aria-label="エンディング">
+  <div class="fin-text" id="fin-text"></div>
+  <div class="fin-rollwrap"><div class="fin-roll" id="fin-roll"></div></div>
+  <div class="fin-btns"><button id="fin-skip">スタッフロールへ</button><button id="fin-close">閉じる</button></div>
+</div>
 
 <section class="screen hidden" id="s-pick">
   <div class="topbar">
@@ -3201,10 +3226,18 @@ const TRUE_STAGES=[ // 自動プレイで慎重に育てた育成ユニットで
   {name:'裂け目の術者団',base:'範囲魔法隊',cost:850,text:'後方の空に、異界の術者たちが列をなしている。'},
   {name:'虚ろの重装隊',base:'反撃壁',cost:1100,text:'打てば打ち返してくる、中身のない鎧の列。'},
   {name:'異界の本隊',base:'壁＋魔法',cost:950,text:'協会の記録にある最大の襲撃と、同じ規模だという。'},
-  {name:'異界の将',base:'英雄2体',cost:1300,text:'軍勢を率いる、格の違う二体。これを退ければ、裂け目は閉じる。'},
+  {name:'異界の将',base:'英雄2体',cost:1300,text:'軍勢を率いる、格の違う二体。これを退ければ、裂け目は閉じる――はずだった。'},
+  // 6・7段階目：遊んだ人の軍勢（総合力2500）より強く。自動プレイの上位12体の各ステータスを2上げた軍（約4900）で、6段階目は97%、7段階目は5割ほど
+  {name:'異界の近衛軍',base:'物理英雄',cost:3000,text:'将を倒しても、裂け目は閉じなかった。奥から、揃った足音が近づいてくる。'},
+  {name:'魔王',maou:true,text:'裂け目の最奥に、王がいた。どこかで見た顔だ。'},
 ];
+// 最後の敵：魔王（速度以外のステータスが最大、すべての特殊能力を持つ魔法使い）と、そこそこの剣の魔物
+const MAOU={minions:8,lv:4,spd:4};
+function maouArmy(){const m={type:'mag',lv:{hp:CFG.MAXL,atk:CFG.MAXL,spd:0,rng:CFG.MAXL,as:CFG.MAXL,sta:CFG.MAXL},ab:Object.keys(AB),name:'魔王'};
+  const sw=Array.from({length:MAOU.minions},(_,j)=>({type:'phy',lv:{hp:MAOU.lv,atk:MAOU.lv,spd:MAOU.spd,rng:0,as:MAOU.lv-1,sta:0},ab:[],name:`異界の剣鬼${j+1}`}));
+  return[...sw.slice(0,4),m,...sw.slice(4)];}
 const trueUnlocked=()=>!!LORE.B2;
-function trueEnemy(i){const s=TRUE_STAGES[i],rng=mulberry32(hashSeed('true-stage',i));
+function trueEnemy(i){const s=TRUE_STAGES[i],rng=mulberry32(hashSeed('true-stage',i));if(s.maou)return maouArmy();
   const a=fitBudget(randomizeArmy(PRESETS[s.base],rng,2),s.cost,rng);roleNames(a);a.forEach(u=>u.name='異界の'+u.name);return a;}
 let TRUE_SEL=store.get('rb3_true_sel',[]);
 const storyUnits=()=>roster.filter(r=>r.story).sort((a,b)=>power(b)-power(a));
@@ -3224,10 +3257,30 @@ function renderTrue(){
       <div class="formation mini">${formationHTML(e,1,{fullBack:true})}</div>
       <button class="btn-primary" data-i="${i}" ${lock||!sel.length?'disabled':''}>出撃</button></div>`;}).join('');
   $('tr-stages').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>startTrue(+b.dataset.i));
+  $('tr-finale').classList.toggle('hidden',cleared<TRUE_STAGES.length);
 }
 function trueArmy(){const us=storyUnits().filter(u=>TRUE_SEL.includes(u.id));return markUniq(us.map(u=>({type:u.type,lv:{...u.lv},ab:[...u.ab],name:u.name,uniq:true})));}
 function startTrue(i){runState={mode:'true',stage:i};startTeams(trueArmy(),markUniq(trueEnemy(i)),`真シナリオ ${i+1}/${TRUE_STAGES.length}：${TRUE_STAGES[i].name}`);}
 $('tr-back').onclick=()=>go('start');
+// ===== 本当のトゥルーエンド：魔王を倒した後のエピローグとスタッフロール =====
+const FINALE_LINES=['魔王は、協会がこしらえた作り話のはずだった。','けれど裂け目の最奥で待っていたのは、協会の魔王の肖像画の、いちばん古い一枚と同じ顔の王だった。',
+  '協会を作った最初の者たちは、その顔を見たのだ。見たままに描き、見たままに「魔王」と名づけた。','作り話は、嘘ではなかった。ただ、少しだけ早すぎた。',
+  '裂け目は閉じた。次に開くのが百年後か、明日かは、誰にもわからない。','だから民は今日も、魔王の噂話をしながら剣を磨いている。'];
+function openFinale(){
+  const us=storyUnits().filter(u=>TRUE_SEL.includes(u.id)),sc={freelance:'剣',entrepreneur:'弓',bureau:'魔'};
+  const roll=[['h','TRPG風軍団戦'],['t','名を持つ十二の兵'],['g',''],['h','魔王を討った十二の兵'],
+    ...(us.length?us.map(u=>['n',`${u.name}`,`${sc[u.story.scn]||''}・${u.story.title||''}`]):[['n','名もなき兵たち','']]),['g',''],
+    ['h','登場人物'],['n','受付のミラ',''],['n','先輩冒険者ガルド',''],['n','道具屋ロッコ',''],['n','ライバルのカイル',''],['n','番頭のエルザ',''],['n','投資家ゴルド',''],['n','王立協会の上司と局長',''],['n','そして、魔王',''],['g',''],
+    ['h','原案・ディレクション・テストプレイ'],['n','naosugi',''],['h','制作'],['n','Claude（Anthropic）',''],['g',''],
+    ['h','そして'],['n','ここまで遊んでくれた、あなた',''],['g',''],['e','FIN']];
+  $('fin-text').innerHTML=FINALE_LINES.map((t,i)=>`<p style="animation-delay:${0.6+i*2.4}s">${esc(t)}</p>`).join('');
+  $('fin-roll').innerHTML=roll.map(([k,a,b])=>k==='g'?'<div class="fin-gap"></div>':k==='n'?`<div class="fin-n">${esc(a)}${b?`<small>${esc(b)}</small>`:''}</div>`:`<div class="fin-${k}">${esc(a)}</div>`).join('');
+  const F=$('finale');F.classList.remove('hidden','rolling');void F.offsetWidth;
+  clearTimeout(openFinale.t);openFinale.t=setTimeout(()=>F.classList.add('rolling'),(0.6+FINALE_LINES.length*2.4+2)*1000);
+  $('fin-close').focus();}
+$('fin-close').onclick=()=>{clearTimeout(openFinale.t);$('finale').classList.add('hidden');};
+$('fin-skip').onclick=()=>{clearTimeout(openFinale.t);$('finale').classList.add('rolling');};
+$('tr-finale').onclick=openFinale;
 $('st-lorebtn').onclick=openLore;
 // ===== 書き出しと読み込み：ユニット・編成・ゲームまるごと =====
 // 形式：{format:'rb-unit'|'rb-army'|'rb-save', v:1, ...}。どれもJSONのテキスト（ファイルでもコピーでも同じ中身）
@@ -3676,7 +3729,7 @@ function endBattle(){
     const i=runState.stage;
     if(r==='win'){const c=store.get('rb3_true_cleared',0);if(i+1>c)store.set('rb3_true_cleared',i+1);
       if(i+1<TRUE_STAGES.length){text=`「${TRUE_STAGES[i].name}」を退けました。裂け目はまだ閉じない。`;btn('次の軍勢へ',()=>startTrue(i+1),true);}
-      else text='異界の本隊を退けた。裂け目が閉じていく。民は今日も、魔王の噂話をしながら剣を磨いている。';}
+      else{text='魔王が倒れた。裂け目が、ゆっくりと閉じていく。';btn('エンディングへ',()=>{openTrue();openFinale();},true);}}
     else btn('もう一度',()=>startTrue(i),true);
     btn('真シナリオに戻る',openTrue);
   }else if(runState.mode==='scenario'){
