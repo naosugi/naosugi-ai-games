@@ -9,6 +9,7 @@
 | ゲーム | 内容 |
 |---|---|
 | [INFINITE SHOT 3D](games/infinite-shot-3d/) | 自動前進の3Dシューティング。5分間スコアアタック |
+| [名を持つ十二の兵](games/named-twelve/) | TRPG風軍団戦。会話と選択で戦士を育て、12体の軍団を編成して見守る |
 
 ## 構成
 
