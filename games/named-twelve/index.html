@@ -126,8 +126,34 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 .bar span.mag{background:repeating-linear-gradient(135deg,#7aa5ea 0 4px,#a9c4f2 4px 7px)}
 .bar span.sel{background:var(--green)}
 .bar span.over{background:var(--red)}
-.ed-grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
-@media (max-width:900px){.ed-grid{grid-template-columns:1fr}}
+.ed-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.ed-pick{grid-column:1/-1;display:grid;gap:8px}
+@media (min-width:1200px){.ed-grid{grid-template-columns:300px 1fr 340px}.ed-pick{grid-column:auto;position:sticky;top:12px}.ed-pick .alist{max-height:calc(100vh - 230px);overflow:auto}}
+.ep-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.ep-h .muted{font-size:12px}
+.ed-pick .arow{grid-template-columns:18px 1fr auto;gap:4px 10px;align-items:center}.ed-pick .arow .cnt{display:none}
+.ed-pick .arow .shape{grid-row:1/3;align-self:start;margin-top:4px}.ed-pick .arow .rn{grid-column:2/4}
+.ed-pick .arow .pw{grid-column:2;display:flex;gap:6px;align-items:baseline;justify-self:start}.ed-pick .arow .pw b{font-size:17px}
+.ed-pick .arow button{grid-column:3;padding:6px 14px}
+.ed-help{position:relative}.ed-help summary{list-style:none;cursor:pointer;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--muted)}
+.ed-help summary::-webkit-details-marker{display:none}
+.ed-help-b{position:absolute;z-index:30;top:32px;left:0;width:min(420px,80vw);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.ed-wrap{padding-bottom:120px}
+.ed-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;gap:12px;align-items:center;padding:8px max(16px,calc((100vw - 1200px)/2)) calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+.ed-bar .gauge{min-width:0}
+.g-rest{margin-left:auto;font-size:17px;font-weight:700;color:var(--green-deep)}.g-rest.over{color:var(--warn)}
+.sheet-only{display:none}
+@media (min-width:901px){.uadd.pc-hide{display:none}}
+@media (max-width:900px){
+  .ed-pick{display:none}
+  #ed-detail{position:fixed;left:0;right:0;bottom:var(--edbar-h,76px);max-height:calc(86vh - var(--edbar-h,76px));overflow:auto;z-index:46;margin:0;border-radius:16px 16px 0 0;transform:translateY(calc(100% + var(--edbar-h,76px) + 20px));transition:transform .22s ease;visibility:hidden}
+  #ed-detail.open{transform:none;visibility:visible}
+  .ed-scrim{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.28)}
+  .sheet-only{display:inline-flex}
+  .ed-bar #g-base{display:none}
+  .ed-bar{gap:10px;padding-left:12px;padding-right:12px}.ed-bar .gauge-top{gap:6px;white-space:nowrap}.ed-bar .gauge-num{font-size:18px}.ed-bar #g-of,.ed-bar #g-units{font-size:12px}.ed-bar .g-rest{font-size:15px}
+  .ed-bar #ed-ok{padding:10px 12px;white-space:nowrap}
+}
+@media (prefers-reduced-motion:reduce){#ed-detail{transition:none}}
 .ulist{display:grid;gap:6px}
 .uitem{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;align-items:center;text-align:left;padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft)}
 .uitem:hover:not(.sel):not(:disabled){border-color:var(--line);background:#f7fbf8}
@@ -302,6 +328,25 @@ dialog textarea{width:100%;height:200px;background:var(--bg);border:1px solid va
 .qcard .npc{font-size:12px;color:var(--green-deep);font-weight:700}
 dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);overflow:auto}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.finale{position:fixed;inset:0;z-index:200;background:#07080c;color:#e9e4d6;overflow:hidden;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
+.finale.hidden{display:none}
+.fin-text{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:0 max(16px,12vw);transition:opacity 1.5s}
+.fin-text p{margin:0;font-size:clamp(15px,2.3vw,21px);line-height:1.8;opacity:0;animation:finIn 1.6s forwards}
+.finale.rolling .fin-text{opacity:0;pointer-events:none}
+.fin-rollwrap{position:absolute;inset:0;opacity:0;transition:opacity 1.5s 1s}
+.finale.rolling .fin-rollwrap{opacity:1}
+.fin-roll{position:absolute;left:0;right:0;top:100%;text-align:center;padding:0 16px}
+.finale.rolling .fin-roll{animation:finRoll 70s linear 1s forwards}
+.fin-h{font-size:13px;letter-spacing:.2em;color:#b9a46a;margin:26px 0 8px}
+.fin-t{font-size:clamp(26px,5vw,40px);letter-spacing:.15em;margin:6px 0 10px}
+.fin-n{font-size:18px;margin:6px 0}.fin-n small{display:block;font-size:12px;color:#9a9486;margin-top:2px}
+.fin-gap{height:90px}.fin-e{font-size:28px;letter-spacing:.4em;margin:60px 0 40vh}
+.fin-btns{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
+.fin-btns button{background:rgba(255,255,255,.08);color:#e9e4d6;border:1px solid rgba(255,255,255,.25)}
+.finale.rolling #fin-skip{display:none}
+@keyframes finIn{to{opacity:1}}
+@keyframes finRoll{to{transform:translateY(calc(-100% - 10vh))}}
+@media (prefers-reduced-motion:reduce){.fin-text p{animation:none;opacity:1}.finale.rolling .fin-roll{animation:none;top:0;overflow:auto;max-height:100%}.fin-rollwrap{overflow:auto}}
 .lore-h{margin:14px 0 6px;padding:4px 10px;border-radius:8px;background:var(--green-soft);color:var(--green-deep);font-size:15px}
 .lore-h .te{margin-left:8px;font-size:12px;background:var(--green);color:#fff;border-radius:8px;padding:1px 8px}
 .lore-it{border-left:3px solid var(--green-mid);padding:4px 10px;margin:6px 0}
@@ -520,6 +565,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
     </div>
     <div class="mgroup rec"><h3 class="mg-h">記録</h3>
       <div class="panel io-panel"><span class="label">手がかり</span><span class="muted num" id="st-lore" style="font-size:13px;flex:1"></span><button id="st-lorebtn">手がかりの記録</button></div>
+      <div class="panel io-panel"><span class="label">サウンド</span><span style="flex:1"></span><button data-snd="sfx">効果音 ON</button><button data-snd="bgm">BGM ON</button></div>
       <div class="panel io-panel"><span class="label">データ</span><span class="muted" style="font-size:13px;flex:1">ユニット・編成・ストーリーの進行をまとめて書き出し、別の端末で続きを遊べます。</span><button id="st-export">ゲームまるごと書き出す</button><button id="st-import">読み込む</button></div>
     </div>
     <details class="rules panel">
@@ -543,17 +589,11 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
 <section class="screen hidden" id="s-edit">
   <div class="topbar">
     <h2 id="ed-title">編成</h2>
-    <div class="gauge">
-      <div class="gauge-top"><span class="gauge-num num" id="g-num">0</span><span class="muted num" id="g-of">/ 377 pt</span><span class="muted num" id="g-base" style="font-size:12px"></span><span class="muted num" id="g-units" style="margin-left:auto"></span></div>
-      <div class="bar" id="g-bar" aria-hidden="true"></div>
-    </div>
-    <div class="ed-actions">
-      <button id="ed-cancel">やめる</button>
-      <button class="btn-primary" id="ed-ok">この編成で決定</button>
-    </div>
+    <details class="ed-help"><summary aria-label="編成のしかた">？</summary><div class="ed-help-b">ユニット一覧のユニットを1〜12体並べて軍団を作り、残りのポイントで上乗せします（1体ごとに基本コスト8pt）。ここでの上乗せは一覧のユニットを書き換えません。♛ユニーク（総合力50以上と育成ユニット）は1体までです。変更は右下の「決定」を押すまで反映されません。</div></details>
+    <span class="sp"></span>
+    <button id="ed-cancel">やめる</button>
   </div>
-  <div class="wrap">
-    <p class="help-line">ユニット一覧のユニットを1〜12体並べて軍団を作り、残りのポイントで上乗せします（1体ごとに基本コスト8pt）。ここでの上乗せは一覧のユニットを書き換えません。変更は「この編成で決定」を押すまで反映されません。</p>
+  <div class="wrap ed-wrap">
     <div class="toolbar" style="margin-bottom:14px">
       <select id="ed-preset" aria-label="プリセット"></select>
       <button id="ed-preset-load">プリセットで編成を作る</button>
@@ -571,7 +611,22 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
         <div class="ulist" id="ed-list"></div>
       </div>
       <div class="panel detail" id="ed-detail"></div>
+      <div class="panel ed-pick" id="ed-pick">
+        <div class="ep-h"><b>ユニットを選ぶ</b><span class="muted num" id="ep-sub"></span></div>
+        <div class="seg" role="group" aria-label="表示するユニット" id="ep-filter"><button data-f="all" aria-pressed="true">すべて</button><button data-f="story" aria-pressed="false">育成</button><button data-f="mine" aria-pressed="false">自分</button><button data-f="std" aria-pressed="false">標準</button></div>
+        <div class="alist" id="ep-list"></div>
+        <button class="linkbtn" id="ep-toroster">ユニット一覧で新しく作る</button>
+      </div>
     </div>
+  </div>
+  <div class="ed-scrim hidden" id="ed-scrim"></div>
+  <div class="ed-bar" id="ed-bar">
+    <div class="gauge">
+      <div class="gauge-top"><span class="gauge-num num" id="g-num">0</span><span class="muted num" id="g-of">/ 377 pt</span><span class="muted num" id="g-units"></span><span class="g-rest num" id="g-rest"></span></div>
+      <div class="bar" id="g-bar" aria-hidden="true"></div>
+      <span class="muted num" id="g-base" style="font-size:11px"></span>
+    </div>
+    <button class="btn-primary" id="ed-ok">決定</button>
   </div>
 </section>
 
@@ -607,7 +662,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
     <div class="nv-center hidden" id="nv-center"><div class="sy-panel" id="sy-panel"></div></div>
     <div class="nv-win" id="nv-win">
       <div class="nv-name hidden" id="nv-name"></div>
-      <div class="nv-ctl"><button class="nv-btn" id="nv-log">ログ</button><button class="nv-btn" id="nv-skip">スキップ</button></div>
+      <div class="nv-ctl"><button class="nv-btn" data-snd="mute">音 ON</button><button class="nv-btn" id="nv-log">ログ</button><button class="nv-btn" id="nv-skip">スキップ</button></div>
       <div class="nv-text" id="nv-text" aria-live="polite"></div>
       <span class="nv-next hidden" id="nv-next" aria-hidden="true">▼</span>
     </div>
@@ -661,8 +716,14 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
       <div class="tr-units" id="tr-units"></div>
       <div class="formation" id="tr-form" style="margin-top:10px"></div></div>
     <div class="cards" id="tr-stages"></div>
+    <div style="margin-top:14px"><button class="btn-primary hidden" id="tr-finale">エンディングをもう一度見る</button></div>
   </div>
 </section>
+<div id="finale" class="finale hidden" role="dialog" aria-modal="true" aria-label="エンディング">
+  <div class="fin-text" id="fin-text"></div>
+  <div class="fin-rollwrap"><div class="fin-roll" id="fin-roll"></div></div>
+  <div class="fin-btns"><button id="fin-skip">スタッフロールへ</button><button id="fin-close">閉じる</button></div>
+</div>
 
 <section class="screen hidden" id="s-pick">
   <div class="topbar">
@@ -693,6 +754,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
           <button data-speed="2">2倍</button>
           <button data-speed="4">4倍</button>
           <button id="bt-zoom" aria-pressed="true">自動ズーム</button>
+          <button data-snd="mute">音 ON</button>
           <button id="bt-quit" class="btn-danger">撤退</button>
         </div>
       </div>
@@ -750,7 +812,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
 </dialog>
 
 <dialog id="dlg-add">
-  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0">ユニット一覧から追加</h3><span class="muted num" id="ad-sub" style="font-size:13px"></span></div>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0">ユニットを選ぶ</h3><span class="muted num" id="ad-sub" style="font-size:13px"></span></div>
   <p class="help-line" style="margin:6px 0 10px">総合力の高い順に並んでいます。同じユニットを何体でも追加できますが、♛ユニーク（総合力50以上）は1体までです。</p>
   <div class="seg" role="group" aria-label="表示するユニット" id="ad-filter" style="margin-bottom:8px"><button data-f="all" aria-pressed="true">すべて</button><button data-f="story" aria-pressed="false">育成</button><button data-f="mine" aria-pressed="false">自分のユニット</button><button data-f="std" aria-pressed="false">標準ユニット</button></div>
   <div class="alist" id="ad-list"></div>
@@ -2286,10 +2348,11 @@ const costIn=u=>unitCost(u)*(u.story?STORY_RATE:1); // 編成でかかるコス�
 const armyTotal=a=>a.reduce((t,u)=>t+costIn(u),0)+BASE_UNIT*a.length;
 const isUnique=r=>!!r.story||power(r)>=CFG.UNIQUE-1e-9;
 const CROWN='<span class="crown" title="ユニーク：編成に1体まで">♛ ユニーク</span>';
-// 同じユニットを2体以上入れていて、そのどれかが総合力50以上（上乗せ込み）なら違反
+// 同じユニットのうち、ユニーク（上乗せ込みで総合力50以上、または育成ユニット）が2体以上なら違反。
+// 1体だけ上乗せしてユニークにしても、上乗せしていない同じユニットは並べられる
 function uniqueProblems(sl){
   const by={};sl.forEach(s=>{(by[s.uid]=by[s.uid]||[]).push(s);});
-  return Object.entries(by).filter(([id,g])=>g.length>1&&g.some(s=>isUnique(resolve(s)))).map(([id,g])=>rosterById(id).name);
+  return Object.entries(by).filter(([id,g])=>g.filter(s=>isUnique(resolve(s))).length>1).map(([id,g])=>rosterById(id).name);
 }
 const usage=id=>slots.filter(s=>s.uid===id).length;
 function freshRosterName(){const used=new Set(allUnits().map(r=>r.name));const f=NAME_POOL.filter(n=>!used.has(n));return f.length?f[Math.floor(Math.random()*f.length)]:'ユニット'+(roster.length+1);}
@@ -2304,6 +2367,7 @@ const STAT_LABEL={hp:'HP',atk:'攻撃',spd:'速度',rng:'射程',as:'頻度',sta
 function go(name){
   for(const s of ['start','edit','roster','pick','battle','shub','story','true','free'])$('s-'+s).classList.toggle('hidden',s!==name);
   if(name!=='battle')stopBattle();
+  if(name!=='battle')SND.bgm(name==='story'?'story':'title');sndRender();
   if(name==='start')renderStart();
   if(name==='edit')renderEdit();
   if(name==='roster')renderRoster();
@@ -2550,8 +2614,8 @@ let draft=[],dirty=false,sel=0;
 // EDCTX：何を編集しているか。main=自分の編成。free=フリーバトルの片方の軍（mode が true なら真シナリオのバランス）
 let EDCTX={target:'main',mode:'scenario',back:'start'};
 const edTrue=()=>EDCTX.mode==='true';
-function edProblems(sl){if(!edTrue())return uniqueProblems(sl);const by={};sl.forEach(s=>{by[s.uid]=(by[s.uid]||0)+1;});return Object.entries(by).filter(([id,n])=>n>1).map(([id])=>rosterById(id).name);}
-function openEditor(ctx){EDCTX=ctx||{target:'main',mode:'scenario',back:'start'};draft=copySlots(EDCTX.target==='main'?slots:cleanSlots(EDCTX.slots||[]));sel=0;dirty=false;$('ed-note').classList.add('hidden');
+function edProblems(sl){return uniqueProblems(sl);}   // どちらのバランスでも、1体までなのはユニークだけ
+function openEditor(ctx){edSheet(false);EDCTX=ctx||{target:'main',mode:'scenario',back:'start'};draft=copySlots(EDCTX.target==='main'?slots:cleanSlots(EDCTX.slots||[]));sel=0;dirty=false;$('ed-note').classList.add('hidden');
   $('ed-title').textContent=EDCTX.title||'編成';go('edit');}
 async function editLeave(){return !dirty||await ask('編成の変更を破棄しますか？','破棄する','編集に戻る',true);}
 $('ed-cancel').onclick=async()=>{if(await editLeave()){if(EDCTX.back==='free')openFree();else go(EDCTX.back||'start');}};
@@ -2559,7 +2623,7 @@ $('ed-ok').onclick=()=>{
   const a=resolveAll(draft),c=armyTotal(a);
   if(!a.length){tell('ユニットが1体もいません。');return;}
   if(!edTrue()&&c>TOTAL_BUDGET+1e-9){tell(`予算を${fmt(c-TOTAL_BUDGET)}pt超えています。`);return;}
-  if(edProblems(draft).length){tell(edTrue()?'同じユニットが2体以上入っています。':'ユニークのユニットが2体以上入っています。');return;}
+  if(edProblems(draft).length){tell('ユニークのユニットが2体以上入っています。');return;}
   if(EDCTX.target!=='main'){EDCTX.save(copySlots(draft));dirty=false;openFree();return;}
   slots=copySlots(draft);saveSlots();go('start');note('st-note','編成を決定しました。');
 };
@@ -2569,24 +2633,31 @@ function renderEdit(){
   $('g-num').textContent=fmt(total);$('g-num').classList.toggle('over',over);$('g-of').textContent=edTrue()?'pt（上限なし）':`/ ${TOTAL_BUDGET} pt`;
   const up=edProblems(draft);
   $('ed-ok').disabled=over||!draft.length||up.length>0;
-  $('ed-warn').textContent=up.length?(edTrue()?`「${up.join('」「')}」が2体以上入っています。真シナリオのバランスでは同じユニットは1体までです。`:`ユニークの「${up.join('」「')}」が2体以上入っています。1体にしないと決定できません。`):'';
+  $('ed-warn').textContent=up.length?`ユニークの「${up.join('」「')}」が2体以上入っています。1体にしないと決定できません。`:'';
   $('ed-warn').classList.toggle('hidden',!up.length);
-  $('g-units').textContent=`${draft.length} / ${CFG.MAXU}体`+(edTrue()?'・コスト上限なし':over?`・${fmt(total-TOTAL_BUDGET)}pt超過`:`・残り ${fmt(TOTAL_BUDGET-total)}pt`);
+  $('g-units').textContent=`${draft.length} / ${CFG.MAXU}体`;
+  $('g-rest').textContent=edTrue()?'上限なし':over?`${fmt(total-TOTAL_BUDGET)}pt 超過`:`残り ${fmt(TOTAL_BUDGET-total)}pt`;$('g-rest').classList.toggle('over',over);
   $('g-base').textContent=`うち基本コスト ${BASE_UNIT}pt×${draft.length}体＝${BASE_UNIT*draft.length}pt`;
   const denom=Math.max(total,edTrue()?1:TOTAL_BUDGET);
   $('g-bar').innerHTML=units.map((u,i)=>`<span class="${u.type==='mag'?'mag':''} ${i===sel?'sel':''} ${over?'over':''}" style="width:${(costIn(u)+BASE_UNIT)/denom*100}%"></span>`).join('');
   $('ed-form').innerHTML=formationHTML(units,0,{names:true,click:true,sel,fullBack:true});
-  $('ed-form').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;renderEdit();});
+  $('ed-form').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;renderEdit();edSheet(true);});
   const L=$('ed-list');
   L.innerHTML=draft.map((s,i)=>{const u=units[i],b=rosterById(s.uid),addC=unitCost(resolve(s))-power(b);
     return`<button class="uitem${i===sel?' sel':''}" data-i="${i}" aria-current="${i===sel}">
       <span class="shape${u.type==='mag'?' mag':''}"></span><span class="n">${esc(u.name)}${isUnique(u)?'<span class="crown sm">♛</span>':''}${u.story?'<span class="crown sm grow">育</span>':''}${i===sel?'<span class="pill">編集中</span>':''}</span><span class="c">${fmt(costIn(u))}</span>
       <span class="s">${statLine(resolve(s),b)}${u.ab.length?'・'+u.ab.map(k=>AB[k].short+(b.ab.includes(k)?'':'+')).join(' '):''}${addC>0.05?`<span class="addc">上乗せ +${fmt(addC)}</span>`:''}</span>
-    </button>`;}).join('')+(draft.length<CFG.MAXU?`<button class="uitem uadd" id="ed-add">＋ ユニット一覧から追加</button>`:'');
-  L.querySelectorAll('.uitem[data-i]').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;renderEdit();if(window.innerWidth<900)$('ed-detail').scrollIntoView({behavior:'smooth',block:'start'});});
-  const add=$('ed-add');if(add)add.onclick=openAddDialog;
-  renderDetail();
+    </button>`;}).join('')+`<button class="uitem uadd" id="ed-add">${draft.length<CFG.MAXU?'＋ ユニットを追加':'⇄ 選んでいるユニットを入れ替える'}</button>`;
+  L.querySelectorAll('.uitem[data-i]').forEach(b=>b.onclick=()=>{sel=+b.dataset.i;renderEdit();edSheet(true);});
+  $('ed-add').onclick=openAddDialog;$('ed-add').classList.toggle('pc-hide',true);
+  renderDetail();renderPicker('ep');
+  document.documentElement.style.setProperty('--edbar-h',$('ed-bar').offsetHeight+'px');
 }
+// スマホでは編集欄を下からのパネルにする
+const edMobile=()=>window.matchMedia('(max-width:900px)').matches;
+function edSheet(open){const on=open&&edMobile()&&draft.length>0;$('ed-detail').classList.toggle('open',on);$('ed-scrim').classList.toggle('hidden',!on);if(on){const c=$('d-close');if(c)c.focus();}}
+$('ed-scrim').onclick=()=>edSheet(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('ed-detail').classList.contains('open'))edSheet(false);});
 function renderDetail(){
   const D=$('ed-detail');
   if(!draft.length){D.innerHTML='<p class="muted">ユニットがいません。「ユニット一覧から追加」かプリセットから始めてください。</p>';return;}
@@ -2594,20 +2665,21 @@ function renderDetail(){
   if(b.story){
     const units0=numbered(resolveAll(draft));
     D.innerHTML=`<div class="estrip"><span class="lbl">編集中</span><span class="muted num">${sel+1} / ${draft.length}体目</span><span class="sp"></span>
-      <button id="d-prev" ${sel<=0?'disabled':''} aria-label="前のユニット">‹ 前</button><button id="d-next" ${sel>=draft.length-1?'disabled':''} aria-label="次のユニット">次 ›</button></div>
+      <button id="d-prev" ${sel<=0?'disabled':''} aria-label="前のユニット">‹ 前</button><button id="d-next" ${sel>=draft.length-1?'disabled':''} aria-label="次のユニット">次 ›</button><button class="sheet-only" id="d-close">閉じる</button></div>
       <div class="dhead"><h3 class="uname">${esc(units0[sel].name)}</h3><span class="tag">${roleLabel(u)}</span>${CROWN}<span class="stdtag storytag">育成</span></div>
       <div class="powerline"><span>総合力</span><b class="num">${fmt(bc)}</b><span class="muted">編成でのコスト <b style="color:var(--text)">${fmt(costIn(u))}pt</b>（${Math.round((1-STORY_RATE)*100)}%オフ）</span></div>
       <p class="help-line" style="margin:0">ストーリーモードで育てたユニットです。上乗せはできません。二つ名「${esc(b.story.title)}」。</p>
       <div class="stats">${statRows(u,null,d,()=>0,true)}</div>
       <div class="dfoot"><span class="sp"></span><button class="btn-danger" id="d-del">編成から外す</button></div>`;
     $('d-prev').onclick=()=>{sel=Math.max(0,sel-1);renderEdit();};$('d-next').onclick=()=>{sel=Math.min(draft.length-1,sel+1);renderEdit();};
-    $('d-del').onclick=()=>{draft.splice(sel,1);sel=Math.max(0,sel-1);dirty=true;renderEdit();};
+    $('d-del').onclick=()=>{draft.splice(sel,1);sel=Math.max(0,sel-1);dirty=true;edSheet(false);renderEdit();};
+    $('d-close').onclick=()=>edSheet(false);
     return;
   }
   const units=numbered(resolveAll(draft));
   const delta=f=>{const t={uid:slot.uid,add:{...slot.add},addAb:[...slot.addAb]};f(t);return unitCost(resolve(t))-cur;};
   let h=`<div class="estrip"><span class="lbl">編集中</span><span class="muted num">${sel+1} / ${draft.length}体目</span><span class="sp"></span>
-      <button id="d-prev" ${sel<=0?'disabled':''} aria-label="前のユニット">‹ 前</button><button id="d-next" ${sel>=draft.length-1?'disabled':''} aria-label="次のユニット">次 ›</button></div>
+      <button id="d-prev" ${sel<=0?'disabled':''} aria-label="前のユニット">‹ 前</button><button id="d-next" ${sel>=draft.length-1?'disabled':''} aria-label="次のユニット">次 ›</button><button class="sheet-only" id="d-close">閉じる</button></div>
     <div class="dhead"><h3 class="uname">${esc(units[sel].name)}</h3><span class="tag">${roleLabel(u)}</span>${isUnique(u)?CROWN:''}</div>
     <div class="powerline"><span>総合力</span><b class="num">${fmt(bc)}</b><span class="muted">＋ この編成での上乗せ ${fmt(cur-bc)} ＝ <b style="color:var(--text)">${fmt(cur)}pt</b></span></div>
     <p class="help-line" style="margin:0">ここで上げた分はこの編成だけに残り、ユニット一覧の「${esc(b.name)}」は変わりません。<button class="linkbtn" id="d-toroster">${b.std?'一覧で見る（標準ユニット）':'一覧で書き換える'}</button></p>
@@ -2632,30 +2704,40 @@ function renderDetail(){
     const nb=$('ed-detail').querySelector(`.abi[data-k="${k}"]`);if(nb)nb.focus();});
   $('d-dup').onclick=()=>{if(draft.length>=CFG.MAXU||isUnique(u))return;draft.splice(sel+1,0,{uid:slot.uid,add:{...slot.add},addAb:[...slot.addAb]});sel++;upd();};
   $('d-reset').onclick=()=>{slot.add=Object.fromEntries(STATS.map(k=>[k,0]));slot.addAb=[];upd();};
-  $('d-del').onclick=()=>{draft.splice(sel,1);sel=Math.max(0,sel-1);upd();};
+  $('d-del').onclick=()=>{draft.splice(sel,1);sel=Math.max(0,sel-1);edSheet(false);upd();};
+  $('d-close').onclick=()=>edSheet(false);
+  // 予算が足りない上乗せは押せない（真シナリオのバランスでは上限なし）
+  if(!edTrue()){const rest=TOTAL_BUDGET-armyTotal(resolveAll(draft));
+    D.querySelectorAll('.stp button[data-d="1"]').forEach(bt=>{const s=bt.dataset.s;if(!bt.disabled&&delta(t=>{t.add[s]=(t.add[s]||0)+1;})>rest+1e-9){bt.disabled=true;bt.title='予算が足りません';}});
+    D.querySelectorAll('.abi[data-k][aria-pressed="false"]').forEach(bt=>{const k=bt.dataset.k;if(delta(t=>t.addAb.push(k))>rest+1e-9){bt.disabled=true;bt.title='予算が足りません';}});}
 }
-// 一覧から追加するダイアログ
+// ユニットを選ぶ欄（PCでは編成画面の右、スマホではダイアログ）。12体そろっていれば、選んでいるユニットと入れ替える
 const dlgAdd=$('dlg-add');
-function openAddDialog(){renderAddDialog();dlgAdd.showModal();}
-function renderAddDialog(){
-  const left=CFG.MAXU-draft.length,rest=TOTAL_BUDGET-armyTotal(resolveAll(draft))-BASE_UNIT;
-  $('ad-sub').textContent=edTrue()?`あと${left}体追加できます・コスト上限なし・同じユニットは1体まで`:`あと${left}体追加できます・1体追加すると基本コスト${BASE_UNIT}ptを引いて残り ${fmt(rest)}pt`;
-  bindFilter($('ad-filter'),()=>afilter,v=>afilter=v,renderAddDialog);
-  $('ad-list').innerHTML=sortedRoster(afilter).map(r=>{const p=costIn(r),cnt=draft.filter(s=>s.uid===r.id).length,uq=isUnique(r)||edTrue(),lock=uq&&cnt>0;
+function openAddDialog(){renderPicker('ad');dlgAdd.showModal();}
+function renderPicker(p){
+  const full=draft.length>=CFG.MAXU,cur=draft[sel],left0=TOTAL_BUDGET-armyTotal(resolveAll(draft)),rest=full&&cur?left0+costIn(resolve(cur)):left0-BASE_UNIT;   // 新しいユニットに使える残り
+  $(p+'-sub').textContent=full?`12体そろっています・押すと${sel+1}体目と入れ替え`+(edTrue()?'':`（使えるのは ${fmt(rest)}pt まで）`)
+    :edTrue()?`あと${CFG.MAXU-draft.length}体・コスト上限なし`:`あと${CFG.MAXU-draft.length}体・追加すると基本コスト${BASE_UNIT}ptを引いて残り ${fmt(rest)}pt`;
+  bindFilter($(p+'-filter'),()=>afilter,v=>afilter=v,()=>{renderPicker('ep');if(dlgAdd.open)renderPicker('ad');});
+  $(p+'-list').innerHTML=sortedRoster(afilter).map(r=>{const c=costIn(r),cnt=draft.filter((s,i)=>s.uid===r.id&&!(full&&i===sel)).length,uq=isUnique(r),lock=uq&&cnt>0;
     return`<div class="arow"><span class="shape${r.type==='mag'?' mag':''}"></span>
       <span class="rn"><b>${esc(r.name)}${r.std?STDTAG:''}${r.story?STORYTAG:''}${uq?CROWN:''}</b><small>${roleLabel(r)}・${statLine(r)}${r.ab.length?'・'+r.ab.map(k=>AB[k].short).join(' '):''}</small></span>
-      <span class="pw"><small>総合力</small><b class="num${p>rest+1e-9?' over':''}">${fmt(p)}</b></span>
+      <span class="pw"><small>総合力</small><b class="num${!edTrue()&&c>rest+1e-9?' over':''}">${fmt(c)}</b></span>
       <span class="cnt">${lock?'編成済み':cnt?`編成に${cnt}体`:''}</span>
-      <button class="btn-primary" data-id="${r.id}" ${left<=0||lock?'disabled':''}>${lock?'1体まで':'追加'}</button></div>`;}).join('')||`<p class="muted">${afilter==='mine'?'自分のユニットはまだありません。':'ユニットがありません。'}</p>`;
-  $('ad-list').querySelectorAll('button[data-id]').forEach(bt=>bt.onclick=()=>{if(draft.length>=CFG.MAXU)return;
-    const r=rosterById(bt.dataset.id);if((isUnique(r)||edTrue())&&draft.some(s=>s.uid===r.id))return;
-    draft.push({uid:bt.dataset.id,add:Object.fromEntries(STATS.map(k=>[k,0])),addAb:[]});sel=draft.length-1;dirty=true;renderEdit();renderAddDialog();});
+      <button class="btn-primary" data-id="${r.id}" ${lock?'disabled':''}>${lock?'1体まで':full?'入れ替え':'追加'}</button></div>`;}).join('')||`<p class="muted">${afilter==='mine'?'自分のユニットはまだありません。':'ユニットがありません。'}</p>`;
+  $(p+'-list').querySelectorAll('button[data-id]').forEach(bt=>bt.onclick=()=>{
+    const r=rosterById(bt.dataset.id),full2=draft.length>=CFG.MAXU;
+    if(isUnique(r)&&draft.some((s,i)=>s.uid===r.id&&!(full2&&i===sel)))return;
+    const slot={uid:r.id,add:Object.fromEntries(STATS.map(k=>[k,0])),addAb:[]};
+    if(full2)draft[sel]=slot;else{draft.push(slot);sel=draft.length-1;}
+    dirty=true;renderEdit();if(dlgAdd.open)renderPicker('ad');});
 }
 $('ad-close').onclick=()=>dlgAdd.close();
 $('ad-toroster').onclick=async()=>{dlgAdd.close();if(await editLeave())openRoster(null);};
+$('ep-toroster').onclick=async()=>{if(await editLeave())openRoster(null);};
 $('ed-preset').innerHTML=Object.keys(PRESETS).map(n=>`<option>${n}</option>`).join('');
 // 下書きを置き換えるだけ（「やめる」で元に戻せる）ので確認は出さない
-$('ed-preset-load').onclick=()=>{const p=$('ed-preset').value;draft=slotsFromPreset(p);sel=0;dirty=true;renderEdit();note('ed-note',`プリセット「${p}」で編成を作りました。「この編成で決定」で確定、「やめる」で元に戻ります。`);};
+$('ed-preset-load').onclick=()=>{const p=$('ed-preset').value;draft=slotsFromPreset(p);sel=0;dirty=true;renderEdit();note('ed-note',`プリセット「${p}」で編成を作りました。右下の「決定」で確定、「やめる」で元に戻ります。`);};
 // 保存ダイアログ（編成は一覧のユニットへの参照として保存）
 const dlg=$('dlg-saves');
 // 書き出し・読み込みの形式は ui_io（armyJSON / importArmy）
@@ -2674,6 +2756,88 @@ $('sv-pick').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)
 $('sv-apply').onclick=()=>{try{draft=importArmy($('sv-json').value);sel=0;dirty=true;renderEdit();dlg.close();}catch(e){$('sv-msg').textContent='読み込めません：'+e.message;}};
 
 /*__STORY_UI_START__*/
+// ===== サウンド：効果音とBGM（Web Audio で合成。外部ファイルなし） =====
+// 設定は rb3_sound に保存。最初の操作まで音は出ない（ブラウザの自動再生の制限）
+const SND=(()=>{
+  let cfg={sfx:true,bgm:true,vol:0.7};try{Object.assign(cfg,JSON.parse(localStorage.getItem('rb3_sound')||'{}'));}catch(e){}
+  const save=()=>{try{localStorage.setItem('rb3_sound',JSON.stringify(cfg));}catch(e){}};
+  let ac=null,master=null,sfxBus=null,bgmBus=null,noiseBuf=null,want=null,cur=null,timer=null,step=0,nextT=0;
+  const last={};
+  function ctx(){
+    if(ac)return ac;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
+    try{ac=new AC();}catch(e){return null;}
+    master=ac.createGain();master.connect(ac.destination);
+    sfxBus=ac.createGain();sfxBus.connect(master);bgmBus=ac.createGain();bgmBus.connect(master);
+    noiseBuf=ac.createBuffer(1,ac.sampleRate*0.6,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    apply();return ac;}
+  function apply(){if(!ac)return;master.gain.value=cfg.vol;sfxBus.gain.value=cfg.sfx?0.9:0;bgmBus.gain.value=cfg.bgm?0.32:0;}
+  function unlock(){const a=ctx();if(!a)return;if(a.state==='suspended')a.resume();if(want!==cur)startBgm(want);}
+  ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,unlock,{passive:true}));
+  // ---- 音の部品 ----
+  function tone(bus,t,f,dur,o={}){const a=ac,osc=a.createOscillator(),g=a.createGain();osc.type=o.type||'sine';osc.frequency.setValueAtTime(f,t);
+    if(o.to)osc.frequency.exponentialRampToValueAtTime(o.to,t+dur);
+    const v=o.vol??0.3,at=o.at??0.005;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    let n=osc;if(o.lp){const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=o.lp;osc.connect(fl);n=fl;}
+    n.connect(g);g.connect(bus);osc.start(t);osc.stop(t+dur+0.02);}
+  function noise(bus,t,dur,o={}){const a=ac,src=a.createBufferSource(),g=a.createGain(),fl=a.createBiquadFilter();src.buffer=noiseBuf;
+    fl.type=o.type||'bandpass';fl.frequency.setValueAtTime(o.f||1200,t);if(o.to)fl.frequency.exponentialRampToValueAtTime(o.to,t+dur);fl.Q.value=o.q||1;
+    const v=o.vol??0.3;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+(o.at??0.003));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(fl);fl.connect(g);g.connect(bus);src.start(t);src.stop(t+dur+0.02);}
+  const N=n=>440*Math.pow(2,(n-69)/12);
+  // ---- 効果音 ----
+  const FX={
+    click:t=>tone(sfxBus,t,880,0.05,{type:'triangle',vol:0.08}),
+    page:t=>tone(sfxBus,t,1320,0.04,{type:'sine',vol:0.05}),
+    slash:t=>noise(sfxBus,t,0.09,{f:2600,to:900,q:2,vol:0.16}),
+    arrow:t=>{noise(sfxBus,t,0.07,{type:'highpass',f:3000,vol:0.08});tone(sfxBus,t,1200,0.06,{to:500,type:'triangle',vol:0.04});},
+    orb:t=>tone(sfxBus,t,520,0.16,{to:1040,type:'sine',vol:0.08}),
+    kill:t=>{tone(sfxBus,t,160,0.22,{to:60,type:'triangle',vol:0.28});noise(sfxBus,t,0.15,{type:'lowpass',f:900,vol:0.15});},
+    uniq:t=>{tone(sfxBus,t,N(76),0.5,{type:'triangle',vol:0.15});tone(sfxBus,t+0.08,N(79),0.6,{type:'triangle',vol:0.12});},
+    charge:t=>{noise(sfxBus,t,0.18,{f:400,to:2400,q:1.5,vol:0.18});},
+    counter:t=>{tone(sfxBus,t,1500,0.08,{type:'square',vol:0.05,lp:3000});tone(sfxBus,t+0.03,1900,0.08,{type:'square',vol:0.04,lp:3000});},
+    aoe:t=>{tone(sfxBus,t,300,0.4,{to:90,type:'sawtooth',vol:0.08,lp:1200});noise(sfxBus,t,0.35,{f:700,to:200,vol:0.12});},
+    bomb:t=>{tone(sfxBus,t,110,0.7,{to:35,type:'sine',vol:0.5});noise(sfxBus,t,0.8,{type:'lowpass',f:1800,to:120,vol:0.4});},
+    knock:t=>tone(sfxBus,t,220,0.12,{to:110,type:'square',vol:0.07,lp:900}),
+    pct:t=>tone(sfxBus,t,700,0.12,{to:350,type:'sawtooth',vol:0.05,lp:2000}),
+    drainstun:t=>tone(sfxBus,t,600,0.3,{to:150,type:'sine',vol:0.1}),
+    start:t=>[60,64,67,72].forEach((n,i)=>tone(sfxBus,t+i*0.07,N(n),0.25,{type:'triangle',vol:0.12})),
+    win:t=>[[72,0],[76,0.12],[79,0.24],[84,0.38]].forEach(([n,d])=>tone(sfxBus,t+d,N(n),d===0.38?0.9:0.25,{type:'triangle',vol:0.18})),
+    lose:t=>[[67,0],[63,0.25],[60,0.5]].forEach(([n,d])=>tone(sfxBus,t+d,N(n),0.5,{type:'triangle',vol:0.14})),
+    clue:t=>[[81,0],[88,0.1],[93,0.2]].forEach(([n,d])=>tone(sfxBus,t+d,N(n),0.8,{type:'sine',vol:0.09})),
+    up:t=>[[67,0],[72,0.09],[76,0.18],[79,0.27]].forEach(([n,d])=>tone(sfxBus,t+d,N(n),0.3,{type:'square',vol:0.05,lp:2500})),
+    gain:t=>tone(sfxBus,t,N(84),0.15,{type:'triangle',vol:0.07}),
+  };
+  const GAP={slash:0.05,arrow:0.05,orb:0.06,kill:0.06,counter:0.08,knock:0.1,pct:0.1,click:0.03,page:0.03};
+  function sfx(k){if(!cfg.sfx||!cfg.vol||!FX[k])return;const a=ctx();if(!a||a.state!=='running')return;const t=a.currentTime;
+    if(t-(last[k]??-9)<(GAP[k]??0.04))return;last[k]=t;try{FX[k](t+0.005);}catch(e){}}
+  // ---- BGM（16分音符の並び。chord は小節ごとの和音、mel は旋律） ----
+  const SONGS={
+    title:{bpm:84,chords:[[57,60,64],[53,57,60],[48,52,55],[55,59,62]],pad:0.05,arp:[0,1,2,1,0,2,1,2],arpVol:0.045,mel:[76,null,74,null,72,null,71,null, 72,null,69,null,67,null,null,null],melVol:0.035},
+    story:{bpm:72,chords:[[50,53,57],[46,50,53],[53,57,60],[48,52,55]],pad:0.05,arp:[0,2,1,2],arpVol:0.04,mel:null},
+    battle:{bpm:132,chords:[[52,55,59],[48,52,55],[50,54,57],[47,50,54]],pad:0.025,bass:true,drums:true,arp:[0,1,2,1,0,1,2,2],arpVol:0.035,mel:[76,null,79,76,null,74,72,null,74,null,76,null,71,null,null,null],melVol:0.03},
+    finale:{bpm:66,chords:[[48,52,55],[43,47,50],[45,48,52],[41,45,48]],pad:0.06,arp:[0,1,2,1],arpVol:0.03,mel:[79,null,null,null,76,null,77,null,79,null,null,null,72,null,null,null],melVol:0.05,bell:true},
+  };
+  function schedule(){if(!ac||!cur)return;const S=SONGS[cur],sp=60/S.bpm/4;
+    while(nextT<ac.currentTime+0.25){const t=nextT,i=step%16,bar=Math.floor(step/16)%S.chords.length,ch=S.chords[bar];
+      if(i===0)ch.forEach(n=>tone(bgmBus,t,N(n),sp*16,{type:'triangle',vol:S.pad,at:0.3,lp:1400}));
+      if(S.arp&&i%2===0){const n=ch[S.arp[(i/2)%S.arp.length]]+12;tone(bgmBus,t,N(n),sp*2.5,{type:S.bell?'sine':'triangle',vol:S.arpVol});}
+      if(S.mel&&S.mel[i]!=null&&Math.floor(step/16)%2===1)tone(bgmBus,t,N(S.mel[i]),sp*3,{type:S.bell?'sine':'square',vol:S.melVol,lp:2400});
+      if(S.bass&&i%2===0)tone(bgmBus,t,N(ch[0]-12),sp*1.6,{type:'sawtooth',vol:0.06,lp:500});
+      if(S.drums){if(i%8===0)tone(bgmBus,t,120,0.18,{to:45,vol:0.22});if(i%8===4)noise(bgmBus,t,0.12,{f:1800,vol:0.08});if(i%2===1)noise(bgmBus,t,0.03,{type:'highpass',f:7000,vol:0.025});}
+      nextT+=sp;step++;}}
+  function startBgm(name){if(timer){clearInterval(timer);timer=null;}cur=null;
+    if(!name||!cfg.bgm)return;const a=ctx();if(!a||a.state!=='running')return;cur=name;step=0;nextT=a.currentTime+0.08;timer=setInterval(schedule,60);schedule();}
+  function bgm(name){want=name||null;if(want===cur)return;if(ac&&ac.state==='running')startBgm(want);}
+  document.addEventListener('visibilitychange',()=>{if(!ac)return;if(document.hidden)ac.suspend();else if(cur||want)ac.resume().then(()=>{if(want!==cur)startBgm(want);});});
+  return{sfx,bgm,get cfg(){return{...cfg};},set(k,v){cfg[k]=v;save();apply();if(k==='bgm'&&ac)startBgm(v?want:null);},
+    get playing(){return cur;},
+    mute(){cfg.vol=cfg.vol>0?0:0.7;save();apply();return cfg.vol===0;}};
+})();
+// 音の切り替えボタン（data-snd="mute" は消音の切り替え、"sfx"・"bgm" はそれぞれの入り切り）
+function sndRender(){const c=SND.cfg;document.querySelectorAll('[data-snd]').forEach(b=>{const k=b.dataset.snd;
+  const on=k==='mute'?c.vol>0:c[k];b.setAttribute('aria-pressed',String(on));b.textContent=k==='mute'?(on?'音 ON':'音 OFF'):`${k==='sfx'?'効果音':'BGM'} ${on?'ON':'OFF'}`;});}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-snd]');if(b){const k=b.dataset.snd;if(k==='mute')SND.mute();else SND.set(k,!SND.cfg[k]);sndRender();return;}
+  if(e.target.closest&&e.target.closest('button:not(:disabled)'))SND.sfx('click');},true);
 // ===== ノベル画面の絵（背景と立ち絵）。すべて図形で描く =====
 const NVA=(()=>{
   const W=1600,H=900;
@@ -3009,7 +3173,7 @@ function nvSync(){
 function nvStep(){
   while(SY.readTo<SY.log.length-1){
     SY.readTo++;const l=SY.log[SY.readTo];
-    if(l.k==='scene'){nvSetBg(l.t);nvSetChara(null);nvBanner(l.t);nvWrite(l,true);continue;}
+    if(l.k==='scene'){nvSetBg(l.t);nvSetChara(null);nvBanner(l.t);nvWrite(l,true);if(l.t==='真相')SND.bgm('finale');else if(l.t==='敗北'){SND.bgm(null);SND.sfx('lose');}continue;}
     if(l.k==='say')nvSetChara(l.who);
     nvWrite(l,false);saveStory();return;
   }
@@ -3019,7 +3183,8 @@ function nvWrite(l,instant){
   const nm=$('nv-name'),tx=$('nv-text');clearInterval(NV.typing);NV.typing=0;
   if(!l){nm.classList.add('hidden');tx.innerHTML='';nvNext();return;}
   if(l.k==='say'){nm.classList.remove('hidden');nm.textContent=l.who;nm.style.background=spCol(l.who);}
-  else if(l.k==='gain'){nm.classList.remove('hidden');nm.textContent='獲得';nm.style.background='var(--gold)';}
+  else if(l.k==='gain'){nm.classList.remove('hidden');nm.textContent='獲得';nm.style.background='var(--gold)';
+    if(!instant)SND.sfx(/手がかり/.test(l.t)?'clue':/ランク|昇格|目覚め|隠された力/.test(l.t)?'up':'gain');}
   else nm.classList.add('hidden');
   tx.className='nv-text k-'+l.k;NV.full=l.k==='scene'?`― ${l.t} ―`:l.t;
   if(instant){tx.textContent=NV.full;nvNext();return;}
@@ -3201,10 +3366,18 @@ const TRUE_STAGES=[ // 自動プレイで慎重に育てた育成ユニットで
   {name:'裂け目の術者団',base:'範囲魔法隊',cost:850,text:'後方の空に、異界の術者たちが列をなしている。'},
   {name:'虚ろの重装隊',base:'反撃壁',cost:1100,text:'打てば打ち返してくる、中身のない鎧の列。'},
   {name:'異界の本隊',base:'壁＋魔法',cost:950,text:'協会の記録にある最大の襲撃と、同じ規模だという。'},
-  {name:'異界の将',base:'英雄2体',cost:1300,text:'軍勢を率いる、格の違う二体。これを退ければ、裂け目は閉じる。'},
+  {name:'異界の将',base:'英雄2体',cost:1300,text:'軍勢を率いる、格の違う二体。これを退ければ、裂け目は閉じる――はずだった。'},
+  // 6・7段階目：遊んだ人の軍勢（総合力2500）より強く。自動プレイの上位12体の各ステータスを2上げた軍（約4900）で、6段階目は97%、7段階目は5割ほど
+  {name:'異界の近衛軍',base:'物理英雄',cost:3000,text:'将を倒しても、裂け目は閉じなかった。奥から、揃った足音が近づいてくる。'},
+  {name:'魔王',maou:true,text:'裂け目の最奥に、王がいた。どこかで見た顔だ。'},
 ];
+// 最後の敵：魔王（速度以外のステータスが最大、すべての特殊能力を持つ魔法使い）と、そこそこの剣の魔物
+const MAOU={minions:8,lv:4,spd:4};
+function maouArmy(){const m={type:'mag',lv:{hp:CFG.MAXL,atk:CFG.MAXL,spd:0,rng:CFG.MAXL,as:CFG.MAXL,sta:CFG.MAXL},ab:Object.keys(AB),name:'魔王'};
+  const sw=Array.from({length:MAOU.minions},(_,j)=>({type:'phy',lv:{hp:MAOU.lv,atk:MAOU.lv,spd:MAOU.spd,rng:0,as:MAOU.lv-1,sta:0},ab:[],name:`異界の剣鬼${j+1}`}));
+  return[...sw.slice(0,4),m,...sw.slice(4)];}
 const trueUnlocked=()=>!!LORE.B2;
-function trueEnemy(i){const s=TRUE_STAGES[i],rng=mulberry32(hashSeed('true-stage',i));
+function trueEnemy(i){const s=TRUE_STAGES[i],rng=mulberry32(hashSeed('true-stage',i));if(s.maou)return maouArmy();
   const a=fitBudget(randomizeArmy(PRESETS[s.base],rng,2),s.cost,rng);roleNames(a);a.forEach(u=>u.name='異界の'+u.name);return a;}
 let TRUE_SEL=store.get('rb3_true_sel',[]);
 const storyUnits=()=>roster.filter(r=>r.story).sort((a,b)=>power(b)-power(a));
@@ -3224,10 +3397,30 @@ function renderTrue(){
       <div class="formation mini">${formationHTML(e,1,{fullBack:true})}</div>
       <button class="btn-primary" data-i="${i}" ${lock||!sel.length?'disabled':''}>出撃</button></div>`;}).join('');
   $('tr-stages').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>startTrue(+b.dataset.i));
+  $('tr-finale').classList.toggle('hidden',cleared<TRUE_STAGES.length);
 }
 function trueArmy(){const us=storyUnits().filter(u=>TRUE_SEL.includes(u.id));return markUniq(us.map(u=>({type:u.type,lv:{...u.lv},ab:[...u.ab],name:u.name,uniq:true})));}
 function startTrue(i){runState={mode:'true',stage:i};startTeams(trueArmy(),markUniq(trueEnemy(i)),`真シナリオ ${i+1}/${TRUE_STAGES.length}：${TRUE_STAGES[i].name}`);}
 $('tr-back').onclick=()=>go('start');
+// ===== 本当のトゥルーエンド：魔王を倒した後のエピローグとスタッフロール =====
+const FINALE_LINES=['魔王は、協会がこしらえた作り話のはずだった。','けれど裂け目の最奥で待っていたのは、協会の魔王の肖像画の、いちばん古い一枚と同じ顔の王だった。',
+  '協会を作った最初の者たちは、その顔を見たのだ。見たままに描き、見たままに「魔王」と名づけた。','作り話は、嘘ではなかった。ただ、少しだけ早すぎた。',
+  '裂け目は閉じた。次に開くのが百年後か、明日かは、誰にもわからない。','だから民は今日も、魔王の噂話をしながら剣を磨いている。'];
+function openFinale(){
+  const us=storyUnits().filter(u=>TRUE_SEL.includes(u.id)),sc={freelance:'剣',entrepreneur:'弓',bureau:'魔'};
+  const roll=[['h','TRPG風軍団戦'],['t','名を持つ十二の兵'],['g',''],['h','魔王を討った十二の兵'],
+    ...(us.length?us.map(u=>['n',`${u.name}`,`${sc[u.story.scn]||''}・${u.story.title||''}`]):[['n','名もなき兵たち','']]),['g',''],
+    ['h','登場人物'],['n','受付のミラ',''],['n','先輩冒険者ガルド',''],['n','道具屋ロッコ',''],['n','ライバルのカイル',''],['n','番頭のエルザ',''],['n','投資家ゴルド',''],['n','王立協会の上司と局長',''],['n','そして、魔王',''],['g',''],
+    ['h','原案・ディレクション・テストプレイ'],['n','naosugi',''],['h','制作'],['n','Claude（Anthropic）',''],['g',''],
+    ['h','そして'],['n','ここまで遊んでくれた、あなた',''],['g',''],['e','FIN']];
+  $('fin-text').innerHTML=FINALE_LINES.map((t,i)=>`<p style="animation-delay:${0.6+i*2.4}s">${esc(t)}</p>`).join('');
+  $('fin-roll').innerHTML=roll.map(([k,a,b])=>k==='g'?'<div class="fin-gap"></div>':k==='n'?`<div class="fin-n">${esc(a)}${b?`<small>${esc(b)}</small>`:''}</div>`:`<div class="fin-${k}">${esc(a)}</div>`).join('');
+  SND.bgm('finale');const F=$('finale');F.classList.remove('hidden','rolling');void F.offsetWidth;
+  clearTimeout(openFinale.t);openFinale.t=setTimeout(()=>F.classList.add('rolling'),(0.6+FINALE_LINES.length*2.4+2)*1000);
+  $('fin-close').focus();}
+$('fin-close').onclick=()=>{clearTimeout(openFinale.t);$('finale').classList.add('hidden');SND.bgm('title');};
+$('fin-skip').onclick=()=>{clearTimeout(openFinale.t);$('finale').classList.add('rolling');};
+$('tr-finale').onclick=openFinale;
 $('st-lorebtn').onclick=openLore;
 // ===== 書き出しと読み込み：ユニット・編成・ゲームまるごと =====
 // 形式：{format:'rb-unit'|'rb-army'|'rb-save', v:1, ...}。どれもJSONのテキスト（ファイルでもコピーでも同じ中身）
@@ -3288,7 +3481,7 @@ $('st-export').onclick=()=>openIO({title:'ゲームまるごと書き出す',des
 $('st-import').onclick=()=>openIO({title:'ゲームまるごと読み込む',desc:'読み込むと、今のデータ（ユニット一覧・編成・ストーリーなど）はすべて置き換わります。必要なら先に書き出しておいてください。',applyLabel:'置き換えて読み込む',
   onImport:async txt=>{parseJSON(txt);if(!await ask('今のデータをすべて置き換えます。よろしいですか？','置き換える','やめる',true))return false;const n=importGame(txt);$('dlg-io').close();await tell(`${n}件のデータを読み込みました。画面を読み込み直します。`);location.reload();return false;}});
 // ===== フリーバトル：両軍を自由に組んで1戦。相手の編成を読み込めば対人戦 =====
-// バランス：scenario＝予算377pt・ユニーク1体まで・育成20%オフ ／ true＝コスト上限なし・同じユニットは1体まで（どちらも12体まで）
+// バランス：scenario＝予算377pt・ユニーク1体まで・育成20%オフ ／ true＝コスト上限なし・ユニーク1体まで（どちらも12体まで）
 const FREE_DEF={mode:'scenario',side:{blue:{src:'mine'},red:{src:'preset',name:'均等物理'}},custom:{blue:[],red:[]},imp:{blue:null,red:null}};
 let FREE=Object.assign(JSON.parse(JSON.stringify(FREE_DEF)),store.get('rb3_free',{}));
 const saveFree=()=>store.set('rb3_free',FREE);
@@ -3308,9 +3501,8 @@ function freeProblems(units,mode){const p=[];
   if(!units.length)p.push('ユニットがいません');
   if(units.length>CFG.MAXU)p.push(`${CFG.MAXU}体を超えています`);
   const by={};units.forEach(u=>{const k=sameKey(u);(by[k]=by[k]||[]).push(u);});
-  if(mode==='true'){const d=Object.values(by).filter(g=>g.length>1).map(g=>g[0].name);if(d.length)p.push(`同じユニットが2体以上います（${d.join('、')}）`);}
-  else{const c=armyTotal(units);if(c>TOTAL_BUDGET+1e-9)p.push(`予算を${fmt(c-TOTAL_BUDGET)}pt超えています`);
-    const d=Object.values(by).filter(g=>g.length>1&&g.some(u=>isUnique(u))).map(g=>g[0].name);if(d.length)p.push(`ユニークが2体以上います（${d.join('、')}）`);}
+  if(mode!=='true'){const c=armyTotal(units);if(c>TOTAL_BUDGET+1e-9)p.push(`予算を${fmt(c-TOTAL_BUDGET)}pt超えています`);}
+  {const d=Object.values(by).filter(g=>g.filter(u=>isUnique(u)).length>1).map(g=>g[0].name);if(d.length)p.push(`ユニークが2体以上います（${d.join('、')}）`);}   // どちらのバランスでも、1体までなのはユニークだけ
   return p;}
 // 一覧に入っていない軍（読み込んだ編成）も書き出せるように
 function unitsArmyJSON(units,name){return JSON.stringify({format:'rb-army',v:1,name:name||'',units:units.map(u=>({name:u.name,type:u.type,lv:{...u.lv},ab:[...u.ab],...(u.story?{story:{scn:'freelance',title:'',bio:'',power:0,at:'',clues:[],trueEnd:false}}:{})})),slots:units.map((u,i)=>({u:i,add:{},addAb:[]}))});}
@@ -3318,7 +3510,7 @@ function openFree(){go('free');renderFree();}
 function renderFree(){
   const m=FREE.mode;
   $('fr-mode').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
-  $('fr-mode-d').textContent=m==='true'?'コストの上限なし・同じユニットは1体まで・12体まで。育てたユニットを全力で戦わせるとき向け。':`予算${TOTAL_BUDGET}pt・ユニーク（総合力50以上と育成ユニット）は1体まで・育成ユニットは編成コスト20%オフ・12体まで。`;
+  $('fr-mode-d').textContent=m==='true'?'コストの上限なし・ユニーク（総合力50以上と育成ユニット）は1体まで・12体まで。育てたユニットを全力で戦わせるとき向け。':`予算${TOTAL_BUDGET}pt・ユニーク（総合力50以上と育成ユニット）は1体まで・育成ユニットは編成コスト20%オフ・12体まで。`;
   const saved=Object.keys(store.get('rb3_saved',{}));let ok=true;
   for(const side of ['blue','red']){
     const s=FREE.side[side],raw=freeUnits(side),us=markUniq(numbered(raw)),pb=freeProblems(raw,m);if(pb.length)ok=false;
@@ -3379,7 +3571,7 @@ function startBattle(enemy,label){startTeams(myArmy(),markUniq(cloneArmy(enemy))
 function startTeams(mine,enemy,label,seed){
   battle=createBattle(mine,enemy,seed==null?(Math.random()*2**31)|0:seed);
   battle.fx=[];battle.pops=[];battle.parts=[];battle.nums=[];battle.popGate={};battle.logGate={};battle.tally=[{},{}];battle.shake=0;battle.vt=0;battle.banner={txt:'開戦！',col:'#1f6e44',t:0};
-  $('bt-label').textContent=label;
+  $('bt-label').textContent=label;SND.bgm('battle');SND.sfx('start');
   paused=false;$('bt-pause').textContent='一時停止';acc=0;lastTs=0;
   $('log').innerHTML='';
   addLog(`<span class="nb">青 ${mine.length}体</span> 対 <span class="nr">赤 ${enemy.length}体</span>、戦闘開始`,'sys big');
@@ -3460,34 +3652,34 @@ function handleEvents(){
   for(const e of battle.events){
     const a=e.a!=null&&e.a>=0?U(e.a):null,b=e.b!=null&&e.b>=0?U(e.b):null;
     switch(e.k){
-      case'shot':{const kind=a.mag?'orb':a.d.rng<=MELEE_MAX?'slash':'arrow';fx({k:kind,x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2,side:a.side,big:e.charged,dur:travel(a),b:e.b});break;}
+      case'shot':{const kind=a.mag?'orb':a.d.rng<=MELEE_MAX?'slash':'arrow';SND.sfx(kind);fx({k:kind,x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2,side:a.side,big:e.charged,dur:travel(a),b:e.b});break;}
       case'dmg':{if(!b)break;const delay=(e.sp||e.tag)?0:(a?travel(a):0);
         battle.nums.push({x:b.x,y:b.y,v:e.v,m:e.m,big:e.tag==='bomb'||e.v>=40,t:battle.t+delay,j:(b.id*37%11)-5});
         if(battle.nums.length>140)battle.nums.splice(0,battle.nums.length-140);
         burst(b.x,b.y,e.m?5:4,e.m?'#9a78f0':'#6b7a73',e.m?55:85,0.32,2.2,{delay});break;}
-      case'kill':
+      case'kill':SND.sfx(b&&b.uniq?'uniq':'kill');
         if(e.bomb)addLog(`${nm(b)} が ${nm(a)} の爆発に巻き込まれて倒れた`,'big');
         else if(a)addLog(`${nm(a)} が ${nm(b)} を倒した`,'big');else addLog(`${nm(b)} が倒れた`,'big');
         if(b&&b.uniq){addLog(`♛ ユニークの ${nm(b)} が倒れた！`,'big');shake(7);burst(b.x,b.y,24,'#f2b51d',150,0.9,3.5);}
         if(b){burst(b.x,b.y,20,b.side===0?'#2f6fdb':'#d4473c',120,0.75,3.2);burst(b.x,b.y,8,'#ffffff',70,0.5,2.2);}
         if(a&&!e.bomb&&a.hp>0)pop(a,'kill',true);
         break;
-      case'charge':pop(a,'charge',true);tally(a,'charge');fx({k:'dash',a:e.a,tx:b.x,ty:b.y});shake(3);burst(b.x,b.y,12,'#d98c0a',140,0.4,2.6);
+      case'charge':SND.sfx('charge');pop(a,'charge',true);tally(a,'charge');fx({k:'dash',a:e.a,tx:b.x,ty:b.y});shake(3);burst(b.x,b.y,12,'#d98c0a',140,0.4,2.6);
         addLog(`${nm(a)} の<span class="ab">突撃</span>`,'minor');break;
-      case'counter':pop(a,'counter');tally(a,'counter');fx({k:'counter',x1:a.x,y1:a.y,x2:b.x,y2:b.y});burst(b.x,b.y,7,'#c08a00',100,0.3,2.2);
+      case'counter':SND.sfx('counter');pop(a,'counter');tally(a,'counter');fx({k:'counter',x1:a.x,y1:a.y,x2:b.x,y2:b.y});burst(b.x,b.y,7,'#c08a00',100,0.3,2.2);
         if(logGate('c'+a.id,2))addLog(`${nm(a)} が ${nm(b)} に<span class="ab">反撃</span>（${fmt(e.v,0)}）`,'minor');break;
       case'aoe':{const d=travel(a);fx({k:'aoe',x:e.x,y:e.y,dur:d,n:e.n});
-        if(e.n>0){pop(a,'aoe');tally(a,'aoe');burst(e.x,e.y,10+e.n*3,'#b894ff',110,0.45,2.6,{delay:d});
+        if(e.n>0){SND.sfx('aoe');pop(a,'aoe');tally(a,'aoe');burst(e.x,e.y,10+e.n*3,'#b894ff',110,0.45,2.6,{delay:d});
           if(e.n>=2||logGate('a'+a.id,3))addLog(`${nm(a)} の<span class="ab">範囲攻撃</span>が${e.n}体を巻き込んだ`,e.n>=3?'':'minor');}break;}
-      case'bomb':fx({k:'bomb',x:e.x,y:e.y});pop(a,'bomb',true);tally(a,'bomb');shake(11);
+      case'bomb':SND.sfx('bomb');fx({k:'bomb',x:e.x,y:e.y});pop(a,'bomb',true);tally(a,'bomb');shake(11);
         burst(e.x,e.y,40,'#e0661a',190,0.9,4);burst(e.x,e.y,20,'#fff1c2',100,0.6,3);burst(e.x,e.y,14,'#6d5f58',45,1.2,5.5);break;
       case'bombhit':addLog(`${nm(a)} が<span class="ab">爆発</span>、周囲${e.n}体に${fmt(e.v,0)}ダメージ`,'big');break;
-      case'knock':pop(b,'knock');tally(a,'knock');fx({k:'knock',b:e.b,dx:b.x-a.x,dy:b.y-a.y});
+      case'knock':SND.sfx('knock');pop(b,'knock');tally(a,'knock');fx({k:'knock',b:e.b,dx:b.x-a.x,dy:b.y-a.y});
         if(logGate('k'+a.id,3))addLog(`${nm(a)} が ${nm(b)} を<span class="ab">吹き飛ばした</span>`,'minor');break;
-      case'pct':pop(b,'pct');tally(a,'pct');fx({k:'crack',b:e.b,dur:travel(a)});break;
+      case'pct':SND.sfx('pct');pop(b,'pct');tally(a,'pct');fx({k:'crack',b:e.b,dur:travel(a)});break;
       case'magres':pop(b,'magres');tally(b,'magres');fx({k:'shield',b:e.b});break;
       case'drain':pop(b,'drain');tally(a,'drain');drainParts(b,a);break;
-      case'drainstun':pop(b,'drainstun',true);tally(a,'drainstun');drainParts(b,a);
+      case'drainstun':SND.sfx('drainstun');pop(b,'drainstun',true);tally(a,'drainstun');drainParts(b,a);
         addLog(`${nm(a)} が ${nm(b)} の<span class="ab">スタミナを削り切った</span>`);break;
       case'exhaust':pop(a,'exhaust',true);burst(a.x,a.y,8,'#9aa9a6',30,0.9,3.2,{rise:20});addLog(`${nm(a)} はスタミナ切れで3秒動けない`,'minor');break;
       case'recover':pop(a,'recover',true);burst(a.x,a.y,10,'#1b9ad6',55,0.5,2.2);break;
@@ -3653,7 +3845,7 @@ function draw(){
 function endBattle(){
   if(!battle||battle.ended)return;battle.ended=true;
   cancelAnimationFrame(raf);
-  const r=battle.result;
+  const r=battle.result;SND.bgm(null);if(!battle.quit)SND.sfx(r==='win'?'win':r==='lose'?'lose':'kill');
   addLog(battle.quit?'撤退した':r==='win'?'<b class="nb">青の勝利</b>':r==='lose'?'<b class="nr">赤の勝利</b>':'時間切れで引き分け','sys big');
   const T=$('res-title');T.className='res-title '+(r==='win'?'win':r==='lose'?'lose':'');
   T.textContent=battle.quit?'撤退':r==='win'?'勝利':r==='lose'?'敗北':'引き分け';
@@ -3676,7 +3868,7 @@ function endBattle(){
     const i=runState.stage;
     if(r==='win'){const c=store.get('rb3_true_cleared',0);if(i+1>c)store.set('rb3_true_cleared',i+1);
       if(i+1<TRUE_STAGES.length){text=`「${TRUE_STAGES[i].name}」を退けました。裂け目はまだ閉じない。`;btn('次の軍勢へ',()=>startTrue(i+1),true);}
-      else text='異界の本隊を退けた。裂け目が閉じていく。民は今日も、魔王の噂話をしながら剣を磨いている。';}
+      else{text='魔王が倒れた。裂け目が、ゆっくりと閉じていく。';btn('エンディングへ',()=>{openTrue();openFinale();},true);}}
     else btn('もう一度',()=>startTrue(i),true);
     btn('真シナリオに戻る',openTrue);
   }else if(runState.mode==='scenario'){
