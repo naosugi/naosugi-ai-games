@@ -1917,7 +1917,7 @@ const BU={
   study:{cost:t=>25+3*t,pt:t=>Math.round(7+0.35*t),rep:-3,rare:0.15},
   transferRep:0.6, secretRank:3, riftFloor:0.85,
   rareAbs:['killsta','bomb'],                   // 自己研鑽の稀な出来事でしか手に入らない能力
-  bonusAbs:['pct','knock','counter','charge'],
+  bonusAbs:['aoe','pct','knock'],               // 昇格祝いの教本は魔法向けの能力だけ
 };
 const RANKS_B=[{n:'見習い',rep:0},{n:'三等協会員',rep:12},{n:'二等協会員',rep:30},{n:'一等協会員',rep:55},{n:'主任',rep:85},{n:'室長',rep:120},{n:'部長',rep:130}];
 const rankB=rep=>{let r=0;RANKS_B.forEach((x,i)=>{if(rep>=x.rep)r=i;});return r;};
