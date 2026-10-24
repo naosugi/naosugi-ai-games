@@ -741,7 +741,7 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
 </dialog>
 <dialog id="dlg-lore" class="lore">
   <div class="dlg-h"><b>手がかりの記録</b><button id="lore-close">閉じる</button></div>
-  <p class="help-line" style="margin:0 0 8px">見つけた手がかりは、ゲームオーバーになっても残ります。あるシナリオの手がかりが、別のシナリオの手がかりへの扉を開きます。</p>
+  <p class="help-line" style="margin:0 0 8px">見つけた手がかりは、ゲームオーバーになっても残ります。あるシナリオの手がかりが、別のシナリオの手がかりへの扉を開きます。<br><b>真相（トゥルーエンド）には、そのシナリオの手がかりを1回の育成ですべて見つける必要があります。</b>前の育成で見つけた手がかりは、扉を開く役には立ちますが、数には入りません。</p>
   <div id="lore-list"></div>
 </dialog>
 <dialog id="dlg-ask" class="ask">
@@ -1193,6 +1193,11 @@ function makeQuest(scn,rank,turn,slot,seed,you,opt){
   const units=build(lam);
   return {id:tpl.id,title:tpl.title,text:tpl.text,war:!!tpl.war,special:tpl.special||null,aspec:aspec.map(a=>({...a})),gen:{seed,turn,slot},black,hint:black?pick(r,BLACK_HINTS):'',T:Math.round(Tq),T0:Math.round(T),tOver,adj,winEst,rm,allies,enemies:units,slot,seed:hashSeed(seed,'battle',turn,slot)};
 }
+// 断れない（または最後の）戦闘で、勝率が floor を割るとき敵を1体ずつ減らす。相性の悪い敵から外す（外したとき一番勝ちやすくなる敵）
+function liftWin(you,allies,enemies,floor,seed){let es=[...enemies],w=winRate(you,allies,es,QG.estN,seed);
+  while(w<floor&&es.length>1){let bj=0,bw=-1;es.forEach((e,j)=>{const x=winRate(you,allies,es.filter((_,k)=>k!==j),40,seed+j);if(x>bw){bw=x;bj=j;}});
+    es=es.filter((_,k)=>k!==bj);w=winRate(you,allies,es,QG.estN,seed);}
+  return{enemies:es,win:w};}
 // 味方の強さを mul 倍にして作り直す（起業家の予算など。依頼の調整の後に変えるので、そのぶん勝率が変わる）
 function alliesScaled(q,mul){return(q.aspec||[]).map((a,j)=>famUnit(a.fam,Math.max(0,(a.p*a.f+a.add)*mul),srng(q.gen.seed,'ally',q.gen.turn,q.gen.slot,j),a.name));}
 // ===== ストーリー進行：全シナリオ共通 =====
@@ -1213,7 +1218,7 @@ const impl=st=>SCN_IMPL[st.scn];
 // ----- 手がかり（記録はシナリオをまたいで残る。st.lore は開始時点の写し、st.found はこの育成で見つけたもの）-----
 const CLUES={
   F1:{scn:'freelance',name:'養殖場の事故',text:'王立協会の「家畜研究所」の事故現場で、瀕死の幹部がつぶやいた。「幹部にまで上り詰めて、養殖場のくだらん事故で死ぬのか」。モンスターは、誰かに育てられている。'},
-  F2:{scn:'freelance',name:'古文書の写し',text:'古い情報紙の束に紛れていた古文書の写し。「魔王」という言葉が初めて記録に現れるのは、王立協会の設立と同じ年だった。'},
+  F2:{scn:'freelance',name:'古文書の写し',text:'公文書を買った商人が持ち込んだ古文書の写し。「魔王」という言葉が初めて記録に現れるのは、王立協会の設立と同じ年だった。'},
   F3:{scn:'freelance',name:'幹部の打ち明け話（剣）',text:'協会の幹部は言った。「養殖は備えだ。いつか来るものに対して、民に剣を握らせておくための」。'},
   E1:{scn:'entrepreneur',name:'流出した公文書',text:'元役人が売りに来た公文書。モンスター討伐の報酬の大半は、王立協会の「民間防衛育成基金」から出ている。'},
   E2:{scn:'entrepreneur',name:'元冒険者の証言',text:'雇った元冒険者が話した。協会の「家畜研究所」で、檻の中のモンスターを見たと。討伐依頼の数は、そこで調整されている。'},
@@ -1287,6 +1292,7 @@ function afterBattle(st){
 function turnStart(st){st.powT=storyPower(st);scene(st,`第${st.turn}ターン　${dateStr(st.turn)}`);if(impl(st).turnStart)impl(st).turnStart(st);}
 function eventPool(st){return(impl(st).events||[]);}
 function turnEnd(st){
+  if(st.flags.finale==='run'){st.flags.finale='done';return toAlloc(st);}   // 最後の場面の後は、イベントや買い物を挟まずに結末へ
   const r=srng(st.seed,'evt',st.turn);
   const pool=eventPool(st).filter(e=>!(e.once&&st.seen[e.id])&&(!e.when||e.when(st)));
   const forced=pool.filter(e=>e.force&&e.force(st));
@@ -1298,9 +1304,11 @@ function turnEnd(st){
   return afterEvents(st);
 }
 function evChoices(st){const ev=eventPool(st).find(e=>e.id===st.event.id);return ev.choices(st,st.event.data);}
-function afterEvents(st){if(impl(st).afterEvents)return impl(st).afterEvents(st);return toAlloc(st);}
+function afterEvents(st){if(st.flags.finale==='run'){st.flags.finale='done';return toAlloc(st);}if(impl(st).afterEvents)return impl(st).afterEvents(st);return toAlloc(st);}
 function toAlloc(st){st.stage='alloc';st.allocBase={lv:{...st.unit.lv},pt:st.pt};}
+// 最後の季節の終わり：最後の手がかりの条件を満たしているのにまだ起きていなければ、ここで必ず起こす（impl.finale が場面を始めたら true）
 function nextTurn(st){
+  if(st.turn>=STORY_TURNS&&!st.flags.finale&&impl(st).finale){st.flags.finale='run';if(impl(st).finale(st))return;st.flags.finale='done';}
   if(st.turn>=STORY_TURNS){st.stage='ending';scene(st,'4年後');endingText(st);return;}
   st.turn++;st.stage='action';turnStart(st);
 }
@@ -1327,6 +1335,7 @@ function endingText(st){
     const k=TRUE_AB[st.scn];if(k&&!st.unit.ab.includes(k)){st.unit.ab.push(k);st.log.push({k:'gain',t:`隠された力に目覚めた：特殊能力「${AB[k].name}」`});}
   }
   I.ending(st);
+  {const ids=clueIdsOf(st.scn),n=ids.filter(k=>st.found[k]).length;if(!st.trueEnd&&n>0)sys(st,`この育成で見つけた手がかりは ${n}/${ids.length}。真相にたどり着くには、ひとつの育成で手がかりをすべて見つける必要がある。`);}
   narr(st,storyBio(st));sys(st,`最終の総合力 ${r2(storyPower(st))}。名前をつけてユニットとして保存できます。`);
 }
 // ----- 保存済みの育成ユニットが訪ねてくる（どのシナリオでも起きる）-----
@@ -1352,8 +1361,8 @@ const FL={
   mpp:8,rewardCap:1.5,                          // 買い物：総合力1あたりの値段。報酬の基準はあなたの総合力の rewardCap 倍まで
   eventRate:0.5, blackShow:0.6,
   shopAbs:['stdrain','spdatk','counter','charge'],// フリーランスの店に並ぶ能力（限定能力は並ばない）
-  farmRank:3, farmRate:0.35,                    // 手がかり：養殖場の事故の依頼（ランクC以上）
-  oldPaperRate:0.4, assocRate:0.5,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
+  farmRank:3, farmRate:0.6,                    // 手がかり：養殖場の事故の依頼（ランクC以上）
+  oldPaperRate:0.65, oldDocRank:3, assocRate:0.75, assocMul:0.75, assocFloor:0.85,              // 古い情報紙の束（要 起業家1）、協会からの指名依頼（ランクS・要 組織人2）
   npcAllyRate:0.4, npcShopRank:4, npcShopRate:0.5,
 };
 // 難しい枠ほど上乗せ（特に金）
@@ -1364,14 +1373,15 @@ function rollOffers(st){
   // 手がかりの依頼は決まった枠に差し込む
   const special={};
   if(rank>=FL.farmRank&&!st.found.F1&&r()<FL.farmRate)special[1]='farm';
-  if(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3&&r()<FL.assocRate)special[2]='assoc';
+  if(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3&&r()<FL.assocRate)special[special[1]?2:1]='assoc';
   let rb=-1;
   st.offers=[0,1,2].map(slot=>{
-    const q=makeQuest(st.scn,rank,st.turn,slot,st.seed,st.unit,special[slot]?{tpl:SPECIAL_QUESTS[special[slot]]}:null);
+    const q=makeQuest(st.scn,rank,st.turn,slot,st.seed,st.unit,special[slot]?{tpl:SPECIAL_QUESTS[special[slot]],mul:special[slot]==='assoc'?FL.assocMul:1}:null);
     const shownT=q.black?Math.round(q.T*FL.blackShow):q.T;
     const tr=Math.min(q.T,FL.rewardCap*(storyPower(st)+4));
     rb=rb<0?tr:Math.max(tr,rb+Math.max(1,rb*0.25));
     const rw=qReward(rb,q.rm,slot);if(q.special)rw.gp=Math.round(rw.gp*1.3);
+    if(q.special==='assoc'){const L=liftWin(st.unit,q.allies,q.enemies,FL.assocFloor,hashSeed(st.seed,'assocw',st.turn));q.enemies=L.enemies;q.winEst=L.win;}
     return{...q,shownT,reward:rw,win:q.winEst==null?null:q.winEst};
   });
   // 保存済みのフリーランスが同行を申し出る（依頼の調整の後に加えるので、そのぶん勝ちやすくなる）
@@ -1396,11 +1406,13 @@ function rollShop(st){
     const nm={hp:'鋼の胸当て',atk:'研ぎ澄まされた剣',spd:'軽量のブーツ',as:'手に馴染む柄巻き',rng:'長めの刀身'}[s]||'装備';
     items.push({label:`${nm}（${STAT_NAME[s]}+${n}）`,eff:{stat:{[s]:n}},mul:disc});
   }
-  // 手がかり：古い情報紙の束に古文書の写しが紛れている（要 起業家1）
-  if(has(st,'E1')&&!st.found.F2&&r()<FL.oldPaperRate){const n=6+rank*3;items[2]={label:`古い情報紙の束（ギルドポイント+${n}）`,eff:{gp:n,clue:'F2'},price:Math.round(n*3),desc:'何年分もまとめて縛ってある。妙に重い'};}
-  // 保存済みの起業家が、自分の商会で開発した品を持ってくる
+  // 手がかり（要 起業家1）：公文書を買った商人が、束の底にあった古文書の写しを持ち込む。
+  // 起業家1を見つけた保存済みユニットがいれば本人、いなければ商人エルザ（起業家の育成で番頭だった人）
   const merch=npcsOf(st,'entrepreneur');
-  if(merch.length&&rank>=FL.npcShopRank&&r()<FL.npcShopRate){const m=pick(r,merch);
+  if(has(st,'E1')&&!st.found.F2&&rank>=FL.oldDocRank&&r()<FL.oldPaperRate){const m=npcsOf(st,'entrepreneur','E1')[0]||merch[0]||{name:'商人エルザ',stranger:true};
+    items.push({label:`${m.name}が持ち込んだ封蝋つきの古文書の写し`,eff:{pt:3,clue:'F2'},price:30+rank*6,desc:'「売り物じゃないんだが、あんたには見せておきたい」',npc:m.name,doc:true,stranger:!!m.stranger});}
+  // 保存済みの起業家が、自分の商会で開発した品を持ってくる
+  else if(merch.length&&rank>=FL.npcShopRank&&r()<FL.npcShopRate){const m=pick(r,merch);
     const rare=['killhp','magres'].filter(k=>abEligible(st.unit,k)&&!st.unit.ab.includes(k));
     if(rare.length&&r()<0.6){const k=pick(r,rare);items.push({label:`${m.name}商会の${AB[k].name}の秘薬`,eff:{ab:k},mul:0.9,desc:AB[k].desc,npc:m.name});}
     else{const s=pick(r,stats.length?stats:['hp']);items.push({label:`${m.name}商会の特注品（${STAT_NAME[s]}+2）`,eff:{stat:{[s]:2}},mul:0.8,npc:m.name});}
@@ -1410,6 +1422,8 @@ function rollShop(st){
 function rebuildShopPrices(st){for(const it of st.shop){if(it.eff.pt||it.eff.gp)continue;if(!it.sold)it.price=shopPrice(st,it.eff,it.mul);}}
 function toShop(st){st.stage='shop';rollShop(st);scene(st,'道具屋');const rk=rankOf(st.gp),top=rk>=RANKS.length-1;
   say(st,CAST.shop,pick(srng(st.seed,'shopl',st.turn),top?['Sランク様のご来店だ。いい品は全部出してあるぜ。','あんたにはもう、教えることも売ることも少なくなってきたな。','うちの店から伝説が出るとはな。ゆっくり見ていってくれ。']:['いらっしゃい。今日の目玉はこれだ。','冷やかしでも構わんよ。冷やかしでも。',rk>=4?'ランク'+RANKS[rk].n+'か。いい品が回ってくるようになったのは、あんたのおかげだ。':'ギルドの評判が上がると、いい品を回してやれるんだがな。']));
+  const d=st.shop.find(it=>it.doc);if(d){const met=metNpc(st,d.npc);say(st,d.npc,met?'また来たよ。……今日は商売の話じゃないんだ。':d.stranger?'はじめまして。商人のエルザ。前は小さな店で番頭をしていた。今日は商売の話じゃないんだ。':'やあ。……初めて会った気がしないな。今日は商売の話じゃないんだ。');
+    say(st,d.npc,'昔、役所から流れた公文書をまとめて買ったことがある。束の底に、もっと古い写しが一枚あった。……剣で協会の仕事をしているあんたなら、意味がわかるかもしれない。');return;}
   const m=st.shop.find(it=>it.npc);if(m){say(st,m.npc,metNpc(st,m.npc)?'また来たよ。今季も、うちの商会の品を持ってきた。':'やあ。……なんだろう、初めて会った気がしない。うちの商会の品、見ていくかい？');}}
 SCN_IMPL.freelance={
   eventRate:FL.eventRate,
@@ -1460,9 +1474,10 @@ SCN_IMPL.freelance={
       if(id==='leave'){st.shop=null;return toAlloc(st);}
       const it=st.shop[+id.slice(3)];if(!it||it.sold||st.gold<it.price)return;st.gold-=it.price;it.sold=true;
       const {clue,...eff}=it.eff;gain(st,eff,`${it.label}（金-${it.price}）`);
-      if(clue==='F2'){narr(st,'束をほどくと、情報紙の間から古い紙が一枚落ちた。古文書の写しだ。');
+      if(clue==='F2'){narr(st,'封蝋を割ると、黄ばんだ写しが出てきた。王国の古い年代記の一部だ。');
         narr(st,'「魔王」という言葉が初めて記録に現れるのは、王立協会が設立されたのと同じ年。それより前の記録に、魔王は一度も出てこない。');
-        say(st,CAST.shop,'ん？ そんなもん挟まってたか。……俺は何も見てないぞ。');findClue(st,'F2');}
+        say(st,it.npc,'帳簿と同じさ。数字が急に現れる所には、たいてい誰かの都合がある。……あんたの剣の向け先が、間違ってないといいんだが。');
+        say(st,CAST.shop,'……俺の店で、物騒な話はやめてくれよ。');findClue(st,'F2');}
       rebuildShopPrices(st);return;}
   },
   afterBattle(st,p){
@@ -1486,6 +1501,14 @@ SCN_IMPL.freelance={
     gain(st,rw,'報酬');return turnEnd(st);
   },
   afterEvents(st){return toShop(st);},
+  // 最後の季節の終わり：Sランクで組織人2があり、まだ協会の指名依頼を受けていなければ、ここで必ず届く
+  finale(st){const rank=rankOf(st.gp);if(!(rank>=RANKS.length-1&&has(st,'B2')&&!st.found.F3))return false;
+    const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'finale'),st.unit,{tpl:SPECIAL_QUESTS.assoc,mul:FL.assocMul});
+    const rw=qReward(Math.min(q.T,FL.rewardCap*(storyPower(st)+4)),q.rm,1);rw.gp=Math.round(rw.gp*1.3);q.reward=rw;
+    {const L=liftWin(st.unit,q.allies,q.enemies,FL.assocFloor,hashSeed(st.seed,'finalew'));q.enemies=L.enemies;q.winEst=L.win;}
+    scene(st,q.title);say(st,CAST.guild,'最後の季節の終わりに、王立協会から指名の依頼が届きました。……あなたに、だそうです。');
+    q.text.forEach(t=>narr(st,t));narr(st,`味方${q.allies.length}人とともに、敵${q.enemies.length}体に挑む。あなたの勝率はおよそ${pct(q.winEst)}。`);
+    storyBattle(st,{kind:'quest',q,b:battleOf(st,q,q.title)});return true;},
   title(st){const h=st.hist,rk=rankOf(st.gp);
     if(st.trueEnd)return'真実を知る剣';
     if(h.bosses.includes('dragon'))return'竜殺しの剣士';if(h.bosses.includes('vampire'))return'夜明けの剣';
@@ -1627,9 +1650,9 @@ const EVENTS=[
       {label:'あたりを調べる',go:(st)=>{narr(st,'荷車の轍が、王都の方角へ続いていた。轍の幅は、協会の輸送車と同じだった。');say(st,CAST.guild,'あ、それ……ギルドでは「回収済み」として処理されてますね。誰が回収したかは、書いてないですけど。');gain(st,{pt:3});}},
       {label:'気にしない',go:(st)=>{narr(st,'魔物の死骸が消えるのは、よくあることだ。たぶん。');gain(st,{pt:1});}}]},
   {id:'f_gard',title:'ガルドの古傷',w:1.5,when:st=>rankOf(st.gp)>=3,once:true,
-    lines:()=>[[CAST.senior,'この傷か？ ……二十年前だ。空が割れた夜があってな。見たこともない化け物が、街道を埋め尽くした。'],[CAST.senior,'翌朝、協会の発表は「魔王軍の大攻勢を撃退」。……魔王軍、ねえ。あれは、魔王軍の顔じゃなかったよ。']],
+    lines:()=>[[CAST.senior,'この傷か？ ……若い頃、協会の古い砦の地下を片付ける仕事を受けてな。百年以上前の戦の跡だって話だった。'],[CAST.senior,'棚に、干からびた化け物の標本が並んでた。見たこともない形だ。一体だけ、まだ動きやがった。……札には「魔王軍の残党」とあったが、あれは魔王軍の顔じゃなかったよ。']],
     choices:()=>[
-      {label:'続きを聞く',go:(st)=>{say(st,CAST.senior,'それ以来、俺は鍛えるのをやめられねえ。理由は聞くな。俺にもうまく言えねえんだ。');gain(st,{pt:4,stat:{hp:1}});}},
+      {label:'続きを聞く',go:(st)=>{say(st,CAST.senior,'それ以来、俺は鍛えるのをやめられねえ。あんなのが百年に一度でも来るなら、と思っちまうんだ。');gain(st,{pt:4,stat:{hp:1}});}},
       {label:'酒をおごる',need:st=>st.gold>=10,go:(st)=>{say(st,CAST.senior,'へっ、気が利くじゃねえか。……忘れろ、今の話は。');gain(st,{gold:-10,gp:6});}}]},
   {id:'f_joint',title:'カイルとの共闘',w:1.2,when:st=>rankOf(st.gp)>=2&&st.hist.duels>=1,
     prep:(st,r)=>evBattle(st,'f_joint',[{fam:'wolf'},{fam:'wolf'},{fam:'wolf'}],T=>[famUnit('merc',Math.max(6,T*0.8),srng(st.seed,'kyle',st.turn),'ライバルのカイル')],QG.evMul.ambush,'カイルとの共闘'),
@@ -1724,6 +1747,9 @@ function enRnd(st){
 SCN_IMPL.entrepreneur={
   eventRate:EN.eventRate,
   get events(){return EVENTS_E;},
+  // 最後の季節の終わり：最高ランクで組織人2があり、まだ幹部が来ていなければ、ここで必ず来る
+  finale(st){const ev=EVENTS_E.find(e=>e.id==='e_exec');if(!ev.force(st))return false;
+    st.seen[ev.id]=true;scene(st,ev.title);ev.lines(st).forEach(([w,t])=>w?say(st,w,t):narr(st,t));st.event={id:ev.id,data:null};st.stage='event';return true;},
   start(st){st.pt=EN.startPt;st.gold=EN.startGold;st.jx=0;st.offers=null;
     scene(st,'プロローグ');
     narr(st,'弓の腕と、なけなしの貯金。それだけを元手に、店を開いた。看板はまだ手書きだ。');
@@ -1850,7 +1876,7 @@ const EVENTS_E=[
     choices:(st)=>{const ex=npcsOf(st,'bureau','B2')[0];const nm=ex?ex.name:'協会幹部ヴァレリア';return[
       {label:'茶を出して話を聞く',go:(st)=>{say(st,nm,'基金の評価項目は一つだけだ。民が戦えるようになったかどうか。討伐の報酬は、民に剣と弓を握らせ続けるための授業料なんだよ。');
         say(st,nm,'いつか空が裂けて、本物の敵が来る。そのとき、君のような商人が補給を支えてくれると助かる。');if(ex)narr(st,`${nm}とは、昔からの知り合いのように話が弾んだ。`);findClue(st,'E3');}},
-      {label:'帳簿を閉じて追い返す',go:(st)=>{say(st,nm,'……そうか。また来るよ。');}}];}},
+      {label:'帳簿を閉じて追い返す',go:(st)=>{say(st,nm,st.flags.finale==='run'?'……そうか。君なら、と思ったんだがね。':'……そうか。また来るよ。');}}];}},
   {id:'e_parts',title:'魔物素材の買い付け',w:1.5,once:true,when:st=>rankE(st.jx)>=1,
     lines:()=>[['','魔物の素材を卸しに行くと、いつもの問屋が首を振った。'],['問屋','すまんね、今季から素材は全部「協会指定業者」が買い取ることになった。値段？ 向こうの言い値さ。']],
     choices:()=>[
@@ -1889,9 +1915,9 @@ const BU={
   q:{exp:0.8,pt:[1.0,0.23],gold:[4,0.9],rep:[4,1.0]},
   goldRank:0.3, repRank:0.25,                   // 階級が上がるほど金は増え、評判は増えにくい
   study:{cost:t=>25+3*t,pt:t=>Math.round(7+0.35*t),rep:-3,rare:0.15},
-  transferRep:0.6, secretRank:3,
+  transferRep:0.6, secretRank:3, riftFloor:0.85,
   rareAbs:['killsta','bomb'],                   // 自己研鑽の稀な出来事でしか手に入らない能力
-  bonusAbs:['pct','knock','counter','charge'],
+  bonusAbs:['aoe','pct','knock'],               // 昇格祝いの教本は魔法向けの能力だけ
 };
 const RANKS_B=[{n:'見習い',rep:0},{n:'三等協会員',rep:12},{n:'二等協会員',rep:30},{n:'一等協会員',rep:55},{n:'主任',rep:85},{n:'室長',rep:120},{n:'部長',rep:130}];
 const rankB=rep=>{let r=0;RANKS_B.forEach((x,i)=>{if(rep>=x.rep)r=i;});return r;};
@@ -1930,7 +1956,7 @@ function buDuty(st,dept,repMul,label){
   // 安全な部署は、合わせた後に敵を1体減らして余裕を持たせる（職務は断れないので、ここで倒れることのないように）
   if(D.safe&&q.enemies.length>1){q.enemies=q.enemies.slice(0,-1);q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'safe',st.turn));}
   // 職務は断れない。相性が悪くて勝率が部署の下限を割るときは、敵を減らして送り出す（強くなるほど楽になるのは変わらない）
-  while(q.winEst<(D.floor||0)&&q.enemies.length>1){q.enemies=q.enemies.slice(0,-1);q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'floor',st.turn,q.enemies.length));}
+  if(q.winEst<(D.floor||0)){const L=liftWin(st.unit,q.allies,q.enemies,D.floor,hashSeed(st.seed,'floor',st.turn));q.enemies=L.enemies;q.winEst=L.win;}
   const tr=Math.min(q.T0/(D.mul||1),1.5*(storyPower(st)+4));const rw=buReward(tr,q.rm,dept,rank);   // 報酬は部署の危険度ではなく、階級の標準の強さで決まる（部署の差は rw で付ける）rw.rep=Math.max(1,Math.round(rw.rep*(repMul||1)));
   scene(st,q.title);q.text.forEach(t=>narr(st,t));
   narr(st,`${D.name}の任務。味方${q.allies.length}人とともに、敵${q.enemies.length}体に挑む。あなたの勝率はおよそ${pct(q.winEst)}。`);
@@ -1938,11 +1964,11 @@ function buDuty(st,dept,repMul,label){
 }
 function buRift(st){
   const rank=rankB(st.rep);const fl=npcsOf(st,'freelance','F1')[0]||npcsOf(st,'freelance')[0],en=npcsOf(st,'entrepreneur','E1')[0]||npcsOf(st,'entrepreneur')[0];
-  const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'rift'),st.unit,{tpl:RIFT_QUEST,band:[0.75,0.92,0.85],mul:1.1,noBlack:true,allyK:4,allyFams:['mercMage','merc','mercArcher'],allyTitle:buColleague});
+  const q=makeQuest(st.scn,rank,st.turn,1,hashSeed(st.seed,'rift'),st.unit,{tpl:RIFT_QUEST,band:[0.75,0.92,0.85],mul:0.8,noBlack:true,allyK:4,allyFams:['mercMage','merc','mercArcher'],allyTitle:buColleague});
   // 共同任務の仲間（保存済みの育成ユニットがいれば本人）。依頼の調整の後に加える
   const fu=fl?npcUnit(fl):famUnit('merc',Math.max(10,storyPower(st)*0.9),srng(st.seed,'riftF'),'剣士カイル');
   const eu=en?npcUnit(en):famUnit('mercArcher',Math.max(10,storyPower(st)*0.9),srng(st.seed,'riftE'),'商人エルザ');
-  q.allies=[...q.allies,fu,eu];q.winEst=winRate(st.unit,q.allies,q.enemies,QG.estN,hashSeed(st.seed,'riftw'));
+  q.allies=[...q.allies,fu,eu];{const L=liftWin(st.unit,q.allies,q.enemies,BU.riftFloor,hashSeed(st.seed,'riftw'));q.enemies=L.enemies;q.winEst=L.win;}
   const rw=buReward(Math.min(q.T,1.5*(storyPower(st)+4)),q.rm,'henkyo',rank);
   scene(st,q.title);q.text.forEach(t=>narr(st,t));
   say(st,fu.name,fl?'協会の人と組むのは初めてだが……あんたとは、なぜか初めての気がしない。':'ギルドから来た剣士のカイルだ。話は聞いてる。');
@@ -1966,6 +1992,8 @@ function buBonus(st){ // 昇格ボーナス：フリーランスの買い物に�
   st.bonus=items;st.stage='bonus';
 }
 SCN_IMPL.bureau={
+  // 最後の季節の終わり：部長でフリーランス1と起業家1があり、まだ共同任務に出ていなければ、ここで必ず空が裂ける
+  finale(st){if(!riftReady(st))return false;narr(st,'四年目の冬の終わり。観測所の鐘が、聞いたことのない鳴り方をした。');return buRift(st),true;},
   eventRate:BU.eventRate,
   get events(){return EVENTS_B;},
   start(st){st.pt=BU.startPt;st.gold=BU.startGold;st.rep=0;st.dept='somu';
@@ -3065,6 +3093,7 @@ function renderSySide(){if($('nv-hud'))renderHud();
       <div class="sy-pow"><span class="muted" style="font-size:13px">総合力</span><b class="num">${fmt(storyPower(SY))}</b></div>
       <div class="sy-res"><div><small>ポイント</small><b class="num">${fmt(SY.pt)}</b></div><div><small>金</small><b class="num">${SY.gold}</b></div><div><small>${sd.label}</small><b style="font-size:${String(sd.val).length>3?14:20}px">${esc(sd.val)}</b></div></div>
       <div><div class="rankbar"><i style="width:${Math.round(sd.prog*100)}%"></i></div><div class="muted num" style="font-size:11px;margin-top:3px">${esc(sd.note)}</div></div>
+      ${(()=>{const ids=clueIdsOf(SY.scn),n=ids.filter(k=>SY.found[k]).length;return n||ids.some(k=>LORE[k])?`<div class="muted num" style="font-size:12px">この育成で見つけた手がかり <b>${n}/${ids.length}</b>${n===ids.length?'（真相に届く）':''}</div>`:'';})()}
     </div>
     <div class="sy-card more"><h4>ステータス</h4><div class="sy-stats">${rows}</div>
       <div class="muted" style="font-size:12px">HP ${val.hp}・攻撃 ${val.atk}・速度 ${val.spd}・射程 ${val.rng}・間隔 ${val.as}</div>
