@@ -29,6 +29,23 @@ body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",syst
 .st .bar i{display:block;height:100%;width:50%;border-radius:9px;transition:width .3s}
 .st.low{animation:blink .6s infinite}
 @keyframes blink{50%{background:#ffd2da}}
+#pauseBtn{border:none;font:inherit;font-size:20px;font-weight:900;width:44px;flex:0 0 44px;color:#2b2233;cursor:pointer}
+#buffs{position:absolute;top:34px;right:6px;display:flex;flex-direction:column;gap:4px;z-index:3;pointer-events:none}
+.buff{background:#2b2233;color:#fff;font-size:11px;font-weight:900;border-radius:99px;padding:3px 9px;animation:bump .6s infinite}
+#combo.t2{font-size:28px;color:#ff8a00}
+#combo.t3{font-size:34px;color:#c400ff;text-shadow:0 0 12px #ff9cf0,2px 2px 0 #fff}
+#combo.t4{font-size:40px;color:#fff;text-shadow:0 0 14px #ff3d8b,0 0 28px #ffb300}
+#app.ct2 #field{box-shadow:inset 0 0 0 3px #ff8a0088;border-radius:16px}
+#app.ct3 #field{box-shadow:inset 0 0 0 4px #c400ff99,inset 0 0 40px #c400ff33;border-radius:16px}
+#app.ct4 #field{box-shadow:inset 0 0 0 5px #ffb300,inset 0 0 60px #ff3d8b66;border-radius:16px;animation:glow .5s infinite}
+@keyframes glow{50%{filter:brightness(1.08)}}
+.mini{border:none;border-radius:99px;background:#2b2233;color:#fff;font:inherit;font-weight:900;font-size:12px;padding:7px 12px;margin:8px 4px 0;cursor:pointer}
+#achList{display:none;margin-top:8px;font-size:12px;line-height:1.6}
+#achList div{padding:2px 0;border-bottom:1px dashed #ddd}
+#achList .no{opacity:.35}
+#toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#2b2233;color:#ffcf3d;font-weight:900;font-size:14px;padding:8px 16px;border-radius:99px;z-index:40;display:none;box-shadow:0 4px 0 #000;white-space:nowrap}
+#toast.on{display:block;animation:pop .3s}
+.career{background:#fff3c4;border-radius:10px;padding:8px 10px;margin:8px 0;font-weight:700}
 #ticker{margin-top:6px;background:#2b2233;color:#fff;border-radius:10px;font-size:12px;font-weight:700;padding:5px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:26px}
 #ticker.in{animation:tin .3s}
 @keyframes tin{0%{transform:translateX(30px);opacity:0}}
@@ -107,6 +124,7 @@ body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",syst
  <div id="top">
   <div class="box" id="age"><span id="ageT">0歳0ヶ月</span><small id="stageT">乳児編</small><div id="mbar"><div id="mbarIn"></div></div></div>
   <div class="box" id="moneyBox"><div id="money">¥0</div><div id="net">収支 —</div><canvas id="spark" width="168" height="56"></canvas></div>
+  <button class="box" id="pauseBtn" aria-label="一時停止">⏸</button>
  </div>
  <div id="stats">
   <div class="st" id="s_hap">😊幸福<div class="bar"><i style="background:#ff8a3d"></i></div></div>
@@ -122,6 +140,7 @@ body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",syst
   <div id="emote"></div>
   <div id="parent">🧑‍🍼</div><div id="sweat">💦</div>
   <div id="gift">🎁</div>
+  <div id="buffs"></div>
   <div id="feverTag">神対応タイム ×2</div>
  </div>
  <div id="autoBar"><button id="autoBtn">🤖 おまかせサポート：未契約</button><button id="autoUp">契約</button></div>
@@ -131,6 +150,7 @@ body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",syst
 <div id="flash"></div>
 <div id="ov"><div class="card"><div id="ovE"></div><h2 id="ovT"></h2><div id="ovP"></div><div id="ovO"></div><div id="ovHint">選んでから「決定」を押してください</div><button id="ovOk" disabled>決定</button><div id="ovBack" style="display:none"><div style="text-align:center;margin-top:10px"><a href="../../" style="color:#8a8094;font-size:13px;font-weight:800;text-decoration:none">← ゲーム一覧</a></div></div></div></div>
 <div id="err"></div>
+<div id="toast"></div>
 
 <script>
 // 画面にエラーを表示（不具合報告用）
@@ -180,13 +200,40 @@ var MONTH_MS=1100, END_M=264, NT_MUL=.6;
 var AUTO=[null,{n:'ベビーシッター',price:150000,th:.4,mul:.6,fee:1},{n:'プロ家事代行',price:350000,th:.75,mul:.8,fee:1.3}];
 var FEE=[10000,10000,14000,18000,18000,14000];
 var SLOTS=[[4,4],[64,4],[2,44],[66,44]];
+var PERS=[
+ {id:'amae',e:'🥺',n:'甘えん坊',d:'だっこ・話を聞くなど絆系のお世話を多く求める。絆が上がりやすい',w:{bond:3},mul:{bond:1.25}},
+ {id:'yancha',e:'😆',n:'やんちゃ',d:'あそび系の要求が多く、ペースが速い。けがも多い',w:{hap:3},mul:{hap:1.1},sp:.85},
+ {id:'benkyo',e:'🤓',n:'勉強好き',d:'絵本・宿題など学び系を求める。学力が伸びやすい',w:{study:3},mul:{gaku:1.3}},
+ {id:'mypace',e:'😪',n:'マイペース',d:'要求はゆっくりで猶予も長いが、幸福が上がりにくい',w:{},mul:{hap:.8},sp:1.25,nt:1.15}];
+function pers(){return PERS.filter(function(x){return x.id===G.pers})[0]||PERS[0]}
+function actType(a){return a.eff.gaku?'study':((a.eff.bond||0)>=(a.eff.hap||0)?'bond':'hap')}
+function effMul(eff,m){var o={},k,pm=pers().mul;for(k in eff)o[k]=eff[k]*m*(pm[k]||1);return o}
+var BUFF={hp:0,slow:0,free:0},BUFFN={hp:'💪体力無限',slow:'⏳猶予2倍',free:'🧚無料おまかせ'};
+var ACH=[
+ ['clear','🎓','22歳まで育て上げた'],['rankA','🥈','ランクA以上'],['rankS','🥇','ランクS「伝説の親」'],
+ ['c10','🔥','10連続お世話'],['c30','💥','30連続お世話'],['c50','👑','50連続お世話'],
+ ['jh','🌸','中学受験に合格'],['nat','🏛','国立大学へ進学'],['home','🏠','マイホームを買った'],
+ ['trip','✈️','海外旅行に行った'],['bonus','🏆','高評価ボーナスを獲得'],['lotto','🎰','宝くじ当選'],
+ ['nodebt','💎','一度も借金せずに卒業'],['noauto','💪','おまかせなしで卒業'],['bond100','❤️','絆MAXで卒業'],
+ ['broke','💸','家計破綻を経験'],['allpers','🌈','4つの性格すべてで卒業']];
+function achData(){try{return JSON.parse(localStorage.getItem('kosodate_ach'))||{}}catch(e){return {}}}
+function achSave(d){try{localStorage.setItem('kosodate_ach',JSON.stringify(d))}catch(e){}}
+function unlock(id){var d=achData();if(d[id])return;d[id]=1;achSave(d);var a=ACH.filter(function(x){return x[0]===id})[0];if(!a)return;
+ toast('🏅 実績解除：'+a[1]+' '+a[2]);chime([1047,1319,1568,2093],'triangle')}
+var TQ=[],TB=0;
+function toast(t){TQ.push(t);if(!TB)nextToast()}
+function nextToast(){var e=$('toast');if(!TQ.length){TB=0;e.className='';return}TB=1;e.textContent=TQ.shift();e.className='';void e.offsetWidth;e.className='on';setTimeout(nextToast,1700)}
+function achHTML(){var d=achData(),n=ACH.filter(function(a){return d[a[0]]}).length;
+ return '<div style="text-align:center"><button class="mini" onclick="var l=document.getElementById(\'achList\');l.style.display=l.style.display===\'block\'?\'none\':\'block\'">🏅 実績 '+n+'/'+ACH.length+'</button></div><div id="achList">'+
+  ACH.map(function(a){return '<div class="'+(d[a[0]]?'':'no')+'">'+(d[a[0]]?a[1]:'🔒')+' '+a[2]+'</div>'}).join('')+'</div>'}
 
 var G,needs,nextNeed,eventT,giftT,giftLife,paused,dispMoney,fever,lastStage,monthT,AC=null,P=[],rt=0;
 
 function newGame(){
  G={m:0,money:1000000,hap:60,bond:50,gaku:20,hp:100,ins:false,dual:false,lesson:null,juku:false,privJH:false,privHS:false,
     univ:null,scholar:false,auto:0,autoOn:false,autoUsed:0,care:0,careSelf:0,raise:0,combo:0,best:0,hist:[1000000],net:0,ended:false,
-    jobM:Math.floor(rnd(60,150)),careM:Math.floor(rnd(150,200)),done:{},eval:50};
+    jobM:Math.floor(rnd(60,150)),careM:Math.floor(rnd(150,200)),done:{},eval:50,pers:PERS[Math.floor(Math.random()*PERS.length)].id,car:0,home:0,shortT:0,everDebt:0,trips:0};
+ BUFF={hp:0,slow:0,free:0};
  work.forEach(function(w){w.el.remove()});work=[];nextWork=2500;$('work').style.display='none';
  needs.forEach(function(n){n.el.remove()});needs=[];
  nextNeed=1500;eventT=4000;giftT=9000;giftLife=0;fever=0;monthT=0;dispMoney=G.money;lastStage=-1;
@@ -242,8 +289,9 @@ function buildButtons(){var st=STAGES[stg()],box=$('btns');box.innerHTML='';
 // ===== お世話要求 =====
 function spawnNeed(){var st=STAGES[stg()];if(needs.length>=st.max)return;
  var used=needs.map(function(n){return n.slot}),free=[0,1,2,3].filter(function(s){return used.indexOf(s)<0});if(!free.length)return;
- var slot=free[Math.floor(Math.random()*free.length)],a=st.acts[Math.floor(Math.random()*4)];
- var t=st.nt*NT_MUL*(fever>0?1.25:1);
+ var slot=free[Math.floor(Math.random()*free.length)],P0=pers(),ws=st.acts.map(function(x){return P0.w[actType(x)]||1}),tot=ws.reduce(function(a,b){return a+b},0),r=Math.random()*tot,a=st.acts[3];
+ for(var i=0;i<4;i++){r-=ws[i];if(r<=0){a=st.acts[i];break}}
+ var t=st.nt*NT_MUL*(P0.nt||1)*(fever>0?1.25:1);
  var el=document.createElement('div');el.className='need';el.style.left=SLOTS[slot][0]+'%';el.style.top=SLOTS[slot][1]+'%';
  el.innerHTML='<div class="ic">'+a.e+'</div>';$('field').appendChild(el);
  needs.push({a:a,slot:slot,t:t,max:t,el:el});tone(900,.05,'triangle',.06)}
@@ -254,18 +302,21 @@ function act(a,btn){if(paused||G.ended)return;
  if(!best){G.combo=0;G.hp=clamp(G.hp-2,0,100);ft('いま要らない…',c[0],c[1]-40,'#8a7a90',15);tone(220,.1,'sine',.06);updCombo();return}
  if(G.hp<a.hp){ft('へとへと…💦',c[0],c[1]-40,'#8a7a90',18);shake();vib(60);tone(160,.2,'sawtooth',.06);return}
  var ratio=best.t/best.max,perfect=ratio>.55,mul=(perfect?1.5:1)*(fever>0?2:1);
- G.hp-=a.hp;pay(a.cost,c[0],c[1]-50);add(a.eff,mul);
- G.combo++;if(G.combo>G.best)G.best=G.combo;
+ if(!(BUFF.hp>0))G.hp-=a.hp;pay(a.cost,c[0],c[1]-50);add(effMul(a.eff,mul));
+ G.combo++;if(G.combo>G.best)G.best=G.combo;if(G.combo===10)unlock('c10');if(G.combo===30)unlock('c30');if(G.combo===50)unlock('c50');
  var k=center(best.el);burst(k[0],k[1],perfect?18:10,[a.e,'✨','💗']);
  ft(perfect?'PERFECT!':'GOOD',k[0],k[1]-30,perfect?'#ff8a00':'#ff3d8b',perfect?26:20);
  tone(PENTA[Math.min(G.combo,PENTA.length-1)],.13,'triangle',.15);if(perfect)tone(PENTA[Math.min(G.combo+2,10)],.12,'sine',.1,.06);
  vib(perfect?[12,25,12]:12);emote(perfect?'🥰':'😊');$('kid').classList.remove('squish');void $('kid').offsetWidth;$('kid').classList.add('squish');
  removeNeed(best);
  if(G.combo%10===0){fever=6000;G.hp=clamp(G.hp+25,0,100);$('app').classList.add('fever');$('feverTag').style.display='block';
-  confetti(70);ft(G.combo+'連続！神対応タイム',innerWidth/2,innerHeight*.4,'#ff3d8b',26);chime([784,988,1175,1568],'square');vib([25,30,25,30,60]);news('🔥 '+G.combo+'連続お世話成功！体力回復＋効果2倍','good')}
+  var tier=G.combo>=50?4:G.combo>=30?3:G.combo>=20?2:1,lbl=['','神対応タイム','超・神対応','伝説の子育て','子育ての神'][tier];
+  confetti(70*tier);if(tier>=2)rain(20*tier,['⭐','💖','✨']);if(tier>=3)flash();
+  ft(G.combo+'連続！'+lbl,innerWidth/2,innerHeight*.4,['','#ff3d8b','#ff8a00','#c400ff','#ff3d8b'][tier],24+tier*3);
+  chime(tier>=3?[523,659,784,1047,1319,1568,2093]:[784,988,1175,1568],'square');vib(tier>=3?[40,30,40,30,40,30,120]:[25,30,25,30,60]);news('🔥 '+G.combo+'連続！'+lbl+'：体力回復＋効果2倍','good')}
  updCombo()}
 function autoNeed(n){var L=AUTO[G.auto],fee=Math.round(FEE[stg()]*L.fee+n.a.cost);var k=center(n.el);
- G.money-=fee;G.autoUsed+=fee;var e={},key;for(key in n.a.eff)e[key]=n.a.eff[key]*(key==='bond'?.3:L.mul);add(e);
+ G.money-=fee;G.autoUsed+=fee;var e={},key;for(key in n.a.eff)e[key]=n.a.eff[key]*(key==='bond'?.3:L.mul);add(effMul(e,1));
  burst(k[0],k[1],6,['🤖','✨']);ft('🤖 -'+fee.toLocaleString(),k[0],k[1]-20,'#1f9d5c',15);tone(1200,.04,'square',.04);removeNeed(n)}
 function updAuto(){var b=$('autoBtn'),u=$('autoUp');if(!G)return;
  if(!G.auto){b.textContent='🤖 おまかせサポート：未契約';b.className='';u.style.display='';u.textContent='契約 ¥150,000'}
@@ -290,21 +341,25 @@ function doWork(o,ev){if(paused||G.ended||work.indexOf(o)<0)return;
  if(G.hp<o.w.hp){ft('へとへと…💦',ev.clientX,ev.clientY-30,'#8a7a90',16);shake();vib(50);return}
  o.left--;tone(330+o.left*80,.04,'square',.05);vib(8);
  if(o.left>0){var h=o.el.querySelector('.hit');if(h)h.textContent='×'+o.left;o.el.style.transform='scale(.9)';setTimeout(function(){o.el.style.transform=''},60);return}
- G.hp-=o.w.hp;G.eval=clamp(G.eval+(o.w.tap>2?4:2),0,100);burst(ev.clientX,ev.clientY,8,['💼','✨','📈']);
+ if(!(BUFF.hp>0))G.hp-=o.w.hp;G.eval=clamp(G.eval+(o.w.tap>2?4:2),0,100);burst(ev.clientX,ev.clientY,8,['💼','✨','📈']);
  ft('完了 評価+'+(o.w.tap>2?4:2),ev.clientX,ev.clientY-30,'#4d7dff',16);tone(988,.08,'triangle',.1);removeWork(o)}
 function removeWork(o){o.el.remove();work.splice(work.indexOf(o),1)}
 function missWork(o){var k=center(o.el);removeWork(o);G.eval=clamp(G.eval-7,0,100);
  ft('⚠ 仕事落とした 評価-7',k[0],k[1]+20,'#e0203a',15);news('📉 '+o.w.t+'の対応が遅れて上司に詰められた（評価-7）','bad');tone(180,.2,'sawtooth',.06);vib(60)}
 function yearlyWork(){if(!G.dual)return;
- if(G.eval>=70){var v=Math.round(150000+G.eval*2000);bigWin('🏆 高評価ボーナス +'+(v/10000).toFixed(0)+'万円',v);G.raise+=5000}
+ if(G.shortT&&G.eval>=60){G.shortT=0;news('🏢 評価が戻りフルタイムに復帰！共働き収入が元に戻った','good');chime([784,1047,1319]);G.eval=clamp(G.eval*.6+20,0,100);return}
+ if(!G.shortT&&G.eval<20){G.shortT=1;shake();news('⏬ 評価が低すぎて時短勤務に…共働き収入が半減（評価60で復帰）','bad');G.eval=clamp(G.eval*.6+20,0,100);return}
+ if(G.eval>=70){unlock('bonus');var v=Math.round(150000+G.eval*2000);bigWin('🏆 高評価ボーナス +'+(v/10000).toFixed(0)+'万円',v);G.raise+=5000}
  else if(G.eval<35){G.raise-=15000;shake();news('📉 評価が低く減給… 月 -1.5万円','bad')}
  else news('🏢 今年の人事評価：ふつう（'+Math.round(G.eval)+'）');
  G.eval=clamp(G.eval*.6+20,0,100)}
+function freeNeed(n){var k=center(n.el);add(effMul(n.a.eff,.8));burst(k[0],k[1],8,['🧚','✨']);ft('🧚 無料',k[0],k[1]-20,'#1f9d5c',15);tone(1400,.05,'triangle',.05);removeNeed(n)}
 function removeNeed(n){n.el.remove();needs.splice(needs.indexOf(n),1)}
 function missNeed(n){var k=center(n.el);removeNeed(n);add({hap:-4,bond:-2});
  if(G.combo>=5)ft(G.combo+'連続 途切れた',k[0],k[1],'#8a7a90',16);else ft('😢 幸福-4',k[0],k[1],'#8a7a90',16);
  G.combo=0;emote('😭');tone(200,.25,'sawtooth',.07);vib(70);shake();updCombo()}
-function updCombo(){var c=$('combo');c.textContent=G.combo>=2?G.combo+' COMBO':'';c.classList.remove('bump');void c.offsetWidth;c.classList.add('bump')}
+function updCombo(){var c=$('combo'),t=G.combo>=50?4:G.combo>=30?3:G.combo>=20?2:0;c.textContent=G.combo>=2?G.combo+' COMBO'+(t>=3?'!!':''):'';
+ c.className=t?'t'+t:'';void c.offsetWidth;c.classList.add('bump');var a=$('app');a.classList.remove('ct2','ct3','ct4');if(t)a.classList.add('ct'+t)}
 
 $('kid').addEventListener('pointerdown',function(ev){ev.preventDefault();if(paused||G.ended)return;
  $('kid').classList.remove('squish');void $('kid').offsetWidth;$('kid').classList.add('squish');
@@ -316,8 +371,10 @@ function spawnGift(){var g=$('gift'),f=$('field').getBoundingClientRect();
  g.style.left=rnd(10,f.width-70)+'px';g.style.top=rnd(f.height*.25,f.height*.7)+'px';g.style.display='block';giftLife=2600;tone(1319,.08,'triangle',.08)}
 $('gift').addEventListener('pointerdown',function(ev){ev.preventDefault();if(paused)return;$('gift').style.display='none';giftLife=0;
  var r=Math.random(),x=ev.clientX,y=ev.clientY,v;
- if(r<.05){v=200000;G.money+=v;flash();rain(40,['💴','💰','✨']);ft('激レア！宝くじ当選 +20万',innerWidth/2,innerHeight*.4,'#c400ff',24);chime([523,659,784,1047,1319,1568],'square');vib([40,40,40,40,150]);news('🎰 宝くじが当たった！ +200,000円','good')}
- else if(r<.25){v=Math.round(rnd(15000,40000)/1000)*1000;G.money+=v;burst(x,y,22,['💴','✨']);ft('レア！ +'+v.toLocaleString(),x,y-40,'#ff8a00',24);chime([784,1047,1319]);vib([15,25,30]);news('💳 ポイント還元キャンペーン +'+v.toLocaleString()+'円','good')}
+ if(r<.05){unlock('lotto');v=200000;G.money+=v;flash();rain(40,['💴','💰','✨']);ft('激レア！宝くじ当選 +20万',innerWidth/2,innerHeight*.4,'#c400ff',24);chime([523,659,784,1047,1319,1568],'square');vib([40,40,40,40,150]);news('🎰 宝くじが当たった！ +200,000円','good')}
+ else if(r<.17){var ks=['hp','slow','free'],kk=ks[Math.floor(Math.random()*3)];BUFF[kk]=10000;flash();burst(x,y,26,['⭐','✨','💫']);
+  ft('アイテム！'+BUFFN[kk],innerWidth/2,innerHeight*.4,'#ff8a00',24);chime([659,880,1175,1568],'square');vib([20,30,20,30,60]);news('⭐ '+BUFFN[kk]+'（10秒）','good')}
+ else if(r<.34){v=Math.round(rnd(15000,40000)/1000)*1000;G.money+=v;burst(x,y,22,['💴','✨']);ft('レア！ +'+v.toLocaleString(),x,y-40,'#ff8a00',24);chime([784,1047,1319]);vib([15,25,30]);news('💳 ポイント還元キャンペーン +'+v.toLocaleString()+'円','good')}
  else{v=Math.round(rnd(1000,5000)/100)*100;G.money+=v;burst(x,y,10,['🪙','✨']);ft('+'+v.toLocaleString(),x,y-40,'#1f9d5c',20);tone(1047,.1,'triangle',.1);vib(15)}});
 
 // ===== ランダムイベント =====
@@ -329,7 +386,9 @@ var EVENTS=[
  {w:1,f:function(){var v=150000;G.money+=v;return['💼 臨時ボーナス +15万円','good',v]}},
  {w:4,f:function(){pay(8000);add({hp:-10});return['🤒 発熱で病院 -8,000円 体力-10','bad',-8000]}},
  {w:2,f:function(){pay(60000);return['🧺 洗濯機が壊れた -6万円','bad',-60000]}},
- {w:1,f:function(){pay(100000);return['🚗 車検 -10万円','bad',-100000]}},
+ {w:2,c:1,f:function(){pay(100000);return['🚗 車検・修理 -10万円','bad',-100000]}},
+ {w:2,nc:1,a:1,f:function(){pay(8000);return['🚕 車がなくてタクシー代 -8,000円','bad',-8000]}},
+ {w:4,p:'yancha',a:2,f:function(){pay(10000);add({hp:-8});return['🩹 走り回ってけが！病院 -1万円','bad',-10000]}},
  {w:3,f:function(){add({hp:-20});return['🏢 残業つづき 体力-20','bad']}},
  {w:2,f:function(){pay(30000);return['💐 親戚の冠婚葬祭 -3万円','bad',-30000]}},
  {w:2,f:function(){pay(5000);return['🦷 歯医者 -5,000円','bad',-5000]}},
@@ -339,7 +398,7 @@ var EVENTS=[
  {w:2,a:3,f:function(){pay(15000);add({hap:4});return['🎡 週末おでかけ -1.5万円 幸福+4','',-15000]}},
  {w:1,a:6,f:function(){pay(20000);return['🎒 学用品・制服の買い足し -2万円','bad',-20000]}}
 ];
-function randomEvent(){var age=G.m/12,pool=EVENTS.filter(function(e){return !e.a||age>=e.a}),tot=0;pool.forEach(function(e){tot+=e.w});
+function randomEvent(){var age=G.m/12,pool=EVENTS.filter(function(e){return (!e.a||age>=e.a)&&(!e.c||G.car)&&(!e.nc||!G.car)&&(!e.p||e.p===G.pers)}),tot=0;pool.forEach(function(e){tot+=e.w});
  var r=Math.random()*tot,e;for(var i=0;i<pool.length;i++){r-=pool[i].w;if(r<=0){e=pool[i];break}}if(!e)e=pool[0];
  var res=e.f();news(res[0],res[1]);var m=center($('moneyBox'));
  if(res[2])ft(man(res[2]),m[0],m[1]+10,res[2]>0?'#1f9d5c':'#e0203a',20);
@@ -347,9 +406,10 @@ function randomEvent(){var age=G.m/12,pool=EVENTS.filter(function(e){return !e.a
 
 // ===== 月次処理 =====
 function monthly(){
- var age=G.m/12,inc=285000+Math.floor(age)*3000+G.raise+(G.dual?70000:0)+(age<15?10000:0),exp=[],k;
+ var age=G.m/12,inc=285000+Math.floor(age)*3000+G.raise+(G.dual?(G.shortT?35000:70000):0)+(age<15?10000:0),exp=[],k;
  exp.push(['生活費',Math.round(240000*Math.pow(1.01,Math.floor(age))/1000)*1000+(G.dual?20000:0)]);var st=STAGES[stg()];if(st.cost)exp.push(['子ども費',st.cost]);
  if(G.dual&&age<6)exp.push(['保育料',55000]);
+ if(G.home){exp.push(['住宅ローン',90000]);exp[0][1]-=60000}
  if(G.lesson&&age<12)exp.push([G.lesson.n,G.lesson.c]);
  if(G.juku&&age>=9.5&&age<12)exp.push(['塾',40000]);
  if(G.privJH&&age>=12&&age<15)exp.push(['私立中',50000]);
@@ -366,7 +426,7 @@ function monthly(){
  if(G.juku&&age>=9.5&&age<12)add({gaku:1.2,hap:-.6});
  if(G.privJH&&age>=12&&age<15)add({gaku:.8});
  add({hap:-.8,bond:-.4});
- G.hist.push(G.money);if(G.hist.length>72)G.hist.shift();
+ if(G.money<0)G.everDebt=1;G.hist.push(G.money);if(G.hist.length>72)G.hist.shift();
  var m=center($('moneyBox'));
  ft('給料 +'+(inc/10000).toFixed(1)+'万',m[0]-50,m[1]+30,'#1f9d5c',17);
  setTimeout(function(){ft('出費 -'+(out/10000).toFixed(1)+'万',m[0]+50,m[1]+30,'#e0203a',17)},300);
@@ -377,14 +437,14 @@ function monthly(){
 }
 
 // ===== 人生の選択 =====
-function card(e,t,p,opts){paused=true;$('ovE').textContent=e;$('ovT').textContent=t;$('ovP').innerHTML=p;var box=$('ovO'),ok=$('ovOk');box.innerHTML='';box.className='';
+function card(e,t,p,opts,back){paused=true;$('ovE').textContent=e;$('ovT').textContent=t;$('ovP').innerHTML=p;var box=$('ovO'),ok=$('ovOk');box.innerHTML='';box.className='';
  var sel=-1,lock=performance.now()+600,btns=[];
  function choose(i){sel=i;box.className='has';btns.forEach(function(b,j){b.classList.toggle('sel',j===i)});ok.disabled=false;ok.textContent='「'+opts[i].l+'」で決定';tone(700,.05,'triangle',.08)}
  opts.forEach(function(o,i){var b=document.createElement('button');if(o.cls)b.className=o.cls;b.disabled=!!o.dis;
   b.innerHTML=o.l+(o.s?'<small>'+o.s+'</small>':'');
   b.onclick=function(){if(performance.now()<lock||o.dis)return;choose(i)};btns.push(b);box.appendChild(b)});
  ok.disabled=true;ok.textContent='決定';$('ovHint').style.display=opts.length>1?'block':'none';
- $('ovBack').style.display=opts.length===1?'block':'none';
+ $('ovBack').style.display=(opts.length===1||back)?'block':'none';
  if(opts.length===1){box.style.display='none';ok.textContent=opts[0].l;ok.disabled=false;sel=0}else box.style.display='flex';
  ok.onclick=function(){if(sel<0||performance.now()<lock)return;var o=opts[sel];$('ov').style.display='none';paused=false;tone(880,.08,'triangle',.1);if(o.f)o.f();render();updAuto()};
  $('ov').style.display='flex';tone(660,.12,'triangle',.1);tone(990,.15,'triangle',.1,.1)}
@@ -393,39 +453,49 @@ function bigWin(text,v){G.money+=v;flash();rain(60,['💴','💰','🪙','✨'])
 
 function decisions(){var m=G.m,d=G.done,age=m/12;
  function once(k){if(d[k])return false;d[k]=1;return true}
- if(m===1&&once('ins'))card('🐣','学資保険に入る？','月12,000円を18歳まで払い込み、18歳で270万円を受け取る（このゲーム内の設定）。<br>途中で家計が苦しくても<b>解約できません</b>。',[
+ if(m>=1&&once('ins'))card('🐣','学資保険に入る？','月12,000円を18歳まで払い込み、18歳で270万円を受け取る（このゲーム内の設定）。<br>途中で家計が苦しくても<b>解約できません</b>。',[
   {l:'加入する',s:'毎月 -12,000円 → 18歳で +270万円',f:function(){G.ins=true;news('📝 学資保険に加入した')}},
   {l:'入らない',s:'手元資金を優先',cls:'gray'}]);
- else if(m===12&&once('work'))card('🏢','育休が終わる','1歳。仕事への復帰を決める時期。',[
+ else if(m>=12&&once('work'))card('🏢','育休が終わる','1歳。仕事への復帰を決める時期。',[
   {l:'共働きで保育園へ',s:'収入 +7万/月・保育料 -5.5万/月（6歳まで）・生活費 +2万/月・<b>仕事タスクが同時進行</b>',f:function(){G.dual=true;$('work').style.display='block';news('🏃 共働きスタート！仕事と育児の同時進行…','bad')}},
   {l:'家で育てる',s:'収入そのまま・絆 +15',cls:'alt',f:function(){add({bond:15})}}]);
- else if(m===48&&once('lesson'))card('🎹','習い事をさせる？','4歳。周りの子も習い事を始めている。（12歳まで）',[
+ else if(m>=48&&once('lesson'))card('🎹','習い事をさせる？','4歳。周りの子も習い事を始めている。（12歳まで）',[
   {l:'ピアノ',s:'月 -8,000円・学力がじわじわ上がる',f:function(){G.lesson={n:'ピアノ',c:8000,eff:{gaku:.35}}}},
   {l:'スイミング',s:'月 -7,000円・幸福がじわじわ上がる',cls:'alt',f:function(){G.lesson={n:'スイミング',c:7000,eff:{hap:.6}}}},
   {l:'させない',s:'節約',cls:'gray'}]);
- else if(m===114&&once('juku'))card('🏫','中学受験に挑戦する？','9歳半。小6まで塾に通う必要がある。<br>合格ラインは<b>学力60</b>（判定は12歳の春）。',[
+ else if(m>=114&&once('juku'))card('🏫','中学受験に挑戦する？','9歳半。小6まで塾に通う必要がある。<br>合格ラインは<b>学力60</b>（判定は12歳の春）。',[
   {l:'挑戦する',s:'塾 月 -4万円・学力↑ 幸福↓',f:function(){G.juku=true;news('📚 塾通いが始まった')}},
   {l:'公立に行く',s:'お金をかけない',cls:'gray'}]);
- else if(m===144&&G.juku&&once('jhres')){if(G.gaku>=60){confetti(120);chime([523,659,784,1047]);card('🌸','中学受験 合格！','学力 '+Math.round(G.gaku)+'。見事合格！<br>私立中は月5万円かかる。',[
+ else if(m>=144&&G.juku&&once('jhres')){if(G.gaku>=60){unlock('jh');confetti(120);chime([523,659,784,1047]);card('🌸','中学受験 合格！','学力 '+Math.round(G.gaku)+'。見事合格！<br>私立中は月5万円かかる。',[
    {l:'私立中に進学',s:'月 -5万円（3年間）・学力↑',f:function(){G.privJH=true;add({hap:10})}},
    {l:'公立中に行く',s:'節約。本人は少し残念そう',cls:'gray',f:function(){add({hap:-5})}}])}
   else card('😢','中学受験 不合格…','学力 '+Math.round(G.gaku)+'（合格ライン60）。<br>塾代は戻ってこない。',[{l:'公立中へ',s:'幸福 -15',cls:'gray',f:function(){add({hap:-15})}}])}
- else if(m===180&&once('hs'))card('🏫','高校受験','公立の合格ラインは<b>学力45</b>。落ちたら私立に行くことになる。<br>現在の学力：<b>'+Math.round(G.gaku)+'</b>',[
+ else if(m>=180&&once('hs'))card('🏫','高校受験','公立の合格ラインは<b>学力45</b>。落ちたら私立に行くことになる。<br>現在の学力：<b>'+Math.round(G.gaku)+'</b>',[
   {l:'公立を受ける',s:'学力45以上で合格',f:function(){if(G.gaku>=45){confetti(100);chime([523,659,784,1047]);news('🌸 公立高校に合格！','good');add({hap:8})}else{G.privHS=true;shake();news('😢 公立不合格…私立高へ（月 -4万円）','bad');add({hap:-10})}}},
   {l:'最初から私立',s:'月 -4万円（3年間）・幸福 +10',cls:'alt',f:function(){G.privHS=true;add({hap:10})}}]);
- else if(m===216&&once('univ')){var ok=G.gaku>=75;
+ else if(m>=216&&once('univ')){var ok=G.gaku>=75;
   if(G.ins)bigWin('学資保険 満期！ +270万円',2700000);
   card('🎓','18歳の進路','学力 <b>'+Math.round(G.gaku)+'</b>／貯金 <b>'+yen(G.money)+'</b><br>国立大は学力75以上。大学は4年間、仕送り月8万円もかかる。<br>奨学金は学費が0になるが、子どもが将来返済する（最終評価で減点）。',[
-   {l:'国立大学',s:ok?'学費 月4.5万＋仕送り 月8万':'学力不足（75必要）',dis:!ok,f:function(){G.univ='nat';confetti(120);add({hap:10})}},
+   {l:'国立大学',s:ok?'学費 月4.5万＋仕送り 月8万':'学力不足（75必要）',dis:!ok,f:function(){G.univ='nat';unlock('nat');confetti(120);add({hap:10})}},
    {l:'私立大学',s:'学費 月10万＋仕送り 月8万',cls:'alt',f:function(){G.univ='pri';add({hap:6})}},
    {l:'私立大学＋奨学金',s:'学費0（子が将来返済）＋仕送り 月8万',cls:'alt',f:function(){G.univ='pri';G.scholar=true}},
    {l:'就職する',s:'ここで子育て卒業',cls:'gray',f:function(){ending('就職')}}])}
- else if(m===G.jobM&&once('job'))card('📈','転職のオファー','年収が上がるが、仕事はきつくなる。',[
+ else if(m>=G.jobM&&once('job'))card('📈','転職のオファー','年収が上がるが、仕事はきつくなる。',[
   {l:'転職する',s:'収入 +4万/月・体力回復↓（ずっと）',f:function(){G.raise=40000;G.hardJob=1;news('💼 転職した！給料アップ','good')}},
   {l:'今の会社に残る',s:'安定',cls:'gray'}]);
- else if(m===G.careM&&once('care'))card('👵','親の介護が必要に','実家の親が倒れた。どうする？',[
+ else if(m>=G.careM&&once('care'))card('👵','親の介護が必要に','実家の親が倒れた。どうする？',[
   {l:'施設に入ってもらう',s:'月 -5万円（3年間）',f:function(){G.care=36}},
   {l:'自分で介護する',s:'体力回復が大きく低下（3年間）',cls:'alt',f:function(){G.careSelf=36}}]);
+ else if(m>=36&&once('car'))card('🚗','車を買う？','3歳。送り迎えや買い物で車があると便利。',[
+  {l:'買う',s:'-150万円・幸福+5・たまに車検代',f:function(){G.money-=1500000;G.car=1;add({hap:5});chime([659,880,1175]);news('🚗 マイカー購入！','good')}},
+  {l:'買わない',s:'たまにタクシー代がかかる',cls:'gray'}]);
+ else if(m>=84&&once('home'))card('🏠','マイホームを買う？','7歳。家賃を払い続けるか、家を買うか。<br>買うと家賃（月6万）が浮くが、住宅ローン月9万を22歳まで払う。<br>最終評価で<b>家の価値500万円</b>を資産に加算。',[
+  {l:'買う',s:'頭金 -200万円・毎月 実質-3万円・幸福+10 絆+5',f:function(){G.money-=2000000;G.home=1;unlock('home');add({hap:10,bond:5});confetti(120);chime([523,659,784,1047,1319]);news('🏠 マイホーム購入！','good')}},
+  {l:'賃貸のまま',s:'身軽に',cls:'gray'}]);
+ else if(((m>=60&&G.trips<1)||(m>=126&&G.trips<2)||(m>=168&&G.trips<3))&&once('trip'+G.trips))card('✈️','家族旅行に行く？','子どもと思い出を作るチャンス。'+(G.trips===2?'（これが最後の家族旅行かも）':''),[
+  {l:'国内旅行',s:'-15万円・幸福+10 絆+8',f:function(){G.trips++;G.money-=150000;add({hap:10,bond:8});rain(30,['🗻','♨️','✨']);chime([784,1047,1319])}},
+  {l:'海外旅行',s:'-40万円・幸福+18 絆+12 学力+3',cls:'alt',f:function(){G.trips++;G.money-=400000;add({hap:18,bond:12,gaku:3});unlock('trip');rain(50,['✈️','🌴','🗽','✨']);flash();chime([523,659,784,1047,1319,1568],'square')}},
+  {l:'行かない',s:'節約・絆-3',cls:'gray',f:function(){G.trips++;add({bond:-3})}}]);
 }
 
 // ===== 誕生日・段階 =====
@@ -437,23 +507,66 @@ function birthday(){var age=G.m/12;yearlyWork();add({hap:5});confetti(60);burst(
  lastStage=s}
 
 // ===== エンディング =====
-function ending(kind){if(G.ended)return;G.ended=true;paused=true;needs.slice().forEach(removeNeed);work.slice().forEach(removeWork);
- var asset=G.money,score,rank,title,txt;
- if(kind==='破産'){card('💸','家計破綻','借金が300万円を超え、生活が立ち行かなくなった。<br>'+(G.m/12|0)+'歳'+(G.m%12)+'ヶ月で子育てサバイバル終了。',[{l:'もう一度',f:function(){newGame()}}]);chime([400,330,262,196],'sawtooth');return}
+function career(kind){var g=G.gaku,h=G.hap,b=G.bond,c,e;
+ if(kind==='就職')c=g>=60?['👷','地元の優良企業に就職。入社3年目でチームの中心に。']:h>=60?['🔨','職人の道へ。不器用だけど、仕事が楽しくて仕方ないらしい。']:['🏪','フリーターをしながら、やりたいことを探している。'];
+ else if(G.univ==='nat'&&g>=95)c=['🔬','研究者になり、世界中の学会を飛び回っている。'];
+ else if(g>=85&&b>=55)c=['🩺','医師になった。「親みたいに人の役に立ちたい」と言っていたらしい。'];
+ else if(g>=80)c=['💼','大手企業に就職。忙しいが、充実している。'];
+ else if(h>=80&&g<55)c=['🎤','お笑い芸人を目指して上京。ライブのチケットが毎回届く。'];
+ else if(h>=70)c=['🚀','学生時代の仲間と起業した。まだ赤字だけど楽しそう。'];
+ else if(G.pers==='benkyo'&&g>=60)c=['📚','学校の先生になった。教え方が丁寧だと評判。'];
+ else c=['🏢','会社員として働き始めた。毎日へとへとらしい。'];
+ if(b>=85)e='実家の近くに住み、週末はよく顔を見せてくれる。';
+ else if(b>=55)e='ときどき電話をくれる。誕生日にはプレゼントが届く。';
+ else if(b>=25)e='連絡は年に数回。でも元気にやっているらしい。';
+ else e='連絡はほとんど来ない…。';
+ if(G.scholar)e+='<br>奨学金を毎月返しながら暮らしている。';
+ if(G.money<0)e+='<br>あなたの借金を、子どもが心配している。';
+ return [c[0],c[1],e]}
+function shareResult(t){var url='https://naosugi.github.io/naosugi-ai-games/games/kosodate-survival/';
+ try{if(navigator.share){navigator.share({title:'子育てサバイバル',text:t,url:url}).catch(function(){});return}}catch(e){}
+ try{navigator.clipboard.writeText(t+' '+url).then(function(){toast('📋 結果をコピーしました')},function(){toast('コピーできませんでした')})}catch(e){toast('コピーできませんでした')}}
+var SHARE='';
+function ending(kind){if(G.ended)return;G.ended=true;paused=true;needs.slice().forEach(removeNeed);work.slice().forEach(removeWork);clearSave();
+ var asset=G.money+(G.home?5000000:0),score,rank,title,txt;
+ if(kind==='破産'){unlock('broke');SHARE='子育てサバイバルで'+(G.m/12|0)+'歳のときに家計破綻しました…💸 #子育てサバイバル';
+  card('💸','家計破綻','借金が300万円を超え、生活が立ち行かなくなった。<br>'+(G.m/12|0)+'歳'+(G.m%12)+'ヶ月で子育てサバイバル終了。<div style="text-align:center"><button class="mini" onclick="shareResult(SHARE)">📤 結果をシェア</button></div>'+achHTML(),[{l:'もう一度',f:function(){newGame();intro()}}]);chime([400,330,262,196],'sawtooth');return}
  score=Math.round(G.hap+G.bond+G.gaku+clamp(asset/50000,-60,80)-(G.scholar?30:0)+(kind==='就職'?10:0));
  rank=score>=260?'S':score>=210?'A':score>=160?'B':score>=110?'C':'D';
  title={S:'伝説の親',A:'頼れる親',B:'ふつうに立派',C:'なんとか完走',D:'ギリギリ生還'}[rank];
+ unlock('clear');if(rank==='A'||rank==='S')unlock('rankA');if(rank==='S')unlock('rankS');
+ if(!G.everDebt&&G.money>=0)unlock('nodebt');if(!G.auto)unlock('noauto');if(G.bond>=99.5)unlock('bond100');
+ var d=achData();d.pers=d.pers||{};d.pers[G.pers]=1;achSave(d);if(Object.keys(d.pers).length>=4)unlock('allpers');
  var best=0;try{best=+localStorage.getItem('kosodate_best')||0;if(score>best)localStorage.setItem('kosodate_best',score)}catch(e){}
- confetti(200);rain(40,['🎓','🎉','✨']);chime([523,659,784,1047,1319,1568,2093],'square');vib([50,50,50,50,200]);
+ var cr=career(kind);
+ confetti(200);rain(40,['🎓','🎉','✨',cr[0]]);chime([523,659,784,1047,1319,1568,2093],'square');vib([50,50,50,50,200]);
+ SHARE='子育てサバイバルでランク'+rank+'「'+title+'」（'+score+'点）！'+pers().e+pers().n+'な子が'+cr[0]+cr[1].replace(/<br>/g,'')+' #子育てサバイバル';
  txt='<b>ランク '+rank+'：'+title+'</b>（'+score+'点）'+(score>best?' 🆕自己ベスト！':'<br>自己ベスト '+best+'点')+
-  '<br>😊幸福 '+Math.round(G.hap)+'／❤️絆 '+Math.round(G.bond)+'／📚学力 '+Math.round(G.gaku)+
-  '<br>💴最終資産 '+yen(asset)+(G.scholar?'<br>📄奨学金の返済を子どもが背負った（-30）':'')+'<br>🔥最大コンボ '+G.best+(G.autoUsed?'<br>🤖代行料の合計 '+yen(G.autoUsed):'');
- card(kind==='就職'?'👔':'🎓',kind==='就職'?'18歳で就職！子育て卒業':'22歳 子育て卒業！',txt,[{l:'もう一度',f:function(){newGame()}}]);
+  '<div class="career">'+cr[0]+' '+cr[1]+'<br>'+cr[2]+'</div>'+
+  '😊幸福 '+Math.round(G.hap)+'／❤️絆 '+Math.round(G.bond)+'／📚学力 '+Math.round(G.gaku)+
+  '<br>💴最終資産 '+yen(G.money)+(G.home?'＋🏠持ち家（500万円）':'')+(G.scholar?'<br>📄奨学金の返済を子どもが背負った（-30）':'')+'<br>🔥最大コンボ '+G.best+(G.autoUsed?'<br>🤖代行料の合計 '+yen(G.autoUsed):'')+
+  '<div style="text-align:center"><button class="mini" onclick="shareResult(SHARE)">📤 結果をシェア</button></div>'+achHTML();
+ card(cr[0],kind==='就職'?'18歳で就職！子育て卒業':'22歳 子育て卒業！',txt,[{l:'もう一度',f:function(){newGame();intro()}}]);
 }
+
+// ===== セーブ・一時停止 =====
+function saveGame(){try{localStorage.setItem('kosodate_save',JSON.stringify(G))}catch(e){}}
+function clearSave(){try{localStorage.removeItem('kosodate_save')}catch(e){}}
+function loadSave(){try{var d=JSON.parse(localStorage.getItem('kosodate_save'));return d&&!d.ended&&d.m>0?d:null}catch(e){return null}}
+function restore(d){G=d;G.down=0;G.combo=0;needs.slice().forEach(removeNeed);work.slice().forEach(removeWork);
+ dispMoney=G.money;monthT=0;lastStage=stg();buildButtons();$('work').style.display=G.dual?'block':'none';render();updAuto();updCombo();news('▶ つづきから再開（'+(G.m/12|0)+'歳'+(G.m%12)+'ヶ月）','good')}
+function pauseGame(){if(paused||G.ended)return;saveGame();
+ card('⏸','一時停止',(G.m/12|0)+'歳'+(G.m%12)+'ヶ月／'+yen(G.money)+'<br>途中経過は毎月自動で保存されます。ページを閉じても「つづきから」遊べます。'+achHTML(),[
+  {l:'再開する'},{l:'はじめからやり直す',s:'今の子育ては消えます',cls:'gray',f:function(){clearSave();newGame();intro()}}],true)}
+$('pauseBtn').addEventListener('pointerdown',function(ev){ev.preventDefault();pauseGame()});
+document.addEventListener('visibilitychange',function(){if(document.hidden)pauseGame()});
+function intro(){var p=pers();
+ card('🍼','子育てサバイバル','吹き出しに出たお世話と<b>同じボタン</b>をすばやくタップ。<br>早いほどPERFECT、10連続で<b>神対応タイム</b>（20・30・50連続でさらに強化）。<br>手が回らなければ💴で<b>🤖おまかせサポート</b>を契約（自動でお世話・有料）。<br>成長するとボタンが変わる。毎月 給料と出費が自動で動く。<b>借金300万円で破綻</b>。<br>🎁は臨時収入やアイテム。人生の選択が家計を左右する。<br>22歳まで育て上げよう（約5分）。'+
+  '<div class="career">今回の子：'+p.e+'<b>'+p.n+'</b><br><small>'+p.d+'</small></div><small>※金額はゲーム用の簡略値です</small>'+achHTML(),[{l:'はじめる'}])}
 
 // ===== 描画 =====
 function render(){var age=G.m/12|0,mo=G.m%12,st=STAGES[stg()];
- $('ageT').textContent=age+'歳'+mo+'ヶ月';$('stageT').textContent=st.n;$('kid').textContent=st.e;$('app').style.background=st.bg;
+ $('ageT').textContent=age+'歳'+mo+'ヶ月';$('stageT').textContent=st.n+'・'+pers().e+pers().n;$('kid').textContent=st.e;$('app').style.background=st.bg;
  [['hap','s_hap'],['bond','s_bond'],['gaku','s_gaku'],['hp','s_hp']].forEach(function(p){var el=$(p[1]);el.querySelector('i').style.width=G[p[0]]+'%';
   el.classList.toggle('low',p[0]!=='gaku'&&G[p[0]]<20)});
  $('net').textContent='先月の収支 '+man(G.net);$('net').style.color=G.net<0?'#e0203a':'#1f9d5c';
@@ -468,20 +581,22 @@ function loop(now){var dt=Math.min(50,now-last);last=now;
  if(!paused&&!G.ended){var st=STAGES[stg()];
   monthT+=dt;$('mbarIn').style.width=(monthT/MONTH_MS*100)+'%';
   if(monthT>=MONTH_MS){monthT=0;G.m++;monthly();if(G.m%12===0)birthday();decisions();
-   if(G.money<-3000000)ending('破産');else if(G.m>=END_M)ending('卒業')}
+   if(G.money<-3000000)ending('破産');else if(G.m>=END_M)ending('卒業');else saveGame()}
+  var bh='';for(var bk in BUFF)if(BUFF[bk]>0){BUFF[bk]-=dt;bh+='<div class="buff">'+BUFFN[bk]+' '+Math.ceil(BUFF[bk]/1000)+'</div>'}$('buffs').innerHTML=bh;if(BUFF.hp>0)G.hp=100;
   // 体力回復
   var regen=7.5-(G.hardJob?1.5:0)-(G.careSelf>0?3:0);G.hp=clamp(G.hp+Math.max(1.5,regen)*dt/1000,0,100);
   if(G.hp<=0.5&&!G.down){G.down=1;pay(50000);add({hap:-10});G.hp=60;needs.slice().forEach(removeNeed);work.slice().forEach(removeWork);G.eval=clamp(G.eval-10,0,100);shake();vib([100,50,100]);news('🚑 過労でダウン… 通院費 -5万円 幸福-10','bad');setTimeout(function(){G.down=0},3000)}
   // 要求
-  needs.slice().forEach(function(n){n.t-=dt;var r=n.t/n.max;
+  needs.slice().forEach(function(n){n.t-=dt*(BUFF.slow>0?.5:1);var r=n.t/n.max;
+   if(BUFF.free>0&&r<.6){freeNeed(n);return}
    if(G.auto&&G.autoOn&&r<AUTO[G.auto].th){autoNeed(n);return}
    n.el.style.background='conic-gradient('+(r>.55?'#ffa600':r>.25?'#ff5c97':'#e0203a')+' '+(r*360)+'deg, rgba(255,255,255,.35) 0)';
    n.el.classList.toggle('urgent',r<.3);if(n.t<=0)missNeed(n)});
   if(G.dual){work.slice().forEach(function(o){o.t-=dt;var r=o.t/o.max;
     o.el.style.background='conic-gradient('+(r>.3?'#7d8cff':'#e0203a')+' '+(r*360)+'deg, rgba(255,255,255,.15) 0)';o.el.classList.toggle('urgent',r<.3);if(o.t<=0)missWork(o)});
-   nextWork-=dt;if(nextWork<=0){spawnWork();nextWork=rnd(1300,2600)*(G.hardJob?.75:1)}
-   $('workEval').textContent='評価 '+Math.round(G.eval)+(G.eval>=70?' 🏆ボーナス圏':G.eval<35?' ⚠減給圏':'');$('work').classList.toggle('idle',!work.length)}
-  nextNeed-=dt;if(nextNeed<=0){spawnNeed();nextNeed=rnd(st.sp[0],st.sp[1])*(fever>0?.6:1)}
+   nextWork-=dt;if(nextWork<=0){spawnWork();nextWork=rnd(1300,2600)*(G.hardJob?.75:1)*(1-Math.min(G.m/12,18)*.025)*(G.shortT?1.6:1)}
+   $('workEval').textContent=(G.shortT?'⏬時短 ':'')+'評価 '+Math.round(G.eval)+(G.eval>=70?' 🏆ボーナス圏':G.eval<20&&!G.shortT?' ⚠時短の危機':G.eval<35?' ⚠減給圏':'');$('work').classList.toggle('idle',!work.length)}
+  nextNeed-=dt;if(nextNeed<=0){spawnNeed();nextNeed=rnd(st.sp[0],st.sp[1])*(pers().sp||1)*(fever>0?.6:1)}
   if(fever>0){fever-=dt;if(fever<=0){$('app').classList.remove('fever');$('feverTag').style.display='none'}}
   eventT-=dt;if(eventT<=0){randomEvent();eventT=rnd(2200,4200)}
   if(giftLife>0){giftLife-=dt;if(giftLife<=0)$('gift').style.display='none'}else{giftT-=dt;if(giftT<=0){spawnGift();giftT=rnd(5000,10000)}}
@@ -491,8 +606,11 @@ function loop(now){var dt=Math.min(50,now-last);last=now;
  rt+=dt;if(rt>120){rt=0;render();updAuto()}
  drawFx(dt/1000);requestAnimationFrame(loop)}
 
+var SV=loadSave();
 newGame();lastStage=0;
-card('🍼','子育てサバイバル','吹き出しに出たお世話と<b>同じボタン</b>をすばやくタップ。<br>早いほどPERFECT、10連続で<b>神対応タイム</b>。<br>手が回らなければ💴で<b>🤖おまかせサポート</b>を契約（自動でお世話・有料）。<br>成長するとボタンが変わる。<br>毎月 給料と出費が自動で動く。<b>借金300万円で破綻</b>。<br>🎁は臨時収入。人生の選択が家計を左右する。<br>22歳まで育て上げよう（約5分）。<br><small>※金額はゲーム用の簡略値です</small>',[{l:'はじめる'}]);
+if(SV)card('📂','つづきから遊ぶ？',(SV.m/12|0)+'歳'+(SV.m%12)+'ヶ月の途中データがあります。<br>所持金 '+yen(SV.money)+achHTML(),[
+ {l:'つづきから',f:function(){restore(SV)}},{l:'はじめから',s:'途中データは消えます',cls:'gray',f:function(){clearSave();newGame();intro()}}],true);
+else intro();
 requestAnimationFrame(loop);
 </script>
 </body>

@@ -12,7 +12,7 @@
 | [名を持つ十二の兵](games/named-twelve/) | TRPG風軍団戦。会話と選択で戦士を4年かけて育て、12体の軍団で戦う。手がかりをつなぐと真シナリオが開く |
 | [NEON CLAW RUSH](games/neon-claw-rush/) | 60秒タイムアタックのクレーンゲーム。連続GETでFEVER突入 |
 | [BLUE DASH](games/blue-dash/) | 5段の高架道路を走る横スクロールアクション。日没までに巨大ロボを倒して相棒を救え |
-| [子育てサバイバル](games/kosodate-survival/) | 0〜22歳を約5分で育てる家計サバイバル。お世話と仕事を同時にさばき、人生の選択で家計が揺れる |
+| [子育てサバイバル](games/kosodate-survival/) | 0〜22歳を約5分で育てる家計サバイバル。お世話と仕事を同時にさばき、人生の選択で家計が揺れる。性格・将来分岐・実績つき |
 | [独裁者AI国家シミュレーター](games/dictator-ai-simulator/) | 独裁者として25ターンでAI国家を築くカード選択シミュレーション。8つのエンディングと図鑑つき（[dictator-ai-simulator](https://github.com/naosugi/dictator-ai-simulator) の1ファイル移植版） |
 | [おうちとひらがな](games/ouchi-hiragana/) | 子ども向けひらがな探し。見つけるたびにおうちが育つ。音声読み上げつき（[moji_learn_mining](https://github.com/naosugi/moji_learn_mining) のスマホ操作改善・1ファイル版） |
 
