@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>NEON CLAW RUSH</title>
+<style>
+html,body{margin:0;height:100%;background:#05010f;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+body{display:flex;align-items:center;justify-content:center}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+// ================= 基本設定 =================
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 420, H = 760;
+let scale = 1, dpr = 1;
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + 'px';
+  cv.style.height = H * scale + 'px';
+  cv.width = Math.round(W * scale * dpr);
+  cv.height = Math.round(H * scale * dpr);
+}
+addEventListener('resize', resize); resize();
+
+const GAME_TIME = 60;
+const RAIL_Y = 120, REST_Y = 170, FLOOR_Y = 650, PR = 22;
+const GRAB_Y = FLOOR_Y - PR - 26;
+const WALL_X = 100, CHUTE_X = 58, MIN_X = 125, MAX_X = W - 36;
+const FEVER_TIME = 8;
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const NEON = ['#ff2bd6', '#2bf6ff', '#7dff3b', '#ff9f1c', '#b26bff', '#ff4d6d'];
+
+// ================= サウンド (WebAudio合成) =================
+let AC = null, master = null, muted = false, noiseBuf = null;
+function initAudio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.45; master.connect(AC.destination);
+    const n = AC.sampleRate;
+    noiseBuf = AC.createBuffer(1, n, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  } catch (e) { AC = null; }
+}
+function tone(freq, dur, type = 'square', vol = 0.15, slideTo = null, delay = 0) {
+  if (!AC || muted) return;
+  const t = AC.currentTime + delay;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+}
+function noise(dur, vol = 0.3, hp = 0, delay = 0) {
+  if (!AC || muted) return;
+  const t = AC.currentTime + delay;
+  const s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  let node = s;
+  if (hp) { const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; s.connect(f); node = f; }
+  node.connect(g); g.connect(master); s.start(t, Math.random() * 0.5, dur + 0.05);
+}
+const BASS = [55, 55, 65.41, 49, 55, 73.42, 65.41, 49];
+const ARP = [440, 523.25, 659.25, 880, 659.25, 523.25, 783.99, 987.77];
+let musT = 0, step = 0, beatPulse = 0;
+function playStep(s) {
+  const fv = fever;
+  if (s % 2 === 0) { tone(150, 0.16, 'sine', 0.55, 40); beatPulse = 1; }
+  if (fv || s % 2 === 1) noise(0.04, fv ? 0.07 : 0.05, 7000);
+  if (s % 2 === 0) tone(BASS[(s >> 3) % 8], 0.2, 'sawtooth', 0.07);
+  if (fv) tone(ARP[(s * 3) % 8] * 1, 0.09, 'square', 0.035);
+  if (fv && s % 8 === 4) noise(0.12, 0.18, 1500);
+}
+
+// ================= ゲーム状態 =================
+let scene = 'title'; // title / count / play / end / result
+let timeLeft, score, dispScore, combo, maxCombo, hits, tries, gauge, fever, feverT;
+let countT = 0, lastCount = 4, endT = 0, resultT = 0, lastSec = 99;
+let best = 0, newBest = false;
+try { best = parseInt(localStorage.getItem('neonClawBest') || '0', 10) || 0; } catch (e) {}
+let claw = { x: MIN_X, y: REST_Y, dir: 1, state: 'move', open: 1, held: null, t: 0 };
+let prizes = [], falling = [], parts = [], pops = [], banner = null;
+let shake = 0, flash = 0, flashColor = '#fff', hitStop = 0, comboPump = 0;
+let spawnT = 0, beltOff = 0, gridOff = 0, time = 0;
+
+function resetVars() {
+  timeLeft = GAME_TIME; score = 0; dispScore = 0; combo = 0; maxCombo = 0;
+  hits = 0; tries = 0; gauge = 0; fever = false; feverT = 0; lastSec = 99; newBest = false;
+}
+resetVars();
+
+const elapsed = () => GAME_TIME - Math.max(0, timeLeft);
+function sweepSpeed() {
+  return (230 + Math.min(combo, 25) * 10 + elapsed() * 1.6) * (fever ? 1.12 : 1);
+}
+function beltSpeed() {
+  if (scene === 'title') return 70;
+  return 80 + elapsed() * 1.3 + (fever ? 55 : 0);
+}
+
+// ================= 景品 =================
+function pickType() {
+  const table = fever
+    ? [['ball', 58, 100], ['star', 24, 300], ['gem', 18, 800]]
+    : [['ball', 62, 100], ['star', 15, 300], ['gem', 6, 800], ['bomb', 13, 0]];
+  const sum = table.reduce((a, t) => a + t[1], 0);
+  let r = Math.random() * sum;
+  for (const t of table) { if ((r -= t[1]) <= 0) return t; }
+  return table[0];
+}
+function makePrize(x) {
+  const [k, , v] = pickType();
+  return { k, v, x, y: FLOOR_Y - PR, c: NEON[(Math.random() * NEON.length) | 0], rot: rand(0, 6), held: false, pts: 0 };
+}
+function fillBelt() {
+  prizes = [];
+  let x = WALL_X + 40;
+  while (x < W + PR) { prizes.push(makePrize(x)); x += rand(56, 115); }
+  prizes.sort((a, b) => a.x - b.x);
+}
+fillBelt();
+
+// ================= エフェクト =================
+function burst(x, y, n, colors, spd = 300, g = 600) {
+  for (let i = 0; i < n && parts.length < 450; i++) {
+    const a = rand(0, Math.PI * 2), s = rand(spd * 0.3, spd);
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - spd * 0.3, life: rand(0.4, 0.9), max: 0.9,
+      c: colors[(Math.random() * colors.length) | 0], s: rand(2, 5), g });
+  }
+}
+function pop(text, x, y, color, size = 26, life = 0.9) {
+  pops.push({ text, x, y, color, size, life, max: life, age: 0 });
+}
+function showBanner(text, color, sub = '', life = 1.2, size = 60) {
+  banner = { text, color, sub, life, max: life, size };
+}
+
+// ================= ゲーム進行 =================
+function startGame() {
+  initAudio();
+  resetVars();
+  fillBelt(); falling = []; parts = []; pops = []; banner = null;
+  claw = { x: MIN_X, y: REST_Y, dir: 1, state: 'move', open: 1, held: null, t: 0 };
+  scene = 'count'; countT = 3; lastCount = 4; step = 0; musT = 0;
+}
+function drop() {
+  if (claw.state !== 'move' || claw.x < MIN_X - 5) return;
+  claw.state = 'down'; tries++;
+  tone(900, 0.06, 'square', 0.08, 300);
+}
+function startFever() {
+  fever = true; feverT = FEVER_TIME; gauge = 1;
+  showBanner('FEVER!!', '#ffe600', 'SCORE ×3', 1.4, 76);
+  flash = 0.8; flashColor = '#fff'; shake = 14;
+  tone(180, 0.9, 'sawtooth', 0.14, 1800); noise(0.6, 0.25, 800);
+  for (let i = 0; i < 4; i++) burst(rand(60, W - 60), rand(200, 500), 30, NEON, 420);
+  // 爆弾をレア景品に変える
+  prizes.forEach(p => { if (p.k === 'bomb' && !p.held) { p.k = 'gem'; p.v = 800; } });
+}
+function endFever() {
+  fever = false; gauge = 0; feverT = 0;
+  pop('FEVER END', W / 2, 300, '#aaa', 22, 1);
+}
+function resolveGrab() {
+  let bp = null, bd = 1e9, bi = -1;
+  prizes.forEach((p, i) => { if (!p.held) { const d = Math.abs(p.x - claw.x); if (d < bd) { bd = d; bp = p; bi = i; } } });
+  const tol = fever ? 32 : 21;
+  if (bp && bd <= tol) {
+    if (bp.k === 'bomb') {
+      prizes.splice(bi, 1);
+      timeLeft = Math.max(0, timeLeft - 3);
+      combo = 0; gauge = 0; if (fever) endFever();
+      shake = 22; flash = 0.9; flashColor = '#ff2040'; hitStop = 0.1;
+      burst(claw.x, claw.y + 30, 70, ['#ff2040', '#ff9f1c', '#ffe600', '#333'], 520);
+      pop('-3 SEC', claw.x, claw.y - 10, '#ff3355', 36, 1.1);
+      pop('BOMB!!', W / 2, 330, '#ff3355', 48, 1);
+      noise(0.6, 0.6, 0); tone(120, 0.5, 'sawtooth', 0.3, 30);
+      return;
+    }
+    bp.held = true; claw.held = bp;
+    combo++; hits++; maxCombo = Math.max(maxCombo, combo); comboPump = 1;
+    const perfect = bd <= (fever ? 9 : 6);
+    bp.pts = Math.round(bp.v * (1 + Math.min(combo, 50) * 0.1) * (fever ? 3 : 1) * (perfect ? 2 : 1));
+    if (!fever) { gauge += perfect ? 0.3 : 0.2; if (gauge >= 1) startFever(); }
+    else feverT = Math.min(FEVER_TIME, feverT + 0.8);
+    if (perfect) {
+      pop('PERFECT!!', claw.x, claw.y - 30, '#ffe600', 32, 0.9);
+      hitStop = 0.08; shake = Math.max(shake, 9); flash = Math.max(flash, 0.35); flashColor = '#fff';
+      burst(claw.x, claw.y + 26, 34, ['#ffe600', '#fff', '#ff2bd6'], 380);
+    } else {
+      pop('GET!', claw.x, claw.y - 30, '#2bf6ff', 26, 0.7);
+      hitStop = 0.03; shake = Math.max(shake, 4);
+      burst(claw.x, claw.y + 26, 16, [bp.c, '#fff'], 260);
+    }
+    if (combo >= 2) pop(combo + ' COMBO', W / 2, 260, combo >= 10 ? '#ff2bd6' : '#ff9f1c', 28 + Math.min(combo, 20), 0.8);
+    const f = 523.25 * Math.pow(2, Math.min(combo, 24) / 12);
+    tone(f, 0.16, 'square', 0.11); tone(f * 1.26, 0.16, 'square', 0.08, null, 0.04); tone(f * 1.5, 0.22, 'triangle', 0.1, null, 0.08);
+    if (perfect) tone(f * 2, 0.3, 'triangle', 0.1, null, 0.12);
+  } else {
+    if (combo >= 3) pop('COMBO BREAK', W / 2, 260, '#888', 26, 0.9);
+    combo = 0;
+    if (fever) { feverT -= 2; } else gauge = 0;
+    pop('MISS', claw.x, claw.y - 20, '#ff5577', 28, 0.7);
+    shake = Math.max(shake, 3);
+    tone(220, 0.25, 'sawtooth', 0.12, 70);
+  }
+}
+function release() {
+  const p = claw.held; if (!p) return;
+  claw.held = null;
+  const i = prizes.indexOf(p); if (i >= 0) prizes.splice(i, 1);
+  p.held = false; p.x = CHUTE_X; p.vy = 0;
+  falling.push(p);
+  score += p.pts;
+  pop('+' + fmt(p.pts), CHUTE_X + 36, 430, fever ? '#ffe600' : '#fff', fever ? 34 : 28, 1);
+  tone(1318.5, 0.08, 'square', 0.09); tone(1760, 0.18, 'square', 0.09, null, 0.07);
+}
+function endGame() {
+  if (claw.held) release();
+  scene = 'end'; endT = 1.7;
+  showBanner('TIME UP!', '#ff2bd6', '', 1.7, 70);
+  tone(880, 0.15, 'square', 0.15); tone(660, 0.15, 'square', 0.15, null, 0.15); tone(440, 0.5, 'square', 0.15, null, 0.3);
+  if (score > best) { best = score; newBest = true; try { localStorage.setItem('neonClawBest', String(best)); } catch (e) {} }
+}
+
+// ================= 更新 =================
+function updateClaw(dt) {
+  const c = claw;
+  switch (c.state) {
+    case 'move':
+      c.x += c.dir * sweepSpeed() * dt;
+      if (c.x > MAX_X) { c.x = MAX_X; c.dir = -1; }
+      if (c.x < MIN_X && c.dir < 0) { c.x = MIN_X; c.dir = 1; }
+      c.open = Math.min(1, c.open + dt * 7);
+      break;
+    case 'down':
+      c.y += 1750 * dt;
+      if (c.y >= GRAB_Y) { c.y = GRAB_Y; c.state = 'close'; c.t = 0; resolveGrab(); }
+      break;
+    case 'close':
+      c.t += dt; c.open = Math.max(0, 1 - c.t / 0.08);
+      if (c.t >= 0.08) c.state = 'up';
+      break;
+    case 'up':
+      c.y -= 1950 * dt;
+      if (c.y <= REST_Y) { c.y = REST_Y; c.state = c.held ? 'carry' : 'move'; }
+      break;
+    case 'carry':
+      c.x -= 1600 * dt;
+      if (c.x <= CHUTE_X) { c.x = CHUTE_X; release(); c.state = 'move'; c.dir = 1; }
+      break;
+  }
+  if (c.held) { c.held.x = c.x; c.held.y = c.y + 26; }
+}
+
+function update(dt) {
+  if (hitStop > 0) { hitStop -= dt; dt *= 0.2; }
+  const bs = beltSpeed();
+  beltOff = (beltOff + bs * dt) % 40;
+  gridOff = (gridOff + dt * (fever ? 2.2 : 0.8)) % 1;
+
+  for (const p of prizes) { if (!p.held) p.x += bs * dt; p.rot += dt * 1.5; }
+  prizes = prizes.filter(p => p.held || p.x < W + PR + 10);
+  spawnT -= dt;
+  if (spawnT <= 0) {
+    const free = prizes.filter(p => !p.held);
+    const lastP = free.length ? free.reduce((a, b) => (a.x < b.x ? a : b)) : null;
+    if (!lastP || lastP.x > WALL_X + 34) {
+      prizes.push(makePrize(WALL_X - PR));
+      spawnT = rand(0.35, 0.95) * 90 / bs;
+    }
+  }
+
+  if (scene === 'title') {
+    if (claw.state === 'move') updateClaw(dt);
+  } else if (scene === 'count') {
+    countT -= dt;
+    const n = Math.ceil(countT);
+    if (n !== lastCount && n > 0) { lastCount = n; tone(660, 0.12, 'square', 0.14); }
+    if (countT <= 0) { scene = 'play'; showBanner('GO!!', '#7dff3b', '', 0.7, 90); tone(1320, 0.35, 'square', 0.16); }
+  } else if (scene === 'play') {
+    timeLeft -= dt;
+    const s = Math.ceil(timeLeft);
+    if (s !== lastSec) {
+      lastSec = s;
+      if (s === 10) showBanner('LAST 10 SEC!', '#ff3355', '', 1, 44);
+      if (s <= 10 && s > 0) { tone(1000, 0.05, 'square', 0.09); if (s <= 5) shake = Math.max(shake, 3); }
+    }
+    if (fever) {
+      feverT -= dt;
+      if (feverT <= 0) endFever();
+      if (Math.random() < 0.6) parts.push({ x: rand(15, W - 15), y: 92, vx: rand(-40, 40), vy: rand(60, 160), life: 1.6, max: 1.6, c: NEON[(Math.random() * 6) | 0], s: rand(2, 4), g: 120 });
+    }
+    updateClaw(dt);
+    musT -= dt;
+    while (musT <= 0) { step++; playStep(step); musT += 60 / (fever ? 170 : timeLeft <= 10 ? 158 : 140) / 2; }
+    if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+  } else if (scene === 'end') {
+    endT -= dt;
+    if (endT <= 0) { scene = 'result'; resultT = 0; }
+  } else if (scene === 'result') {
+    resultT += dt;
+  }
+
+  for (const p of falling) { p.vy += 2400 * dt; p.y += p.vy * dt; }
+  falling = falling.filter(p => {
+    if (p.y >= 660) { burst(CHUTE_X, 640, fever ? 40 : 22, fever ? NEON : [p.c, '#fff', '#2bf6ff'], fever ? 480 : 340); shake = Math.max(shake, fever ? 7 : 3); return false; }
+    return true;
+  });
+  for (const p of parts) { p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  parts = parts.filter(p => p.life > 0);
+  for (const p of pops) { p.y -= 50 * dt; p.life -= dt; p.age += dt; }
+  pops = pops.filter(p => p.life > 0);
+  if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
+  shake = Math.max(0, shake - dt * 40);
+  flash = Math.max(0, flash - dt * 3);
+  beatPulse = Math.max(0, beatPulse - dt * 6);
+  comboPump = Math.max(0, comboPump - dt * 5);
+  dispScore += (score - dispScore) * Math.min(1, dt * 12);
+  if (Math.abs(score - dispScore) < 1) dispScore = score;
+}
+
+// ================= 描画 =================
+function glow(c, b) { ctx.shadowColor = c; ctx.shadowBlur = b; }
+function noGlow() { ctx.shadowBlur = 0; }
+function rr(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function txt(s, x, y, size, color, align = 'center', glowC = null) {
+  ctx.font = `900 ${size}px "Arial Black","Hiragino Sans","Yu Gothic",system-ui,sans-serif`;
+  ctx.textAlign = align; ctx.textBaseline = 'middle';
+  if (glowC) glow(glowC, size * 0.45);
+  ctx.fillStyle = color; ctx.fillText(s, x, y); noGlow();
+}
+const hueNow = () => (fever ? (time * 140) % 360 : 275);
+function frameColor() { return fever ? `hsl(${(time * 360) % 360},100%,60%)` : '#ff2bd6'; }
+
+function drawBG() {
+  const hue = hueNow();
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, `hsl(${hue},70%,${fever ? 14 : 9}%)`);
+  g.addColorStop(1, `hsl(${(hue + 50) % 360},80%,3%)`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const hy = 380;
+  ctx.strokeStyle = `hsla(${(hue + 60) % 360},100%,60%,${fever ? 0.3 : 0.16})`; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < 12; i++) { const k = (i + gridOff) / 12; const y = hy + (H - hy) * k * k; ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  for (let i = -8; i <= 8; i++) { ctx.moveTo(W / 2 + i * 8, hy); ctx.lineTo(W / 2 + i * 95, H); }
+  ctx.stroke();
+  if (fever) {
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 28; i++) {
+      const a = i / 28 * Math.PI * 2 + time * 0.4;
+      const r1 = 40 + ((time * 700 + i * 53) % 380), r2 = r1 + 70;
+      ctx.strokeStyle = `hsla(${(hue + i * 13) % 360},100%,70%,0.22)`;
+      ctx.beginPath(); ctx.moveTo(W / 2 + Math.cos(a) * r1, 380 + Math.sin(a) * r1);
+      ctx.lineTo(W / 2 + Math.cos(a) * r2, 380 + Math.sin(a) * r2); ctx.stroke();
+    }
+  }
+}
+
+function drawMachine() {
+  rr(12, 96, W - 24, 596, 14);
+  ctx.fillStyle = 'rgba(255,255,255,0.035)'; ctx.fill();
+  const fc = frameColor();
+  glow(fc, 12 + beatPulse * 14); ctx.strokeStyle = fc; ctx.lineWidth = 3; ctx.stroke(); noGlow();
+  // マーキーライト
+  for (let i = 0; i < 16; i++) {
+    const x = 26 + i * ((W - 52) / 15);
+    const on = ((i + Math.floor(time * (fever ? 16 : 5))) % 3) === 0;
+    ctx.fillStyle = on ? (fever ? `hsl(${(i * 30 + time * 400) % 360},100%,65%)` : '#ffe600') : 'rgba(255,255,255,0.15)';
+    if (on) glow(ctx.fillStyle, 10);
+    ctx.beginPath(); ctx.arc(x, 103, 3, 0, Math.PI * 2); ctx.fill(); noGlow();
+  }
+  // レール
+  glow('#2bf6ff', 10); ctx.strokeStyle = '#2bf6ff'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(24, RAIL_Y); ctx.lineTo(W - 24, RAIL_Y); ctx.stroke(); noGlow();
+  // シュート(取り出し口)
+  rr(20, 480, WALL_X - 26, 205, 8);
+  ctx.fillStyle = fever ? `hsla(${(time * 300) % 360},100%,50%,0.18)` : 'rgba(43,246,255,0.08)'; ctx.fill();
+  ctx.strokeStyle = '#2bf6ff'; ctx.lineWidth = 2; glow('#2bf6ff', 8); ctx.stroke(); noGlow();
+  ctx.save(); ctx.translate(CHUTE_X, 585); ctx.rotate(-Math.PI / 2);
+  txt('GOAL', 0, 0, 22, 'rgba(43,246,255,0.55)'); ctx.restore();
+  if (Math.floor(time * 4) % 2 === 0) txt('▼', CHUTE_X, 462, 18, '#2bf6ff', 'center', '#2bf6ff');
+  // ベルトコンベア
+  ctx.save();
+  ctx.beginPath(); ctx.rect(WALL_X, FLOOR_Y, W - 14 - WALL_X, 22); ctx.clip();
+  ctx.fillStyle = '#16102a'; ctx.fillRect(WALL_X, FLOOR_Y, W, 22);
+  ctx.fillStyle = fever ? `hsla(${(time * 300) % 360},100%,60%,0.6)` : 'rgba(255,43,214,0.4)';
+  for (let x = WALL_X - 40 + beltOff; x < W; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, FLOOR_Y); ctx.lineTo(x + 14, FLOOR_Y); ctx.lineTo(x + 4, FLOOR_Y + 22); ctx.lineTo(x - 10, FLOOR_Y + 22); ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle = fc; ctx.lineWidth = 2; ctx.strokeRect(WALL_X, FLOOR_Y, W - 14 - WALL_X, 22);
+}
+function drawWall() {
+  const fc = frameColor();
+  ctx.fillStyle = '#0b0618'; ctx.fillRect(WALL_X - 6, 480, 8, 208);
+  glow(fc, 10); ctx.strokeStyle = fc; ctx.lineWidth = 2; ctx.strokeRect(WALL_X - 6, 480, 8, 208); noGlow();
+}
+
+function starPath(x, y, ro, ri, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) { const r = i % 2 ? ri : ro; const a = rot + i * Math.PI / 5 - Math.PI / 2; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+  ctx.closePath();
+}
+function drawPrize(p) {
+  const x = p.x, y = p.y;
+  if (p.k === 'ball') {
+    glow(p.c, 14); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(x, y, PR, 0, Math.PI * 2); ctx.fill(); noGlow();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(x, y, PR, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - PR, y - 2, PR * 2, 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.beginPath(); ctx.arc(x - 8, y - 10, 5, 0, Math.PI * 2); ctx.fill();
+  } else if (p.k === 'star') {
+    glow('#ffb800', 18); ctx.fillStyle = '#ffe14d'; starPath(x, y, PR + 4, PR * 0.48, p.rot * 0.4); ctx.fill(); noGlow();
+    ctx.strokeStyle = '#fff6'; ctx.lineWidth = 2; ctx.stroke();
+  } else if (p.k === 'gem') {
+    const h = (time * 220 + p.x) % 360;
+    glow('#fff', 20);
+    ctx.fillStyle = `hsl(${h},100%,62%)`;
+    ctx.beginPath(); ctx.moveTo(x - PR, y - 5); ctx.lineTo(x - PR * 0.55, y - PR + 2); ctx.lineTo(x + PR * 0.55, y - PR + 2);
+    ctx.lineTo(x + PR, y - 5); ctx.lineTo(x, y + PR); ctx.closePath(); ctx.fill(); noGlow();
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x - PR, y - 5); ctx.lineTo(x + PR, y - 5); ctx.moveTo(x - 6, y - 5); ctx.lineTo(x, y + PR); ctx.lineTo(x + 6, y - 5); ctx.stroke();
+    if (Math.sin(time * 9 + p.x) > 0.6) txt('✦', x + 12, y - 16, 14, '#fff', 'center', '#fff');
+  } else if (p.k === 'bomb') {
+    const pulse = 0.5 + 0.5 * Math.sin(time * 14);
+    ctx.strokeStyle = `rgba(255,40,70,${0.4 + pulse * 0.5})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, PR + 3 + pulse * 3, 0, Math.PI * 2); ctx.stroke();
+    const g = ctx.createRadialGradient(x - 7, y - 7, 2, x, y, PR);
+    g.addColorStop(0, '#666'); g.addColorStop(1, '#0a0a0a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, PR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#c9a36b'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x + 10, y - 18); ctx.quadraticCurveTo(x + 18, y - 30, x + 24, y - 26); ctx.stroke();
+    glow('#ff9f1c', 14); ctx.fillStyle = Math.random() < 0.5 ? '#ffe600' : '#ff6a00';
+    ctx.beginPath(); ctx.arc(x + 24, y - 26, rand(3, 5), 0, Math.PI * 2); ctx.fill(); noGlow();
+    txt('!', x, y + 1, 22, '#ff3355');
+  }
+}
+function drawPrizes() {
+  ctx.save(); ctx.beginPath(); ctx.rect(WALL_X - 2, 96, W - 14 - WALL_X, 596); ctx.clip();
+  for (const p of prizes) if (!p.held) drawPrize(p);
+  ctx.restore();
+  for (const p of falling) drawPrize(p);
+}
+
+function drawClaw() {
+  const x = claw.x, y = claw.y, o = claw.open;
+  // 狙いレーザー
+  if (claw.state === 'move' && (scene === 'play' || scene === 'title')) {
+    ctx.strokeStyle = fever ? 'rgba(255,230,0,0.35)' : 'rgba(255,60,90,0.28)'; ctx.lineWidth = fever ? 3 : 1.5;
+    ctx.setLineDash([6, 8]); ctx.beginPath(); ctx.moveTo(x, y + 44); ctx.lineTo(x, FLOOR_Y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = fever ? 'rgba(255,230,0,0.5)' : 'rgba(255,60,90,0.45)';
+    ctx.beginPath(); ctx.ellipse(x, FLOOR_Y + 2, fever ? 32 : 21, 4, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // キャリッジ
+  rr(x - 24, RAIL_Y - 11, 48, 22, 6); ctx.fillStyle = '#1c1238'; ctx.fill();
+  ctx.strokeStyle = '#2bf6ff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = Math.floor(time * 10) % 2 ? '#ff2bd6' : '#2bf6ff'; ctx.fillRect(x - 4, RAIL_Y - 4, 8, 8);
+  // ケーブル
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, RAIL_Y + 11); ctx.lineTo(x, y - 12); ctx.stroke();
+  if (claw.held) drawPrize(claw.held);
+  // ハブとアーム
+  const ac = fever ? `hsl(${(time * 360) % 360},100%,65%)` : '#e6e6ff';
+  glow(fever ? ac : '#2bf6ff', 10);
+  ctx.strokeStyle = ac; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const s of [-1, 1]) {
+    ctx.beginPath(); ctx.moveTo(x + s * 10, y);
+    ctx.lineTo(x + s * (26 + 14 * o), y + 16);
+    ctx.lineTo(x + s * (14 + 24 * o), y + 40);
+    ctx.stroke();
+  }
+  noGlow();
+  rr(x - 17, y - 14, 34, 18, 5); ctx.fillStyle = '#2a1d55'; ctx.fill();
+  ctx.strokeStyle = ac; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function drawFX() {
+  for (const p of parts) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max * 1.4));
+    ctx.fillStyle = p.c; ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+  }
+  ctx.globalAlpha = 1;
+  for (const p of pops) {
+    const s = 1 + Math.max(0, (0.12 - p.age) / 0.12) * 0.9;
+    ctx.globalAlpha = Math.min(1, p.life / 0.3);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.scale(s, s);
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.font = `900 ${p.size}px "Arial Black","Hiragino Sans",system-ui,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.strokeText(p.text, 0, 0);
+    txt(p.text, 0, 0, p.size, p.color, 'center', p.color);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHUD() {
+  ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(0, 0, W, 90);
+  txt('SCORE', 16, 22, 12, '#9cf', 'left');
+  txt(fmt(dispScore), 16, 54, 24, '#fff', 'left', '#2bf6ff');
+  const tl = Math.max(0, timeLeft);
+  const red = tl <= 10 && scene !== 'title';
+  txt('TIME', W / 2, 16, 11, '#f9c');
+  ctx.save(); ctx.translate(W / 2, 52);
+  const sc = red ? 1 + beatPulse * 0.15 : 1; ctx.scale(sc, sc);
+  txt(tl.toFixed(2), 0, 0, 38, red ? '#ff3355' : '#fff', 'center', red ? '#ff0033' : '#ff2bd6');
+  ctx.restore();
+  txt('COMBO', W - 16, 22, 12, '#fc9', 'right');
+  const cs = 26 * (1 + comboPump * 0.5) + Math.min(combo, 20) * 0.6;
+  txt(String(combo), W - 16, 54, cs, combo >= 5 ? '#ffe600' : '#fff', 'right', combo >= 5 ? '#ff9f1c' : '#ff2bd6');
+
+  // フィーバーゲージ
+  const gx = 86, gy = 702, gw = W - 106, gh = 18;
+  txt('FEVER', 16, gy + gh / 2, 15, fever ? '#ffe600' : '#ff2bd6', 'left', fever ? '#ffe600' : null);
+  rr(gx, gy, gw, gh, 9); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+  const ratio = fever ? Math.max(0, feverT / FEVER_TIME) : Math.min(1, gauge);
+  if (ratio > 0) {
+    ctx.save(); rr(gx, gy, gw, gh, 9); ctx.clip();
+    const g = ctx.createLinearGradient(gx, 0, gx + gw, 0);
+    if (fever) { for (let i = 0; i <= 6; i++) g.addColorStop(i / 6, `hsl(${(i * 60 + time * 400) % 360},100%,60%)`); }
+    else { g.addColorStop(0, '#b26bff'); g.addColorStop(1, '#ff2bd6'); }
+    glow('#ff2bd6', 12); ctx.fillStyle = g; ctx.fillRect(gx, gy, gw * ratio, gh); noGlow();
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2;
+  if (!fever) for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(gx + gw * i / 5, gy); ctx.lineTo(gx + gw * i / 5, gy + gh); ctx.stroke(); }
+  rr(gx, gy, gw, gh, 9); ctx.strokeStyle = fever ? '#fff' : 'rgba(255,43,214,0.7)'; ctx.lineWidth = 2; ctx.stroke();
+  if (fever) txt(`×3  ${Math.max(0, feverT).toFixed(1)}s`, gx + gw / 2, gy + gh / 2, 12, '#000');
+  else if (gauge >= 0.79 && scene === 'play' && Math.floor(time * 6) % 2 === 0) txt('あと1回でFEVER!', gx + gw / 2, gy + gh / 2, 11, '#fff');
+
+  txt('TAP / SPACE で DROP', W / 2, 744, 12, 'rgba(255,255,255,0.45)');
+  if (scene === 'title' || scene === 'result') txt('◀ GAMES', 14, 744, 11, '#ff2bd6', 'left');
+  txt(muted ? 'SOUND OFF' : 'SOUND ON', W - 14, 744, 10, muted ? '#888' : '#2bf6ff', 'right');
+}
+
+function drawOverlays() {
+  if (fever) {
+    ctx.strokeStyle = `hsla(${(time * 360) % 360},100%,60%,${0.45 + beatPulse * 0.45})`;
+    ctx.lineWidth = 10; ctx.strokeRect(5, 5, W - 10, H - 10);
+  }
+  if (scene === 'play' && timeLeft <= 10) {
+    const a = 0.12 + 0.18 * beatPulse;
+    const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+    g.addColorStop(0, 'rgba(255,0,40,0)'); g.addColorStop(1, `rgba(255,0,40,${a})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  if (banner) {
+    const k = 1 - banner.life / banner.max;
+    const s = k < 0.15 ? 2.2 - (k / 0.15) * 1.2 : 1 + Math.sin(time * 20) * 0.03;
+    ctx.globalAlpha = Math.min(1, banner.life / 0.25);
+    ctx.save(); ctx.translate(W / 2, 360); ctx.rotate(-0.06); ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(-W, -banner.size * 0.75, W * 2, banner.size * (banner.sub ? 2 : 1.5));
+    txt(banner.text, 0, 0, banner.size, banner.color, 'center', banner.color);
+    if (banner.sub) txt(banner.sub, 0, banner.size * 0.8, banner.size * 0.38, '#fff', 'center', '#ff2bd6');
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+  if (flash > 0) { ctx.globalAlpha = Math.min(1, flash) * 0.7; ctx.fillStyle = flashColor; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+
+  if (scene === 'title') {
+    ctx.fillStyle = 'rgba(5,1,15,0.72)'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(W / 2, 200); ctx.rotate(-0.05);
+    txt('NEON', 0, -40, 62, '#2bf6ff', 'center', '#2bf6ff');
+    txt('CLAW RUSH', 0, 26, 50, '#ff2bd6', 'center', '#ff2bd6');
+    ctx.restore();
+    txt('60秒 タイムアタック', W / 2, 300, 20, '#ffe600', 'center', '#ff9f1c');
+    const lines = [
+      'タイミングよくタップしてアームを落とせ',
+      'ど真ん中なら PERFECT（得点×2）',
+      '連続GETでゲージを溜めて FEVER（×3）',
+      'FEVER中はアームが太くなり、GETで延長',
+      '爆弾をつかむと -3秒 ＆ コンボ消滅'
+    ];
+    ctx.font = '700 15px "Hiragino Sans","Yu Gothic",system-ui,sans-serif';
+    lines.forEach((l, i) => { ctx.textAlign = 'center'; ctx.fillStyle = '#ddd'; ctx.fillText(l, W / 2, 352 + i * 30); });
+    if (Math.floor(time * 2.5) % 2 === 0) txt('TAP TO START', W / 2, 545, 30, '#fff', 'center', '#ff2bd6');
+    txt('BEST  ' + fmt(best), W / 2, 600, 18, '#2bf6ff');
+  } else if (scene === 'count') {
+    const n = Math.ceil(countT);
+    const f = countT - Math.floor(countT);
+    ctx.fillStyle = 'rgba(5,1,15,0.45)'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(W / 2, 360); ctx.scale(1 + f * 0.8, 1 + f * 0.8);
+    txt(String(n), 0, 0, 120, '#fff', 'center', '#ff2bd6'); ctx.restore();
+  } else if (scene === 'result') {
+    const a = Math.min(1, resultT * 3);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(5,1,15,0.82)'; ctx.fillRect(0, 0, W, H);
+    rr(30, 130, W - 60, 500, 18); ctx.fillStyle = 'rgba(30,15,60,0.9)'; ctx.fill();
+    glow('#ff2bd6', 18); ctx.strokeStyle = '#ff2bd6'; ctx.lineWidth = 3; ctx.stroke(); noGlow();
+    txt('RESULT', W / 2, 175, 30, '#2bf6ff', 'center', '#2bf6ff');
+    const shown = Math.min(1, resultT / 0.8) * score;
+    txt(fmt(shown), W / 2, 245, 50, '#fff', 'center', '#ff2bd6');
+    if (newBest && Math.floor(time * 4) % 2 === 0) txt('NEW RECORD!!', W / 2, 295, 20, '#ffe600', 'center', '#ff9f1c');
+    const rank = score >= 60000 ? 'S' : score >= 30000 ? 'A' : score >= 12000 ? 'B' : 'C';
+    const rc = { S: '#ffe600', A: '#ff2bd6', B: '#2bf6ff', C: '#aaa' }[rank];
+    if (resultT > 0.8) {
+      const s = Math.max(1, 3 - (resultT - 0.8) * 10);
+      ctx.save(); ctx.translate(W / 2, 370); ctx.scale(s, s); txt(rank, 0, 0, 80, rc, 'center', rc); ctx.restore();
+    }
+    const acc = tries ? Math.round(hits / tries * 100) : 0;
+    const rows = [['MAX COMBO', String(maxCombo)], ['GET', `${hits} / ${tries}`], ['精度', acc + '%'], ['BEST', fmt(best)]];
+    rows.forEach((r, i) => { txt(r[0], 70, 450 + i * 34, 16, '#bbb', 'left'); txt(r[1], W - 70, 450 + i * 34, 18, '#fff', 'right'); });
+    ctx.globalAlpha = 1;
+    if (resultT > 1.2 && Math.floor(time * 2.5) % 2 === 0) txt('TAP TO RETRY', W / 2, 670, 26, '#fff', 'center', '#ff2bd6');
+  }
+}
+
+function render() {
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  drawBG();
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+  drawMachine();
+  drawPrizes();
+  drawWall();
+  drawClaw();
+  drawFX();
+  ctx.restore();
+  drawHUD();
+  drawOverlays();
+}
+
+// ================= 入力 =================
+function toggleMute() { muted = !muted; }
+function press(x, y) {
+  initAudio();
+  if (x > W - 90 && y > H - 30) { toggleMute(); return; }
+  if (x >= 0 && x < 90 && y > H - 30 && (scene === 'title' || scene === 'result')) { location.href = '../../'; return; }
+  if (scene === 'title' || (scene === 'result' && resultT > 1.2)) startGame();
+  else if (scene === 'play') drop();
+}
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect();
+  press((e.clientX - r.left) / scale, (e.clientY - r.top) / scale);
+});
+addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) press(-1, -1); }
+  if (e.code === 'KeyM') toggleMute();
+});
+
+// ================= ループ =================
+let lastT = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; time += dt;
+  update(dt); render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
