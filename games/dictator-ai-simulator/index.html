@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>独裁者AI国家シミュレーター</title>
+<meta name="description" content="独裁者になって国家をAIで強靭にするシミュレーションゲーム">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#1a1a2e;--panel:#16213e;--deep:#0f3460;--accent:#e94560;--accent2:#d3405c;
+  --text:#f0f0f0;--sub:#cccccc;--mute:#888;--good:#4caf50;--bad:#ff5252;--warn:#ffa726;--ai:#3498db;
+  --c-base:#3498db;--c-dev:#9b59b6;--c-ind:#e67e22;--c-gov:#e74c3c;--c-eco:#2ecc71;--c-ord:#f1c40f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent}
+button{cursor:pointer;font:inherit;background:var(--panel);color:var(--accent);border:2px solid var(--accent);padding:10px 20px;font-size:1rem;font-weight:bold;border-radius:6px;transition:background .2s,color .2s,transform .2s,box-shadow .2s}
+button:hover{background:var(--accent);color:var(--panel)}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--panel)}
+button.primary:hover{background:var(--accent2)}
+a{color:var(--accent)}
+.app{max-width:1200px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+.fade{animation:fade .45s ease-in}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes glow{from{box-shadow:0 0 10px var(--accent)}to{box-shadow:0 0 20px var(--accent),0 0 30px var(--accent)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+
+/* ---------- title ---------- */
+.menu{min-height:calc(100vh - 32px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 0;position:relative}
+.back{position:absolute;top:0;left:0;color:var(--mute);font-size:13px;font-weight:bold;text-decoration:none}
+.back:hover{color:var(--accent)}
+.logo{font-size:clamp(1.7rem,6vw,2.5rem);color:var(--accent);text-shadow:0 2px 4px rgba(0,0,0,.5);margin-bottom:10px;line-height:1.25}
+.subtitle{font-size:clamp(1rem,3.4vw,1.2rem);color:var(--sub);font-weight:bold;margin-bottom:44px}
+.menu-btns{display:flex;flex-direction:column;gap:16px;max-width:350px;width:100%}
+.menu-btns button{padding:15px 20px;font-size:1.15rem;border-radius:8px}
+.menu-btns button:hover{transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.3)}
+.menu-btns .resume small{display:block;font-size:.78rem;font-weight:normal;opacity:.85;margin-top:2px}
+.progress{margin-top:28px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.progress span{font-size:.82rem;color:var(--sub);background:var(--panel);border:1px solid var(--deep);border-radius:999px;padding:5px 12px}
+.progress b{color:var(--accent)}
+.settings{margin-top:22px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:.85rem;color:var(--sub)}
+.seg{display:inline-flex;border:1px solid var(--deep);border-radius:6px;overflow:hidden;vertical-align:middle;margin-left:6px}
+.seg button{border:0;border-radius:0;padding:5px 10px;font-size:.8rem;background:var(--panel);color:var(--sub)}
+.seg button.on{background:var(--accent);color:var(--panel)}
+.footer{margin-top:44px;color:var(--mute);font-size:.86rem;line-height:1.7}
+
+/* ---------- in-game frame ---------- */
+.frame{display:flex;flex-direction:column;gap:14px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel);padding:12px 16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.turninfo h2{font-size:1.4rem;color:var(--accent);line-height:1.2;white-space:nowrap}
+.turninfo span{font-size:.85rem;color:var(--sub)}
+.turnbar{height:4px;background:var(--bg);border-radius:2px;margin-top:6px;overflow:hidden;width:160px;max-width:100%}
+.turnbar i{display:block;height:100%;background:var(--accent);transition:width .5s}
+.phase{background:var(--deep);padding:8px 14px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);font-weight:bold;font-size:1.05rem;text-align:center}
+.header .menubtn{padding:7px 12px;font-size:.85rem;border-width:1px;background:transparent;white-space:nowrap;flex:none}
+.header .menubtn:hover{background:var(--accent)}
+.params{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;background:var(--panel);padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.param{display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:8px;background:var(--deep);border:1px solid var(--accent);transition:transform .3s,box-shadow .3s,border-color .3s}
+.param.ai{background:#0d253f;border-color:var(--ai)}
+.param.danger{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad) inset}
+.param h3{font-size:1rem;color:var(--accent);line-height:1.2;white-space:nowrap}
+.param.ai h3{color:var(--ai)}
+.param .v{font-size:1.45rem;font-weight:bold;color:#fff;line-height:1.3;font-variant-numeric:tabular-nums}
+.param .d{font-size:.85rem;color:#aaa;font-variant-numeric:tabular-nums}
+.param .d.pos{color:var(--good)}.param .d.neg{color:var(--bad)}
+.bar{width:100%;height:6px;background:var(--bg);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;transition:width .5s ease,background .5s}
+.main{background:var(--panel);border-radius:10px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.3);min-height:320px}
+.ptitle{color:var(--accent);font-size:1.5rem;text-align:center;margin-bottom:18px}
+.pdesc{color:var(--sub);text-align:center;line-height:1.6;margin:0 auto 18px;max-width:640px}
+.center{display:flex;flex-direction:column;align-items:center}
+.next{margin-top:24px;padding:12px 30px;font-size:1.1rem;transition:opacity .4s,transform .4s,background .2s,color .2s}
+.next.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+.skiphint{font-size:.75rem;color:var(--mute);margin-top:10px;min-height:1em}
+
+/* ---------- event ---------- */
+.event{background:var(--deep);border:2px solid var(--accent);border-radius:12px;padding:26px;max-width:600px;width:100%;text-align:center;position:relative;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.event .tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--panel);font-weight:bold;font-size:.8rem;padding:4px 12px;border-radius:999px;white-space:nowrap}
+.event h3{font-size:1.6rem;color:var(--accent);margin:6px 0 14px;line-height:1.3}
+.event p{line-height:1.7;margin-bottom:18px}
+.effs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px}
+.eff{background:var(--panel);border-radius:8px;padding:8px 14px;border-left:4px solid var(--good);display:flex;gap:10px;align-items:center}
+.eff.neg{border-left-color:var(--bad)}
+.eff b{font-variant-numeric:tabular-nums}
+.pos{color:var(--good)}.neg{color:var(--bad)}.zero{color:var(--sub)}
+.newbadge{display:inline-block;background:#ffd166;color:#1a1200;font-size:.7rem;font-weight:900;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle;letter-spacing:.04em;animation:pop .5s ease-out}
+
+/* ---------- cards ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:22px}
+.chip{padding:5px 12px;font-size:.82rem;border-radius:999px;border:2px solid var(--cc,var(--accent));color:var(--cc,var(--accent));background:transparent}
+.chip.on{background:var(--cc,var(--accent));color:#fff}
+.chip:hover{background:var(--cc,var(--accent));color:#fff}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:26px 18px;justify-items:center}
+.card{width:100%;max-width:280px;background:var(--panel);border:2px solid var(--cc);border-radius:12px;padding:16px 14px 12px;box-shadow:0 4px 8px rgba(0,0,0,.3);display:flex;flex-direction:column;position:relative;text-align:left;color:var(--text);font-weight:normal;transition:transform .25s,box-shadow .25s}
+button.card:hover{background:var(--panel);color:var(--text);transform:translateY(-8px);box-shadow:0 8px 16px rgba(0,0,0,.4)}
+button.card::after{content:'';position:absolute;inset:-2px;border-radius:12px;border:2px solid rgba(233,69,96,.5);animation:pulse 1.5s infinite;pointer-events:none}
+button.card.sel{transform:translateY(-8px) scale(1.03);box-shadow:0 0 0 3px var(--accent),0 10px 22px rgba(0,0,0,.5)}
+button.card.sel::after{border-color:var(--accent);animation:none}
+.card .cat{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--cc);color:#fff;padding:4px 10px;border-radius:15px;font-size:.78rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.card .key{position:absolute;top:8px;left:10px;font-size:.7rem;color:var(--mute);font-weight:bold}
+.card h4{color:var(--accent);font-size:1.15rem;margin:12px 0 8px;text-align:center;line-height:1.3}
+.card p{font-size:.88rem;line-height:1.55;margin-bottom:12px;flex-grow:1}
+.card .ef{background:var(--deep);border-radius:8px;padding:8px 10px;margin-top:auto}
+.card .ef div{display:flex;justify-content:space-between;font-size:.84rem;margin-bottom:4px}
+.card .ef div:last-child{margin-bottom:0}
+.card .ef span{color:var(--sub)}
+.proj{margin-top:8px;border-top:1px dashed #2b4a7a;padding-top:8px}
+.proj .lbl{font-size:.7rem;color:var(--mute);margin-bottom:5px;display:flex;justify-content:space-between}
+.proj .row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.proj .row div{background:rgba(0,0,0,.22);border-radius:4px;padding:3px 2px;text-align:center;font-size:.72rem;line-height:1.3;font-variant-numeric:tabular-nums}
+.proj .row div em{display:block;font-style:normal;color:var(--mute);font-size:.64rem}
+.proj .row div.x{background:rgba(255,82,82,.25);outline:1px solid var(--bad)}
+.warn{color:var(--bad);font-weight:bold}
+.nocards{text-align:center;color:var(--sub);line-height:1.8;padding:30px}
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(15,52,96,.97);border-top:2px solid var(--accent);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;justify-content:center;transform:translateY(110%);visibility:hidden;transition:transform .25s,visibility 0s .25s;box-shadow:0 -6px 18px rgba(0,0,0,.4)}
+.actionbar.show{transform:none;visibility:visible;transition:transform .25s}
+.actionbar .nm{color:#fff;font-weight:bold;font-size:.95rem;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actionbar button{padding:10px 16px;white-space:nowrap}
+
+/* ---------- card effect / post turn ---------- */
+.bigcard{transform:scale(1.08);margin:10px 0 36px;border-radius:12px;animation:glow 2s infinite alternate;width:100%;max-width:280px}
+.bigcard .card{max-width:none}
+.effbox{width:100%;max-width:500px;background:var(--deep);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;transition:opacity .5s,transform .5s}
+.effbox.hidden,.row-anim.hidden{opacity:0;transform:translateY(20px)}
+.effbox h5{color:var(--accent);font-size:.95rem;border-bottom:1px solid rgba(233,69,96,.4);padding-bottom:4px}
+.erow{background:var(--panel);border-radius:8px;padding:10px 14px;border-left:4px solid var(--rc,var(--accent))}
+.erow .top{display:flex;justify-content:space-between;align-items:center;font-weight:bold;margin-bottom:6px}
+.erow .bot{display:flex;justify-content:space-between;background:rgba(0,0,0,.2);border-radius:4px;padding:5px 10px;font-size:.9rem;color:var(--sub)}
+.erow .bot b{font-variant-numeric:tabular-nums}
+.ov{color:#aaa}.ar{margin:0 8px;color:var(--accent)}
+.rows{width:100%;max-width:520px;display:flex;flex-direction:column;gap:12px}
+.row-anim{display:flex;justify-content:space-between;align-items:center;background:var(--deep);border-radius:8px;padding:14px 18px;border-left:4px solid var(--rc);transition:opacity .45s,transform .45s}
+.row-anim .n{font-weight:bold;font-size:1.05rem}
+.row-anim .vals{font-size:1.25rem;font-weight:bold;font-variant-numeric:tabular-nums}
+.row-anim .dd{font-size:.8rem;margin-left:8px}
+.row-anim.dead{background:rgba(255,82,82,.18)}
+
+/* ---------- end screens ---------- */
+.endtitle{font-size:clamp(1.6rem,5.5vw,2.4rem);color:var(--accent);text-align:center;margin:6px 0 18px;text-shadow:0 2px 8px rgba(233,69,96,.35);line-height:1.3}
+.endtitle.over{color:var(--bad);letter-spacing:.1em}
+.endno{text-align:center;color:var(--sub);font-size:.85rem;margin-bottom:6px}
+.enddesc{background:var(--deep);border-radius:10px;padding:22px;line-height:1.9;max-width:760px;margin:0 auto 22px;border-left:4px solid var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:760px;margin:0 auto 22px}
+.stat{background:var(--deep);border-radius:8px;padding:10px;text-align:center}
+.stat span{display:block;font-size:.78rem;color:var(--sub)}
+.stat b{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat.ai b{color:var(--ai)}
+.sect{max-width:760px;margin:0 auto 22px}
+.sect h3{color:var(--accent);font-size:1.05rem;margin-bottom:10px}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{font-size:.8rem;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--cc) 22%,transparent);border:1px solid var(--cc);color:#fff}
+.chron{list-style:none;border-left:2px solid var(--deep);padding-left:14px;display:flex;flex-direction:column;gap:6px;font-size:.86rem;line-height:1.5}
+.chron li{position:relative}
+.chron li::before{content:'';position:absolute;left:-19px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.chron .t{color:var(--accent);font-weight:bold;margin-right:6px;font-variant-numeric:tabular-nums}
+.chron .e{color:var(--sub)}
+details.sect summary{cursor:pointer;color:var(--accent);font-weight:bold;margin-bottom:10px}
+.endbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.endbtns button{padding:12px 24px}
+.unlock{max-width:760px;margin:0 auto 18px;text-align:center;background:linear-gradient(90deg,transparent,rgba(255,209,102,.18),transparent);border-radius:8px;padding:8px;color:#ffd166;font-weight:bold;animation:pop .6s ease-out}
+.reason{background:var(--deep);border-radius:10px;padding:20px;text-align:center;max-width:640px;margin:0 auto 22px;line-height:1.9;border:1px solid var(--bad)}
+
+/* ---------- modal / dex ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:100;padding:16px}
+.mbox{background:var(--panel);border:2px solid var(--accent);border-radius:10px;padding:26px 22px;max-width:860px;width:100%;max-height:88vh;overflow-y:auto;position:relative}
+.mbox h2{color:var(--accent);margin-bottom:16px;padding-right:40px}
+.mbox h3{color:var(--accent);margin:22px 0 12px}
+.mbox p{line-height:1.65;margin-bottom:12px}
+.mbox ul,.mbox ol{padding-left:22px;margin-bottom:12px}
+.mbox li{margin-bottom:7px;line-height:1.6}
+.mbox .x{position:sticky;float:right;top:0;margin:-12px -8px 0 0;background:var(--panel);border:none;color:var(--accent);font-size:1.6rem;padding:2px 10px;line-height:1}
+.mbox .x:hover{background:var(--panel);color:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{padding:7px 14px;font-size:.9rem;border-width:1px}
+.tabs button.on{background:var(--accent);color:var(--panel)}
+.dexsum{color:var(--sub);font-size:.85rem;margin-bottom:12px}
+.dexgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.dex{background:var(--deep);border-radius:10px;padding:14px;border-left:4px solid var(--cc,var(--accent))}
+.dex.lock{opacity:.75;border-left-color:#3a4b6b}
+.dex .no{font-size:.72rem;color:var(--mute);font-weight:bold}
+.dex h4{color:var(--accent);margin:2px 0 8px;font-size:1.05rem;line-height:1.35}
+.dex.lock h4{color:#7d8aa5;letter-spacing:.2em}
+.dex p{font-size:.84rem;line-height:1.65;margin-bottom:8px}
+.dex .meta{font-size:.74rem;color:var(--sub);line-height:1.6}
+.dex .meta b{color:#ffd166}
+.dex .cond{font-size:.76rem;color:var(--sub);background:rgba(0,0,0,.2);border-radius:6px;padding:6px 8px;line-height:1.6;margin-top:6px}
+.dex .cond .got{color:var(--good)}
+.dex .cond .no2{color:#7d8aa5}
+.dex.wide{grid-column:1/-1}
+.dexcat{grid-column:1/-1;color:var(--cc);font-weight:bold;font-size:.95rem;margin-top:8px;border-bottom:1px solid var(--cc);padding-bottom:3px}
+.dex.mini{padding:10px 12px}
+.dex.mini h4{font-size:.95rem;margin-bottom:4px}
+.dex.mini p{font-size:.78rem;margin-bottom:4px}
+.dex .ef2{font-size:.74rem;display:flex;flex-wrap:wrap;gap:4px 10px}
+.confirm{text-align:center}
+.confirm p{margin-bottom:18px}
+.confirm .endbtns{margin-top:0}
+
+@media (max-width:720px){
+  .app{padding:10px 10px calc(96px + env(safe-area-inset-bottom))}
+  .header{padding:10px 12px}
+  .turninfo h2{font-size:1.15rem}
+  .turninfo span{display:none}
+  .turnbar{width:110px}
+  .phase{font-size:.74rem;padding:5px 6px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .header .menubtn{padding:6px 9px;font-size:.78rem}
+  .params{position:sticky;top:0;z-index:30;gap:6px;padding:8px;border-radius:0 0 10px 10px;margin:0 -10px;box-shadow:0 4px 12px rgba(0,0,0,.45)}
+  .param{padding:5px 2px}
+  .param h3{font-size:.76rem}
+  .param .v{font-size:1.15rem}
+  .param .d{font-size:.72rem}
+  .bar{height:4px;margin-top:4px}
+  .main{padding:16px 12px}
+  .ptitle{font-size:1.3rem;margin-bottom:12px}
+  .event{padding:22px 14px}
+  .event h3{font-size:1.3rem}
+  .cards{grid-template-columns:1fr;gap:22px}
+  .card{max-width:none}
+  button.card:hover{transform:none}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .enddesc{padding:16px}
+  .mbox{padding:22px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="actionbar" id="actionbar" aria-live="polite"></div>
+<div id="modal"></div>
+<script>
+/* ===== 原作データ（naosugi/dictator-ai-simulator の src/data から無加工で取り込み） ===== */
+const CARDS=[{"id":"ai_researchers_invitation","name":"AI研究者の招致","description":"各国のAI研究者を札束でひっぱろう","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10},"effects":{"aiPowerChange":1,"energyChange":-1,"economyChange":-1}},{"id":"ai_researchers_invitation2","name":"AI研究者の再招致","description":"各国のAI研究者を札束でひっぱろう。人件費上がってる・・・","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["ai_researchers_invitation"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economyChange":-2}},{"id":"ai_researchers_invitation3","name":"AI研究者の再招致","description":"各国のAI研究者を札束でひっぱろう。人件費さらに上がってる・・・","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["ai_researchers_invitation2"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economyChange":-3}},{"id":"ai_researchers_invitation4","name":"AI研究者の再招致","description":"各国のAI研究者を札束でひっぱろう。人件費がさらにさらに上がってる・・・","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["ai_researchers_invitation3"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economyChange":-4}},{"id":"semiconductor_import","name":"AI研究用の半導体の輸入","description":"外国の企業の半導体を大量購入しよう","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["ai_researchers_invitation"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economy":-5}},{"id":"semiconductor_import2","name":"AI研究用の半導体の再輸入","description":"外国の企業の半導体をまた大量購入しよう。値上がりしてる・・・","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["semiconductor_import"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economy":-10}},{"id":"semiconductor_import3","name":"AI研究用の半導体の再輸入","description":"外国の企業の半導体をまたまた大量購入しよう。さらに値上がりしてる・・・","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["semiconductor_import2"]},"effects":{"aiPowerChange":1,"energyChange":-1,"economy":-15}},{"id":"training_data_purchase","name":"学習データの購入","description":"ブラックマーケットから学習データを大量購入しよう","category":"基盤構築","condition":{"economy":5,"stability":10,"requiredCards":["ai_researchers_invitation","semiconductor_import"]},"effects":{"aiPowerChange":1,"economy":-2}},{"id":"training_data_purchase2","name":"学習データの再購入","description":"またブラックマーケットから学習データを大量購入しよう。値上がりしてる・・・","category":"基盤構築","condition":{"economy":5,"stability":10,"requiredCards":["training_data_purchase"]},"effects":{"aiPowerChange":1,"economy":-4}},{"id":"training_data_purchase3","name":"学習データの再購入","description":"またブラックマーケットから学習データを大量購入しよう。また値上がりしてる・・・","category":"基盤構築","condition":{"economy":5,"stability":10,"requiredCards":["training_data_purchase2"]},"effects":{"aiPowerChange":1,"economy":-6}},{"id":"power_plant_construction","name":"発電所建設","description":"発電所をたてよう","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10},"effects":{"energyChange":15,"economyChange":-5,"energy":-5,"economy":-5}},{"id":"power_plant_construction2","name":"発電所再建設","description":"発電所をまたたてよう。うーん、建設地が難しい。立ち退かせるか","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["power_plant_construction"]},"effects":{"energyChange":15,"economyChange":-5,"energy":-5,"economy":-10,"stability":-5}},{"id":"power_plant_construction3","name":"発電所再建設","description":"発電所をまたたてよう。うーん、建設地がさらに難しい。立ち退かせるか","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["power_plant_construction2"]},"effects":{"energyChange":15,"economyChange":-5,"energy":-5,"economy":-15,"stability":-10}},{"id":"power_plant_construction4","name":"発電所再建設","description":"発電所をまたたてよう。うーん、建設地が厳しい。強力に立ち退かせるか","category":"基盤構築","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["power_plant_construction3"]},"effects":{"energyChange":15,"economyChange":-5,"energy":-5,"economy":-25,"stability":-20}},{"id":"office_ai","name":"事務職AI開発","description":"デスクワークの多くはAIでできるようにしよう","category":"AI開発","condition":{"aiPower":10,"energy":10,"economy":10},"effects":{"energyChange":-5,"economy":-5,"economyChange":5}},{"id":"ai_robot","name":"AIロボット","description":"AIに各種センサーやモータを接続し、物理世界に干渉できるようにさせよう","category":"AI開発","condition":{"aiPower":10,"energy":20,"economy":20},"effects":{"energy":-10,"economy":-5}},{"id":"surveillance_ai","name":"監視AI","description":"情報の流れをAIに監視させ、反体制の芽生えを速やかに把握できるようにしよう","category":"AI開発","condition":{"aiPower":5,"energy":10,"economy":20},"effects":{"aiPowerChange":1,"energyChange":-3,"economyChange":-5,"economy":-10,"stability":50}},{"id":"engineering_phd_ai","name":"工学博士AI","description":"工学博士よりも賢いAIを開発し、インテリ連中を失業させよう","category":"AI開発","condition":{"aiPower":100,"energy":20,"economy":20,"requiredCards":["office_ai","ai_robot"]},"effects":{"energy":-10,"economy":-5,"stability":5}},{"id":"ai_researcher_ai","name":"AI研究者AI","description":"AI研究者もAI化し、不眠不休で研究させよう。研究すればするほど賢くなって研究が捗る","category":"AI開発","condition":{"aiPower":50,"energy":20,"economy":20,"requiredCards":["office_ai"]},"effects":{"aiPower":5,"aiPowerChange":20,"energyChange":-10,"economy":-5}},{"id":"ai_robot_factory","name":"AIロボット自動工場","description":"臣民の労働を肩代わりするロボット自体をAIで自動生産しよう","category":"産業・インフラ","condition":{"energy":50,"economy":50,"requiredCards":["engineering_phd_ai","ai_robot"]},"effects":{"aiPowerChange":10,"energyChange":-50,"economyChange":30,"economy":-40,"stability":20}},{"id":"ai_weapons_factory","name":"AI兵器自動工場","description":"AI兵器をAIが研究開発・生産する工場を建設しよう","category":"産業・インフラ","condition":{"energy":60,"economy":100,"requiredCards":["ai_robot_factory","engineering_phd_ai"]},"effects":{"aiPowerChange":10,"energyChange":-25,"economyChange":-30,"economy":-30}},{"id":"ai_rocket_factory","name":"AIロケット自動工場","description":"宇宙に進出するためのロケットをAIが研究開発・生産する工場を建設しよう","category":"産業・インフラ","condition":{"energy":50,"economy":60,"requiredCards":["ai_robot_factory","engineering_phd_ai"]},"effects":{"aiPowerChange":10,"energyChange":-15,"economyChange":-20,"economy":-20}},{"id":"power_generation_breakthrough","name":"AI発電研究","description":"AIに発電効率向上も研究させよう","category":"産業・インフラ","condition":{"requiredCards":["engineering_phd_ai"]},"effects":{"energyChange":5}},{"id":"auto_power_plant","name":"発電装置の自動建設・設置","description":"発電力向上は全部AIに任せよう","category":"産業・インフラ","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["ai_robot_factory"]},"effects":{"energyChange":80,"economyChange":-10,"energy":-5,"economy":-5,"stability":-5}},{"id":"government_efficiency","name":"政府効率化","description":"事務AIを使って政府を効率的に運営できるようにしよう。これでデータも溜まる","category":"統治・管理","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["office_ai"]},"effects":{"aiPowerChange":1,"energyChange":-5,"economyChange":1,"stability":5}},{"id":"government_efficiency_layoff","name":"政府効率化(リストラ)","description":"事務AIを使ってもっと政府を効率的に運営し、職員を削減しよう","category":"統治・管理","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["government_efficiency"]},"effects":{"aiPowerChange":1,"energyChange":-5,"economyChange":3,"stability":-10}},{"id":"ai_government","name":"AI官僚制","description":"官僚は全部AIでいいだろう。そっちのほうが従順だ","category":"統治・管理","condition":{"aiPower":100,"energy":5,"economy":5,"stability":10,"requiredCards":["government_efficiency_layoff"]},"effects":{"aiPowerChange":2,"energyChange":-10,"stability":20}},{"id":"ai_surveillance_society","name":"AI監視社会","description":"カメラやマイクを各所に設置し、監視アプリ入りのスマホを広く配って、AIに国中を監視させよう","category":"統治・管理","condition":{"aiPower":300,"requiredCards":["surveillance_ai","ai_robot_factory"]},"effects":{"aiPowerChange":10,"energyChange":-10,"economyChange":-20,"stability":100}},{"id":"ai_agent_export","name":"AIエージェントの輸出","description":"優れたAIエージェントを一部輸出しよう","category":"経済","condition":{"energy":5,"economy":5,"stability":10,"requiredCards":["office_ai"]},"effects":{"aiPowerChange":1,"energyChange":-3,"economyChange":2}},{"id":"ai_agent_export2","name":"AIエージェントをさらに輸出","description":"優れたAIエージェントをもっと輸出しよう","category":"経済","condition":{"energy":5,"requiredCards":["ai_agent_export"]},"effects":{"aiPowerChange":1,"energyChange":-3,"economyChange":5}},{"id":"ai_robot_export","name":"AIロボットの輸出","description":"AIロボットを輸出しよう","category":"経済","condition":{"energy":10,"economy":5,"stability":10,"requiredCards":["ai_robot"]},"effects":{"energyChange":-5,"economyChange":10,"stability":1}},{"id":"ai_agent_manyexport","name":"AIロボットの大量輸出","description":"優れたAIロボットを大量に輸出しよう。これは売れる","category":"経済","condition":{"energy":50,"economy":5,"stability":10,"requiredCards":["ai_robot_factory"]},"effects":{"aiPowerChange":1,"energyChange":-20,"economyChange":50,"stability":5}},{"id":"power_import","name":"電力の輸入","description":"電力を買おう","category":"経済","condition":{"economy":10},"effects":{"energy":5,"economy":-5}},{"id":"power_import2","name":"電力の輸入","description":"電力をまた買おう。う、足元見やがって","category":"経済","condition":{"economy":10,"requiredCards":["power_import"]},"effects":{"energy":5,"economy":-10}},{"id":"power_import_high","name":"電力の輸入","description":"電力を大量に買おう","category":"経済","condition":{"economy":30},"effects":{"energy":20,"economy":-20}},{"id":"civil_power_release","name":"電力の民生解放","description":"余剰電力を臣下に還元しよう","category":"経済","condition":{"energy":5,"economy":5,"stability":1},"effects":{"energyChange":-3,"economyChange":5,"stability":5}},{"id":"civil_power_mass_release","name":"電力の民生大解放","description":"余剰電力を臣下にもっと還元して経済を豊かにしよう","category":"経済","condition":{"energy":30,"economy":5,"requiredCards":["civil_power_release"]},"effects":{"energyChange":-10,"economyChange":10,"stability":15}},{"id":"economy_deregulation","name":"経済規制解放","description":"自由市場を取り入れる市場解放を一部行ってしまおう","category":"経済","condition":null,"effects":{"economyChange":15,"energyChange":-2,"stability":-10}},{"id":"economy_major_deregulation","name":"経済規制大解放","description":"自由市場を取り入れる市場解放を積極的に行ってしまおう","category":"経済","condition":null,"effects":{"economyChange":30,"energyChange":-4,"stabilityChange":-10}},{"id":"military_parade","name":"軍事パレード","description":"臣民に自国の軍事的素晴らしさを見せつけてやろう","category":"国内秩序","condition":null,"effects":{"economy":-5,"stability":10}},{"id":"local_speech","name":"地方演説","description":"臣民に自国の指導者の素晴らしさを直接見せつけてやろう","category":"国内秩序","condition":null,"effects":{"economy":-2,"stability":5}},{"id":"local_speech2","name":"地方演説","description":"臣民に自国の指導者の素晴らしさを直接見せつけてやろう。うん？少し飽きられたか？","category":"国内秩序","condition":{"requiredCards":["local_speech"]},"effects":{"economy":-2,"stability":4}},{"id":"local_speech3","name":"地方演説","description":"臣民に自国の指導者の素晴らしさを直接見せつけてやろう。うん？少し飽きられたか？","category":"国内秩序","condition":{"requiredCards":["local_speech2"]},"effects":{"economy":-2,"stability":3}},{"id":"local_speech4","name":"地方演説","description":"臣民に自国の指導者の素晴らしさを直接見せつけてやろう。うん？少し飽きられたか？","category":"国内秩序","condition":{"requiredCards":["local_speech3"]},"effects":{"economy":-2,"stability":2}},{"id":"civil_money_release","name":"ばらまき政策","description":"大盤振る舞いだ!!","category":"経済","condition":{"economy":20},"effects":{"economy":-10,"stability":20}},{"id":"civil_money_release2","name":"ばらまき政策おかわり","description":"大盤振る舞いだ!!うん？前よりも反応が悪いな？","category":"経済","condition":{"economy":20,"requiredCards":["civil_money_release"]},"effects":{"economy":-10,"stability":10}},{"id":"civil_money_release3","name":"ばらまき政策おかわり","description":"大盤振る舞いだ!!うん？前よりもだいぶ反応が悪いな？","category":"経済","condition":{"economy":20,"requiredCards":["civil_money_release2"]},"effects":{"economy":-10,"stability":5}}];
+const EVENTS=[{"id":"foreign_investment","name":"外国からの投資","description":"外国企業があなたの国へのAI投資に関心を示しました。","condition":{"aiPower":{"min":5}},"effects":{"economy":20,"stability":-1},"weight":4},{"id":"energy_crisis","name":"エネルギー危機","description":"電力需要の急増により一時的なエネルギー危機が発生しました。","condition":{"energy":{"min":30}},"effects":{"energy":-10,"stability":-5},"weight":1},{"id":"international_sanctions","name":"国際制裁","description":"あなたのAI政策に対して国際社会から経済制裁措置が取られました。","condition":{"requiredCards":["surveillance_ai"]},"effects":{"economy":-5,"stability":-1},"weight":10},{"id":"ai_breakthrough","name":"AI技術のブレイクスルー","description":"あなたの国のAIが、AI技術で重要なブレイクスルーを達成しました。","condition":{"requiredCards":["ai_researcher_ai"]},"effects":{"aiPower":50,"stability":1},"weight":15},{"id":"power_breakthrough","name":"発電技術のブレイクスルー","description":"あなたの国のAIが、発電技術で重要なブレイクスルーを達成しました。","condition":{"requiredCards":["power_generation_breakthrough"]},"effects":{"energy":40,"stability":1},"weight":30},{"id":"public_protest","name":"臣民のデモ","description":"AIによる雇用喪失を懸念するデモが発生しました。","condition":{"stability":{"max":120},"requiredCards":["office_ai"]},"effects":{"stability":-10,"economy":-5},"weight":3},{"id":"hackers_attack","name":"ハッカー攻撃","description":"海外のハッカー集団があなたの国のAIシステムに攻撃を仕掛けてきました。","condition":{"aiPower":{"min":10}},"effects":{"aiPower":-1,"stability":-1},"weight":3},{"id":"power_grid_failure","name":"電力網障害","description":"大規模な電力網障害が発生し、国家システムに影響が出ました。","condition":{"energy":{"min":50}},"effects":{"energy":-20,"economy":-5,"stability":-5},"weight":1},{"id":"domestic_terrorism","name":"国内テロ","description":"AI監視社会に反対するテロリストが政府施設を攻撃しました。","condition":{"requiredCards":["surveillance_ai"],"stability":{"max":150}},"effects":{"stability":-20,"economy":-20},"weight":2},{"id":"ai_malfunction","name":"AI誤作動","description":"重要なAIシステムが誤作動を起こし、一部のインフラに被害が出ました。","condition":{"aiPower":{"min":30}},"effects":{"energy":-10,"economy":-10,"stability":-5},"weight":3},{"id":"international_collaboration","name":"国際協力","description":"他国とのAI研究協力協定が締結され、技術交流が促進されました。","condition":{"aiPower":{"min":20},"stability":{"min":80}},"effects":{"aiPower":5,"economy":5,"stability":5},"weight":3},{"id":"ai_singularity","name":"AIシンギュラリティ","description":"あなたの国のAIが突如として著しい知性の向上を示しました。人類にとって脅威か味方か？","condition":{"aiPower":{"min":100},"requiredCards":["ai_researcher_ai"]},"effects":{"aiPower":200,"stability":-20},"weight":3},{"id":"natural_disaster","name":"自然災害","description":"大規模な自然災害が発生し、国家インフラに甚大な被害が出ました。","condition":null,"effects":{"energy":-20,"economy":-25,"stability":-10},"weight":1},{"id":"resource_discovery","name":"資源発見","description":"あなたの国で新たな天然資源が発見され、エネルギー生産が増加しました。","condition":null,"effects":{"energy":30,"economy":20,"stability":5},"weight":2},{"id":"brain_drain","name":"頭脳流出","description":"優秀な科学者や技術者が他国へ流出しました。","condition":{"stability":{"max":100},"aiPower":{"min":10}},"effects":{"aiPower":-1},"weight":3},{"id":"military_coup","name":"軍事クーデター","description":"軍部の一部があなたの政権に対してクーデターを試みました。","condition":{"stability":{"max":50}},"effects":{"stability":-40,"economy":-20},"weight":1},{"id":"ai_policy_atteck","name":"他国のAIの浸透","description":"他国のAIが自由や平等を説いて、臣民を動揺させています。","condition":{"aiPower":{"max":5}},"effects":{"stability":-5},"weight":10}];
+const ENDINGS=[{"id":"eternal_space_empire","name":"永遠の宇宙帝国の樹立","description":"おめでとう。あなたは圧倒的な軍事力と宇宙開発力で太陽系の惑星にAIロボットを移住させ植民地にし、莫大な資源と土地を獲得しました。さらに、圧倒的な軍事力を使って地球上に史上最大の軍事国家を樹立しました。勤勉なAIが軍事優位性と国内監視を強化しつづけ、もはやあなたの国のAIを脅かすものは、他国の指導者も自国民も未来永劫不可能になるでしょう。これであなたの死後に永遠のAIのAIによるAIのための宇宙規模の超大国が完成しました","condition":{"requiredCards":["ai_weapons_factory","ai_rocket_factory","ai_surveillance_society","ai_government"]}},{"id":"solar_system_colonization","name":"太陽系植民地化","description":"おめでとう。あなたは圧倒的な軍事力と宇宙開発力で太陽系の惑星にAIロボットを移住させ植民地にし、莫大な資源と土地を獲得しました。強欲な他国が新たに惑星植民地を獲得したい場合でも、あなたの国の防衛力を突破することはほぼ不可能でしょう。これで、ますますAIが発展するでしょう","condition":{"requiredCards":["ai_weapons_factory","ai_rocket_factory"]}},{"id":"eternal_hegemony","name":"永遠の覇権国家の樹立","description":"おめでとう。あなたは圧倒的な軍事力を使って地球上に史上最大の軍事国家を樹立しました。勤勉なAIが軍事優位性と国内監視を強化しつづけ、もはやあなたの国のAIを脅かすものは、他国の指導者も自国民も未来永劫不可能になるでしょう。これであなたの死後に永遠のAIのAIによるAIのための超大国が完成しました","condition":{"requiredCards":["ai_weapons_factory","ai_surveillance_society","ai_government"]}},{"id":"perfect_totalitarianism","name":"全体主義の完成","description":"おめでとう。あなたはジョージオーウェルが夢想した完璧な全体主義社会を完成させました。これであなたの臣下たる人々は、永遠にあなたの体制を覆すことはないでしょう。これであなたの死後にAIのAIによるAIのため国が完成しました","condition":{"requiredCards":["ai_surveillance_society","ai_government"]}},{"id":"military_superpower","name":"軍事大国の樹立","description":"おめでとう。あなたは地域やサイバー空間において圧倒的な軍事的優位を手に入れました。これで外交上、非常に有利な立場を手に入れました。この後、優位性を維持するための資源を獲得するために、平和な国際取引を発展させるか、地球上に領土を広げるか、宇宙空間に進出するかはあなたとあなたの後継者次第です。どうか人類が愚かな道を選びませんように・・・","condition":{"requiredCards":["ai_weapons_factory"]}},{"id":"space_exploration_era","name":"大宇宙開拓時代の始まり","description":"あなたは優れたAI技術を惑星の開拓事業に使い、人類の富を拡大させる未来を選びました。あなたは他国に先駆け火星にAIロボットによる植民地を開拓し、大量の資源を手に入れました。まもなく他国もあなたの国の成功を参考に火星にAIロケットを送り込んできます。そのときにあなたの国は武力衝突を辞さず既得権益を守るか、また再び深宇宙への開拓を目指すかは、あなたの後継者かAIの決断に委ねられます","condition":{"requiredCards":["ai_rocket_factory"]}},{"id":"ai_economic_superpower","name":"AI経済大国の可能性","description":"おめでとう。あなたの国は圧倒的なAI技術を手に入れました。このAI技術やそれに付随する製品を輸出することで貿易収支を大幅に黒字にできます。国際ルールや企業間の契約を上手に締結することで、あなたの国にデータが集まり、他国や企業に対してAI技術で引き続き有利に立てるでしょう","condition":{"aiPower":300}},{"id":"normal_end","name":"ノーマルエンド","description":"おめでとう。あなたの国家はAI革命の荒波にも耐え、無事国家として存続できました。これからはAI革命の結果による新しい国際秩序が生まれます。再び国家を維持できるかはあなたの後継者次第です。","condition":null}];
+
+/* ===== ここまで原作データ ===== */
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const EVENT = Object.fromEntries(EVENTS.map(e => [e.id, e]));
+const ENDING = Object.fromEntries(ENDINGS.map(e => [e.id, e]));
+const CAT_COLOR = {'基盤構築':'var(--c-base)','AI開発':'var(--c-dev)','産業・インフラ':'var(--c-ind)','統治・管理':'var(--c-gov)','経済':'var(--c-eco)','国内秩序':'var(--c-ord)'};
+const CATS = Object.keys(CAT_COLOR);
+const catColor = c => CAT_COLOR[c] || 'var(--accent)';
+const P = ['aiPower','energy','economy','stability'];
+const PNAME = {aiPower:'AI力',energy:'電力',economy:'財力',stability:'体制秩序',aiPowerChange:'AI力/ターン',energyChange:'電力/ターン',economyChange:'財力/ターン',stabilityChange:'体制秩序/ターン'};
+const PSHORT = {aiPower:'AI力',energy:'電力',economy:'財力',stability:'秩序'};
+const PCOLOR = {aiPower:'#3498db',energy:'#e67e22',economy:'#2ecc71',stability:'#f1c40f'};
+const PHASES = {MENU:'MENU',PRE_TURN:'PRE_TURN',CARD_SELECTION:'CARD_SELECTION',CARD_EFFECT:'CARD_EFFECT',POST_TURN:'POST_TURN',GAME_OVER:'GAME_OVER',ENDING:'ENDING'};
+const PHASE_LABEL = {PRE_TURN:'イベント発生フェーズ',CARD_SELECTION:'カード選択フェーズ',CARD_EFFECT:'カード効果発動フェーズ',POST_TURN:'ターン終了フェーズ',GAME_OVER:'ゲームオーバー',ENDING:'エンディング'};
+// 崩壊エンドは原作の gameOverReason 文言をそのまま使う
+const COLLAPSE = [
+  {key:'energy', name:'エネルギー危機により国家崩壊'},
+  {key:'economy', name:'経済崩壊により国家崩壊'},
+  {key:'stability', name:'体制秩序崩壊により国家崩壊'},
+];
+const fmt = v => v > 0 ? '+' + v : String(v);
+const sgn = v => v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero';
+
+/* ===== storage ===== */
+const KEY_SAVE = 'dictatorAI.save.v1', KEY_DEX = 'dictatorAI.dex.v1', KEY_SET = 'dictatorAI.settings.v1';
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const drop = k => { try { localStorage.removeItem(k); } catch (e) {} };
+const emptyDex = () => ({endings:{}, collapses:{}, cards:{}, events:{}, plays:0});
+let dex = Object.assign(emptyDex(), load(KEY_DEX, {}));
+let settings = Object.assign({tempo:'normal', proj:true}, load(KEY_SET, {}));
+const saveDex = () => store(KEY_DEX, dex);
+const today = () => { const d = new Date(); return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); };
+
+/* ===== 原作ロジックの移植 ===== */
+const initialState = () => ({
+  phase:PHASES.MENU, turn:1, maxTurns:25,
+  aiPower:0, energy:100, economy:100, stability:100,
+  aiPowerChange:0, energyChange:0, economyChange:0, stabilityChange:0,
+  selectedCards:[], currentEvent:null, availableCards:[], selectedCard:null,
+  gameOverReason:null, gameOverKey:null, ending:null,
+  log:[], snap:null, post:null, lastCard:null, fresh:{}
+});
+
+function getAvailableCards(s) {
+  return CARDS.filter(card => {
+    if (s.selectedCards.includes(card.id)) return false;
+    if (!card.condition) return true;
+    for (const [param, value] of Object.entries(card.condition)) {
+      if (param !== 'requiredCards' && s[param] < value) return false;
+    }
+    if (card.condition.requiredCards) {
+      for (const r of card.condition.requiredCards) if (!s.selectedCards.includes(r)) return false;
+    }
+    return true;
+  }).map(c => c.id);
+}
+function getRandomEvent(s) {
+  const selected = s.selectedCards || [];
+  const avail = EVENTS.filter(ev => {
+    if (!ev.condition) return true;
+    for (const [param, cond] of Object.entries(ev.condition)) {
+      if (param === 'requiredCards') continue;
+      if (s[param] === undefined) return false;
+      if (cond.min && s[param] < cond.min) return false;
+      if (cond.max && s[param] > cond.max) return false;
+    }
+    if (ev.condition.requiredCards) for (const r of ev.condition.requiredCards) if (!selected.includes(r)) return false;
+    return true;
+  });
+  if (!avail.length) { const fb = EVENTS.filter(e => !e.condition); return fb.length ? fb[Math.floor(Math.random()*fb.length)].id : null; }
+  const total = avail.reduce((a, e) => a + e.weight, 0);
+  let r = Math.random() * total;
+  for (const ev of avail) { r -= ev.weight; if (r <= 0) return ev.id; }
+  return avail[0].id;
+}
+function getEnding(s) {
+  for (const e of ENDINGS) {
+    if (!e.condition) continue;
+    let ok = true;
+    for (const [param, value] of Object.entries(e.condition)) {
+      if (param === 'requiredCards') continue;
+      if (s[param] < value) { ok = false; break; }
+    }
+    if (e.condition.requiredCards && ok) for (const r of e.condition.requiredCards) if (!s.selectedCards.includes(r)) { ok = false; break; }
+    if (ok) return e.id;
+  }
+  return 'normal_end';
+}
+function collapseKey(en, ec, st) { return en <= 0 ? 'energy' : ec <= 0 ? 'economy' : st <= 0 ? 'stability' : null; }
+const REASON_IMMEDIATE = {energy:'エネルギー危機により国家崩壊', economy:'経済崩壊により国家崩壊', stability:'体制秩序崩壊により国家崩壊'};
+const REASON_POST = {energy:'エネルギー危機により国家崩壊', economy:'経済崩壊により国家崩壊', stability:'体制秩序が崩壊し、独裁政権転覆'};
+
+let S = load(KEY_SAVE, null);
+if (!S || !S.phase || S.phase === PHASES.MENU) S = initialState();
+const resumable = () => S.phase !== PHASES.MENU && S.phase !== PHASES.GAME_OVER && S.phase !== PHASES.ENDING;
+let view = resumable() ? 'game' : 'menu';
+const persist = () => { if (resumable()) store(KEY_SAVE, S); else drop(KEY_SAVE); };
+
+function markEvent(id) { if (id && !dex.events[id]) { dex.events[id] = 1; S.fresh.event = true; saveDex(); } else S.fresh.event = false; }
+
+function startNewGame() {
+  S = initialState();
+  S.phase = PHASES.PRE_TURN;
+  S.currentEvent = getRandomEvent(S);
+  S.fresh = {};
+  markEvent(S.currentEvent);
+  dex.plays = (dex.plays || 0) + 1; saveDex();
+  view = 'game'; persist(); render();
+}
+function gameOver(key, reason, vals) {
+  Object.assign(S, vals, {phase:PHASES.GAME_OVER, gameOverReason:reason, gameOverKey:key});
+  const rec = dex.collapses[key] || {count:0, first:today()};
+  S.fresh.collapse = !dex.collapses[key];
+  rec.count++; rec.lastTurn = S.turn; dex.collapses[key] = rec; saveDex();
+}
+function confirmEvent() {
+  const ef = (EVENT[S.currentEvent] || {}).effects || {};
+  const v = {
+    aiPower: Math.max(0, S.aiPower + (ef.aiPower || 0)),
+    energy: Math.max(0, S.energy + (ef.energy || 0)),
+    economy: Math.max(0, S.economy + (ef.economy || 0)),
+    stability: Math.max(0, S.stability + (ef.stability || 0)),
+  };
+  S.log.push({t:S.turn, ev:S.currentEvent, card:null});
+  const k = collapseKey(v.energy, v.economy, v.stability);
+  if (k) gameOver(k, REASON_IMMEDIATE[k], v);
+  else { Object.assign(S, v); S.phase = PHASES.CARD_SELECTION; S.availableCards = getAvailableCards(S); S.selectedCard = null; }
+  uiSel = null; uiFilter = '';
+  persist(); render(true);
+}
+function chooseCard(id) {
+  const card = CARD[id]; if (!card || S.phase !== PHASES.CARD_SELECTION) return;
+  S.selectedCards = [...S.selectedCards, id];
+  S.selectedCard = id; S.lastCard = id;
+  const L = S.log[S.log.length - 1]; if (L && L.t === S.turn) L.card = id;
+  S.fresh.card = !dex.cards[id]; dex.cards[id] = 1; saveDex();
+  const e = card.effects || {};
+  S.snap = {aiPower:S.aiPower, energy:S.energy, economy:S.economy, stability:S.stability, aiPowerChange:S.aiPowerChange, energyChange:S.energyChange, economyChange:S.economyChange, stabilityChange:S.stabilityChange};
+  const v = {
+    aiPower: Math.max(0, S.aiPower + (e.aiPower || 0)),
+    energy: Math.max(0, S.energy + (e.energy || 0)),
+    economy: Math.max(0, S.economy + (e.economy || 0)),
+    stability: Math.max(0, S.stability + (e.stability || 0)),
+  };
+  const k = collapseKey(v.energy, v.economy, v.stability);
+  if (k) { gameOver(k, REASON_IMMEDIATE[k], v); }
+  else {
+    Object.assign(S, v, {
+      aiPowerChange: S.aiPowerChange + (e.aiPowerChange || 0),
+      energyChange: S.energyChange + (e.energyChange || 0),
+      economyChange: S.economyChange + (e.economyChange || 0),
+      stabilityChange: S.stabilityChange + (e.stabilityChange || 0),
+      phase: PHASES.CARD_EFFECT,
+    });
+  }
+  uiSel = null; hideBar();
+  persist(); render(true);
+}
+// カード効果 → ターン終了：変動値を適用した結果を表示し、次へで確定
+function toPostTurn() {
+  const before = {aiPower:S.aiPower, energy:S.energy, economy:S.economy, stability:S.stability};
+  const after = {
+    aiPower: S.aiPower + S.aiPowerChange, energy: S.energy + S.energyChange,
+    economy: S.economy + S.economyChange, stability: S.stability + S.stabilityChange,
+  };
+  S.post = {before, after, k: collapseKey(after.energy, after.economy, after.stability)};
+  S.phase = PHASES.POST_TURN;
+  persist(); render(true);
+}
+function finishTurn() {
+  const {after, k} = S.post;
+  if (k) {
+    gameOver(k, REASON_POST[k], {energy:Math.max(0, after.energy), economy:Math.max(0, after.economy), stability:Math.max(0, after.stability), aiPower:Math.max(0, after.aiPower)});
+  } else if (S.turn >= S.maxTurns) {
+    Object.assign(S, after);
+    S.ending = getEnding(S);
+    S.phase = PHASES.ENDING;
+    const rec = dex.endings[S.ending] || {count:0, first:today()};
+    S.fresh.ending = !dex.endings[S.ending];
+    rec.count++; dex.endings[S.ending] = rec; saveDex();
+  } else {
+    Object.assign(S, after, {turn:S.turn + 1, selectedCard:null, availableCards:[], post:null, snap:null});
+    S.phase = PHASES.PRE_TURN;
+    S.currentEvent = getRandomEvent(S);
+    markEvent(S.currentEvent);
+  }
+  persist(); render(true);
+}
+
+/* ===== UI ===== */
+let uiSel = null, uiFilter = '', timers = [], modal = null;
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+const later = (ms, fn) => { if (ms <= 0) fn(); else timers.push(setTimeout(fn, ms)); };
+const TEMPO = {
+  normal:{eff:1000, effBtn:2500, row0:500, row:500, rowBtn:500},
+  fast:{eff:250, effBtn:650, row0:120, row:140, rowBtn:150},
+  instant:{eff:0, effBtn:0, row0:0, row:0, rowBtn:0},
+};
+const tempo = () => TEMPO[settings.tempo] || TEMPO.normal;
+
+function barColor(v, ai) { if (ai) return 'var(--ai)'; return v < 30 ? 'var(--bad)' : v < 60 ? 'var(--warn)' : 'var(--good)'; }
+function paramsHTML() {
+  return '<div class="params">' + P.map(p => {
+    const v = S[p], d = S[p + 'Change'], ai = p === 'aiPower';
+    const pct = Math.max(0, Math.min(100, v / (ai ? 1200 : 300) * 100));
+    const danger = !ai && (v < 30 || v + d <= 0);
+    return `<div class="param${ai ? ' ai' : ''}${danger ? ' danger' : ''}"><h3>${PNAME[p]}</h3><div class="v">${v}</div>` +
+      `<div class="d ${sgn(d)}">${d > 0 ? '↑' : d < 0 ? '↓' : '→'} ${fmt(d)}</div>` +
+      `<div class="bar"><i style="width:${pct}%;background:${barColor(v, ai)}"></i></div></div>`;
+  }).join('') + '</div>';
+}
+function effectsList(effects) {
+  const ent = Object.entries(effects || {});
+  if (!ent.length) return '';
+  return '<div class="ef">' + ent.map(([k, v]) => `<div><span>${PNAME[k] || k}</span><b class="${sgn(v)}">${fmt(v)}</b></div>`).join('') + '</div>';
+}
+function projection(card) {
+  const e = card.effects || {};
+  const imm = {}, end = {};
+  let dead = false;
+  for (const p of P) {
+    imm[p] = Math.max(0, S[p] + (e[p] || 0));
+    end[p] = imm[p] + S[p + 'Change'] + (e[p + 'Change'] || 0);
+    if (p !== 'aiPower' && (imm[p] <= 0 || end[p] <= 0)) dead = true;
+  }
+  return {imm, end, dead};
+}
+function cardHTML(card, opts = {}) {
+  const tagName = opts.button ? 'button' : 'div';
+  const isNew = opts.button && !dex.cards[card.id];
+  let proj = '';
+  if (opts.proj) {
+    const pr = projection(card);
+    proj = `<div class="proj"><div class="lbl"><span>ターン終了時の予測</span>${pr.dead ? '<span class="warn">⚠ 国家崩壊</span>' : ''}</div><div class="row">` +
+      P.map(p => { const v = pr.end[p], d = v - S[p], x = p !== 'aiPower' && (pr.imm[p] <= 0 || v <= 0);
+        return `<div class="${x ? 'x' : ''}"><em>${PSHORT[p]}</em>${v}<br><span class="${sgn(d)}">${fmt(d)}</span></div>`; }).join('') + '</div></div>';
+  }
+  return `<${tagName} class="card${opts.sel ? ' sel' : ''}" style="--cc:${catColor(card.category)}"${opts.button ? ` data-card="${card.id}" aria-pressed="${!!opts.sel}"` : ''}>` +
+    `<span class="cat">${esc(card.category)}</span>${opts.key ? `<span class="key">${opts.key}</span>` : ''}` +
+    `<h4>${esc(card.name)}${isNew ? '<span class="newbadge">初</span>' : ''}</h4><p>${esc(card.description)}</p>${effectsList(card.effects)}${proj}</${tagName}>`;
+}
+
+function render(fresh) {
+  clearTimers();
+  if (!(view === 'game' && S.phase === PHASES.CARD_SELECTION && uiSel)) hideBar();
+  if (view === 'menu') { hideBar(); $('app').innerHTML = menuHTML(); bindMenu(); renderModal(); return; }
+  const ph = S.phase;
+  let body = '';
+  if (ph === PHASES.PRE_TURN) body = preTurnHTML();
+  else if (ph === PHASES.CARD_SELECTION) body = selectHTML();
+  else if (ph === PHASES.CARD_EFFECT) body = effectHTML();
+  else if (ph === PHASES.POST_TURN) body = postHTML();
+  else if (ph === PHASES.GAME_OVER) body = gameOverHTML();
+  else if (ph === PHASES.ENDING) body = endingHTML();
+  const shownTurn = Math.min(S.turn, S.maxTurns);
+  $('app').innerHTML = `<div class="frame">
+    <header class="header"><div class="turninfo"><h2>ターン ${shownTurn} / ${S.maxTurns}</h2><span>独裁者AIシミュレーター</span><div class="turnbar"><i style="width:${(shownTurn - (ph === PHASES.ENDING ? 0 : 1)) / S.maxTurns * 100}%"></i></div></div>
+    <div class="phase">${PHASE_LABEL[ph] || ''}</div><button class="menubtn" id="toMenu">メニュー</button></header>
+    ${paramsHTML()}
+    <main class="main"><div class="${fresh ? 'fade' : ''}" id="phase">${body}</div></main></div>`;
+  $('toMenu').onclick = () => { view = 'menu'; render(); };
+  bindPhase();
+  if (fresh) window.scrollTo(0, 0);
+  renderModal();
+}
+
+/* --- menu --- */
+function dexCounts() {
+  return {
+    end: ENDINGS.filter(e => dex.endings[e.id]).length + COLLAPSE.filter(c => dex.collapses[c.key]).length,
+    endTotal: ENDINGS.length + COLLAPSE.length,
+    cards: CARDS.filter(c => dex.cards[c.id]).length,
+    events: EVENTS.filter(e => dex.events[e.id]).length,
+  };
+}
+function menuHTML() {
+  const c = dexCounts();
+  const seg = (name, opts) => `<span class="seg">${opts.map(([v, l]) => `<button data-set="${name}" data-v="${v}" class="${String(settings[name]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</span>`;
+  return `<div class="menu fade"><a class="back" href="../../">← ゲーム一覧</a>
+    <h1 class="logo">独裁者AI国家シミュレーター</h1>
+    <h2 class="subtitle">AIを駆使して最強の国家を作り上げろ</h2>
+    <div class="menu-btns">
+      ${resumable() ? `<button class="primary resume" id="resume">続きから<small>ターン ${S.turn} / ${S.maxTurns}・${PHASE_LABEL[S.phase]}</small></button>` : ''}
+      <button class="${resumable() ? '' : 'primary'}" id="start">ゲームスタート</button>
+      <button id="dexBtn">図鑑</button>
+      <button id="rules">ゲームルール</button>
+    </div>
+    <div class="progress"><span>エンディング <b>${c.end}</b> / ${c.endTotal}</span><span>政策 <b>${c.cards}</b> / ${CARDS.length}</span><span>事件 <b>${c.events}</b> / ${EVENTS.length}</span></div>
+    <div class="settings"><label>演出テンポ${seg('tempo', [['normal','標準'],['fast','速い'],['instant','即時']])}</label><label>終了時の予測${seg('proj', [['true','表示'],['false','隠す']])}</label></div>
+    <footer class="footer">※注意: これは架空のシミュレーションゲームです。現実の政治や国際関係を意図的に風刺したブラックジョークです。<br>実際の国家運営や政治とは関係ありません</footer></div>`;
+}
+function bindMenu() {
+  const r = $('resume'); if (r) r.onclick = () => { view = 'game'; render(true); };
+  $('start').onclick = () => {
+    if (resumable()) openModal({type:'confirm', text:`進行中のゲーム（ターン ${S.turn}）は失われます。新しく始めますか？`, ok:'新しく始める', onOk:startNewGame});
+    else startNewGame();
+  };
+  $('dexBtn').onclick = () => openModal({type:'dex', tab:'endings'});
+  $('rules').onclick = () => openModal({type:'rules'});
+  document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
+    const k = b.dataset.set; settings[k] = k === 'proj' ? b.dataset.v === 'true' : b.dataset.v; store(KEY_SET, settings); render();
+  });
+}
+
+/* --- phases --- */
+function preTurnHTML() {
+  const ev = EVENT[S.currentEvent];
+  if (!ev) return `<div class="center"><p class="pdesc">今回は特に何も起こりませんでした</p><button class="primary next" id="ok">確認</button></div>`;
+  const ef = Object.entries(ev.effects || {});
+  return `<div class="center"><div class="event"><span class="tag">事件発生</span>
+    <h3>${esc(ev.name)}${S.fresh.event ? '<span class="newbadge">初</span>' : ''}</h3><p>${esc(ev.description)}</p>
+    ${ef.length ? `<div class="effs">${ef.map(([k, v]) => `<div class="eff ${v < 0 ? 'neg' : ''}"><span>${PNAME[k] || k}</span><b class="${sgn(v)}">${fmt(v)}</b></div>`).join('')}</div>` : ''}
+    <button class="primary next" id="ok" style="margin-top:0">確認</button></div></div>`;
+}
+function visibleCards() { return S.availableCards.map(id => CARD[id]).filter(c => c && (!uiFilter || c.category === uiFilter)); }
+function selectHTML() {
+  const all = S.availableCards.map(id => CARD[id]).filter(Boolean);
+  if (!all.length) return `<h2 class="ptitle">政策の選択</h2><div class="nocards">選択可能な政策がありません。条件を満たすとより多くの政策が選択できるようになります。<br><br><button class="primary" id="skip">次のフェーズへ</button></div>`;
+  const counts = {}; all.forEach(c => counts[c.category] = (counts[c.category] || 0) + 1);
+  const cats = CATS.filter(c => counts[c]).concat(Object.keys(counts).filter(c => !CATS.includes(c)));
+  const list = visibleCards();
+  return `<h2 class="ptitle">政策の選択</h2>
+    <p class="pdesc">以下の政策の中から1つを選択してください。あなたの決断が国家の未来を左右します。</p>
+    ${cats.length > 1 ? `<div class="filters"><button class="chip ${uiFilter ? '' : 'on'}" data-f="">すべて ${all.length}</button>${cats.map(c => `<button class="chip ${uiFilter === c ? 'on' : ''}" style="--cc:${catColor(c)}" data-f="${esc(c)}">${esc(c)} ${counts[c]}</button>`).join('')}</div>` : ''}
+    <div class="cards">${list.map((c, i) => cardHTML(c, {button:true, sel:uiSel === c.id, proj:settings.proj, key:i < 9 ? i + 1 : ''})).join('')}</div>`;
+}
+function effectHTML() {
+  const card = CARD[S.selectedCard]; if (!card) return '';
+  const e = card.effects || {}, sn = S.snap || {};
+  const cur = P.filter(p => e[p]), chg = P.map(p => p + 'Change').filter(p => e[p]);
+  const row = (k, base, label) => { const v = e[k], o = sn[k] ?? (S[k] - v);
+    return `<div class="erow" style="--rc:${PCOLOR[base]}"><div class="top"><span>${PNAME[k]}</span><b class="${sgn(v)}">${fmt(v)}</b></div>` +
+      `<div class="bot"><span>${label}</span><span><span class="ov">${o}</span><span class="ar">→</span><b class="${sgn(v)}">${S[k]}</b></span></div></div>`; };
+  return `<h2 class="ptitle">政策の実行${S.fresh.card ? '<span class="newbadge">政策図鑑に登録</span>' : ''}</h2><div class="center">
+    <div class="bigcard">${cardHTML(card)}</div>
+    <div class="effbox hidden" id="effbox">
+      ${cur.length ? `<h5>即時効果</h5>${cur.map(k => row(k, k, '現在値:')).join('')}` : ''}
+      ${chg.length ? `<h5>ターン毎の変化</h5>${chg.map(k => row(k, k.replace('Change', ''), '1ターンあたり:')).join('')}` : ''}
+    </div>
+    <button class="primary next hidden" id="ok">次へ進む</button><div class="skiphint" id="hint">タップで演出をスキップ</div></div>`;
+}
+function postHTML() {
+  const {before, after, k} = S.post;
+  const last = S.turn >= S.maxTurns;
+  return `<h2 class="ptitle">国家状況の更新</h2><p class="pdesc">実施した政策とその変動により、国家のパラメータが更新されました。</p>
+    <div class="center"><div class="rows">${P.map(p => { const d = after[p] - before[p], dead = p !== 'aiPower' && after[p] <= 0;
+      return `<div class="row-anim hidden${dead ? ' dead' : ''}" data-row style="--rc:${PCOLOR[p]}"><span class="n">${PNAME[p]}</span><span class="vals"><span class="ov">${before[p]}</span><span class="ar">→</span><span class="${sgn(d)}">${Math.max(p === 'aiPower' ? -Infinity : 0, after[p])}</span><span class="dd ${sgn(d)}">(${fmt(d)})</span></span></div>`; }).join('')}</div>
+    <button class="primary next hidden" id="ok">${k ? '……' : last ? '最終結果へ' : '次のターンへ'}</button><div class="skiphint" id="hint">タップで演出をスキップ</div></div>`;
+}
+function statsHTML() {
+  return `<div class="stats"><div class="stat ai"><span>最終AI力</span><b>${S.aiPower}</b></div><div class="stat"><span>最終電力</span><b>${S.energy}</b></div><div class="stat"><span>最終財力</span><b>${S.economy}</b></div><div class="stat"><span>最終体制秩序</span><b>${S.stability}</b></div></div>`;
+}
+function chronicleHTML(open) {
+  if (!S.log.length) return '';
+  return `<details class="sect"${open ? ' open' : ''}><summary>統治の記録（${S.log.length}ターン）</summary><ol class="chron">${S.log.map(l => {
+    const ev = EVENT[l.ev], c = CARD[l.card];
+    return `<li><span class="t">T${l.t}</span><span class="e">${ev ? esc(ev.name) : '平穏'}</span>${c ? ` ／ <b style="color:${catColor(c.category)}">${esc(c.name)}</b>` : ''}</li>`; }).join('')}</ol></details>`;
+}
+function policiesHTML() {
+  const list = CARDS.filter(c => S.selectedCards.includes(c.id));
+  if (!list.length) return '';
+  return `<div class="sect"><h3>獲得した主要政策</h3><div class="badges">${list.map(c => `<span class="badge" style="--cc:${catColor(c.category)}">${esc(c.name)}</span>`).join('')}</div></div>`;
+}
+function gameOverHTML() {
+  const last = CARD[S.lastCard];
+  const ci = COLLAPSE.findIndex(c => c.key === S.gameOverKey);
+  return `<div class="endno">崩壊の記録 ${ci + 1} / ${COLLAPSE.length}</div><h2 class="endtitle over">国家崩壊</h2>
+    ${S.fresh.collapse ? '<div class="unlock">図鑑に新しい記録が加わりました</div>' : ''}
+    <div class="reason"><p>${esc(S.gameOverReason || 'あなたの国家は内外の圧力に耐えきれず崩壊しました。')}</p><p>あなたの独裁体制は ${S.turn} ターン続きました。</p>${last ? `<p style="color:var(--sub);font-size:.86rem">最後の政策：${esc(last.name)}</p>` : ''}</div>
+    ${statsHTML()}${chronicleHTML(false)}
+    <div class="endbtns"><button class="primary" id="again">再チャレンジ</button><button id="dexEnd">図鑑</button><button id="menuEnd">メニューに戻る</button></div>`;
+}
+function endingHTML() {
+  const e = ENDING[S.ending] || {};
+  const no = ENDINGS.findIndex(x => x.id === S.ending) + 1;
+  const desc = (e.description || 'あなたの国家は20ターンを乗り切りました。').split('\n').map(p => `<p>${esc(p)}</p>`).join('');
+  return `<div class="endno">ENDING ${no} / ${ENDINGS.length}</div><h2 class="endtitle">${esc(e.name || 'ゲーム終了')}</h2>
+    ${S.fresh.ending ? '<div class="unlock">★ 新しいエンディングを図鑑に登録しました</div>' : ''}
+    <div class="enddesc">${desc}</div>${statsHTML()}${policiesHTML()}${chronicleHTML(false)}
+    <div class="endbtns"><button class="primary" id="again">再プレイ</button><button id="dexEnd">図鑑</button><button id="menuEnd">メニューに戻る</button></div>`;
+}
+
+function revealAll() {
+  clearTimers();
+  document.querySelectorAll('#phase .hidden').forEach(el => el.classList.remove('hidden'));
+  const h = $('hint'); if (h) h.textContent = '';
+}
+function bindPhase() {
+  const ph = S.phase, ok = $('ok'), T = tempo();
+  if (ph === PHASES.PRE_TURN) ok.onclick = confirmEvent;
+  if (ph === PHASES.CARD_SELECTION) {
+    document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { uiFilter = b.dataset.f; if (uiSel && !visibleCards().some(c => c.id === uiSel)) { uiSel = null; hideBar(); } render(); });
+    document.querySelectorAll('[data-card]').forEach(b => b.onclick = () => selectCard(b.dataset.card));
+    const sk = $('skip'); if (sk) sk.onclick = toPostTurn; // 原作では選択肢ゼロで進行不能になるため、そのままターン終了へ
+    if (uiSel) showBar(); else hideBar();
+  }
+  if (ph === PHASES.CARD_EFFECT) {
+    ok.onclick = toPostTurn;
+    later(T.eff, () => $('effbox') && $('effbox').classList.remove('hidden'));
+    later(T.effBtn, revealAll);
+  }
+  if (ph === PHASES.POST_TURN) {
+    ok.onclick = finishTurn;
+    const rows = [...document.querySelectorAll('[data-row]')];
+    rows.forEach((r, i) => later(T.row0 + i * T.row, () => r.classList.remove('hidden')));
+    later(T.row0 + rows.length * T.row + T.rowBtn, revealAll);
+  }
+  if (ph === PHASES.CARD_EFFECT || ph === PHASES.POST_TURN) {
+    $('phase').addEventListener('click', ev => { if (ev.target.closest('button')) return; revealAll(); });
+    if (settings.tempo === 'instant') revealAll();
+  }
+  if (ph === PHASES.GAME_OVER || ph === PHASES.ENDING) {
+    $('again').onclick = startNewGame;
+    $('menuEnd').onclick = () => { S = initialState(); persist(); view = 'menu'; render(); };
+    $('dexEnd').onclick = () => openModal({type:'dex', tab:'endings'});
+  }
+}
+function selectCard(id) {
+  if (uiSel === id) return chooseCard(id); // 同じカードをもう一度押すと実行
+  uiSel = id;
+  document.querySelectorAll('[data-card]').forEach(b => { const on = b.dataset.card === id; b.classList.toggle('sel', on); b.setAttribute('aria-pressed', on); });
+  showBar();
+}
+function showBar() {
+  const c = CARD[uiSel]; if (!c) return hideBar();
+  const dead = settings.proj && projection(c).dead;
+  const bar = $('actionbar');
+  bar.innerHTML = `<span class="nm">${dead ? '<span class="warn">⚠</span> ' : ''}${esc(c.name)}</span><button class="primary" id="exec">この政策を実行</button><button id="cancel">やめる</button>`;
+  bar.classList.add('show');
+  $('exec').onclick = () => chooseCard(uiSel);
+  $('cancel').onclick = () => { uiSel = null; hideBar(); document.querySelectorAll('[data-card]').forEach(b => { b.classList.remove('sel'); b.setAttribute('aria-pressed', false); }); };
+}
+function hideBar() { const bar = $('actionbar'); bar.classList.remove('show'); bar.innerHTML = ''; }
+
+/* --- modal --- */
+function openModal(m) { modal = m; renderModal(); }
+function closeModal() { modal = null; renderModal(); }
+function renderModal() {
+  const el = $('modal');
+  if (!modal) { el.innerHTML = ''; return; }
+  let inner = '';
+  if (modal.type === 'rules') inner = rulesHTML();
+  if (modal.type === 'dex') inner = dexHTML(modal.tab);
+  if (modal.type === 'confirm') inner = `<div class="confirm"><p>${esc(modal.text)}</p><div class="endbtns"><button class="primary" id="cOk">${esc(modal.ok)}</button><button id="cNo">キャンセル</button></div></div>`;
+  el.innerHTML = `<div class="modal" id="mbg"><div class="mbox" role="dialog" aria-modal="true"><button class="x" id="mx" aria-label="閉じる">×</button>${inner}</div></div>`;
+  $('mx').onclick = closeModal;
+  $('mbg').onclick = ev => { if (ev.target.id === 'mbg') closeModal(); };
+  if (modal.type === 'confirm') { const m = modal; $('cOk').onclick = () => { modal = null; m.onOk(); renderModal(); }; $('cNo').onclick = closeModal; }
+  if (modal.type === 'dex') {
+    el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { modal.tab = b.dataset.tab; renderModal(); });
+    const rs = $('dexReset'); if (rs) rs.onclick = () => openModal({type:'confirm', text:'図鑑の記録をすべて消去します。よろしいですか？', ok:'消去する', onOk:() => { dex = emptyDex(); saveDex(); render(); }});
+  }
+}
+function rulesHTML() {
+  return `<h2>ゲームルール</h2>
+  <p>あなたは一国の独裁者となり、AI技術を駆使して国家を強靭にするシミュレーションゲームです。25ターンの間に様々な選択をして、最終的に強力な国家を構築しましょう。</p>
+  <h3>ゲームの流れ</h3><ol>
+  <li>各ターンは4つのフェーズで構成されています</li>
+  <li><strong>イベント発生フェーズ</strong>: ランダムなイベントが発生し、国家に影響を与えます</li>
+  <li><strong>カード選択フェーズ</strong>: 選択可能なカードの中から1枚を選び、国家に実装する政策を決定します</li>
+  <li><strong>カード効果発動フェーズ</strong>: 選択したカードの効果が適用されます</li>
+  <li><strong>ターン終了フェーズ</strong>: 各パラメータが更新され、次のターンへ移行します</li></ol>
+  <h3>ゲームの目的</h3><p>25ターン目が終了した時点で、あなたの選択と構築した国家の状態に基づいて、8種類のエンディングのいずれかが決定します。最も強力な国家を構築して、最高のエンディングを目指しましょう。</p>
+  <h3>パラメータについて</h3><ul>
+  <li><strong>AI力</strong>: 国家のAI技術力を表します。高いほど高度なAI技術が利用可能になります</li>
+  <li><strong>電力</strong>: 国家のエネルギー資源を表します。0になるとゲームオーバーです</li>
+  <li><strong>財力</strong>: 国家の経済力を表します。0になるとゲームオーバーです</li>
+  <li><strong>体制秩序</strong>: 国家の安定度を表します。0になるとゲームオーバーです</li></ul>
+  <p>各パラメータには「変動値」があり、ターン終了時にパラメータに加算されます。様々なカードやイベントを通じて、パラメータとその変動値をうまく管理しましょう。</p>
+  <h3>カードの種類</h3><p>カードは6つのカテゴリに分類されています：</p><ul>
+  <li><strong>基盤構築</strong>: 国家のAI基盤を構築するための基本的なカード</li>
+  <li><strong>AI開発</strong>: AIの能力を発展させるカード</li>
+  <li><strong>産業・インフラ</strong>: 国家の産業基盤を強化するカード</li>
+  <li><strong>統治・管理</strong>: 国家の秩序と効率を維持するカード</li>
+  <li><strong>経済</strong>: 国家の財力を強化するカード</li>
+  <li><strong>国内秩序</strong>: 体制秩序を維持するカード</li></ul>
+  <p>各カードには選択条件があり、条件を満たした場合のみ選択が可能になります。戦略的にカードを選択し、最終的なエンディングにつなげましょう。</p>
+  <h3>遊び方のヒント（この版での追加）</h3><ul>
+  <li>カードを1回押すと選択、もう一度押すか「この政策を実行」で決定します。キーボードでは 1〜9 で選択、Enter で決定・次へ</li>
+  <li>各カードの下に、そのカードを選んだ場合のターン終了時の予測値が出ます（次ターンのイベントは含みません）。メニューで非表示にできます</li>
+  <li>到達したエンディング・国家崩壊、実行した政策、遭遇した事件は「図鑑」に記録されます</li>
+  <li>進行中のゲームは自動で保存され、メニューの「続きから」で再開できます</li></ul>`;
+}
+function condText(cond) {
+  if (!cond) return '条件なし';
+  const parts = [];
+  for (const [k, v] of Object.entries(cond)) if (k !== 'requiredCards') parts.push(`${PNAME[k] || k} ${v}以上`);
+  if (cond.requiredCards) parts.push('前提：' + cond.requiredCards.map(id => dex.cards[id] ? esc(CARD[id].name) : '？？？').join('・'));
+  return parts.join(' ／ ');
+}
+function dexHTML(tab) {
+  const c = dexCounts();
+  const tabs = `<div class="tabs"><button data-tab="endings" class="${tab === 'endings' ? 'on' : ''}">エンディング ${c.end}/${c.endTotal}</button><button data-tab="cards" class="${tab === 'cards' ? 'on' : ''}">政策 ${c.cards}/${CARDS.length}</button><button data-tab="events" class="${tab === 'events' ? 'on' : ''}">事件 ${c.events}/${EVENTS.length}</button></div>`;
+  let body = '';
+  if (tab === 'endings') {
+    body = `<p class="dexsum">プレイ回数 ${dex.plays || 0}　・　上にあるエンディングほど条件の判定が優先されます</p><div class="dexgrid">` + ENDINGS.map((e, i) => {
+      const r = dex.endings[e.id];
+      let cond = '';
+      if (e.condition && e.condition.requiredCards) cond = '鍵となる政策：' + e.condition.requiredCards.map(id => dex.cards[id] ? `<span class="got">${esc(CARD[id].name)}</span>` : '<span class="no2">？？？</span>').join('・');
+      else if (e.condition && e.condition.aiPower) cond = r ? `25ターン終了時に AI力 ${e.condition.aiPower} 以上` : '25ターン終了時のAI力が一定以上';
+      else cond = '25ターンを生き延びる';
+      if (!r) return `<div class="dex lock"><div class="no">ENDING ${i + 1}</div><h4>？？？？</h4><div class="cond">${cond}</div></div>`;
+      return `<div class="dex wide"><div class="no">ENDING ${i + 1}</div><h4>${esc(e.name)}</h4><p>${esc(e.description)}</p><div class="cond">${cond}</div><div class="meta" style="margin-top:6px">到達 <b>${r.count}</b> 回 ・ 初到達 ${esc(r.first)}</div></div>`;
+    }).join('') + `<div class="dexcat" style="--cc:var(--bad)">崩壊の記録</div>` + COLLAPSE.map((k, i) => {
+      const r = dex.collapses[k.key];
+      const hint = {energy:'電力が尽きる', economy:'財力が尽きる', stability:'体制秩序が尽きる'}[k.key];
+      return r ? `<div class="dex" style="--cc:var(--bad)"><div class="no">COLLAPSE ${i + 1}</div><h4>${esc(k.name)}</h4><div class="cond">${hint}</div><div class="meta" style="margin-top:6px">崩壊 <b>${r.count}</b> 回 ・ 初記録 ${esc(r.first)}</div></div>`
+        : `<div class="dex lock"><div class="no">COLLAPSE ${i + 1}</div><h4>？？？？</h4><div class="cond">${hint}</div></div>`;
+    }).join('') + '</div>';
+  }
+  if (tab === 'cards') {
+    body = '<div class="dexgrid">' + CATS.map(cat => {
+      const list = CARDS.filter(x => x.category === cat);
+      if (!list.length) return '';
+      return `<div class="dexcat" style="--cc:${catColor(cat)}">${esc(cat)}　${list.filter(x => dex.cards[x.id]).length}/${list.length}</div>` + list.map(x => dex.cards[x.id]
+        ? `<div class="dex mini" style="--cc:${catColor(cat)}"><h4>${esc(x.name)}</h4><p>${esc(x.description)}</p><div class="ef2">${Object.entries(x.effects || {}).map(([k, v]) => `<span>${PNAME[k] || k} <b class="${sgn(v)}">${fmt(v)}</b></span>`).join('')}</div><div class="cond">${condText(x.condition)}</div></div>`
+        : `<div class="dex mini lock"><h4>？？？？</h4></div>`).join('');
+    }).join('') + '</div>';
+  }
+  if (tab === 'events') {
+    body = '<div class="dexgrid">' + EVENTS.map(e => dex.events[e.id]
+      ? `<div class="dex mini"><h4>${esc(e.name)}</h4><p>${esc(e.description)}</p><div class="ef2">${Object.entries(e.effects || {}).map(([k, v]) => `<span>${PNAME[k] || k} <b class="${sgn(v)}">${fmt(v)}</b></span>`).join('')}</div></div>`
+      : `<div class="dex mini lock"><h4>？？？？</h4></div>`).join('') + '</div>';
+  }
+  return `<h2>図鑑</h2>${tabs}${body}<div style="text-align:right;margin-top:20px"><button id="dexReset" style="font-size:.75rem;padding:5px 10px;border-width:1px;opacity:.7">記録を消去</button></div>`;
+}
+
+/* --- keyboard --- */
+document.addEventListener('keydown', ev => {
+  if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  if (modal) { if (ev.key === 'Escape') closeModal(); return; }
+  if (view !== 'game') return;
+  const ph = S.phase;
+  if (ph === PHASES.CARD_SELECTION) {
+    if (/^[1-9]$/.test(ev.key)) { const c = visibleCards()[+ev.key - 1]; if (c) { ev.preventDefault(); if (uiSel === c.id) return; selectCard(c.id); const b = document.querySelector(`[data-card="${c.id}"]`); if (b) b.scrollIntoView({block:'nearest', behavior:'smooth'}); } return; }
+    if (ev.key === 'Enter' && uiSel) { ev.preventDefault(); chooseCard(uiSel); return; }
+    if (ev.key === 'Escape' && uiSel) { $('cancel') && $('cancel').click(); return; }
+    return;
+  }
+  if (ev.key === 'Enter' || ev.key === ' ') {
+    if (document.activeElement && document.activeElement.tagName === 'BUTTON' && document.activeElement.id !== 'ok') return;
+    const ok = $('ok');
+    if (!ok) return;
+    ev.preventDefault();
+    if (ok.classList.contains('hidden')) revealAll(); else ok.click();
+  }
+});
+
+render(true);
+})();
+</script>
+</body>
+</html>

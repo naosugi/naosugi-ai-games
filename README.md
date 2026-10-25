@@ -13,6 +13,7 @@
 | [NEON CLAW RUSH](games/neon-claw-rush/) | 60秒タイムアタックのクレーンゲーム。連続GETでFEVER突入 |
 | [BLUE DASH](games/blue-dash/) | 5段の高架道路を走る横スクロールアクション。日没までに巨大ロボを倒して相棒を救え |
 | [子育てサバイバル](games/kosodate-survival/) | 0〜22歳を約5分で育てる家計サバイバル。お世話と仕事を同時にさばき、人生の選択で家計が揺れる |
+| [独裁者AI国家シミュレーター](games/dictator-ai-simulator/) | 独裁者として25ターンでAI国家を築くカード選択シミュレーション。8つのエンディングと図鑑つき（[dictator-ai-simulator](https://github.com/naosugi/dictator-ai-simulator) の1ファイル移植版） |
 
 ## 構成
 

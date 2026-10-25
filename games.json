@@ -75,5 +75,20 @@
     "controls": "タップ",
     "playtime": "約5分",
     "added": "2026-10-25"
+  },
+  {
+    "id": "dictator-ai-simulator",
+    "title": "独裁者AI国家シミュレーター",
+    "description": "一国の独裁者となり、25ターンでAI国家を築くカード選択シミュレーション。毎ターン起きる事件に耐え、条件を満たした政策カードを1枚ずつ実行して、AI力・電力・財力・体制秩序をやりくりする。電力・財力・体制秩序のどれかが0で国家崩壊。8つのエンディングと崩壊の記録、政策・事件を集める図鑑つき。※現実の政治を風刺した架空のブラックジョークです。",
+    "path": "games/dictator-ai-simulator/",
+    "thumbnail": "games/dictator-ai-simulator/thumb.jpg",
+    "tags": [
+      "シミュレーション",
+      "カード",
+      "マルチエンド"
+    ],
+    "controls": "クリック・タップ / 1〜9・Enter",
+    "playtime": "1周 約10分",
+    "added": "2026-10-25"
   }
 ]
