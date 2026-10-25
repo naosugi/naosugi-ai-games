@@ -2018,6 +2018,7 @@ function startGame() {
             height: Math.round(h * DPR),
             zoom: 1 / DPR
         },
+        banner: false, // コンソールの Phaser バナーを出さない
         input: { activePointers: 3 },
         physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
         scene: [BootScene, HomeScene, SearchScene]
