@@ -90,5 +90,20 @@
     "controls": "クリック・タップ / 1〜9・Enter",
     "playtime": "1周 約10分",
     "added": "2026-10-25"
+  },
+  {
+    "id": "ouchi-hiragana",
+    "title": "おうちとひらがな",
+    "description": "小さな子ども向けのひらがな探しゲーム。おうちをタッチするとブロックの下にかくれたひらがなを探すゲームが始まり、見つけるたびにおうちが大きくなったり、動物やお花がふえたりする。あ行〜ら行の9行、ふしぎなたまご、図鑑つき。音声読み上げで遊べる（moji_learn_mining のスマホ操作改善・1ファイル版）。",
+    "path": "games/ouchi-hiragana/",
+    "thumbnail": "games/ouchi-hiragana/thumb.jpg",
+    "tags": [
+      "知育",
+      "ひらがな",
+      "こども"
+    ],
+    "controls": "タップ・ドラッグ・ピンチ / クリック・ホイール",
+    "playtime": "自由",
+    "added": "2026-10-25"
   }
 ]
