@@ -29,5 +29,20 @@
     "controls": "クリック・タップ",
     "playtime": "育成1回 約30分〜",
     "added": "2026-10-24"
+  },
+  {
+    "id": "neon-claw-rush",
+    "title": "NEON CLAW RUSH",
+    "description": "60秒タイムアタックのクレーンゲーム。流れてくる景品をワンタップで狙い撃ち。連続GETでゲージを溜めるとFEVER（得点×3）に突入。ど真ん中はPERFECT、爆弾をつかむと-3秒。",
+    "path": "games/neon-claw-rush/",
+    "thumbnail": "games/neon-claw-rush/thumb.jpg",
+    "tags": [
+      "アクション",
+      "スコアアタック",
+      "ワンボタン"
+    ],
+    "controls": "タップ / スペース・Enter",
+    "playtime": "1分",
+    "added": "2026-10-25"
   }
 ]

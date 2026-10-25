@@ -10,6 +10,7 @@
 |---|---|
 | [INFINITE SHOT 3D](games/infinite-shot-3d/) | 自動前進の3Dシューティング。5分間スコアアタック |
 | [名を持つ十二の兵](games/named-twelve/) | TRPG風軍団戦。会話と選択で戦士を4年かけて育て、12体の軍団で戦う。手がかりをつなぐと真シナリオが開く |
+| [NEON CLAW RUSH](games/neon-claw-rush/) | 60秒タイムアタックのクレーンゲーム。連続GETでFEVER突入 |
 
 ## 構成
 
