@@ -234,6 +234,12 @@ input.txt:focus{border-color:var(--accent2)}
   #map{height:360px}
 }
 
+.tab .rec{position:absolute;top:-8px;right:-4px;background:var(--ng);color:#fff;font-size:9.5px;font-weight:900;padding:1px 5px;border-radius:99px}
+.tabs{padding-top:8px}
+.hintbar{display:block;width:100%;text-align:left;background:rgba(255,210,63,.15);border:1px solid rgba(255,210,63,.5);color:#ffe9a3;font-weight:800;font-size:13.5px;border-radius:12px;padding:8px 12px;margin:-2px 0 10px;line-height:1.5}
+.need{font-size:12px;color:#c45f10;font-weight:800;line-height:1.45;margin-top:3px}
+.need.ok{color:var(--ok)}
+
 </style>
 </head>
 <body>
@@ -309,6 +315,7 @@ var KDW = (function () {
   // 衛星: 親, 軌道半径[km], 周期[日], 初期角[度]（月は月齢から計算）
   var MOON_EL = {
     moon: ['earth', 384400, 29.530589, null, '{月|つき}'],
+    jwst: ['earth', 1500000, 365.256, null, 'ジェイムズ・ウェッブ{宇宙望遠鏡|うちゅうぼうえんきょう}'],
     phobos: ['mars', 9376, 0.31891, 40, 'フォボス'],
     deimos: ['mars', 23463, 1.26244, 200, 'ダイモス'],
     io: ['jupiter', 421700, 1.769138, 10, 'イオ'],
@@ -344,6 +351,11 @@ var KDW = (function () {
   }
   function moonPos(id, jd) {
     var m = MOON_EL[id];
+    if (id === 'jwst') {
+      // 太陽と地球を むすぶ せんの そとがわ（L2）、地球から やく150万km
+      var e = planetPos('earth', jd), r = Math.sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
+      return [e[0] + e[0] / r * m[1], e[1] + e[1] / r * m[1], e[2] + e[2] / r * m[1]];
+    }
     var p = planetPos(m[0], jd);
     var ang;
     if (m[3] === null) {
@@ -361,7 +373,7 @@ var KDW = (function () {
     return [d * Math.cos(dec) * Math.cos(ra), d * Math.cos(dec) * Math.sin(ra), d * Math.sin(dec)];
   }
 
-  var INNER_IDS = ['venus', 'earth', 'moon', 'mars', 'phobos', 'deimos', 'jupiter', 'io', 'europa', 'ganymede', 'callisto'];
+  var INNER_IDS = ['venus', 'earth', 'moon', 'jwst', 'mars', 'phobos', 'deimos', 'jupiter', 'io', 'europa', 'ganymede', 'callisto'];
   var SOLAR_IDS = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'titan', 'uranus', 'neptune', 'triton', 'pluto', 'charon'];
   function bodyList(ids) {
     return ids.map(function (id) {
@@ -429,14 +441,14 @@ var KDE = (function () {
   // ねんりょう（もんだいの しゅるい）。mult はロケットの はやさに かかる
   var FUELS = [
     { id: 'hira', mult: 1, cost: 0 },
-    { id: 'small', mult: 3, cost: 15000 },
-    { id: 'kata', mult: 8, cost: 170000 },
-    { id: 'kuten', mult: 12, cost: 4e+06 },
-    { id: 'kanji', mult: 60, cost: 1.2e+08 },
-    { id: 'kigou', mult: 25, cost: 2.8e+10 },
-    { id: 'abc', mult: 40, cost: 8.7e+11 },
-    { id: 'num', mult: 100, cost: 1.5e+12 },
-    { id: 'long', mult: 300, cost: 4e+16 }
+    { id: 'small', mult: 3, cost: 2000 },
+    { id: 'kata', mult: 8, cost: 20000 },
+    { id: 'kuten', mult: 12, cost: 950000 },
+    { id: 'kanji', mult: 60, cost: 36000000 },
+    { id: 'kigou', mult: 25, cost: 7200000000 },
+    { id: 'abc', mult: 40, cost: 270000000000 },
+    { id: 'num', mult: 100, cost: 2400000000000 },
+    { id: 'long', mult: 300, cost: 11000000000000000 }
   ];
   var ENGINE_MULT = 1.6;
   var ENGINE_PER_FUEL = 2;   // ねんりょう1つで エンジンを 2だん あげられる
@@ -444,9 +456,10 @@ var KDE = (function () {
   function engineMax(fuelCount) { return ENGINE_START + ENGINE_PER_FUEL * (fuelCount - 1); }
   // エンジンの ねだん: その時点の ねんりょうの つよさ にあわせて きまる
   function fuelProduct(fuelCount) { var p = 1; for (var i = 0; i < fuelCount; i++) p *= FUELS[i].mult; return p; }
-  function engineCost(level, fuelCount) {
-    // level = 今のレベル（次は level+1）
-    return niceRound(220 * fuelProduct(fuelCount) * Math.pow(ENGINE_MULT, level) * Math.pow(1.12, level));
+  // エンジンの ねだん（レベルごと）。じっさいの いらいで かせげる コインから きめた
+  var ENGINE_COST = [150,400,5000,8000,73000,410000,2800000,3600000,1400000000,2600000000,60000000000,99000000000,130000000000,170000000000,2500000000000000,3900000000000000,250000000000000000,1400000000000000000];
+  function engineCost(level) {
+    return ENGINE_COST[Math.min(level, ENGINE_COST.length - 1)];
   }
   function speed(fuelCount, engineLv) { return BASE * fuelProduct(fuelCount) * Math.pow(ENGINE_MULT, engineLv); }
   // ひつようなせいかい数
@@ -980,35 +993,125 @@ var KDT = {
   }
 
   // ---------- 音 ----------
-  var AC = null;
-  function snd(kind) {
-    if (!S || !S.set.sound) return;
-    try {
-      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-      if (AC.state === 'suspended') AC.resume();
-      var t = AC.currentTime;
-      var tone = function (f, st, len, type, vol) {
-        var o = AC.createOscillator(), g = AC.createGain();
-        o.type = type || 'sine'; o.frequency.setValueAtTime(f, t + st);
-        g.gain.setValueAtTime(0.0001, t + st); g.gain.exponentialRampToValueAtTime(vol || 0.18, t + st + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + st + len);
-        o.connect(g); g.connect(AC.destination); o.start(t + st); o.stop(t + st + len + 0.05);
-      };
-      if (kind === 'ok') { tone(784, 0, 0.18, 'triangle'); tone(1175, 0.09, 0.28, 'triangle'); }
-      else if (kind === 'ng') { tone(220, 0, 0.22, 'square', 0.08); tone(185, 0.1, 0.25, 'square', 0.07); }
-      else if (kind === 'buy') { tone(988, 0, 0.12, 'square', 0.08); tone(1319, 0.08, 0.3, 'square', 0.08); }
-      else if (kind === 'tap') { tone(660, 0, 0.06, 'triangle', 0.08); }
-      else if (kind === 'arrive') { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.11, 0.35, 'triangle', 0.16); }); }
-      else if (kind === 'boost') {
-        var len = 0.6, buf = AC.createBuffer(1, AC.sampleRate * len, AC.sampleRate), d = buf.getChannelData(0);
-        for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-        var src = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain();
-        src.buffer = buf; fl.type = 'bandpass'; fl.frequency.setValueAtTime(400, t); fl.frequency.exponentialRampToValueAtTime(2400, t + len);
-        g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-        src.connect(fl); fl.connect(g); g.connect(AC.destination); src.start(t);
+  // こうかおん と、とんでいる あいだの エンジンおん（WebAudio で その場で つくる）
+  var AU = (function () {
+    var ctx = null, master = null, noiseBuf = null, eng = null;
+    var PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760, 2093];
+    function on() { return S && S.set.sound; }
+    function init() {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var comp = ctx.createDynamicsCompressor();
+        master = ctx.createGain(); master.gain.value = 0.9;
+        master.connect(comp); comp.connect(ctx.destination);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+        var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       }
-    } catch (e) { /* 音が出なくても続ける */ }
-  }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    }
+    function tone(f, st, len, type, vol, f2) {
+      var t = ctx.currentTime + st, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + len);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + len + 0.05);
+    }
+    function noise(st, len, ftype, f0, f1, vol, q) {
+      var t = ctx.currentTime + st, src = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      src.buffer = noiseBuf; fl.type = ftype; fl.Q.value = q || 1;
+      fl.frequency.setValueAtTime(f0, t); if (f1) fl.frequency.exponentialRampToValueAtTime(f1, t + len);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      src.connect(fl); fl.connect(g); g.connect(master);
+      src.start(t, Math.random() * 1.5); src.stop(t + len + 0.05);
+    }
+    function play(kind, n) {
+      if (!on()) return;
+      try {
+        init();
+        if (kind === 'key') {
+          noise(0, 0.035, 'highpass', 2500 + Math.random() * 2500, 0, 0.09, 0.7);
+          tone(900 + Math.random() * 500, 0, 0.03, 'triangle', 0.025);
+        } else if (kind === 'ok') {
+          var i = Math.min((n || 1) - 1, PENTA.length - 1), f = PENTA[i];
+          tone(f, 0, 0.16, 'triangle', 0.16); tone(f * 1.5, 0.07, 0.22, 'triangle', 0.12); tone(f * 2, 0.14, 0.32, 'sine', 0.08);
+          if (n && n % 5 === 0) { [0, 4, 7, 12].forEach(function (s2, k) { tone(f * Math.pow(2, s2 / 12), 0.25 + k * 0.07, 0.4, 'square', 0.05); }); }
+        } else if (kind === 'boost') {
+          noise(0, 0.9, 'bandpass', 300, 3200, 0.22, 0.9);
+          tone(70, 0, 0.7, 'sawtooth', 0.09, 160);
+        } else if (kind === 'warp') {
+          noise(0, 1.1, 'bandpass', 200, 5000, 0.2, 1.4);
+          tone(180, 0, 1.0, 'sawtooth', 0.06, 1400);
+          tone(360, 0.05, 1.0, 'sine', 0.07, 2600);
+        } else if (kind === 'ng') { tone(330, 0, 0.14, 'triangle', 0.1); tone(262, 0.11, 0.22, 'triangle', 0.1); }
+        else if (kind === 'buy') { tone(988, 0, 0.12, 'square', 0.07); tone(1319, 0.08, 0.3, 'square', 0.07); }
+        else if (kind === 'tap') { tone(660, 0, 0.06, 'triangle', 0.07); }
+        else if (kind === 'pickup') { [659, 880, 1175].forEach(function (f2, k) { tone(f2, k * 0.09, 0.25, 'triangle', 0.13); }); }
+        else if (kind === 'arrive') {
+          [523, 659, 784, 1047, 1319].forEach(function (f2, k) { tone(f2, k * 0.1, 0.45, 'triangle', 0.15); });
+          tone(1568, 0.55, 0.8, 'sine', 0.1); noise(0, 1.2, 'lowpass', 1500, 120, 0.12);
+        }
+      } catch (e) { /* 音が出なくても続ける */ }
+    }
+    // ---- エンジンおん ----
+    var PRESET = {
+      japan: { nf: 520, ng: 0.06, nt: 'lowpass', p: 58, pg: 0.035, pad: 0 },
+      world: { nf: 380, ng: 0.06, nt: 'lowpass', p: 50, pg: 0.04, pad: 0 },
+      inner: { nf: 240, ng: 0.035, nt: 'lowpass', p: 42, pg: 0.055, pad: 0.012 },
+      solar: { nf: 220, ng: 0.035, nt: 'lowpass', p: 38, pg: 0.06, pad: 0.016 },
+      stars: { nf: 700, ng: 0.025, nt: 'bandpass', p: 34, pg: 0.06, pad: 0.026 }
+    };
+    function engineStart(stageId) {
+      engineStop(true);
+      if (!on() || S.set.engine === false) return;
+      try {
+        init();
+        var pr = PRESET[stageId] || PRESET.japan, t = ctx.currentTime;
+        var out = ctx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(1, t + 0.8); out.connect(master);
+        var n = ctx.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
+        var nf = ctx.createBiquadFilter(); nf.type = pr.nt; nf.frequency.value = pr.nf; nf.Q.value = pr.nt === 'bandpass' ? 0.8 : 0.5;
+        var ng = ctx.createGain(); ng.gain.value = pr.ng;
+        n.connect(nf); nf.connect(ng); ng.connect(out); n.start();
+        var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = pr.p;
+        var of = ctx.createBiquadFilter(); of.type = 'lowpass'; of.frequency.value = 260;
+        var og = ctx.createGain(); og.gain.value = pr.pg;
+        o.connect(of); of.connect(og); og.connect(out); o.start();
+        var pad = null, lfo = null;
+        if (pr.pad) {
+          pad = ctx.createOscillator(); pad.type = 'sine'; pad.frequency.value = 220;
+          var pg = ctx.createGain(); pg.gain.value = pr.pad;
+          lfo = ctx.createOscillator(); lfo.frequency.value = 0.35; var lg = ctx.createGain(); lg.gain.value = 6;
+          lfo.connect(lg); lg.connect(pad.frequency); pad.connect(pg); pg.connect(out); pad.start(); lfo.start();
+        }
+        eng = { out: out, n: n, nf: nf, ng: ng, o: o, of: of, og: og, pad: pad, lfo: lfo, pr: pr };
+      } catch (e) { eng = null; }
+    }
+    function engineSet(boost) {
+      if (!eng || !ctx) return;
+      var b = Math.min(1.6, boost), t = ctx.currentTime, pr = eng.pr;
+      eng.nf.frequency.setTargetAtTime(pr.nf + b * 2200, t, 0.06);
+      eng.ng.gain.setTargetAtTime(pr.ng + b * 0.09, t, 0.06);
+      eng.o.frequency.setTargetAtTime(pr.p * (1 + b * 0.9), t, 0.08);
+      eng.of.frequency.setTargetAtTime(260 + b * 900, t, 0.08);
+      if (eng.pad) eng.pad.frequency.setTargetAtTime(220 * (1 + b * 0.5), t, 0.1);
+    }
+    function engineStop(now) {
+      if (!eng || !ctx) { eng = null; return; }
+      var e = eng, t = ctx.currentTime; eng = null;
+      try {
+        e.out.gain.cancelScheduledValues(t); e.out.gain.setValueAtTime(Math.max(0.0001, e.out.gain.value), t);
+        e.out.gain.exponentialRampToValueAtTime(0.0001, t + (now ? 0.05 : 0.5));
+        [e.n, e.o, e.pad, e.lfo].forEach(function (x) { if (x) x.stop(t + (now ? 0.1 : 0.6)); });
+      } catch (err) { }
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (!ctx) return;
+      if (document.hidden) ctx.suspend(); else if (on()) ctx.resume();
+    });
+    return { play: play, engineStart: engineStart, engineSet: engineSet, engineStop: engineStop };
+  })();
+  function snd(kind, n) { AU.play(kind, n); }
 
   // ---------- セーブ ----------
   var S = null, slot = -1;
@@ -1079,6 +1182,16 @@ var KDT = {
         ctx.save(); ctx.translate(x, y); var s = Math.max(2, r);
         ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.ellipse(0, -s * 0.2, s, s * 0.35, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#999'; ctx.fillRect(-s * 0.08, -s * 0.2, s * 0.16, s * 1.1); ctx.fillRect(-s * 0.9, s * 0.5, s * 1.8, s * 0.06);
+        ctx.restore(); return;
+      }
+      if (id === 'jwst') {
+        ctx.save(); ctx.translate(x, y); var m = Math.max(2.5, r);
+        ctx.fillStyle = '#b9a6d8'; ctx.beginPath(); ctx.moveTo(-m * 1.6, m * 0.9); ctx.lineTo(m * 1.6, m * 0.9); ctx.lineTo(m * 1.1, m * 0.5); ctx.lineTo(-m * 1.1, m * 0.5); ctx.fill();
+        ctx.fillStyle = '#f2c14e'; ctx.strokeStyle = '#8a6a10'; ctx.lineWidth = Math.max(0.5, m * 0.05);
+        for (var hx = 0; hx < 7; hx++) {
+          var cx0 = hx === 0 ? 0 : Math.cos(hx * Math.PI / 3 + Math.PI / 6) * m * 0.5, cy0 = hx === 0 ? 0 : Math.sin(hx * Math.PI / 3 + Math.PI / 6) * m * 0.5;
+          ctx.beginPath(); for (var k = 0; k < 6; k++) { var an = k * Math.PI / 3; ctx.lineTo(cx0 + Math.cos(an) * m * 0.27, cy0 - m * 0.2 + Math.sin(an) * m * 0.27); } ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
         ctx.restore(); return;
       }
       if (id === 'andromeda' || id === 'gc' || id === 'lmc' || id === 'pleiades') {
@@ -1269,6 +1382,7 @@ var KDT = {
     function frame(ts) {
       var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts; tm += dt;
       boost *= Math.exp(-dt * 1.6); warp *= Math.exp(-dt * 1.2); flash *= Math.exp(-dt * 5);
+      if (mode === 'game') AU.engineSet(boost);
       if (mode === 'game') {
         if (stageId === 'japan') { v = 0.22; drawJapan(dt); }
         else if (stageId === 'world') { v = 0.22; drawWorld(dt); }
@@ -1311,6 +1425,7 @@ var KDT = {
 
   // ================= タイトル =================
   function renderTitle() {
+    AU.engineStop();
     BG.setScene('space');
     var html = '<div class="wrap"><div class="logo">' + rocketSVG(3, 6) +
       '<h1>キーボード<span class="st">☆</span><br>ドライバー</h1><p>もじを うって ロケットで にもつを とどけよう！</p></div><div class="slots">';
@@ -1374,6 +1489,7 @@ var KDT = {
   // ================= ホーム =================
   var selJob = -1;
   function goHome() {
+    AU.engineStop();
     if (S.trip) S.cur = S.trip.stage;
     selJob = -1; renderHome(); show('scr-home');
   }
@@ -1409,10 +1525,24 @@ var KDT = {
     var dist = W.dist(stage, c.o, c.d, jd);
     return { o: c.o, d: c.d, cargo: pick(CARGO[stage.id]), reward: E.reward(dist) };
   }
+  function jobN(stage, j) {
+    var st = stageState(stage.id), jd = W.jdNow(), D = speed();
+    return (st.pos !== j.o ? E.answersFor(W.dist(stage, st.pos, j.o, jd), D) : 0) + E.answersFor(W.dist(stage, j.o, j.d, jd), D);
+  }
   function ensureJobs(stage, force) {
     var st = stageState(stage.id);
     if (force) st.jobs = [];
     while (st.jobs.length < 4) st.jobs.push(genJob(stage, st.jobs));
+    // すぐ とどけられる いらいが ないときは、いまいる ばしょから でる ものを 1つ いれる
+    if (!st.jobs.some(function (j) { return jobN(stage, j) <= 20; })) {
+      var jd = W.jdNow(), near = [];
+      stage.places.forEach(function (p) {
+        if (p.id === st.pos) return;
+        var j = { o: st.pos, d: p.id, cargo: pick(CARGO[stage.id]), reward: E.reward(W.dist(stage, st.pos, p.id, jd)) };
+        if (jobN(stage, j) <= 20) near.push(j);
+      });
+      if (near.length) { near.sort(function (a, b) { return b.reward - a.reward; }); st.jobs[st.jobs.length - 1] = near[rnd(Math.min(3, near.length))]; }
+    }
     // いまいる ばしょから でる いらいを 2つ いじょう
     var here = st.jobs.filter(function (j) { return j.o === st.pos; }).length, guard = 0;
     while (here < 2 && guard++ < 20) {
@@ -1422,6 +1552,21 @@ var KDT = {
       var j = genJob(stage, st.jobs);
       if (j.o === st.pos) { st.jobs[idx] = j; here++; }
     }
+  }
+  function refreshBoards() { W.STAGES.forEach(function (s2) { S.stages[s2.id].jobs = []; }); }
+  // ステージごとの「1かい せいかい あたりの コイン」の いちばん よい いらい
+  function stageRates() {
+    var out = {};
+    W.STAGES.forEach(function (stg) {
+      ensureJobs(stg);
+      var best = 0;
+      S.stages[stg.id].jobs.forEach(function (j) { var n = jobN(stg, j); if (n <= 60) best = Math.max(best, j.reward / n); });
+      out[stg.id] = best;
+    });
+    return out;
+  }
+  function recommended(rates) {
+    var b = null; W.STAGES.forEach(function (stg) { if (!b || rates[stg.id] > rates[b] * 1.15) b = stg.id; }); return b;
   }
   function renderHome() {
     BG.setScene('space');
@@ -1437,11 +1582,15 @@ var KDT = {
         '<div class="muted">' + ruby(W.place(ts, S.trip.job.o).name) + ' → ' + ruby(W.place(ts, S.trip.job.d).name) + '　（' + STAGE_SHORT[ts.id] + '）</div>' +
         '<div class="row" style="margin-top:8px"><button class="btn primary grow" data-h="resume">つづきから とぶ</button><button class="btn small" data-h="abort">やめる</button></div></div>';
     }
+    var rates = S.trip ? null : stageRates(), rec = rates ? recommended(rates) : null;
     html += '<div class="tabs">';
     W.STAGES.forEach(function (s) {
-      html += '<button class="tab' + (s.id === S.cur ? ' on' : '') + '" data-stage="' + s.id + '">' + s.no + '. ' + STAGE_SHORT[s.id] + (S.stages[s.id].cleared ? '<span class="clr">★</span>' : '') + '</button>';
+      html += '<button class="tab' + (s.id === S.cur ? ' on' : '') + '" data-stage="' + s.id + '">' + (s.id === rec ? '<span class="rec">おすすめ</span>' : '') + s.no + '. ' + STAGE_SHORT[s.id] + (S.stages[s.id].cleared ? '<span class="clr">★</span>' : '') + '</button>';
     });
     html += '</div>';
+    if (rec && rec !== S.cur && rates[rec] > rates[S.cur] * 1.5) {
+      html += '<button class="hintbar" data-stage="' + rec + '">💡 いまの ロケットなら「' + stageById(rec).no + '. ' + STAGE_SHORT[rec] + '」の ほうが たくさん コインが もらえるよ →</button>';
+    }
     var vc = Object.keys(st.visited).length;
     html += '<div class="stagehead"><h2>ステージ' + stage.no + '　' + ruby(stage.title) + '</h2><div class="muted">' + ruby(stage.sub) + '</div></div>';
     html += '<div class="mapbox"><canvas id="map"></canvas><div class="maplegend">' + mapLegend(stage) + '</div></div>';
@@ -1614,7 +1763,19 @@ var KDT = {
   function line(ctx, a, b) { if (!a || !b) return; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
 
   // ================= きょうか =================
+  function answersToBuy(cost) {
+    if (S.coins >= cost) return 0;
+    var r = stageRates(), best = 0; Object.keys(r).forEach(function (k) { best = Math.max(best, r[k]); });
+    if (!best) best = speed() / 3;
+    return Math.ceil((cost - S.coins) / best);
+  }
+  function needHTML(cost) {
+    if (S.coins >= cost) return '<div class="need ok">かえる！</div>';
+    var n = answersToBuy(cost);
+    return '<div class="need">あと ' + coins(cost - S.coins) + '（めやす：せいかい やく' + fmtNum(n) + 'かいぶん）</div>';
+  }
   function renderUp() {
+    AU.engineStop();
     BG.setScene('space');
     var D = speed(), html = '<div class="wrap"><div class="topbar"><button class="btn ghost small" data-u="home">← もどる</button><div class="title grow">ロケット きょうか</div><div class="pill">' + coins(S.coins) + '</div></div>';
     html += '<div class="card rocketbox">' + rocketSVG(S.fuel, S.eng) + '<div class="speedbig">1かい せいかいで<b>' + fmtKm(D) + '</b>すすむ</div></div>';
@@ -1622,7 +1783,7 @@ var KDT = {
     E.FUELS.forEach(function (f, i) {
       var t = T[f.id], got = i < S.fuel, next = i === S.fuel;
       html += '<div class="card fuel' + (got || next ? '' : ' locked') + '"><div class="badge" style="background:' + t.color + '">' + esc(t.icon) + '</div><div class="grow"><div class="nm">' + ruby(t.name) + '</div><div class="ds">' + ruby(t.desc) +
-        (i > 0 ? '<br>はやさ ×' + f.mult : '') + '</div></div><div class="acts">';
+        (i > 0 ? '<br>はやさ ×' + f.mult : '') + '</div>' + (next ? needHTML(f.cost) : '') + '</div><div class="acts">';
       if (got) {
         html += '<button class="btn small" data-u="tut" data-id="' + f.id + '">せつめい</button>';
         if (S.fuel > 1) html += '<label class="tog"><input type="checkbox" data-u="tog" data-id="' + f.id + '"' + (S.off[f.id] ? '' : ' checked') + '>つむ</label>';
@@ -1633,7 +1794,7 @@ var KDT = {
     });
     if (S.fuel > 1) html += '<div class="muted" style="color:#b8c4ff;margin:-2px 2px 0">「つむ」を はずすと、その もんだいは でなくなるよ（はやさは かわらない）。</div>';
     var mx = E.engineMax(S.fuel), ec = E.engineCost(S.eng, S.fuel);
-    html += '<div class="sec">⚙️ エンジン</div><div class="card"><div class="row"><div class="grow"><div style="font-weight:900">レベル ' + S.eng + '</div><div class="ds muted">1だん あげるごとに はやさ ×' + E.ENGINE_MULT + '</div></div>' +
+    html += '<div class="sec">⚙️ エンジン</div><div class="card"><div class="row"><div class="grow"><div style="font-weight:900">レベル ' + S.eng + '</div><div class="ds muted">1だん あげるごとに はやさ ×' + E.ENGINE_MULT + '</div>' + (S.eng < mx ? needHTML(ec) : '') + '</div>' +
       (S.eng < mx ? '<button class="btn primary" data-u="eng"' + (S.coins >= ec ? '' : ' disabled') + '>' + coins(ec) + '</button>' : '<span class="muted">' + (S.fuel < FUEL_IDS.length ? 'つぎの ねんりょうで<br>もっと あげられる' : 'さいだい！') + '</span>') + '</div>';
     html += '<div class="eng">';
     var cap = E.engineMax(FUEL_IDS.length);
@@ -1649,12 +1810,12 @@ var KDT = {
     else if (a === 'eng') {
       var c = E.engineCost(S.eng, S.fuel);
       if (S.coins < c || S.eng >= E.engineMax(S.fuel)) return;
-      var before = speed(); S.coins -= c; S.eng++; save(); snd('buy');
+      var before = speed(); S.coins -= c; S.eng++; refreshBoards(); save(); snd('buy');
       toast('エンジン レベル' + S.eng + '！ ' + fmtKm(before) + ' → ' + fmtKm(speed()));
       var y = $('#scr-up').scrollTop; renderUp(); $('#scr-up').scrollTop = y;
     } else if (a === 'fuel') {
       var f = E.FUELS[S.fuel]; if (!f || S.coins < f.cost) return;
-      var b4 = speed(); S.coins -= f.cost; S.fuel++; save(); snd('arrive');
+      var b4 = speed(); S.coins -= f.cost; S.fuel++; refreshBoards(); save(); snd('arrive');
       renderUp();
       var t = T[f.id];
       openModal('<div style="text-align:center"><div style="font-size:14px;font-weight:900;color:var(--sub)">あたらしい ねんりょう ゲット！</div>' + rocketSVG(S.fuel, S.eng).replace('class="rocketsvg"', 'class="rocketsvg" style="width:110px;height:110px"') +
@@ -1677,12 +1838,13 @@ var KDT = {
   function openSettings() {
     openModal('<h3>せってい</h3>' +
       '<label class="set-row">おと を ならす<input type="checkbox" id="setSnd"' + (S.set.sound ? ' checked' : '') + '></label>' +
+      '<label class="set-row">とんでいる ときの エンジンの おと<input type="checkbox" id="setEng"' + (S.set.engine !== false ? ' checked' : '') + '></label>' +
       '<label class="set-row">ローマじの ヒントを さいしょから だす<input type="checkbox" id="setRom"' + (S.set.romaji ? ' checked' : '') + '></label>' +
       '<div class="set-row">あそびかた<button class="btn small" data-m="howto">みる</button></div>' +
       '<p class="muted" style="margin-top:10px">セーブは この ブラウザの なかに されるよ。ブラウザの データを けすと きえるので ちゅうい。</p>' +
       '<div class="acts"><button class="btn primary" data-m="ok">とじる</button></div>', function (act) {
         if (act === 'howto') { closeModal(); openTutorial('hira', {}); return; }
-        S.set.sound = $('#setSnd').checked; S.set.romaji = $('#setRom').checked; save(); closeModal();
+        S.set.sound = $('#setSnd').checked; S.set.engine = $('#setEng').checked; S.set.romaji = $('#setRom').checked; save(); closeModal();
       });
   }
   function openRomaji(inGame) {
@@ -1824,10 +1986,11 @@ var KDT = {
     enterGame();
   }
   function enterGame() {
-    G.busy = false;
+    G.busy = false; G.combo = 0;
     var tr = S.trip, stage = stageById(tr.stage);
     BG.setScene('game', stage.id, tr.legs[tr.leg].to);
     show('scr-game');
+    AU.engineStart(stage.id);
     renderGameHUD();
     nextProblem();
   }
@@ -1879,7 +2042,7 @@ var KDT = {
     var inp = $('#ans'), val = inp.value;
     var r = K.check(G.src, val);
     if (r.ok) return correct();
-    G.tries++;
+    G.tries++; G.combo = 0;
     snd('ng');
     inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
     var html = r.msgs.map(function (m) { return '<div class="msg">' + esc(m) + '</div>'; }).join('') + diffHTML(r.diff);
@@ -1896,15 +2059,16 @@ var KDT = {
     var gained = Math.min(step, leg.dist - tr.prog);
     tr.prog += step; tr.cnt++;
     S.stats.correct++; if (first) S.stats.firstTry++;
-    snd('ok'); setTimeout(function () { snd('boost'); }, 80);
+    G.combo = first ? (G.combo || 0) + 1 : 1;
+    snd('ok', G.combo); snd(stage.id === 'stars' ? 'warp' : 'boost');
     BG.kick(stage.id === 'stars' ? 1.6 : 1.1);
-    floatText((first ? '<span style="color:#ffd23f">いっぱつ！</span> ' : 'せいかい！ ') + '+' + fmtKm(gained).replace(/<ruby>光年<rt>こうねん<\/rt><\/ruby>/, '光年'));
+    floatText((G.combo >= 3 ? '<span style="color:#ff8a2a">' + G.combo + 'れんぞく！</span> ' : first ? '<span style="color:#ffd23f">いっぱつ！</span> ' : 'せいかい！ ') + '+' + fmtKm(gained).replace(/<ruby>光年<rt>こうねん<\/rt><\/ruby>/, '光年'));
     if (tr.prog >= leg.dist - 1e-6) {
       if (tr.leg < tr.legs.length - 1) {
         tr.leg++; tr.prog = 0;
         S.stages[tr.stage].pos = leg.to;
         save();
-        toast('📦 ' + ruby(W.place(stage, leg.to).name) + ' で にもつを つんだ！ つぎは おとどけ！');
+        toast('📦 ' + ruby(W.place(stage, leg.to).name) + ' で にもつを つんだ！ つぎは おとどけ！'); snd('pickup');
         BG.setScene('game', stage.id, tr.legs[tr.leg].to);
         renderGameHUD(); nextProblem();
         return;
@@ -1958,7 +2122,10 @@ var KDT = {
     '<div class="fb" id="fb"></div></div></div>';
   $('#send').addEventListener('pointerdown', function (e) { e.preventDefault(); });
   $('#send').addEventListener('click', function () { submit(); });
+  var lastKey = 0;
+  $('#ans').addEventListener('input', function () { if (Date.now() - lastKey > 60) snd('key'); });
   $('#ans').addEventListener('keydown', function (e) {
+    if (!e.repeat && e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Meta') { lastKey = Date.now(); snd('key'); }
     if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
       if ($('#ans').value && !G.enterTip) { G.enterTip = true; $('#fb').insertAdjacentHTML('afterbegin', '<div class="tip">かくてい できたら「おくる」ボタンを おしてね！</div>'); }
@@ -1972,7 +2139,7 @@ var KDT = {
     fb.insertAdjacentHTML('beforeend', '<div class="tip">うちかたの ヒント</div>' + chipsHTML(c)); refocus();
   });
   $('#gpass').addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  $('#gpass').addEventListener('click', function () { nextProblem(); toast('べつの もんだいに したよ'); });
+  $('#gpass').addEventListener('click', function () { G.combo = 0; nextProblem(); toast('べつの もんだいに したよ'); });
   $('#grom').addEventListener('click', function () { openRomaji(true); });
   $('#gpause').addEventListener('click', function () {
     openModal('<h3>ひとやすみ</h3><p>ホームに もどっても、はいたつの つづきから とべるよ。</p><div class="acts"><button class="btn" data-m="home">ホームへ</button><button class="btn primary" data-m="go">つづける</button></div>', function (a) {
