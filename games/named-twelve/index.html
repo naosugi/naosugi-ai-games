@@ -571,8 +571,8 @@ dialog.lore{width:min(720px,calc(100% - 24px));max-height:calc(100vh - 40px);ove
         <div class="mgroup"><h3 class="mg-h">戦う</h3>
         <button class="mode mode-true hidden" id="m-true"><span class="t">真シナリオ</span><span class="d">育てたユニット12体（すべて別々）で、異界の本隊に挑む。編成コストの上限はない。</span><span class="s">突破<b id="m-true-v">0/5</b></span></button>
         <button class="mode mode-lock" id="m-true-lock" disabled><span class="t">？？？</span><span class="d">この世界には、まだ明かされていない謎がある。</span><span class="s">条件<b>？</b></span></button>
-        <button class="mode" id="m-scenario"><span class="t">シナリオ</span><span class="d">稀に空が裂けて現れる、異界の軍勢。12の軍勢を弱い順に退けます。</span><span class="s">突破<b id="m-scn-v">0/12</b></span></button>
-        <button class="mode" id="m-random"><span class="t">ランダム連勝</span><span class="d">負けるまで戦い続けます。相手は予算70%から始まり、勝つたびに5%ずつ増えます。</span><span class="s">最高<b id="m-rnd-v">0</b></span></button>
+        <button class="mode" id="m-scenario"><span class="t">シナリオ</span><span class="d">稀に空が裂けて現れる、異界の軍勢。12の軍勢を弱い順に退けます。突破すると、さらに強い軍勢が3つ。</span><span class="s">突破<b id="m-scn-v">0/12</b></span></button>
+        <button class="mode" id="m-random"><span class="t">ランダム連勝</span><span class="d">負けるまで戦い続けます。相手は予算70%から始まり、勝つたびに5%ずつ、160%まで増えます。</span><span class="s">最高<b id="m-rnd-v">0</b></span></button>
         <button class="mode" id="m-free"><span class="t">フリーバトル</span><span class="d">青軍も赤軍も自由に組んで1戦。相手が書き出した編成を読み込めば対人戦。</span><span class="s">対戦<b>▶</b></span></button>
         </div>
       </div>
@@ -2358,7 +2358,7 @@ const myArmy=()=>markUniq(numbered(resolveAll(slots)));
 const power=r=>unitCost(r); // 総合力＝そのユニットを作るのに必要なポイント（基本コストは含めない）
 // 編成の予算：1体ごとの基本コスト＋各ユニットのコスト。12体なら従来の281ptと同じ条件
 const BASE_UNIT=8, TOTAL_BUDGET=CFG.BUDGET+BASE_UNIT*CFG.MAXU;
-const STORY_RATE=0.8; // 育成ユニットの編成コスト（20%オフ）
+const STORY_RATE=0.25; // 育成ユニットの編成コスト（1/4。弱いうちは入れるほど強く、強く育つと何体入れるかを選ぶ必要が出る）
 const costIn=u=>unitCost(u)*(u.story?STORY_RATE:1); // 編成でかかるコスト
 const armyTotal=a=>a.reduce((t,u)=>t+costIn(u),0)+BASE_UNIT*a.length;
 const isUnique=r=>!!r.story||power(r)>=CFG.UNIQUE-1e-9;
@@ -2434,7 +2434,7 @@ function renderStart(){
   const p=armyProblem();$('st-warn').textContent=p||'';$('st-warn').classList.toggle('hidden',!p);
   $('st-roster-n').textContent=allUnits().length;
   $('m-story-s').innerHTML=SY&&!['over','done'].includes(SY.stage)?`続きから<b class="num">${SY.turn}/${STORY_TURNS}</b>`:'はじめる<b>▶</b>';
-  $('m-scn-v').textContent=`${store.get('rb2_cleared',0)}/12`;
+  $('m-scn-v').textContent=`${store.get('rb2_cleared',0)}/${scnCount()}`;
   $('m-rnd-v').textContent=store.get('rb2_best',0);
   // 十二の兵：育成ユニットを総合力の高い順に12まで
   const su=roster.filter(r=>r.story).sort((a,b)=>power(b)-power(a)).slice(0,12);
@@ -2460,15 +2460,17 @@ $('rules-ab').innerHTML='<tr><th>特殊能力</th><th>属性</th><th>効果</th>
 function openPick(mode){
   const cleared=store.get('rb2_cleared',0);
   $('pick-title').textContent=mode==='scenario'?'シナリオ':'フリー対戦';
-  $('pick-sub').textContent=mode==='scenario'?`${cleared} / 12 突破`:'相手を選んでください';
-  const list=mode==='scenario'?SCENARIO:Object.keys(PRESETS);
+  $('pick-sub').textContent=mode==='scenario'?`${cleared} / ${scnCount()} 突破`:'相手を選んでください';
+  const list=mode==='scenario'?scnNames():Object.keys(PRESETS);
   $('pick-cards').innerHTML=list.map((n,i)=>{
-    const lock=mode==='scenario'&&i>cleared, clear=mode==='scenario'&&i<cleared;
+    const lock=mode==='scenario'&&i>cleared, clear=mode==='scenario'&&i<cleared,ex=mode==='scenario'&&i>=SCENARIO.length;
+    if(ex&&cleared<SCENARIO.length)return i===SCENARIO.length?`<div class="ecard lock"><div class="row1"><span class="nm">？？？</span><span class="st">全${SCENARIO.length}ステージ突破で解放</span></div><div class="muted" style="font-size:13px">さらに強い異界の軍勢が、${SCN_EXTRA.length}つ待っている。</div></div>`:'';
     const st=mode==='scenario'?(clear?'突破済み':lock?'未解放':'挑戦できます'):'';
-    return`<div class="ecard${lock?' lock':''}${clear?' clear':''}">
+    const army=mode==='scenario'?scnArmy(i):PRESETS[n];
+    return`<div class="ecard${lock?' lock':''}${clear?' clear':''}${ex?' extra':''}">
       <div class="row1">${mode==='scenario'?`<span class="no num">${i+1}</span>`:''}<span class="nm">${n}</span><span class="st">${st}</span></div>
-      <div class="muted" style="font-size:13px">${PRESET_NOTE[n]||''}</div>
-      <div class="formation mini">${formationHTML(PRESETS[n],1,{fullBack:true})}</div>
+      <div class="muted" style="font-size:13px">${ex?`${SCN_EXTRA[i-SCENARIO.length].text}　軍勢の総合力 ${fmt(armyCost(army))}`:PRESET_NOTE[n]||''}</div>
+      <div class="formation mini">${formationHTML(army,1,{fullBack:true})}</div>
       <button class="btn-primary" data-n="${n}" data-i="${i}" ${lock?'disabled':''}>${mode==='scenario'?'出撃':'対戦'}</button>
     </div>`;}).join('');
   $('pick-cards').querySelectorAll('button[data-n]').forEach(b=>b.onclick=()=>{
@@ -2477,11 +2479,22 @@ function openPick(mode){
   runState={mode};
   go('pick');
 }
-function startScenario(i){runState={mode:'scenario',stage:i};startBattle(PRESETS[SCENARIO[i]],`異界の軍勢 ${i+1}/12：${SCENARIO[i]}`);}
+// クリア後の追加ステージ：プリセットを元に予算を上げた軍勢（自動プレイで育てたユニットで強さを合わせた）
+const SCN_EXTRA=[
+  {name:'異界の双将',base:'英雄2体',pct:160,text:'将軍と大魔導が、倍近い兵を連れて戻ってきた。'},
+  {name:'異界の城塞',base:'壁＋魔法',pct:180,text:'動く城壁と、その後ろに並ぶ術者たち。'},
+  {name:'異界の魔導軍',base:'均等魔法',pct:160,text:'全員が魔法を使う。数も、質も。'},
+];
+const scnCount=()=>SCENARIO.length+SCN_EXTRA.length;
+const scnNames=()=>[...SCENARIO,...SCN_EXTRA.map(x=>x.name)];
+function scnArmy(i){if(i<SCENARIO.length)return PRESETS[SCENARIO[i]];const x=SCN_EXTRA[i-SCENARIO.length],rng=mulberry32(hashSeed('scn-extra',x.base,x.pct));
+  const a=roleNames(fitBudget(randomizeArmy(PRESETS[x.base],rng,2),CFG.BUDGET*x.pct/100,rng));return a;}
+function startScenario(i){runState={mode:'scenario',stage:i};startBattle(scnArmy(i),`異界の軍勢 ${i+1}/${scnCount()}：${scnNames()[i]}`);}
+const RANDOM_MAX=160;   // ランダム連勝の相手の予算の上限（%）。70%から勝つたびに5%ずつ
 function nextRandom(){
   const rng=mulberry32((Math.random()*2**31)|0);
   const names=Object.keys(PRESETS);const base=names[Math.floor(rng()*names.length)];
-  const pct=Math.min(100,70+5*runState.streak);
+  const pct=Math.min(RANDOM_MAX,70+5*runState.streak);
   const enemy=roleNames(fitBudget(randomizeArmy(PRESETS[base],rng,2),CFG.BUDGET*pct/100,rng));
   runState.enemyBase=base;runState.pct=pct;
   startBattle(enemy,`ランダム連勝：${runState.streak}連勝中・相手は「${base}」系、予算${pct}%`);
@@ -3497,7 +3510,7 @@ $('st-export').onclick=()=>openIO({title:'ゲームまるごと書き出す',des
 $('st-import').onclick=()=>openIO({title:'ゲームまるごと読み込む',desc:'読み込むと、今のデータ（ユニット一覧・編成・ストーリーなど）はすべて置き換わります。必要なら先に書き出しておいてください。',applyLabel:'置き換えて読み込む',
   onImport:async txt=>{parseJSON(txt);if(!await ask('今のデータをすべて置き換えます。よろしいですか？','置き換える','やめる',true))return false;const n=importGame(txt);$('dlg-io').close();await tell(`${n}件のデータを読み込みました。画面を読み込み直します。`);location.reload();return false;}});
 // ===== フリーバトル：両軍を自由に組んで1戦。相手の編成を読み込めば対人戦 =====
-// バランス：scenario＝予算377pt・ユニーク1体まで・育成20%オフ ／ true＝コスト上限なし・ユニーク1体まで（どちらも12体まで）
+// バランス：scenario＝予算377pt・ユニーク1体まで・育成ユニットは編成コスト1/4 ／ true＝コスト上限なし・ユニーク1体まで（どちらも12体まで）
 const FREE_DEF={mode:'scenario',side:{blue:{src:'mine'},red:{src:'preset',name:'均等物理'}},custom:{blue:[],red:[]},imp:{blue:null,red:null}};
 let FREE=Object.assign(JSON.parse(JSON.stringify(FREE_DEF)),store.get('rb3_free',{}));
 const saveFree=()=>store.set('rb3_free',FREE);
@@ -3526,7 +3539,7 @@ function openFree(){go('free');renderFree();}
 function renderFree(){
   const m=FREE.mode;
   $('fr-mode').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
-  $('fr-mode-d').textContent=m==='true'?'コストの上限なし・ユニーク（総合力50以上と育成ユニット）は1体まで・12体まで。育てたユニットを全力で戦わせるとき向け。':`予算${TOTAL_BUDGET}pt・ユニーク（総合力50以上と育成ユニット）は1体まで・育成ユニットは編成コスト20%オフ・12体まで。`;
+  $('fr-mode-d').textContent=m==='true'?'コストの上限なし・ユニーク（総合力50以上と育成ユニット）は1体まで・12体まで。育てたユニットを全力で戦わせるとき向け。':`予算${TOTAL_BUDGET}pt・ユニーク（総合力50以上と育成ユニット）は1体まで・育成ユニットは編成コスト${Math.round(STORY_RATE*100)}%・12体まで。`;
   const saved=Object.keys(store.get('rb3_saved',{}));let ok=true;
   for(const side of ['blue','red']){
     const s=FREE.side[side],raw=freeUnits(side),us=markUniq(numbered(raw)),pb=freeProblems(raw,m);if(pb.length)ok=false;
@@ -3940,13 +3953,13 @@ function endBattle(){
   }else if(runState.mode==='scenario'){
     const i=runState.stage;
     if(r==='win'){const c=store.get('rb2_cleared',0);if(i+1>c)store.set('rb2_cleared',i+1);
-      if(i+1<SCENARIO.length){text=`ステージ${i+1}「${SCENARIO[i]}」を突破しました。`;btn('次のステージへ',()=>startScenario(i+1),true);}
-      else text='全12ステージを制覇しました。';}
+      if(i+1<scnCount()){text=i+1===SCENARIO.length?`全${SCENARIO.length}ステージを制覇しました。さらに強い軍勢が${SCN_EXTRA.length}つ現れた。`:`ステージ${i+1}「${scnNames()[i]}」を突破しました。`;btn('次のステージへ',()=>startScenario(i+1),true);}
+      else text=`追加の${SCN_EXTRA.length}ステージも含め、全${scnCount()}ステージを制覇しました。`;}
     else btn('もう一度',()=>startScenario(i),true);
     btn('ステージ一覧',()=>openPick('scenario'));btn('編成を見直す',openEditor);
   }else if(runState.mode==='random'){
     if(r==='win'){runState.streak++;if(runState.streak>store.get('rb2_best',0))store.set('rb2_best',runState.streak);
-      text=`${runState.streak}連勝中です。次の相手の予算は${Math.min(100,70+5*runState.streak)}%です。`;btn('次の相手へ',nextRandom,true);btn('ここでやめる',()=>go('start'));}
+      text=`${runState.streak}連勝中です。次の相手の予算は${Math.min(RANDOM_MAX,70+5*runState.streak)}%です。`;btn('次の相手へ',nextRandom,true);btn('ここでやめる',()=>go('start'));}
     else{text=`記録は${runState.streak}連勝でした（最高 ${store.get('rb2_best',0)}連勝）。相手は「${runState.enemyBase}」系、予算${runState.pct}%でした。`;
       btn('もう一度挑戦',()=>{runState={mode:'random',streak:0};nextRandom();},true);btn('編成を見直す',openEditor);btn('スタートへ',()=>go('start'));}
   }else{
