@@ -4966,7 +4966,7 @@ function resetRun() {
   banishes = 1; banished = new Set(); banishMode = false;
   for (const list of [enemies, items, pillars]) if (list) list.forEach(o => dropObj(o.mesh));
   if (boss) dropObj(boss.mesh); if (gate) dropObj(gate.mesh);
-  enemies = []; pb = []; eb = []; gems = []; items = []; parts = []; pillars = []; boss = null; gate = null;
+  enemies = []; pb = []; eb = []; gems = []; items = []; parts = []; pillars = []; boss = null; gate = null; netHoles = [];
   route = { kind: null, core: null, terrain: null, until: 0, label: '' };
   curB = { x: BX0, y: BY0 }; tgtB = { x: BX0, y: BY0 };
   const b1 = pick(['guardian', 'sentinel']);
@@ -5687,6 +5687,7 @@ function update(dt) {
   updateHoles(dt);
   updateFx(dt);
   updateWaves(dt);
+  for (const h of netHoles) h.t -= dt; netHoles = netHoles.filter(h => h.t > 0);
   // level-up
   while (xp >= xpNeed(level)) { xp -= xpNeed(level); level++; pendingLv++; }
   if (T >= RUN_LEN && endTimer <= 0 && state === 'play') finish('TIMEUP');
@@ -5936,6 +5937,7 @@ function updateBoss(dt) {
   if (!b.def.final && b.age > b.window && !b.leaving) { b.leaving = true; toast(b.def.name + ' は撤退した…'); }
 }
 const BOSS_HOVER = -58, BOSS_CLOSE = -21;
+let netHoles = [];
 const NO_PRESSURE = { net: 1, sweep: 1, netFast: 1, cross: 1 };
 const BOSS_MOVES = {
   guardian: [['fan', 'ring', 'lunge'], ['fan', 'net', 'stopgo', 'lunge']],
@@ -5981,9 +5983,9 @@ function bossMove(b, m, sp, dt) {
           const dx = gx - b.x, dy = gy - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz);
           ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .34, fast ? 0xb05cff : 0xff4d6d);
         }
-        // a green ring marks where the hole will arrive, until it does
+        // a labelled ring marks where the hole will arrive, until it does
         const tt = Math.min(4.5, Math.hypot(cx - b.x, cy - b.y, b.z) / v);
-        for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; parts.push({ x: cx + Math.cos(a) * 1.4, y: cy + Math.sin(a) * 1.4, z: -4, vx: 0, vy: 0, vz: 0, life: tt, max: tt, color: 0x6bff9e, s: .22 }); }
+        netHoles.push({ x: cx, y: cy, t: tt, max: tt });
         m.n++;
       }
       return m.t > (fast ? 5.4 : 4.8);
@@ -6197,6 +6199,7 @@ function finish(res) {
   slowT = 1;
   if (res !== 'DOWN') P.invuln = 0;
   if (res === 'DOWN') {
+    pb.length = 0;
     burst(P.x, P.y, 0, 0x65f6ff, 70, 9, .3, 1); burst(P.x, P.y, 0, 0xff5cbd, 40, 7, .3, .9); burst(P.x, P.y, 0, 0xffffff, 25, 12, .25, .7);
     shockRing(P.x, P.y, -2, 0x65f6ff, 4.5, .8); shockRing(P.x, P.y, -3, 0xff5cbd, 2.8, .6);
     audio.playerDown(); ship.visible = false; shake = 16;
@@ -6204,6 +6207,8 @@ function finish(res) {
     return;
   }
   // the screen clears: bullets turn to sparks, leftover items fade
+  for (const b of pb) burst(b.x, b.y, b.z, b.color, 1, 3, .15, .3);
+  pb.length = 0;
   for (const b of eb) burst(b.x, b.y, b.z, b.color, 2, 3, .2, .4);
   eb.length = 0;
   if (res === 'CLEAR') {
@@ -6423,7 +6428,7 @@ function clearWorld() {
   if (items) items.forEach(i => dropObj(i.mesh));
   if (pillars) pillars.forEach(p => dropObj(p.mesh));
   if (boss) dropObj(boss.mesh); if (gate) dropObj(gate.mesh);
-  enemies = []; pb = []; eb = []; gems = []; items = []; parts = []; pillars = []; boss = null; gate = null;
+  enemies = []; pb = []; eb = []; gems = []; items = []; parts = []; pillars = []; boss = null; gate = null; netHoles = [];
   orbMeshes.forEach(m => dropObj(m)); orbMeshes.length = 0;
   cloneMeshes.forEach(m => dropObj(m)); cloneMeshes.length = 0;
   holes.forEach(h => dropObj(h.mesh)); holes = [];
@@ -6552,6 +6557,17 @@ function drawOverlay() {
     og.fillStyle = 'rgba(0,0,0,.65)'; og.fillRect(sx - bw / 2 - 1, sy - 3, bw + 2, 4);
     og.fillStyle = hex(ET[e.type].color); og.fillRect(sx - bw / 2, sy - 2, bw * f, 2);
     if (e.type === 'shield' && !e.shieldBroken) { og.fillStyle = '#ffb3e6'; og.fillRect(sx - bw / 2, sy + 2, bw * clamp(e.shieldHp / (2.2 * enemyHp('normal')), 0, 1), 2); }
+  }
+  // where the next hole in a bullet net will be
+  if (state === 'play' && !(endTimer > 0)) for (const hl of netHoles.slice(0, 1)) { // only the hole of the wall that arrives next
+    pv.set(hl.x, hl.y, 0).project(cam); if (pv.z > 1) continue;
+    const sx = (pv.x * .5 + .5) * W, sy = (-pv.y * .5 + .5) * H;
+    pv.set(hl.x + 1.5, hl.y, 0).project(cam); const rr = Math.abs((pv.x * .5 + .5) * W - sx);
+    const a = .55 + .35 * Math.sin(hl.t * 10);
+    og.save(); og.setLineDash([6, 5]); og.lineWidth = 3; og.strokeStyle = 'rgba(107,255,158,' + a + ')';
+    og.beginPath(); og.arc(sx, sy, rr, 0, Math.PI * 2); og.stroke(); og.setLineDash([]);
+    og.font = '900 13px system-ui,-apple-system,sans-serif'; og.textBaseline = 'bottom'; og.lineWidth = 3; og.strokeStyle = 'rgba(0,0,0,.85)'; og.fillStyle = 'rgba(160,255,190,' + Math.min(1, a + .2) + ')';
+    og.strokeText('すき間', sx, sy - rr - 3); og.fillText('すき間', sx, sy - rr - 3); og.restore();
   }
   // boss HP as a number right above the boss (as in the first game)
   if (boss && !boss.leaving && boss.z > -200) {
@@ -6742,6 +6758,7 @@ if (DEBUG) window.__is2 = {
   boss(key, frac = 1) { spawnBoss(key, 999); infoQ.length = 0; boss.hp = boss.max * frac; },
   rsSet(o) { Object.assign(rs, o); }, rsGet() { return { trueFight: rs.trueFight, trueClear: rs.trueClear, boss: boss && boss.key, T, hTime: document.getElementById('hTime').textContent, result, state }; },
   dbgSet(o) { Object.assign(dbg, o); }, shield() { return P.shield; },
+  ebInfo() { return { n: eb.length, parts: parts.length, pb: pb.length, endTimer: +endTimer.toFixed(2) }; },
   bhp(frac) { if (boss) boss.hp = boss.max * frac; },
   bstate() { return boss ? { mode: boss.mode, mv: boss.mv && boss.mv.k, phase: boss.phase, eb: eb.length, z: +boss.z.toFixed(1) } : null; },
   audio,
