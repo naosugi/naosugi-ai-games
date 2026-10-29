@@ -9,6 +9,7 @@
 | ゲーム | 内容 |
 |---|---|
 | [INFINITE SHOT 3D](games/infinite-shot-3d/) | 自動前進の3Dシューティング。5分間スコアアタック |
+| [INFINITE SHOT 3D II](games/infinite-shot-3d-2/) | INFINITE SHOT 3D の続編。分岐ルートで拾ったコアで武器が進化する、5分間の3Dシューティング |
 | [名を持つ十二の兵](games/named-twelve/) | TRPG風軍団戦。会話と選択で戦士を4年かけて育て、12体の軍団で戦う。手がかりをつなぐと真シナリオが開く |
 | [NEON CLAW RUSH](games/neon-claw-rush/) | 60秒タイムアタックのクレーンゲーム。連続GETでFEVER突入 |
 | [BLUE DASH](games/blue-dash/) | 5段の高架道路を走る横スクロールアクション。日没までに巨大ロボを倒して相棒を救え |
@@ -57,6 +58,6 @@ games/<id>/thumb.jpg  一覧用サムネイル（16:9 推奨）
 
 同梱しているサードパーティ製ソフトウェア:
 
-- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html` に埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
+- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html` と `games/infinite-shot-3d-2/index.html` に埋め込み（どちらも r186）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
 - `games/blue-dash/index.html` は three.js（r128）を cdnjs から読み込みます（同梱はしていません）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
