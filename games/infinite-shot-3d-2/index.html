@@ -104,6 +104,13 @@ button[disabled]{opacity:.4;pointer-events:none}
 .tbl td.s{text-align:right;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
 .tbl tr.me td{background:#24502f}
 .rec{display:grid;gap:6px;text-align:left}
+.card>.eyebrow{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--dim);margin-bottom:2px}
+button.big{font-size:18px;padding:15px 16px}
+details.lockd{margin-top:8px;text-align:left;background:#0b1630;border:1px dashed #2b4870;border-radius:10px;padding:6px 9px}
+details.lockd summary{cursor:pointer;font-size:12px;font-weight:800;color:#a9c0de}
+details.lockd .r{padding:5px 0;border-top:1px solid #1d2f50}
+details.lockd .r b{font-size:12.5px}
+details.lockd .r small{display:block;font-size:11px;color:#94a9ca}
 .rec .r{background:#0f1d38;border:1px solid #2b4870;border-radius:10px;padding:7px 9px}
 .rec .r b{font-size:13px}
 .rec .r small{display:block;color:#b6c9e3;font-size:11px;line-height:1.45;margin-top:2px}
@@ -4546,6 +4553,7 @@ const BOSSES = {
   dread: { name: 'DREADNOUGHT', color: 0xe0457b, fill: 0x3a0c1e, spikes: 12, pattern: 'spiral', ttk: 20, xp: 45, idx: 1 },
   hydra: { name: 'HYDRA', color: 0xff6a3d, fill: 0x3a160c, spikes: 6, pattern: 'hydra', ttk: 20, xp: 45, idx: 1 },
   omega: { name: 'OMEGA', color: 0xff3b5c, fill: 0x3a0d18, spikes: 16, pattern: 'final', ttk: 34, xp: 0, idx: 2, final: true },
+  abyssOmega: { name: 'OMEGA ABYSS', color: 0xb05cff, fill: 0x14051f, spikes: 24, pattern: 'final', ttk: 42, xp: 0, idx: 3, final: true, truth: true, r: 5.2 },
 };
 const TERRAIN = {
   tunnel: { name: 'トンネル', desc: '動ける範囲が狭い' },
@@ -4583,6 +4591,7 @@ const UNLOCKS = [
   { k: 'fusion', name: '🔗 融合', cond: '覚醒を1回発動する', prog: () => [UL.awakened || 0, 1] },
   { k: 'abyss', name: '🕳️ アビスルート', cond: '3回クリア（2回目の分岐に出る）', prog: () => [UL.clears || 0, 3] },
   { k: 'phantom', name: '🛸 機体ファントム', cond: 'HARDでクリア', prog: () => [UL.hardClears || 0, 1] },
+  { k: 'abyssKing', hidden: true, name: '🌌 隠し実績「深淵の果て」', cond: 'HARDでアビスルートを通り、OMEGAの真の姿を倒した', prog: () => [UL.trueClears || 0, 1] },
 ];
 function checkUnlocks() {
   const got = [];
@@ -4664,6 +4673,7 @@ const audio = (() => {
     route_abyss: { bpm: 112, prog: [[45, 48, 51], [46, 49, 53], [44, 47, 51], [45, 48, 52]], bass: 'drone', arp: [0, null, 2, null, 1, null, 3, null], arpW: 'sine', lead: M.slow, leadW: 'sine', echo: true, kick: 'break', snare: true, hat: 0 },
     bossA: { bpm: 146, prog: [[50, 53, 57], [50, 53, 57], [46, 50, 53], [45, 49, 52]], bass: 'gallop', bassLp: 800, arp: [0, 1, 2, 1, 0, 2, 1, 2], arpW: 'square', lead: M.call, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
     bossB: { bpm: 150, prog: [[47, 50, 54], [43, 47, 50], [45, 48, 52], [42, 46, 49]], bass: 'gallop', bassLp: 1000, arp: [0, 2, 1, 2, 3, 2, 1, 2], arpW: 'sawtooth', lead: M.tense, leadW: 'square', kick: 'four', snare: true, hat: 16 },
+    abyss_final: { bpm: 172, prog: [[44, 47, 50], [43, 46, 50], [41, 44, 48], [43, 47, 50]], bass: 'gallop', bassLp: 900, arp: [0, 3, 1, 2, 0, 3, 2, 1], arpW: 'sawtooth', lead: M.tense, leadW: 'sawtooth', echo: true, kick: 'four', snare: true, hat: 16 },
     final: { bpm: 158, prog: [[45, 48, 52], [46, 50, 53], [44, 48, 51], [45, 49, 52]], bass: 'gallop', bassLp: 1200, arp: [0, 1, 2, 3, 2, 1, 0, 1], arpW: 'sawtooth', lead: M.run, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
   };
   let cur = null, want = null, step = 0, nextT = 0, timer = null;
@@ -5084,7 +5094,7 @@ function spawnBoss(key, window) {
   if (boss) { dropObj(boss.mesh); boss = null; }
   const def = BOSSES[key];
   const hp = def.ttk * refDps() * DF.boss;
-  boss = { key, def, x: 0, y: 1, z: SPAWNZ, r: def.final ? 4.4 : 3.6, hp, max: hp, age: 0, flash: 0, t1: 1.5, t2: 3, t3: 4, mode: 'enter', mt: 0, cyc: 0, window, leaving: false, phase: 1, mv: null, ci: 0, tele: 0, seen: {} };
+  boss = { key, def, x: 0, y: 1, z: SPAWNZ, r: def.r || (def.final ? 4.4 : 3.6), hp, max: hp, age: 0, flash: 0, t1: 1.5, t2: 3, t3: 4, mode: 'enter', mt: 0, cyc: 0, window, leaving: false, phase: 1, mv: null, ci: 0, tele: 0, seen: {} };
   const g = new T3.Group(), spinG = new T3.Group();
   const core = solid(GEO.ico, def.fill, def.color); core.scale.setScalar(boss.r * .8); spinG.add(core);
   const sm = new T3.MeshPhongMaterial({ color: def.fill, emissive: new T3.Color(def.color).multiplyScalar(.5), flatShading: true });
@@ -5093,8 +5103,9 @@ function spawnBoss(key, window) {
   g.add(spinG);
   const halo = new T3.Mesh(GEO.wave, addMat({ color: 0xff2d55, opacity: 0 })); halo.scale.setScalar(boss.r * 1.5); g.add(halo);
   boss.halo = halo; boss.spin = spinG; boss.body = [core]; boss.mesh = g; g.position.set(boss.x, boss.y, boss.z); scene.add(g);
-  audio.bossAppear(def.final); audio.bgm(def.final ? 'final' : key === 'guardian' || key === 'sentinel' ? 'bossA' : 'bossB');
-  info({ eyebrow: def.final ? '最終ボス' : '中ボス', title: '⚠ ' + def.name, color: hex(def.color),
+  audio.bossAppear(def.final); audio.bgm(def.truth ? 'abyss_final' : def.final ? 'final' : key === 'guardian' || key === 'sentinel' ? 'bossA' : 'bossB');
+  if (def.truth) info({ eyebrow: '真・最終形態', title: '⚠ ' + def.name, color: hex(def.color), html: '<p class="big">深淵に呑まれたOMEGAが姿を変えた。<b>時間は止まった</b>。倒すか、倒されるまで終わらない。</p><p>HPが減るたびに攻撃が変わる。<b>引き寄せ</b>に逆らって動け。</p>' });
+  else info({ eyebrow: def.final ? '最終ボス' : '中ボス', title: '⚠ ' + def.name, color: hex(def.color),
     html: '<p class="big">' + (def.final ? '倒せばクリア。HPが減ると攻撃が激しくなる。' : '<b>' + Math.round(window) + '秒以内</b>に倒さないと撤退する（報酬なし）。HPが半分を切ると攻撃パターンが変わる。') + '</p><p>周期的に<b>手前まで接近</b>してくる（赤い輪が点滅したら合図）。ブレイカーが届く好機。</p>' });
   shake = 6;
 }
@@ -5223,9 +5234,15 @@ function killBoss() {
   audio.bossDown(b.def.final); burst(b.x, b.y, b.z, b.def.color, 120, 16, .4, 1); shockRing(b.x, b.y, b.z, b.def.color, 22, .7); shake = 12;
   dropObj(b.mesh); boss = null;
   eb.length = 0;
-  if (b.def.final) { finish('CLEAR'); return; }
+  if (b.def.final && b.key === 'omega' && diffKey === 'HARD' && rs.gateChoices.includes('abyss')) { startTrueForm(b); return; }
+  if (b.def.final) { if (b.def.truth) rs.trueClear = true; finish('CLEAR'); return; }
   toast(b.def.name + ' 撃破！');
   audio.bgm(routeSong());
+}
+function startTrueForm(b) {
+  rs.trueFight = true; rs.trueSpawnT = 3.2; audio.bgmStop(); slowT = 1.2; shake = 22;
+  shockRing(b.x, b.y, b.z, 0xb05cff, 40, 2.2); burst(b.x, b.y, b.z, 0xb05cff, 160, 20, .6, 1.6);
+  toast('……OMEGAが深淵に呑まれていく');
 }
 function hurtPlayer(n) {
   if (dbg.god && P.invuln <= 0) { rs.godHits = (rs.godHits || 0) + n; P.invuln = .8; }
@@ -5619,7 +5636,8 @@ function movePlayer(dt) {
   if (mx || my) { const l = Math.hypot(mx, my), mv = 12 * moveMul() * dt; P.x += mx / l * mv; P.y += my / l * mv; }
 }
 function update(dt) {
-  if (!dbg.freezeT && !(endTimer > 0)) T += dt;
+  if (!dbg.freezeT && !(endTimer > 0) && !(rs && rs.trueFight)) T += dt;
+  if (rs && rs.trueSpawnT > 0 && !(endTimer > 0)) { rs.trueSpawnT -= dt; if (rs.trueSpawnT <= 0) spawnBoss('abyssOmega', 1e9); }
   if (endTimer > 0) {
     const before = endTimer; endTimer -= dt; endElapsed += dt;
     if (result !== 'DOWN' && Math.ceil(endTimer) < Math.ceil(before) && endTimer > 0 && Math.ceil(endTimer) <= 3) audio.tick(Math.ceil(endTimer));
@@ -5896,9 +5914,10 @@ function updateBoss(dt) {
   if (b.mode === 'enter') { b.z += 45 * dt; if (b.z >= BOSS_HOVER) { b.z = BOSS_HOVER; b.mode = 'hover'; b.mt = 0; b.tele = .8; } return; }
   // phases: mid-bosses change at half HP, OMEGA at 2/3 and 1/3
   const f = b.hp / b.max, ph = b.def.final ? (f > .66 ? 1 : f > .33 ? 2 : 3) : (f > .5 ? 1 : 2);
+  if (b.def.truth) b.halo.material.color.set(0xb05cff);
   if (ph > b.phase) {
     b.phase = ph; b.ci = 0; shake = 10; audio.approach();
-    toast(b.def.final ? (ph === 2 ? 'OMEGA 形態変化！' : 'OMEGA 最終形態！') : b.def.name + ' 怒り状態！ 攻撃が変わる');
+    toast(b.def.truth ? (ph === 2 ? '深淵が深まる……' : 'OMEGA ABYSS 最後のあがき！') : b.def.final ? (ph === 2 ? 'OMEGA 形態変化！' : 'OMEGA 最終形態！') : b.def.name + ' 怒り状態！ 攻撃が変わる');
     burst(b.x, b.y, b.z, b.def.color, 40, 10, .3, .7);
     if (b.mv && b.mv.k !== 'lunge') { b.mv = null; b.tele = .9; }
   }
@@ -5911,20 +5930,22 @@ function updateBoss(dt) {
   const m = b.mv; m.t += dt;
   const done = bossMove(b, m, sp, dt);
   // later phases keep up a little aimed pressure, except during the moves that ask you to find a path
-  if (b.phase >= 2 && m.k !== 'net' && m.k !== 'sweep' && b.mode !== 'in' && b.t2 <= 0) { aimed(b, 3, .05, sp * 1.05, .42); b.t2 = b.def.final && b.phase === 3 ? 1.8 : 2.6; }
+  if ((b.phase >= 2 || b.def.truth) && !NO_PRESSURE[m.k] && b.mode !== 'in' && b.t2 <= 0) { aimed(b, 3, .05, sp * 1.05, .42, b.def.truth ? 0xb05cff : 0xff2d55); b.t2 = b.def.truth ? 3.2 - .6 * b.phase : b.def.final && b.phase === 3 ? 1.8 : 2.6; }
   if (b.def.final && b.phase === 3 && b.t3 <= 0) { spawnEnemy('dasher'); spawnEnemy('dasher'); b.t3 = 5; }
   if (done) { b.mv = null; b.mode = 'hover'; b.tele = b.phase >= 2 ? .55 : .8; }
   if (!b.def.final && b.age > b.window && !b.leaving) { b.leaving = true; toast(b.def.name + ' は撤退した…'); }
 }
 const BOSS_HOVER = -58, BOSS_CLOSE = -21;
+const NO_PRESSURE = { net: 1, sweep: 1, netFast: 1, cross: 1 };
 const BOSS_MOVES = {
   guardian: [['fan', 'ring', 'lunge'], ['fan', 'net', 'stopgo', 'lunge']],
   sentinel: [['ring', 'stopgo', 'lunge'], ['curve', 'net', 'ring', 'lunge']],
   dread: [['spiral', 'split', 'lunge'], ['curve', 'sweep', 'split', 'net', 'lunge']],
   hydra: [['brood', 'split', 'lunge'], ['stopgo', 'brood', 'sweep', 'lunge']],
+  abyssOmega: [['netFast', 'pinwheel', 'splitRain', 'lunge'], ['pull', 'cross', 'stopgo2', 'netFast', 'lunge'], ['pull', 'pinwheel', 'cross', 'splitRain', 'stopgo2', 'netFast', 'lunge']],
   omega: [['fan', 'ring', 'net', 'lunge'], ['spiral', 'stopgo', 'split', 'sweep', 'lunge'], ['curve', 'net', 'stopgo', 'spiral', 'sweep', 'lunge']],
 };
-const MOVE_LABEL = { net: '弾の網：すき間へ逃げろ', stopgo: '止まる弾：動き出したら狙ってくる', split: '炸裂弾：はじけて広がる', sweep: '横なぎ：予告線から離れろ', curve: 'うずまき弾' };
+const MOVE_LABEL = { netFast: '連続の網：すき間から次のすき間へ', pinwheel: '四重うずまき', splitRain: '炸裂弾の雨', stopgo2: '止まる弾：三重', cross: '十字なぎ：縦と横を同時に', pull: '引き寄せ：中心から離れろ', net: '弾の網：すき間へ逃げろ', stopgo: '止まる弾：動き出したら狙ってくる', split: '炸裂弾：はじけて広がる', sweep: '横なぎ：予告線から離れろ', curve: 'うずまき弾' };
 function ebRaw(x, y, z, vx, vy, vz, r, color, extra) {
   if (endTimer > 0 && result !== 'DOWN') return null;
   const b = { x, y, z, px: x, py: y, pz: z, vx, vy, vz, r, color, dmg: ebDmg() };
@@ -5946,30 +5967,31 @@ function bossMove(b, m, sp, dt) {
       if (b.t1 <= 0) { ring(b, 3, 4.5 + 2 * Math.sin(b.age * .5), b.age * 2.6, sp * .7, .38, 0xff4d8a); b.t1 = .12; }
       if (m.t > 3.6 && !s.a) { s.a = 1; aimed(b, 3, .05, sp * 1.1, .45); }
       return m.t > 4.2;
-    case 'net': {
-      // three walls of bullets, each with one hole; the next hole is always somewhere else
-      if (m.n < 3 && m.t >= m.n * 1.5) {
+    case 'net': case 'netFast': {
+      // walls of bullets, each with one hole; the next hole is always somewhere else
+      const fast = m.k === 'netFast', cnt = fast ? 4 : 3, gap = fast ? 1.15 : 1.5;
+      if (m.n < cnt && m.t >= m.n * gap) {
         const bx = curB.x, by = curB.y;
         let cx, cy, tries = 0;
         do { cx = rnd(-bx + 1.2, bx - 1.2); cy = rnd(-by + 1.2, by - 1.2); tries++; } while (s.cx != null && Math.hypot(cx - s.cx, cy - s.cy) < Math.min(4, bx) && tries < 20);
         s.cx = cx; s.cy = cy;
-        const st = 1.3, v = sp * .55;
+        const st = 1.3, v = sp * (fast ? .62 : .55);
         for (let gx = -bx - .6; gx <= bx + .6; gx += st) for (let gy = -by - .6; gy <= by + .6; gy += st) {
           if (Math.hypot(gx - cx, gy - cy) < 1.9) continue;
           const dx = gx - b.x, dy = gy - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz);
-          ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .34, 0xff4d6d);
+          ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .34, fast ? 0xb05cff : 0xff4d6d);
         }
         // a green ring marks where the hole will arrive, until it does
         const tt = Math.min(4.5, Math.hypot(cx - b.x, cy - b.y, b.z) / v);
         for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; parts.push({ x: cx + Math.cos(a) * 1.4, y: cy + Math.sin(a) * 1.4, z: -4, vx: 0, vy: 0, vz: 0, life: tt, max: tt, color: 0x6bff9e, s: .22 }); }
         m.n++;
       }
-      return m.t > 4.8;
+      return m.t > (fast ? 5.4 : 4.8);
     }
-    case 'stopgo':
+    case 'stopgo': case 'stopgo2':
       // a ring flies out, freezes, then every bullet re-aims at where you are
-      if (m.n < 2 && m.t >= m.n * 1.7) {
-        const n = 14, rot = rnd(0, 6);
+      if (m.n < (m.k === 'stopgo2' ? 3 : 2) && m.t >= m.n * (m.k === 'stopgo2' ? 1.2 : 1.7)) {
+        const n = m.k === 'stopgo2' ? 18 : 14, rot = rnd(0, 6);
         for (let i = 0; i < n; i++) {
           const a = rot + i * Math.PI * 2 / n, R = 7, dx = Math.cos(a) * R, dy = Math.sin(a) * R, dz = 22, l = Math.hypot(dx, dy, dz), v = sp * .8;
           ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .4, 0xff7ad9, { stopAt: .9, hold: .55, goSp: sp * 1.05, age: 0 });
@@ -5977,31 +5999,47 @@ function bossMove(b, m, sp, dt) {
         m.n++;
       }
       return m.t > 4.2;
-    case 'split':
-      if (m.n < 3 && b.t1 <= 0) {
+    case 'split': case 'splitRain':
+      if (m.n < (m.k === 'splitRain' ? 6 : 3) && b.t1 <= 0) {
         const dx = P.x - b.x, dy = P.y - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz), v = sp * .6;
         ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .85, 0xff6a3d, { split: -24 });
-        b.t1 = 1.15; m.n++;
+        b.t1 = m.k === 'splitRain' ? .65 : 1.15; m.n++;
       }
       return m.t > 4;
-    case 'sweep': {
-      // a row of bullets swept across at your height, then a column at your x
+    case 'sweep': case 'cross': {
+      // a row of bullets swept across at your height, then a column at your x (cross: both at once, twice)
       const run = (t0, horiz) => {
-        const k = 'w' + t0;
+        const k = 'w' + t0 + horiz;
         if (m.t >= t0 && !s[k]) {
           s[k] = { v: horiz ? P.y : P.x };
           const v = s[k].v;
           for (let i = 0; i <= 12; i++) { const u = -1.1 + 2.2 * i / 12; parts.push({ x: horiz ? u * curB.x : v, y: horiz ? v : u * curB.y, z: -3, vx: 0, vy: 0, vz: 0, life: .9, max: .9, color: 0xff2d55, s: .2 }); }
         }
         const a = (m.t - t0 - .8) / 1.3; // .8s warning, then 1.3s of sweep
-        if (s[k] && a >= 0 && a <= 1 && b.t1 <= 0) {
+        if (s[k]) s[k].cd = (s[k].cd || 0) - dt;
+        if (s[k] && a >= 0 && a <= 1 && s[k].cd <= 0) {
           const v = s[k].v, u = (-1.1 + 2.2 * a), gx = horiz ? u * curB.x : v, gy = horiz ? v : u * curB.y;
           const dx = gx - b.x, dy = gy - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz), w = sp * .95;
           ebRaw(b.x, b.y, b.z, dx / l * w, dy / l * w, dz / l * w, .4, 0xff2d55);
-          b.t1 = .045;
+          s[k].cd = .045 / DF.fire;
         }
       };
+      if (m.k === 'cross') { run(0, true); run(0, false); run(2.4, true); run(2.4, false); return m.t > 4.8; }
       run(0, true); run(2.3, false);
+      return m.t > 4.6;
+    }
+    case 'pinwheel':
+      if (b.t1 <= 0) {
+        for (let q = 0; q < 4; q++) { const sg = q % 2 ? -1 : 1, a = b.age * 1.8 * sg + q * Math.PI / 2, lat = 6.5; ebRaw(b.x, b.y, b.z, Math.cos(a) * lat, Math.sin(a) * lat, sp * .72, .38, 0xb05cff, { curl: 1.4 * sg }); }
+        b.t1 = .14;
+      }
+      return m.t > 4.4;
+    case 'pull': {
+      // the abyss pulls the ship toward the boss while a slow spiral turns around it
+      const dx = b.x - P.x, dy = b.y - P.y, d = Math.hypot(dx, dy);
+      if (m.t > .6 && d > .3) { const pw = 5.2 * dt; P.x += dx / d * Math.min(d, pw); P.y += dy / d * Math.min(d, pw); }
+      if (b.t1 <= 0) { ring(b, 4, 2.5 + 1.5 * Math.sin(b.age), b.age * 2, sp * .65, .4, 0x7a3dff); b.t1 = .16; }
+      if (m.t > .6 && Math.random() < dt * 30) parts.push({ x: P.x + rnd(-6, 6), y: P.y + rnd(-4, 4), z: -6, vx: 0, vy: 0, vz: 0, life: .4, max: .4, color: 0x7a3dff, s: .15 });
       return m.t > 4.6;
     }
     case 'curve':
@@ -6187,7 +6225,7 @@ function skipEnding() { if (endTimer > 0 && endElapsed > .7 && result !== 'RETIR
 function computeResult() {
   const rows = [['撃破スコア', score]];
   let bonus = 0;
-  if (result === 'CLEAR') { const tb = Math.round(Math.max(0, RUN_LEN - T) * 100), cb = 20000, sb = Math.round(P.shield * 50); rows.push(['クリアボーナス', cb], ['残り時間ボーナス', tb], ['シールド残量ボーナス', sb]); bonus = tb + cb + sb; }
+  if (result === 'CLEAR') { const tb = Math.round(Math.max(0, RUN_LEN - T) * 100), cb = 20000, sb = Math.round(P.shield * 50); rows.push(['クリアボーナス', cb], ['残り時間ボーナス', tb], ['シールド残量ボーナス', sb]); bonus = tb + cb + sb; if (rs.trueClear) { rows.push(['真・最終形態ボーナス', 50000]); bonus += 50000; } }
   else if (result === 'TIMEUP') { const sb = Math.round(P.shield * 50); rows.push(['生存ボーナス', 5000], ['シールド残量ボーナス', sb]); bonus = 5000 + sb; }
   return { total: score + bonus, rows };
 }
@@ -6208,22 +6246,23 @@ function bumpStats(r) {
   const kb = rs.killsBy, a = kb.armor || 0, sh = kb.shield || 0;
   UL.best.armor = Math.max(UL.best.armor || 0, a); UL.best.shield = Math.max(UL.best.shield || 0, sh); UL.best.as = Math.max(UL.best.as || 0, a + sh); UL.best.dasher = Math.max(UL.best.dasher || 0, kb.dasher || 0);
   if (result === 'CLEAR') { UL.clears = (UL.clears || 0) + 1; if (diffKey === 'HARD') UL.hardClears = (UL.hardClears || 0) + 1; }
+  if (rs.trueClear) UL.trueClears = (UL.trueClears || 0) + 1;
   if (P.awk) UL.awakened = (UL.awakened || 0) + 1;
   return checkUnlocks();
 }
-const RES_MARK = { CLEAR: '👑', TIMEUP: '⏱️', DOWN: '💥', RETIRE: '🏳️' };
+const RES_MARK = { TRUE: '🌌', CLEAR: '👑', TIMEUP: '⏱️', DOWN: '💥', RETIRE: '🏳️' };
 function loadRank() { const r = store.get(KEY.rank, {}); return r && typeof r === 'object' ? r : {}; }
 function showResult() {
   state = 'result'; ship.visible = false; $('hud').style.display = 'none'; $('pauseBtn').style.display = 'none'; $('hint').style.display = 'none'; $('banner').style.display = 'none';
   const r = computeResult(); const newly = bumpStats(r);
   const ranks = loadRank(), list = ranks[diffKey] || [];
   const canRank = r.total > 0 && (list.length < 10 || r.total > list[list.length - 1].score);
-  const head = { CLEAR: ['CLEAR!', '全ボスを撃破した'], TIMEUP: ['TIME UP', '5分間を生き抜いた'], DOWN: ['GAME OVER', 'シールドが尽きた'], RETIRE: ['RETIRE', 'ここまでの記録'] }[result];
+  const head = { CLEAR: rs.trueClear ? ['TRUE CLEAR!', '深淵の果てまでたどり着いた'] : ['CLEAR!', '全ボスを撃破した'], TIMEUP: ['TIME UP', '5分間を生き抜いた'], DOWN: ['GAME OVER', 'シールドが尽きた'], RETIRE: ['RETIRE', 'ここまでの記録'] }[result];
   const noEvo = P.evo ? '' : P.core && P.evoDeclined ? '進化を選ばなかった' : P.core ? '武器がLv3に届かなかった' : rs.carrier === 'escaped' ? 'コアキャリアーを逃した' : !rs.gateChoices.length ? '分岐ゲートまで進めなかった' : 'コアキャリアーを倒せなかった';
   const evoTxt = (P.evo ? WEAPONS[P.weapon].icon + ' ' + EVOS[P.evo].name + '（' + CORES[EVOS[P.evo].core].icon + '）' : WEAPONS[P.weapon].icon + ' ' + WEAPONS[P.weapon].name + '（未進化）') + (P.awk ? ' ✴️' + AWAKE[P.weapon].name : '') + (P.fus ? ' 🔗' + FUSE[P.weapon].name : '');
   let h = '<h2>' + head[0] + '</h2><div class="small">' + head[1] + ' ・ ' + DF.label + '</div><div class="result-score">' + r.total.toLocaleString() + '</div><div class="rows">';
   r.rows.forEach(([k, v]) => h += '<div><span>' + k + '</span><b>' + v.toLocaleString() + '</b></div>');
-  h += '<div><span>生存時間</span><b>' + fmtT(Math.min(T, RUN_LEN)) + '</b></div><div><span>到達レベル</span><b>' + level + '</b></div><div><span>撃破数</span><b>' + kills + '</b></div><div><span>ボス撃破</span><b>' + rs.bossesDown + '/3</b></div><div><span>武器</span><b>' + evoTxt + '</b></div>' + (noEvo ? '<div><span>進化しなかった理由</span><b>' + noEvo + '</b></div>' : '') + '</div>';
+  h += '<div><span>生存時間</span><b>' + fmtT(Math.min(T, RUN_LEN)) + '</b></div><div><span>到達レベル</span><b>' + level + '</b></div><div><span>撃破数</span><b>' + kills + '</b></div><div><span>ボス撃破</span><b>' + Math.min(3, rs.bossesDown) + '/3' + (rs.trueClear ? ' ＋真' : '') + '</b></div><div><span>武器</span><b>' + evoTxt + '</b></div>' + (noEvo ? '<div><span>進化しなかった理由</span><b>' + noEvo + '</b></div>' : '') + '</div>';
   if (newly.length) h += '<div class="unlocked">🔓 新しく解放：' + newly.map(esc).join('、') + '</div>';
   if (canRank) h += '<div class="small">🏆 ランキングに入ります！名前を入力して登録</div><input id="nameIn" maxlength="8" placeholder="名前（8文字まで）" value="' + esc(store.get(KEY.name, '')) + '"><div class="btnrow"><button id="regBtn">登録する</button></div>';
   h += '<div class="btnrow two-col"><button id="againBtn">もう一度 ↻</button><button class="sub" id="toTitle">タイトルへ</button></div>';
@@ -6233,7 +6272,7 @@ function showResult() {
   if (reg) reg.onclick = () => {
     const name = ($('nameIn').value || '').trim().slice(0, 8) || 'PLAYER';
     store.set(KEY.name, name);
-    const entry = { name, score: r.total, res: result, evo: P.evo || '', awk: P.awk || '', fus: P.fus || '', ship: P.ship, weapon: P.weapon, lv: level, at: Date.now() };
+    const entry = { name, score: r.total, res: rs.trueClear ? 'TRUE' : result, evo: P.evo || '', awk: P.awk || '', fus: P.fus || '', ship: P.ship, weapon: P.weapon, lv: level, at: Date.now() };
     const all = loadRank(), l2 = (all[diffKey] || []).concat([entry]).sort((a, b) => b.score - a.score).slice(0, 10);
     all[diffKey] = l2; store.set(KEY.rank, all);
     showRanking(diffKey, entry.at, 'result');
@@ -6247,30 +6286,48 @@ function showTitle() {
   state = 'title'; ship.visible = false; $('hud').style.display = 'none'; $('pauseBtn').style.display = 'none'; $('hint').style.display = 'none'; $('banner').style.display = 'none'; $('levelup').classList.remove('show');
   clearWorld();
   let h = '<a class="back" href="../../">← ゲーム一覧</a><h1>INFINITE<br>SHOT<span class="d3">3D</span><span class="two">II</span></h1>';
-  h += '<p>自動で前進し、迫る敵を撃ち落として5分間を生き抜く。<b style="color:var(--gold)">分岐ゲートで選んだルートのコア</b>で武器が進化する。</p>';
-  h += '<div class="legend"><div class="lg bad"><b>✖ 触ると被弾</b><small>赤・橙・桃色の敵（数字＝HP）と、赤・桃色の敵弾。赤い柱。赤い線の先に突進が来る</small></div><div class="lg good"><b>◎ 触ると得</b><small>緑・黄＝経験値ジェム<br>金の輪＝アイテム・コア</small></div></div>';
-  if (!weaponOpen(selWeapon)) selWeapon = 'blaster';
-  if (!SHIPS[selShip] || (selShip === 'phantom' && !isUnlocked('phantom'))) selShip = 'std';
-  h += '<div class="lbl">メイン武器</div><div class="wsel">' + Object.entries(WEAPONS).map(([k, w]) => {
-    if (!weaponOpen(k)) { const u = UNLOCKS.find(x => x.k === k), [a, b] = u.prog(); return '<button class="wbtn locked" disabled>🔒 ' + w.name + '<small>' + esc(u.cond) + '（最高 ' + Math.min(a, b) + '/' + b + '）</small></button>'; }
-    return '<button class="wbtn' + (k === selWeapon ? ' on' : '') + '" data-w="' + k + '">' + w.icon + ' ' + w.name + '<small>' + esc(w.desc) + '</small></button>';
-  }).join('') + '</div>';
-  h += '<div class="lbl">機体</div><div class="wsel">' + Object.entries(SHIPS).map(([k, sp]) => {
-    if (k === 'phantom' && !isUnlocked('phantom')) return '<button class="wbtn locked" disabled>🔒 ' + sp.name + '<small>HARDでクリアすると解放</small></button>';
-    return '<button class="wbtn' + (k === selShip ? ' on' : '') + '" data-s="' + k + '">' + sp.icon + ' ' + sp.name + '<small>' + esc(sp.desc) + '</small></button>';
-  }).join('') + '</div>';
-  h += '<div class="lbl">難易度</div><div class="diffsel">' + Object.entries(DIFF).map(([k, d]) => '<button class="dbtn' + (k === diffKey ? ' on' : '') + '" data-d="' + k + '" style="--dc:' + d.color + '">' + d.label + '<small>' + d.jp + '</small></button>').join('') + '</div><div class="small" style="margin-top:4px">' + DF.desc + '</div>';
-  h += '<div class="btnrow"><button id="goBtn">出撃する ▶</button><div class="two-col"><button class="sub" id="recipeBtn">📖 進化レシピ</button><button class="sub" id="rankBtn">🏆 ランキング</button></div><button class="ghost" id="statsBtn">📊 あなたの記録（進化の偏り）</button></div>';
-  h += '<p class="small">🕹️ ドラッグ（相対移動）／WASD・矢印キー ・ ショットは自動 ・ ⏸ P／Esc<br>🔴 当たり判定は機体中央の赤い点だけ</p>';
-  h += '<h3>🔓 解放</h3><div class="rec">' + UNLOCKS.map(u => { const on = isUnlocked(u.k), [a, b] = u.prog(); return '<div class="r' + (on ? ' got' : '') + '"><b>' + (on ? '' : '🔒 ') + u.name + '</b><small>' + esc(u.cond) + (on ? '（解放済み）' : '（' + Math.min(a, b) + '/' + b + '）') + '</small></div>'; }).join('') + '</div>';
+  h += '<p>迫る敵を撃ち落として5分間を生き抜く。<br>分岐ゲートでルートを選び、手に入れたコアで武器を進化させよう。</p>';
+  h += '<div class="btnrow"><button id="goBtn" class="big">スタート ▶</button></div>';
+  h += '<div class="btnrow"><div class="two-col"><button class="sub" id="recipeBtn">📖 レシピ・図鑑</button><button class="sub" id="rankBtn">🏆 ランキング</button></div><div class="two-col"><button class="ghost" id="unlockBtn">🔓 解放状況</button><button class="ghost" id="statsBtn">📊 あなたの記録</button></div></div>';
   $('ovCard').innerHTML = h; $('overlay').classList.add('show'); $('ovCard').scrollTop = 0;
-  $('ovCard').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { selWeapon = b.dataset.w; store.set(KEY.weapon, selWeapon); audio.init(); audio.ui(); showTitle(); });
-  $('ovCard').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { selShip = b.dataset.s; store.set(KEY.ship, selShip); audio.init(); audio.ui(); showTitle(); });
-  $('ovCard').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { diffKey = b.dataset.d; DF = DIFF[diffKey]; store.set(KEY.diff, diffKey); audio.init(); audio.ui(); showTitle(); });
-  $('goBtn').onclick = () => startGame();
+  $('goBtn').onclick = () => { audio.init(); audio.ui(); showSetup('weapon'); };
   $('recipeBtn').onclick = () => { audio.init(); audio.ui(); showRecipes('title'); };
   $('rankBtn').onclick = () => { audio.init(); audio.ui(); showRanking(diffKey, null, 'title'); };
+  $('unlockBtn').onclick = () => { audio.init(); audio.ui(); showUnlocks(); };
   $('statsBtn').onclick = () => { audio.init(); audio.ui(); showStats(); };
+}
+// after START: pick a weapon (and ship once it exists), then the difficulty
+function showSetup(step) {
+  if (!weaponOpen(selWeapon)) selWeapon = 'blaster';
+  if (!SHIPS[selShip] || (selShip === 'phantom' && !isUnlocked('phantom'))) selShip = 'std';
+  let h = '';
+  if (step === 'weapon') {
+    h += '<div class="eyebrow">1 / 2</div><h2>メイン武器を選ぶ</h2>';
+    const open = Object.keys(WEAPONS).filter(weaponOpen), locked = Object.keys(WEAPONS).filter(k => !weaponOpen(k));
+    h += '<div class="wsel">' + open.map(k => { const w = WEAPONS[k]; return '<button class="wbtn' + (k === selWeapon ? ' on' : '') + '" data-w="' + k + '">' + w.icon + ' ' + w.name + '<small>' + esc(w.desc) + '</small></button>'; }).join('') + '</div>';
+    if (locked.length) h += '<details class="lockd"><summary>🔒 まだ使えない武器（' + locked.length + '）</summary>' + locked.map(k => { const w = WEAPONS[k], u = UNLOCKS.find(x => x.k === k), [a, b] = u.prog(); return '<div class="r"><b>' + w.icon + ' ' + w.name + '</b><small>' + esc(u.cond) + '（最高 ' + Math.min(a, b) + '/' + b + '）</small></div>'; }).join('') + '</details>';
+    if (isUnlocked('phantom')) h += '<div class="lbl">機体</div><div class="wsel">' + Object.entries(SHIPS).map(([k, sp]) => '<button class="wbtn' + (k === selShip ? ' on' : '') + '" data-s="' + k + '">' + sp.icon + ' ' + sp.name + '<small>' + esc(sp.desc) + '</small></button>').join('') + '</div>';
+    h += '<div class="btnrow"><button id="nextBtn">次へ ▶</button><button class="sub" id="bk">戻る</button></div>';
+  } else {
+    const st = store.get(KEY.stats, {}) || {}, newbie = (st.runs || 0) < 3;
+    h += '<div class="eyebrow">2 / 2</div><h2>難易度を選ぶ</h2>';
+    h += '<div class="diffsel">' + Object.entries(DIFF).map(([k, d]) => '<button class="dbtn' + (k === diffKey ? ' on' : '') + '" data-d="' + k + '" style="--dc:' + d.color + '">' + d.label + '<small>' + d.jp + '</small></button>').join('') + '</div><div class="small" style="margin-top:4px">' + DF.desc + '</div>';
+    if (newbie) h += '<div class="legend"><div class="lg bad"><b>✖ 触ると被弾</b><small>赤・橙・桃色の敵（数字＝HP）と敵弾。赤い柱</small></div><div class="lg good"><b>◎ 触ると得</b><small>緑・黄＝経験値ジェム<br>金の輪＝アイテム・コア</small></div></div>';
+    h += '<p class="small">🕹️ ドラッグ（相対移動）／WASD・矢印キー ・ ショットは自動<br>🔴 当たり判定は機体中央の赤い点だけ</p>';
+    h += '<div class="btnrow"><button id="goBtn" class="big">' + WEAPONS[selWeapon].icon + ' ' + WEAPONS[selWeapon].name + 'で出撃 ▶</button><button class="sub" id="bk">戻る</button></div>';
+  }
+  $('ovCard').innerHTML = h; $('overlay').classList.add('show'); $('ovCard').scrollTop = 0;
+  $('ovCard').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { selWeapon = b.dataset.w; store.set(KEY.weapon, selWeapon); audio.ui(); showSetup('weapon'); });
+  $('ovCard').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { selShip = b.dataset.s; store.set(KEY.ship, selShip); audio.ui(); showSetup('weapon'); });
+  $('ovCard').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { diffKey = b.dataset.d; DF = DIFF[diffKey]; store.set(KEY.diff, diffKey); audio.ui(); showSetup('diff'); });
+  if (step === 'weapon') { $('nextBtn').onclick = () => { audio.ui(); showSetup('diff'); }; $('bk').onclick = () => { audio.ui(); showTitle(); }; }
+  else { $('goBtn').onclick = () => startGame(); $('bk').onclick = () => { audio.ui(); showSetup('weapon'); }; }
+}
+function showUnlocks() {
+  let h = '<h2>🔓 解放状況</h2><div class="rec">' + UNLOCKS.map(u => { const on = isUnlocked(u.k), [a, b] = u.prog(); if (u.hidden && !on) return '<div class="r"><b>🔒 ？？？</b><small>隠し実績</small></div>'; return '<div class="r' + (on ? ' got' : '') + '"><b>' + (on ? '' : '🔒 ') + u.name + '</b><small>' + esc(u.cond) + (on ? '（解放済み）' : '（' + Math.min(a, b) + '/' + b + '）') + '</small></div>'; }).join('') + '</div>';
+  h += '<div class="btnrow"><button class="sub" id="bk">戻る</button></div>';
+  $('ovCard').innerHTML = h; $('ovCard').scrollTop = 0;
+  $('bk').onclick = () => { audio.ui(); showTitle(); };
 }
 function enemyIcon(k) {
   const d = ET[k], c = hex(d.color === 0xffffff ? 0xffd166 : d.color), f = hex(d.fill);
@@ -6315,7 +6372,7 @@ function showRanking(dk, hiAt, from) {
   else {
     h += '<table class="tbl"><tr><th>#</th><th>名前</th><th>武器</th><th></th><th style="text-align:right">スコア</th></tr>';
     list.forEach((e, i) => { const w = WEAPONS[e.weapon] || WEAPONS.spread; h += '<tr' + (e.at === hiAt ? ' class="me"' : '') + '><td>' + (i + 1) + '</td><td class="n">' + esc(e.name) + '</td><td>' + w.icon + (e.evo && EVOS[e.evo] ? EVOS[e.evo].name : '') + (e.awk ? '✴️' : '') + (e.fus ? '🔗' : '') + '</td><td>' + (RES_MARK[e.res] || '') + '</td><td class="s">' + Number(e.score).toLocaleString() + '</td></tr>'; });
-    h += '</table><div class="small" style="margin-top:6px">👑クリア ⏱️時間切れ 💥撃墜 🏳️リタイア</div>';
+    h += '</table><div class="small" style="margin-top:6px">👑クリア ⏱️時間切れ 💥撃墜 🏳️リタイア' + (list.some(e => e.res === 'TRUE') ? ' 🌌？？？' : '') + '</div>';
   }
   if (!storageOK) h += '<p class="small">⚠️ この環境では記録を保存できません</p>';
   h += '<div class="btnrow">' + (from === 'result' ? '<div class="two-col"><button id="againBtn">もう一度 ↻</button><button class="sub" id="bk">タイトルへ</button></div>' : '<button class="sub" id="bk">戻る</button>') + '<button class="danger" id="clr">この難易度の記録を消去</button></div>';
@@ -6431,7 +6488,7 @@ function evoGuide() {
 }
 function updateHUD() {
   $('hScore').textContent = score.toLocaleString(); $('hLv').textContent = level; $('hKills').textContent = kills;
-  const rem = RUN_LEN - T; $('hTime').textContent = fmtT(rem); $('hTime').style.color = rem < 30 ? '#ff6b8a' : '';
+  const rem = RUN_LEN - T; $('hTime').textContent = rs && rs.trueFight ? '∞' : fmtT(rem); $('hTime').style.color = rs && rs.trueFight ? '#b05cff' : rem < 30 ? '#ff6b8a' : '';
   const f = P.shield / P.maxShield; $('shFill').style.width = (f * 100) + '%'; $('shNum').textContent = Math.ceil(P.shield); $('shRow').classList.toggle('low', f <= .3); $('shRow').classList.toggle('mid', f > .3 && f <= .6);
   const hd = $('hudDiff'); if (hd.textContent !== DF.label) { hd.textContent = DF.label; hd.style.color = DF.color; hd.style.borderColor = DF.color; }
   $('xp').style.width = clamp(xp / xpNeed(level) * 100, 0, 100) + '%';
@@ -6475,7 +6532,7 @@ function drawOverlay() {
   if (!enemies || state === 'title' || state === 'result') return;
   og.setTransform(ovDpr, 0, 0, ovDpr, 0, 0); og.lineJoin = 'round';
   if (endTimer > 0 && result && result !== 'RETIRE') { drawEnding(); return; }
-  if (state === 'play' && RUN_LEN - T <= 30) { og.fillStyle = 'rgba(255,40,80,' + (.05 + .04 * Math.sin(T * 6)) + ')'; og.fillRect(0, 0, W, H); }
+  if (state === 'play' && RUN_LEN - T <= 30 && !rs.trueFight) { og.fillStyle = 'rgba(255,40,80,' + (.05 + .04 * Math.sin(T * 6)) + ')'; og.fillRect(0, 0, W, H); }
   if (P && state === 'play') for (const [z, sz, a] of [[-22, 22, .55], [-48, 13, .4]]) {
     pv.set(P.x, P.y, z).project(cam); if (pv.z > 1) continue;
     const sx = (pv.x * .5 + .5) * W, sy = (-pv.y * .5 + .5) * H;
@@ -6496,10 +6553,21 @@ function drawOverlay() {
     og.fillStyle = hex(ET[e.type].color); og.fillRect(sx - bw / 2, sy - 2, bw * f, 2);
     if (e.type === 'shield' && !e.shieldBroken) { og.fillStyle = '#ffb3e6'; og.fillRect(sx - bw / 2, sy + 2, bw * clamp(e.shieldHp / (2.2 * enemyHp('normal')), 0, 1), 2); }
   }
+  // boss HP as a number right above the boss (as in the first game)
+  if (boss && !boss.leaving && boss.z > -200) {
+    pv.set(boss.x, boss.y + boss.r * 1.15, boss.z).project(cam);
+    if (pv.z <= 1) {
+      const sx = (pv.x * .5 + .5) * W, sy = (-pv.y * .5 + .5) * H, near = clamp(1 - (-boss.z) / 100, 0, 1);
+      og.font = '900 ' + Math.round(17 + 9 * near) + 'px system-ui,-apple-system,sans-serif';
+      og.lineWidth = 4; og.strokeStyle = 'rgba(0,0,0,.85)'; og.fillStyle = boss.flash > 0 ? '#ffffff' : '#ffe9a8';
+      const t = Math.max(0, Math.ceil(boss.hp)).toLocaleString();
+      og.strokeText(t, sx, sy); og.fillText(t, sx, sy);
+    }
+  }
 }
 
 function drawEnding() {
-  const cfg = { CLEAR: ['STAGE CLEAR', 'OMEGA 撃破！', '#ffd166', '#fff3c4', 0], TIMEUP: ['TIME UP', '5分間 生き残った！', '#65f6ff', '#e6fdff', 0], DOWN: ['GAME OVER', 'シールドが尽きた…', '#ff5c8a', '#ffe3ea', .7] }[result];
+  const cfg = { CLEAR: rs.trueClear ? ['TRUE CLEAR', 'OMEGA ABYSS 撃破！', '#b05cff', '#f0e0ff', 0] : ['STAGE CLEAR', 'OMEGA 撃破！', '#ffd166', '#fff3c4', 0], TIMEUP: ['TIME UP', '5分間 生き残った！', '#65f6ff', '#e6fdff', 0], DOWN: ['GAME OVER', 'シールドが尽きた…', '#ff5c8a', '#ffe3ea', .7] }[result];
   if (result === 'DOWN') { og.fillStyle = 'rgba(40,0,10,' + Math.min(.45, endElapsed * .3) + ')'; og.fillRect(0, 0, W, H); }
   const s = endElapsed - cfg[4]; if (s <= 0) return;
   const r = Math.min(1, s / .45), y = H * .3;
@@ -6594,7 +6662,7 @@ let lastNow = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   let dt = Math.min(.05, Math.max(0, (now - lastNow) / 1000)); lastNow = now;
-  if (state === 'play') {
+  if (state === 'play' && !dbg.hold) {
     let sdt = dt; if (slowT > 0) { slowT -= dt; sdt *= .35; }
     try { update(sdt); afterTick(); } catch (err) { console.error(err); } // keep the loop alive if one frame fails
     uiTimer -= dt; if (uiTimer <= 0) { uiTimer = .1; updateHUD(); }
@@ -6672,6 +6740,8 @@ if (DEBUG) window.__is2 = {
   unlockAll(v = true) { UL.all = v; },
   gz() { return gate ? gate.z : null; },
   boss(key, frac = 1) { spawnBoss(key, 999); infoQ.length = 0; boss.hp = boss.max * frac; },
+  rsSet(o) { Object.assign(rs, o); }, rsGet() { return { trueFight: rs.trueFight, trueClear: rs.trueClear, boss: boss && boss.key, T, hTime: document.getElementById('hTime').textContent, result, state }; },
+  dbgSet(o) { Object.assign(dbg, o); }, shield() { return P.shield; },
   bhp(frac) { if (boss) boss.hp = boss.max * frac; },
   bstate() { return boss ? { mode: boss.mode, mv: boss.mv && boss.mv.k, phase: boss.phase, eb: eb.length, z: +boss.z.toFixed(1) } : null; },
   audio,
