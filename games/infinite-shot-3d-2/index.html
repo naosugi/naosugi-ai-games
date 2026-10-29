@@ -5084,7 +5084,7 @@ function spawnBoss(key, window) {
   if (boss) { dropObj(boss.mesh); boss = null; }
   const def = BOSSES[key];
   const hp = def.ttk * refDps() * DF.boss;
-  boss = { key, def, x: 0, y: 1, z: SPAWNZ, r: def.final ? 4.4 : 3.6, hp, max: hp, age: 0, flash: 0, t1: 1.5, t2: 3, t3: 4, mode: 'enter', mt: 0, cyc: 0, window, leaving: false, phase: 1 };
+  boss = { key, def, x: 0, y: 1, z: SPAWNZ, r: def.final ? 4.4 : 3.6, hp, max: hp, age: 0, flash: 0, t1: 1.5, t2: 3, t3: 4, mode: 'enter', mt: 0, cyc: 0, window, leaving: false, phase: 1, mv: null, ci: 0, tele: 0, seen: {} };
   const g = new T3.Group(), spinG = new T3.Group();
   const core = solid(GEO.ico, def.fill, def.color); core.scale.setScalar(boss.r * .8); spinG.add(core);
   const sm = new T3.MeshPhongMaterial({ color: def.fill, emissive: new T3.Color(def.color).multiplyScalar(.5), flatShading: true });
@@ -5095,7 +5095,7 @@ function spawnBoss(key, window) {
   boss.halo = halo; boss.spin = spinG; boss.body = [core]; boss.mesh = g; g.position.set(boss.x, boss.y, boss.z); scene.add(g);
   audio.bossAppear(def.final); audio.bgm(def.final ? 'final' : key === 'guardian' || key === 'sentinel' ? 'bossA' : 'bossB');
   info({ eyebrow: def.final ? '最終ボス' : '中ボス', title: '⚠ ' + def.name, color: hex(def.color),
-    html: '<p class="big">' + (def.final ? '倒せばクリア。HPが減ると攻撃が激しくなる。' : '<b>' + Math.round(window) + '秒以内</b>に倒さないと撤退する（報酬なし）。') + '</p><p>周期的に<b>手前まで接近</b>してくる（赤い輪が点滅したら合図）。ブレイカーが届く好機。</p>' });
+    html: '<p class="big">' + (def.final ? '倒せばクリア。HPが減ると攻撃が激しくなる。' : '<b>' + Math.round(window) + '秒以内</b>に倒さないと撤退する（報酬なし）。HPが半分を切ると攻撃パターンが変わる。') + '</p><p>周期的に<b>手前まで接近</b>してくる（赤い輪が点滅したら合図）。ブレイカーが届く好機。</p>' });
   shake = 6;
 }
 function spawnGate(n) {
@@ -5612,6 +5612,12 @@ function segD2(px, py, pz, ax, ay, az, bx, by, bz) {
   const dx = ax + lx * t - px, dy = ay + ly * t - py, dz = az + lz * t - pz; return dx * dx + dy * dy + dz * dz;
 }
 let drag = null, uiTimer = 0;
+function movePlayer(dt) {
+  let mx = 0, my = 0;
+  if (keys.has('ArrowLeft') || keys.has('a')) mx--; if (keys.has('ArrowRight') || keys.has('d')) mx++;
+  if (keys.has('ArrowUp') || keys.has('w')) my++; if (keys.has('ArrowDown') || keys.has('s')) my--;
+  if (mx || my) { const l = Math.hypot(mx, my), mv = 12 * moveMul() * dt; P.x += mx / l * mv; P.y += my / l * mv; }
+}
 function update(dt) {
   if (!dbg.freezeT && !(endTimer > 0)) T += dt;
   if (endTimer > 0) {
@@ -5620,7 +5626,10 @@ function update(dt) {
     $('skipBtn').style.display = endElapsed > .9 && endTimer > 0 ? 'block' : 'none';
     for (const e of enemies) if (!e.dead && e.type === 'dasher' && e.state === 2) { e.x += e.vx * dt; e.y += e.vy * dt; e.z += e.vz * dt; }
     if (boss && boss.leaving) boss.z -= 60 * dt;
-    if (result !== 'DOWN') endCollect(dt);
+    if (result !== 'DOWN') {
+      movePlayer(dt); P.x = clamp(P.x, -curB.x, curB.x); P.y = clamp(P.y, -curB.y, curB.y);
+      updateGems(dt); updateItems(dt);
+    }
     updateFx(dt); updateWaves(dt);
     if (endTimer <= 0) { $('skipBtn').style.display = 'none'; showResult(); }
     return;
@@ -5634,11 +5643,7 @@ function update(dt) {
   if (boss && boss.drillT != null) { boss.drillT -= dt; if (boss.drillT <= 0) boss.drill = 1; }
   // bounds
   curB.x += (tgtB.x - curB.x) * Math.min(1, dt * 2); curB.y += (tgtB.y - curB.y) * Math.min(1, dt * 2);
-  // movement
-  let mx = 0, my = 0;
-  if (keys.has('ArrowLeft') || keys.has('a')) mx--; if (keys.has('ArrowRight') || keys.has('d')) mx++;
-  if (keys.has('ArrowUp') || keys.has('w')) my++; if (keys.has('ArrowDown') || keys.has('s')) my--;
-  if (mx || my) { const l = Math.hypot(mx, my), mv = 12 * moveMul() * dt; P.x += mx / l * mv; P.y += my / l * mv; }
+  movePlayer(dt);
   if (dbg.auto) autopilot(dt);
   P.x = clamp(P.x, -curB.x, curB.x); P.y = clamp(P.y, -curB.y, curB.y);
   // timeline
@@ -5883,39 +5888,144 @@ function updateBoss(dt) {
   b.age += dt; b.flash = Math.max(0, b.flash - dt); b.mt += dt;
   const sp = ebSpeed();
   b.t1 -= dt * DF.fire; b.t2 -= dt * DF.fire; b.t3 -= dt * DF.fire;
-  const hoverZ = -58, closeZ = -21;
   if (b.leaving) { b.z -= 60 * dt; if (b.z < -200) { dropObj(b.mesh); boss = null; audio.bgm(routeSong()); } return; }
   // sway target; the boss always moves toward it at a capped speed so it never jumps between modes
   const tx = b.mode === 'enter' ? 0 : Math.sin(b.age * .5) * Math.min(4, curB.x - 1);
   const ty = b.mode === 'enter' ? 1 : 1 + Math.sin(b.age * .7) * 1.4 * (b.mode === 'hold' ? .4 : 1);
   b.x += clamp(tx - b.x, -8 * dt, 8 * dt); b.y += clamp(ty - b.y, -6 * dt, 6 * dt);
-  if (b.mode === 'enter') { b.z += 45 * dt; if (b.z >= hoverZ) { b.z = hoverZ; b.mode = 'hover'; b.mt = 0; } }
-  else {
-    if (b.mode === 'hover' && b.mt > 4.5) { b.mode = 'warn'; b.mt = 0; toastSmall('⚠ ' + b.def.name + ' 接近！'); audio.approach(); }
-    else if (b.mode === 'warn' && b.mt > 1) { b.mode = 'in'; b.mt = 0; }
-    else if (b.mode === 'in') { b.z += clamp(closeZ - b.z, -45 * dt, 45 * dt); if (b.z >= closeZ - .01) { b.mode = 'hold'; b.mt = 0; } }
-    else if (b.mode === 'hold' && b.mt > 4.5) { b.mode = 'out'; b.mt = 0; }
-    else if (b.mode === 'out') { b.z += clamp(hoverZ - b.z, -45 * dt, 45 * dt); if (b.z <= hoverZ + .01) { b.mode = 'hover'; b.mt = 0; } }
-    if (b.mode === 'hold') { if (b.t2 <= 0) { aimed(b, 3, .09, sp * .85, .45, 0xff2d55); b.t2 = 1.3; } }
-    else if (b.mode !== 'in') bossPattern(b, sp);
-    if (!b.def.final && b.age > b.window && !b.leaving) { b.leaving = true; toast(b.def.name + ' は撤退した…'); }
+  if (b.mode === 'enter') { b.z += 45 * dt; if (b.z >= BOSS_HOVER) { b.z = BOSS_HOVER; b.mode = 'hover'; b.mt = 0; b.tele = .8; } return; }
+  // phases: mid-bosses change at half HP, OMEGA at 2/3 and 1/3
+  const f = b.hp / b.max, ph = b.def.final ? (f > .66 ? 1 : f > .33 ? 2 : 3) : (f > .5 ? 1 : 2);
+  if (ph > b.phase) {
+    b.phase = ph; b.ci = 0; shake = 10; audio.approach();
+    toast(b.def.final ? (ph === 2 ? 'OMEGA 形態変化！' : 'OMEGA 最終形態！') : b.def.name + ' 怒り状態！ 攻撃が変わる');
+    burst(b.x, b.y, b.z, b.def.color, 40, 10, .3, .7);
+    if (b.mv && b.mv.k !== 'lunge') { b.mv = null; b.tele = .9; }
   }
+  if (!b.mv) {
+    if (b.tele > 0) { b.tele -= dt; if (b.tele > 0) return; }
+    const list = BOSS_MOVES[b.key][b.phase - 1];
+    b.mv = { k: list[b.ci % list.length], t: 0, n: 0, s: {} }; b.ci++; b.t1 = 0;
+    const lb = MOVE_LABEL[b.mv.k]; if (lb && !b.seen[b.mv.k]) { b.seen[b.mv.k] = 1; toastSmall('⚠ ' + lb); }
+  }
+  const m = b.mv; m.t += dt;
+  const done = bossMove(b, m, sp, dt);
+  // later phases keep up a little aimed pressure, except during the moves that ask you to find a path
+  if (b.phase >= 2 && m.k !== 'net' && m.k !== 'sweep' && b.mode !== 'in' && b.t2 <= 0) { aimed(b, 3, .05, sp * 1.05, .42); b.t2 = b.def.final && b.phase === 3 ? 1.8 : 2.6; }
+  if (b.def.final && b.phase === 3 && b.t3 <= 0) { spawnEnemy('dasher'); spawnEnemy('dasher'); b.t3 = 5; }
+  if (done) { b.mv = null; b.mode = 'hover'; b.tele = b.phase >= 2 ? .55 : .8; }
+  if (!b.def.final && b.age > b.window && !b.leaving) { b.leaving = true; toast(b.def.name + ' は撤退した…'); }
 }
-function bossPattern(b, sp) {
-  switch (b.def.pattern) {
-    case 'fan': if (b.t1 <= 0) { aimed(b, 7, .07, sp * .9, .45); b.t1 = 1.4; } if (b.t2 <= 0) { ring(b, 12, 4.5, b.age, sp * .7); b.t2 = 2.6; } break;
-    case 'ring': if (b.t1 <= 0) { ring(b, 16, 4.2 + 1.5 * Math.sin(b.age), b.age, sp * .75); b.t1 = 1.5; } if (b.t2 <= 0) { aimed(b, 3, .05, sp, .42); b.t2 = 1.1; } break;
-    case 'spiral': if (b.t1 <= 0) { ring(b, 3, 4.5 + 2 * Math.sin(b.age * .5), b.age * 2.6, sp * .7, .38, 0xff4d8a); b.t1 = .12; } if (b.t2 <= 0) { aimed(b, 3, .05, sp * 1.1, .45); b.t2 = 2.2; } break;
-    case 'hydra': if (b.t1 <= 0) { aimed(b, 3, .04, sp, .42, 0xff4dd2); b.t1 = .55; } if (b.t2 <= 0) { ring(b, 12, 5, b.age, sp * .7, .38, 0xff4dd2); b.t2 = 2.8; } if (b.t3 <= 0) { spawnEnemy('normal', { x: b.x - 3, y: b.y, z: b.z + 3 }); spawnEnemy('normal', { x: b.x + 3, y: b.y, z: b.z + 3 }); b.t3 = 4.5; } break;
-    case 'final': {
-      const f = b.hp / b.max, ph = f > .66 ? 1 : f > .33 ? 2 : 3;
-      if (ph !== b.phase) { b.phase = ph; b.t1 = b.t2 = b.t3 = .6; shake = 10; toast(ph === 2 ? 'OMEGA 形態変化！' : 'OMEGA 最終形態！'); }
-      if (ph === 1) { if (b.t1 <= 0) { aimed(b, 7, .05, sp * .9, .45); b.t1 = 1; } if (b.t2 <= 0) { ring(b, 16, 5 + 2 * Math.sin(b.age), b.age, sp * .7); b.t2 = 2.2; } }
-      else if (ph === 2) { if (b.t1 <= 0) { ring(b, 3, 5, b.age * 2.2, sp * .7, .38, 0xff4d8a); b.t1 = .13; } if (b.t2 <= 0) { aimed(b, 3, .045, sp * 1.15, .45); b.t2 = 1.4; } }
-      else { if (b.t1 <= 0) { ring(b, 2, 4 + 2 * Math.sin(b.age * .7), -b.age * 2.8, sp * .75, .38, 0xff4d8a); b.t1 = .1; } if (b.t2 <= 0) { ring(b, 18, 3 + 3 * (1 + Math.sin(b.age * 1.3)) * .5 * 2, b.age, sp * .8, .45); b.t2 = 1.8; } if (b.t3 <= 0) { spawnEnemy('dasher'); spawnEnemy('dasher'); b.t3 = 4.5; } }
-      break;
+const BOSS_HOVER = -58, BOSS_CLOSE = -21;
+const BOSS_MOVES = {
+  guardian: [['fan', 'ring', 'lunge'], ['fan', 'net', 'stopgo', 'lunge']],
+  sentinel: [['ring', 'stopgo', 'lunge'], ['curve', 'net', 'ring', 'lunge']],
+  dread: [['spiral', 'split', 'lunge'], ['curve', 'sweep', 'split', 'net', 'lunge']],
+  hydra: [['brood', 'split', 'lunge'], ['stopgo', 'brood', 'sweep', 'lunge']],
+  omega: [['fan', 'ring', 'net', 'lunge'], ['spiral', 'stopgo', 'split', 'sweep', 'lunge'], ['curve', 'net', 'stopgo', 'spiral', 'sweep', 'lunge']],
+};
+const MOVE_LABEL = { net: '弾の網：すき間へ逃げろ', stopgo: '止まる弾：動き出したら狙ってくる', split: '炸裂弾：はじけて広がる', sweep: '横なぎ：予告線から離れろ', curve: 'うずまき弾' };
+function ebRaw(x, y, z, vx, vy, vz, r, color, extra) {
+  if (endTimer > 0 && result !== 'DOWN') return null;
+  const b = { x, y, z, px: x, py: y, pz: z, vx, vy, vz, r, color, dmg: ebDmg() };
+  if (extra) Object.assign(b, extra);
+  eb.push(b); return b;
+}
+// one boss move; returns true when it has finished
+function bossMove(b, m, sp, dt) {
+  const s = m.s;
+  switch (m.k) {
+    case 'fan':
+      if (b.t1 <= 0) { aimed(b, 7, .07, sp * .9, .45); b.t1 = 1.1; m.n++; }
+      if (m.n === 2 && !s.r) { s.r = 1; ring(b, 12, 4.5, b.age, sp * .7); }
+      return m.t > 3.6;
+    case 'ring':
+      if (b.t1 <= 0) { ring(b, 16, 4.2 + 1.5 * Math.sin(b.age), b.age + m.n * .2, sp * .75); b.t1 = 1.2; m.n++; }
+      return m.t > 3.8;
+    case 'spiral':
+      if (b.t1 <= 0) { ring(b, 3, 4.5 + 2 * Math.sin(b.age * .5), b.age * 2.6, sp * .7, .38, 0xff4d8a); b.t1 = .12; }
+      if (m.t > 3.6 && !s.a) { s.a = 1; aimed(b, 3, .05, sp * 1.1, .45); }
+      return m.t > 4.2;
+    case 'net': {
+      // three walls of bullets, each with one hole; the next hole is always somewhere else
+      if (m.n < 3 && m.t >= m.n * 1.5) {
+        const bx = curB.x, by = curB.y;
+        let cx, cy, tries = 0;
+        do { cx = rnd(-bx + 1.2, bx - 1.2); cy = rnd(-by + 1.2, by - 1.2); tries++; } while (s.cx != null && Math.hypot(cx - s.cx, cy - s.cy) < Math.min(4, bx) && tries < 20);
+        s.cx = cx; s.cy = cy;
+        const st = 1.3, v = sp * .55;
+        for (let gx = -bx - .6; gx <= bx + .6; gx += st) for (let gy = -by - .6; gy <= by + .6; gy += st) {
+          if (Math.hypot(gx - cx, gy - cy) < 1.9) continue;
+          const dx = gx - b.x, dy = gy - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz);
+          ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .34, 0xff4d6d);
+        }
+        // a green ring marks where the hole will arrive, until it does
+        const tt = Math.min(4.5, Math.hypot(cx - b.x, cy - b.y, b.z) / v);
+        for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; parts.push({ x: cx + Math.cos(a) * 1.4, y: cy + Math.sin(a) * 1.4, z: -4, vx: 0, vy: 0, vz: 0, life: tt, max: tt, color: 0x6bff9e, s: .22 }); }
+        m.n++;
+      }
+      return m.t > 4.8;
     }
+    case 'stopgo':
+      // a ring flies out, freezes, then every bullet re-aims at where you are
+      if (m.n < 2 && m.t >= m.n * 1.7) {
+        const n = 14, rot = rnd(0, 6);
+        for (let i = 0; i < n; i++) {
+          const a = rot + i * Math.PI * 2 / n, R = 7, dx = Math.cos(a) * R, dy = Math.sin(a) * R, dz = 22, l = Math.hypot(dx, dy, dz), v = sp * .8;
+          ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .4, 0xff7ad9, { stopAt: .9, hold: .55, goSp: sp * 1.05, age: 0 });
+        }
+        m.n++;
+      }
+      return m.t > 4.2;
+    case 'split':
+      if (m.n < 3 && b.t1 <= 0) {
+        const dx = P.x - b.x, dy = P.y - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz), v = sp * .6;
+        ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .85, 0xff6a3d, { split: -24 });
+        b.t1 = 1.15; m.n++;
+      }
+      return m.t > 4;
+    case 'sweep': {
+      // a row of bullets swept across at your height, then a column at your x
+      const run = (t0, horiz) => {
+        const k = 'w' + t0;
+        if (m.t >= t0 && !s[k]) {
+          s[k] = { v: horiz ? P.y : P.x };
+          const v = s[k].v;
+          for (let i = 0; i <= 12; i++) { const u = -1.1 + 2.2 * i / 12; parts.push({ x: horiz ? u * curB.x : v, y: horiz ? v : u * curB.y, z: -3, vx: 0, vy: 0, vz: 0, life: .9, max: .9, color: 0xff2d55, s: .2 }); }
+        }
+        const a = (m.t - t0 - .8) / 1.3; // .8s warning, then 1.3s of sweep
+        if (s[k] && a >= 0 && a <= 1 && b.t1 <= 0) {
+          const v = s[k].v, u = (-1.1 + 2.2 * a), gx = horiz ? u * curB.x : v, gy = horiz ? v : u * curB.y;
+          const dx = gx - b.x, dy = gy - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz), w = sp * .95;
+          ebRaw(b.x, b.y, b.z, dx / l * w, dy / l * w, dz / l * w, .4, 0xff2d55);
+          b.t1 = .045;
+        }
+      };
+      run(0, true); run(2.3, false);
+      return m.t > 4.6;
+    }
+    case 'curve':
+      if (b.t1 <= 0) {
+        for (const sg of [1, -1]) { const a = b.age * 2.2 * sg + (sg < 0 ? Math.PI : 0), lat = 6; ebRaw(b.x, b.y, b.z, Math.cos(a) * lat, Math.sin(a) * lat, sp * .7, .38, 0xd94dff, { curl: 1.5 * sg }); }
+        b.t1 = .11;
+      }
+      return m.t > 4;
+    case 'brood':
+      if (m.n < 2 && m.t >= m.n * 2.2) { spawnEnemy('normal', { x: b.x - 3, y: b.y, z: b.z + 3 }); spawnEnemy('normal', { x: b.x + 3, y: b.y, z: b.z + 3 }); m.n++; }
+      if (b.t1 <= 0) { aimed(b, 3, .04, sp, .42, 0xff4dd2); b.t1 = .6; }
+      return m.t > 4.2;
+    case 'lunge':
+      if (!s.st) { s.st = 'warn'; b.mode = 'warn'; b.mt = 0; toastSmall('⚠ ' + b.def.name + ' 接近！'); audio.approach(); }
+      if (s.st === 'warn' && b.mt > 1) { s.st = b.mode = 'in'; b.mt = 0; }
+      else if (s.st === 'in') { b.z += clamp(BOSS_CLOSE - b.z, -45 * dt, 45 * dt); if (b.z >= BOSS_CLOSE - .01) { s.st = b.mode = 'hold'; b.mt = 0; b.t1 = .4; } }
+      else if (s.st === 'hold') {
+        if (b.t1 <= 0) { aimed(b, 3, .09, sp * .85, .45, 0xff2d55); b.t1 = 1.3; }
+        if (b.phase >= 2 && !s.r && b.mt > 2) { s.r = 1; ring(b, 10, 3.5, b.age, sp * .6); }
+        if (b.mt > 4.5) { s.st = b.mode = 'out'; b.mt = 0; }
+      } else if (s.st === 'out') { b.z += clamp(BOSS_HOVER - b.z, -45 * dt, 45 * dt); if (b.z <= BOSS_HOVER + .01) return true; }
+      return false;
   }
+  return true;
 }
 function mirrorShot(b) {
   P.mirrorTok--; b.dead = true;
@@ -5930,6 +6040,22 @@ function updateEB(dt) {
   for (const b of eb) {
     if (b.dead) continue;
     b.px = b.x; b.py = b.y; b.pz = b.z;
+    if (b.stopAt != null) {
+      b.age += dt;
+      if (b.age >= b.stopAt && !b.stopped) { b.stopped = true; b.vx = b.vy = b.vz = 0; b.color = 0xffffff; }
+      if (b.stopped && b.age >= b.stopAt + b.hold) { const dx = P.x - b.x, dy = P.y - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz) || 1; b.vx = dx / l * b.goSp; b.vy = dy / l * b.goSp; b.vz = dz / l * b.goSp; b.color = 0xff7ad9; b.stopAt = null; }
+    }
+    if (b.curl) { const c = Math.cos(b.curl * dt), sn = Math.sin(b.curl * dt), vx = b.vx; b.vx = vx * c - b.vy * sn; b.vy = vx * sn + b.vy * c; }
+    if (b.split != null && b.z >= b.split) {
+      b.dead = true; burst(b.x, b.y, b.z, b.color, 10, 6, .2, .35);
+      const v = Math.hypot(b.vx, b.vy, b.vz) * 1.25, n = 9, rot = rnd(0, 6);
+      for (let i = 0; i <= n; i++) {
+        const R = i === n ? 0 : 3, a = rot + i * Math.PI * 2 / n, tx = b.x + b.vx / b.vz * -b.z + Math.cos(a) * R, ty = b.y + b.vy / b.vz * -b.z + Math.sin(a) * R;
+        const dx = tx - b.x, dy = ty - b.y, dz = -b.z, l = Math.hypot(dx, dy, dz);
+        ebRaw(b.x, b.y, b.z, dx / l * v, dy / l * v, dz / l * v, .36, 0xff9a5c);
+      }
+      continue;
+    }
     b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
     if (P.fus === 'mirror' && b.z > -22 && b.z < 0 && Math.hypot(b.x - P.x, b.y - P.y) < 6 && P.mirrorTok >= 1) { mirrorShot(b); continue; }
     if (P.fus === 'formation' && P.clones > 0 && b.z > -1.5 && b.z < 1.5) {
@@ -5977,6 +6103,7 @@ function updateItems(dt) {
   items = items.filter(it => { if (it.dead) { dropObj(it.mesh); return false; } return true; });
 }
 function collectItem(it) {
+  if (endTimer > 0) { score += 100; audio.item(); burst(it.x, it.y, it.z, 0xffd166, 12, 5, .2, .4); return; }
   if (it.kind === 'core') audio.coreGet(); else audio.item();
   if (it.kind === 'core') {
     P.core = it.core; rs.coreGot = it.core;
@@ -6041,7 +6168,6 @@ function finish(res) {
   // the screen clears: bullets turn to sparks, leftover items fade
   for (const b of eb) burst(b.x, b.y, b.z, b.color, 2, 3, .2, .4);
   eb.length = 0;
-  for (const g of gems) g.home = true; // everything left on screen flies to the ship
   if (res === 'CLEAR') {
     for (let pass = 0; pass < 2; pass++) for (const e of enemies.slice()) if (!e.dead) killEnemy(e, null);
     shockRing(P.x, P.y, -10, 0xffd166, 30, 1.2);
@@ -6056,24 +6182,6 @@ function shockRing(x, y, z, color, max, life) {
 function updateWaves(dt) {
   for (const w of waves) { w.life -= dt; const f = 1 - Math.max(0, w.life / w.maxLife); w.m.scale.setScalar(.5 + (w.max - .5) * (1 - (1 - f) * (1 - f))); w.m.material.opacity = Math.max(0, w.life / w.maxLife); }
   for (let i = waves.length - 1; i >= 0; i--) if (waves[i].life <= 0) { dropObj(waves[i].m); waves.splice(i, 1); }
-}
-// ending: gems and items are pulled in from the whole screen (as in the first game)
-function endCollect(dt) {
-  for (const g of gems) {
-    g.spin += dt * 4;
-    const dx = P.x - g.x, dy = P.y - g.y, dz = -g.z, l = Math.hypot(dx, dy, dz) || 1;
-    if (l < 1.1) { g.dead = true; xp += g.v; score += g.v * 5; audio.gem(); continue; }
-    const s = 45 * dt; g.x += dx / l * Math.min(l, s); g.y += dy / l * Math.min(l, s); g.z += dz / l * Math.min(l, s);
-  }
-  gems = gems.filter(g => !g.dead);
-  for (const it of items) {
-    it.mesh.rotation.y += dt * 3;
-    const dx = P.x - it.x, dy = P.y - it.y, dz = -it.z, l = Math.hypot(dx, dy, dz) || 1;
-    if (l < 1.4) { it.dead = true; audio.item(); burst(it.x, it.y, it.z, 0xffd166, 12, 5, .2, .4); continue; }
-    const s = 26 * dt; it.x += dx / l * Math.min(l, s); it.y += dy / l * Math.min(l, s); it.z += dz / l * Math.min(l, s);
-    it.mesh.position.set(it.x, it.y, it.z);
-  }
-  items = items.filter(it => { if (it.dead) { dropObj(it.mesh); return false; } return true; });
 }
 function skipEnding() { if (endTimer > 0 && endElapsed > .7 && result !== 'RETIRE') endTimer = .001; }
 function computeResult() {
@@ -6461,7 +6569,7 @@ function render(dt) {
   if (boss) {
     boss.mesh.position.set(boss.x, boss.y, boss.z); boss.spin.rotation.z += .012;
     boss.body[0].material.emissive.set(boss.flash > 0 ? 0xffffff : boss.def.color).multiplyScalar(boss.flash > 0 ? 1 : .25);
-    boss.halo.material.opacity = boss.mode === 'warn' ? .5 + .5 * Math.sin(boss.mt * 30) : boss.mode === 'hold' ? .35 : 0;
+    boss.halo.material.opacity = boss.mode === 'warn' ? .5 + .5 * Math.sin(boss.mt * 30) : boss.mode === 'hold' ? .35 : boss.tele > 0 && !boss.mv ? .25 + .2 * Math.sin(boss.age * 18) : 0;
   }
   // tunnel
   const sk2 = inGame && route && route.kind ? (route.kind === 'core' ? route.core : route.kind) : 'none', sc = STAGE_COL[sk2], lk = Math.min(1, dt * 1.5);
@@ -6563,6 +6671,9 @@ function autoChoose() {
 if (DEBUG) window.__is2 = {
   unlockAll(v = true) { UL.all = v; },
   gz() { return gate ? gate.z : null; },
+  boss(key, frac = 1) { spawnBoss(key, 999); infoQ.length = 0; boss.hp = boss.max * frac; },
+  bhp(frac) { if (boss) boss.hp = boss.max * frac; },
+  bstate() { return boss ? { mode: boss.mode, mv: boss.mv && boss.mv.k, phase: boss.phase, eb: eb.length, z: +boss.z.toFixed(1) } : null; },
   audio,
   start(opt = {}) { Object.assign(dbg, opt); if (opt.weapon) selWeapon = opt.weapon; if (opt.ship) selShip = opt.ship; if (opt.diff) { diffKey = opt.diff; DF = DIFF[diffKey]; } startGame(); },
   // boundary check: report any object that moves farther in one step than it should be able to
