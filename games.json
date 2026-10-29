@@ -120,5 +120,20 @@
     "controls": "キーボード（日本語入力）・タップ",
     "playtime": "自由",
     "added": "2026-10-28"
+  },
+  {
+    "id": "infinite-shot-3d-2",
+    "title": "INFINITE SHOT 3D II",
+    "description": "INFINITE SHOT 3D の続編となる、自動で前進する3Dシューティング。分岐ゲートでルートを選び、拾ったコアで武器を進化させながら5分間を戦い抜く。6種の武器に覚醒と融合、遊ぶほど増える解放要素つき。",
+    "path": "games/infinite-shot-3d-2/",
+    "thumbnail": "games/infinite-shot-3d-2/thumb.jpg",
+    "tags": [
+      "シューティング",
+      "3D",
+      "スコアアタック"
+    ],
+    "controls": "ドラッグ / WASD・矢印キー",
+    "playtime": "約5分",
+    "added": "2026-10-29"
   }
 ]
