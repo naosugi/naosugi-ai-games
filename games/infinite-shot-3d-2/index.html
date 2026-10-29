@@ -4454,7 +4454,7 @@ const RUN_LEN = 300;
 const DIFF = {
   EASY: { label: 'EASY', jp: 'かんたん', color: '#6bff9e', hp: .75, bspd: .8, fire: .7, dmg: .6, spawn: 1.15, boss: .8, late: .6, desc: '敵の弾が遅く、少なく、痛くない' },
   NORMAL: { label: 'NORMAL', jp: 'ふつう', color: '#65f6ff', hp: 1, bspd: 1, fire: 1, dmg: 1, spawn: 1, boss: 1, late: .6, desc: '標準のバランス' },
-  HARD: { label: 'HARD', jp: 'むずかしい', color: '#ff5c8a', hp: 1.25, bspd: 1.15, fire: 1.25, dmg: 1.35, spawn: .85, boss: 1.2, late: .8, desc: '弾が速く多い。敵も硬い' },
+  HARD: { label: 'HARD', jp: 'むずかしい', color: '#ff5c8a', hp: 1.3, bspd: 1.25, fire: 1.4, dmg: 1.9, spawn: .85, boss: 1.25, late: .8, desc: '弾が速く多く、被弾が痛い。修復も出にくい' },
 };
 let diffKey = store.get(KEY.diff, 'NORMAL'); if (!DIFF[diffKey]) diffKey = 'NORMAL';
 let DF = DIFF[diffKey];
@@ -4523,7 +4523,7 @@ const PASSIVES = [
 const SUBS = [
   { id: 'orb', icon: '🪐', name: 'サテライト', max: 4, desc: '周りを回るオーブが近くの敵を撃つ。通常型なら約4発で倒せる（Lvで数+1）' },
   { id: 'nova', icon: '☄️', name: 'ノヴァ', max: 4, desc: '定期的に、前方の近い敵すべてへ衝撃波（通常型のHPの約半分）。装甲・盾には半分' },
-  { id: 'missile', icon: '🚀', name: 'ミサイル', max: 4, desc: '狙った敵を一撃で倒すミサイル。着弾すると周りの敵も爆発に巻き込む（通常型のHPの約4割、Lv3から約6割）。群れの中にいる敵を優先して狙う。ボスには最大HPの1.5%', lv: ['1発ずつ。通常・射撃・突進を一撃', '2発ずつ', '装甲型・盾持ちも一撃・爆発が強くなる', '3発ずつ・発射間隔短縮'] },
+  { id: 'missile', icon: '🚀', name: 'ミサイル', max: 4, desc: '群れの中の敵を狙い、一撃で倒すミサイル。着弾すると周りも爆発に巻き込む', lv: ['1発ずつ。通常・射撃・突進を一撃', '2発ずつ', '装甲型・盾持ちも一撃・爆発が強くなる', '3発ずつ・発射間隔短縮'] },
   { id: 'reflect', icon: '🔰', name: 'リフレクター', max: 4, desc: '機体の周りのバリアが、近づいた敵弾を弾き返して敵に当てる（チャージ制。Lvでチャージ数と回復速度アップ）', lv: ['チャージ3・約1.9秒で1回復', 'チャージ4・約1.6秒で1回復', 'チャージ5・約1.3秒で1回復', 'チャージ6・約1秒で1回復'] },
 ];
 const SUB_SLOTS = 2;
@@ -4596,91 +4596,225 @@ const BX0 = 8, BY0 = 5.5, CAMZ = 12, SPAWNZ = -170, PB_SPEED = 110, SCROLL = 38,
 
 // ---------- audio ----------
 const audio = (() => {
-  let ctx = null, master = null, muted = !!store.get(KEY.mute, false), noiseBuf = null;
+  let ctx = null, master = null, sfxBus = null, bgmBus = null, echoIn = null, muted = !!store.get(KEY.mute, false), noiseBuf = null;
+  let laserNodes = null, meter = null;
   const last = {};
   const thr = (k, s) => { const n = performance.now() / 1000; if (last[k] && n - last[k] < s) return false; last[k] = n; return true; };
   function init() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume().catch(() => {}); return; }
-    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = muted ? 0 : .7; master.connect(ctx.destination); } catch { ctx = null; }
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // master -> light compressor -> speakers; separate buses for music and effects
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .18;
+      master = ctx.createGain(); master.gain.value = muted ? 0 : .8; master.connect(comp); comp.connect(ctx.destination);
+      meter = ctx.createAnalyser(); meter.fftSize = 2048; comp.connect(meter);
+      sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(master);
+      bgmBus = ctx.createGain(); bgmBus.gain.value = .75; bgmBus.connect(master);
+      // echo send used by some songs (dotted-eighth feel)
+      echoIn = ctx.createGain(); const dl = ctx.createDelay(1); dl.delayTime.value = .27; const fb = ctx.createGain(); fb.gain.value = .32; const wet = ctx.createGain(); wet.gain.value = .5;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+      echoIn.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(wet); wet.connect(bgmBus);
+    } catch { ctx = null; }
   }
-  function tone({ type = 'square', f = 440, f2 = 0, dur = .1, vol = .05, when = 0, at = 0, lp = 0 }) {
+  const out = bus => bus === 'bgm' ? bgmBus : sfxBus;
+  function tone({ type = 'square', f = 440, f2 = 0, dur = .1, vol = .05, when = 0, at = 0, lp = 0, bus = 'sfx', a = .008, echo = false, det = 0 }) {
     if (!ctx || muted) return;
     const t = at || ctx.currentTime + when;
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
+    o.type = type; o.frequency.setValueAtTime(f, t); if (det) o.detune.value = det;
     if (f2) o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t + dur);
-    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
     let node = o;
     if (lp) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.connect(fl); node = fl; }
-    node.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .03);
+    node.connect(g); g.connect(out(bus)); if (echo && echoIn) g.connect(echoIn);
+    o.start(t); o.stop(t + dur + .03);
   }
-  function noise({ dur = .2, vol = .1, f = 2000, f2 = 200, when = 0, at = 0, hp = false }) {
+  function noise({ dur = .2, vol = .1, f = 2000, f2 = 200, when = 0, at = 0, hp = false, bp = false, q = 1, bus = 'sfx', a = 0 }) {
     if (!ctx || muted) return;
     if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     const t = at || ctx.currentTime + when;
     const s = ctx.createBufferSource(); s.buffer = noiseBuf;
-    const fl = ctx.createBiquadFilter(); fl.type = hp ? 'highpass' : 'lowpass'; fl.frequency.setValueAtTime(f, t); fl.frequency.exponentialRampToValueAtTime(Math.max(40, f2 || f), t + dur);
-    const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    s.connect(fl); fl.connect(g); g.connect(master); s.start(t); s.stop(t + dur + .03);
+    const fl = ctx.createBiquadFilter(); fl.type = bp ? 'bandpass' : hp ? 'highpass' : 'lowpass'; fl.Q.value = q; fl.frequency.setValueAtTime(f, t); fl.frequency.exponentialRampToValueAtTime(Math.max(40, f2 || f), t + dur);
+    const g = ctx.createGain();
+    if (a) { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); } else g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(fl); fl.connect(g); g.connect(out(bus)); s.start(t); s.stop(t + dur + .03);
   }
+  const chord = (notes, o) => notes.forEach(m => tone({ ...o, f: mtof(m) }));
+
+  // ---------- music ----------
+  // Each song: chords (4 bars), bass style, arpeggio, lead motif, drums. 8-bar loop: bars 0-3 without lead, 4-7 with lead, fill at the end.
+  const M = { // lead motifs: 16 steps, values index chord tones (0-2, 3-5 = octave up), null = rest
+    run: [3, null, 4, null, 5, null, 4, 3, null, 2, null, 3, 4, null, 2, null],
+    hook: [5, null, null, 4, null, 3, null, null, 4, null, 5, null, 3, null, null, null],
+    call: [3, 3, null, 4, null, null, 5, null, 4, null, 3, null, 2, null, null, null],
+    pulse: [3, null, 3, null, 4, null, 3, null, 5, null, 4, null, 3, null, 2, null],
+    slow: [5, null, null, null, 4, null, null, null, 3, null, null, null, 2, null, null, null],
+    bell: [5, null, 3, null, 4, null, 5, null, null, null, 4, 3, null, null, 2, null],
+    tense: [3, 4, 3, null, 3, 4, 5, null, 3, 4, 3, null, 2, null, 1, null],
+  };
   const SONGS = {
-    normal: { bpm: 128, prog: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], sn: false },
-    route: { bpm: 136, prog: [[52, 55, 59], [48, 52, 55], [50, 53, 57], [47, 50, 54]], sn: false },
-    boss: { bpm: 146, prog: [[50, 53, 57], [50, 53, 57], [46, 50, 53], [45, 49, 52]], sn: true },
-    final: { bpm: 156, prog: [[45, 48, 52], [46, 50, 53], [44, 48, 51], [45, 49, 52]], sn: true },
+    normal: { bpm: 128, prog: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], bass: 'eighth', arp: [0, 1, 2, 1, 0, 2, 1, 2], arpW: 'square', lead: M.run, leadW: 'square', kick: 'four', snare: false, hat: 8 },
+    route_red: { bpm: 144, prog: [[52, 55, 59], [48, 52, 55], [50, 54, 57], [47, 51, 54]], bass: 'gallop', bassLp: 900, arp: [0, 2, 1, 2, 0, 2, 1, 2], arpW: 'sawtooth', lead: M.call, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
+    route_blue: { bpm: 128, prog: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 55, 59]], bass: 'offbeat', arp: [0, 1, 2, 3, 2, 1, 0, 1], arpW: 'triangle', lead: M.hook, leadW: 'triangle', echo: true, kick: 'half', snare: false, hat: 8 },
+    route_gold: { bpm: 140, prog: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]], bass: 'eighth', arp: [0, 1, 2, 3, 0, 1, 2, 3], arpW: 'square', lead: M.pulse, leadW: 'square', kick: 'four', snare: true, hat: 8 },
+    route_repair: { bpm: 116, prog: [[53, 57, 60], [48, 52, 55], [50, 53, 57], [46, 50, 53]], bass: 'half', arp: [0, 2, 1, 3, 1, 2, 0, 2], arpW: 'sine', lead: M.slow, leadW: 'triangle', echo: true, kick: 'half', snare: false, hat: 0 },
+    route_risk: { bpm: 152, prog: [[52, 55, 59], [53, 57, 60], [52, 55, 59], [50, 53, 57]], bass: 'gallop', bassLp: 1100, arp: [0, 1, 0, 2, 0, 1, 0, 2], arpW: 'sawtooth', lead: M.tense, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
+    route_gem: { bpm: 134, prog: [[64, 68, 71], [59, 63, 66], [61, 64, 68], [57, 61, 64]], bass: 'offbeat', arp: [3, 1, 2, 3, 4, 2, 3, 1], arpW: 'triangle', lead: M.bell, leadW: 'sine', echo: true, kick: 'four', snare: false, hat: 16 },
+    route_abyss: { bpm: 112, prog: [[45, 48, 51], [46, 49, 53], [44, 47, 51], [45, 48, 52]], bass: 'drone', arp: [0, null, 2, null, 1, null, 3, null], arpW: 'sine', lead: M.slow, leadW: 'sine', echo: true, kick: 'break', snare: true, hat: 0 },
+    bossA: { bpm: 146, prog: [[50, 53, 57], [50, 53, 57], [46, 50, 53], [45, 49, 52]], bass: 'gallop', bassLp: 800, arp: [0, 1, 2, 1, 0, 2, 1, 2], arpW: 'square', lead: M.call, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
+    bossB: { bpm: 150, prog: [[47, 50, 54], [43, 47, 50], [45, 48, 52], [42, 46, 49]], bass: 'gallop', bassLp: 1000, arp: [0, 2, 1, 2, 3, 2, 1, 2], arpW: 'sawtooth', lead: M.tense, leadW: 'square', kick: 'four', snare: true, hat: 16 },
+    final: { bpm: 158, prog: [[45, 48, 52], [46, 50, 53], [44, 48, 51], [45, 49, 52]], bass: 'gallop', bassLp: 1200, arp: [0, 1, 2, 3, 2, 1, 0, 1], arpW: 'sawtooth', lead: M.run, leadW: 'sawtooth', kick: 'four', snare: true, hat: 16 },
   };
   let cur = null, want = null, step = 0, nextT = 0, timer = null;
+  const tones = (ch, k) => k == null ? null : ch[k % 3] + 12 * Math.floor(k / 3);
+  function playStep(s, t, i, bar) {
+    const sp = 60 / s.bpm / 4, ch = s.prog[bar % s.prog.length], sec = bar % 8, B = { bus: 'bgm', at: t };
+    const fill = sec === 7 && i >= 12;
+    // drums
+    const kick = s.kick === 'four' ? i % 4 === 0 : s.kick === 'half' ? i % 8 === 0 : s.kick === 'break' ? (i === 0 || i === 6 || i === 10) : false;
+    if (kick && !fill) tone({ ...B, type: 'sine', f: 140, f2: 40, dur: .16, vol: .4 });
+    if (s.snare && (i === 4 || i === 12) && !fill) noise({ ...B, f: 2200, f2: 900, dur: .13, vol: .14, bp: true, q: .6 });
+    if (fill) noise({ ...B, f: 1800 + (i - 12) * 300, f2: 900, dur: .09, vol: .1 + (i - 12) * .02, bp: true, q: .8 });
+    if (s.hat === 16 || (s.hat === 8 && i % 2 === 0)) noise({ ...B, f: 8000, dur: .025, vol: i % 4 === 2 ? .05 : .025, hp: true });
+    // bass
+    const root = ch[0] - 24;
+    if (s.bass === 'eighth' && i % 2 === 0) tone({ ...B, type: 'sawtooth', f: mtof(root + (i % 8 === 6 ? 12 : 0)), dur: sp * 1.7, vol: .09, lp: s.bassLp || 520 });
+    if (s.bass === 'gallop' && (i % 4 !== 1)) tone({ ...B, type: 'sawtooth', f: mtof(root + (i % 8 === 7 ? 7 : 0)), dur: sp * .9, vol: .08, lp: s.bassLp || 700 });
+    if (s.bass === 'offbeat' && i % 4 === 2) tone({ ...B, type: 'square', f: mtof(root + 12), dur: sp * 1.6, vol: .06, lp: 600 });
+    if (s.bass === 'half' && i % 8 === 0) tone({ ...B, type: 'triangle', f: mtof(root), dur: sp * 7, vol: .12 });
+    if (s.bass === 'drone' && i === 0) { tone({ ...B, type: 'sawtooth', f: mtof(root), dur: sp * 16, vol: .07, lp: 300, a: .3 }); tone({ ...B, type: 'sine', f: mtof(root - 12), dur: sp * 16, vol: .12, a: .3 }); }
+    // arpeggio
+    const ak = s.arp[i % s.arp.length];
+    if (ak != null && !(sec < 4 && s.bass === 'drone' && i % 4)) tone({ ...B, type: s.arpW, f: mtof(tones(ch, ak) + (i >= 8 ? 12 : 0)), dur: sp * .85, vol: s.arpW === 'sine' || s.arpW === 'triangle' ? .045 : .022, lp: 2600, echo: s.echo });
+    // lead in the second half of the loop
+    if (sec >= 4 && !fill) { const lk = s.lead[i]; if (lk != null) tone({ ...B, type: s.leadW, f: mtof(tones(ch, lk) + 12), dur: sp * 1.8, vol: s.leadW === 'sine' || s.leadW === 'triangle' ? .06 : .03, lp: 3200, echo: s.echo, det: 4 }); }
+  }
   function sched() {
     if (!ctx) return;
     while (cur && nextT < ctx.currentTime + .15) {
-      if (step % 16 === 0 && want !== cur) { cur = want; if (!cur) return; }
-      const s = cur, sp = 60 / s.bpm / 4, ch = s.prog[Math.floor(step / 16) % s.prog.length], i = step % 16;
-      if (!muted) {
-        if (i % 4 === 0) tone({ at: nextT, type: 'sine', f: 130, f2: 42, dur: .15, vol: .35 });
-        if (i % 4 === 2) noise({ at: nextT, f: 7000, dur: .03, vol: .05, hp: true });
-        if (s.sn && (i === 4 || i === 12)) noise({ at: nextT, f: 1800, f2: 900, dur: .12, vol: .12 });
-        if (i % 2 === 0) tone({ at: nextT, type: 'sawtooth', f: mtof(ch[0] - 24 + (i % 8 === 6 ? 12 : 0)), dur: sp * 1.7, vol: .09, lp: 520 });
-        tone({ at: nextT, type: 'square', f: mtof(ch[[0, 1, 2, 1, 0, 2, 1, 2][i % 8]] + (i >= 8 ? 12 : 0)), dur: sp * .85, vol: .02, lp: 2600 });
-      }
-      nextT += sp; step++;
+      if (step % 16 === 0 && want !== cur) { cur = want; step = 0; if (!cur) return; }
+      if (!muted) playStep(cur, nextT, step % 16, Math.floor(step / 16));
+      nextT += 60 / cur.bpm / 4; step++;
     }
   }
   function bgm(name) {
     if (!ctx) return;
-    want = name ? SONGS[name] : null;
+    want = name ? (SONGS[name] || SONGS.normal) : null;
     if (!cur && want) { cur = want; step = 0; nextT = ctx.currentTime + .08; }
     if (!timer) timer = setInterval(sched, 25);
   }
+
+  // ---------- laser hum (continuous while the beam is on) ----------
+  function laser(on, solar) {
+    if (!ctx) return;
+    if (!laserNodes) {
+      const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      o1.type = 'sawtooth'; o2.type = 'square'; o1.frequency.value = 98; o2.frequency.value = 196.8; lfo.frequency.value = 7; lg.gain.value = 260;
+      fl.type = 'lowpass'; fl.frequency.value = 900; fl.Q.value = 6; g.gain.value = 0;
+      lfo.connect(lg); lg.connect(fl.frequency); o1.connect(fl); o2.connect(fl); fl.connect(g); g.connect(sfxBus);
+      o1.start(); o2.start(); lfo.start();
+      laserNodes = { o1, o2, fl, g, lfo };
+    }
+    const n = laserNodes, t = ctx.currentTime, v = on && !muted ? (solar ? .12 : .08) : 0;
+    n.g.gain.setTargetAtTime(v, t, .04);
+    n.o1.frequency.setTargetAtTime(solar ? 73 : 98, t, .1); n.o2.frequency.setTargetAtTime(solar ? 147 : 196.8, t, .1);
+    n.fl.frequency.setTargetAtTime(solar ? 1700 : 900, t, .1); n.lfo.frequency.setTargetAtTime(solar ? 12 : 7, t, .1);
+  }
+
   return {
-    init, bgm, bgmStop() { cur = null; want = null; },
+    init, bgm, laser, bgmStop() { cur = null; want = null; },
+    level() { if (!meter) return null; const a = new Float32Array(meter.fftSize); meter.getFloatTimeDomainData(a); let s = 0, pk = 0; for (const v of a) { s += v * v; pk = Math.max(pk, Math.abs(v)); } return { rms: Math.sqrt(s / a.length), peak: pk }; },
     get muted() { return muted; },
-    setMuted(v) { muted = v; store.set(KEY.mute, v); if (master && ctx) master.gain.setTargetAtTime(v ? 0 : .7, ctx.currentTime, .02); },
+    setMuted(v) { muted = v; store.set(KEY.mute, v); if (master && ctx) master.gain.setTargetAtTime(v ? 0 : .8, ctx.currentTime, .02); },
     suspend() { ctx && ctx.state === 'running' && ctx.suspend().catch(() => {}); },
     resume() { ctx && ctx.state === 'suspended' && ctx.resume().catch(() => {}); },
-    shot() { thr('shot', .08) && tone({ type: 'square', f: 900, f2: 450, dur: .05, vol: .016 }); },
+    // weapon fire, one voice per weapon (evolutions change the colour)
+    fire(w, evo, big) {
+      if (!thr('fire', w === 'blaster' ? .05 : .07)) return;
+      if (w === 'blaster') {
+        if (evo === 'heavy') { tone({ type: 'square', f: 640, f2: 260, dur: .07, vol: .03, lp: 2400 }); noise({ f: 2500, f2: 600, dur: .04, vol: .03 }); }
+        else tone({ type: 'square', f: 1150, f2: 560, dur: .05, vol: .032 });
+        if (evo === 'chain') tone({ type: 'sawtooth', f: 2400, f2: 1600, dur: .03, vol: .008, lp: 5000 });
+      } else if (w === 'spread') {
+        noise({ f: 3200, f2: 900, dur: .06, vol: .08, bp: true, q: .7 }); tone({ type: 'triangle', f: 620, f2: 310, dur: .05, vol: .045 });
+        if (evo === 'storm') tone({ type: 'square', f: 1500, f2: 900, dur: .03, vol: .01 });
+      } else if (w === 'homing') {
+        tone({ type: 'sine', f: 480, f2: 1500, dur: .14, vol: .03 }); noise({ f: 1500, f2: 4500, dur: .12, vol: .025, hp: true });
+      } else if (w === 'cannon') {
+        tone({ type: 'sine', f: big ? 110 : 150, f2: big ? 30 : 45, dur: big ? .5 : .26, vol: big ? .4 : .24 }); noise({ f: big ? 1400 : 900, f2: 90, dur: big ? .45 : .22, vol: big ? .22 : .13 });
+        if (big) tone({ type: 'sawtooth', f: 220, f2: 55, dur: .4, vol: .06, lp: 1200 });
+      } else if (w === 'breaker') {
+        noise({ dur: .16, vol: .16, f: 3400, f2: 240 }); tone({ type: 'sine', f: 120, f2: 50, dur: .12, vol: .14 });
+      } else if (w === 'pile') {
+        tone({ type: 'square', f: 260, f2: 70, dur: .2, vol: .07, lp: 1800 }); noise({ f: 5000, f2: 400, dur: .18, vol: .1 }); tone({ type: 'sine', f: 90, f2: 35, dur: .25, vol: .25 });
+      }
+    },
     blast() { thr('blast', .12) && noise({ dur: .14, vol: .14, f: 3200, f2: 260 }); },
+    boom() { if (!thr('boom', .06)) return; noise({ f: 1800, f2: 120, dur: .26, vol: .13 }); tone({ type: 'sine', f: 130, f2: 40, dur: .22, vol: .14 }); },
+    zap() { if (!thr('zap', .07)) return; tone({ type: 'square', f: 2200, f2: 700, dur: .06, vol: .04, lp: 6000 }); noise({ f: 6000, f2: 3000, dur: .05, vol: .05, hp: true }); },
     hit() { thr('hit', .05) && tone({ type: 'triangle', f: 620, f2: 300, dur: .04, vol: .018 }); },
     block() { thr('block', .08) && tone({ type: 'square', f: 1800, f2: 1500, dur: .03, vol: .02 }); },
-    kill(big) { thr('kill', .03) && noise({ dur: big ? .3 : .15, vol: big ? .18 : .09, f: 2600, f2: 140 }); },
+    kill(big) { thr('kill', .03) && (noise({ dur: big ? .3 : .15, vol: big ? .18 : .09, f: 2600, f2: 140 }), big && tone({ type: 'sine', f: 110, f2: 40, dur: .25, vol: .15 })); },
     gem() { thr('gem', .05) && tone({ type: 'sine', f: 1250, f2: 1750, dur: .06, vol: .025 }); },
     levelup() { [72, 76, 79, 84].forEach((m, i) => tone({ type: 'square', f: mtof(m), dur: .15, vol: .045, when: i * .07, lp: 3000 })); },
     choose() { tone({ type: 'triangle', f: mtof(88), dur: .12, vol: .07 }); tone({ type: 'triangle', f: mtof(93), dur: .16, vol: .07, when: .07 }); },
     damage() { noise({ dur: .38, vol: .35, f: 1200, f2: 90 }); tone({ type: 'sawtooth', f: 190, f2: 55, dur: .3, vol: .08, lp: 900 }); },
     warn() { for (let i = 0; i < 3; i++) tone({ type: 'square', f: i % 2 ? 330 : 440, dur: .2, vol: .05, when: i * .24, lp: 1800 }); },
-    approach() { tone({ type: 'sawtooth', f: 160, f2: 700, dur: .5, vol: .035, lp: 1600 }); },
-    evolve() { [60, 64, 67, 72, 76, 79, 84].forEach((m, i) => tone({ type: 'square', f: mtof(m), dur: .22, vol: .05, when: i * .06, lp: 3500 })); noise({ dur: .9, vol: .14, f: 6000, f2: 400 }); },
+    mine() { thr('mine', .3) && [0, .12].forEach(w => tone({ type: 'square', f: 1200, dur: .07, vol: .04, when: w, lp: 3000 })); },
+    approach() { tone({ type: 'sawtooth', f: 160, f2: 700, dur: .5, vol: .035, lp: 1600 }); noise({ f: 300, f2: 2000, dur: .6, vol: .06, a: .3 }); },
+    bossAppear(final) {
+      // siren over a low rumble
+      for (let i = 0; i < (final ? 6 : 4); i++) tone({ type: 'sawtooth', f: i % 2 ? 330 : 494, dur: .26, vol: .045, when: i * .3, lp: 1800 });
+      tone({ type: 'sine', f: final ? 46 : 55, dur: final ? 2.2 : 1.6, vol: .3, a: .4 }); noise({ f: 200, f2: 120, dur: final ? 2.2 : 1.6, vol: .12, a: .5 });
+    },
+    evolve() {
+      // bright rising arpeggio into a major chord with a shimmer
+      [60, 64, 67, 72, 76, 79, 84].forEach((m, i) => tone({ type: 'square', f: mtof(m), dur: .2, vol: .045, when: i * .055, lp: 3800 }));
+      chord([72, 76, 79, 84], { type: 'triangle', dur: 1.1, vol: .05, when: .42, a: .02 });
+      noise({ dur: 1, vol: .1, f: 9000, f2: 3000, hp: true, when: .4 });
+    },
+    awaken() {
+      // heavy power chord and a long rising swell: something waking up
+      noise({ f: 300, f2: 6000, dur: 1.1, vol: .16, a: .9 });
+      chord([36, 43, 48], { type: 'sawtooth', dur: 1.4, vol: .07, lp: 1400, when: 1, a: .01 });
+      tone({ type: 'sine', f: 65, f2: 30, dur: 1.4, vol: .35, when: 1 });
+      [84, 91, 96].forEach((m, i) => tone({ type: 'sine', f: mtof(m), dur: .9, vol: .05, when: 1.05 + i * .08 }));
+    },
+    fuse() {
+      // two sweeps meet in the middle, then a bell chord
+      tone({ type: 'sawtooth', f: 200, f2: 880, dur: .6, vol: .05, lp: 2500 });
+      tone({ type: 'sawtooth', f: 3200, f2: 880, dur: .6, vol: .04, lp: 4000 });
+      chord([69, 76, 81, 88], { type: 'sine', dur: 1.3, vol: .06, when: .6, a: .01 });
+      noise({ f: 8000, f2: 2000, dur: .6, vol: .08, hp: true, when: .6 });
+    },
+    coreGet() { [79, 86, 91, 98].forEach((m, i) => tone({ type: 'sine', f: mtof(m), dur: .5, vol: .06, when: i * .08 })); noise({ f: 9000, f2: 5000, dur: .6, vol: .05, hp: true }); },
+    carrier() { for (let i = 0; i < 4; i++) tone({ type: 'triangle', f: i % 2 ? 784 : 1047, dur: .14, vol: .06, when: i * .16 }); },
     item() { [84, 88, 91].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), dur: .1, vol: .07, when: i * .05 })); },
-    bossDown() { noise({ dur: 1.5, vol: .45, f: 3200, f2: 50 }); tone({ type: 'sine', f: 140, f2: 28, dur: 1.3, vol: .3 }); },
+    bossDown(final) {
+      noise({ dur: 1.5, vol: .45, f: 3200, f2: 50 }); tone({ type: 'sine', f: 140, f2: 28, dur: 1.3, vol: .3 });
+      for (let i = 0; i < 4; i++) noise({ f: 2500, f2: 200, dur: .25, vol: .2, when: .15 + i * .16 });
+      if (!final) [72, 76, 79, 84].forEach((m, i) => tone({ type: 'square', f: mtof(m), dur: i === 3 ? .5 : .14, vol: .05, when: .7 + i * .11, lp: 3500 }));
+    },
     gate() { tone({ type: 'sine', f: 300, f2: 1200, dur: .45, vol: .08 }); },
-    nova() { tone({ type: 'sine', f: 180, f2: 1100, dur: .35, vol: .08 }); noise({ f: 1200, f2: 6000, dur: .3, vol: .05, hp: true }); },
-    missile() { thr('missile', .15) && noise({ dur: .2, vol: .05, f: 900, f2: 3000, hp: true }); },
+    gatePass() { noise({ f: 600, f2: 6000, dur: .5, vol: .12, bp: true, q: .8 }); chord([67, 74, 79], { type: 'triangle', dur: .6, vol: .05, when: .25 }); },
+    nova() { tone({ type: 'sine', f: 180, f2: 1100, dur: .35, vol: .08 }); noise({ f: 1200, f2: 6000, dur: .3, vol: .05, hp: true }); tone({ type: 'sine', f: 90, f2: 40, dur: .3, vol: .12 }); },
+    missile() { thr('missile', .15) && noise({ dur: .25, vol: .06, f: 900, f2: 3500, hp: true }); },
     parry() { thr('parry', .06) && tone({ type: 'square', f: 1500, f2: 2400, dur: .06, vol: .04 }); },
+    overheat() { tone({ type: 'sawtooth', f: 900, f2: 120, dur: .6, vol: .05, lp: 2000 }); noise({ f: 5000, f2: 800, dur: .8, vol: .08, hp: true }); },
     start() { tone({ type: 'sawtooth', f: 220, f2: 880, dur: .45, vol: .05, lp: 2500 }); noise({ hp: true, f: 800, f2: 5000, dur: .5, vol: .05 }); },
     dash() { thr('dash', .25) && tone({ type: 'sawtooth', f: 160, f2: 700, dur: .6, vol: .03, lp: 1600 }); },
     playerDown() { noise({ f: 4000, f2: 60, dur: 1.8, vol: .5 }); tone({ type: 'sawtooth', f: 420, f2: 40, dur: 1.2, vol: .1, lp: 1600 }); tone({ type: 'sine', f: 110, f2: 30, dur: 1.5, vol: .3 }); for (let i = 0; i < 3; i++) noise({ f: 2200, f2: 150, dur: .3, vol: .18, when: .2 + i * .22 }); },
     tick(n) { tone({ type: 'square', f: n <= 1 ? 1320 : 990, dur: .09, vol: .06, lp: 4000 }); },
-    over() { [67, 64, 60, 55].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), dur: .32, vol: .1, when: i * .22 })); },
-    clear() { [[72, 0], [76, .14], [79, .28], [84, .42], [79, .95], [84, 1.09]].forEach(([m, w]) => tone({ type: 'square', f: mtof(m), dur: .3, vol: .06, when: w, lp: 3500 })); },
+    over() { [67, 64, 60, 55].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), dur: .32, vol: .1, when: i * .22 })); tone({ type: 'sine', f: mtof(43), dur: 1.2, vol: .15, when: .88 }); },
+    clear() {
+      // short fanfare: pickup, call, answer, held chord
+      const mel = [[67, 0, .12], [72, .12, .12], [76, .24, .12], [79, .36, .36], [76, .78, .12], [79, .9, .12], [84, 1.02, .9]];
+      mel.forEach(([m, w, d]) => { tone({ type: 'square', f: mtof(m), dur: d + .05, vol: .055, when: w, lp: 4000 }); tone({ type: 'triangle', f: mtof(m - 12), dur: d + .05, vol: .07, when: w }); });
+      chord([60, 64, 67, 72], { type: 'sawtooth', dur: 1.4, vol: .03, lp: 2500, when: 1.02, a: .02 });
+      tone({ type: 'sine', f: mtof(36), dur: 1.4, vol: .2, when: 1.02 });
+      noise({ f: 9000, f2: 4000, dur: 1.2, vol: .06, hp: true, when: 1.02 });
+    },
     ui() { thr('ui', .05) && tone({ type: 'triangle', f: 1400, dur: .04, vol: .04 }); },
   };
 })();
@@ -4831,7 +4965,7 @@ function resetRun() {
     { t: TL.boss1 - 5, f: () => { if (diffKey !== 'HARD') dropItem('rapid', P.x, P.y + 1, -70); } },
     { t: TL.boss1, f: () => spawnBoss(b1, TL.bossWindow) },
     { t: TL.gate1, f: () => spawnGate(1) },
-    { t: TL.carrier1, f: () => { if (route.kind !== 'core') return; spawnEnemy('carrier'); const c = CORES[route.core]; info({ eyebrow: 'コアキャリアー', title: c.icon + ' コアキャリアー出現', color: c.css, html: '<p class="big"><b>20秒以内</b>に倒すと' + c.name + 'を落とす。武器がLv3以上なら、拾ったときに進化するか選べる。</p><p>逃がすと、このプレイでは進化できない。手前で止まるのでブレイカーも届く。</p>' }); } },
+    { t: TL.carrier1, f: () => { if (route.kind !== 'core') return; spawnEnemy('carrier'); audio.carrier(); const c = CORES[route.core]; info({ eyebrow: 'コアキャリアー', title: c.icon + ' コアキャリアー出現', color: c.css, html: '<p class="big"><b>20秒以内</b>に倒すと' + c.name + 'を落とす。武器がLv3以上なら、拾ったときに進化するか選べる。</p><p>逃がすと、このプレイでは進化できない。手前で止まるのでブレイカーも届く。</p>' }); } },
     { t: TL.route1End, f: () => endRoute() },
     { t: TL.boss2 - 5, f: () => { if (diffKey !== 'HARD') dropItem('rapid', P.x, P.y + 1, -70); } },
     { t: TL.boss2, f: () => spawnBoss(b2, TL.bossWindow) },
@@ -4959,7 +5093,7 @@ function spawnBoss(key, window) {
   g.add(spinG);
   const halo = new T3.Mesh(GEO.wave, addMat({ color: 0xff2d55, opacity: 0 })); halo.scale.setScalar(boss.r * 1.5); g.add(halo);
   boss.halo = halo; boss.spin = spinG; boss.body = [core]; boss.mesh = g; g.position.set(boss.x, boss.y, boss.z); scene.add(g);
-  audio.warn(); audio.bgm(def.final ? 'final' : 'boss');
+  audio.bossAppear(def.final); audio.bgm(def.final ? 'final' : key === 'guardian' || key === 'sentinel' ? 'bossA' : 'bossB');
   info({ eyebrow: def.final ? '最終ボス' : '中ボス', title: '⚠ ' + def.name, color: hex(def.color),
     html: '<p class="big">' + (def.final ? '倒せばクリア。HPが減ると攻撃が激しくなる。' : '<b>' + Math.round(window) + '秒以内</b>に倒さないと撤退する（報酬なし）。') + '</p><p>周期的に<b>手前まで接近</b>してくる（赤い輪が点滅したら合図）。ブレイカーが届く好機。</p>' });
   shake = 6;
@@ -4996,10 +5130,11 @@ function startRoute(o, n) {
   const css = o.kind === 'core' ? CORES[o.core].css : ROUTE2[o.kind].css;
   tunnelMat.color.set(css);
   rs.gateChoices.push(o.kind === 'core' ? o.core : o.kind);
-  audio.bgm('route');
+  audio.bgm(routeSong()); audio.gatePass();
   const name = o.kind === 'core' ? CORES[o.core].icon + ' ' + CORES[o.core].name + 'ルート' : ROUTE2[o.kind].icon + ' ' + ROUTE2[o.kind].name + 'ルート';
   toastSmall(name + ' ・ ' + TERRAIN[o.terrain].name);
 }
+function routeSong() { return route && route.kind ? 'route_' + (route.kind === 'core' ? route.core : route.kind) : 'normal'; }
 function endRoute() {
   if (!route.kind) return;
   route = { kind: null, core: null, terrain: null, until: 0, bias: null };
@@ -5063,7 +5198,7 @@ function killEnemy(e, src) {
   const comboNeed = { EASY: 10, NORMAL: 15, HARD: 25 }[diffKey] || 15;
   if (rs.combo >= comboNeed && rs.powerCd <= 0) { rs.combo = 0; rs.powerCd = 15; dropItem('power', e.x, e.y, e.z); }
   const low = P.shield <= P.maxShield * .3;
-  if ((low || route.kind === 'repair') && rs.repairCd <= 0 && Math.random() < (route.kind === 'repair' ? .14 : .08)) { dropItem('repair', e.x, e.y, e.z); rs.repairCd = route.kind === 'repair' ? 5 : 8; }
+  if ((low || route.kind === 'repair') && rs.repairCd <= 0 && Math.random() < (route.kind === 'repair' ? .14 : .08) * (diffKey === 'HARD' ? .5 : 1)) { dropItem('repair', e.x, e.y, e.z); rs.repairCd = route.kind === 'repair' ? 5 : 8; }
   // evolution hooks
   if (P.evo === 'storm') { stormSt.stack = Math.min(6, stormSt.stack + 1); stormSt.timer = 4; }
   if (P.evo === 'rush') { stormSt.stack = Math.min(10, stormSt.stack + 1); stormSt.timer = 5; }
@@ -5084,13 +5219,13 @@ function killBoss() {
   const b = boss; rs.bossesDown++;
   score += Math.round(b.max * 2 + 5000 * (b.def.idx + 1));
   dropGems(b.x, b.y, b.z, b.def.xp);
-  if (!b.def.final) { dropItem('repair', b.x - 1.5, b.y, b.z); if (diffKey !== 'HARD') dropItem('power', b.x + 1.5, b.y, b.z); }
-  audio.bossDown(); burst(b.x, b.y, b.z, b.def.color, 120, 16, .4, 1); shockRing(b.x, b.y, b.z, b.def.color, 22, .7); shake = 12;
+  if (!b.def.final) { if (diffKey !== 'HARD' || Math.random() < .5) dropItem('repair', b.x - 1.5, b.y, b.z); if (diffKey !== 'HARD') dropItem('power', b.x + 1.5, b.y, b.z); }
+  audio.bossDown(b.def.final); burst(b.x, b.y, b.z, b.def.color, 120, 16, .4, 1); shockRing(b.x, b.y, b.z, b.def.color, 22, .7); shake = 12;
   dropObj(b.mesh); boss = null;
   eb.length = 0;
   if (b.def.final) { finish('CLEAR'); return; }
   toast(b.def.name + ' 撃破！');
-  audio.bgm(route.kind ? 'route' : 'normal');
+  audio.bgm(routeSong());
 }
 function hurtPlayer(n) {
   if (dbg.god && P.invuln <= 0) { rs.godHits = (rs.godHits || 0) + n; P.invuln = .8; }
@@ -5203,14 +5338,14 @@ function doAwaken() {
   const A = AWAKE[P.weapon], need = A.need;
   if (need === 'maxsh') { P.maxShield -= 20 * L.maxsh; P.shield = Math.min(P.shield, P.maxShield); }
   L[need] = 0; banished.add(need); setAwaken(A.id); P.awkT = T;
-  slowT = .9; shake = 10; audio.evolve(); burst(P.x, P.y, 0, 0xffd166, 70, 14, .4, 1);
+  slowT = .9; shake = 10; audio.awaken(); burst(P.x, P.y, 0, 0xffd166, 70, 14, .4, 1);
   info({ eyebrow: '覚醒', title: '✴️ ' + EVOS[P.evo].name + ' → ' + A.name, color: '#ffd166', html: '<p class="big">' + esc(A.desc) + '</p><p>' + PASSIVES.find(x => x.id === need).name + 'は消費された（このプレイでは再取得できない）。</p>' });
 }
 function setFuse(id) { P.fus = id; if (id === 'formation') { P.clones = 4; P.cloneCd = 10; } }
 function doFuse() {
   const F = FUSE[P.weapon], need = F.need;
   L[need] = 0; banished.add(need); setFuse(F.id); P.fusT = T;
-  slowT = .9; shake = 10; audio.evolve(); burst(P.x, P.y, 0, 0x9dfcff, 70, 14, .4, 1);
+  slowT = .9; shake = 10; audio.fuse(); burst(P.x, P.y, 0, 0x9dfcff, 70, 14, .4, 1);
   info({ eyebrow: '融合', title: '🔗 ' + EVOS[P.evo].name + ' ＋ ' + SUBS.find(x => x.id === need).name + ' → ' + F.name, color: '#9dfcff', html: '<p class="big">' + esc(F.desc) + '</p><p>サブ武器の枠が1つ空いた。</p>' });
 }
 // evolution is offered as a choice once the core is held and the weapon is Lv3+
@@ -5319,9 +5454,9 @@ function fireMain() {
       const [d, c] = crit(base * m);
       firePB({ x: ox, y: oy, z: -1.5, vx: 0, vy: 0, vz: -PB_SPEED * 1.15, r: heavy ? .34 : .22, dmg: d, crit: c, kind: 'blaster', front: true, tgt: aimAssist(ox, oy), assist: 10, pierce: heavy ? 1 : 0, armorPierce: heavy, chain: P.evo === 'chain', big: heavy, color: c ? 0xfff06d : 0x65f6ff });
     }
-    audio.shot();
+    audio.fire('blaster', P.evo);
     let iv = .16 / (rateMul() * (1 + .05 * (P.wlv - 1))) / (heavy ? .85 : 1);
-    if (P.awk === 'overload') { iv /= 3; P.heat += .7; if (P.heat >= 100) { P.heat = 0; P.overheat = 2.5; toastSmall('🌡️ オーバーヒート！'); } }
+    if (P.awk === 'overload') { iv /= 3; P.heat += .7; if (P.heat >= 100) { P.heat = 0; P.overheat = 2.5; audio.overheat(); toastSmall('🌡️ オーバーヒート！'); } }
     return iv;
   }
   if (P.weapon === 'laser') { laserTick(.1); return .1; }
@@ -5335,7 +5470,7 @@ function fireMain() {
       const t = tg[ti] || null; launchHoming(t, i, n);
       if (t && t !== boss) { acc += per * (t.armor ? .5 : 1); if (acc >= t.hp) { ti = Math.min(ti + 1, tg.length - 1); acc = 0; } }
     }
-    audio.shot();
+    audio.fire('homing', P.evo);
     return .38 / rateMul();
   }
   if (P.weapon === 'cannon') {
@@ -5343,7 +5478,7 @@ function fireMain() {
     const giga = P.awk === 'giga', huge = giga && P.cannonN % 3 === 0;
     const [d, c] = crit(5.6 * dm * (1 + .15 * (P.wlv - 1)) * (huge ? 5 : 1) * (P.evo === 'jackpot' ? 1.1 : P.evo === 'buster' ? 1.25 : 1));
     firePB({ x: P.x, y: P.y, z: -1.6, vx: 0, vy: 0, vz: -110, r: huge ? 1.4 : .5, dmg: d, bossDmg: d * 1.6, crit: c, kind: 'cannon', front: true, armorPierce: true, pierce: huge ? 99 : 2 + (P.wlv >= 3 ? 1 : 0) + (P.wlv >= 5 ? 1 : 0), buster: P.evo === 'buster', stun: P.evo === 'bulwark', cancel: P.evo === 'bulwark' ? 3 : 0, kc: 0, color: c ? 0xfff06d : 0x9df0ff });
-    burst(P.x, P.y, -2, 0x9df0ff, huge ? 16 : 6, 6, .25, .2); audio.blast();
+    burst(P.x, P.y, -2, 0x9df0ff, huge ? 16 : 6, 6, .25, .2); audio.fire('cannon', P.evo, huge);
     return .6 / rateMul() / (giga ? .8 : 1);
   }
   if (P.weapon === 'spread') {
@@ -5354,7 +5489,7 @@ function fireMain() {
       const a = -half + 2 * half * i / (n - 1), [d, c] = crit(base);
       firePB({ x: P.x + Math.sin(a) * .6, y: P.y - .05, z: -1.4, vx: Math.sin(a) * PB_SPEED, vy: (i % 2 ? 1 : -1) * 1.4, vz: -Math.cos(a) * PB_SPEED, r: .2, dmg: d, bossDmg: d * .45, crit: c, kind: 'spread', front: true, pierce: 2, cancel: P.evo === 'wall' ? 1 : 0, flare: P.evo === 'flare', color: c ? 0xfff06d : 0x65f6ff });
     }
-    audio.shot();
+    audio.fire('spread', P.evo);
     return .27 / rateMul();
   }
   const n = 6, half = .085, range = 34 + 3 * P.wlv, base = 3.1 * dm * (1 + .2 * (P.wlv - 1)) * (P.awk === 'ram' ? 1.3 : 1) * (P.evo === 'drain' ? 1.1 : 1);
@@ -5363,7 +5498,7 @@ function fireMain() {
     firePB({ x: P.x, y: P.y, z: -1.4, vx: Math.sin(a) * sp, vy: Math.sin(v) * sp, vz: -Math.cos(a) * sp, r: .34, dmg: d, crit: c, kind: 'breaker', front: true, armorPierce: true, shieldBreak: true, range, dist: 0, color: c ? 0xfff06d : 0xffa94d });
   }
   burst(P.x, P.y, -1.8, 0xffa94d, 6, 6, .2, .18);
-  audio.blast();
+  audio.fire('breaker', P.evo);
   return .5 / rateMul();
 }
 function fireSubs(dt) {
@@ -5423,7 +5558,7 @@ function fireSubs(dt) {
   // awakening / fusion extras
   if (P.awk === 'nest' && P.nest > 0) {
     P.nestCd -= dt;
-    if (P.nestCd <= 0) { const t = homingTargets(P.x, P.y, -75)[0]; if (t) { launchHoming(t, P.nest % 5, 5); P.nest--; P.nestCd = .03; audio.shot(); } }
+    if (P.nestCd <= 0) { const t = homingTargets(P.x, P.y, -75)[0]; if (t) { launchHoming(t, P.nest % 5, 5); P.nest--; P.nestCd = .03; audio.fire('homing', P.evo); } }
   }
   if (P.awk === 'blackhole') {
     P.bhCd -= dt;
@@ -5447,7 +5582,7 @@ function fireSubs(dt) {
       for (const e of enemies) if (!e.dead && e.type !== 'carrier' && e.z > -45) hurtEnemy(e, d, { kind: 'supernova', armorPierce: true, front: false });
       if (boss && boss.z > -45) hurtBoss(60 * dm, { kind: 'supernova' });
       P.shield = Math.max(1, P.shield - 3);
-      novaRing.material.color.set(0xffa94d); novaRing.material.opacity = 1; novaRing.userData.t = 0; burst(P.x, P.y, -6, 0xffa94d, 50, 18, .4, .6); audio.bossDown(); shake = 6;
+      novaRing.material.color.set(0xffa94d); novaRing.material.opacity = 1; novaRing.userData.t = 0; burst(P.x, P.y, -6, 0xffa94d, 50, 18, .4, .6); audio.boom(); audio.nova(); shake = 6;
     }
   }
   if (P.fus === 'formation' && P.clones < 4) { P.cloneCd -= dt; if (P.cloneCd <= 0) { P.clones++; P.cloneCd = 10; } }
@@ -5463,7 +5598,7 @@ function fireSubs(dt) {
         const [d, c] = crit(24 * dm * (1 + .2 * (P.wlv - 1)));
         const dx = t.x - P.x, dy = t.y - P.y, dz = t.z, l = Math.hypot(dx, dy, dz) || 1;
         firePB({ x: P.x, y: P.y, z: -1.5, vx: dx / l * 160, vy: dy / l * 160, vz: dz / l * 160, r: .55, dmg: d, crit: c, kind: 'pile', front: false, armorPierce: true, range: 90, dist: 0, tgt: t, homing: 9, color: 0xff4d6d, big: true });
-        audio.blast();
+        audio.fire('pile');
       }
     }
   }
@@ -5602,12 +5737,12 @@ function updatePB(dt) {
 function missileBlast(b, hitObj) {
   const R = 4.2, d = (L.missile >= 3 ? .6 : .4) * enemyHp('normal');
   for (const e of enemies) { if (e.dead || e === hitObj || e.type === 'carrier') continue; if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 + (e.z - b.z) ** 2 < (R + e.r) ** 2) hurtEnemy(e, d, { kind: 'missileBlast', front: false, armorPierce: true }); }
-  burst(b.x, b.y, b.z, 0xff9bd2, 16, 9, .3, .4); shockRing(b.x, b.y, b.z, 0xff9bd2, R, .35);
+  burst(b.x, b.y, b.z, 0xff9bd2, 16, 9, .3, .4); shockRing(b.x, b.y, b.z, 0xff9bd2, R, .35); audio.boom();
 }
 function busterBlast(b, hitObj) {
   const R = 3.4, d = b.dmg * .5;
   for (const e of enemies) { if (e.dead || e === hitObj) continue; if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 + (e.z - b.z) ** 2 < (R + e.r) ** 2) hurtEnemy(e, d, { kind: 'buster', front: false, armorPierce: true }); }
-  burst(b.x, b.y, b.z, 0xffa94d, 18, 9, .3, .4); shockRing(b.x, b.y, b.z, 0xffa94d, 3.4, .35);
+  burst(b.x, b.y, b.z, 0xffa94d, 18, 9, .3, .4); shockRing(b.x, b.y, b.z, 0xffa94d, 3.4, .35); audio.boom();
 }
 function chainZap(b, from) {
   const near = enemies.filter(o => !o.dead && o !== from && Math.hypot(o.x - from.x, o.y - from.y, o.z - from.z) < 7).sort((p, q) => Math.hypot(p.x - from.x, p.y - from.y, p.z - from.z) - Math.hypot(q.x - from.x, q.y - from.y, q.z - from.z)).slice(0, 3);
@@ -5615,6 +5750,7 @@ function chainZap(b, from) {
     for (let k = 1; k <= 5; k++) { const f = k / 6; parts.push({ x: from.x + (o.x - from.x) * f + rnd(-.2, .2), y: from.y + (o.y - from.y) * f + rnd(-.2, .2), z: from.z + (o.z - from.z) * f, vx: 0, vy: 0, vz: 0, life: .15, max: .15, color: 0x9dfcff, s: .25 }); }
     hurtEnemy(o, b.dmg * .55, { kind: 'chain', front: false });
   }
+  if (near.length) audio.zap();
 }
 function spawnHole() {
   const g = new T3.Group();
@@ -5649,7 +5785,7 @@ function updateHoles(dt) {
 function flareBlast(b, hitObj) {
   const R = 3.2, d = b.dmg * .9 * (b.z > -35 ? 1.6 : 1);
   for (const e of enemies) { if (e.dead || e === hitObj) continue; if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 + (e.z - b.z) ** 2 < (R + e.r) ** 2) hurtEnemy(e, d, { kind: 'flare', front: false }); }
-  burst(b.x, b.y, b.z, 0xff7a3d, 5, 7, .22, .3);
+  burst(b.x, b.y, b.z, 0xff7a3d, 5, 7, .22, .3); audio.boom();
 }
 function updateEnemies(dt0) {
   const fire = DF.fire, sp = ebSpeed();
@@ -5707,7 +5843,7 @@ function updateEnemies(dt0) {
         break;
       case 'mine':
         e.z += e.vz * dt;
-        if (!e.armed && e.z > -24) { e.armed = true; e.timer = .7; audio.warn(); }
+        if (!e.armed && e.z > -24) { e.armed = true; e.timer = .7; audio.mine(); }
         if (e.armed) { e.timer -= dt; e.flash = Math.sin(e.timer * 40) > 0 ? .05 : 0; if (e.timer <= 0) { ring(e, 14, 3.2, rnd(0, 6), sp * .8, .4, 0xff3b5c); burst(e.x, e.y, e.z, 0xff3b5c, 24, 10, .3, .5); audio.kill(true); e.dead = true; } }
         break;
       case 'fighter':
@@ -5748,7 +5884,7 @@ function updateBoss(dt) {
   const sp = ebSpeed();
   b.t1 -= dt * DF.fire; b.t2 -= dt * DF.fire; b.t3 -= dt * DF.fire;
   const hoverZ = -58, closeZ = -21;
-  if (b.leaving) { b.z -= 60 * dt; if (b.z < -200) { dropObj(b.mesh); boss = null; audio.bgm(route.kind ? 'route' : 'normal'); } return; }
+  if (b.leaving) { b.z -= 60 * dt; if (b.z < -200) { dropObj(b.mesh); boss = null; audio.bgm(routeSong()); } return; }
   // sway target; the boss always moves toward it at a capped speed so it never jumps between modes
   const tx = b.mode === 'enter' ? 0 : Math.sin(b.age * .5) * Math.min(4, curB.x - 1);
   const ty = b.mode === 'enter' ? 1 : 1 + Math.sin(b.age * .7) * 1.4 * (b.mode === 'hold' ? .4 : 1);
@@ -5841,7 +5977,7 @@ function updateItems(dt) {
   items = items.filter(it => { if (it.dead) { dropObj(it.mesh); return false; } return true; });
 }
 function collectItem(it) {
-  audio.item();
+  if (it.kind === 'core') audio.coreGet(); else audio.item();
   if (it.kind === 'core') {
     P.core = it.core; rs.coreGot = it.core;
     if (P.wlv >= 3) tryEvolve();
@@ -6355,6 +6491,7 @@ function frame(now) {
     try { update(sdt); afterTick(); } catch (err) { console.error(err); } // keep the loop alive if one frame fails
     uiTimer -= dt; if (uiTimer <= 0) { uiTimer = .1; updateHUD(); }
   }
+  audio.laser(state === 'play' && endTimer <= 0 && P && P.weapon === 'laser' && laserBeams().length > 0, P && P.awk === 'solar' && P.solarOn);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) $('toast').style.opacity = 0; }
   render(state === 'play' ? dt : state === 'title' ? dt * .5 : 0);
 }
@@ -6409,7 +6546,8 @@ function autopilot(dt) {
   if (dbg.dodge) {
     // keep a little distance from targets, and steer away from incoming bullets and bodies
     let ex = 0, ey = 0;
-    for (const b of eb) { if (b.z < -16 || b.vz <= 0) continue; const t = -b.z / b.vz, px = b.x + b.vx * t, py = b.y + b.vy * t, d = Math.hypot(px - P.x, py - P.y); if (d < 1.8) { const w = (1.8 - d) / 1.8 * 4 / (1 + t * 3); ex += (P.x - px) / (d || .01) * w; ey += (P.y - py) / (d || .01) * w; } }
+    const sk = dbg.skill == null ? 1 : dbg.skill; // below 1: reacts late or misses some threats, like a person
+    for (const b of eb) { if (b.z < -16 || b.vz <= 0) continue; if (sk < 1 && (Math.random() > sk || -b.z / b.vz > .25 + .5 * sk)) continue; const t = -b.z / b.vz, px = b.x + b.vx * t, py = b.y + b.vy * t, d = Math.hypot(px - P.x, py - P.y); if (d < 1.8) { const w = (1.8 - d) / 1.8 * 4 / (1 + t * 3); ex += (P.x - px) / (d || .01) * w; ey += (P.y - py) / (d || .01) * w; } }
     for (const e of enemies) { if (e.dead || e.z < -12) continue; const d = Math.hypot(e.x - P.x, e.y - P.y), R = e.r + 1.4; if (d < R) { const w = (R - d) / R * 4; ex += (P.x - e.x) / (d || .01) * w; ey += (P.y - e.y) / (d || .01) * w; } }
     if (Math.hypot(ex, ey) > .05) { dx = ex * 6; dy = ey * 6; }
   }
@@ -6424,6 +6562,8 @@ function autoChoose() {
 }
 if (DEBUG) window.__is2 = {
   unlockAll(v = true) { UL.all = v; },
+  gz() { return gate ? gate.z : null; },
+  audio,
   start(opt = {}) { Object.assign(dbg, opt); if (opt.weapon) selWeapon = opt.weapon; if (opt.ship) selShip = opt.ship; if (opt.diff) { diffKey = opt.diff; DF = DIFF[diffKey]; } startGame(); },
   // boundary check: report any object that moves farther in one step than it should be able to
   scan(sec, step = 1 / 60) {
