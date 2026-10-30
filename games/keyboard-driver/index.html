@@ -995,7 +995,7 @@ var KDT = {
   // ---------- 音 ----------
   // こうかおん と、とんでいる あいだの エンジンおん（WebAudio で その場で つくる）
   var AU = (function () {
-    var ctx = null, master = null, noiseBuf = null, eng = null;
+    var ctx = null, master = null, noiseBuf = null, eng = null, lastKeySnd = 0;
     var PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760, 2093];
     function on() { return S && S.set.sound; }
     function init() {
@@ -1007,23 +1007,39 @@ var KDT = {
         noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
         var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       }
-      if (ctx.state === 'suspended') ctx.resume();
+      // iPhone の Safari では 'interrupted' に なることが ある
+      if (ctx.state !== 'running' && !document.hidden) { try { ctx.resume(); } catch (e) { } }
       return ctx;
     }
+    // Safari は なりおわった ノードを つないだままに すると しょりしつづけ、だんだん おもくなる。
+    // おわったら かならず disconnect する。
+    var voices = 0, MAX_VOICES = 24;
+    function release(src, nodes) {
+      voices++;
+      var done = false;
+      var fin = function () {
+        if (done) return; done = true; voices = Math.max(0, voices - 1);
+        nodes.forEach(function (nd) { try { nd.disconnect(); } catch (e) { } });
+      };
+      src.onended = fin;
+    }
+    function busy() { return voices >= MAX_VOICES; }
     function tone(f, st, len, type, vol, f2) {
+      if (busy()) return;
       var t = ctx.currentTime + st, o = ctx.createOscillator(), g = ctx.createGain();
       o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
       if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + len);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
       g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      o.connect(g); g.connect(master); o.start(t); o.stop(t + len + 0.05);
+      o.connect(g); g.connect(master); release(o, [o, g]); o.start(t); o.stop(t + len + 0.05);
     }
     function noise(st, len, ftype, f0, f1, vol, q) {
+      if (busy()) return;
       var t = ctx.currentTime + st, src = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
       src.buffer = noiseBuf; fl.type = ftype; fl.Q.value = q || 1;
       fl.frequency.setValueAtTime(f0, t); if (f1) fl.frequency.exponentialRampToValueAtTime(f1, t + len);
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      src.connect(fl); fl.connect(g); g.connect(master);
+      src.connect(fl); fl.connect(g); g.connect(master); release(src, [src, fl, g]);
       src.start(t, Math.random() * 1.5); src.stop(t + len + 0.05);
     }
     function play(kind, n) {
@@ -1031,6 +1047,7 @@ var KDT = {
       try {
         init();
         if (kind === 'key') {
+          var nowMs = Date.now(); if (nowMs - lastKeySnd < 35) return; lastKeySnd = nowMs;
           noise(0, 0.035, 'highpass', 2500 + Math.random() * 2500, 0, 0.09, 0.7);
           tone(900 + Math.random() * 500, 0, 0.03, 'triangle', 0.025);
         } else if (kind === 'ok') {
@@ -1077,19 +1094,26 @@ var KDT = {
         var of = ctx.createBiquadFilter(); of.type = 'lowpass'; of.frequency.value = 260;
         var og = ctx.createGain(); og.gain.value = pr.pg;
         o.connect(of); of.connect(og); og.connect(out); o.start();
-        var pad = null, lfo = null;
+        var pad = null, lfo = null, pg = null, lg = null;
         if (pr.pad) {
           pad = ctx.createOscillator(); pad.type = 'sine'; pad.frequency.value = 220;
-          var pg = ctx.createGain(); pg.gain.value = pr.pad;
-          lfo = ctx.createOscillator(); lfo.frequency.value = 0.35; var lg = ctx.createGain(); lg.gain.value = 6;
+          pg = ctx.createGain(); pg.gain.value = pr.pad;
+          lfo = ctx.createOscillator(); lfo.frequency.value = 0.35; lg = ctx.createGain(); lg.gain.value = 6;
           lfo.connect(lg); lg.connect(pad.frequency); pad.connect(pg); pg.connect(out); pad.start(); lfo.start();
         }
-        eng = { out: out, n: n, nf: nf, ng: ng, o: o, of: of, og: og, pad: pad, lfo: lfo, pr: pr };
+        eng = { out: out, n: n, nf: nf, ng: ng, o: o, of: of, og: og, pad: pad, lfo: lfo, pr: pr, last: -1, lastAt: 0,
+          all: [n, nf, ng, o, of, og, pad, pg, lfo, lg, out].filter(Boolean) };
       } catch (e) { eng = null; }
     }
+    // まいフレーム よぶと AudioParam の よてい が どんどん たまるので、
+    // かわった ときだけ、0.1びょうに 1かいまで おくる
     function engineSet(boost) {
       if (!eng || !ctx) return;
-      var b = Math.min(1.6, boost), t = ctx.currentTime, pr = eng.pr;
+      var b = Math.min(1.6, boost), now = Date.now();
+      if (b < 0.004) b = 0;
+      if (Math.abs(b - eng.last) < 0.01 || now - eng.lastAt < 100) return;
+      eng.last = b; eng.lastAt = now;
+      var t = ctx.currentTime, pr = eng.pr;
       eng.nf.frequency.setTargetAtTime(pr.nf + b * 2200, t, 0.06);
       eng.ng.gain.setTargetAtTime(pr.ng + b * 0.09, t, 0.06);
       eng.o.frequency.setTargetAtTime(pr.p * (1 + b * 0.9), t, 0.08);
@@ -1104,6 +1128,7 @@ var KDT = {
         e.out.gain.exponentialRampToValueAtTime(0.0001, t + (now ? 0.05 : 0.5));
         [e.n, e.o, e.pad, e.lfo].forEach(function (x) { if (x) x.stop(t + (now ? 0.1 : 0.6)); });
       } catch (err) { }
+      setTimeout(function () { e.all.forEach(function (nd) { try { nd.disconnect(); } catch (err2) { } }); }, now ? 200 : 800);
     }
     document.addEventListener('visibilitychange', function () {
       if (!ctx) return;
@@ -1164,7 +1189,7 @@ var KDT = {
       return { x: (Math.random() * 2 - 1) * 3.2, y: -(Math.random() * 0.9 + 0.12), z: z, s: Math.random() * 0.5 + 0.6, low: Math.random() };
     }
     function setScene(m, st, dst) { mode = m; stageId = st || null; destId = dst || null; }
-    function setProg(p) { prog = p; }
+    function setProg(p) { prog = isFinite(p) ? Math.max(0, Math.min(1, p)) : 0; }
     function kick(power) { boost += power; if (stageId === 'stars') warp = 1; flash = 0.6; }
 
     var BODY = {
@@ -1177,7 +1202,7 @@ var KDT = {
       altair: ['#ffffff', '#dfe8ff'], vega: ['#ffffff', '#b8d0ff'], polaris: ['#fffbe0', '#ffd88a'], betelgeuse: ['#ffd0a0', '#ff6a2a']
     };
     function drawBody(id, x, y, r) {
-      if (r < 0.5) return;
+      if (!(r >= 0.5) || !isFinite(r) || !isFinite(x) || !isFinite(y)) return;
       if (id === 'voyager') {
         ctx.save(); ctx.translate(x, y); var s = Math.max(2, r);
         ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.ellipse(0, -s * 0.2, s, s * 0.35, 0, 0, Math.PI * 2); ctx.fill();
@@ -1379,7 +1404,16 @@ var KDT = {
       }
     }
     var last = 0;
+    var frameErrors = 0;
     function frame(ts) {
+      requestAnimationFrame(frame); // さきに つぎを よやく（とちゅうで エラーが でても アニメが とまらない）
+      try { draw(ts); } catch (e) {
+        frameErrors++;
+        if (frameErrors < 3 && window.console) console.error('draw error', e);
+        try { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over'; } catch (e2) { }
+      }
+    }
+    function draw(ts) {
       var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts; tm += dt;
       boost *= Math.exp(-dt * 1.6); warp *= Math.exp(-dt * 1.2); flash *= Math.exp(-dt * 5);
       if (mode === 'game') AU.engineSet(boost);
@@ -1393,7 +1427,6 @@ var KDT = {
         v = 0.05; drawSpace(dt, { top: '#060a24', bot: '#0d1840', neb: 'rgba(60,80,200,0.25)', streak: 0.12 });
       }
       if (flash > 0.02) { ctx.fillStyle = 'rgba(255,255,255,' + (flash * 0.35).toFixed(3) + ')'; ctx.fillRect(0, 0, w, h); }
-      requestAnimationFrame(frame);
     }
     resize(); seed(); window.addEventListener('resize', resize);
     requestAnimationFrame(frame);
@@ -2111,7 +2144,7 @@ var KDT = {
     var tr = S.trip, stage = stageById(tr.stage), leg = tr.legs[tr.leg];
     var first = G.tries === 0;
     var step = speed() * (first ? 1.2 : 1);
-    step = Math.min(step, leg.dist / 3 + 1e-6);
+    step = Math.min(step, leg.dist / 3 * 1.000001);
     var gained = Math.min(step, leg.dist - tr.prog);
     tr.prog += step; tr.cnt++;
     S.stats.correct++; if (first) S.stats.firstTry++;
@@ -2119,7 +2152,7 @@ var KDT = {
     snd('ok', G.combo); snd(stage.id === 'stars' ? 'warp' : 'boost');
     BG.kick(stage.id === 'stars' ? 1.6 : 1.1);
     floatText((G.combo >= 3 ? '<span style="color:#ff8a2a">' + G.combo + 'れんぞく！</span> ' : first ? '<span style="color:#ffd23f">いっぱつ！</span> ' : 'せいかい！ ') + '+' + fmtKm(gained).replace(/<ruby>光年<rt>こうねん<\/rt><\/ruby>/, '光年'));
-    if (tr.prog >= leg.dist - 1e-6) {
+    if (tr.prog >= leg.dist * (1 - 1e-9)) {
       if (tr.leg < tr.legs.length - 1) {
         tr.leg++; tr.prog = 0;
         S.stages[tr.stage].pos = leg.to;
@@ -2221,6 +2254,26 @@ var KDT = {
   if (window.visualViewport) { visualViewport.addEventListener('resize', onVV); visualViewport.addEventListener('scroll', onVV); }
   window.addEventListener('resize', function () { onVV(); if (curScreen === 'scr-home') drawMap(stageById(S.cur)); });
   onVV();
+
+  // ---------- こまったときの たてなおし ----------
+  // よそうしない エラーが おきたら、セーブして ホームへ もどれる まどを だす
+  var errShown = 0;
+  function onFatal(msg) {
+    try { save(); } catch (e) { }
+    if (Date.now() - errShown < 5000) return;
+    errShown = Date.now();
+    try {
+      G.busy = false;
+      openModal('<h3>うまく うごかなく なったかも</h3><p>きろくは セーブしたよ。ホームに もどって、もういちど ためしてみてね。はいたつの とちゅうなら「つづきから とぶ」で つづけられるよ。</p>' +
+        '<p class="muted" style="font-size:11px;word-break:break-all">' + esc(String(msg).slice(0, 160)) + '</p>' +
+        '<div class="acts"><button class="btn" data-m="stay">このまま つづける</button><button class="btn primary" data-m="home">ホームへ</button></div>', function (act) {
+          closeModal();
+          if (act === 'home') goHome(); else refocus();
+        });
+    } catch (e) { }
+  }
+  window.addEventListener('error', function (e) { if (S) onFatal((e.message || 'error') + ' @' + (e.lineno || '')); });
+  window.addEventListener('unhandledrejection', function (e) { if (S) onFatal('promise: ' + (e.reason && e.reason.message || e.reason)); });
 
   // テスト用
   window.__kd = { get S() { return S; }, set S(v) { S = v; }, save: save, goHome: goHome, renderUp: renderUp, check: K.check, G: G, submit: submit, show: show };
