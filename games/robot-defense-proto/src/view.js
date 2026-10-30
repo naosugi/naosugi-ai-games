@@ -153,10 +153,6 @@ function buildMap(st, paths) {
   const b2 = new T.Mesh(new T.CylinderGeometry(.9, 1.1, .7, 6), M.head); b2.position.y = 1.1;
   const b3 = new T.Mesh(new T.TorusGeometry(1.25, .07, 6, 30), new T.MeshBasicMaterial({ color: 0x65f6ff })); b3.rotation.x = Math.PI / 2; b3.position.y = 1.5;
   base.add(b1, b2, b3); base.position.set(st.base.x, 0, st.base.z); g.add(base); M.baseRing = b3;
-  // 建造パッド
-  const pad = new T.Mesh(G.box, M.roboDark); pad.scale.set(1.8, .1, 1.4); pad.position.set(st.factory.x, .05, st.factory.z); g.add(pad);
-  const padE = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.8, .1, 1.4)), new T.LineBasicMaterial({ color: 0x65f6ff }));
-  padE.position.copy(pad.position); g.add(padE);
   // 前線拠点
   M.outposts = (st.outposts || []).map(o => {
     const og = new T.Group(); og.position.set(o[0], 0, o[1]);
@@ -699,19 +695,24 @@ function updHud() {
   setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
-  setText('hBots', activeCount(S) + '/' + CFG.deployCap);
+  setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
   setText('hBaseN', String(Math.ceil(S.baseHP)));
   const k = S.baseHP / CFG.baseHP;
   $('hBase').style.width = (k * 100) + '%'; $('hBaseBar').classList.toggle('hurt', k < .5);
   // 建造キュー
-  const q = $('queue'), html = S.queue.map((it, i) => { const act = i < S.lines; return '<div class="qchip' + (act ? '' : ' wait') + '"><span class="num">' + it.slot + '</span>' + esc(it.body.name) + ' ' + it.wids.map(w => WEAPONS[w].icon).join('') + (act ? ' ' + Math.max(0, it.time - it.prog).toFixed(1) + 's' : ' 待機') + '<i style="width:' + (act ? it.prog / it.time * 100 : 0) + '%"></i></div>'; }).join('');
+  let busy = 0;
+  const q = $('queue'), html = S.queue.map((it, i) => {
+    const ready = it.prog >= it.time, act = !ready && busy++ < S.lines, op = S.outposts[it.at];
+    const st = ready ? (op && op.owner !== 'p' ? ' ⚠陣地喪失' : ' 出撃待ち') : act ? ' ' + Math.max(0, it.time - it.prog).toFixed(1) + 's' : ' 待機';
+    return '<div class="qchip' + (ready ? ' ready' : act ? '' : ' wait') + '"><span class="num">予' + (i + 1) + '</span>' + esc(it.body.name) + ' ' + it.wids.map(w => WEAPONS[w].icon).join('') + (op ? '🚩' + op.label : '') + st + '<i style="width:' + (it.prog / it.time * 100) + '%"></i></div>';
+  }).join('');
   if (hudCache.queue !== html) { hudCache.queue = html; q.innerHTML = html; }
   if (sel && sel.dead) sel = null;
   updInfo(); updRoster();
 }
 function updInfo() {
   const el = $('info');
-  const html = sel ? '<b>' + esc(sel.name) + '</b> ' + sel.weapons.map(w => w.def.icon).join('') + ' ❤' + Math.ceil(sel.hp) + '/' + sel.maxHp + ' ・ 移動先をタップ'
+  const html = sel ? '<span class="slow">◷スロー</span><b>' + esc(sel.name) + '</b> ' + sel.weapons.map(w => w.def.icon).join('') + ' ❤' + Math.ceil(sel.hp) + '/' + sel.maxHp + ' ・ 移動先をタップ'
     : esc(S && S.robots.length ? 'ロボット（地図か右の一覧）を選んで → 移動先をタップ' : (S && S.queue.length ? '建造中…完成したら配置しよう' : '🔧 建造からロボットを作ろう'));
   if (hudCache.info !== html) { hudCache.info = html; el.innerHTML = html; el.className = sel ? 'sel' : ''; }
 }
@@ -738,8 +739,8 @@ function renderBuild() {
   $('bStep1').style.display = step2 ? 'none' : '';
   $('bStep2').style.display = step2 ? '' : 'none';
   if (!step2) {
-    const minW = Math.min(...Object.values(WEAPONS).map(w => w.cost)), full = activeCount(S) >= CFG.deployCap;
-    $('bNote1').innerHTML = full ? '<div class="note">出撃上限（' + CFG.deployCap + '機）です。ロボットが減るまで建造できません</div>' : '';
+    const minW = Math.min(...Object.values(WEAPONS).map(w => w.cost)), full = S.queue.length >= CFG.queueMax;
+    $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します</div>' : '';
     $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || S.pts < b.cost + minW) ? 'dis' : '')).join('');
     return;
   }
@@ -754,7 +755,7 @@ function renderBuild() {
     '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + '</div>' +
     '<div class="wd">' + esc(w.desc) + '</div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
-  $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + activeCount(S) + '/' + CFG.deployCap +
+  $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + S.robots.length + '/' + CFG.deployCap + ' ・ 予約 ' + S.queue.length + '/' + CFG.queueMax +
     (S.queue.length ? '<div class="dim">建造ライン' + S.lines + '本で順番に建造（予約 ' + S.queue.length + '機）</div>' : '') +
     (err ? '<div class="err">' + esc(err) + '</div>' : '');
   $('bGo').disabled = !!err;
@@ -788,7 +789,8 @@ function titleScreen() {
     '<li>ロボットは射程内の最寄りの敵を自動で攻撃（敵がいなければ敵拠点）</li>' +
     '<li>敵を倒すとポイント。拠点に取り付いた敵は、倒すまで拠点を攻撃し続ける</li>' +
     '<li>外周の🏭敵拠点を壊すと大量ポイント。その方面から来る敵が減る</li>' +
-    '<li>同時出撃は' + CFG.deployCap + '機まで（建造中も含む）。ロボットは使い捨て</li>' +
+    '<li>同時出撃は' + CFG.deployCap + '機まで。それとは別に' + CFG.queueMax + '機まで予約でき、誰かが倒れたら予約機がすぐ出撃する。陣地から出撃する予約は、その陣地が落ちていると出撃失敗</li>' +
+    '<li>ロボットを選んでいる間は、時間の流れが1/4になる</li>' +
     '<li><b>味方の弾や爆風は味方ロボットにも当たる</b>。範囲攻撃は強力だが、置き場所に注意</li>' +
     '<li>本編の🚩陣地：青は確保済みで、建造時に出撃地点に選べる。灰は中立、赤は敵占領（守備隊を倒して確保）。敵だけが近くにいると奪われる</li>' +
     '<li>地図はスワイプで移動、ピンチで拡大。⤢で全体表示</li></ul>' +
@@ -896,12 +898,14 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (mode === 'play' && !paused && !building) {
-    for (let i = 0; i < speed; i++) step(S, dt);
+    const rate = sel ? .25 : 1; // ロボットを選んでいる間はスロー
+    for (let i = 0; i < speed; i++) step(S, dt * rate);
   }
   if (S) {
     for (const f of S.fx) addFx(f); S.fx.length = 0;
     for (const m of S.msgs) toast(m.text, m.kind); S.msgs.length = 0;
     sync(dt); updHud(); updTags(); updEdges();
+    canvas.classList.toggle('slowmo', !!sel && mode === 'play' && !building);
     if (mode === 'play' && S.over) { // 勝敗の告知を見せてから結果画面へ
       mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();
       const win = S.over === 'win'; if (win) AU.S.win(); else AU.S.lose();
