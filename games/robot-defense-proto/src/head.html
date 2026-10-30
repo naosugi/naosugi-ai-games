@@ -150,6 +150,7 @@ canvas#c.slowmo{filter:saturate(.75) hue-rotate(-12deg) brightness(.92)}
 .wcard .wn b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcard .ws{display:flex;gap:8px;font-size:12px;color:var(--dim);align-items:center}
 .wcard .wd{font-size:10.5px;color:var(--dim);line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.wcard.dis{opacity:.45}
 .wcard.on .chk{background:var(--cyan);color:#04142a;border-color:var(--cyan)}
 
 /* モーダル */
@@ -226,6 +227,7 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
     <div class="sec">① ボディを選ぶ <span class="dim">今回の配備（抽選）</span></div>
     <div id="bNote1"></div>
     <div id="bodyList" class="list"></div>
+    <div id="bWorks"></div>
     <div class="foot"><div class="btns"><button id="bClose" class="ghost">閉じる</button></div></div>
   </div>
   <div id="bStep2">

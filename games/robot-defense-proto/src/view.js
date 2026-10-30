@@ -2,7 +2,7 @@
 (() => {
 'use strict';
 const T = window.THREE;
-const { CFG, TIER, PLUS, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, buyLine, newState, step, buildCost, buildCheck, orderBuild, moveRobot, activeCount, goalText } = RD;
+const { WORKS, workCost, workCheck, orderWork, CFG, TIER, PLUS, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, buyLine, newState, step, buildCost, buildCheck, orderBuild, moveRobot, activeCount, goalText } = RD;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -115,6 +115,7 @@ const M = {
   shotM: new T.MeshBasicMaterial({ color: 0xffd166 }),
   shotE: new T.MeshBasicMaterial({ color: 0xff6a3d }),
   line: new T.LineBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .45 }),
+  bubble: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .18, depthWrite: false }),
   rangeRing: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .35, side: T.DoubleSide, depthWrite: false }),
   aimLine: new T.LineBasicMaterial({ color: 0xff2d55 }),
 };
@@ -153,6 +154,12 @@ function buildMap(st, paths) {
   const b2 = new T.Mesh(new T.CylinderGeometry(.9, 1.1, .7, 6), M.head); b2.position.y = 1.1;
   const b3 = new T.Mesh(new T.TorusGeometry(1.25, .07, 6, 30), new T.MeshBasicMaterial({ color: 0x65f6ff })); b3.rotation.x = Math.PI / 2; b3.position.y = 1.5;
   base.add(b1, b2, b3); base.position.set(st.base.x, 0, st.base.z); g.add(base); M.baseRing = b3;
+  const gun = new T.Group(); gun.position.y = 1.55; gun.visible = false; base.add(gun);
+  const gb = new T.Mesh(G.box, M.roboDark); gb.scale.set(.7, .35, .7); gun.add(gb);
+  M.baseBarrels = [-1, 1].map(k => { const b = new T.Mesh(G.cyl, M.blaster); b.scale.set(.12, .9, .12); b.rotation.x = Math.PI / 2; b.position.set(k * .16, .1, .45); b.visible = false; gun.add(b); return b; });
+  M.baseGun = gun;
+  const dome = new T.Mesh(new T.SphereGeometry(2.6, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .2, side: T.DoubleSide, depthWrite: false }));
+  dome.visible = false; base.add(dome); M.baseDome = dome;
   // 前線拠点
   M.outposts = (st.outposts || []).map(o => {
     const og = new T.Group(); og.position.set(o[0], 0, o[1]);
@@ -202,7 +209,9 @@ function roboMesh(r) {
   const range = new T.Mesh(new T.RingGeometry(R - .08, R, 56), M.rangeRing); range.rotation.x = -Math.PI / 2; range.position.y = .04; range.visible = false; g.add(range);
   g.add(ring);
   const beams = r.weapons.map(w => { if (w.def.type !== 'beam') return null; return Array.from({ length: w.def.beams || 1 }, () => { const b = new T.Mesh(G.box, M.beam); b.visible = false; return b; }); });
-  return { obj: g, inner, body, ring, range, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
+  let bubble = null;
+  if (r.maxShield) { bubble = new T.Mesh(G.sph, M.bubble); bubble.scale.setScalar(2.1 * sc); bubble.position.y = .7 * sc; g.add(bubble); }
+  return { obj: g, inner, body, ring, range, bubble, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
 }
 function enemyMesh(e) {
   if (e.type === 'boss') {
@@ -320,6 +329,7 @@ function sync(dt) {
     v.inner.position.y = (v.dropT > 0 ? (v.dropT / .45) ** 2 * 7 : 0) + (r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0);
     v.body.material = r.flash > 0 ? M.white : M.robo;
     v.ring.visible = sel === r; v.range.visible = sel === r;
+    if (v.bubble) { v.bubble.visible = r.shield > 0; v.bubble.scale.setScalar(2.1 * TIER[r.body.tier].scale * 1.45 * (.85 + .15 * r.shield / r.maxShield)); }
     setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp);
     if (r.moving) setLine(v.line, r.x, r.z, r.tx, r.tz); else v.line.visible = false;
   }
@@ -559,6 +569,7 @@ function addFx(f) {
     case 'rebuild': fxMesh(G.ring, 0xff4d6d, f.x, f.z, .1, 4, .5, .8, true); return;
     case 'block': fxMesh(G.ring, 0xffc2ef, f.x, f.z, .6, .1, .6, .2, true); return;
     case 'ebase': fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, 1, 5, .8, true); burst(f.x, f.z, 0xff4d6d, 40, 10, .35, 1.3); floatText(f.x, f.z, '+' + f.pts); AU.S.blast(true); shake(.6, .5); return;
+    case 'work': fxMesh(G.ring, 0x7dffa8, S.home.x, S.home.z, .1, 1, 4, .6, true); burst(S.home.x, S.home.z, 0x7dffa8, 14, 4, .18, .7, 1.5); AU.S.built(); return;
     case 'spawn': fxColumn(f.x, f.z, 0x65f6ff); fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .3, 2.2, .4, true); pendingDrop.add(f.id); AU.S.built(); return;
     case 'capture': fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .5, 4, .6, true); burst(f.x, f.z, 0x65f6ff, 14, 5, .18, .7); AU.S.capture(); return;
     case 'boss': banner('WARNING', '模倣機（ボス）接近', 'boss', 2.8); AU.S.boss(); shake(.25, .8); return;
@@ -674,7 +685,7 @@ function updRoster() {
     const [st, cls] = robotState(r), k = Math.max(0, r.hp / r.maxHp);
     el.classList.toggle('on', sel === r);
     const bar = el.querySelector('.rb i'); bar.style.width = (k * 100) + '%'; bar.className = k < .3 ? 'low' : '';
-    const sEl = el.querySelector('.rs'), txt = st + ' ❤' + Math.ceil(r.hp);
+    const sEl = el.querySelector('.rs'), txt = st + ' ❤' + Math.ceil(r.hp) + (r.maxShield ? ' 🛡' + Math.ceil(r.shield) : '');
     if (sEl.textContent !== txt) { sEl.textContent = txt; sEl.className = 'rs ' + cls; }
   }
   for (const [id, el] of rosterEls) if (!alive.has(id)) { el.remove(); rosterEls.delete(id); }
@@ -696,7 +707,7 @@ function updHud() {
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
-  setText('hBaseN', String(Math.ceil(S.baseHP)));
+  setText('hBaseN', Math.ceil(S.baseHP) + (S.homeShield > 0 ? ' 🛡' + Math.ceil(S.homeShield) : ''));
   const k = S.baseHP / CFG.baseHP;
   $('hBase').style.width = (k * 100) + '%'; $('hBaseBar').classList.toggle('hurt', k < .5);
   // 建造キュー
@@ -742,6 +753,10 @@ function renderBuild() {
     const minW = Math.min(...Object.values(WEAPONS).map(w => w.cost)), full = S.queue.length >= CFG.queueMax;
     $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します</div>' : '';
     $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || S.pts < b.cost + minW) ? 'dis' : '')).join('');
+    $('bWorks').innerHTML = '<div class="sec">拠点工事 <span class="dim">建造ラインを使うが出撃数には数えない</span></div><div class="wgrid">' + Object.entries(WORKS).map(([id, w]) => {
+      const err = workCheck(S, id), lv = id === 'turret' ? ' ' + (S.works.turret || 0) + '/' + w.max : id === 'shield' && S.homeShield > 0 ? ' 残' + Math.ceil(S.homeShield) : '';
+      return '<button class="wcard' + (err ? ' dis' : '') + '" data-work="' + id + '"><div class="wn"><b>' + w.icon + ' ' + esc(w.name) + lv + '</b></div><div class="ws"><span class="cost">⭐' + workCost(S, id) + '</span><span>⏱' + w.build + 's</span></div><div class="wd">' + esc(err && err !== 'ポイントが足りません' ? err : w.desc) + '</div></button>';
+    }).join('') + '</div>';
     return;
   }
   $('bChosen').innerHTML = bodyRow(uiBody, '', 'on').replace(/^<button/, '<div').replace(/<\/button>$/, '</div>');
@@ -765,6 +780,11 @@ $('bodyList').addEventListener('click', e => {
   uiBody = S.bodies[+b.dataset.b]; uiW = new Set(); renderBuild(); $('buildM').querySelector('.card').scrollTop = 0;
 });
 $('wList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; const id = b.dataset.w; uiW.has(id) ? uiW.delete(id) : uiW.add(id); renderBuild(); });
+$('bWorks').addEventListener('click', e => {
+  const b = e.target.closest('[data-work]'); if (!b) return;
+  const err = orderWork(S, b.dataset.work);
+  toast(err ? err : WORKS[b.dataset.work].icon + ' ' + WORKS[b.dataset.work].name + 'を予約', err ? 'warn' : 'info'); renderBuild();
+});
 $('bAt').addEventListener('click', e => { const b = e.target.closest('[data-at]'); if (!b) return; uiAt = +b.dataset.at; renderBuild(); });
 $('bBack').addEventListener('click', () => { uiBody = null; uiW = new Set(); renderBuild(); });
 $('bClose').addEventListener('click', closeBuild);
@@ -789,6 +809,7 @@ function titleScreen() {
     '<li>ロボットは射程内の最寄りの敵を自動で攻撃（敵がいなければ敵拠点）</li>' +
     '<li>敵を倒すとポイント。拠点に取り付いた敵は、倒すまで拠点を攻撃し続ける</li>' +
     '<li>外周の🏭敵拠点を壊すと大量ポイント。その方面から来る敵が減る</li>' +
+    '<li>建造画面の「拠点工事」で、拠点の修理・砲台・盾をポイントで頼める（建造ラインの時間を使う）</li>' +
     '<li>同時出撃は' + CFG.deployCap + '機まで。それとは別に' + CFG.queueMax + '機まで予約でき、誰かが倒れたら予約機がすぐ出撃する。陣地から出撃する予約は、その陣地が落ちていると出撃失敗</li>' +
     '<li>ロボットを選んでいる間は、時間の流れが1/4になる</li>' +
     '<li><b>味方の弾や爆風は味方ロボットにも当たる</b>。範囲攻撃は強力だが、置き場所に注意</li>' +
@@ -915,6 +936,11 @@ function frame(now) {
     }
   }
   for (const gt of M.gates || []) { gt.rotation.y += dt * 1.5; gt.rotation.x = Math.sin(now / 900) * .3; }
+  if (S && M.baseGun) {
+    M.baseGun.visible = S.homeGun > 0; M.baseBarrels.forEach((b, i) => b.visible = S.homeGun > i);
+    M.baseGun.rotation.y = lerpAngle(M.baseGun.rotation.y, S.homeObj.face || 0, .3);
+    M.baseDome.visible = S.homeShield > 0; M.baseDome.material.opacity = .08 + .22 * (S.homeShield / (S.homeShieldMax || 1)) + Math.sin(now / 200) * .03;
+  }
   if (M.baseRing) M.baseRing.position.y = 1.5 + Math.sin(now / 500) * .08;
   if (markerT > 0) { markerT -= dt; marker.material.opacity = Math.max(0, markerT / .6); marker.scale.setScalar(1 + (.6 - markerT)); if (markerT <= 0) marker.visible = false; }
   updFx(dt); updParts(dt); updCombo(dt);

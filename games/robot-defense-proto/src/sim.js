@@ -55,6 +55,7 @@ const BODIES = [
   { id: 'striker', name: 'ストライカー', tier: 'mid', cost: 70, hp: 100, speed: 4, build: 5, plus: { dmg: .4 } },
   { id: 'gunner', name: 'ガンナー', tier: 'mid', cost: 80, hp: 120, speed: 3, build: 6, plus: { rate: .4 } },
   { id: 'seeker', name: 'シーカー', tier: 'mid', cost: 75, hp: 100, speed: 3.2, build: 5, plus: { range: .35, crit: .15 } },
+  { id: 'shieldbody', name: 'シールドフレーム', tier: 'mid', cost: 85, hp: 100, speed: 2.4, build: 6, shield: 90, plus: {}, note: '🛡シールド90（4秒被弾しないと毎秒8回復）' },
   { id: 'mass', name: '量産フレーム', tier: 'mid', cost: 65, hp: 70, speed: 3, build: 1, wbMul: .4, plus: {}, note: '武器の建造時間 -60%' },
   // 高価格帯：高いが一騎当千
   { id: 'fortress', name: 'フォートレス', tier: 'high', cost: 160, hp: 650, speed: 1.2, build: 12, plus: { dmg: .3 } },
@@ -333,6 +334,7 @@ function newState0(stageId, opt) {
     st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
     ebases: (st.ebases || []).map((b, i) => ({ id: 'eb' + i, x: st.paths[b.path][0][0], z: st.paths[b.path][0][1], ...b, maxHp: b.hp, cd: 1, dead: false, flash: 0, ebase: true, r: CFG.ebaseR })),
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
+    homeObj: { id: 'home', name: '拠点砲台', x: st.base.x, z: st.base.z, cd: 0, face: 0, ptsMul: 1 }, homeGun: 0, homeShield: 0, homeShieldMax: 0, works: {},
     outposts: (st.outposts || []).map((o, i) => ({ id: 'op' + i, x: o[0], z: o[1], owner: o[3] || null, prog: o[3] === 'p' ? 1 : o[3] === 'e' ? -1 : 0, enemyOrig: o[3] === 'e', label: o[2] || String.fromCharCode(65 + i) })),
     spawned: 0,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
@@ -358,6 +360,42 @@ function buildCheck(S, body, wids) {
   if (S.queue.length >= CFG.queueMax) return '予約は' + CFG.queueMax + '機までです';
   if (S.pts < buildCost(body, wids).cost) return 'ポイントが足りません';
   return null;
+}
+// ---------- 拠点工事：建造ラインの時間を使うが、出撃数には数えない。ロボットが主役なので控えめな性能 ----------
+const WORKS = {
+  repair: { name: '拠点修理', icon: '🔧', cost: 60, costUp: 20, build: 6, desc: '拠点HPを30回復する。頼むたびに費用が20上がる' },
+  turret: { name: '拠点砲台', icon: '🗼', cost: 80, build: 8, max: 2, desc: '拠点に簡易砲台を付ける（射程6・威力7）。2段階まで。弾は味方にも当たる' },
+  shield: { name: '拠点シールド', icon: '🛡', cost: 70, build: 6, desc: '拠点に60の盾を張る。ダメージを先に受け止める。張り直すと満タンに戻る' },
+};
+const HOME_GUN = { name: '拠点砲台', range: 6, dmg: 7, cd: .7, speed: 20, pellets: 1, fan: 0 };
+function workCost(S, id) { const w = WORKS[id]; return w.cost + (w.costUp || 0) * (S.works[id] || 0); }
+function workCheck(S, id) {
+  const w = WORKS[id];
+  if (S.queue.length >= CFG.queueMax) return '予約は' + CFG.queueMax + '機までです';
+  if (w.max && (S.works[id] || 0) >= w.max) return '最大まで強化済みです';
+  if (w.max && (S.works[id] || 0) + S.queue.filter(q => q.work === id).length >= w.max) return '予約分を含めて最大です';
+  if (S.pts < workCost(S, id)) return 'ポイントが足りません';
+  return null;
+}
+function orderWork(S, id) {
+  const err = workCheck(S, id); if (err) return err;
+  const c = workCost(S, id); S.pts -= c; S.spent += c;
+  S.queue.push({ work: id, body: { name: WORKS[id].name }, wids: [], time: WORKS[id].build, prog: 0, no: ++S.serial, at: -1 });
+  return null;
+}
+function finishWork(S, id) {
+  S.works[id] = (S.works[id] || 0) + 1;
+  if (id === 'repair') { const h = Math.min(30, CFG.baseHP - S.baseHP); S.baseHP += h; say(S, '🔧 拠点を修理（+' + Math.round(h) + '）', 'good'); }
+  if (id === 'turret') { S.homeGun = Math.min(2, S.homeGun + 1); say(S, '🗼 拠点砲台 ' + S.homeGun + '段階', 'good'); }
+  if (id === 'shield') { S.homeShield = S.homeShieldMax = 60; say(S, '🛡 拠点シールドを展開', 'good'); }
+  S.fx.push({ type: 'work', id });
+}
+// 拠点の砲台：射程内の最寄りの敵を撃つ（段階が上がると連射が速くなる）
+function updHomeGun(S, dt) {
+  if (!S.homeGun) return;
+  const H = S.homeObj; H.cd -= dt; if (H.cd > 0) return;
+  const tg = nearest(S.enemies, H.x, H.z, HOME_GUN.range, true); if (!tg) return;
+  H.face = fireWeapon(S, H, HOME_GUN, tg, 'p', {}); H.cd = HOME_GUN.cd / S.homeGun;
 }
 function buyLine(S) {
   if (S.lines >= 2) return '開放済みです';
@@ -389,7 +427,7 @@ function makeRobot(S, q) {
   const r = {
     id: S.nid++, slot: q.slot, name: q.slot + '番 ' + b.name, body: b,
     x: f.x, z: f.z, tx: 0, tz: 0,
-    hp: b.hp, maxHp: b.hp, spd: b.speed,
+    hp: b.hp, maxHp: b.hp, spd: b.speed, shield: b.shield || 0, maxShield: b.shield || 0,
     dmgMul: 1 + (p.dmg || 0), rateMul: 1 + (p.rate || 0), crit: p.crit || 0, ptsMul: 1 + (p.pts || 0), rangeMul: 1 + (p.range || 0),
     weapons: q.wids.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(0, .3) })),
     face: Math.PI, moving: false, warned: false, dead: false, flash: 0, fireT: -9, hitT: -9,
@@ -469,14 +507,21 @@ function hurtEbase(S, b, dmg) {
     say(S, '🏭 敵拠点を破壊（残り ' + S.ebases.filter(x => !x.dead).length + '）' + (S.st.goal === 'bases' ? '' : ' この方面の敵が減る'), 'good');
   }
 }
+// 拠点へのダメージ。盾があれば先に盾が受け止める
+function homeTake(S, dmg) {
+  if (S.homeShield > 0) { const a = Math.min(S.homeShield, dmg); S.homeShield -= a; dmg -= a; if (S.homeShield <= 0) { S.homeShield = 0; say(S, '🛡 拠点シールドが破れた', 'bad'); } }
+  S.baseHP -= dmg; S.baseDmg += dmg;
+}
 function hurtHome(S, dmg, x, z) {
   dmg *= CFG.homeShotMul;
-  S.baseHP -= dmg; S.baseDmg += dmg; S.fx.push({ type: 'basehit', x, z });
+  homeTake(S, dmg); S.fx.push({ type: 'basehit', x, z });
   if (S.baseWarnT <= 0) { S.baseWarnT = 6; say(S, '🚨 拠点が攻撃を受けている', 'bad'); }
 }
 function hurtRobot(S, r, dmg, by) {
   if (r.dead || dmg <= 0) return;
-  r.hp -= dmg; r.flash = .1; r.hitT = S.t;
+  r.flash = .1; r.hitT = S.t;
+  if (r.shield > 0) { const a = Math.min(r.shield, dmg); r.shield -= a; dmg -= a; if (dmg <= 0) return; }
+  r.hp -= dmg;
   const ff = !!by;
   if (ff) { S.ffDmg += Math.min(dmg, r.hp + dmg); if (S.t - (r.ffMsgT || -9) > 4) { r.ffMsgT = S.t; say(S, '⚡ ' + r.name + ' 誤射を受けた（' + by.name + '）', 'warn'); } }
   if (r.hp <= 0) {
@@ -549,6 +594,7 @@ function beam(S, r, w, d, dt) {
 }
 function updRobot(S, r, dt) {
   r.flash = Math.max(0, r.flash - dt);
+  if (r.maxShield && S.t - r.hitT > 4) r.shield = Math.min(r.maxShield, r.shield + 8 * dt); // 盾：3秒被弾しないと回復
   const dx = r.tx - r.x, dz = r.tz - r.z, dist = Math.hypot(dx, dz);
   r.moving = dist > .05;
   if (r.moving) { const m = Math.min(dist, r.spd * dt); r.x += dx / dist * m; r.z += dz / dist * m; r.face = Math.atan2(dx, dz); }
@@ -600,9 +646,9 @@ function attackBase(S, e, dt) {
   if (!e.atBase) {
     e.atBase = true; e.atkT = 0; S.leaked++;
     const once = e.def.mine ? e.def.mine.baseDmg : e.def.kamikaze ? e.def.kamikaze.baseDmg : 0;
-    if (once) { S.baseHP -= once; S.baseDmg += once; e.dead = true; S.fx.push({ type: 'boom', x: e.x, z: e.z, rad: 2, team: 'e' }); return; }
+    if (once) { homeTake(S, once); e.dead = true; S.fx.push({ type: 'boom', x: e.x, z: e.z, rad: 2, team: 'e' }); return; }
   }
-  const dmg = e.def.baseDps * dt; S.baseHP -= dmg; S.baseDmg += dmg;
+  homeTake(S, e.def.baseDps * dt);
   e.face = Math.atan2(S.st.base.x - e.x, S.st.base.z - e.z);
   e.atkT -= dt; if (e.atkT <= 0) { e.atkT = 1; S.fx.push({ type: 'basehit', x: e.x, z: e.z }); }
   if (S.baseWarnT <= 0) { S.baseWarnT = 6; say(S, '🚨 拠点が攻撃を受けている', 'bad'); }
@@ -840,6 +886,7 @@ function step(S, dt) {
   for (let i = 0; i < S.queue.length; i++) {
     const q = S.queue[i];
     if (q.prog < q.time) continue;
+    if (q.work) { S.queue.splice(i--, 1); finishWork(S, q.work); continue; }
     if (S.robots.length >= CFG.deployCap) { if (!q.waitSaid) { q.waitSaid = true; say(S, '🔧 ' + q.body.name + ' 完成。出撃枠が空き次第すぐ出撃'); } continue; }
     S.queue.splice(i--, 1); makeRobot(S, q);
   }
@@ -847,6 +894,7 @@ function step(S, dt) {
   for (let i = 0; i < S.enemies.length; i++) { const e = S.enemies[i]; if (!e.dead) updEnemy(S, e, dt); }
   for (const b of S.ebases) if (!b.dead) updEbase(S, b, dt);
   for (const o of S.outposts) updOutpost(S, o, dt);
+  updHomeGun(S, dt);
   updShots(S, dt);
   S.robots = S.robots.filter(r => !r.dead);
   S.enemies = S.enemies.filter(e => !e.dead);
@@ -863,6 +911,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
 }
 
-return { queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

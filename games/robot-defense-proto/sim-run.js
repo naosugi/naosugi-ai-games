@@ -34,6 +34,9 @@ const strategies = {
   '[進化] 中+チェイン+フレア+ライン2': S => [cheapest(S, 'mid'), ['chain', 'flare'], true],
   '[進化] 量産+プリズム+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['prism'], true],
   '[進化] 段階 安2→高+パイル+バスター': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['pile', 'buster']]),
+  '量産+スプ+ミサ+ライン2+修理': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['spread', 'missile'], true, 'repair'],
+  '量産+スプ+ミサ+ライン2+砲台盾': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['spread', 'missile'], true, 'fort'],
+  '盾+スプ+ミサ+ライン2': S => [S.bodies.find(b => b.id === 'shieldbody') || cheapest(S, 'mid'), ['spread', 'missile'], true],
   '節約 安ブラ2機まで': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster']] : null),
 };
 
@@ -56,6 +59,9 @@ function runOne(stId, pol) {
     if (c && c[0] && !S.robots.length && !S.queue.length && S.pts < RD.buildCost(c[0], c[1]).cost) c = [S.bodies[0], ['blaster']];
     // ライン2：作れる機体がいっぱいでも建造待ちが出る場面に備え、余裕があれば開放する
     if (c && c[2] && S.lines < 2 && S.pts >= RD.CFG.line2Cost + 60 && S.robots.length >= 1) RD.buyLine(S);
+    // 拠点工事：修理はHPが半分を切ったら、砲台・盾は余裕があるとき
+    if (c && c[3] === 'repair' && S.baseHP < RD.CFG.baseHP * .5 && !S.queue.some(q => q.work)) RD.orderWork(S, 'repair');
+    if (c && c[3] === 'fort' && S.pts >= 200 && !S.queue.some(q => q.work)) { if ((S.works.turret || 0) < 2) RD.orderWork(S, 'turret'); else if (S.homeShield <= 0) RD.orderWork(S, 'shield'); else if (S.baseHP < 75) RD.orderWork(S, 'repair'); }
     if (c && c[0] && !RD.buildCheck(S, c[0], c[1])) RD.orderBuild(S, c[0], c[1]);
     RD.step(S, 1 / 30);
     for (const r of S.robots) if (!r.spot) assign(r);
