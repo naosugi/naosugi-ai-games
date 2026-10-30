@@ -1010,15 +1010,37 @@ function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = '
 function hideOv() { $('ov').classList.remove('show'); }
 function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { cam = pCam; scene.fog = FOG_M; } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
+const CH = RD.CHAPTERS, ORDER = CH.flatMap(c => c.stages);
+const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
+const nextStage = () => ORDER.find(id => !cleared(id)) || null;
+const stById = id => STAGES.find(s => s.id === id);
+const seen = k => !!(SAVE.seen && SAVE.seen[k]);
+function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
+let uiCh = null;
+// 管制AI「アイ」の通信。行ごとに少しずつ表示する
+function commHTML(lines, big) { return '<div class="comm' + (big ? ' big' : '') + '"><div class="who">📡 管制 アイ</div>' + lines.map((l, i) => '<p style="animation-delay:' + (i * (big ? .55 : .25)) + 's">' + esc(l) + '</p>').join('') + '</div>'; }
+function chapterCard(c, kind, next) {
+  markSeen(c.id + (kind === 'intro' ? 'i' : 'o'));
+  showOv('<div class="chcard"><small>' + esc(c.no) + (kind === 'outro' ? '　完了' : '') + '</small><h1>' + esc(c.title) + '</h1>' + commHTML(kind === 'intro' ? c.intro : c.outro, true) +
+    '<button class="primary big" id="chOk">' + (kind === 'intro' ? '了解' : '次へ') + '</button></div>', 'story');
+  $('chOk').onclick = next;
+}
+// 作戦を開く：章の最初に来たときは章の通信から
+function openStage(id) {
+  const c = chOf(id);
+  if (c.intro && !seen(c.id + 'i')) chapterCard(c, 'intro', () => stageDetail(id)); else stageDetail(id);
+}
 function titleScreen() {
   mode = 'title'; setMenu(true);
   showOv('<div class="hero">' +
     '<div class="logo"><small>FRONTLINE BASE DEFENSE</small><span>ROBOT</span><span>DEFENSE</span></div>' +
     '<p class="tagline">補給の途絶えた前線基地。<br>残った機材でロボットを組み、侵略者を食い止めろ。</p>' +
-    '<button class="primary big" id="goBtn">▶ 出撃する</button>' +
+    (() => { const nx = nextStage(), any = ORDER.some(cleared), st = nx && stById(nx);
+      return '<button class="primary big" id="goBtn">' + (st ? (any ? '▶ 続きから' : '▶ はじめる') + '<small>' + esc(st.name + '「' + st.sub + '」') + '</small>' : '▶ 作戦を選ぶ') + '</button>' +
+        (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
     '<button class="ghost" id="howBtn">遊び方</button>' +
     '<div class="ver">試作版</div></div>', 'hero');
-  $('goBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
+  const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
 }
 // 遊び方：1項目1行。細かいことはプレイ中の案内で出す
 const HOW = [
@@ -1038,24 +1060,32 @@ function howTo(back) {
 }
 function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name); }
 function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : '🛡 ' + fmtT(st.time) + ' 守る'; }
-function stageNo(st) { const i = STAGES.indexOf(st), w = STAGES.findIndex(s => s.wide); return st.wide ? '本' + (i - w + 1) : String(i + 1); }
+function stageNo(st) { return st.name.replace('序章-', ''); }
 function stageSelect() {
   mode = 'select'; setMenu(true);
-  let html = '<h1>作戦を選ぶ</h1><div class="slist">';
-  STAGES.forEach((st, i) => {
-    if (i === 0) html += '<div class="sec">訓練 <span class="dim">基本を覚える</span></div>';
-    else if (st.wide && !STAGES[i - 1].wide) html += '<div class="sec">本編 <span class="dim">広い戦場。地図を動かして戦う</span></div>';
-    const rw = UNLOCKS.filter(u => u.stage === st.id);
-    html += '<button class="scard' + (cleared(st.id) ? ' clear' : '') + (st.wide ? ' wide' : '') + '" data-st="' + st.id + '">' +
-      '<span class="sno">' + stageNo(st) + '</span>' +
-      '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
-      '<span class="sr">' + (cleared(st.id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
-  });
+  const nx = nextStage();
+  if (!uiCh) uiCh = chOf(nx || ORDER[0]).id;
+  const c = CH.find(x => x.id === uiCh) || CH[0];
+  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
+  if (c.soon) html += '<div class="soonbox"><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b><p>準備中</p></div>';
+  else {
+    html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
+    for (const id of c.stages) {
+      const st = stById(id), rw = UNLOCKS.filter(u => u.stage === id);
+      html += '<button class="scard' + (cleared(id) ? ' clear' : '') + (id === nx ? ' next' : '') + '" data-st="' + id + '">' +
+        '<span class="sno">' + stageNo(st) + '</span>' +
+        '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
+        '<span class="sr">' + (id === nx ? '<i class="nx">▶ 次</i>' : '') + (cleared(id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
+    }
+    html += '</div>';
+  }
   const other = UNLOCKS.filter(u => !u.stage);
-  html += '</div>' + (other.length ? '<details class="more"><summary>ステージ以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
+  html += (other.length ? '<details class="more"><summary>作戦以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
     '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button><button class="ghost small" id="allOpen">全解禁（試作用）</button></div>';
   showOv(html);
-  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => stageDetail(b.dataset.st));
+  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => openStage(b.dataset.st));
+  $('ovCard').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { uiCh = b.dataset.ch; stageSelect(); });
+  if ($('story')) $('story').onclick = () => chapterCard(c, c.stages.every(cleared) && c.outro ? 'outro' : 'intro', stageSelect);
   $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
 }
@@ -1065,7 +1095,8 @@ function stageDetail(stId) {
   const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen);
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
   const rw = UNLOCKS.filter(u => u.stage === st.id), c = SAVE.clear && SAVE.clear[st.id];
-  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+    (st.brief ? commHTML(st.brief) : '') +
     '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
@@ -1078,7 +1109,7 @@ function stageDetail(stId) {
     if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
     saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
   });
-  $('sdBack').onclick = stageSelect; $('sdGo').onclick = () => startGame(stId);
+  $('sdBack').onclick = () => { uiCh = chOf(stId).id; stageSelect(); }; $('sdGo').onclick = () => startGame(stId);
 }
 function startGame(stId) {
   if (stId) curStage = stId;
@@ -1103,10 +1134,12 @@ function endGame() {
   const head = win ? (g === 'points' ? '補給線確保' : g === 'bases' ? '敵拠点制圧' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : '時間まで拠点を守り抜いた')
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : '時間切れ。目標を達成できなかった');
-  const next = win ? STAGES[STAGES.findIndex(s => s.id === S.st.id) + 1] : null;
+  const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
+  const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
   const tile = (icon, v, label) => '<div class="tile"><span>' + icon + '</span><b>' + v + '</b><small>' + label + '</small></div>';
   showOv(
     '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
+    (win && S.st.win ? commHTML([S.st.win]) : '') +
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
@@ -1118,10 +1151,12 @@ function endGame() {
     '<span>誤射ダメージ / 誤射で撃破</span><b>' + Math.round(S.ffDmg) + ' / ' + S.ffKills + '</b>' +
     '<span>獲得 / 使ったポイント</span><b>' + S.earned + ' / ' + S.spent + '</b>' +
     '<span>拠点に取り付いた敵 / 被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b></div></details>' +
-    '<div class="btns col">' + (next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
-    '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
-  $('again').onclick = () => startGame(curStage); $('toSel').onclick = stageSelect;
-  if (next) $('nextSt').onclick = () => stageDetail(next.id);
+    '<div class="btns col">' + (chDone ? '<button class="primary big" id="nextSt">📡 通信を受信（' + esc(ch.no) + ' 完了）</button>' : next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
+    '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next || chDone ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
+  $('again').onclick = () => startGame(curStage);
+  if (chDone) $('nextSt').onclick = () => chapterCard(ch, 'outro', () => { if (next) openStage(next.id); else { const ci = CH.indexOf(ch); uiCh = (CH[ci + 1] || ch).id; stageSelect(); } });
+  else if (next) $('nextSt').onclick = () => openStage(next.id);
+  $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
 }
 function togglePause() {
   if (mode !== 'play' || building) return;

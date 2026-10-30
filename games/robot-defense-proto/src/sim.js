@@ -115,7 +115,7 @@ const ENEMIES = {
 // waves: [出現開始秒, 種類, 数, 間隔秒, 経路番号（'*'は経路を順番に使う）]
 const STAGES = [
   {
-    id: 's1', name: '第1戦区', sub: '一本道', goal: 'time', time: 120, startPoints: 120, hpRamp: 1.2,
+    id: 's1', name: '序章-1', sub: '一本道', brief: ['敵影、北西より接近。経路は一本。', '残存機材にて機体を組み、迎撃せよ。'], win: '第一波、撃退。防衛機能、正常。', goal: 'time', time: 120, startPoints: 120, hpRamp: 1.2,
     intro: '敵の経路は1本。拠点の周りを回り込んでくる。まずはここで戦い方を覚える。',
     map: { minX: -11, maxX: 11, minZ: -17, maxZ: 15 }, base: { x: 0, z: 0 }, factory: { x: -2.6, z: -2.4 },
     paths: [[[-8, -15], [-8, -6], [6, -6], [6, 12], [-5, 12], [-5, 4], [0, 4], [0, 0]]],
@@ -127,7 +127,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's2', name: '第2戦区', sub: '挟撃', goal: 'time', time: 120, startPoints: 110, hpRamp: 1,
+    id: 's2', name: '序章-2', sub: '挟撃', brief: ['北西および南東に敵拠点。挟撃を受けている。', '突進型、装甲型を確認。配置に留意せよ。'], win: '挟撃、退けた。', goal: 'time', time: 120, startPoints: 110, hpRamp: 1,
     intro: '北西と南東の2方向から挟み撃ち。突進型・装甲型・特攻型が現れる。',
     map: { minX: -13, maxX: 13, minZ: -18, maxZ: 18 }, base: { x: 0, z: 0 }, factory: { x: 2.4, z: -2.2 },
     paths: [
@@ -142,7 +142,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's3', name: '第3戦区', sub: '補給線', goal: 'points', goalPts: 350, time: 140, startPoints: 60, hpRamp: 1,
+    id: 's3', name: '序章-3', sub: '補給線', brief: ['補給、依然途絶。', '撃破した敵機より資源を回収する。目標量に達するまで戦闘を継続せよ。'], win: '資源、目標量に到達。', goal: 'points', goalPts: 350, time: 140, startPoints: 60, hpRamp: 1,
     drawCount: { low: 3, mid: 3, high: 1 },
     intro: '補給が途絶えた。拠点を渦巻くように回る長い経路。時間内にポイントを貯めよ（所持ポイントで判定）。',
     map: { minX: -13, maxX: 13, minZ: -18.5, maxZ: 13 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.6 },
@@ -155,7 +155,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's4', name: '第4戦区', sub: '逆侵攻', goal: 'bases', time: 150, startPoints: 160, hpRamp: 1,
+    id: 's4', name: '序章-4', sub: '逆侵攻', brief: ['敵拠点三か所を特定。攻勢に転じる。', '敵拠点内部に高密度の反応あり。破壊せよ。'], win: '敵拠点、全壊。内部の反応体を回収した。解析は後とする。', goal: 'bases', time: 150, startPoints: 160, hpRamp: 1,
     intro: '三方に敵拠点。すべて壊せば勝ち。壊した拠点からは出撃が止まる。北と南東の拠点は砲台付き。',
     map: { minX: -16, maxX: 16, minZ: -22, maxZ: 20 }, base: { x: 0, z: 0 }, factory: { x: -2.8, z: -2.2 },
     paths: [
@@ -175,7 +175,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's5', name: '第5戦区', sub: '三方面', goal: 'time', time: 150, startPoints: 200, hpRamp: 1,
+    id: 's5', name: '序章-5', sub: '三方面', brief: ['三方向より同時侵攻。', '北方に大型反応。照合中。……我が方の機体と構造が一致する。'], win: '三方面、防衛完了。大型機の構造を記録した。侵略者は、我々を学習している。', goal: 'time', time: 150, startPoints: 200, hpRamp: 1,
     intro: '北・南西・東の三方から。75秒で模倣機（ボス）が北から来る。',
     map: { minX: -17, maxX: 17, minZ: -23, maxZ: 22 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.8 },
     paths: [
@@ -198,7 +198,7 @@ const STAGES = [
 ];
 // ---------- 本編（地図移動が前提の広いステージ） ----------
 STAGES.push({
-  id: 'w1', name: '本編1', sub: '四方の前線', goal: 'time', time: 180, startPoints: 300, hpRamp: .8, wide: true,
+  id: 'w1', name: '1-1', sub: '四方の前線', brief: ['包囲網、四方に展開。戦域、拡大。', '陣地を確保し、出撃地点とせよ。模倣機、再出現の兆候あり。'], win: '四方の前線、維持。', goal: 'time', time: 180, startPoints: 300, hpRamp: .8, wide: true,
   intro: '広い戦場。四方の敵拠点から長い経路で押し寄せる。地図を動かして戦況を見よ。100秒で模倣機が北から来る。',
   map: { minX: -30, maxX: 30, minZ: -40, maxZ: 40 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 },
   view: { zoom: 2.6 },
@@ -229,7 +229,7 @@ STAGES.push({
   ],
 });
 STAGES.push({
-  id: 'w2', name: '本編2', sub: '大群', goal: 'time', time: 120, startPoints: 300, hpRamp: .5, wide: true,
+  id: 'w2', name: '1-2', sub: '大群', brief: ['敵、物量戦に移行。推定、千体以上。', '範囲兵器の使用を許可する。友軍の損耗は許容範囲内とする。'], win: '大群、殲滅。損耗率、許容範囲内。', goal: 'time', time: 120, startPoints: 300, hpRamp: .5, wide: true,
   intro: '2分間で約1000体が押し寄せる。範囲攻撃と前線拠点で一網打尽にせよ。輸送艦・飛行型・砲撃型・工兵も来る。',
   map: { minX: -26, maxX: 26, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 3, z: -3 },
   view: { zoom: 2.2 },
@@ -262,7 +262,7 @@ STAGES.push({
   waves.push([40, 'carrier', 2, 2, '*'], [80, 'carrier', 2, 2, '*'], [120, 'carrier', 2, 2, '*'], [60, 'flyer', 10, .4, '*'], [110, 'flyer', 14, .3, '*'],
     [90, 'boss', 1, 0, 0], [100, 'artillery', 2, 3, '*'], [70, 'engineer', 3, 3, '*'], [130, 'engineer', 3, 3, '*'], [30, 'shooter', 8, .8, '*'], [75, 'armor', 6, 1, '*'], [95, 'kamikaze', 24, .1, '*']);
   STAGES.push({
-    id: 'w3', name: '本編3', sub: '包囲', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
+    id: 'w3', name: '1-3', sub: '包囲', brief: ['八方より侵攻。完全包囲。', '持ちこたえよ。救援は、ない。'], win: '包囲、持ちこたえた。北端に指揮拠点の反応を捕捉。', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
     intro: '八方から2分半で1500体以上。群体の全種が来る。前線拠点は経路のすぐ脇にあり、奪い合いになる。90秒で模倣機。',
     map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 1.7, z: -3.6 },
     view: { zoom: 2.2 },
@@ -273,15 +273,57 @@ STAGES.push({
   });
 })();
 
+// 1-4 突破：縦長の戦場。北端の指揮拠点（硬い・砲台付き）と左右の拠点を壊す。陣地を北へ伝って攻め上がる
+STAGES.push({
+  id: 'w4', name: '1-4', sub: '突破', goal: 'bases', time: 210, startPoints: 350, hpRamp: .8, wide: true,
+  brief: ['包囲網の北端に指揮拠点を確認。', '陣地を伝って北上し、これを破壊せよ。突破口を開く。'], win: '指揮拠点、破壊。包囲網に穴が開いた。反攻に移る。',
+  intro: '縦に長い戦場。北端の指揮拠点はとても硬く、砲台付き。左右の拠点も壊せば勝ち。北へ進むほど陣地は敵の手にある。',
+  map: { minX: -26, maxX: 26, minZ: -40, maxZ: 32 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 },
+  view: { zoom: 2.4 },
+  outposts: [[-8, 12, 'A', 'p'], [10, 10, 'B', 'p'], [0, -4, 'C'], [-14, -16, 'D', 'e'], [14, -16, 'E', 'e'], [8, -30, 'F', 'e']],
+  garrison: ['shooter', 'shooter', 'armor', 'shield', 'normal', 'normal'],
+  paths: [
+    [[0, -36], [0, -24], [-8, -24], [-8, -10], [6, -10], [6, 6], [-2, 6], [-2, 16], [0, 16], [0, 26]],
+    [[-22, -20], [-22, 0], [-14, 0], [-14, 18], [-6, 18], [-6, 24], [0, 26]],
+    [[22, -20], [22, 2], [14, 2], [14, 20], [6, 20], [6, 24], [0, 26]],
+  ],
+  ebases: [
+    { path: 0, hp: 1500, pts: 400, turret: { range: 7, dmg: 11, cd: .9, shotSpeed: 11 } },
+    { path: 1, hp: 700, pts: 160, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
+    { path: 2, hp: 700, pts: 160 },
+  ],
+  waves: [
+    [3, 'normal', 4, 1.2, '*'], [10, 'shooter', 3, 1.8, '*'], [16, 'swarm', 30, .12, '*'], [24, 'dasher', 4, 1.4, '*'], [30, 'shield', 4, 1.5, '*'],
+    [38, 'kamikaze', 10, .25, 0], [44, 'armor', 4, 2, '*'], [50, 'swarmFast', 40, .08, '*'], [56, 'splitter', 5, 1.2, '*'], [62, 'healer', 2, 4, '*'],
+    [68, 'flyer', 6, .8, '*'], [74, 'normal', 18, .4, '*'], [80, 'artillery', 1, 0, 0], [86, 'mine', 6, 1, '*'], [92, 'swarm', 50, .08, '*'],
+    [100, 'engineer', 2, 5, '*'], [110, 'boss', 1, 0, 0], [116, 'shield', 6, 1.2, '*'], [124, 'swarmHeavy', 40, .08, '*'], [132, 'kamikaze', 14, .2, '*'],
+    [140, 'armor', 6, 1.4, '*'], [148, 'swarmBomb', 30, .1, '*'], [156, 'shooter', 8, 1, '*'], [164, 'swarmFly', 30, .12, '*'], [172, 'normal', 30, .3, '*'],
+    [180, 'artillery', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
+  ],
+});
+// ---------- 章（物語の区切り。作戦は順に並べる。分岐はしない） ----------
+// 語り手は基地の管制AI「アイ」。硬い無線の調子で話す
+const CHAPTERS = [
+  { id: 'c0', no: '序章', title: '着任', stages: ['s1', 's2', 's3', 's4', 's5'],
+    intro: ['指揮官ユニット、再起動を確認。', '前線基地は孤立状態。補給線、途絶。', '残存機材にて防衛を継続せよ。'],
+    outro: ['敵大型機は、我が方の機体構造を模倣していた。', '侵略者は学習している。', '包囲網、拡大中。戦域を広げる。'] },
+  { id: 'c1', no: '第1章', title: '四方の前線', stages: ['w1', 'w2', 'w3', 'w4'],
+    intro: ['包囲網、四方に展開。', '敵拠点群を確認。戦域を拡大する。', '前線を維持し、突破口を開け。'],
+    outro: ['包囲網、北端を突破。', '敵拠点より回収した反応体を「コア」と呼称する。', '解析を開始。反攻に移る。'] },
+  { id: 'c2', no: '第2章', title: '反攻', stages: [], soon: true },
+  { id: 'c3', no: '第3章', title: '模倣', stages: [], soon: true },
+  { id: 'c4', no: '第4章', title: '深淵', stages: [], soon: true },
+];
+
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
 const UNLOCKS = [
-  { id: 'magnum', cond: '第1戦区をクリア', stage: 's1' },
-  { id: 'chain', cond: '第2戦区をクリア', stage: 's2' },
-  { id: 'swarmer', cond: '第3戦区をクリア', stage: 's3' },
-  { id: 'pile', cond: '第4戦区をクリア', stage: 's4' },
+  { id: 'magnum', cond: '序章-1をクリア', stage: 's1' },
+  { id: 'chain', cond: '序章-2をクリア', stage: 's2' },
+  { id: 'swarmer', cond: '序章-3をクリア', stage: 's3' },
+  { id: 'pile', cond: '序章-4をクリア', stage: 's4' },
   { id: 'buster', cond: '模倣機（ボス）を撃破する', boss: true },
   { id: 'flare', cond: '群体を累計500体倒す', swarmKills: 500 },
-  { id: 'prism', cond: '本編2「大群」をクリア', stage: 'w2' },
+  { id: 'prism', cond: '1-2「大群」をクリア', stage: 'w2' },
 ];
 // 1回のプレイの結果と、これまでの累計からアンロックを判定。新しく解禁したものを返す
 function checkUnlocks(S, save) {
@@ -928,6 +970,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
 }
 
-return { setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

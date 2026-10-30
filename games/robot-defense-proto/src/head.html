@@ -340,6 +340,30 @@ body.coachRobot .tag:not(.op){animation:tagPulse 1s ease-in-out infinite}
 .rcard .rr .rs{flex:1;min-width:0}
 .rcard .ride{margin:0;padding:6px 9px;font-size:12px}
 .tag{width:24px;height:24px;font-size:13px}
+/* 章・通信 */
+.chtabs button{font-size:13px;padding:8px 4px}
+.chtabs button.soon{opacity:.55}
+.chh{display:flex;align-items:center;gap:10px;margin:10px 0 8px}
+.chh>div{flex:1;display:flex;flex-direction:column}
+.chh small{font-size:11px;color:var(--cyan);letter-spacing:.1em}
+.chh b{font-size:18px}
+.soonbox{text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;margin:10px 0;display:flex;flex-direction:column;gap:4px}
+.soonbox small{color:var(--cyan)} .soonbox b{font-size:20px} .soonbox p{color:var(--dim);margin:4px 0 !important}
+.scard.next{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset,0 0 14px #65f6ff33}
+.nx{color:var(--cyan);font-weight:800}
+.comm{margin:12px 0 4px;padding:8px 12px;border-left:3px solid var(--cyan);background:#06142ad9;border-radius:0 10px 10px 0;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.comm .who{font-size:11px;color:var(--cyan);letter-spacing:.12em;margin-bottom:4px;font-family:system-ui,sans-serif}
+.comm p{margin:2px 0 !important;font-size:13px;line-height:1.6 !important;color:#d8f6ff;opacity:0;animation:commIn .35s forwards}
+.comm.big p{font-size:15px;line-height:1.8 !important}
+@keyframes commIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+#ov.story{background:#020510e0}
+#ov.story #ovCard{background:transparent;border:none;box-shadow:none;max-width:460px}
+.chcard{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:10px 0}
+.chcard small{color:var(--cyan);letter-spacing:.3em;font-size:12px;font-weight:700}
+.chcard h1{font-size:34px !important;letter-spacing:.12em;margin:0 0 6px !important;text-shadow:0 0 18px #65f6ff55}
+.chcard .comm{width:100%;text-align:left}
+.chcard button.big{margin-top:16px;min-width:200px}
+#goBtn small{display:block;font-size:12px;font-weight:400;opacity:.85;margin-top:2px}
 </style>
 </head>
 <body>

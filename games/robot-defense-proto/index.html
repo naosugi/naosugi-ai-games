@@ -340,6 +340,30 @@ body.coachRobot .tag:not(.op){animation:tagPulse 1s ease-in-out infinite}
 .rcard .rr .rs{flex:1;min-width:0}
 .rcard .ride{margin:0;padding:6px 9px;font-size:12px}
 .tag{width:24px;height:24px;font-size:13px}
+/* 章・通信 */
+.chtabs button{font-size:13px;padding:8px 4px}
+.chtabs button.soon{opacity:.55}
+.chh{display:flex;align-items:center;gap:10px;margin:10px 0 8px}
+.chh>div{flex:1;display:flex;flex-direction:column}
+.chh small{font-size:11px;color:var(--cyan);letter-spacing:.1em}
+.chh b{font-size:18px}
+.soonbox{text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;margin:10px 0;display:flex;flex-direction:column;gap:4px}
+.soonbox small{color:var(--cyan)} .soonbox b{font-size:20px} .soonbox p{color:var(--dim);margin:4px 0 !important}
+.scard.next{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset,0 0 14px #65f6ff33}
+.nx{color:var(--cyan);font-weight:800}
+.comm{margin:12px 0 4px;padding:8px 12px;border-left:3px solid var(--cyan);background:#06142ad9;border-radius:0 10px 10px 0;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.comm .who{font-size:11px;color:var(--cyan);letter-spacing:.12em;margin-bottom:4px;font-family:system-ui,sans-serif}
+.comm p{margin:2px 0 !important;font-size:13px;line-height:1.6 !important;color:#d8f6ff;opacity:0;animation:commIn .35s forwards}
+.comm.big p{font-size:15px;line-height:1.8 !important}
+@keyframes commIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+#ov.story{background:#020510e0}
+#ov.story #ovCard{background:transparent;border:none;box-shadow:none;max-width:460px}
+.chcard{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:10px 0}
+.chcard small{color:var(--cyan);letter-spacing:.3em;font-size:12px;font-weight:700}
+.chcard h1{font-size:34px !important;letter-spacing:.12em;margin:0 0 6px !important;text-shadow:0 0 18px #65f6ff55}
+.chcard .comm{width:100%;text-align:left}
+.chcard button.big{margin-top:16px;min-width:200px}
+#goBtn small{display:block;font-size:12px;font-weight:400;opacity:.85;margin-top:2px}
 </style>
 </head>
 <body>
@@ -4775,7 +4799,7 @@ const ENEMIES = {
 // waves: [出現開始秒, 種類, 数, 間隔秒, 経路番号（'*'は経路を順番に使う）]
 const STAGES = [
   {
-    id: 's1', name: '第1戦区', sub: '一本道', goal: 'time', time: 120, startPoints: 120, hpRamp: 1.2,
+    id: 's1', name: '序章-1', sub: '一本道', brief: ['敵影、北西より接近。経路は一本。', '残存機材にて機体を組み、迎撃せよ。'], win: '第一波、撃退。防衛機能、正常。', goal: 'time', time: 120, startPoints: 120, hpRamp: 1.2,
     intro: '敵の経路は1本。拠点の周りを回り込んでくる。まずはここで戦い方を覚える。',
     map: { minX: -11, maxX: 11, minZ: -17, maxZ: 15 }, base: { x: 0, z: 0 }, factory: { x: -2.6, z: -2.4 },
     paths: [[[-8, -15], [-8, -6], [6, -6], [6, 12], [-5, 12], [-5, 4], [0, 4], [0, 0]]],
@@ -4787,7 +4811,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's2', name: '第2戦区', sub: '挟撃', goal: 'time', time: 120, startPoints: 110, hpRamp: 1,
+    id: 's2', name: '序章-2', sub: '挟撃', brief: ['北西および南東に敵拠点。挟撃を受けている。', '突進型、装甲型を確認。配置に留意せよ。'], win: '挟撃、退けた。', goal: 'time', time: 120, startPoints: 110, hpRamp: 1,
     intro: '北西と南東の2方向から挟み撃ち。突進型・装甲型・特攻型が現れる。',
     map: { minX: -13, maxX: 13, minZ: -18, maxZ: 18 }, base: { x: 0, z: 0 }, factory: { x: 2.4, z: -2.2 },
     paths: [
@@ -4802,7 +4826,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's3', name: '第3戦区', sub: '補給線', goal: 'points', goalPts: 350, time: 140, startPoints: 60, hpRamp: 1,
+    id: 's3', name: '序章-3', sub: '補給線', brief: ['補給、依然途絶。', '撃破した敵機より資源を回収する。目標量に達するまで戦闘を継続せよ。'], win: '資源、目標量に到達。', goal: 'points', goalPts: 350, time: 140, startPoints: 60, hpRamp: 1,
     drawCount: { low: 3, mid: 3, high: 1 },
     intro: '補給が途絶えた。拠点を渦巻くように回る長い経路。時間内にポイントを貯めよ（所持ポイントで判定）。',
     map: { minX: -13, maxX: 13, minZ: -18.5, maxZ: 13 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.6 },
@@ -4815,7 +4839,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's4', name: '第4戦区', sub: '逆侵攻', goal: 'bases', time: 150, startPoints: 160, hpRamp: 1,
+    id: 's4', name: '序章-4', sub: '逆侵攻', brief: ['敵拠点三か所を特定。攻勢に転じる。', '敵拠点内部に高密度の反応あり。破壊せよ。'], win: '敵拠点、全壊。内部の反応体を回収した。解析は後とする。', goal: 'bases', time: 150, startPoints: 160, hpRamp: 1,
     intro: '三方に敵拠点。すべて壊せば勝ち。壊した拠点からは出撃が止まる。北と南東の拠点は砲台付き。',
     map: { minX: -16, maxX: 16, minZ: -22, maxZ: 20 }, base: { x: 0, z: 0 }, factory: { x: -2.8, z: -2.2 },
     paths: [
@@ -4835,7 +4859,7 @@ const STAGES = [
     ],
   },
   {
-    id: 's5', name: '第5戦区', sub: '三方面', goal: 'time', time: 150, startPoints: 200, hpRamp: 1,
+    id: 's5', name: '序章-5', sub: '三方面', brief: ['三方向より同時侵攻。', '北方に大型反応。照合中。……我が方の機体と構造が一致する。'], win: '三方面、防衛完了。大型機の構造を記録した。侵略者は、我々を学習している。', goal: 'time', time: 150, startPoints: 200, hpRamp: 1,
     intro: '北・南西・東の三方から。75秒で模倣機（ボス）が北から来る。',
     map: { minX: -17, maxX: 17, minZ: -23, maxZ: 22 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.8 },
     paths: [
@@ -4858,7 +4882,7 @@ const STAGES = [
 ];
 // ---------- 本編（地図移動が前提の広いステージ） ----------
 STAGES.push({
-  id: 'w1', name: '本編1', sub: '四方の前線', goal: 'time', time: 180, startPoints: 300, hpRamp: .8, wide: true,
+  id: 'w1', name: '1-1', sub: '四方の前線', brief: ['包囲網、四方に展開。戦域、拡大。', '陣地を確保し、出撃地点とせよ。模倣機、再出現の兆候あり。'], win: '四方の前線、維持。', goal: 'time', time: 180, startPoints: 300, hpRamp: .8, wide: true,
   intro: '広い戦場。四方の敵拠点から長い経路で押し寄せる。地図を動かして戦況を見よ。100秒で模倣機が北から来る。',
   map: { minX: -30, maxX: 30, minZ: -40, maxZ: 40 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 },
   view: { zoom: 2.6 },
@@ -4889,7 +4913,7 @@ STAGES.push({
   ],
 });
 STAGES.push({
-  id: 'w2', name: '本編2', sub: '大群', goal: 'time', time: 120, startPoints: 300, hpRamp: .5, wide: true,
+  id: 'w2', name: '1-2', sub: '大群', brief: ['敵、物量戦に移行。推定、千体以上。', '範囲兵器の使用を許可する。友軍の損耗は許容範囲内とする。'], win: '大群、殲滅。損耗率、許容範囲内。', goal: 'time', time: 120, startPoints: 300, hpRamp: .5, wide: true,
   intro: '2分間で約1000体が押し寄せる。範囲攻撃と前線拠点で一網打尽にせよ。輸送艦・飛行型・砲撃型・工兵も来る。',
   map: { minX: -26, maxX: 26, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 3, z: -3 },
   view: { zoom: 2.2 },
@@ -4922,7 +4946,7 @@ STAGES.push({
   waves.push([40, 'carrier', 2, 2, '*'], [80, 'carrier', 2, 2, '*'], [120, 'carrier', 2, 2, '*'], [60, 'flyer', 10, .4, '*'], [110, 'flyer', 14, .3, '*'],
     [90, 'boss', 1, 0, 0], [100, 'artillery', 2, 3, '*'], [70, 'engineer', 3, 3, '*'], [130, 'engineer', 3, 3, '*'], [30, 'shooter', 8, .8, '*'], [75, 'armor', 6, 1, '*'], [95, 'kamikaze', 24, .1, '*']);
   STAGES.push({
-    id: 'w3', name: '本編3', sub: '包囲', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
+    id: 'w3', name: '1-3', sub: '包囲', brief: ['八方より侵攻。完全包囲。', '持ちこたえよ。救援は、ない。'], win: '包囲、持ちこたえた。北端に指揮拠点の反応を捕捉。', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
     intro: '八方から2分半で1500体以上。群体の全種が来る。前線拠点は経路のすぐ脇にあり、奪い合いになる。90秒で模倣機。',
     map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 1.7, z: -3.6 },
     view: { zoom: 2.2 },
@@ -4933,15 +4957,57 @@ STAGES.push({
   });
 })();
 
+// 1-4 突破：縦長の戦場。北端の指揮拠点（硬い・砲台付き）と左右の拠点を壊す。陣地を北へ伝って攻め上がる
+STAGES.push({
+  id: 'w4', name: '1-4', sub: '突破', goal: 'bases', time: 210, startPoints: 350, hpRamp: .8, wide: true,
+  brief: ['包囲網の北端に指揮拠点を確認。', '陣地を伝って北上し、これを破壊せよ。突破口を開く。'], win: '指揮拠点、破壊。包囲網に穴が開いた。反攻に移る。',
+  intro: '縦に長い戦場。北端の指揮拠点はとても硬く、砲台付き。左右の拠点も壊せば勝ち。北へ進むほど陣地は敵の手にある。',
+  map: { minX: -26, maxX: 26, minZ: -40, maxZ: 32 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 },
+  view: { zoom: 2.4 },
+  outposts: [[-8, 12, 'A', 'p'], [10, 10, 'B', 'p'], [0, -4, 'C'], [-14, -16, 'D', 'e'], [14, -16, 'E', 'e'], [8, -30, 'F', 'e']],
+  garrison: ['shooter', 'shooter', 'armor', 'shield', 'normal', 'normal'],
+  paths: [
+    [[0, -36], [0, -24], [-8, -24], [-8, -10], [6, -10], [6, 6], [-2, 6], [-2, 16], [0, 16], [0, 26]],
+    [[-22, -20], [-22, 0], [-14, 0], [-14, 18], [-6, 18], [-6, 24], [0, 26]],
+    [[22, -20], [22, 2], [14, 2], [14, 20], [6, 20], [6, 24], [0, 26]],
+  ],
+  ebases: [
+    { path: 0, hp: 1500, pts: 400, turret: { range: 7, dmg: 11, cd: .9, shotSpeed: 11 } },
+    { path: 1, hp: 700, pts: 160, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
+    { path: 2, hp: 700, pts: 160 },
+  ],
+  waves: [
+    [3, 'normal', 4, 1.2, '*'], [10, 'shooter', 3, 1.8, '*'], [16, 'swarm', 30, .12, '*'], [24, 'dasher', 4, 1.4, '*'], [30, 'shield', 4, 1.5, '*'],
+    [38, 'kamikaze', 10, .25, 0], [44, 'armor', 4, 2, '*'], [50, 'swarmFast', 40, .08, '*'], [56, 'splitter', 5, 1.2, '*'], [62, 'healer', 2, 4, '*'],
+    [68, 'flyer', 6, .8, '*'], [74, 'normal', 18, .4, '*'], [80, 'artillery', 1, 0, 0], [86, 'mine', 6, 1, '*'], [92, 'swarm', 50, .08, '*'],
+    [100, 'engineer', 2, 5, '*'], [110, 'boss', 1, 0, 0], [116, 'shield', 6, 1.2, '*'], [124, 'swarmHeavy', 40, .08, '*'], [132, 'kamikaze', 14, .2, '*'],
+    [140, 'armor', 6, 1.4, '*'], [148, 'swarmBomb', 30, .1, '*'], [156, 'shooter', 8, 1, '*'], [164, 'swarmFly', 30, .12, '*'], [172, 'normal', 30, .3, '*'],
+    [180, 'artillery', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
+  ],
+});
+// ---------- 章（物語の区切り。作戦は順に並べる。分岐はしない） ----------
+// 語り手は基地の管制AI「アイ」。硬い無線の調子で話す
+const CHAPTERS = [
+  { id: 'c0', no: '序章', title: '着任', stages: ['s1', 's2', 's3', 's4', 's5'],
+    intro: ['指揮官ユニット、再起動を確認。', '前線基地は孤立状態。補給線、途絶。', '残存機材にて防衛を継続せよ。'],
+    outro: ['敵大型機は、我が方の機体構造を模倣していた。', '侵略者は学習している。', '包囲網、拡大中。戦域を広げる。'] },
+  { id: 'c1', no: '第1章', title: '四方の前線', stages: ['w1', 'w2', 'w3', 'w4'],
+    intro: ['包囲網、四方に展開。', '敵拠点群を確認。戦域を拡大する。', '前線を維持し、突破口を開け。'],
+    outro: ['包囲網、北端を突破。', '敵拠点より回収した反応体を「コア」と呼称する。', '解析を開始。反攻に移る。'] },
+  { id: 'c2', no: '第2章', title: '反攻', stages: [], soon: true },
+  { id: 'c3', no: '第3章', title: '模倣', stages: [], soon: true },
+  { id: 'c4', no: '第4章', title: '深淵', stages: [], soon: true },
+];
+
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
 const UNLOCKS = [
-  { id: 'magnum', cond: '第1戦区をクリア', stage: 's1' },
-  { id: 'chain', cond: '第2戦区をクリア', stage: 's2' },
-  { id: 'swarmer', cond: '第3戦区をクリア', stage: 's3' },
-  { id: 'pile', cond: '第4戦区をクリア', stage: 's4' },
+  { id: 'magnum', cond: '序章-1をクリア', stage: 's1' },
+  { id: 'chain', cond: '序章-2をクリア', stage: 's2' },
+  { id: 'swarmer', cond: '序章-3をクリア', stage: 's3' },
+  { id: 'pile', cond: '序章-4をクリア', stage: 's4' },
   { id: 'buster', cond: '模倣機（ボス）を撃破する', boss: true },
   { id: 'flare', cond: '群体を累計500体倒す', swarmKills: 500 },
-  { id: 'prism', cond: '本編2「大群」をクリア', stage: 'w2' },
+  { id: 'prism', cond: '1-2「大群」をクリア', stage: 'w2' },
 ];
 // 1回のプレイの結果と、これまでの累計からアンロックを判定。新しく解禁したものを返す
 function checkUnlocks(S, save) {
@@ -5588,7 +5654,7 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
 }
 
-return { setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/
 // ===== 描画・UI =====
@@ -6603,15 +6669,37 @@ function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = '
 function hideOv() { $('ov').classList.remove('show'); }
 function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { cam = pCam; scene.fog = FOG_M; } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
+const CH = RD.CHAPTERS, ORDER = CH.flatMap(c => c.stages);
+const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
+const nextStage = () => ORDER.find(id => !cleared(id)) || null;
+const stById = id => STAGES.find(s => s.id === id);
+const seen = k => !!(SAVE.seen && SAVE.seen[k]);
+function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
+let uiCh = null;
+// 管制AI「アイ」の通信。行ごとに少しずつ表示する
+function commHTML(lines, big) { return '<div class="comm' + (big ? ' big' : '') + '"><div class="who">📡 管制 アイ</div>' + lines.map((l, i) => '<p style="animation-delay:' + (i * (big ? .55 : .25)) + 's">' + esc(l) + '</p>').join('') + '</div>'; }
+function chapterCard(c, kind, next) {
+  markSeen(c.id + (kind === 'intro' ? 'i' : 'o'));
+  showOv('<div class="chcard"><small>' + esc(c.no) + (kind === 'outro' ? '　完了' : '') + '</small><h1>' + esc(c.title) + '</h1>' + commHTML(kind === 'intro' ? c.intro : c.outro, true) +
+    '<button class="primary big" id="chOk">' + (kind === 'intro' ? '了解' : '次へ') + '</button></div>', 'story');
+  $('chOk').onclick = next;
+}
+// 作戦を開く：章の最初に来たときは章の通信から
+function openStage(id) {
+  const c = chOf(id);
+  if (c.intro && !seen(c.id + 'i')) chapterCard(c, 'intro', () => stageDetail(id)); else stageDetail(id);
+}
 function titleScreen() {
   mode = 'title'; setMenu(true);
   showOv('<div class="hero">' +
     '<div class="logo"><small>FRONTLINE BASE DEFENSE</small><span>ROBOT</span><span>DEFENSE</span></div>' +
     '<p class="tagline">補給の途絶えた前線基地。<br>残った機材でロボットを組み、侵略者を食い止めろ。</p>' +
-    '<button class="primary big" id="goBtn">▶ 出撃する</button>' +
+    (() => { const nx = nextStage(), any = ORDER.some(cleared), st = nx && stById(nx);
+      return '<button class="primary big" id="goBtn">' + (st ? (any ? '▶ 続きから' : '▶ はじめる') + '<small>' + esc(st.name + '「' + st.sub + '」') + '</small>' : '▶ 作戦を選ぶ') + '</button>' +
+        (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
     '<button class="ghost" id="howBtn">遊び方</button>' +
     '<div class="ver">試作版</div></div>', 'hero');
-  $('goBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
+  const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
 }
 // 遊び方：1項目1行。細かいことはプレイ中の案内で出す
 const HOW = [
@@ -6631,24 +6719,32 @@ function howTo(back) {
 }
 function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name); }
 function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : '🛡 ' + fmtT(st.time) + ' 守る'; }
-function stageNo(st) { const i = STAGES.indexOf(st), w = STAGES.findIndex(s => s.wide); return st.wide ? '本' + (i - w + 1) : String(i + 1); }
+function stageNo(st) { return st.name.replace('序章-', ''); }
 function stageSelect() {
   mode = 'select'; setMenu(true);
-  let html = '<h1>作戦を選ぶ</h1><div class="slist">';
-  STAGES.forEach((st, i) => {
-    if (i === 0) html += '<div class="sec">訓練 <span class="dim">基本を覚える</span></div>';
-    else if (st.wide && !STAGES[i - 1].wide) html += '<div class="sec">本編 <span class="dim">広い戦場。地図を動かして戦う</span></div>';
-    const rw = UNLOCKS.filter(u => u.stage === st.id);
-    html += '<button class="scard' + (cleared(st.id) ? ' clear' : '') + (st.wide ? ' wide' : '') + '" data-st="' + st.id + '">' +
-      '<span class="sno">' + stageNo(st) + '</span>' +
-      '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
-      '<span class="sr">' + (cleared(st.id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
-  });
+  const nx = nextStage();
+  if (!uiCh) uiCh = chOf(nx || ORDER[0]).id;
+  const c = CH.find(x => x.id === uiCh) || CH[0];
+  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
+  if (c.soon) html += '<div class="soonbox"><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b><p>準備中</p></div>';
+  else {
+    html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
+    for (const id of c.stages) {
+      const st = stById(id), rw = UNLOCKS.filter(u => u.stage === id);
+      html += '<button class="scard' + (cleared(id) ? ' clear' : '') + (id === nx ? ' next' : '') + '" data-st="' + id + '">' +
+        '<span class="sno">' + stageNo(st) + '</span>' +
+        '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
+        '<span class="sr">' + (id === nx ? '<i class="nx">▶ 次</i>' : '') + (cleared(id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
+    }
+    html += '</div>';
+  }
   const other = UNLOCKS.filter(u => !u.stage);
-  html += '</div>' + (other.length ? '<details class="more"><summary>ステージ以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
+  html += (other.length ? '<details class="more"><summary>作戦以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
     '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button><button class="ghost small" id="allOpen">全解禁（試作用）</button></div>';
   showOv(html);
-  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => stageDetail(b.dataset.st));
+  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => openStage(b.dataset.st));
+  $('ovCard').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { uiCh = b.dataset.ch; stageSelect(); });
+  if ($('story')) $('story').onclick = () => chapterCard(c, c.stages.every(cleared) && c.outro ? 'outro' : 'intro', stageSelect);
   $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
 }
@@ -6658,7 +6754,8 @@ function stageDetail(stId) {
   const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen);
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
   const rw = UNLOCKS.filter(u => u.stage === st.id), c = SAVE.clear && SAVE.clear[st.id];
-  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+    (st.brief ? commHTML(st.brief) : '') +
     '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
@@ -6671,7 +6768,7 @@ function stageDetail(stId) {
     if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
     saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
   });
-  $('sdBack').onclick = stageSelect; $('sdGo').onclick = () => startGame(stId);
+  $('sdBack').onclick = () => { uiCh = chOf(stId).id; stageSelect(); }; $('sdGo').onclick = () => startGame(stId);
 }
 function startGame(stId) {
   if (stId) curStage = stId;
@@ -6696,10 +6793,12 @@ function endGame() {
   const head = win ? (g === 'points' ? '補給線確保' : g === 'bases' ? '敵拠点制圧' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : '時間まで拠点を守り抜いた')
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : '時間切れ。目標を達成できなかった');
-  const next = win ? STAGES[STAGES.findIndex(s => s.id === S.st.id) + 1] : null;
+  const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
+  const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
   const tile = (icon, v, label) => '<div class="tile"><span>' + icon + '</span><b>' + v + '</b><small>' + label + '</small></div>';
   showOv(
     '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
+    (win && S.st.win ? commHTML([S.st.win]) : '') +
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
@@ -6711,10 +6810,12 @@ function endGame() {
     '<span>誤射ダメージ / 誤射で撃破</span><b>' + Math.round(S.ffDmg) + ' / ' + S.ffKills + '</b>' +
     '<span>獲得 / 使ったポイント</span><b>' + S.earned + ' / ' + S.spent + '</b>' +
     '<span>拠点に取り付いた敵 / 被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b></div></details>' +
-    '<div class="btns col">' + (next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
-    '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
-  $('again').onclick = () => startGame(curStage); $('toSel').onclick = stageSelect;
-  if (next) $('nextSt').onclick = () => stageDetail(next.id);
+    '<div class="btns col">' + (chDone ? '<button class="primary big" id="nextSt">📡 通信を受信（' + esc(ch.no) + ' 完了）</button>' : next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
+    '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next || chDone ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
+  $('again').onclick = () => startGame(curStage);
+  if (chDone) $('nextSt').onclick = () => chapterCard(ch, 'outro', () => { if (next) openStage(next.id); else { const ci = CH.indexOf(ch); uiCh = (CH[ci + 1] || ch).id; stageSelect(); } });
+  else if (next) $('nextSt').onclick = () => openStage(next.id);
+  $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
 }
 function togglePause() {
   if (mode !== 'play' || building) return;
