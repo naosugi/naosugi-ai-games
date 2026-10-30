@@ -77,8 +77,9 @@ function resetView() { const b = S ? S.st.base : { x: mapCX, z: mapCZ }; camS.x 
 function toggleView() { if (ZOOM_START > 1 && camS.zoom > 1.05) { camS.x = mapCX; camS.z = mapCZ; camS.zoom = 1; applyCam(); } else resetView(); }
 addEventListener('resize', fit);
 
-scene.add(new T.HemisphereLight(0x9fd8ff, 0x101830, 1.3));
-const sun = new T.DirectionalLight(0xffffff, 1.6); sun.position.set(6, 14, 9); scene.add(sun);
+scene.add(new T.HemisphereLight(0xb0dcff, 0x2a1838, 1.45));
+const FOG_P = new T.Fog(0x050a1c, 22, 75); const FOG_M = new T.Fog(0x050a1c, 40, 115); // 自操作：遠くを暗くして奥行きを出す（見通しの悪さも表す）
+const sun = new T.DirectionalLight(0xfff0dc, 1.7); sun.position.set(6, 14, 9); scene.add(sun);
 
 // 共有ジオメトリ・マテリアル
 const G = {
@@ -111,6 +112,7 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
+  visor: new T.MeshBasicMaterial({ color: 0xaefcff }), visorE: new T.MeshBasicMaterial({ color: 0xffe14d }),
   shadow: new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false }),
   selRing: new T.MeshBasicMaterial({ color: 0x65f6ff, side: T.DoubleSide, transparent: true, opacity: .9 }),
   barBg: new T.MeshBasicMaterial({ color: 0x0a0f1e, depthTest: false }),
@@ -127,26 +129,68 @@ const M = {
 };
 
 // ---------- 地形（ステージごとに作り直す） ----------
-let mapGroup = null;
+let mapGroup = null, chev = null, chevPaths = [];
+const CHEV_GAP = 2.4, chevD = new T.Object3D();
+M.chev = new T.MeshBasicMaterial({ color: 0xff5a7a, transparent: true, opacity: .55, depthWrite: false });
+// 床パネルの模様（canvas で描いて繰り返す）
+function techTex(base, line, dot, rep) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  x.fillStyle = base; x.fillRect(0, 0, 128, 128);
+  x.strokeStyle = line; x.lineWidth = 3; x.strokeRect(0, 0, 128, 128);
+  x.lineWidth = 1; x.globalAlpha = .45; x.beginPath(); x.moveTo(64, 8); x.lineTo(64, 120); x.moveTo(8, 64); x.lineTo(120, 64); x.stroke(); x.globalAlpha = 1;
+  x.fillStyle = dot; for (const [px, py] of [[0, 0], [128, 0], [0, 128], [128, 128]]) x.fillRect(px - 4, py - 4, 8, 8);
+  const t = new T.CanvasTexture(c); t.colorSpace = 'srgb'; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rep[0], rep[1]); t.anisotropy = 4; return t;
+}
+// 経路の矢印を流す（敵の進む向きが分かるように）
+function updChev(now) {
+  if (!chev) return;
+  let k = 0; const off = (now / 1000 * 1.3) % CHEV_GAP;
+  for (const P of chevPaths) {
+    let si = 0, acc = 0;
+    for (let d = off; d < P.len - .3 && k < chev.instanceMatrix.count; d += CHEV_GAP) {
+      while (si < P.segs.length - 1 && d > acc + P.segs[si].len) { acc += P.segs[si].len; si++; }
+      const s = P.segs[si], t = d - acc;
+      chevD.position.set(s.ax + s.ux * t, .07, s.az + s.uz * t); chevD.rotation.set(Math.PI / 2, Math.atan2(s.ux, s.uz), 0, 'YXZ'); chevD.scale.set(.6, .55, .05); chevD.updateMatrix();
+      chev.setMatrixAt(k++, chevD.matrix);
+    }
+  }
+  chev.count = k; chev.instanceMatrix.needsUpdate = true;
+}
 function buildMap(st, paths) {
   if (mapGroup) scene.remove(mapGroup);
   const g = mapGroup = new T.Group(); scene.add(g);
-  const ground = new T.Mesh(new T.PlaneGeometry(mapW + 40, mapD + 40), lam(0x0a1530));
+  // 地面：4マスごとの床パネル（戦場）と、その外の暗い地面
+  const OUT = 40;
+  const ground = new T.Mesh(new T.PlaneGeometry(mapW + OUT * 2, mapD + OUT * 2), new T.MeshLambertMaterial({ map: techTex('#071026', '#0f2246', '#16305a', [(mapW + OUT * 2) / 4, (mapD + OUT * 2) / 4]) }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(mapCX, 0, mapCZ); g.add(ground);
-  const field = new T.Mesh(new T.PlaneGeometry(mapW, mapD), lam(0x0d1c3c));
+  const field = new T.Mesh(new T.PlaneGeometry(mapW, mapD), new T.MeshLambertMaterial({ map: techTex('#0e2044', '#21477c', '#3a7cc0', [mapW / 4, mapD / 4]) }));
   field.rotation.x = -Math.PI / 2; field.position.set(mapCX, .005, mapCZ); g.add(field);
-  const gs = Math.ceil(Math.max(mapW, mapD) / 2) * 2;
-  const grid = new T.GridHelper(gs, gs / 2, 0x1d4a7a, 0x163259);
-  grid.position.set(mapCX, .01, mapCZ); grid.material.transparent = true; grid.material.opacity = .45; g.add(grid);
-  const edge = new T.LineSegments(new T.EdgesGeometry(new T.PlaneGeometry(mapW, mapD)), new T.LineBasicMaterial({ color: 0x2f6aa0 }));
+  const edge = new T.LineSegments(new T.EdgesGeometry(new T.PlaneGeometry(mapW, mapD)), new T.LineBasicMaterial({ color: 0x3f8ad0 }));
   edge.rotation.x = -Math.PI / 2; edge.position.set(mapCX, .02, mapCZ); g.add(edge);
-  // 敵の経路
-  const road = lam(0x2a0f1c, 0x12040a), mid = new T.MeshBasicMaterial({ color: 0x8a1d3a });
-  for (const P of paths) for (const s of P.segs) {
-    const cx = (s.ax + s.bx) / 2, cz = (s.az + s.bz) / 2, ang = Math.atan2(s.ux, s.uz);
-    const r = new T.Mesh(G.box, road); r.scale.set(1.8, .04, s.len + 1.8); r.position.set(cx, .02, cz); r.rotation.y = ang; g.add(r);
-    const m = new T.Mesh(G.box, mid); m.scale.set(.08, .05, s.len); m.position.set(cx, .03, cz); m.rotation.y = ang; g.add(m);
+  // 戦場の外：崩れた建物（見た目だけ。当たり判定はない）
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const ruinM = [lam(0x142a52, 0x050c1c), lam(0x1b3664, 0x060f22), lam(0x0f2040, 0x040a18)];
+  for (let i = 0; i < 70; i++) {
+    const side = i % 4, t = rnd(), d = 2 + rnd() * 18;
+    const x = side < 2 ? MAP.minX + t * mapW : (side === 2 ? MAP.minX - d : MAP.maxX + d), z = side < 2 ? (side === 0 ? MAP.minZ - d : MAP.maxZ + d) : MAP.minZ + t * mapD;
+    const h = side === 1 ? .3 + rnd() * .8 : .6 + rnd() * rnd() * 7, w = 1.2 + rnd() * 3, b = new T.Mesh(G.box, ruinM[i % 3]); // 手前側（カメラ側）は低くして戦場を隠さない
+    b.scale.set(w, h, 1.2 + rnd() * 3); b.position.set(x, h / 2, z); b.rotation.y = rnd() * .6 - .3; g.add(b);
   }
+  // 敵の経路：路面・両側の赤い縁・拠点へ向かって流れる矢印
+  const road = lam(0x35122a, 0x14040c), rim = new T.MeshBasicMaterial({ color: 0xff4d6d, transparent: true, opacity: .45 });
+  chevPaths = [];
+  let nChev = 0;
+  for (const P of paths) {
+    let len = 0;
+    for (const s of P.segs) {
+      const cx = (s.ax + s.bx) / 2, cz = (s.az + s.bz) / 2, ang = Math.atan2(s.ux, s.uz);
+      const r = new T.Mesh(G.box, road); r.scale.set(1.8, .04, s.len + 1.8); r.position.set(cx, .02, cz); r.rotation.y = ang; g.add(r);
+      for (const k of [-1, 1]) { const m = new T.Mesh(G.box, rim); m.scale.set(.07, .05, s.len + 1.8); m.position.set(cx + s.uz * .92 * k, .03, cz - s.ux * .92 * k); m.rotation.y = ang; g.add(m); }
+      len += s.len;
+    }
+    chevPaths.push({ segs: P.segs, len }); nChev += Math.floor(len / CHEV_GAP) + 2;
+  }
+  chev = new T.InstancedMesh(G.cone, M.chev, Math.max(1, nChev)); chev.frustumCulled = false; chev.count = 0; g.add(chev);
   // 敵の出現ゲート（敵拠点がある経路には置かない）
   M.gates = [];
   st.paths.forEach((p, i) => {
@@ -159,7 +203,9 @@ function buildMap(st, paths) {
   const b1 = new T.Mesh(new T.CylinderGeometry(1.5, 1.8, .8, 6), M.robo); b1.position.y = .4;
   const b2 = new T.Mesh(new T.CylinderGeometry(.9, 1.1, .7, 6), M.head); b2.position.y = 1.1;
   const b3 = new T.Mesh(new T.TorusGeometry(1.25, .07, 6, 30), new T.MeshBasicMaterial({ color: 0x65f6ff })); b3.rotation.x = Math.PI / 2; b3.position.y = 1.5;
-  base.add(b1, b2, b3); base.position.set(st.base.x, 0, st.base.z); g.add(base); M.baseRing = b3;
+  const glow = new T.Mesh(new T.CircleGeometry(3.6, 40), new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .16, blending: T.AdditiveBlending, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = .04; M.baseGlow = glow;
+  base.add(b1, b2, b3, glow); base.position.set(st.base.x, 0, st.base.z); g.add(base); M.baseRing = b3;
   const gun = new T.Group(); gun.position.y = 1.55; gun.visible = false; base.add(gun);
   const gb = new T.Mesh(G.box, M.roboDark); gb.scale.set(.7, .35, .7); gun.add(gb);
   M.baseBarrels = [-1, 1].map(k => { const b = new T.Mesh(G.cyl, M.blaster); b.scale.set(.12, .9, .12); b.rotation.x = Math.PI / 2; b.position.set(k * .16, .1, .45); b.visible = false; gun.add(b); return b; });
@@ -188,7 +234,8 @@ function mechMesh(weaponIds, sc, mats) {
   const head = new T.Mesh(G.box, mats.head); head.scale.set(.42, .26, .36); head.position.set(0, 1.02, .06);
   const legL = new T.Mesh(G.box, mats.dark); legL.scale.set(.24, .38, .3); legL.position.set(-.26, .2, 0);
   const legR = legL.clone(); legR.position.x = .26;
-  inner.add(body, head, legL, legR);
+  const visor = new T.Mesh(G.box, mats.visor || M.visor); visor.scale.set(.34, .07, .04); visor.position.set(0, 1.05, .25);
+  inner.add(body, head, legL, legR, visor);
   const slots = [[.6, .7, .12], [-.6, .7, .12], [0, .98, -.42], [0, 1.3, .05]];
   weaponIds.forEach((id0, i) => {
     const id = (WEAPONS[id0] && WEAPONS[id0].base) || id0;
@@ -221,7 +268,7 @@ function roboMesh(r) {
 }
 function enemyMesh(e) {
   if (e.type === 'boss') {
-    const { g, inner, body } = mechMesh(e.def.weapons, 2.2, { body: M.boss, head: M.bossHead, dark: M.bossDark });
+    const { g, inner, body } = mechMesh(e.def.weapons, 2.2, { body: M.boss, head: M.bossHead, dark: M.bossDark, visor: M.visorE });
     return { obj: g, inner, body, bar: makeBar(3, M.barGold), barY: 2.8, baseMat: M.boss, face: true, always: true };
   }
   const g = new T.Group(), inner = new T.Group();
@@ -653,11 +700,16 @@ function tap(px, py) {
   if (mode !== 'play' || paused || building) return;
   const w = toWorld(px, py); if (!w) return;
   // ロボットは背が高いので、見た目の中心（少し奥）で当たりを取る
-  let best = null, bd = 1.35 ** 2;
-  for (const r of S.robots) { const d = (r.x - w.x) ** 2 + (r.z - .45 - w.z) ** 2; if (d < bd) { bd = d; best = r; } }
-  if (best) { sel = sel === best ? null : best; updInfo(); return; }
+  // 画面上の距離で選ぶ（縮小表示でも指で選びやすいように、見た目の中心から 38px 以内か、地図上で 1.35 以内）
+  let best = null, bd = 1e9;
+  for (const r of S.robots) {
+    const v = views.get(r.id); tagV.set(r.x, v ? v.barY * .5 : .8, r.z).project(oCam);
+    const sd = Math.hypot((tagV.x + 1) / 2 * innerWidth - px, (1 - tagV.y) / 2 * innerHeight - py), wd = Math.hypot(r.x - w.x, r.z - .45 - w.z);
+    const sc = Math.min(sd / 38, wd / 1.35); if (sc < 1 && sc < bd) { bd = sc; best = r; }
+  }
+  if (best) { sel = sel === best ? null : best; if (sel) tutDone('sel'); updInfo(); return; }
   if (sel) {
-    moveRobot(sel, w.x, w.z, S);
+    moveRobot(sel, w.x, w.z, S); tutDone('moved');
     marker.position.set(sel.tx, .06, sel.tz); marker.visible = true; markerT = .6;
     sel = null; updInfo();
   }
@@ -670,16 +722,16 @@ const PV = new T.Vector3();
 function pilotFov(asp) { return Math.max(58, Math.min(96, 2 * Math.atan(Math.tan(50 * Math.PI / 180) / asp) * 180 / Math.PI)); }
 function enterPilot(r) {
   if (!r || r.dead || mode !== 'play' || paused || building) return;
-  RD.setPilot(S, r); pilot = r; pYawT = r.aimYaw = r.face; sel = null; cam = pCam;
+  RD.setPilot(S, r); pilot = r; pYawT = r.aimYaw = r.face; sel = null; cam = pCam; scene.fog = FOG_P; tutDone('rode');
   document.body.classList.add('piloting'); setRoster(false); updInfo(); fit();
-  $('pName').textContent = r.slot + ' ' + r.name + ' ' + r.weapons.map(w => w.def.icon).join('');
+  $('pName').textContent = r.name + ' ' + r.weapons.map(w => w.def.icon).join('');
   $('pWeap').innerHTML = r.weapons.map(w => '<div class="pw"><span class="pn">' + w.def.icon + ' ' + esc(w.def.name) + '</span><span class="pc"><i></i></span><b></b></div>').join('');
   pWeapEls = [...$('pWeap').children];
   banner('搭乗', '連射・威力・射程が上がる。機体は動かない', 'start', 1.6);
 }
 function exitPilot(msg) {
   if (!pilot) return;
-  const r = pilot; RD.setPilot(S, null); pilot = null; cam = oCam;
+  const r = pilot; RD.setPilot(S, null); pilot = null; cam = oCam; scene.fog = null;
   document.body.classList.remove('piloting'); $('lockMk').style.display = 'none';
   if (!r.dead) { camS.x = r.x; camS.z = r.z; }
   fit(); updInfo(); if (msg) toast(msg, 'bad');
@@ -770,7 +822,7 @@ function updPilot(dt) {
 $('pExit').addEventListener('click', () => exitPilot());
 $('pTurn').addEventListener('click', () => { if (pilot) turnTo(pYawT + Math.PI); });
 $('pBuild').addEventListener('click', () => openBuild());
-$('info').addEventListener('click', e => { if (e.target.closest('[data-ride]') && sel) enterPilot(sel); });
+$('info').addEventListener('click', e => { if (e.target.closest('[data-ride]') && sel) enterPilot(sel); else if (e.target.closest('[data-desel]')) { sel = null; updInfo(); } });
 
 // ---------- 稼働中ロボット一覧（右端・折りたたみ） ----------
 let rosterOpen = false;
@@ -781,7 +833,7 @@ $('rosterList').addEventListener('click', e => {
   const c = e.target.closest('[data-id]'); if (!c || mode !== 'play' || paused || building) return;
   const r = S.robots.find(x => x.id === +c.dataset.id); if (!r) return;
   if (e.target.closest('[data-ride]')) { enterPilot(r); return; }
-  sel = sel === r ? null : r; updInfo();
+  sel = sel === r ? null : r; if (sel) tutDone('sel'); updInfo();
   if (sel && innerWidth < 700) setRoster(false); // スマホでは閉じて、移動先をタップしやすくする
 });
 function robotState(r) {
@@ -797,7 +849,7 @@ function updRoster() {
     let el = rosterEls.get(r.id);
     if (!el) {
       el = document.createElement('button'); el.className = 'rcard'; el.dataset.id = r.id;
-      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span><span class="ride" data-ride>🎮</span></div><div class="rb"><i></i></div><div class="rs"></div>';
+      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span></div><div class="rb"><i></i></div><div class="rr"><span class="rs"></span><span class="ride" data-ride>🎮 乗る</span></div>';
       el.querySelector('.num').textContent = r.slot; el.querySelector('b').textContent = r.body.name; el.querySelector('.rw').textContent = r.weapons.map(w => w.def.icon).join('');
       list.appendChild(el); rosterEls.set(r.id, el);
     }
@@ -840,11 +892,31 @@ function updHud() {
   if (sel && sel.dead) sel = null;
   updInfo(); updRoster();
 }
+// 初めての人への案内：一度できたことは二度と出さない（SAVE.tut に記録）
+function tutDone(k) { SAVE.tut = SAVE.tut || {}; if (!SAVE.tut[k]) { SAVE.tut[k] = 1; saveNow(); } }
+function coachTip() {
+  if (mode !== 'play' || building || paused || pilot || !S) return null;
+  const t = SAVE.tut || {};
+  if (!t.built) return S.queue.length ? ['⏱', '建造中…できあがると拠点から出撃する'] : ['🔧', '右下の「建造」でロボットを作ろう', 'build'];
+  if (!t.sel && S.robots.length && !sel) return ['👆', 'ロボットをタップして選ぼう', 'robot'];
+  if (!t.rode && t.moved && S.t > 35 && S.robots.length && !sel) return ['🎮', 'ロボットを選んで「乗る」と、自分で操縦できる'];
+  return null;
+}
 function updInfo() {
-  const el = $('info');
-  const html = sel ? '<span class="slow">◷スロー</span><b>' + esc(sel.name) + '</b> ' + sel.weapons.map(w => w.def.icon).join('') + ' ❤' + Math.ceil(sel.hp) + '/' + sel.maxHp + ' ・ 移動先をタップ <button class="ride" data-ride>🎮乗る</button>'
-    : esc(S && S.robots.length ? 'ロボット（地図か右の一覧）を選んで → 移動先をタップ' : (S && S.queue.length ? '建造中…完成したら配置しよう' : '🔧 建造からロボットを作ろう'));
-  if (hudCache.info !== html) { hudCache.info = html; el.innerHTML = html; el.className = sel ? 'sel' : ''; }
+  const el = $('info'), tip = sel ? null : coachTip();
+  const key = sel ? 'sel' + sel.id + (SAVE.tut && SAVE.tut.moved ? 'm' : '') : tip ? 'tip' + tip[1] : 'hint' + (S && S.robots.length ? 1 : S && S.queue.length ? 2 : 0);
+  if (hudCache.infoKey !== key) {
+    hudCache.infoKey = key;
+    if (sel) el.innerHTML = '<div class="selp"><span class="num">' + sel.slot + '</span><div class="sn"><b>' + esc(sel.body.name) + ' <span class="wi">' + sel.weapons.map(w => w.def.icon).join('') + '</span></b><span class="hpb"><i></i></span></div><button class="ride" data-ride>🎮 乗る</button><button class="desel" data-desel aria-label="選択をやめる">✕</button></div>' +
+      '<div class="selhint"><span class="slow">◷スロー</span>' + (SAVE.tut && SAVE.tut.moved ? '地面をタップで移動' : '<b>地面をタップすると、そこへ移動する</b>') + '</div>';
+    else if (tip) el.innerHTML = '<div class="coach"><span>' + tip[0] + '</span>' + esc(tip[1]) + '</div>';
+    else el.innerHTML = '<div class="hint">' + esc(S && S.robots.length ? 'ロボットをタップ → 地面をタップで移動' : S && S.queue.length ? '建造中…完成したら出撃する' : '🔧 建造からロボットを作ろう') + '</div>';
+    el.className = sel ? 'sel' : tip ? 'tip' : '';
+  }
+  if (sel) { const i = el.querySelector('.hpb i'); if (i) { const k = Math.max(0, sel.hp / sel.maxHp); i.style.width = (k * 100) + '%'; i.className = k < .3 ? 'low' : ''; } }
+  const tg = tip && tip[2];
+  $('buildBtn').classList.toggle('pulse', tg === 'build' || (mode === 'play' && !!S && !S.robots.length && !S.queue.length && !building));
+  document.body.classList.toggle('coachRobot', tg === 'robot');
 }
 
 // ---------- 建造画面 ----------
@@ -929,69 +1001,84 @@ $('buildM').addEventListener('click', e => { if (e.target === $('buildM')) close
 $('bGo').addEventListener('click', () => {
   const err = orderBuild(S, uiBody, [...uiW], uiAt);
   if (err) { renderBuild(); return; }
-  toast('🔧 建造開始：' + uiBody.name); closeBuild(); updInfo();
+  toast('🔧 建造開始：' + uiBody.name); tutDone('built'); closeBuild(); updInfo();
 });
 $('buildBtn').addEventListener('click', openBuild);
 
 // ---------- 画面遷移 ----------
-function showOv(html) { $('ovCard').innerHTML = html; $('ov').classList.add('show'); }
+function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = 'modal center show' + (cls ? ' ' + cls : ''); $('ovCard').scrollTop = 0; }
 function hideOv() { $('ov').classList.remove('show'); }
+function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { cam = pCam; scene.fog = FOG_M; } else scene.fog = null; }
+const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
 function titleScreen() {
-  mode = 'title';
-  showOv(
-    '<h1>ROBOT DEFENSE <small>試作版</small></h1>' +
-    '<p>前線基地に着任した。補給は届かない。残っている機材を組み合わせて、侵略者の進攻を食い止めろ。</p>' +
-    '<ul><li>🔧建造で <b>ボディ1つ＋武器</b> を選ぶ（その間は時間が止まる）</li>' +
-    '<li>ロボット（地図か右の一覧）を選んで → 地面をタップで移動</li>' +
-    '<li>ロボットは射程内の最寄りの敵を自動で攻撃（敵がいなければ敵拠点）</li>' +
-    '<li>敵を倒すとポイント。拠点に取り付いた敵は、倒すまで拠点を攻撃し続ける</li>' +
-    '<li>外周の🏭敵拠点を壊すと大量ポイント。その方面から来る敵が減る</li>' +
-    '<li>建造画面の「拠点工事」で、拠点の修理・砲台・盾をポイントで頼める（建造ラインの時間を使う）</li>' +
-    '<li>同時出撃は' + CFG.deployCap + '機まで。それとは別に' + CFG.queueMax + '機まで予約でき、誰かが倒れたら予約機がすぐ出撃する。陣地から出撃する予約は、その陣地が落ちていると出撃失敗</li>' +
-    '<li>ロボットを選んでいる間は、時間の流れが1/4になる</li>' +
-    '<li>🎮乗る（一覧か、選んだロボットの欄）で自操作。肩越し視点で、ドラッグで旋回・敵をタップでロック。連射・威力・射程が上がるが、機体は動かず視界は前方だけ。ほかのロボットへの指示もできない</li>' +
-    '<li><b>味方の弾や爆風は味方ロボットにも当たる</b>。範囲攻撃は強力だが、置き場所に注意</li>' +
-    '<li>本編の🚩陣地：青は確保済みで、建造時に出撃地点に選べる。灰は中立、赤は敵占領（守備隊を倒して確保）。敵だけが近くにいると奪われる</li>' +
-    '<li>地図はスワイプで移動、ピンチで拡大。⤢で全体表示</li></ul>' +
-    '<div class="btns"><button class="primary" id="goBtn">ステージ選択へ</button></div>');
-  $('goBtn').onclick = stageSelect;
+  mode = 'title'; setMenu(true);
+  showOv('<div class="hero">' +
+    '<div class="logo"><small>FRONTLINE BASE DEFENSE</small><span>ROBOT</span><span>DEFENSE</span></div>' +
+    '<p class="tagline">補給の途絶えた前線基地。<br>残った機材でロボットを組み、侵略者を食い止めろ。</p>' +
+    '<button class="primary big" id="goBtn">▶ 出撃する</button>' +
+    '<button class="ghost" id="howBtn">遊び方</button>' +
+    '<div class="ver">試作版</div></div>', 'hero');
+  $('goBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
 }
-function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name).join('・'); }
+// 遊び方：1項目1行。細かいことはプレイ中の案内で出す
+const HOW = [
+  ['🔧', '作る', 'ボディ1つ＋武器を選ぶ。選んでいる間は時間が止まる'],
+  ['👆', '動かす', 'ロボットをタップ → 地面をタップ。選んでいる間は時間が1/4'],
+  ['🎯', '戦う', '射程内の敵を自動で撃つ。倒すと⭐が入る'],
+  ['💥', '誤射に注意', '味方の弾や爆風は、味方のロボットにも当たる'],
+  ['🏭', '攻める', '敵拠点を壊すと⭐が多く入り、その方面の敵が減る'],
+  ['🎮', '乗る', '自分で操縦。連射・威力・射程が上がるが、前しか見えず動けない'],
+  ['🏗', '拠点工事', '⭐で拠点の修理・砲台・盾を頼める'],
+  ['🚩', '陣地', '青い陣地は出撃地点に選べる。敵だけが近くにいると奪われる'],
+];
+function howTo(back) {
+  showOv('<h1>遊び方</h1><div class="how">' + HOW.map(([i, t, d]) => '<div class="hw"><span class="hi">' + i + '</span><b>' + t + '</b><span>' + d + '</span></div>').join('') +
+    '</div><p class="dim">地図はスワイプで移動、ピンチで拡大。⤢で全体表示。</p><div class="btns"><button class="primary" id="howOk">わかった</button></div>');
+  $('howOk').onclick = back;
+}
+function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name); }
+function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : '🛡 ' + fmtT(st.time) + ' 守る'; }
+function stageNo(st) { const i = STAGES.indexOf(st), w = STAGES.findIndex(s => s.wide); return st.wide ? '本' + (i - w + 1) : String(i + 1); }
 function stageSelect() {
-  mode = 'select';
-  showOv('<h1>ステージ選択</h1><div class="list">' + STAGES.map((st, i) => (i === 0 ? '<div class="sec">チュートリアル</div>' : st.wide && !STAGES[i - 1].wide ? '<div class="sec">本編 <span class="dim">広い戦場（地図を動かして戦う）</span></div>' : '') +
-    '<button class="item stage" data-st="' + st.id + '">' +
-    '<div class="l1"><b>' + esc(st.name) + '「' + esc(st.sub) + '」</b><span class="sp"></span><span class="cost">開始⭐' + st.startPoints + '</span></div>' +
-    '<div class="goalline">🎯 ' + esc(goalText(st)) + '</div>' +
-    '<div class="l2"><span>' + esc(st.intro) + '</span></div>' +
-    '<div class="l2"><span>経路 ' + st.paths.length + '本 ・ 敵拠点 ' + (st.ebases || []).length + ' ・ 出現：' + esc(stageEnemies(st)) + '</span></div>' +
-    UNLOCKS.filter(u => u.stage === st.id).map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ 解禁済み：' : '🎁 クリア報酬：') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '</div>').join('') + '</button>').join('') +
-    '<div class="sec">そのほかの解禁条件</div>' + UNLOCKS.filter(u => !u.stage).map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') +
-    '</div><div class="btns"><button class="ghost" id="toTitle">タイトル</button><button class="ghost" id="allOpen">全解禁（試作用）</button></div>');
-  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => loadoutScreen(b.dataset.st));
+  mode = 'select'; setMenu(true);
+  let html = '<h1>作戦を選ぶ</h1><div class="slist">';
+  STAGES.forEach((st, i) => {
+    if (i === 0) html += '<div class="sec">訓練 <span class="dim">基本を覚える</span></div>';
+    else if (st.wide && !STAGES[i - 1].wide) html += '<div class="sec">本編 <span class="dim">広い戦場。地図を動かして戦う</span></div>';
+    const rw = UNLOCKS.filter(u => u.stage === st.id);
+    html += '<button class="scard' + (cleared(st.id) ? ' clear' : '') + (st.wide ? ' wide' : '') + '" data-st="' + st.id + '">' +
+      '<span class="sno">' + stageNo(st) + '</span>' +
+      '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
+      '<span class="sr">' + (cleared(st.id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
+  });
+  const other = UNLOCKS.filter(u => !u.stage);
+  html += '</div>' + (other.length ? '<details class="more"><summary>ステージ以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
+    '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button><button class="ghost small" id="allOpen">全解禁（試作用）</button></div>';
+  showOv(html);
+  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => stageDetail(b.dataset.st));
   $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
 }
-// 出撃前：解禁済みの進化パーツから持ち込むものを選ぶ（解禁がなければ飛ばす）
-function loadoutScreen(stId) {
+// 作戦の詳細：説明・出現する敵・報酬・持ち込みを1枚にまとめ、ここから出撃する
+function stageDetail(stId) {
   curStage = stId;
-  const open = UNLOCKS.map(u => u.id).filter(isOpen);
-  if (!open.length) { startGame(stId); return; }
+  const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen);
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
-  const st = STAGES.find(s => s.id === stId);
-  const draw = () => {
-    showOv('<h1>持ち込み <small>' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '</small></h1>' +
-      '<p class="dim">' + esc(st.name) + '「' + esc(st.sub) + '」へ持ち込む進化パーツを' + CFG.loadoutSlots + 'つまで選ぶ。建造画面で通常の武器と一緒に選べるようになる。</p>' +
-      '<div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="dim">（' + esc(WEAPONS[w.base].name) + 'の進化）</span><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' +
-      '<div class="btns"><button class="ghost" id="loBack">戻る</button><button class="primary" id="loGo">出撃</button></div>');
-    $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
-      const id = b.dataset.lo, i = SAVE.loadout.indexOf(id);
-      if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
-      saveNow(); draw();
-    });
-    $('loBack').onclick = stageSelect; $('loGo').onclick = () => startGame(stId);
-  };
-  draw();
+  const rw = UNLOCKS.filter(u => u.stage === st.id), c = SAVE.clear && SAVE.clear[st.id];
+  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+    '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
+    '<p>' + esc(st.intro) + '</p>' +
+    '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
+    '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
+    (rw.length ? '<div class="sec">クリア報酬</div>' + rw.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ 解禁済み：' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '<span class="dim">（' + esc(WEAPONS[WEAPONS[u.id].base].name) + 'の進化）</span></div>').join('') : '') +
+    (open.length ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
+    '<div class="btns sticky"><button class="ghost" id="sdBack">← 戻る</button><button class="primary big" id="sdGo">▶ 出撃</button></div>');
+  $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
+    const id = b.dataset.lo, i = SAVE.loadout.indexOf(id);
+    if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
+    saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
+  });
+  $('sdBack').onclick = stageSelect; $('sdGo').onclick = () => startGame(stId);
 }
 function startGame(stId) {
   if (stId) curStage = stId;
@@ -1000,8 +1087,8 @@ function startGame(stId) {
   S = newState(curStage, { loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S;
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
-  mode = 'play'; paused = false; sel = null; uiBody = null;
-  for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false);
+  mode = 'play'; paused = false; sel = null; uiBody = null; setMenu(false); cam = oCam;
+  for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false); hudCache.infoKey = null;
   hideOv(); updInfo(); fit(); resetView();
   AU.init(); AU.bgmStart(!!S.st.wide); combo.times = []; combo.n = 0; combo.best = 0; parts.length = 0;
   banner(S.st.name + '「' + S.st.sub + '」', goalText(S.st), 'start', 2.6);
@@ -1009,39 +1096,46 @@ function startGame(stId) {
 }
 function endGame() {
   mode = 'over'; closeBuild(); sel = null;
-  const newly = checkUnlocks(S, SAVE); saveNow();
+  const newly = checkUnlocks(S, SAVE);
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
+  if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; }
+  saveNow();
   const head = win ? (g === 'points' ? '補給線確保' : g === 'bases' ? '敵拠点制圧' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
-  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した。' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した。' : '時間まで拠点を守り抜いた。')
-    : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された。' : '時間切れ。目標を達成できなかった。');
+  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : '時間まで拠点を守り抜いた')
+    : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : '時間切れ。目標を達成できなかった');
+  const next = win ? STAGES[STAGES.findIndex(s => s.id === S.st.id) + 1] : null;
+  const tile = (icon, v, label) => '<div class="tile"><span>' + icon + '</span><b>' + v + '</b><small>' + label + '</small></div>';
   showOv(
-    '<h1 class="' + (win ? 'win' : 'lose') + '">' + head + '</h1>' +
-    '<p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」 ' + msg + '</p>' +
-    '<div class="res">' +
-    '<span>撃破</span><b>' + S.kills + '</b>' +
+    '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
+    '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
+    (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
+    (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
+    '<details class="more"><summary>くわしい記録</summary><div class="res">' +
     (combo.best >= 8 ? '<span>最大連続撃破</span><b>×' + combo.best + '</b>' : '') +
-    (S.ebases.length ? '<span>破壊した敵拠点</span><b>' + S.ebKills + ' / ' + S.ebases.length + '</b>' : '') +
     (S.st.waves.some(w => w[1] === 'boss') ? '<span>模倣機（ボス）</span><b>' + (S.bossKilled ? '撃破' : '未撃破') + '</b>' : '') +
-    '<span>建造したロボット</span><b>' + S.built + '</b>' +
-    '<span>撃破されたロボット</span><b>' + S.lost + '</b>' +
+    '<span>建造したロボット / 撃破された</span><b>' + S.built + ' / ' + S.lost + '</b>' +
     '<span>自爆</span><b>' + S.bombs + '</b>' +
     '<span>誤射ダメージ / 誤射で撃破</span><b>' + Math.round(S.ffDmg) + ' / ' + S.ffKills + '</b>' +
-    '<span>獲得ポイント / 使ったポイント</span><b>' + S.earned + ' / ' + S.spent + '</b>' +
-    (g === 'points' ? '<span>所持ポイント / 目標</span><b>' + S.pts + ' / ' + S.st.goalPts + '</b>' : '') +
-    '<span>拠点に取り付いた敵 / 拠点への被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b>' +
-    '<span>残り拠点HP</span><b>' + Math.ceil(S.baseHP) + ' / ' + CFG.baseHP + '</b></div>' +
-    (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">次の出撃から持ち込める</span></div>' : '') +
-    '<div class="btns"><button class="ghost" id="toSel">ステージ選択</button><button class="primary" id="again">もう一度（ボディ再抽選）</button></div>');
-  $('again').onclick = () => loadoutScreen(curStage); $('toSel').onclick = stageSelect;
+    '<span>獲得 / 使ったポイント</span><b>' + S.earned + ' / ' + S.spent + '</b>' +
+    '<span>拠点に取り付いた敵 / 被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b></div></details>' +
+    '<div class="btns col">' + (next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
+    '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
+  $('again').onclick = () => startGame(curStage); $('toSel').onclick = stageSelect;
+  if (next) $('nextSt').onclick = () => stageDetail(next.id);
 }
 function togglePause() {
   if (mode !== 'play' || building) return;
   paused = !paused;
-  if (paused) {
-    showOv('<h1>一時停止</h1><div class="btns"><button class="ghost" id="rs">やり直す</button><button class="primary" id="re">再開</button></div>');
-    $('re').onclick = togglePause; $('rs').onclick = () => { paused = false; startGame(); };
-    $('ovCard').insertAdjacentHTML('beforeend', '<div class="btns"><button class="ghost" id="qs">ステージ選択へ戻る</button></div>'); $('qs').onclick = () => { paused = false; stageSelect(); };
-  } else hideOv();
+  if (paused) pauseMenu(); else hideOv();
+}
+function pauseMenu() {
+  showOv('<h1>一時停止</h1><p class="dim">' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　🎯 ' + esc(goalText(S.st)) + '</p><div class="pmenu">' +
+    '<button class="primary big" id="re">▶ 再開</button><button id="howP">遊び方</button><button id="muteP">' + (AU.muted ? '🔇 音：オフ' : '🔊 音：オン') + '</button>' +
+    '<button id="rs">やり直す（ボディ再抽選）</button><button id="qs">作戦選択へ戻る</button></div>');
+  $('re').onclick = togglePause; $('rs').onclick = () => { paused = false; startGame(); };
+  $('qs').onclick = () => { paused = false; exitPilot(); stageSelect(); };
+  $('howP').onclick = () => howTo(pauseMenu);
+  $('muteP').onclick = () => { AU.init(); AU.setMute(!AU.muted); muteLabel(); pauseMenu(); };
 }
 $('pauseBtn').addEventListener('click', togglePause);
 $('viewBtn').addEventListener('click', toggleView);
@@ -1082,6 +1176,11 @@ function frame(now) {
     M.baseGun.rotation.y = lerpAngle(M.baseGun.rotation.y, S.homeObj.face || 0, .3);
     M.baseDome.visible = S.homeShield > 0; M.baseDome.material.opacity = .08 + .22 * (S.homeShield / (S.homeShieldMax || 1)) + Math.sin(now / 200) * .03;
   }
+  updChev(now);
+  if (M.baseGlow) M.baseGlow.material.opacity = .12 + Math.sin(now / 400) * .05 + (S && S.enemies.some(e => e.atBase) ? .12 * (Math.sin(now / 90) > 0 ? 1 : 0) : 0);
+  if (mode === 'title' || mode === 'select') { // メニューの背景：戦場をゆっくり回って見せる
+    const a = now / 30000, R = Math.max(mapW, mapD) * .45 + 8; pCam.position.set(mapCX + Math.sin(a) * R, R * .38, mapCZ + Math.cos(a) * R); pCam.lookAt(mapCX, 0, mapCZ);
+  }
   if (M.baseRing) { M.baseRing.position.y = 1.5 + Math.sin(now / 500) * .08; M.baseRing.visible = !pilot; } // 乗っている間は視界の邪魔になるので消す
   if (markerT > 0) { markerT -= dt; marker.material.opacity = Math.max(0, markerT / .6); marker.scale.setScalar(1 + (.6 - markerT)); if (markerT <= 0) marker.visible = false; }
   updFx(dt); updParts(dt); updCombo(dt); updPilot(dt);
@@ -1092,7 +1191,8 @@ function frame(now) {
 }
 // 試走・デバッグ用：ワールド座標→画面座標
 window.RD_proj = (x, z, y = 0) => { const p = new T.Vector3(x, y, z).project(cam); return { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight }; };
-buildMap(STAGES[0], STAGES[0].paths.map(p => ({ segs: p.slice(1).map((b, i) => { const a = p[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]); return { ax: a[0], az: a[1], bx: b[0], bz: b[1], len, ux: (b[0] - a[0]) / len, uz: (b[1] - a[1]) / len }; }) })));
+const BACKDROP = STAGES.find(s => s.wide) || STAGES[0]; setMapDims(BACKDROP);
+buildMap(BACKDROP, BACKDROP.paths.map(p => ({ segs: p.slice(1).map((b, i) => { const a = p[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]); return { ax: a[0], az: a[1], bx: b[0], bz: b[1], len, ux: (b[0] - a[0]) / len, uz: (b[1] - a[1]) / len }; }) })));
 fit();
 titleScreen();
 requestAnimationFrame(frame);
