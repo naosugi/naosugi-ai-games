@@ -70,6 +70,12 @@ a{color:var(--cyan)}
 .edge b{position:relative;width:22px;height:22px;border-radius:50%;background:#ff4d6de6;display:grid;place-items:center;font-size:11px;color:#fff;font-weight:800;border:1px solid #fff6}
 .edge.boss i{background:#ffd166}.edge.boss b{background:#ffd166;color:#04142a;font-size:8px}
 .edge.art i{background:#ffa94d}.edge.art b{background:#ffa94d;color:#04142a}
+/* 建造ライン・進化パーツ・報酬 */
+.linebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:4px 0 2px}
+.item.evo{border-color:#b48cff}
+.evotag{font-size:10px;color:#d8c4ff;border:1px solid #b48cff;border-radius:4px;padding:0 4px}
+.reward{font-size:12px;color:var(--gold);margin-top:3px}
+.reward.got{color:var(--green)}
 /* 出撃地点 */
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{padding:6px 10px;border-radius:16px;font-size:13px}
@@ -175,6 +181,7 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
 
 <div id="buildM" class="modal"><div class="card sheet">
   <div class="mh"><b>🔧 建造</b><span class="dim">時間停止中</span><span class="sp"></span><span>所持 ⭐<b id="bPts">0</b></span></div>
+  <div id="bLine" class="linebar"></div>
   <div id="bStep1">
     <div class="sec">① ボディを選ぶ <span class="dim">今回の配備（抽選）</span></div>
     <div id="bNote1"></div>

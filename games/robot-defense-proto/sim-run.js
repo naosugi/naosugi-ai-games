@@ -27,11 +27,18 @@ const strategies = {
   '高+レーザー+ヘビー': S => [cheapest(S, 'high'), ['laser', 'heavy']],
   '段階 安2機→高+ヘビ+ミサ': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['heavy', 'missile']]),
   '段階 安2機→中+ブラ+スプ': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'mid'), ['blaster', 'spread']]),
+  '量産+スプ+ミサ': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['spread', 'missile']],
+  '量産+スプ+ミサ+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['spread', 'missile'], true],
+  '中+ブラ+スプ+ライン2': S => [cheapest(S, 'mid'), ['blaster', 'spread'], true],
+  '[進化] 量産+フレア+ミサ+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['flare', 'missile'], true],
+  '[進化] 中+チェイン+フレア+ライン2': S => [cheapest(S, 'mid'), ['chain', 'flare'], true],
+  '[進化] 量産+プリズム+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['prism'], true],
+  '[進化] 段階 安2→高+パイル+バスター': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['pile', 'buster']]),
   '節約 安ブラ2機まで': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster']] : null),
 };
 
 function runOne(stId, pol) {
-  const S = RD.newState(stId), spots = [];
+  const S = RD.newState(stId, { loadout: Object.keys(RD.WEAPONS).filter(k => RD.WEAPONS[k].evo) }), spots = []; // 進化パーツはすべて持ち込める前提（使うかは戦略しだい）
   // 守備位置は経路から自動で作る：各経路の拠点寄り・中ほど・手前の3か所（経路の脇2.6）
   // bases ステージでは、各敵拠点の手前（経路沿い5.5）を攻撃位置にする
   if (S.st.goal === 'bases') for (const b of S.ebases) { const q = RD.pathPos(S.paths[b.path], 5.5, 2.4); spots.push({ p: [q.x, q.z], atk: true }); }
@@ -47,6 +54,8 @@ function runOne(stId, pol) {
     let c = pol(S);
     // 立ち上がり：狙いの構成が買えず、ロボットも1機もいないときは最安ボディ＋ブラスターで稼ぐ（買えないまま詰むのを防ぐ）
     if (c && c[0] && !S.robots.length && !S.queue.length && S.pts < RD.buildCost(c[0], c[1]).cost) c = [S.bodies[0], ['blaster']];
+    // ライン2：作れる機体がいっぱいでも建造待ちが出る場面に備え、余裕があれば開放する
+    if (c && c[2] && S.lines < 2 && S.pts >= RD.CFG.line2Cost + 60 && S.robots.length >= 1) RD.buyLine(S);
     if (c && c[0] && !RD.buildCheck(S, c[0], c[1])) RD.orderBuild(S, c[0], c[1]);
     RD.step(S, 1 / 30);
     for (const r of S.robots) if (!r.spot) assign(r);

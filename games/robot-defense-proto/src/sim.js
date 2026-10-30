@@ -18,6 +18,8 @@ const CFG = {
   armorFloor: .2,                      // 装甲で減らせるのは最大でこの割合まで（＝最低2割は通る）
   ebaseR: 1.6,                         // 敵拠点の当たり判定の半径
   homeR: 1.8,                          // 自拠点の当たり判定の半径（敵の弾・爆風が当たる）
+  line2Cost: 150,                      // 2本目の建造ラインを開放するポイント
+  loadoutSlots: 2,                     // 出撃前に持ち込める進化パーツの数
   homeShotMul: .4,                     // 敵の弾・爆風が自拠点に当たるときの倍率（拠点は硬い）
   captureTime: 4,                      // 前線拠点の占領にかかる秒数（敵がいない状態でロボットが近くにいる）
   outpostR: 2.6,                       // 前線拠点の占領範囲
@@ -50,6 +52,7 @@ const BODIES = [
   { id: 'striker', name: 'ストライカー', tier: 'mid', cost: 70, hp: 100, speed: 4, build: 5, plus: { dmg: .4 } },
   { id: 'gunner', name: 'ガンナー', tier: 'mid', cost: 80, hp: 120, speed: 3, build: 6, plus: { rate: .4 } },
   { id: 'seeker', name: 'シーカー', tier: 'mid', cost: 75, hp: 100, speed: 3.2, build: 5, plus: { range: .35, crit: .15 } },
+  { id: 'mass', name: '量産フレーム', tier: 'mid', cost: 65, hp: 70, speed: 3, build: 1, wbMul: .4, plus: {}, note: '武器の建造時間 -60%' },
   // 高価格帯：高いが一騎当千
   { id: 'fortress', name: 'フォートレス', tier: 'high', cost: 160, hp: 650, speed: 1.2, build: 12, plus: { dmg: .3 } },
   { id: 'ace', name: 'エース', tier: 'high', cost: 180, hp: 260, speed: 5.5, build: 10, plus: { rate: .4, crit: .25 } },
@@ -65,6 +68,14 @@ const WEAPONS = {
   heavy: { name: 'ヘビーショット', icon: '🎯', cost: 55, build: 4, type: 'gun', range: 14, dmg: 90, cd: 2.4, speed: 26, pellets: 1, fan: 0, pierce: 2, noArmor: true, size: .3, pick: 'tough', desc: '狙撃用の大口径砲。射程が非常に長く、射程内で一番硬い敵（ボス・装甲・輸送艦など）を狙う。装甲を貫き3体まで貫通。連射が遅い' },
   missile: { name: 'ミサイル', icon: '🚀', cost: 60, build: 5, type: 'gun', range: 8, dmg: 55, cd: 2.6, speed: 9, pellets: 1, fan: 0, blast: 2.6, cluster: true, desc: '敵が一番固まっている所を狙い、着弾で爆発。弾が遅く速い敵に弱い。装甲・盾を無視。爆風は味方も巻き込む' },
   laser: { name: 'レーザー', icon: '🔦', cost: 70, build: 5, type: 'beam', range: 10, dps: 15, width: .4, ffMul: 1.5, noBase: true, desc: '前方へビームを照射し続ける。直線上をすべて貫き、装甲・盾を無視。直線上の味方には1.5倍で当たる。敵拠点は自動では狙わない' },
+  // ---- 進化パーツ（INFINITE SHOT 3D II の進化形）。アンロックして、出撃前の持ち込み枠に入れたものだけ使える ----
+  magnum: { evo: true, base: 'blaster', name: 'マグナム', icon: '🔷', cost: 30, build: 2, type: 'gun', range: 6.5, dmg: 24, cd: .5, speed: 24, pellets: 1, fan: 0, pierce: 1, noArmor: true, size: .24, desc: '大きな弾で威力2倍以上。装甲を貫き2体まで貫通' },
+  chain: { evo: true, base: 'blaster', name: 'チェイン', icon: '⚡', cost: 30, build: 2, type: 'gun', range: 6, dmg: 10, cd: .4, speed: 22, pellets: 1, fan: 0, chain: { n: 3, mul: .55, range: 3.2 }, desc: '命中すると近くの敵3体へ電撃が連鎖する（威力55%）。群体に強い' },
+  flare: { evo: true, base: 'spread', name: 'フレア', icon: '🔥', cost: 45, build: 3, type: 'gun', range: 4.5, dmg: 14, cd: .9, speed: 16, pellets: 5, fan: .8, pierce: 1, splash: { r: 1.3, mul: .6 }, desc: '扇状の弾が命中すると炸裂し、周りも巻き込む。炸裂は味方にも当たる' },
+  prism: { evo: true, base: 'laser', name: 'プリズム', icon: '🌈', cost: 80, build: 5, type: 'beam', range: 9, dps: 10, width: .35, beams: 3, spread: .32, slow: true, ffMul: 1.5, noBase: true, desc: 'ビームが3本に分かれて広がる。当たった敵は遅くなる。味方には1.5倍' },
+  buster: { evo: true, base: 'heavy', name: 'バスター', icon: '💥', cost: 65, build: 4, type: 'gun', range: 12, dmg: 80, cd: 2.4, speed: 22, pellets: 1, fan: 0, noArmor: true, size: .32, pick: 'tough', splash: { r: 2.4, mul: .6 }, desc: '狙撃弾が着弾で爆発し、周りも巻き込む。爆発は味方にも当たる' },
+  swarmer: { evo: true, base: 'homing', name: 'スウォーム', icon: '🐝', cost: 35, build: 2, type: 'gun', range: 7, dmg: 7, cd: .8, speed: 8, pellets: 4, fan: 1.4, homing: 3.5, noShield: true, desc: '追尾弾が4発に増える。盾に防がれない' },
+  pile: { evo: true, base: 'breaker', name: 'パイル', icon: '📌', cost: 40, build: 3, type: 'gun', range: 12, dmg: 150, cd: 3.4, speed: 30, pellets: 1, fan: 0, pierce: 1, noArmor: true, noShield: true, size: .22, pick: 'tough', desc: '遠くまで届く杭を撃ち込む。射程内で一番硬い敵を狙い、装甲も盾も貫く' },
   bomb: { name: '自爆ユニット', icon: '💣', cost: 5, build: 1, type: 'bomb', trigger: 1.4, radius: 5, dmg: 300, desc: '敵が近づくと広範囲を吹き飛ばして自爆する。近くの味方も巻き込む' },
 };
 
@@ -81,6 +92,10 @@ const ENEMIES = {
   kamikaze: { name: '特攻型', hp: 18, speed: 4.2, r: .42, pts: 6, baseDps: 0, kamikaze: { sense: 5, dmg: 28, radius: 1.6, baseDmg: 5 }, desc: '速い。近くのロボットへ突っ込んで自爆する' },
   mine: { name: '機雷', hp: 30, speed: 1.9, r: .5, pts: 10, baseDps: 0, mine: { trigger: 1.6, radius: 2.6, dmg: 45, baseDmg: 8 }, desc: 'ロボットに近づくと爆発する' },
   swarm: { name: '群体', hp: 8, speed: 2.2, r: .32, pts: 1, baseDps: .25, inst: true, desc: '弱いが、とにかく数が多い' },
+  swarmFast: { name: '俊足群体', hp: 5, speed: 3.8, r: .28, pts: 1, baseDps: .2, inst: true, desc: '脆いが速い。遅い弾をすり抜ける' },
+  swarmHeavy: { name: '重群体', hp: 26, speed: 1.5, r: .42, pts: 2, baseDps: .5, armor: 3, inst: true, desc: '硬い群体。弱い弾のダメージを3減らす' },
+  swarmBomb: { name: '自爆群体', hp: 6, speed: 2.6, r: .3, pts: 1, baseDps: 0, inst: true, kamikaze: { sense: 2.2, dmg: 9, radius: 1.1, baseDmg: 1 }, desc: 'ロボットに近づくと小さく自爆する' },
+  swarmFly: { name: '飛行群体', hp: 6, speed: 3, r: .3, pts: 1, baseDps: .2, inst: true, fly: true, desc: '経路を無視して拠点へ飛んでくる群体' },
   flyer: { name: '飛行型', hp: 30, speed: 2.4, r: .5, pts: 12, baseDps: .8, fly: true, desc: '経路を無視して、拠点へ一直線に飛んでくる' },
   carrier: { name: '輸送艦', hp: 320, speed: .8, r: 1.2, pts: 60, baseDps: 3, drop: { type: 'swarm', n: 5, every: 3.5 }, desc: '経路を進みながら群体を降ろし続ける' },
   artillery: { name: '砲撃型', hp: 90, speed: 1.1, r: .7, pts: 40, baseDps: 2, artillery: { range: 15, dmg: 14, cd: 3.2, shotSpeed: 7 }, desc: '拠点から遠くで止まり、拠点を砲撃し続ける' },
@@ -103,7 +118,7 @@ const STAGES = [
     waves: [
       [1, 'normal', 4, 1.4], [10, 'normal', 6, 1], [22, 'shooter', 2, 2.5], [28, 'normal', 8, .8], [42, 'shooter', 3, 2],
       [48, 'normal', 10, .7], [62, 'normal', 6, .5], [64, 'shooter', 4, 1.6], [78, 'normal', 14, .55], [90, 'shooter', 5, 1.4],
-      [98, 'normal', 18, .45], [104, 'shooter', 4, 1.5],
+      [98, 'normal', 18, .45], [104, 'shooter', 4, 1.5], [36, 'swarm', 20, .2], [86, 'swarm', 30, .15],
     ],
   },
   {
@@ -118,7 +133,7 @@ const STAGES = [
     waves: [
       [1, 'normal', 4, 1.4, 0], [4, 'normal', 4, 1.4, 1], [14, 'normal', 6, 1, '*'], [24, 'dasher', 3, 2, 1], [30, 'armor', 2, 3, 0],
       [40, 'normal', 10, .7, '*'], [52, 'shooter', 3, 2, 0], [56, 'dasher', 4, 1.5, 1], [60, 'kamikaze', 8, .25, 0], [66, 'armor', 3, 2.5, '*'],
-      [72, 'normal', 12, .55, '*'], [86, 'shooter', 4, 1.6, 1], [90, 'dasher', 5, 1.2, 0], [94, 'kamikaze', 10, .25, 1], [98, 'normal', 16, .45, '*'], [104, 'armor', 4, 2, '*'],
+      [72, 'normal', 12, .55, '*'], [86, 'shooter', 4, 1.6, 1], [90, 'dasher', 5, 1.2, 0], [94, 'kamikaze', 10, .25, 1], [98, 'normal', 16, .45, '*'], [104, 'armor', 4, 2, '*'], [46, 'swarm', 24, .15, '*'], [80, 'swarmFast', 20, .15, '*'],
     ],
   },
   {
@@ -131,7 +146,7 @@ const STAGES = [
     waves: [
       [1, 'normal', 5, 1.2], [10, 'splitter', 3, 2.5], [20, 'normal', 8, .8], [30, 'healer', 1, 0], [31, 'normal', 8, .8], [44, 'splitter', 5, 1.6],
       [50, 'kamikaze', 8, .3], [56, 'shooter', 3, 2], [62, 'healer', 2, 3], [64, 'normal', 12, .6], [80, 'splitter', 6, 1.2],
-      [94, 'normal', 14, .5], [100, 'kamikaze', 12, .25], [104, 'healer', 2, 3], [106, 'shooter', 4, 1.5], [115, 'splitter', 8, 1], [125, 'normal', 16, .4],
+      [94, 'normal', 14, .5], [100, 'kamikaze', 12, .25], [104, 'healer', 2, 3], [106, 'shooter', 4, 1.5], [115, 'splitter', 8, 1], [125, 'normal', 16, .4], [40, 'swarm', 30, .15], [90, 'swarmHeavy', 15, .4], [120, 'swarm', 40, .1],
     ],
   },
   {
@@ -151,7 +166,7 @@ const STAGES = [
     waves: [
       [6, 'normal', 4, 1.3, 0], [7, 'normal', 4, 1.3, 1], [8, 'normal', 4, 1.3, 2], [14, 'shooter', 2, 2.5, '*'], [22, 'shield', 3, 2, 0], [30, 'normal', 8, .8, '*'],
       [42, 'shield', 3, 2, 1], [48, 'shooter', 3, 2, '*'], [58, 'normal', 10, .6, '*'], [64, 'kamikaze', 8, .3, '*'], [70, 'shield', 4, 1.6, '*'], [80, 'shooter', 4, 1.6, '*'],
-      [90, 'normal', 14, .5, '*'], [105, 'shield', 5, 1.4, '*'], [115, 'normal', 16, .45, '*'], [128, 'shooter', 5, 1.2, '*'],
+      [90, 'normal', 14, .5, '*'], [105, 'shield', 5, 1.4, '*'], [115, 'normal', 16, .45, '*'], [128, 'shooter', 5, 1.2, '*'], [52, 'swarm', 24, .15, '*'], [96, 'swarmBomb', 20, .15, '*'],
     ],
   },
   {
@@ -172,7 +187,7 @@ const STAGES = [
       [5, 'normal', 4, 1.2, 0], [7, 'normal', 4, 1.2, 2], [12, 'mine', 3, 1.5, 1], [18, 'shield', 3, 2, '*'], [26, 'normal', 9, .7, '*'],
       [34, 'armor', 3, 2.5, '*'], [44, 'splitter', 4, 1.6, '*'], [52, 'mine', 4, 1.2, '*'], [56, 'kamikaze', 9, .25, '*'], [60, 'shooter', 4, 1.5, '*'],
       [68, 'normal', 12, .55, '*'], [75, 'boss', 1, 0, 0], [78, 'shield', 4, 1.5, '*'], [84, 'dasher', 5, 1.2, '*'],
-      [100, 'normal', 16, .45, '*'], [108, 'kamikaze', 12, .2, '*'], [110, 'armor', 4, 2, '*'], [118, 'mine', 6, 1, '*'], [126, 'splitter', 6, 1.1, '*'], [135, 'normal', 18, .4, '*'],
+      [100, 'normal', 16, .45, '*'], [108, 'kamikaze', 12, .2, '*'], [110, 'armor', 4, 2, '*'], [118, 'mine', 6, 1, '*'], [126, 'splitter', 6, 1.1, '*'], [135, 'normal', 18, .4, '*'], [40, 'swarm', 30, .12, '*'], [90, 'swarmFly', 20, .2, '*'], [115, 'swarmHeavy', 18, .3, '*'],
     ],
   },
 ];
@@ -203,6 +218,7 @@ STAGES.push({
     [104, 'shield', 6, 1.2, '*'], [112, 'armor', 6, 1.6, '*'], [120, 'normal', 24, .35, '*'], [130, 'kamikaze', 16, .2, '*'],
     [140, 'splitter', 8, 1, '*'], [150, 'dasher', 8, .9, '*'], [160, 'normal', 28, .3, '*'], [168, 'armor', 6, 1.2, '*'],
     [70, 'flyer', 5, .8, '*'], [90, 'artillery', 1, 0, 1], [110, 'engineer', 2, 5, '*'], [150, 'engineer', 2, 5, '*'],
+    [50, 'swarm', 40, .1, '*'], [95, 'swarmFast', 40, .08, '*'], [135, 'swarmBomb', 30, .1, '*'], [155, 'swarmFly', 30, .12, '*'],
   ],
 });
 STAGES.push({
@@ -225,10 +241,52 @@ STAGES.push({
     [2, 'swarm', 30, .15, 0], [4, 'swarm', 30, .15, 1], [6, 'swarm', 30, .15, 2],
     [14, 'swarm', 45, .12, '*'], [20, 'flyer', 6, .8, '*'], [24, 'swarm', 60, .1, '*'], [30, 'carrier', 1, 0, 0], [32, 'shooter', 6, 1, '*'],
     [38, 'swarm', 60, .1, '*'], [44, 'kamikaze', 15, .15, '*'], [50, 'swarm', 70, .08, '*'], [55, 'carrier', 1, 0, 1], [56, 'carrier', 1, 0, 2],
-    [60, 'armor', 6, 1.5, '*'], [64, 'swarm', 80, .07, '*'], [70, 'flyer', 10, .5, '*'], [74, 'artillery', 3, 3, '*'], [78, 'swarm', 90, .06, '*'],
-    [84, 'engineer', 3, 4, '*'], [88, 'carrier', 1, 0, 0], [90, 'swarm', 100, .05, '*'], [96, 'kamikaze', 20, .12, '*'], [100, 'swarm', 100, .05, '*'], [108, 'swarm', 100, .05, '*'],
+    [60, 'armor', 6, 1.5, '*'], [64, 'swarmFast', 80, .07, '*'], [70, 'flyer', 10, .5, '*'], [74, 'artillery', 3, 3, '*'], [78, 'swarm', 90, .06, '*'],
+    [84, 'engineer', 3, 4, '*'], [88, 'carrier', 1, 0, 0], [90, 'swarm', 100, .05, '*'], [96, 'kamikaze', 20, .12, '*'], [100, 'swarmHeavy', 60, .06, '*'], [104, 'swarmBomb', 40, .1, '*'], [108, 'swarm', 100, .05, '*'], [112, 'swarmFly', 40, .1, '*'],
   ],
 });
+(() => {
+  // 本編3：経路8本の包囲。経路は自拠点を中心に45度ずつ。少し曲げて互い違いにする
+  const P = (r, a) => [Math.round(Math.sin(a) * r * 10) / 10, Math.round(-Math.cos(a) * r * 10) / 10];
+  const paths = [];
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; paths.push([P(30, a), P(22, a), P(22, a + .18), P(13, a + .18), P(13, a - .1), P(6, a - .1), P(3, a), [0, 0]]); }
+  const waves = [], kinds = ['swarm', 'swarmFast', 'swarm', 'swarmHeavy', 'swarmBomb', 'swarm', 'swarmFly'];
+  for (let k = 0, t = 3; t <= 140; t += 7, k++) waves.push([t, kinds[k % kinds.length], Math.round(40 + t * .5), .04, '*']);
+  waves.push([40, 'carrier', 2, 2, '*'], [80, 'carrier', 2, 2, '*'], [120, 'carrier', 2, 2, '*'], [60, 'flyer', 10, .4, '*'], [110, 'flyer', 14, .3, '*'],
+    [90, 'boss', 1, 0, 0], [100, 'artillery', 2, 3, '*'], [70, 'engineer', 3, 3, '*'], [130, 'engineer', 3, 3, '*'], [30, 'shooter', 8, .8, '*'], [75, 'armor', 6, 1, '*'], [95, 'kamikaze', 24, .1, '*']);
+  STAGES.push({
+    id: 'w3', name: '本編3', sub: '包囲', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
+    intro: '八方から2分半で1500体以上。群体の全種が来る。前線拠点は経路のすぐ脇にあり、奪い合いになる。90秒で模倣機。',
+    map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 1.7, z: -3.6 },
+    view: { zoom: 2.2 },
+    outposts: [0, 1, 2, 3].map(k => P(11, Math.PI / 8 + k * Math.PI / 2).concat(['ABCD'[k]])),
+    paths,
+    ebases: paths.map((_, i) => ({ path: i, hp: 500, pts: 120, turret: i % 2 ? null : { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } })),
+    waves,
+  });
+})();
+
+// ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
+const UNLOCKS = [
+  { id: 'magnum', cond: '第1戦区をクリア', stage: 's1' },
+  { id: 'chain', cond: '第2戦区をクリア', stage: 's2' },
+  { id: 'swarmer', cond: '第3戦区をクリア', stage: 's3' },
+  { id: 'pile', cond: '第4戦区をクリア', stage: 's4' },
+  { id: 'buster', cond: '模倣機（ボス）を撃破する', boss: true },
+  { id: 'flare', cond: '群体を累計500体倒す', swarmKills: 500 },
+  { id: 'prism', cond: '本編2「大群」をクリア', stage: 'w2' },
+];
+// 1回のプレイの結果と、これまでの累計からアンロックを判定。新しく解禁したものを返す
+function checkUnlocks(S, save) {
+  save.unlocked = save.unlocked || {}; save.swarmKills = (save.swarmKills || 0) + S.swarmKills;
+  const got = [];
+  for (const u of UNLOCKS) {
+    if (save.unlocked[u.id]) continue;
+    const ok = u.stage ? (S.over === 'win' && S.st.id === u.stage) : u.boss ? S.bossKilled : u.swarmKills ? save.swarmKills >= u.swarmKills : false;
+    if (ok) { save.unlocked[u.id] = true; got.push(u.id); }
+  }
+  return got;
+}
 const DRAW_DEFAULT = { low: 2, mid: 3, high: 2 };
 
 // ---------- 経路 ----------
@@ -253,7 +311,8 @@ function drawBodies(dc) {
   for (const tier in dc) out.push(...shuffle(BODIES.filter(b => b.tier === tier)).slice(0, dc[tier]));
   return out.sort((a, b) => a.cost - b.cost);
 }
-function newState(stageId) {
+function newState(stageId, opt) {
+  opt = opt || {};
   const st = STAGES.find(s => s.id === stageId) || STAGES[0];
   return {
     st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
@@ -263,8 +322,8 @@ function newState(stageId) {
     spawned: 0,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
-    bodies: drawBodies(st.drawCount || DRAW_DEFAULT), nid: 1, serial: 0,
-    kills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
+    bodies: drawBodies(st.drawCount || DRAW_DEFAULT), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo),
+    kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
     over: null, fx: [], msgs: [], warnT: 0, baseWarnT: 0, baseDmg: 0,
   };
 }
@@ -273,7 +332,8 @@ const activeCount = S => S.robots.length + S.queue.length;
 
 function buildCost(body, wids) {
   let cost = body.cost, time = body.build;
-  for (const w of wids) { cost += WEAPONS[w].cost; time += WEAPONS[w].build; }
+  for (const w of wids) { cost += WEAPONS[w].cost; time += WEAPONS[w].build * (body.wbMul || 1); }
+  time = Math.round(time * 10) / 10;
   return { cost, time };
 }
 function buildCheck(S, body, wids) {
@@ -281,6 +341,12 @@ function buildCheck(S, body, wids) {
   if (!wids.length) return '武器を1つ以上選んでください';
   if (activeCount(S) >= CFG.deployCap) return '出撃上限（' + CFG.deployCap + '機）です';
   if (S.pts < buildCost(body, wids).cost) return 'ポイントが足りません';
+  return null;
+}
+function buyLine(S) {
+  if (S.lines >= 2) return '開放済みです';
+  if (S.pts < CFG.line2Cost) return 'ポイントが足りません';
+  S.pts -= CFG.line2Cost; S.spent += CFG.line2Cost; S.lines = 2; say(S, '🏗 建造ライン2を開放。2機同時に建造できる', 'good');
   return null;
 }
 function orderBuild(S, body, wids, at) {
@@ -361,7 +427,7 @@ function hurtEnemy(S, e, dmg, owner, noArmor) {
   if (e.hp <= 0) killEnemy(S, e, owner);
 }
 function killEnemy(S, e, owner) {
-  e.dead = true; S.kills++;
+  e.dead = true; S.kills++; if (e.def.inst) S.swarmKills++;
   const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1));
   S.pts += g; S.earned += g;
   S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss });
@@ -434,7 +500,7 @@ function fireWeapon(S, src, d, tg, team, mul) {
       life: (d.blast ? Math.hypot(tg.x - src.x, tg.z - src.z) : range) / d.speed * (d.homing ? 1.6 : 1) + .05, r: d.size || (d.blast ? .25 : .18),
       owner: team === 'p' ? src : null, src, pierce: d.pierce || 0, hits: [], w: d.name, blast: d.blast || 0,
       arm: d.blast ? (d.blast + CFG.missileSafety) / d.speed : 0,
-      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || 0, tg: d.homing ? tg : null, size: d.size || 0,
+      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || 0, tg: d.homing ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null,
     });
   }
   return a;
@@ -443,13 +509,17 @@ function fireWeapon(S, src, d, tg, team, mul) {
 function beam(S, r, w, d, dt) {
   const range = d.range * r.rangeMul, tg = robotTarget(S, r, d, range);
   if (!tg) { w.beam = null; return; }
-  const a = Math.atan2(tg.x - r.x, tg.z - r.z), ux = Math.sin(a), uz = Math.cos(a);
-  w.beam = { x2: r.x + ux * range, z2: r.z + uz * range }; r.fireT = S.t; if (!r.moving) r.face = a;
+  const a0 = Math.atan2(tg.x - r.x, tg.z - r.z), n = d.beams || 1; r.fireT = S.t; if (!r.moving) r.face = a0;
   const dmg = d.dps * dt * r.dmgMul * (1 + r.crit * (CFG.critMul - 1));
-  const onLine = (t, rr) => { const px = t.x - r.x, pz = t.z - r.z, along = px * ux + pz * uz; return along > 0 && along < range + rr && Math.abs(px * uz - pz * ux) < d.width + rr; };
-  for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) hurtEnemy(S, e, dmg, r, true);
-  for (const b of S.ebases) if (!b.dead && onLine(b, b.r)) hurtEbase(S, b, dmg);
-  for (const o of S.robots) if (o !== r && !o.dead && onLine(o, CFG.robotR)) hurtRobot(S, o, dmg * CFG.friendlyFire * (d.ffMul || 1), r);
+  w.beam = [];
+  for (let k = 0; k < n; k++) {
+    const a = a0 + (n > 1 ? (k / (n - 1) - .5) * 2 * d.spread : 0), ux = Math.sin(a), uz = Math.cos(a);
+    w.beam.push({ x2: r.x + ux * range, z2: r.z + uz * range });
+    const onLine = (t, rr) => { const px = t.x - r.x, pz = t.z - r.z, along = px * ux + pz * uz; return along > 0 && along < range + rr && Math.abs(px * uz - pz * ux) < d.width + rr; };
+    for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) { hurtEnemy(S, e, dmg, r, true); if (d.slow) e.slowT = .6; }
+    for (const b of S.ebases) if (!b.dead && onLine(b, b.r)) hurtEbase(S, b, dmg);
+    for (const o of S.robots) if (o !== r && !o.dead && onLine(o, CFG.robotR)) hurtRobot(S, o, dmg * CFG.friendlyFire * (d.ffMul || 1), r);
+  }
 }
 function updRobot(S, r, dt) {
   r.flash = Math.max(0, r.flash - dt);
@@ -491,6 +561,7 @@ function dirName(S, p) {
   return ['北', '北東', '東', '南東', '南', '南西', '西', '北西'][((Math.round(a / 45) % 8) + 8) % 8];
 }
 function goAlongPath(S, e, dt, speed) {
+  if (e.slowT > 0) speed *= .5;
   const P = S.paths[e.pi], stop = P.len - CFG.baseStop;
   if (e.d >= stop) return true;
   e.d = Math.min(stop, e.d + speed * dt);
@@ -511,7 +582,7 @@ function attackBase(S, e, dt) {
 }
 function updEnemy(S, e, dt) {
   const def = e.def;
-  e.flash = Math.max(0, e.flash - dt);
+  e.flash = Math.max(0, e.flash - dt); if (e.slowT > 0) e.slowT -= dt;
   // 回復ドローン：周りの敵を回復
   if (def.heal) {
     for (const o of S.enemies) if (o !== e && !o.dead && o.hp < o.maxHp && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.heal.range ** 2) o.hp = Math.min(o.maxHp, o.hp + def.heal.hps * dt);
@@ -521,7 +592,7 @@ function updEnemy(S, e, dt) {
     if (e.atBase) { attackBase(S, e, dt); return; }
     const dx = S.home.x - e.x, dz = S.home.z - e.z, dd = Math.hypot(dx, dz);
     if (dd <= S.home.r + 1.2) { attackBase(S, e, dt); return; }
-    const m = Math.min(dd, def.speed * dt); e.x += dx / dd * m; e.z += dz / dd * m; e.face = Math.atan2(dx, dz);
+    const m = Math.min(dd, def.speed * (e.slowT > 0 ? .5 : 1) * dt); e.x += dx / dd * m; e.z += dz / dd * m; e.face = Math.atan2(dx, dz);
     if (dd < 8 && S.warnT <= 0) { S.warnT = 8; say(S, '⚠ 飛行型が拠点に接近', 'warn'); }
     return;
   }
@@ -626,6 +697,23 @@ function shieldBlocks(e, s) {
   const sp = Math.hypot(s.vx, s.vz) || 1;
   return (Math.sin(e.face) * -s.vx + Math.cos(e.face) * -s.vz) / sp > Math.cos(e.def.shield);
 }
+// 命中時の追加効果：連鎖（近くの敵へ電撃）と炸裂（周りを巻き込む。味方にも当たる）
+function onHitExtra(S, s, t) {
+  if (s.chain) {
+    const C = s.chain, got = [];
+    for (let k = 0; k < C.n; k++) {
+      let best = null, bd = C.range * C.range; const from = got.length ? got[got.length - 1] : t;
+      for (const e of S.enemies) { if (e.dead || e === t || got.includes(e)) continue; const d = (e.x - from.x) ** 2 + (e.z - from.z) ** 2; if (d < bd) { bd = d; best = e; } }
+      if (!best) break; got.push(best); S.fx.push({ type: 'chain', x: from.x, z: from.z, x2: best.x, z2: best.z }); hurtEnemy(S, best, s.dmg * C.mul, s.owner, false);
+    }
+  }
+  if (s.splash) {
+    const P = s.splash, dm = s.dmg * P.mul;
+    for (const e of S.enemies) if (!e.dead && e !== t && Math.hypot(e.x - s.x, e.z - s.z) <= P.r + e.r) hurtEnemy(S, e, dm, s.owner, true);
+    for (const o of S.robots) if (!o.dead && o !== s.owner && Math.hypot(o.x - s.x, o.z - s.z) <= P.r + CFG.robotR) hurtRobot(S, o, dm * CFG.friendlyFire, s.owner);
+    S.fx.push({ type: 'splash', x: s.x, z: s.z, rad: P.r });
+  }
+}
 function updShots(S, dt) {
   for (const s of S.shots) {
     if (s.homing && s.tg && !s.tg.dead) {
@@ -656,6 +744,7 @@ function updShots(S, dt) {
         if (li === 2) hurtRobot(S, t, s.dmg * CFG.friendlyFire, s.owner);
         else if (li === 1) hurtEbase(S, t, s.dmg);
         else hurtEnemy(S, t, s.dmg, s.owner, s.noArmor);
+        if (li !== 2) onHitExtra(S, s, t);
         if (s.pierce > 0) { s.pierce--; s.hits.push(t); } else { s.dead = true; break; }
       }
     } else {
@@ -698,8 +787,9 @@ function step(S, dt) {
     while (sp.next <= 0 && sp.n > 0) { const pi = pickPath(S, sp); if (pi >= 0) spawnEnemy(S, sp.type, pi, 0); sp.n--; sp.next += sp.gap; if (sp.gap <= 0) sp.next = 0; }
   }
   S.spawners = S.spawners.filter(s => s.n > 0);
-  const q = S.queue[0];
-  if (q) { q.prog += dt; if (q.prog >= q.time) { S.queue.shift(); makeRobot(S, q); } }
+  // 建造：先頭からライン数ぶんを同時に進める
+  for (let i = 0; i < Math.min(S.lines, S.queue.length); i++) S.queue[i].prog += dt;
+  for (let i = S.queue.length - 1; i >= 0; i--) if (S.queue[i].prog >= S.queue[i].time) { const q = S.queue.splice(i, 1)[0]; makeRobot(S, q); }
   for (const r of S.robots) if (!r.dead) updRobot(S, r, dt);
   for (let i = 0; i < S.enemies.length; i++) { const e = S.enemies[i]; if (!e.dead) updEnemy(S, e, dt); }
   for (const b of S.ebases) if (!b.dead) updEbase(S, b, dt);
@@ -720,6 +810,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
 }
 
-return { CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, moveRobot, activeCount, goalText };
+return { CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

@@ -2,7 +2,7 @@
 (() => {
 'use strict';
 const T = window.THREE;
-const { CFG, TIER, PLUS, WEAPONS, ENEMIES, STAGES, newState, step, buildCost, buildCheck, orderBuild, moveRobot, activeCount, goalText } = RD;
+const { CFG, TIER, PLUS, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, buyLine, newState, step, buildCost, buildCheck, orderBuild, moveRobot, activeCount, goalText } = RD;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -14,6 +14,12 @@ let paused = false, building = false, speed = 1;
 let sel = null;           // 選択中のロボット
 let uiBody = null, uiW = new Set(), uiAt = -1;
 let curStage = STAGES[0].id;
+// ---------- 保存（アンロックと持ち込み） ----------
+const SAVE_KEY = 'robodef_save_v1';
+let SAVE = { unlocked: {}, swarmKills: 0, loadout: [] };
+try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (v && typeof v === 'object') SAVE = Object.assign(SAVE, v); } catch (_) {}
+function saveNow() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (_) {} }
+const isOpen = id => !!(SAVE.unlocked && SAVE.unlocked[id]);
 
 // ---------- three.js ----------
 const canvas = $('c');
@@ -173,7 +179,8 @@ function mechMesh(weaponIds, sc, mats) {
   const legR = legL.clone(); legR.position.x = .26;
   inner.add(body, head, legL, legR);
   const slots = [[.6, .7, .12], [-.6, .7, .12], [0, .98, -.42], [0, 1.3, .05]];
-  weaponIds.forEach((id, i) => {
+  weaponIds.forEach((id0, i) => {
+    const id = (WEAPONS[id0] && WEAPONS[id0].base) || id0;
     const [x, y, z] = slots[i % slots.length], p = new T.Group(); p.position.set(x, y, z);
     if (id === 'blaster') { const b = new T.Mesh(G.cyl, M.blaster); b.scale.set(.16, .75, .16); b.rotation.x = Math.PI / 2; b.position.z = .3; p.add(b); }
     else if (id === 'spread') { for (let k = -1; k <= 1; k++) { const b = new T.Mesh(G.cyl, M.spread); b.scale.set(.1, .5, .1); b.rotation.x = Math.PI / 2; b.rotation.y = k * .35; b.position.set(k * .1, 0, .22); p.add(b); } const blk = new T.Mesh(G.box, M.spread); blk.scale.set(.32, .22, .3); p.add(blk); }
@@ -194,7 +201,7 @@ function roboMesh(r) {
   const { g, inner, body } = mechMesh(r.weapons.map(w => w.id), sc, { body: M.robo, head: M.head, dark: M.roboDark });
   const ring = new T.Mesh(G.ring, M.selRing); ring.rotation.x = -Math.PI / 2; ring.position.y = .05; ring.scale.setScalar(sc * 1.05); ring.visible = false;
   g.add(ring);
-  const beams = r.weapons.map(w => { if (w.def.type !== 'beam') return null; const b = new T.Mesh(G.box, M.beam); b.visible = false; return b; });
+  const beams = r.weapons.map(w => { if (w.def.type !== 'beam') return null; return Array.from({ length: w.def.beams || 1 }, () => { const b = new T.Mesh(G.box, M.beam); b.visible = false; return b; }); });
   return { obj: g, inner, body, ring, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
 }
 function enemyMesh(e) {
@@ -280,23 +287,31 @@ function setLine(l, x1, z1, x2, z2) { const p = l.geometry.attributes.position; 
 // 群体と弾は数が多いので、まとめて1回で描く
 const dummy = new T.Object3D();
 function makeInst(geo, mat, max) { const m = new T.InstancedMesh(geo, mat, max); m.count = 0; m.frustumCulled = false; scene.add(m); return m; }
-const swarmInst = makeInst(G.oct, M.enemySw, 2500);
+const SWARM_LOOK = {
+  swarm: { mat: M.enemySw, y: .45, s: [.62, .7, .62] },
+  swarmFast: { mat: lam(0xffd166, 0x5a4008), y: .38, s: [.48, .5, .62] },
+  swarmHeavy: { mat: lam(0xa0283c, 0x2a0610), y: .55, s: [.85, .9, .85] },
+  swarmBomb: { mat: lam(0xffa94d, 0x6a3008), y: .42, s: [.55, .55, .55] },
+  swarmFly: { mat: lam(0xff8ad8, 0x4a1440), y: 2, s: [.6, .3, .7] },
+};
+const swarmInst = {}; for (const k in SWARM_LOOK) swarmInst[k] = makeInst(G.oct, SWARM_LOOK[k].mat, 2500);
 const shotInst = { p: makeInst(G.shot, M.shotP, 2000), m: makeInst(G.shot, M.shotM, 400), h: makeInst(G.shot, M.shotH, 600), e: makeInst(G.shot, M.shotE, 1000) };
 const views = new Map();
 const marker = new T.Mesh(G.ring, new T.MeshBasicMaterial({ color: 0x65f6ff, side: T.DoubleSide, transparent: true }));
 marker.rotation.x = -Math.PI / 2; marker.position.y = .06; marker.visible = false; scene.add(marker);
 let markerT = 0;
 
-function dropView(v) { scene.remove(v.obj); if (v.bar) scene.remove(v.bar); if (v.line) scene.remove(v.line); if (v.aim) scene.remove(v.aim); if (v.beams) for (const b of v.beams) if (b) scene.remove(b); }
+function dropView(v) { scene.remove(v.obj); if (v.bar) scene.remove(v.bar); if (v.line) scene.remove(v.line); if (v.aim) scene.remove(v.aim); if (v.beams) for (const b of v.beams) if (b) for (const m of b) scene.remove(m); }
 function clearViews() { for (const v of views.values()) dropView(v); views.clear(); }
 function sync(dt) {
   const seen = new Set(), k = 1 - Math.exp(-14 * dt);
   for (const r of S.robots) {
     let v = views.get(r.id);
-    if (!v) { v = roboMesh(r); scene.add(v.obj, v.bar, v.line); for (const b of v.beams) if (b) scene.add(b); views.set(r.id, v); v.obj.position.set(r.x, 0, r.z); v.obj.rotation.y = r.face; }
-    r.weapons.forEach((w, i) => { const b = v.beams[i]; if (!b) return; if (!w.beam) { b.visible = false; return; }
-      const dx = w.beam.x2 - r.x, dz = w.beam.z2 - r.z, len = Math.hypot(dx, dz); b.visible = true;
-      b.position.set(r.x + dx / 2, .75, r.z + dz / 2); b.rotation.set(0, Math.atan2(dx, dz), 0); b.scale.set(.16 + Math.random() * .06, .12, len); });
+    if (!v) { v = roboMesh(r); scene.add(v.obj, v.bar, v.line); for (const b of v.beams) if (b) for (const m of b) scene.add(m); views.set(r.id, v); v.obj.position.set(r.x, 0, r.z); v.obj.rotation.y = r.face; }
+    r.weapons.forEach((w, i) => { const bs = v.beams[i]; if (!bs) return;
+      bs.forEach((b, k) => { const e = w.beam && w.beam[k]; if (!e) { b.visible = false; return; }
+        const dx = e.x2 - r.x, dz = e.z2 - r.z, len = Math.hypot(dx, dz); b.visible = true;
+        b.position.set(r.x + dx / 2, .75, r.z + dz / 2); b.rotation.set(0, Math.atan2(dx, dz), 0); b.scale.set(.14 + Math.random() * .06, .12, len); }); });
     seen.add(r.id);
     v.obj.position.set(r.x, 0, r.z);
     v.obj.rotation.y = lerpAngle(v.obj.rotation.y, r.face, k);
@@ -306,11 +321,12 @@ function sync(dt) {
     setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp);
     if (r.moving) setLine(v.line, r.x, r.z, r.tx, r.tz); else v.line.visible = false;
   }
-  let ni = 0; const spin = performance.now() / 500;
+  const ni = {}; for (const k in swarmInst) ni[k] = 0; const spin = performance.now() / 500;
   for (const e of S.enemies.concat(S.ebases)) {
     if (e.dead) continue;
     if (e.def && e.def.inst) { // 群体：まとめ描画
-      if (ni < 2500) { dummy.position.set(e.x, .45, e.z); dummy.rotation.set(0, spin + e.id, 0); dummy.scale.set(.62, .7, .62); dummy.updateMatrix(); swarmInst.setMatrixAt(ni++, dummy.matrix); }
+      const key = swarmInst[e.type] ? e.type : 'swarm', L = SWARM_LOOK[key], im = swarmInst[key];
+      if (ni[key] < 2500) { dummy.position.set(e.x, L.y, e.z); dummy.rotation.set(0, spin + e.id, 0); dummy.scale.set(L.s[0], L.s[1], L.s[2]); dummy.updateMatrix(); im.setMatrixAt(ni[key]++, dummy.matrix); }
       continue;
     }
     let v = views.get(e.id);
@@ -324,7 +340,7 @@ function sync(dt) {
     v.bar.visible = v.always || e.hp < e.maxHp;
     if (v.bar.visible) setBar(v.bar, v.obj.position.x, v.barY, v.obj.position.z, e.hp / e.maxHp);
   }
-  swarmInst.count = ni; swarmInst.instanceMatrix.needsUpdate = true;
+  for (const k in swarmInst) { swarmInst[k].count = ni[k]; swarmInst[k].instanceMatrix.needsUpdate = true; }
   const sc = { p: 0, m: 0, h: 0, e: 0 };
   for (const s of S.shots) {
     const key = s.team === 'e' ? 'e' : s.blast ? 'm' : s.homing ? 'h' : 'p', im = shotInst[key];
@@ -401,6 +417,8 @@ function fxMesh(geo, color, x, z, y, from, to, dur, flat) {
   scene.add(m); fxs.push({ m, from, to, dur, t: 0 });
 }
 function addFx(f) {
+  if (f.type === 'chain') { const l = makeLine(new T.LineBasicMaterial({ color: 0x9df8ff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .5; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 120); return; }
+  if (f.type === 'splash') { fxMesh(G.ring, 0xffa94d, f.x, f.z, .1, .3, f.rad, .25, true); return; }
   if (f.type === 'kill') { fxMesh(G.ring, 0xff6a7a, f.x, f.z, .1, .3, f.big ? 5 : 1.4, f.big ? .8 : .35, true); if (f.big) fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); floatText(f.x, f.z, '+' + f.pts); }
   else if (f.type === 'blast') { const e = f.team === 'e'; fxMesh(G.sph, e ? 0xff4d6d : 0xffa94d, f.x, f.z, .4, .3, f.rad * 2, .4); fxMesh(G.ring, e ? 0xff2d55 : 0xffd166, f.x, f.z, .08, .3, f.rad * 1.05, .45, true); }
   else if (f.type === 'rebuild') { fxMesh(G.ring, 0xff4d6d, f.x, f.z, .1, 4, .5, .8, true); }
@@ -542,7 +560,7 @@ function updHud() {
   const k = S.baseHP / CFG.baseHP;
   $('hBase').style.width = (k * 100) + '%'; $('hBaseBar').classList.toggle('hurt', k < .5);
   // 建造キュー
-  const q = $('queue'), html = S.queue.map((it, i) => '<div class="qchip' + (i ? ' wait' : '') + '"><span class="num">' + it.slot + '</span>' + esc(it.body.name) + ' ' + it.wids.map(w => WEAPONS[w].icon).join('') + (i ? ' 待機' : ' ' + Math.max(0, it.time - it.prog).toFixed(1) + 's') + '<i style="width:' + (i ? 0 : it.prog / it.time * 100) + '%"></i></div>').join('');
+  const q = $('queue'), html = S.queue.map((it, i) => { const act = i < S.lines; return '<div class="qchip' + (act ? '' : ' wait') + '"><span class="num">' + it.slot + '</span>' + esc(it.body.name) + ' ' + it.wids.map(w => WEAPONS[w].icon).join('') + (act ? ' ' + Math.max(0, it.time - it.prog).toFixed(1) + 's' : ' 待機') + '<i style="width:' + (act ? it.prog / it.time * 100 : 0) + '%"></i></div>'; }).join('');
   if (hudCache.queue !== html) { hudCache.queue = html; q.innerHTML = html; }
   if (sel && sel.dead) sel = null;
   updInfo(); updRoster();
@@ -555,7 +573,7 @@ function updInfo() {
 }
 
 // ---------- 建造画面 ----------
-function plusText(p) { return Object.keys(p).map(k => PLUS[k].icon + PLUS[k].name + PLUS[k].fmt(p[k])).join(' ') || '特性なし'; }
+function plusText(p) { return Object.keys(p).map(k => PLUS[k].icon + PLUS[k].name + PLUS[k].fmt(p[k])).join(' '); }
 function openBuild() {
   if (mode !== 'play') return;
   building = true; sel = null; updInfo();
@@ -566,10 +584,12 @@ function closeBuild() { building = false; $('buildM').classList.remove('show'); 
 function bodyRow(b, attrs, cls) {
   return '<button class="item ' + (cls || '') + '" ' + attrs + '>' +
     '<div class="l1"><span class="tier ' + b.tier + '">' + TIER[b.tier].name + '</span><b>' + esc(b.name) + '</b><span class="sp"></span><span class="cost">⭐' + b.cost + '</span></div>' +
-    '<div class="l2"><span>❤HP ' + b.hp + '</span><span>👟速度 ' + b.speed + '</span><span>⏱建造 ' + b.build + 's</span><span class="plus">' + plusText(b.plus) + '</span></div></button>';
+    '<div class="l2"><span>❤HP ' + b.hp + '</span><span>👟速度 ' + b.speed + '</span><span>⏱建造 ' + b.build + 's</span><span class="plus">' + (b.note ? esc(b.note) + ' ' : '') + (plusText(b.plus) || (b.note ? '' : '特性なし')) + '</span></div></button>';
 }
 function renderBuild() {
   $('bPts').textContent = S.pts;
+  $('bLine').innerHTML = '🏗 建造ライン <b>' + S.lines + '/2</b>' + (S.lines < 2 ? '<button id="lineBtn" class="chip"' + (S.pts < CFG.line2Cost ? ' disabled' : '') + '>2本目を開放 ⭐' + CFG.line2Cost + '</button><span class="dim">同時に2機建造できる</span>' : '<span class="dim">2機同時に建造できる</span>');
+  if ($('lineBtn')) $('lineBtn').onclick = () => { const err = buyLine(S); if (err) toast(err, 'warn'); renderBuild(); };
   const step2 = !!uiBody;
   $('bStep1').style.display = step2 ? 'none' : '';
   $('bStep2').style.display = step2 ? '' : 'none';
@@ -583,13 +603,14 @@ function renderBuild() {
   const ops = S.outposts.map((o, i) => [o, i]).filter(([o]) => o.owner === 'p');
   if (uiAt >= 0 && !(S.outposts[uiAt] && S.outposts[uiAt].owner === 'p')) uiAt = -1;
   $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩前線' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
-  $('wList').innerHTML = Object.entries(WEAPONS).map(([id, w]) =>
-    '<button class="item' + (uiW.has(id) ? ' on' : '') + '" data-w="' + id + '">' +
-    '<div class="l1"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div>' +
-    '<div class="l2"><span>⏱建造 +' + w.build + 's</span><span>' + esc(w.desc) + '</span></div></button>').join('');
+  const wb = uiBody.wbMul || 1;
+  $('wList').innerHTML = Object.entries(WEAPONS).filter(([id, w]) => !w.evo || S.loadout.includes(id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
+    '<button class="item' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
+    '<div class="l1"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b>' + (w.evo ? '<span class="evotag">進化・持ち込み</span>' : '') + '<span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div>' +
+    '<div class="l2"><span>⏱建造 +' + Math.round(w.build * wb * 10) / 10 + 's</span><span>' + esc(w.desc) + '</span></div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
   $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + activeCount(S) + '/' + CFG.deployCap +
-    (S.queue.length ? '<div class="dim">建造は1機ずつ順番に行います（待ち ' + S.queue.length + '機）</div>' : '') +
+    (S.queue.length ? '<div class="dim">建造ライン' + S.lines + '本で順番に建造（予約 ' + S.queue.length + '機）</div>' : '') +
     (err ? '<div class="err">' + esc(err) + '</div>' : '');
   $('bGo').disabled = !!err;
 }
@@ -636,25 +657,50 @@ function stageSelect() {
     '<div class="l1"><b>' + esc(st.name) + '「' + esc(st.sub) + '」</b><span class="sp"></span><span class="cost">開始⭐' + st.startPoints + '</span></div>' +
     '<div class="goalline">🎯 ' + esc(goalText(st)) + '</div>' +
     '<div class="l2"><span>' + esc(st.intro) + '</span></div>' +
-    '<div class="l2"><span>経路 ' + st.paths.length + '本 ・ 敵拠点 ' + (st.ebases || []).length + ' ・ 出現：' + esc(stageEnemies(st)) + '</span></div></button>').join('') +
-    '</div><div class="btns"><button class="ghost" id="toTitle">タイトル</button></div>');
-  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => startGame(b.dataset.st));
+    '<div class="l2"><span>経路 ' + st.paths.length + '本 ・ 敵拠点 ' + (st.ebases || []).length + ' ・ 出現：' + esc(stageEnemies(st)) + '</span></div>' +
+    UNLOCKS.filter(u => u.stage === st.id).map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ 解禁済み：' : '🎁 クリア報酬：') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '</div>').join('') + '</button>').join('') +
+    '<div class="sec">そのほかの解禁条件</div>' + UNLOCKS.filter(u => !u.stage).map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') +
+    '</div><div class="btns"><button class="ghost" id="toTitle">タイトル</button><button class="ghost" id="allOpen">全解禁（試作用）</button></div>');
+  $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => loadoutScreen(b.dataset.st));
+  $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
+}
+// 出撃前：解禁済みの進化パーツから持ち込むものを選ぶ（解禁がなければ飛ばす）
+function loadoutScreen(stId) {
+  curStage = stId;
+  const open = UNLOCKS.map(u => u.id).filter(isOpen);
+  if (!open.length) { startGame(stId); return; }
+  SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
+  const st = STAGES.find(s => s.id === stId);
+  const draw = () => {
+    showOv('<h1>持ち込み <small>' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '</small></h1>' +
+      '<p class="dim">' + esc(st.name) + '「' + esc(st.sub) + '」へ持ち込む進化パーツを' + CFG.loadoutSlots + 'つまで選ぶ。建造画面で通常の武器と一緒に選べるようになる。</p>' +
+      '<div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="dim">（' + esc(WEAPONS[w.base].name) + 'の進化）</span><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' +
+      '<div class="btns"><button class="ghost" id="loBack">戻る</button><button class="primary" id="loGo">出撃</button></div>');
+    $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
+      const id = b.dataset.lo, i = SAVE.loadout.indexOf(id);
+      if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
+      saveNow(); draw();
+    });
+    $('loBack').onclick = stageSelect; $('loGo').onclick = () => startGame(stId);
+  };
+  draw();
 }
 function startGame(stId) {
   if (stId) curStage = stId;
   clearViews(); for (const f of fxs) scene.remove(f.m); fxs.length = 0;
-  S = newState(curStage); window.RD_S = S;
+  S = newState(curStage, { loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S;
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
   mode = 'play'; paused = false; sel = null; uiBody = null;
   for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false);
   hideOv(); updInfo(); fit(); resetView();
   toast(S.st.name + '「' + S.st.sub + '」 ' + goalText(S.st), 'warn');
-  toast('ボディ ' + S.bodies.length + '種を確保。開始ポイント ' + S.pts);
+  toast('ボディ ' + S.bodies.length + '種を確保。開始ポイント ' + S.pts + (S.loadout.length ? '。持ち込み：' + S.loadout.map(id => WEAPONS[id].name).join('・') : ''));
 }
 function endGame() {
   mode = 'over'; closeBuild(); sel = null;
+  const newly = checkUnlocks(S, SAVE); saveNow();
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
   const head = win ? (g === 'points' ? '補給線確保' : g === 'bases' ? '敵拠点制圧' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した。' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した。' : '時間まで拠点を守り抜いた。')
@@ -674,8 +720,9 @@ function endGame() {
     (g === 'points' ? '<span>所持ポイント / 目標</span><b>' + S.pts + ' / ' + S.st.goalPts + '</b>' : '') +
     '<span>拠点に取り付いた敵 / 拠点への被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b>' +
     '<span>残り拠点HP</span><b>' + Math.ceil(S.baseHP) + ' / ' + CFG.baseHP + '</b></div>' +
+    (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">次の出撃から持ち込める</span></div>' : '') +
     '<div class="btns"><button class="ghost" id="toSel">ステージ選択</button><button class="primary" id="again">もう一度（ボディ再抽選）</button></div>');
-  $('again').onclick = () => startGame(); $('toSel').onclick = stageSelect;
+  $('again').onclick = () => loadoutScreen(curStage); $('toSel').onclick = stageSelect;
 }
 function togglePause() {
   if (mode !== 'play' || building) return;
