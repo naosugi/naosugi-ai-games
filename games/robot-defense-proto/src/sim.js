@@ -22,6 +22,7 @@ const CFG = {
   loadoutSlots: 2,                     // 出撃前に持ち込める進化パーツの数
   homeShotMul: .4,                     // 敵の弾・爆風が自拠点に当たるときの倍率（拠点は硬い）
   captureTime: 4,                      // 前線拠点の占領にかかる秒数（敵がいない状態でロボットが近くにいる）
+  liberatePts: 60,                     // 敵占領の陣地を確保したときのポイント
   outpostR: 2.6,                       // 前線拠点の占領範囲
   deadSpawnRate: .35,                  // 敵拠点を壊した経路から、それでも出てくる割合（bases ステージでは0）
 };
@@ -197,7 +198,9 @@ STAGES.push({
   intro: '広い戦場。四方の敵拠点から長い経路で押し寄せる。地図を動かして戦況を見よ。100秒で模倣機が北から来る。',
   map: { minX: -30, maxX: 30, minZ: -40, maxZ: 40 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 },
   view: { zoom: 2.6 },
-  outposts: [[-8, -12, 'A'], [15, -4, 'B'], [9, 9, 'C'], [-15, 4, 'D']],
+  // 陣地：[x, z, 名前, 状態]。p＝最初から確保済み（拠点寄り）/ 省略＝中立 / e＝敵占領（守備隊が居座る。敵拠点寄り）
+  outposts: [[-8, -12, 'A', 'p'], [15, -4, 'B'], [9, 9, 'C', 'p'], [-15, 4, 'D'], [4, -30, 'E', 'e'], [24, 0, 'F', 'e'], [-4, 30, 'G', 'e'], [-24, 0, 'H', 'e']],
+  garrison: ['shooter', 'shooter', 'armor', 'normal', 'normal', 'normal'],
   paths: [
     [[0, -38], [0, -28], [-14, -28], [-14, -16], [-4, -16], [-4, -4], [0, -4], [0, 0]],
     [[28, 4], [20, 4], [20, -12], [10, -12], [10, 2], [3, 2], [0, 0]],
@@ -226,7 +229,7 @@ STAGES.push({
   intro: '2分間で約1000体が押し寄せる。範囲攻撃と前線拠点で一網打尽にせよ。輸送艦・飛行型・砲撃型・工兵も来る。',
   map: { minX: -26, maxX: 26, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 3, z: -3 },
   view: { zoom: 2.2 },
-  outposts: [[-8, -6, 'A'], [10, -4, 'B'], [0, 12, 'C']],
+  outposts: [[-8, -6, 'A', 'p'], [10, -4, 'B', 'p'], [0, 12, 'C', 'p']],
   paths: [
     [[0, -32], [0, -22], [-10, -22], [-10, -10], [-3, -10], [-3, -3], [0, 0]],
     [[24, 30], [24, 16], [12, 16], [12, 6], [4, 6], [0, 0]],
@@ -259,7 +262,7 @@ STAGES.push({
     intro: '八方から2分半で1500体以上。群体の全種が来る。前線拠点は経路のすぐ脇にあり、奪い合いになる。90秒で模倣機。',
     map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 1.7, z: -3.6 },
     view: { zoom: 2.2 },
-    outposts: [0, 1, 2, 3].map(k => P(11, Math.PI / 8 + k * Math.PI / 2).concat(['ABCD'[k]])),
+    outposts: [0, 1, 2, 3].map(k => P(11, Math.PI / 8 + k * Math.PI / 2).concat(['ABCD'[k], 'p'])),
     paths,
     ebases: paths.map((_, i) => ({ path: i, hp: 500, pts: 120, turret: i % 2 ? null : { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } })),
     waves,
@@ -312,13 +315,23 @@ function drawBodies(dc) {
   return out.sort((a, b) => a.cost - b.cost);
 }
 function newState(stageId, opt) {
+  const S = newState0(stageId, opt);
+  // 敵占領の陣地に守備隊を置く（その場から動かない）
+  for (const o of S.outposts) if (o.owner === 'e') (S.st.garrison || []).forEach((type, k) => {
+    const a = k / S.st.garrison.length * Math.PI * 2, def = ENEMIES[type];
+    const e = { id: S.nid++, type, def, pi: 0, d: 0, off: 0, hp: def.hp, maxHp: def.hp, r: def.r, cd: rnd(.4, 1), x: o.x + Math.sin(a) * 1.4, z: o.z + Math.cos(a) * 1.4, face: 0, dead: false, flash: 0, firing: false, state: 'guard', armed: true };
+    S.enemies.push(e);
+  });
+  return S;
+}
+function newState0(stageId, opt) {
   opt = opt || {};
   const st = STAGES.find(s => s.id === stageId) || STAGES[0];
   return {
     st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
     ebases: (st.ebases || []).map((b, i) => ({ id: 'eb' + i, x: st.paths[b.path][0][0], z: st.paths[b.path][0][1], ...b, maxHp: b.hp, cd: 1, dead: false, flash: 0, ebase: true, r: CFG.ebaseR })),
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
-    outposts: (st.outposts || []).map((o, i) => ({ id: 'op' + i, x: o[0], z: o[1], owner: null, prog: 0, label: o[2] || String.fromCharCode(65 + i) })),
+    outposts: (st.outposts || []).map((o, i) => ({ id: 'op' + i, x: o[0], z: o[1], owner: o[3] || null, prog: o[3] === 'p' ? 1 : o[3] === 'e' ? -1 : 0, enemyOrig: o[3] === 'e', label: o[2] || String.fromCharCode(65 + i) })),
     spawned: 0,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
@@ -587,6 +600,16 @@ function updEnemy(S, e, dt) {
   if (def.heal) {
     for (const o of S.enemies) if (o !== e && !o.dead && o.hp < o.maxHp && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.heal.range ** 2) o.hp = Math.min(o.maxHp, o.hp + def.heal.hps * dt);
   }
+  // 守備隊：陣地から動かない。射撃型は撃ち、それ以外は触れたロボットを殴る
+  if (e.state === 'guard') {
+    const tg = nearest(S.robots, e.x, e.z, def.range || 6);
+    if (tg) e.face = Math.atan2(tg.x - e.x, tg.z - e.z);
+    if (def.range) {
+      e.cd -= dt; e.firing = !!tg;
+      if (tg && e.cd <= 0) { e.cd = def.cd; S.shots.push({ id: S.nid++, team: 'e', x: e.x, z: e.z, vx: Math.sin(e.face) * def.shotSpeed, vz: Math.cos(e.face) * def.shotSpeed, dmg: def.dmg, life: def.range / def.shotSpeed + .3, r: .22, pierce: 0, hits: [] }); }
+    } else if (tg && Math.hypot(tg.x - e.x, tg.z - e.z) < e.r + CFG.robotR + .4) hurtRobot(S, tg, 8 * dt, null);
+    return;
+  }
   // 飛行型：経路を無視して拠点へ直進
   if (def.fly) {
     if (e.atBase) { attackBase(S, e, dt); return; }
@@ -759,9 +782,19 @@ function updShots(S, dt) {
 
 // ---------- 前線拠点：敵がいない状態でロボットが近くにいると占領。敵だけが近くにいると奪われる ----------
 function updOutpost(S, o, dt) {
-  const R = CFG.outpostR, rob = !!nearest(S.robots, o.x, o.z, R), en = !!nearest(S.enemies, o.x, o.z, R, true);
-  if (rob && !en && o.owner !== 'p') { o.prog = Math.min(1, o.prog + dt / CFG.captureTime); if (o.prog >= 1) { o.owner = 'p'; say(S, '🚩 前線拠点' + o.label + 'を確保。ここから出撃できる', 'good'); } }
-  else if (en && !rob && o.prog > 0) { o.prog = Math.max(0, o.prog - dt / CFG.captureTime); if (o.prog <= 0 && o.owner === 'p') { o.owner = null; say(S, '🚩 前線拠点' + o.label + 'を奪われた', 'bad'); } }
+  const R = CFG.outpostR, rob = !!nearest(S.robots, o.x, o.z, R), en = !!nearest(S.enemies, o.x, o.z, R, true), v = dt / CFG.captureTime;
+  if (rob && !en && o.prog < 1) {
+    o.prog = Math.min(1, o.prog + v);
+    if (o.owner === 'e' && o.prog >= 0) { o.owner = null; say(S, '🚩 敵占領の陣地' + o.label + 'を制圧。このまま確保する', 'good'); }
+    if (o.prog >= 1) { o.owner = 'p'; if (o.enemyOrig && !o.freed) { o.freed = true; S.pts += CFG.liberatePts; S.earned += CFG.liberatePts; } say(S, '🚩 陣地' + o.label + 'を確保。ここから出撃できる' + (o.enemyOrig && o.freed ? '（+' + CFG.liberatePts + '）' : ''), 'good'); }
+  } else if (en && !rob) {
+    const floor = o.enemyOrig ? -1 : 0; // 敵占領だった陣地は、敵に取り返される
+    if (o.prog > floor) {
+      o.prog = Math.max(floor, o.prog - v);
+      if (o.owner === 'p' && o.prog <= 0) { o.owner = null; say(S, '🚩 陣地' + o.label + 'を奪われた', 'bad'); }
+      if (o.enemyOrig && o.prog <= -1) o.owner = 'e';
+    }
+  }
 }
 
 // ---------- 1ステップ ----------

@@ -96,7 +96,8 @@ const M = {
   shotH: new T.MeshBasicMaterial({ color: 0xc9b8ff }), enemyK: lam(0xff2d2d, 0x7a0a0a),
   enemySw: lam(0xff5c8a, 0x5a0f2a), enemyF: lam(0xff8a9a, 0x5a1a24), wing: lam(0x8a1d3a, 0x2a0610), enemyC: lam(0xa83a4a, 0x3a0a14), enemyAr: lam(0xc8643a, 0x3a1a08), enemyEn: lam(0xffc04d, 0x5a3a08),
   opRing: new T.MeshBasicMaterial({ color: 0x9fb6d6, side: T.DoubleSide, transparent: true, opacity: .5 }), opProg: new T.MeshBasicMaterial({ color: 0x65f6ff, side: T.DoubleSide, transparent: true, opacity: .35 }),
-  flagN: lam(0x9fb6d6, 0x1a2a3a), flagP: lam(0x65f6ff, 0x1a6a80),
+  flagN: lam(0x9fb6d6, 0x1a2a3a), flagP: lam(0x65f6ff, 0x1a6a80), flagE: lam(0xff4d6d, 0x5a0f1e),
+  opProgE: new T.MeshBasicMaterial({ color: 0xff4d6d, side: T.DoubleSide, transparent: true, opacity: .3 }),
   enemyN: lam(0xff4d6d, 0x4a0f1e), enemyS: lam(0xff7a3d, 0x4a1a08), enemyDark: lam(0x5a1424, 0x200008),
   enemyD: lam(0xff2d55, 0x5a0f1c), enemyA: lam(0xe0a070, 0x3f2a1c), enemySh: lam(0xff6ad5, 0x4a1740), shieldPlate: lam(0xffc2ef, 0x6a2a5a),
   enemySp: lam(0xff7a5c, 0x4a1a10), enemyH: lam(0xff6aa8, 0x4a1430), healRing: new T.MeshBasicMaterial({ color: 0x7dffa8, transparent: true, opacity: .5, side: T.DoubleSide }),
@@ -350,7 +351,7 @@ function sync(dt) {
   }
   for (const key in shotInst) { shotInst[key].count = sc[key]; shotInst[key].instanceMatrix.needsUpdate = true; }
   // 前線拠点
-  (M.outposts || []).forEach((v, i) => { const o = S.outposts[i]; if (!o) return; const mine = o.owner === 'p'; v.prog.scale.setScalar(Math.max(.001, o.prog)); v.flag.material = mine ? M.flagP : M.flagN; v.pole.material = v.flag.material; });
+  (M.outposts || []).forEach((v, i) => { const o = S.outposts[i]; if (!o) return; v.prog.scale.setScalar(Math.max(.001, Math.abs(o.prog))); v.prog.material = o.prog < 0 ? M.opProgE : M.opProg; v.flag.material = o.owner === 'p' ? M.flagP : o.owner === 'e' ? M.flagE : M.flagN; v.pole.material = v.flag.material; });
   for (const [id, v] of views) if (!seen.has(id)) { dropView(v); views.delete(id); }
 }
 
@@ -404,7 +405,7 @@ function updTags() {
     if (!el) { el = document.createElement('div'); el.className = 'tag op'; el.textContent = o.label; box.appendChild(el); tags.set(o.id, el); }
     tagV.set(o.x, 2.9, o.z).project(cam);
     el.style.transform = 'translate(' + ((tagV.x + 1) / 2 * innerWidth) + 'px,' + ((1 - tagV.y) / 2 * innerHeight) + 'px) translate(-50%,-50%)';
-    el.classList.toggle('mine', o.owner === 'p');
+    el.classList.toggle('mine', o.owner === 'p'); el.classList.toggle('en', o.owner === 'e');
   });
   for (const [id, el] of tags) if (!alive.has(id)) { el.remove(); tags.delete(id); }
 }
@@ -602,7 +603,7 @@ function renderBuild() {
   $('bChosen').innerHTML = bodyRow(uiBody, '', 'on').replace(/^<button/, '<div').replace(/<\/button>$/, '</div>');
   const ops = S.outposts.map((o, i) => [o, i]).filter(([o]) => o.owner === 'p');
   if (uiAt >= 0 && !(S.outposts[uiAt] && S.outposts[uiAt].owner === 'p')) uiAt = -1;
-  $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩前線' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
+  $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩陣地' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
   const wb = uiBody.wbMul || 1;
   $('wList').innerHTML = Object.entries(WEAPONS).filter(([id, w]) => !w.evo || S.loadout.includes(id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
     '<button class="item' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
@@ -645,6 +646,7 @@ function titleScreen() {
     '<li>外周の🏭敵拠点を壊すと大量ポイント。その方面から来る敵が減る</li>' +
     '<li>同時出撃は' + CFG.deployCap + '機まで（建造中も含む）。ロボットは使い捨て</li>' +
     '<li><b>味方の弾や爆風は味方ロボットにも当たる</b>。範囲攻撃は強力だが、置き場所に注意</li>' +
+    '<li>本編の🚩陣地：青は確保済みで、建造時に出撃地点に選べる。灰は中立、赤は敵占領（守備隊を倒して確保）。敵だけが近くにいると奪われる</li>' +
     '<li>地図はスワイプで移動、ピンチで拡大。⤢で全体表示</li></ul>' +
     '<div class="btns"><button class="primary" id="goBtn">ステージ選択へ</button></div>');
   $('goBtn').onclick = stageSelect;
