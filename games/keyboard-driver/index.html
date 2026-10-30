@@ -28,10 +28,10 @@ ruby rt{font-size:.45em;font-weight:700;letter-spacing:0}
 
 /* ---------- 共通パーツ ---------- */
 .card{background:var(--panel);border-radius:18px;box-shadow:0 6px 0 rgba(0,0,0,.18);padding:14px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 18px;border-radius:14px;font-weight:800;font-size:16px;background:#eef1fb;color:var(--ink);box-shadow:0 4px 0 #c9cfe6;transition:transform .06s}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c9cfe6}
+.btn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 18px;border-radius:14px;font-weight:800;font-size:16px;background:#eef1fb;color:var(--ink);box-shadow:0 4px 0 #c9cfe6;transition:transform .06s}
+.btn:active,.btn.pressed{transform:translateY(3px);box-shadow:0 1px 0 #c9cfe6}
 .btn.primary{background:var(--accent);color:#fff;box-shadow:0 4px 0 #c45f10}
-.btn.primary:active{box-shadow:0 1px 0 #c45f10}
+.btn.primary:active,.btn.primary.pressed{box-shadow:0 1px 0 #c45f10}
 .btn.blue{background:var(--accent2);color:#06233a;box-shadow:0 4px 0 #1b8fbd}
 .btn.green{background:var(--ok);color:#fff;box-shadow:0 4px 0 #1f8a50}
 .btn.ghost{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.25)}
@@ -1935,40 +1935,60 @@ var KDT = {
       html += dots(pi) + '<div class="acts">' + (pi > 0 ? '<button class="btn" data-m="prev">もどる</button>' : '<button class="btn" data-m="skip">とじる</button>') + '<button class="btn primary" data-m="next">つぎへ</button></div>';
       openModal(html, onAct);
     }
-    function renderPractice(msg) {
+    function renderPractice() {
       if (qi >= practice.length) {
         openModal(head() + '<h3>できた！ <span class="okmark">✔</span></h3><p>これで じゅんびは ばっちり。' + (opts.first ? 'さあ、いらいを えらんで しゅっぱつ しよう！' : 'ゲームで つかってみよう！') + '</p>' +
           (opts.first ? '<p class="muted">いらいを タップすると「しゅっぱつ！」ボタンが でるよ。にもつを とどけると コインが もらえて、ロケットを つよく できる。</p>' : '') +
           '<div class="acts"><button class="btn primary" data-m="done">OK！</button></div>', onAct);
         return;
       }
-      var src = practice[qi];
-      var html = head() + '<h3>やってみよう（' + (qi + 1) + '/' + practice.length + '）</h3><div class="practice"><div class="q">' + qHTML(src) + '</div>' +
-        (hasWidthMarks(src) ? legendHTML() : '') +
-        '<div class="ansrow"><input class="txt" id="tans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn primary" data-m="send" id="tsend">おくる</button></div>' +
-        '<div class="fb" id="tfb">' + (msg || '') + '</div>' + (tries >= 1 ? chipsHTML(K.hintChips(src)) : '') + '</div>' + dots(pages.length) +
-        '<div class="acts"><button class="btn small" data-m="hint">ヒント</button><button class="btn small" data-m="skipq">とばす</button></div>';
+      var html = head() + '<h3 id="tttl"></h3><div class="practice"><div class="q" id="tq"></div><div id="tleg"></div>' +
+        '<div class="ansrow"><input class="txt" id="tans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter"><button class="btn primary" id="tsend">おくる</button></div>' +
+        '<div class="fb" id="tfb"></div><div id="tchips"></div></div>' + dots(pages.length) +
+        '<div class="acts"><button class="btn small" id="thint">ヒント</button><button class="btn small" id="tskip">とばす</button></div>';
       openModal(html, onAct);
       var inp = $('#tans');
+      trackComposing(inp);
       inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); } });
-      $('#tsend').addEventListener('pointerdown', function (e) { e.preventDefault(); });
-      setTimeout(function () { inp.focus(); }, 30);
+      keepFocusButton($('#tsend'), send, inp);
+      keepFocusButton($('#thint'), function () { tries = Math.max(tries, 1); showQ(true); }, inp);
+      keepFocusButton($('#tskip'), function () { qi++; tries = 0; nextQ(''); }, inp);
+      showQ(false);
+      // さいしょの 1かいは、ボタンを おした ながれの なかで フォーカスする（iPhone は タイマーからだと キーボードが でない）
+      try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
+      setTimeout(function () { if (document.activeElement !== inp && $('#tans') === inp) inp.focus(); }, 30);
+    }
+    function showQ(keepFb) {
+      var src = practice[qi];
+      $('#tttl').textContent = 'やってみよう（' + (qi + 1) + '/' + practice.length + '）';
+      $('#tq').innerHTML = qHTML(src);
+      $('#tleg').innerHTML = hasWidthMarks(src) ? legendHTML() : '';
+      $('#tchips').innerHTML = tries >= 1 ? chipsHTML(K.hintChips(src)) : '';
+      if (!keepFb) $('#tfb').innerHTML = '';
+    }
+    function nextQ(msg) {
+      if (qi >= practice.length) { renderPractice(); return; }
+      $('#tans').value = '';
+      showQ(false);
+      $('#tfb').innerHTML = msg || '';
+    }
+    var tWarned = false;
+    function send() {
+      var inp = $('#tans'); if (!inp) return;
+      if (inp._composing && !tWarned) { tWarned = true; $('#tfb').innerHTML = '<div class="tip">まだ へんかん中だよ。かくてい してから「おくる」を おしてね。</div>'; return; }
+      tWarned = false;
+      var src = practice[qi], r = K.check(src, inp.value);
+      if (r.ok) { snd('ok'); qi++; tries = 0; nextQ('<div class="tip">せいかい！ <span class="okmark">✔</span></div>'); }
+      else {
+        snd('ng'); tries++;
+        $('#tfb').innerHTML = r.msgs.map(function (m) { return '<div class="msg">' + esc(m) + '</div>'; }).join('') + diffHTML(r.diff);
+        showQ(true);
+      }
     }
     function onAct(a) {
       if (a === 'next') { pi++; snd('tap'); renderPage(); }
       else if (a === 'prev') { pi = Math.max(0, pi - 1); renderPage(); }
       else if (a === 'skip' || a === 'done') { closeModal(); if (curScreen === 'scr-home') renderHome(); }
-      else if (a === 'hint') { tries = Math.max(tries, 1); var v = $('#tans').value; renderPractice(); $('#tans').value = v; }
-      else if (a === 'skipq') { qi++; tries = 0; renderPractice(); }
-      else if (a === 'send') {
-        var src = practice[qi], val = $('#tans').value, r = K.check(src, val);
-        if (r.ok) { snd('ok'); qi++; tries = 0; renderPractice('<div class="tip">せいかい！ <span class="okmark">✔</span></div>'); }
-        else {
-          snd('ng'); tries++;
-          renderPractice(r.msgs.map(function (m) { return '<div class="msg">' + esc(m) + '</div>'; }).join('') + diffHTML(r.diff));
-          $('#tans').value = val;
-        }
-      }
     }
     renderPage();
   }
@@ -2036,10 +2056,46 @@ var KDT = {
     $('#fb').innerHTML = S.set.romaji ? chipsHTML(K.hintChips(p.src)) : '';
     refocus();
   }
+  // iPhone/iPad では pointerdown を止めても ボタンに フォーカスが うつり、キーボードが とじてしまう。
+  // touchstart を止めて touchend で うごかすと、入力欄の フォーカスと キーボードが そのまま のこる。
+  function keepFocusButton(el, fn, input) {
+    var touchedAt = 0;
+    el.addEventListener('touchstart', function (e) { e.preventDefault(); el.classList.add('pressed'); }, { passive: false });
+    el.addEventListener('touchmove', function (e) {
+      var t = e.changedTouches[0], r = el.getBoundingClientRect();
+      if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) el.classList.remove('pressed');
+    }, { passive: true });
+    el.addEventListener('touchend', function (e) {
+      e.preventDefault();
+      var on = el.classList.contains('pressed');
+      el.classList.remove('pressed');
+      touchedAt = Date.now();
+      if (!on || el.disabled) return;
+      fn();
+      var inp = typeof input === 'function' ? input() : input;
+      if (inp && document.activeElement !== inp) { try { inp.focus({ preventScroll: true }); } catch (err) { inp.focus(); } }
+    }, { passive: false });
+    el.addEventListener('touchcancel', function () { el.classList.remove('pressed'); });
+    el.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    el.addEventListener('click', function () { if (Date.now() - touchedAt < 800) return; fn(); });
+  }
+  // へんかん中（したせんが ある あいだ）かどうか
+  function trackComposing(inp) {
+    inp._composing = false;
+    inp.addEventListener('compositionstart', function () { inp._composing = true; });
+    inp.addEventListener('compositionend', function () { inp._composing = false; });
+    inp.addEventListener('blur', function () { inp._composing = false; });
+  }
   function refocus() { var a = $('#ans'); if (a && curScreen === 'scr-game') { try { a.focus({ preventScroll: true }); } catch (e) { a.focus(); } } }
   function submit() {
     if (!S.trip || G.busy) return;
     var inp = $('#ans'), val = inp.value;
+    if (inp._composing && !G.composeWarned) {
+      G.composeWarned = true;
+      $('#fb').insertAdjacentHTML('afterbegin', '<div class="tip">まだ へんかん中だよ。かくてい してから「おくる」を おしてね。</div>');
+      refocus(); return;
+    }
+    G.composeWarned = false;
     var r = K.check(G.src, val);
     if (r.ok) return correct();
     G.tries++; G.combo = 0;
@@ -2117,11 +2173,17 @@ var KDT = {
     '<div class="gmeter"><div class="gbar"><i id="gfill"></i><span class="me" id="gme">' + miniRocket() + '</span></div>' +
     '<div class="gsub"><span id="gleft"></span><span id="gcount"></span></div></div>' +
     '<div class="qcard"><div class="qtype" id="qtype"></div><div class="qtext" id="qtext"></div><div id="qlegend"></div>' +
-    '<div class="ansrow"><input id="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="ここに うってね"><button class="btn primary" id="send">おくる</button></div>' +
+    '<div class="ansrow"><input id="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter" placeholder="ここに うってね"><button class="btn primary" id="send">おくる</button></div>' +
     '<div class="gbtns"><button class="btn small" id="ghint">💡 ヒント</button><button class="btn small" id="gpass">べつの もんだい</button></div>' +
     '<div class="fb" id="fb"></div></div></div>';
-  $('#send').addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  $('#send').addEventListener('click', function () { submit(); });
+  var ansEl = $('#ans');
+  trackComposing(ansEl);
+  keepFocusButton($('#send'), function () { submit(); }, ansEl);
+  // もんだいの カードや 背景を タップしたら 入力欄に もどる
+  $('#scr-game').addEventListener('click', function (e) {
+    if (e.target.closest('button,input,a') || $('#modal').classList.contains('on')) return;
+    refocus();
+  });
   var lastKey = 0;
   $('#ans').addEventListener('input', function () { if (Date.now() - lastKey > 60) snd('key'); });
   $('#ans').addEventListener('keydown', function (e) {
@@ -2131,15 +2193,13 @@ var KDT = {
       if ($('#ans').value && !G.enterTip) { G.enterTip = true; $('#fb').insertAdjacentHTML('afterbegin', '<div class="tip">かくてい できたら「おくる」ボタンを おしてね！</div>'); }
     }
   });
-  $('#ghint').addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  $('#ghint').addEventListener('click', function () {
+  keepFocusButton($('#ghint'), function () {
     var c = K.hintChips(G.src);
     var fb = $('#fb');
     if (fb.querySelector('.chips')) return;
     fb.insertAdjacentHTML('beforeend', '<div class="tip">うちかたの ヒント</div>' + chipsHTML(c)); refocus();
-  });
-  $('#gpass').addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  $('#gpass').addEventListener('click', function () { G.combo = 0; nextProblem(); toast('べつの もんだいに したよ'); });
+  }, ansEl);
+  keepFocusButton($('#gpass'), function () { G.combo = 0; nextProblem(); toast('べつの もんだいに したよ'); }, ansEl);
   $('#grom').addEventListener('click', function () { openRomaji(true); });
   $('#gpause').addEventListener('click', function () {
     openModal('<h3>ひとやすみ</h3><p>ホームに もどっても、はいたつの つづきから とべるよ。</p><div class="acts"><button class="btn" data-m="home">ホームへ</button><button class="btn primary" data-m="go">つづける</button></div>', function (a) {
