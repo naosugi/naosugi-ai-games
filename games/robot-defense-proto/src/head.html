@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>ROBOT DEFENSE（試作）</title>
+<style>
+:root{color-scheme:dark;--bg:#050a1c;--panel:#0d1830;--panel2:#132544;--line:#2f4c74;--fg:#eef7ff;--dim:#9fb6d6;--cyan:#65f6ff;--blue:#4dabff;--red:#ff4d6d;--gold:#ffd166;--green:#7dffa8;--orange:#ffa94d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;font-size:14px}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:linear-gradient(180deg,#1d6aa0,#14467a);border-color:var(--cyan);font-weight:700}
+button.ghost{background:transparent}
+a{color:var(--cyan)}
+.row{display:flex;align-items:center;gap:8px}
+.sp{flex:1}
+.dim{color:var(--dim);font-size:12px}
+
+/* HUD */
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 6px) calc(env(safe-area-inset-right) + 10px) 8px calc(env(safe-area-inset-left) + 10px);background:linear-gradient(#050a1cf2 70%,#050a1c00);z-index:5;display:flex;flex-direction:column;gap:6px}
+#hud .back{font-size:12px;text-decoration:none}
+#hud .ttl{font-weight:800;letter-spacing:.06em;font-size:13px}
+#hud .ttl small{color:var(--dim);font-weight:400;letter-spacing:0}
+@media (max-width:480px){#hud .ttl{display:none}}
+#hud .back{white-space:nowrap}
+#hud button{padding:4px 10px;font-size:13px;min-width:40px}
+.stats{gap:10px;font-variant-numeric:tabular-nums}
+.st{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.st b{font-size:16px}
+#hTime.low{color:var(--red)}
+#hGoal{font-size:13px;color:var(--gold);font-weight:700}
+#hPts.goalok{color:var(--gold)}
+.item.stage{margin-bottom:2px}
+.goalline{color:var(--gold);font-size:12px;margin-top:3px}
+#ovCard .list{max-height:62vh;overflow-y:auto;touch-action:pan-y}
+.basebar{flex:1;min-width:60px;height:10px;border-radius:5px;background:#1a2440;overflow:hidden;border:1px solid var(--line)}
+.basebar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .2s}
+.basebar.hurt i{background:linear-gradient(90deg,#ff4d6d,#ffa94d)}
+
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 74px);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:6}
+.toast{background:#0d1830e8;border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;padding:5px 10px;font-size:13px;transition:opacity .4s,transform .4s;max-width:92%}
+.toast::before{content:"📡 ";opacity:.8}
+.toast.warn{border-left-color:var(--gold)}
+.toast.bad{border-left-color:var(--red)}
+.toast.out{opacity:0;transform:translateY(-6px)}
+#floats{position:fixed;inset:0;pointer-events:none;z-index:4}
+.float{position:absolute;transform:translate(-50%,-50%);font-weight:800;color:var(--gold);font-size:13px;text-shadow:0 1px 3px #000;animation:fl .8s ease-out forwards}
+@keyframes fl{to{transform:translate(-50%,-160%);opacity:0}}
+#hitFlash{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 60px #ff2d55;opacity:0;transition:opacity .35s;z-index:3}
+#hitFlash.on{opacity:1;transition:none}
+
+/* ロボット番号 */
+#tags{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.tag{position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:#0d1830;border:2px solid var(--cyan);color:var(--cyan);font-size:12px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums;will-change:transform}
+.tag.on{background:var(--gold);border-color:var(--gold);color:#04142a}
+.tag.hurt{border-color:var(--red);color:var(--red)}
+.tag.on.hurt{color:#04142a}
+.num{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:50%;background:var(--cyan);color:#04142a;font-size:11px;font-weight:800;margin-right:4px;padding:0 3px}
+.rcard.on .num{background:var(--gold)}
+
+/* 前線拠点の名前 */
+.tag.op{border-radius:4px;border-color:var(--dim);color:var(--dim);width:22px}
+.tag.op.mine{border-color:var(--cyan);color:var(--cyan);background:#0d2a40}
+/* 画面端の敵方向表示 */
+#edges{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.edge{position:absolute;left:0;top:0;width:34px;height:34px;display:grid;place-items:center}
+.edge i{position:absolute;inset:0;background:#ff4d6d;clip-path:polygon(100% 50%,74% 28%,74% 72%)}
+.edge b{position:relative;width:22px;height:22px;border-radius:50%;background:#ff4d6de6;display:grid;place-items:center;font-size:11px;color:#fff;font-weight:800;border:1px solid #fff6}
+.edge.boss i{background:#ffd166}.edge.boss b{background:#ffd166;color:#04142a;font-size:8px}
+.edge.art i{background:#ffa94d}.edge.art b{background:#ffa94d;color:#04142a}
+/* 出撃地点 */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 10px;border-radius:16px;font-size:13px}
+.chip.on{border-color:var(--cyan);background:#16345a;box-shadow:0 0 0 1px var(--cyan) inset}
+
+/* 稼働中ロボット一覧 */
+#roster{position:fixed;right:0;top:90px;z-index:7;display:flex;align-items:flex-start;max-height:60%;padding-right:env(safe-area-inset-right)}
+#rosterTab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 5px;border-radius:10px 0 0 10px;border-right:none;background:#0d1830e8;min-width:40px;font-size:13px}
+#rosterTab .pips{display:flex;flex-direction:column;gap:3px;width:26px}
+#rosterTab .pips i{display:block;height:4px;border-radius:2px;background:var(--cyan);min-width:2px}
+#rosterTab .pips i.on{background:var(--gold)}
+#rosterTab .arr{color:var(--dim);font-size:11px}
+#roster.open .arr{transform:scaleX(-1)}
+#rosterList{display:none;flex-direction:column;gap:5px;width:164px;max-height:100%;overflow-y:auto;padding:6px;background:#0d1830ee;border:1px solid var(--line);border-right:none;border-radius:0 0 0 10px;touch-action:pan-y}
+#roster.open #rosterList{display:flex}
+#roster.open #rosterList:empty{display:none}
+#roster.open #rosterTab .pips{display:none}
+.rcard{text-align:left;padding:5px 7px;border-radius:8px;font-size:12px;width:100%}
+.rcard.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.rcard .rn{display:flex;gap:4px;align-items:center;white-space:nowrap;overflow:hidden}
+.rcard .rn b{font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.rcard .rb{height:5px;border-radius:3px;background:#1a2440;margin:4px 0 3px;overflow:hidden}
+.rcard .rb i{display:block;height:100%;background:var(--cyan)}
+.rcard .rb i.low{background:var(--red)}
+.rcard .rs{color:var(--dim);font-size:11px}
+.rcard .rs.bad{color:var(--red)} .rcard .rs.fight{color:var(--gold)} .rcard .rs.move{color:var(--cyan)}
+
+/* 下部 */
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:10px calc(env(safe-area-inset-right) + 10px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 10px);background:linear-gradient(#050a1c00,#050a1cf2 30%);z-index:5;display:flex;flex-direction:column;gap:8px}
+#info{min-height:20px;font-size:13px;color:var(--dim);text-align:center}
+#info b{color:var(--fg)}
+#info.sel{color:var(--cyan)}
+#queue{display:flex;gap:6px;overflow:hidden;flex:1;min-width:0}
+.qchip{position:relative;flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px;overflow:hidden;max-width:46%}
+.qchip i{position:absolute;left:0;bottom:0;height:3px;background:var(--cyan)}
+.qchip.wait{opacity:.6}
+#buildBtn{padding:12px 18px;font-size:16px;font-weight:800;flex:0 0 auto}
+
+/* モーダル */
+.modal{position:fixed;inset:0;display:none;background:#020510b0;z-index:20;justify-content:center;align-items:flex-end}
+.modal.center{align-items:center;padding:16px}
+.modal.show{display:flex}
+.card{width:min(520px,100%);max-height:94%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.sheet{border-radius:16px 16px 0 0;padding-bottom:calc(env(safe-area-inset-bottom) + 14px);touch-action:pan-y}
+.mh{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.mh b{font-size:17px}
+.sec{margin:12px 0 6px;font-weight:700;font-size:13px;display:flex;gap:8px;align-items:baseline}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{text-align:left;padding:8px 10px;border-radius:10px;width:100%}
+.item.on{border-color:var(--cyan);background:#16345a;box-shadow:0 0 0 1px var(--cyan) inset}
+.item .l1{display:flex;align-items:center;gap:6px}
+.item .l1 b{font-size:15px}
+.item .l2{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums}
+.item .l2 .plus{color:var(--gold)}
+.item .cost{font-weight:800;color:var(--gold)}
+.tier{font-size:11px;border-radius:4px;padding:0 5px;border:1px solid}
+.tier.low{color:var(--green);border-color:var(--green)}
+.tier.mid{color:var(--cyan);border-color:var(--cyan)}
+.tier.high{color:var(--gold);border-color:var(--gold)}
+.chk{width:18px;height:18px;border-radius:5px;border:1px solid var(--line);display:inline-grid;place-items:center;font-size:12px}
+.item.on .chk{background:var(--cyan);color:#04142a;border-color:var(--cyan)}
+.foot{position:sticky;bottom:calc(-1 * (env(safe-area-inset-bottom) + 14px));margin:12px -16px calc(-1 * (env(safe-area-inset-bottom) + 14px));padding:10px 16px calc(env(safe-area-inset-bottom) + 14px);background:var(--panel);border-top:1px solid var(--line)}
+.sum{padding:10px;border-radius:10px;background:#0a1328;border:1px solid var(--line);font-size:13px;font-variant-numeric:tabular-nums}
+.sum .err{color:var(--red);margin-top:4px}
+.btns{display:flex;gap:8px;margin-top:10px}
+.item.dis{opacity:.45}
+div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px}
+.chosen{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#0a1328;border:1px solid var(--line);margin-bottom:8px;font-size:13px}
+.chosen .l2{color:var(--dim);font-size:12px}
+.note{color:var(--gold);font-size:12px;margin-bottom:6px}
+.btns button{flex:1;padding:12px}
+#ovCard h1{margin:0 0 4px;font-size:24px;letter-spacing:.08em}
+#ovCard h1 small{font-size:12px;color:var(--dim);letter-spacing:0;font-weight:400}
+#ovCard p{line-height:1.6;margin:8px 0}
+#ovCard ul{padding-left:18px;margin:8px 0;line-height:1.7;font-size:13px}
+.goal{border:1px solid var(--gold);border-radius:10px;padding:8px 10px;margin:10px 0;color:var(--gold)}
+.res{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:10px 0;font-variant-numeric:tabular-nums}
+.win{color:var(--cyan)} .lose{color:var(--red)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hitFlash"></div>
+<div id="floats"></div>
+<div id="tags"></div>
+<div id="edges"></div>
+<div id="hud">
+  <div class="row"><a class="back" href="../../">← ゲーム一覧</a><span class="ttl">ROBOT DEFENSE <small>試作</small></span><span class="sp"></span><button id="viewBtn" title="全体表示">⤢</button><button id="spdBtn">×1</button><button id="pauseBtn">Ⅱ</button></div>
+  <div class="row stats">
+    <span class="st">⏱<b id="hTime">2:00</b></span>
+    <span class="st" id="hGoal" style="display:none"></span>
+    <span class="st">⭐<b id="hPts">0</b></span>
+    <span class="st">🤖<b id="hBots">0/5</b></span>
+    <span class="st" style="flex:1">🏠<span class="basebar" id="hBaseBar"><i id="hBase" style="width:100%"></i></span><b id="hBaseN">100</b></span>
+  </div>
+</div>
+<div id="toasts"></div>
+<div id="roster"><button id="rosterTab"><span>🤖<b id="rTabN">0</b></span><span class="pips" id="rTabPips"></span><span class="arr">◂</span></button><div id="rosterList"></div></div>
+<div id="bottom">
+  <div id="info">ロボットをタップ → 移動先をタップ</div>
+  <div class="row"><div id="queue"></div><button id="buildBtn" class="primary">🔧 建造</button></div>
+</div>
+
+<div id="buildM" class="modal"><div class="card sheet">
+  <div class="mh"><b>🔧 建造</b><span class="dim">時間停止中</span><span class="sp"></span><span>所持 ⭐<b id="bPts">0</b></span></div>
+  <div id="bStep1">
+    <div class="sec">① ボディを選ぶ <span class="dim">今回の配備（抽選）</span></div>
+    <div id="bNote1"></div>
+    <div id="bodyList" class="list"></div>
+    <div class="foot"><div class="btns"><button id="bClose" class="ghost">閉じる</button></div></div>
+  </div>
+  <div id="bStep2">
+    <div class="sec">② 武器を選ぶ <span class="dim">複数選択可</span></div>
+    <div id="bChosen"></div>
+    <div id="wList" class="list"></div>
+    <div id="bAt"></div>
+    <div class="foot"><div id="bSum" class="sum"></div>
+    <div class="btns"><button id="bBack" class="ghost">← ボディ選択へ</button><button id="bGo" class="primary">建造する</button></div></div>
+  </div>
+</div></div>
+</div></div>
+
+<div id="ov" class="modal center show"><div class="card" id="ovCard"></div></div>
