@@ -193,6 +193,50 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
 .goal{border:1px solid var(--gold);border-radius:10px;padding:8px 10px;margin:10px 0;color:var(--gold)}
 .res{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:10px 0;font-variant-numeric:tabular-nums}
 .win{color:var(--cyan)} .lose{color:var(--red)}
+/* 建造画面のタブ */
+.tabs{display:flex;gap:6px;margin:6px 0 4px}
+.tabs button{flex:1;padding:9px 6px;font-weight:700;font-size:14px}
+.tabs button.on{border-color:var(--cyan);background:#16345a;box-shadow:0 0 0 1px var(--cyan) inset;color:var(--cyan)}
+.tabs button.warn small{color:var(--red)}
+.tabs small{font-size:11px;color:var(--dim);font-weight:400}
+.basest{font-size:12px;color:var(--dim);margin:0 0 6px}
+.basest b{color:var(--fg)}
+.rsv{background:var(--gold);color:#241800;border-radius:4px;padding:0 5px;font-weight:800;font-size:11px}
+#bOrder small{font-weight:400;font-size:12px;opacity:.85}
+/* 乗る */
+.ride{display:inline-block;padding:2px 8px;font-size:12px;border-radius:7px;border:1px solid var(--cyan);background:#0d2a44;color:var(--cyan);font-weight:700;margin-left:6px}
+.rcard .ride{margin-left:auto;padding:0 5px;font-size:12px}
+/* 自操作 */
+#pilotUI{display:none}
+body.piloting #toasts{top:calc(env(safe-area-inset-top) + 150px)}
+body.piloting #pilotUI{display:block}
+body.piloting #bottom,body.piloting #roster,body.piloting #edges{display:none}
+#pTop{position:fixed;left:50%;transform:translateX(-50%);top:90px;z-index:6;display:flex;align-items:center;gap:6px;background:#050a1ccc;border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-size:12px;white-space:nowrap;max-width:calc(100% - 20px)}
+#pTop b{overflow:hidden;text-overflow:ellipsis}
+.pbar{display:inline-block;width:70px;height:6px;border-radius:3px;background:#1a2440;overflow:hidden;flex:0 0 auto}
+.pbar i{display:block;height:100%;background:var(--cyan)} .pbar i.low{background:var(--red)}
+.pbar.sh{width:40px} .pbar.sh i{background:#8fd0ff}
+#pHint{position:fixed;left:0;right:0;top:124px;text-align:center;font-size:11px;color:var(--dim);pointer-events:none;z-index:5;text-shadow:0 1px 3px #000}
+#xhair{position:fixed;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border:2px solid #65f6ff88;border-radius:50%;pointer-events:none;z-index:4}
+#xhair::after{content:'';position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:#65f6ffaa;border-radius:50%}
+#lockMk{position:fixed;left:0;top:0;pointer-events:none;z-index:5;display:none;will-change:transform}
+#lockMk i{display:block;width:40px;height:40px;margin:0 auto;border:2px solid var(--gold);transform:rotate(45deg);opacity:.7}
+#lockMk.in i{opacity:1;box-shadow:0 0 10px #ffd166;animation:lk .5s ease-in-out infinite alternate}
+#lockMk.off i{width:22px;height:22px}
+#lockMk span{display:block;text-align:center;font-size:11px;color:var(--gold);font-weight:800;margin-top:4px;text-shadow:0 1px 3px #000;white-space:nowrap}
+@keyframes lk{to{transform:rotate(45deg) scale(.82)}}
+#radar{position:fixed;left:calc(env(safe-area-inset-left) + 10px);bottom:calc(env(safe-area-inset-bottom) + 10px);width:128px;height:128px;z-index:6;border-radius:50%;touch-action:none}
+#pSide{position:fixed;right:calc(env(safe-area-inset-right) + 10px);bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:6;display:flex;flex-direction:column;gap:6px;align-items:stretch;width:min(46vw,200px)}
+#pWeap{display:flex;flex-direction:column;gap:3px}
+.pw{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto 4px;gap:1px 6px;background:#050a1ccc;border:1px solid var(--line);border-radius:8px;padding:3px 7px;font-size:11px}
+.pw .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pw b{font-weight:700;color:var(--dim);grid-row:1;grid-column:2}
+.pw .pc{grid-column:1/3;background:#1a2440;border-radius:2px;overflow:hidden}
+.pw .pc i{display:block;height:100%;background:var(--cyan)}
+.pw.lk{border-color:var(--gold)} .pw.lk b{color:var(--gold)} .pw.lk .pc i{background:var(--gold)}
+#pBtns{display:grid;grid-template-columns:1fr auto;gap:6px}
+#pBtns button{padding:10px 8px;font-weight:800}
+#pExit{grid-column:1/3}
 </style>
 </head>
 <body>
@@ -223,13 +267,14 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
 <div id="buildM" class="modal"><div class="card sheet">
   <div class="mh"><b>🔧 建造</b><span class="dim">時間停止中</span><span class="sp"></span><span>所持 ⭐<b id="bPts">0</b></span></div>
   <div id="bLine" class="linebar"></div>
+  <div id="bTabs" class="tabs"></div>
   <div id="bStep1">
     <div class="sec">① ボディを選ぶ <span class="dim">今回の配備（抽選）</span></div>
     <div id="bNote1"></div>
     <div id="bodyList" class="list"></div>
-    <div id="bWorks"></div>
-    <div class="foot"><div class="btns"><button id="bClose" class="ghost">閉じる</button></div></div>
   </div>
+  <div id="bWorksPane"><div id="bWorks"></div></div>
+  <div id="bFoot1" class="foot"><div id="bWorkSum" class="sum"></div><div class="btns"><button id="bClose" class="ghost">閉じる</button><button id="bOrder" class="primary"></button></div></div>
   <div id="bStep2">
     <div class="sec">② 武器を選ぶ <span class="dim">複数選択可</span></div>
     <div id="bChosen"></div>
@@ -240,5 +285,14 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
   </div>
 </div></div>
 </div></div>
+
+<div id="pilotUI">
+  <div id="pTop"><b id="pName"></b><span class="pbar"><i id="pHp"></i></span><span class="pbar sh" id="pShW"><i id="pSh"></i></span><span id="pHpN"></span></div>
+  <div id="pHint"></div>
+  <div id="xhair"></div>
+  <div id="lockMk"><i></i><span></span></div>
+  <canvas id="radar"></canvas>
+  <div id="pSide"><div id="pWeap"></div><div id="pBtns"><button id="pTurn">↻ 180°</button><button id="pBuild">🔧</button><button id="pExit" class="primary">降りる</button></div></div>
+</div>
 
 <div id="ov" class="modal center show"><div class="card" id="ovCard"></div></div>

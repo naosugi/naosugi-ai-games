@@ -12,7 +12,7 @@ let S = null;
 let mode = 'title';       // title | select | play | over
 let paused = false, building = false, speed = 1;
 let sel = null;           // 選択中のロボット
-let uiBody = null, uiW = new Set(), uiAt = -1;
+let uiBody = null, uiW = new Set(), uiAt = -1, uiTab = 'robot', uiWork = null;
 let curStage = STAGES[0].id;
 // ---------- 保存（アンロックと持ち込み） ----------
 const SAVE_KEY = 'robodef_save_v1';
@@ -27,7 +27,10 @@ const renderer = new T.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 const scene = new T.Scene();
 scene.background = new T.Color(0x050a1c);
-const cam = new T.OrthographicCamera(-1, 1, 1, -1, .1, 200);
+const oCam = new T.OrthographicCamera(-1, 1, 1, -1, .1, 200);
+const pCam = new T.PerspectiveCamera(70, 1, .1, 400); // 自操作（肩越し）用
+let cam = oCam;
+let pilot = null; // 自操作中のロボット
 const TILT = .6; // 真上からの傾き（ラジアン）
 let MAP, mapCX, mapCZ, mapW, mapD;
 function setMapDims(st) { MAP = st.map; mapCX = (MAP.minX + MAP.maxX) / 2; mapCZ = (MAP.minZ + MAP.maxZ) / 2; mapW = MAP.maxX - MAP.minX; mapD = MAP.maxZ - MAP.minZ; }
@@ -45,7 +48,10 @@ function fit() {
   renderer.setSize(W, H, false);
   camS.s0 = Math.max((mapW + 1.2) / W, (mapD * Math.cos(TILT) + 2.4) / avail);
   applyCam();
+  pCam.aspect = W / H; pCam.fov = pilotFov(W / H); pCam.updateProjectionMatrix();
   const r = $('roster'); if (r) r.style.top = ($('hud').offsetHeight + 4) + 'px';
+  const pt = $('pTop'); if (pt) pt.style.top = ($('hud').offsetHeight + 4) + 'px';
+  const ph = $('pHint'); if (ph) ph.style.top = ($('hud').offsetHeight + 36) + 'px';
 }
 function applyCam() {
   const { W, H, top, avail } = viewArea();
@@ -56,10 +62,10 @@ function applyCam() {
   camS.x = Math.max(mapCX - mx, Math.min(mapCX + mx, camS.x));
   camS.z = Math.max(mapCZ - mz, Math.min(mapCZ + mz, camS.z));
   const yc = top + avail / 2;
-  cam.left = -W / 2 * s; cam.right = W / 2 * s; cam.top = yc * s; cam.bottom = -(H - yc) * s;
-  cam.position.set(camS.x, Math.cos(TILT) * 60, camS.z + Math.sin(TILT) * 60);
-  cam.lookAt(camS.x, 0, camS.z);
-  cam.updateProjectionMatrix();
+  oCam.left = -W / 2 * s; oCam.right = W / 2 * s; oCam.top = yc * s; oCam.bottom = -(H - yc) * s;
+  oCam.position.set(camS.x, Math.cos(TILT) * 60, camS.z + Math.sin(TILT) * 60);
+  oCam.lookAt(camS.x, 0, camS.z);
+  oCam.updateProjectionMatrix();
 }
 function panBy(dx, dy) { const s = camS.s0 / camS.zoom; camS.x -= dx * s; camS.z -= dy * s / Math.cos(TILT); applyCam(); }
 function zoomAt(z, px, py) {
@@ -328,9 +334,9 @@ function sync(dt) {
     if (v.dropT > 0) v.dropT -= dt;
     v.inner.position.y = (v.dropT > 0 ? (v.dropT / .45) ** 2 * 7 : 0) + (r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0);
     v.body.material = r.flash > 0 ? M.white : M.robo;
-    v.ring.visible = sel === r; v.range.visible = sel === r;
+    v.ring.visible = sel === r; v.range.visible = sel === r || pilot === r; v.range.scale.setScalar(pilot === r ? CFG.pilot.range : 1);
     if (v.bubble) { v.bubble.visible = r.shield > 0; v.bubble.scale.setScalar(2.1 * TIER[r.body.tier].scale * 1.45 * (.85 + .15 * r.shield / r.maxShield)); }
-    setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp);
+    setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp); if (pilot === r) v.bar.visible = false;
     if (r.moving) setLine(v.line, r.x, r.z, r.tx, r.tz); else v.line.visible = false;
   }
   const ni = {}; for (const k in swarmInst) ni[k] = 0; const spin = performance.now() / 500;
@@ -370,7 +376,7 @@ function sync(dt) {
 const edgeEls = [], pv = new T.Vector3();
 function updEdges() {
   const box = $('edges'); let used = 0;
-  if (S && mode === 'play') {
+  if (S && mode === 'play' && !pilot) {
     const W = innerWidth, H = innerHeight, top = $('hud').offsetHeight + 8, bot = H - $('bottom').offsetHeight - 8, l = 10, r = W - 10;
     const cx = W / 2, cy = (top + bot) / 2, buckets = new Map();
     for (const e of S.enemies) {
@@ -407,6 +413,7 @@ function updTags() {
     const v = views.get(r.id); const y = v ? v.barY + .55 : 2.2;
     tagV.set(r.x, y, r.z).project(cam);
     el.style.transform = 'translate(' + ((tagV.x + 1) / 2 * innerWidth) + 'px,' + ((1 - tagV.y) / 2 * innerHeight) + 'px) translate(-50%,-50%)';
+    el.style.display = tagV.z > 1 || r === pilot ? 'none' : ''; // 自操作中：カメラの後ろと自機は出さない
     el.classList.toggle('on', sel === r); el.classList.toggle('hurt', r.hp < r.maxHp * .3);
   }
   for (const [id, el] of tags) if (!alive.has(id)) { el.remove(); tags.delete(id); }
@@ -416,6 +423,7 @@ function updTags() {
     if (!el) { el = document.createElement('div'); el.className = 'tag op'; el.textContent = o.label; box.appendChild(el); tags.set(o.id, el); }
     tagV.set(o.x, 2.9, o.z).project(cam);
     el.style.transform = 'translate(' + ((tagV.x + 1) / 2 * innerWidth) + 'px,' + ((1 - tagV.y) / 2 * innerHeight) + 'px) translate(-50%,-50%)';
+    el.style.display = tagV.z > 1 ? 'none' : '';
     el.classList.toggle('mine', o.owner === 'p'); el.classList.toggle('en', o.owner === 'e');
   });
   for (const [id, el] of tags) if (!alive.has(id)) { el.remove(); tags.delete(id); }
@@ -590,7 +598,7 @@ function updFx(dt) {
   }
 }
 function floatText(x, z, text) {
-  const p = new T.Vector3(x, 1, z).project(cam);
+  const p = new T.Vector3(x, 1, z).project(cam); if (p.z > 1) return;
   const d = document.createElement('div'); d.className = 'float'; d.textContent = text;
   d.style.left = ((p.x + 1) / 2 * innerWidth) + 'px'; d.style.top = ((1 - p.y) / 2 * innerHeight) + 'px';
   $('floats').appendChild(d); setTimeout(() => d.remove(), 800);
@@ -616,11 +624,12 @@ canvas.addEventListener('pointerdown', e => {
   try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (ptrs.size === 1) gest = { type: 'tap', x0: e.clientX, y0: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now() };
-  else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; gest = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: camS.zoom }; }
+  else if (ptrs.size === 2 && !pilot) { const [a, b] = [...ptrs.values()]; gest = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: camS.zoom }; }
 });
 canvas.addEventListener('pointermove', e => {
   if (!ptrs.has(e.pointerId) || !gest) return;
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pilot) { pilotMove(e); return; }
   if (gest.type === 'pinch' && ptrs.size >= 2) {
     const [a, b] = [...ptrs.values()];
     zoomAt(gest.z0 * Math.hypot(a.x - b.x, a.y - b.y) / gest.d0, (a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -633,13 +642,13 @@ canvas.addEventListener('pointermove', e => {
 function ptrEnd(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
-  if (gest && gest.type === 'tap' && ptrs.size === 0 && performance.now() - gest.t < 700) tap(e.clientX, e.clientY);
+  if (gest && gest.type === 'tap' && ptrs.size === 0 && performance.now() - gest.t < 700) (pilot ? pilotTap : tap)(e.clientX, e.clientY);
   if (ptrs.size === 0) gest = null;
   else { const p = [...ptrs.values()][0]; gest = { type: 'pan', lx: p.x, ly: p.y }; } // ピンチの後はタップ扱いにしない
 }
 canvas.addEventListener('pointerup', ptrEnd);
 canvas.addEventListener('pointercancel', ptrEnd);
-canvas.addEventListener('wheel', e => { e.preventDefault(); zoomAt(camS.zoom * Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); }, { passive: false });
+canvas.addEventListener('wheel', e => { e.preventDefault(); if (pilot) return; zoomAt(camS.zoom * Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); }, { passive: false });
 function tap(px, py) {
   if (mode !== 'play' || paused || building) return;
   const w = toWorld(px, py); if (!w) return;
@@ -654,6 +663,115 @@ function tap(px, py) {
   }
 }
 
+// ---------- 自操作（乗る）：肩越しの3D視点 ----------
+// 乗っている間：機体は動かない／時間は通常どおり流れる／ロックした敵が射程内の武器はそれを撃ち、ほかの武器は自動で全方向を狙う
+let pYawT = 0, pWeapEls = [];
+const PV = new T.Vector3();
+function pilotFov(asp) { return Math.max(58, Math.min(96, 2 * Math.atan(Math.tan(50 * Math.PI / 180) / asp) * 180 / Math.PI)); }
+function enterPilot(r) {
+  if (!r || r.dead || mode !== 'play' || paused || building) return;
+  RD.setPilot(S, r); pilot = r; pYawT = r.aimYaw = r.face; sel = null; cam = pCam;
+  document.body.classList.add('piloting'); setRoster(false); updInfo(); fit();
+  $('pName').textContent = r.slot + ' ' + r.name + ' ' + r.weapons.map(w => w.def.icon).join('');
+  $('pWeap').innerHTML = r.weapons.map(w => '<div class="pw"><span class="pn">' + w.def.icon + ' ' + esc(w.def.name) + '</span><span class="pc"><i></i></span><b></b></div>').join('');
+  pWeapEls = [...$('pWeap').children];
+  banner('搭乗', '連射・威力・射程が上がる。機体は動かない', 'start', 1.6);
+}
+function exitPilot(msg) {
+  if (!pilot) return;
+  const r = pilot; RD.setPilot(S, null); pilot = null; cam = oCam;
+  document.body.classList.remove('piloting'); $('lockMk').style.display = 'none';
+  if (!r.dead) { camS.x = r.x; camS.z = r.z; }
+  fit(); updInfo(); if (msg) toast(msg, 'bad');
+}
+function pilotMove(e) {
+  if (!gest || ptrs.size !== 1) return;
+  if (gest.type === 'tap' && Math.hypot(e.clientX - gest.x0, e.clientY - gest.y0) > 10) gest.type = 'turn';
+  if (gest.type === 'turn' || gest.type === 'pan') { pilot.aimYaw -= (e.clientX - gest.lx) * 2.6 / Math.max(320, innerWidth); pYawT = pilot.aimYaw; }
+  gest.lx = e.clientX; gest.ly = e.clientY;
+}
+// タップした位置に一番近い敵（画面上で48px以内）をロック。何もなければロック解除
+function pilotTap(px, py) {
+  if (mode !== 'play' || paused || building || !pilot) return;
+  let best = null, bd = 48 * 48;
+  for (const e of S.enemies.concat(S.ebases)) {
+    if (e.dead || Math.hypot(e.x - pilot.x, e.z - pilot.z) > 70) continue;
+    PV.set(e.x, e.ebase ? 1.2 : .6, e.z).project(pCam); if (PV.z > 1) continue;
+    const d = ((PV.x + 1) / 2 * innerWidth - px) ** 2 + ((1 - PV.y) / 2 * innerHeight - py) ** 2;
+    if (d < bd) { bd = d; best = e; }
+  }
+  RD.setLock(pilot, best);
+}
+function turnTo(yaw) { pYawT = yaw; }
+const radar = $('radar'), rctx = radar.getContext('2d'), RADAR_R = 26;
+radar.addEventListener('pointerdown', e => { // レーダーをタップ：その方向を向く
+  e.stopPropagation(); if (!pilot) return;
+  const b = radar.getBoundingClientRect(), rx = e.clientX - b.left - b.width / 2, fz = -(e.clientY - b.top - b.height / 2);
+  if (Math.hypot(rx, fz) < 6) return;
+  const f = pilot.aimYaw, wx = Math.sin(f) * fz - Math.cos(f) * rx, wz = Math.cos(f) * fz + Math.sin(f) * rx;
+  turnTo(Math.atan2(wx, wz));
+});
+function drawRadar() {
+  const dpr = Math.min(2, devicePixelRatio || 1), W = radar.clientWidth || 128;
+  if (radar.width !== Math.round(W * dpr)) { radar.width = radar.height = Math.round(W * dpr); }
+  const c = rctx, h = W / 2, sc = h / RADAR_R, r = pilot, f = r.aimYaw, cs = Math.cos(f), sn = Math.sin(f);
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, W);
+  c.fillStyle = '#050a1ccc'; c.beginPath(); c.arc(h, h, h - 1, 0, 7); c.fill();
+  c.strokeStyle = '#2f4c74'; c.lineWidth = 1; c.beginPath(); c.arc(h, h, h - 1, 0, 7); c.arc(h, h, h / 2, 0, 7); c.stroke();
+  // 視野（画面に映る範囲のめやす）
+  const hf = Math.atan(Math.tan(pCam.fov * Math.PI / 360) * pCam.aspect);
+  c.fillStyle = '#65f6ff14'; c.beginPath(); c.moveTo(h, h); c.arc(h, h, h - 1, -Math.PI / 2 - hf, -Math.PI / 2 + hf); c.closePath(); c.fill();
+  // 射程（乗っているときの値）
+  const R = Math.max(...r.weapons.map(w => (w.def.range || w.def.trigger || 1) * r.rangeMul)) * CFG.pilot.range;
+  c.strokeStyle = '#65f6ff66'; c.setLineDash([3, 3]); c.beginPath(); c.arc(h, h, Math.min(h - 1, R * sc), 0, 7); c.stroke(); c.setLineDash([]);
+  const pt = (x, z) => { const dx = x - r.x, dz = z - r.z, fw = dx * sn + dz * cs, rt = -dx * cs + dz * sn; return [h + rt * sc, h - fw * sc, Math.hypot(dx, dz)]; };
+  const dot = (x, z, col, s) => { const [px, py, d] = pt(x, z); if (d > RADAR_R) return; c.fillStyle = col; c.fillRect(px - s / 2, py - s / 2, s, s); };
+  dot(S.home.x, S.home.z, '#ffd166', 7);
+  for (const o of S.outposts) dot(o.x, o.z, o.owner === 'p' ? '#4dabff' : o.owner === 'e' ? '#ff4d6d' : '#9fb6d6', 5);
+  for (const b of S.ebases) if (!b.dead) dot(b.x, b.z, '#ff7a90', 8);
+  for (const e of S.enemies) if (!e.dead) dot(e.x, e.z, e.def.boss ? '#ffffff' : '#ff4d6d', e.def.boss ? 6 : e.def.inst ? 2 : 3);
+  for (const o of S.robots) if (o !== r) dot(o.x, o.z, '#65f6ff', 4);
+  if (r.lock && !r.lock.dead) { const [px, py, d] = pt(r.lock.x, r.lock.z); const k = Math.min(1, (RADAR_R - 1) / Math.max(d, .01)); c.strokeStyle = '#ffd166'; c.lineWidth = 1.5; c.beginPath(); c.arc(h + (px - h) * k, h + (py - h) * k, 5, 0, 7); c.stroke(); }
+  c.fillStyle = '#65f6ff'; c.beginPath(); c.moveTo(h, h - 6); c.lineTo(h - 4, h + 4); c.lineTo(h + 4, h + 4); c.closePath(); c.fill();
+}
+function updPilot(dt) {
+  if (!pilot) return;
+  const r = pilot;
+  if (r.dead || mode !== 'play' || !S || !S.robots.includes(r)) { exitPilot(r.dead ? '搭乗機が撃破された' : ''); return; }
+  r.aimYaw = lerpAngle(r.aimYaw, pYawT, 1 - Math.exp(-10 * dt));
+  const f = r.aimYaw, fx = Math.sin(f), fz = Math.cos(f), sc = TIER[r.body.tier].scale;
+  // 肩越し：機体の右後ろ上から、前方を見る（機体は画面の左下に小さめに入る）
+  // 縦長の画面は上が空になりやすいので、少し高く・手前を見下ろす
+  const t = Math.max(0, Math.min(1, (pCam.aspect - .5))), back = 6.2 * sc, side = 1.9 * sc, ht = (4.8 - 1.4 * t) * sc, look = 8 + 8 * t;
+  pCam.position.set(r.x - fx * back - fz * side, ht, r.z - fz * back + fx * side);
+  pCam.lookAt(r.x + fx * look - fz * side * .5, 0, r.z + fz * look + fx * side * .5);
+  if (r.lock && r.lock.dead) RD.setLock(r, null);
+  // ロック表示
+  const mk = $('lockMk'), L = r.lock;
+  let on = 0; r.weapons.forEach((w, i) => { const el = pWeapEls[i]; if (!el) return; const k = w.cdMax ? Math.max(0, 1 - w.cd / w.cdMax) : 1;
+    el.querySelector('i').style.width = (k * 100) + '%'; const lk = !!(L && w.onLock); if (lk) on++;
+    el.classList.toggle('lk', lk); el.lastChild.textContent = !L ? '自動' : lk ? '◎ロック' : '自動'; });
+  if (L) {
+    PV.set(L.x, L.ebase ? 1.2 : .6, L.z).project(pCam);
+    let x = (PV.x + 1) / 2 * innerWidth, y = (1 - PV.y) / 2 * innerHeight; const back = PV.z > 1;
+    if (back) { x = innerWidth - x; y = innerHeight - y; }
+    const m = 30, off = back || x < m || x > innerWidth - m || y < m || y > innerHeight - m;
+    x = Math.max(m, Math.min(innerWidth - m, x)); y = Math.max(m, Math.min(innerHeight - m, y));
+    mk.style.display = 'block'; mk.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%)';
+    mk.className = (on ? 'in' : '') + (off ? ' off' : '');
+    mk.lastChild.textContent = Math.round(Math.hypot(L.x - r.x, L.z - r.z)) + 'm' + (on ? ' ◎' + on : ' 射程外');
+  } else mk.style.display = 'none';
+  setText('pHint', L ? 'ロック中：射程に入った武器が狙う ・ 何もない所をタップで解除' : 'ドラッグで旋回 ・ 敵をタップでロック');
+  $('pHp').style.width = Math.max(0, r.hp / r.maxHp * 100) + '%'; $('pHp').className = r.hp < r.maxHp * .3 ? 'low' : '';
+  $('pShW').style.display = r.maxShield ? '' : 'none'; if (r.maxShield) $('pSh').style.width = Math.max(0, r.shield / r.maxShield * 100) + '%';
+  setText('pHpN', '❤' + Math.ceil(r.hp) + (r.maxShield ? ' 🛡' + Math.ceil(r.shield) : ''));
+  drawRadar();
+}
+$('pExit').addEventListener('click', () => exitPilot());
+$('pTurn').addEventListener('click', () => { if (pilot) turnTo(pYawT + Math.PI); });
+$('pBuild').addEventListener('click', () => openBuild());
+$('info').addEventListener('click', e => { if (e.target.closest('[data-ride]') && sel) enterPilot(sel); });
+
 // ---------- 稼働中ロボット一覧（右端・折りたたみ） ----------
 let rosterOpen = false;
 const rosterEls = new Map();
@@ -662,6 +780,7 @@ $('rosterTab').addEventListener('click', () => setRoster(!rosterOpen));
 $('rosterList').addEventListener('click', e => {
   const c = e.target.closest('[data-id]'); if (!c || mode !== 'play' || paused || building) return;
   const r = S.robots.find(x => x.id === +c.dataset.id); if (!r) return;
+  if (e.target.closest('[data-ride]')) { enterPilot(r); return; }
   sel = sel === r ? null : r; updInfo();
   if (sel && innerWidth < 700) setRoster(false); // スマホでは閉じて、移動先をタップしやすくする
 });
@@ -678,7 +797,7 @@ function updRoster() {
     let el = rosterEls.get(r.id);
     if (!el) {
       el = document.createElement('button'); el.className = 'rcard'; el.dataset.id = r.id;
-      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span></div><div class="rb"><i></i></div><div class="rs"></div>';
+      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span><span class="ride" data-ride>🎮</span></div><div class="rb"><i></i></div><div class="rs"></div>';
       el.querySelector('.num').textContent = r.slot; el.querySelector('b').textContent = r.body.name; el.querySelector('.rw').textContent = r.weapons.map(w => w.def.icon).join('');
       list.appendChild(el); rosterEls.set(r.id, el);
     }
@@ -723,7 +842,7 @@ function updHud() {
 }
 function updInfo() {
   const el = $('info');
-  const html = sel ? '<span class="slow">◷スロー</span><b>' + esc(sel.name) + '</b> ' + sel.weapons.map(w => w.def.icon).join('') + ' ❤' + Math.ceil(sel.hp) + '/' + sel.maxHp + ' ・ 移動先をタップ'
+  const html = sel ? '<span class="slow">◷スロー</span><b>' + esc(sel.name) + '</b> ' + sel.weapons.map(w => w.def.icon).join('') + ' ❤' + Math.ceil(sel.hp) + '/' + sel.maxHp + ' ・ 移動先をタップ <button class="ride" data-ride>🎮乗る</button>'
     : esc(S && S.robots.length ? 'ロボット（地図か右の一覧）を選んで → 移動先をタップ' : (S && S.queue.length ? '建造中…完成したら配置しよう' : '🔧 建造からロボットを作ろう'));
   if (hudCache.info !== html) { hudCache.info = html; el.innerHTML = html; el.className = sel ? 'sel' : ''; }
 }
@@ -733,7 +852,7 @@ function plusText(p) { return Object.keys(p).map(k => PLUS[k].icon + PLUS[k].nam
 function openBuild() {
   if (mode !== 'play') return;
   building = true; sel = null; updInfo(); canvas.classList.add('frozen');
-  uiBody = null; uiW = new Set(); // 毎回まっさらな状態から選ぶ
+  uiBody = null; uiW = new Set(); uiTab = 'robot'; uiWork = null; // 毎回まっさらな状態から選ぶ
   renderBuild(); $('buildM').classList.add('show'); $('buildM').querySelector('.card').scrollTop = 0;
 }
 function closeBuild() { building = false; $('buildM').classList.remove('show'); canvas.classList.remove('frozen'); }
@@ -747,16 +866,30 @@ function renderBuild() {
   $('bLine').innerHTML = '🏗 建造ライン <b>' + S.lines + '/2</b>' + (S.lines < 2 ? '<button id="lineBtn" class="chip"' + (S.pts < CFG.line2Cost ? ' disabled' : '') + '>2本目を開放 ⭐' + CFG.line2Cost + '</button><span class="dim">同時に2機建造できる</span>' : '<span class="dim">2機同時に建造できる</span>');
   if ($('lineBtn')) $('lineBtn').onclick = () => { const err = buyLine(S); if (err) toast(err, 'warn'); renderBuild(); };
   const step2 = !!uiBody;
-  $('bStep1').style.display = step2 ? 'none' : '';
+  $('bTabs').style.display = step2 ? 'none' : '';
+  $('bTabs').innerHTML = '<button data-tab="robot" class="' + (uiTab === 'robot' ? 'on' : '') + '">🤖 ロボット</button><button data-tab="works" class="' + (uiTab === 'works' ? 'on' : '') + (S.baseHP < CFG.baseHP * .5 ? ' warn' : '') + '">🏗 拠点工事 <small>🏠' + Math.ceil(S.baseHP) + '</small></button>';
+  $('bStep1').style.display = !step2 && uiTab === 'robot' ? '' : 'none';
+  $('bWorksPane').style.display = !step2 && uiTab === 'works' ? '' : 'none';
+  $('bFoot1').style.display = step2 ? 'none' : '';
   $('bStep2').style.display = step2 ? '' : 'none';
   if (!step2) {
     const minW = Math.min(...Object.values(WEAPONS).map(w => w.cost)), full = S.queue.length >= CFG.queueMax;
     $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します</div>' : '';
     $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || S.pts < b.cost + minW) ? 'dis' : '')).join('');
-    $('bWorks').innerHTML = '<div class="sec">拠点工事 <span class="dim">建造ラインを使うが出撃数には数えない</span></div><div class="wgrid">' + Object.entries(WORKS).map(([id, w]) => {
-      const err = workCheck(S, id), lv = id === 'turret' ? ' ' + (S.works.turret || 0) + '/' + w.max : id === 'shield' && S.homeShield > 0 ? ' 残' + Math.ceil(S.homeShield) : '';
-      return '<button class="wcard' + (err ? ' dis' : '') + '" data-work="' + id + '"><div class="wn"><b>' + w.icon + ' ' + esc(w.name) + lv + '</b></div><div class="ws"><span class="cost">⭐' + workCost(S, id) + '</span><span>⏱' + w.build + 's</span></div><div class="wd">' + esc(err && err !== 'ポイントが足りません' ? err : w.desc) + '</div></button>';
-    }).join('') + '</div>';
+    const qn = id => S.queue.filter(q => q.work === id).length;
+    $('bWorks').innerHTML = '<div class="dim" style="margin:6px 0">工事を選んでから、下のボタンで頼む。建造ラインの時間を使うが、出撃数には数えない</div>' +
+      '<div class="basest">🏠拠点HP <b>' + Math.ceil(S.baseHP) + '/' + CFG.baseHP + '</b> ・ 砲台 <b>' + (S.works.turret || 0) + '/' + WORKS.turret.max + '</b> ・ 盾 <b>' + (S.homeShield > 0 ? Math.ceil(S.homeShield) : 'なし') + '</b></div>' +
+      '<div class="wgrid">' + Object.entries(WORKS).map(([id, w]) => {
+        const err = workCheck(S, id), n = qn(id);
+        return '<button class="wcard' + (uiWork === id ? ' on' : '') + (err && err !== 'ポイントが足りません' ? ' dis' : '') + '" data-work="' + id + '"><div class="wn"><span class="chk">' + (uiWork === id ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div><div class="ws"><span class="cost">⭐' + workCost(S, id) + '</span><span>⏱' + w.build + 's</span>' + (n ? '<span class="rsv">予約中' + (n > 1 ? '×' + n : '') + '</span>' : '') + '</div><div class="wd">' + esc(w.desc) + '</div></button>';
+      }).join('') + '</div>';
+    const ob = $('bOrder'); ob.style.display = uiTab === 'works' ? '' : 'none';
+    if (uiWork) {
+      const w = WORKS[uiWork], err = workCheck(S, uiWork), n = qn(uiWork);
+      ob.innerHTML = w.icon + ' ' + (n ? 'もう1回頼む' : esc(w.name) + 'を頼む') + ' <small>⭐' + workCost(S, uiWork) + '・' + w.build + '秒</small>';
+      ob.disabled = !!err || ob.dataset.lock === '1';
+      $('bWorkSum').innerHTML = uiTab === 'works' ? (err ? '<div class="err">' + esc(err) + '</div>' : n ? '<div class="dim">' + esc(w.name) + 'は予約中' + (n > 1 ? '（' + n + '件）' : '') + '。建造ラインが空くと始まる</div>' : '') : '';
+    } else { ob.textContent = '工事を選んでください'; ob.disabled = true; $('bWorkSum').innerHTML = ''; }
     return;
   }
   $('bChosen').innerHTML = bodyRow(uiBody, '', 'on').replace(/^<button/, '<div').replace(/<\/button>$/, '</div>');
@@ -780,10 +913,14 @@ $('bodyList').addEventListener('click', e => {
   uiBody = S.bodies[+b.dataset.b]; uiW = new Set(); renderBuild(); $('buildM').querySelector('.card').scrollTop = 0;
 });
 $('wList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (!b) return; const id = b.dataset.w; uiW.has(id) ? uiW.delete(id) : uiW.add(id); renderBuild(); });
-$('bWorks').addEventListener('click', e => {
-  const b = e.target.closest('[data-work]'); if (!b) return;
-  const err = orderWork(S, b.dataset.work);
-  toast(err ? err : WORKS[b.dataset.work].icon + ' ' + WORKS[b.dataset.work].name + 'を予約', err ? 'warn' : 'info'); renderBuild();
+$('bTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; uiTab = b.dataset.tab; renderBuild(); });
+$('bWorks').addEventListener('click', e => { const b = e.target.closest('[data-work]'); if (!b) return; uiWork = b.dataset.work; renderBuild(); });
+$('bOrder').addEventListener('click', () => {
+  if (!uiWork) return;
+  const err = orderWork(S, uiWork), ob = $('bOrder');
+  toast(err ? err : WORKS[uiWork].icon + ' ' + WORKS[uiWork].name + 'を予約', err ? 'warn' : 'good');
+  ob.dataset.lock = '1'; setTimeout(() => { ob.dataset.lock = ''; if (building) renderBuild(); }, 600); // 連打で重ねて頼まないよう少し待つ
+  renderBuild();
 });
 $('bAt').addEventListener('click', e => { const b = e.target.closest('[data-at]'); if (!b) return; uiAt = +b.dataset.at; renderBuild(); });
 $('bBack').addEventListener('click', () => { uiBody = null; uiW = new Set(); renderBuild(); });
@@ -812,6 +949,7 @@ function titleScreen() {
     '<li>建造画面の「拠点工事」で、拠点の修理・砲台・盾をポイントで頼める（建造ラインの時間を使う）</li>' +
     '<li>同時出撃は' + CFG.deployCap + '機まで。それとは別に' + CFG.queueMax + '機まで予約でき、誰かが倒れたら予約機がすぐ出撃する。陣地から出撃する予約は、その陣地が落ちていると出撃失敗</li>' +
     '<li>ロボットを選んでいる間は、時間の流れが1/4になる</li>' +
+    '<li>🎮乗る（一覧か、選んだロボットの欄）で自操作。肩越し視点で、ドラッグで旋回・敵をタップでロック。連射・威力・射程が上がるが、機体は動かず視界は前方だけ。ほかのロボットへの指示もできない</li>' +
     '<li><b>味方の弾や爆風は味方ロボットにも当たる</b>。範囲攻撃は強力だが、置き場所に注意</li>' +
     '<li>本編の🚩陣地：青は確保済みで、建造時に出撃地点に選べる。灰は中立、赤は敵占領（守備隊を倒して確保）。敵だけが近くにいると奪われる</li>' +
     '<li>地図はスワイプで移動、ピンチで拡大。⤢で全体表示</li></ul>' +
@@ -857,6 +995,7 @@ function loadoutScreen(stId) {
 }
 function startGame(stId) {
   if (stId) curStage = stId;
+  exitPilot();
   clearViews(); for (const f of fxs) scene.remove(f.m); fxs.length = 0;
   S = newState(curStage, { loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S;
   setMapDims(S.st); buildMap(S.st, S.paths);
@@ -910,7 +1049,9 @@ const muteLabel = () => { $('muteBtn').textContent = AU.muted ? '🔇' : '🔊';
 $('muteBtn').addEventListener('click', () => { AU.init(); AU.setMute(!AU.muted); muteLabel(); }); muteLabel();
 document.addEventListener('click', e => { if (e.target.closest('button')) { AU.init(); AU.S.ui(); } }, true);
 $('spdBtn').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; $('spdBtn').textContent = '×' + speed; });
-addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'p') togglePause(); if (e.key === 'b' && !building) openBuild(); });
+addEventListener('keydown', e => {
+  if (pilot && (e.key === 'ArrowLeft' || e.key === 'a')) turnTo(pYawT + .4); if (pilot && (e.key === 'ArrowRight' || e.key === 'd')) turnTo(pYawT - .4); if (pilot && e.key === 's') turnTo(pYawT + Math.PI);
+  if (e.key === 'Escape' || e.key === 'p') togglePause(); if (e.key === 'b' && !building) openBuild(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused && !building) togglePause(); });
 
 // ---------- ループ ----------
@@ -928,7 +1069,7 @@ function frame(now) {
     sync(dt); updHud(); updTags(); updEdges();
     canvas.classList.toggle('slowmo', !!sel && mode === 'play' && !building);
     if (mode === 'play' && S.over) { // 勝敗の告知を見せてから結果画面へ
-      mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();
+      exitPilot(); mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();
       const win = S.over === 'win'; if (win) AU.S.win(); else AU.S.lose();
       banner(win ? 'MISSION COMPLETE' : 'MISSION FAILED', win ? '作戦成功' : (S.baseHP <= 0 ? '拠点陥落' : '時間切れ'), win ? 'good' : 'boss', 1.6);
       if (!win) shake(.5, .8);
@@ -941,11 +1082,11 @@ function frame(now) {
     M.baseGun.rotation.y = lerpAngle(M.baseGun.rotation.y, S.homeObj.face || 0, .3);
     M.baseDome.visible = S.homeShield > 0; M.baseDome.material.opacity = .08 + .22 * (S.homeShield / (S.homeShieldMax || 1)) + Math.sin(now / 200) * .03;
   }
-  if (M.baseRing) M.baseRing.position.y = 1.5 + Math.sin(now / 500) * .08;
+  if (M.baseRing) { M.baseRing.position.y = 1.5 + Math.sin(now / 500) * .08; M.baseRing.visible = !pilot; } // 乗っている間は視界の邪魔になるので消す
   if (markerT > 0) { markerT -= dt; marker.material.opacity = Math.max(0, markerT / .6); marker.scale.setScalar(1 + (.6 - markerT)); if (markerT <= 0) marker.visible = false; }
-  updFx(dt); updParts(dt); updCombo(dt);
+  updFx(dt); updParts(dt); updCombo(dt); updPilot(dt);
   let sx = 0, sz = 0;
-  if (shakeT > 0) { shakeT -= dt; const m = shakeMag * Math.max(0, shakeT) * 2 / (camS.zoom || 1); sx = (Math.random() - .5) * m; sz = (Math.random() - .5) * m; cam.position.x += sx; cam.position.z += sz; if (shakeT <= 0) shakeMag = 0; }
+  if (shakeT > 0) { shakeT -= dt; const m = shakeMag * Math.max(0, shakeT) * 2 / (pilot ? 4 : camS.zoom || 1); sx = (Math.random() - .5) * m; sz = (Math.random() - .5) * m; cam.position.x += sx; cam.position.z += sz; if (shakeT <= 0) shakeMag = 0; }
   renderer.render(scene, cam);
   if (sx || sz) { cam.position.x -= sx; cam.position.z -= sz; }
 }

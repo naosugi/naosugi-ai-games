@@ -13,6 +13,7 @@ const CFG = {
   enemySpeedMul: .8,                   // 敵の移動速度の倍率（全敵共通）
   baseHP: 150,                         // 拠点HP
   baseStop: 2.3,                       // 敵が拠点の手前で止まって攻撃する距離
+  pilot: { rate: 1.5, dmg: 1.2, range: 1.2, lockHoming: 1.6 }, // 自操作中の強化（連射・威力・射程）と、ロック対象への弾のわずかな追尾
   missileSafety: 1.4,                  // AIがミサイルを撃つとき、爆風半径に足す安全距離（自操作では使わない＝自爆あり）
   critMul: 2.5,
   friendlyFire: 1,                     // 味方の弾・爆発が味方ロボットに当たるときの倍率（1=等倍）
@@ -525,7 +526,7 @@ function hurtRobot(S, r, dmg, by) {
   const ff = !!by;
   if (ff) { S.ffDmg += Math.min(dmg, r.hp + dmg); if (S.t - (r.ffMsgT || -9) > 4) { r.ffMsgT = S.t; say(S, '⚡ ' + r.name + ' 誤射を受けた（' + by.name + '）', 'warn'); } }
   if (r.hp <= 0) {
-    r.dead = true; S.lost++; if (ff) S.ffKills++;
+    r.dead = true; S.lost++; if (ff) S.ffKills++; if (r.piloted) S.fx.push({ type: 'pilotDown' });
     S.fx.push({ type: 'robodie', x: r.x, z: r.z });
     say(S, '✖ ' + r.name + (ff ? ' 味方の攻撃で撃破' : ' 撃破された'), 'bad');
   } else if (!r.warned && r.hp < r.maxHp * .3) {
@@ -571,17 +572,30 @@ function fireWeapon(S, src, d, tg, team, mul) {
       life: (d.blast ? Math.hypot(tg.x - src.x, tg.z - src.z) : range) / d.speed * (d.homing ? 1.6 : 1) + .05, r: d.size || (d.blast ? .25 : .18),
       owner: team === 'p' ? src : null, src, pierce: d.pierce || 0, hits: [], w: d.name, blast: d.blast || 0,
       arm: d.blast ? (d.blast + CFG.missileSafety) / d.speed : 0,
-      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || 0, tg: d.homing ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null,
+      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null,
     });
   }
   return a;
 }
 // レーザー：最寄りの敵へ向けて照射し続ける。直線上の敵・敵拠点・味方ロボットすべてに毎秒ダメージ
+// 自操作：ロック対象がこの武器の射程内なら、それを狙う。射程外の武器はAIのまま最寄りを狙う
+// （ミサイルも最低距離を無視する＝近い敵をロックすると自爆の危険がある）
+function lockTarget(S, r, d, range) {
+  const L = r.lock;
+  if (!r.piloted || !L || L.dead || d.type === 'bomb') return null;
+  return Math.hypot(L.x - r.x, L.z - r.z) - (L.r || (L.def && L.def.r) || 0) <= range ? L : null;
+}
+function pmul(r) { const P = r.piloted ? CFG.pilot : null; return { rate: r.rateMul * (P ? P.rate : 1), dmg: r.dmgMul * (P ? P.dmg : 1), range: r.rangeMul * (P ? P.range : 1) }; }
+function setPilot(S, r) {
+  for (const o of S.robots) { o.piloted = false; o.lock = null; }
+  if (r && !r.dead) { r.piloted = true; r.tx = r.x; r.tz = r.z; r.aimYaw = r.face; }
+}
+function setLock(r, t) { if (r) r.lock = t || null; }
 function beam(S, r, w, d, dt) {
-  const range = d.range * r.rangeMul, tg = robotTarget(S, r, d, range);
+  const m = pmul(r), range = d.range * m.range, tg = lockTarget(S, r, d, range) || robotTarget(S, r, d, range);
   if (!tg) { w.beam = null; return; }
-  const a0 = Math.atan2(tg.x - r.x, tg.z - r.z), n = d.beams || 1; r.fireT = S.t; if (!r.moving) r.face = a0;
-  const dmg = d.dps * dt * r.dmgMul * (1 + r.crit * (CFG.critMul - 1));
+  const a0 = Math.atan2(tg.x - r.x, tg.z - r.z), n = d.beams || 1; r.fireT = S.t; if (!r.moving && !r.piloted) r.face = a0;
+  const dmg = d.dps * dt * m.dmg * (1 + r.crit * (CFG.critMul - 1));
   w.beam = [];
   for (let k = 0; k < n; k++) {
     const a = a0 + (n > 1 ? (k / (n - 1) - .5) * 2 * d.spread : 0), ux = Math.sin(a), uz = Math.cos(a);
@@ -597,18 +611,21 @@ function updRobot(S, r, dt) {
   if (r.maxShield && S.t - r.hitT > 4) r.shield = Math.min(r.maxShield, r.shield + 8 * dt); // 盾：3秒被弾しないと回復
   const dx = r.tx - r.x, dz = r.tz - r.z, dist = Math.hypot(dx, dz);
   r.moving = dist > .05;
+  if (r.piloted) { r.moving = false; r.tx = r.x; r.tz = r.z; if (r.aimYaw !== undefined) r.face = r.aimYaw; } // 乗っている間は動かない
   if (r.moving) { const m = Math.min(dist, r.spd * dt); r.x += dx / dist * m; r.z += dz / dist * m; r.face = Math.atan2(dx, dz); }
+  const pm = pmul(r);
   for (const w of r.weapons) {
     const d = w.def;
     if (d.type === 'bomb') { if (nearest(S.enemies, r.x, r.z, d.trigger, true)) { explode(S, r, d); return; } continue; }
     if (d.type === 'beam') { beam(S, r, w, d, dt); continue; }
     w.cd -= dt; if (w.cd > 0) continue;
-    const tg = robotTarget(S, r, d, d.range * r.rangeMul);
+    const lk = lockTarget(S, r, d, d.range * pm.range), tg = lk || robotTarget(S, r, d, d.range * pm.range);
+    w.onLock = !!lk;
     if (!tg) { w.cd = 0; continue; }
     if (d.blast && r.moving && !blastSafe(r, tg, d)) { w.cd = .1; continue; } // 移動中：着弾時に自分が爆風に入るなら撃たない
-    const a = fireWeapon(S, r, d, tg, 'p', { dmg: r.dmgMul, crit: r.crit, range: r.rangeMul });
-    w.cd = d.cd / r.rateMul; r.fireT = S.t;
-    if (!r.moving) r.face = a;
+    const a = fireWeapon(S, r, d, tg, 'p', { dmg: pm.dmg, crit: r.crit, range: pm.range, lock: !!lk });
+    w.cd = d.cd / pm.rate; w.cdMax = w.cd; r.fireT = S.t;
+    if (!r.moving && !r.piloted) r.face = a;
   }
 }
 
@@ -911,6 +928,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
 }
 
-return { WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/
