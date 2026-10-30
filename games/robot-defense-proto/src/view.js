@@ -653,7 +653,7 @@ function floatText(x, z, text) {
 function toast(text, kind = 'info') {
   const box = $('toasts'), d = document.createElement('div');
   d.className = 'toast ' + kind; d.textContent = text; box.prepend(d);
-  const life = kind === 'bad' ? 3200 : kind === 'warn' || kind === 'good' ? 2600 : 1800;
+  const life = kind === 'new' ? 5000 : kind === 'bad' ? 3200 : kind === 'warn' || kind === 'good' ? 2600 : 1800;
   setTimeout(() => d.classList.add('out'), life); setTimeout(() => d.remove(), life + 400);
   while (box.children.length > 3) box.lastChild.remove();
 }
@@ -717,11 +717,18 @@ function tap(px, py) {
 
 // ---------- 自操作（乗る）：肩越しの3D視点 ----------
 // 乗っている間：機体は動かない／時間は通常どおり流れる／ロックした敵が射程内の武器はそれを撃ち、ほかの武器は自動で全方向を狙う
-let pYawT = 0, pWeapEls = [];
+let pYawT = 0, pWeapEls = [], runSeenE = new Set();
+// 初めて見る敵：一度だけ説明を出す（SAVE.seenE に記録）
+function checkNewEnemies() {
+  for (const e of S.enemies) if (!runSeenE.has(e.type)) {
+    runSeenE.add(e.type); SAVE.seenE = SAVE.seenE || {};
+    if (!SAVE.seenE[e.type] && ENEMIES[e.type].desc) { SAVE.seenE[e.type] = 1; saveNow(); toast('NEW 敵：' + ENEMIES[e.type].name + '　' + ENEMIES[e.type].desc, 'new'); }
+  }
+}
 const PV = new T.Vector3();
 function pilotFov(asp) { return Math.max(58, Math.min(96, 2 * Math.atan(Math.tan(50 * Math.PI / 180) / asp) * 180 / Math.PI)); }
 function enterPilot(r) {
-  if (!r || r.dead || mode !== 'play' || paused || building) return;
+  if (!r || r.dead || mode !== 'play' || paused || building || !S.allow.pilot) return;
   RD.setPilot(S, r); pilot = r; pYawT = r.aimYaw = r.face; sel = null; cam = pCam; scene.fog = FOG_P; tutDone('rode');
   document.body.classList.add('piloting'); setRoster(false); updInfo(); fit();
   $('pName').textContent = r.name + ' ' + r.weapons.map(w => w.def.icon).join('');
@@ -849,7 +856,7 @@ function updRoster() {
     let el = rosterEls.get(r.id);
     if (!el) {
       el = document.createElement('button'); el.className = 'rcard'; el.dataset.id = r.id;
-      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span></div><div class="rb"><i></i></div><div class="rr"><span class="rs"></span><span class="ride" data-ride>🎮 乗る</span></div>';
+      el.innerHTML = '<div class="rn"><span class="num"></span><b></b><span class="rw"></span></div><div class="rb"><i></i></div><div class="rr"><span class="rs"></span>' + (S.allow.pilot ? '<span class="ride" data-ride>🎮 乗る</span>' : '') + '</div>';
       el.querySelector('.num').textContent = r.slot; el.querySelector('b').textContent = r.body.name; el.querySelector('.rw').textContent = r.weapons.map(w => w.def.icon).join('');
       list.appendChild(el); rosterEls.set(r.id, el);
     }
@@ -874,7 +881,8 @@ function updHud() {
   setText('hPts', String(S.pts));
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? (S.enemies.some(e => e.def.boss) ? '👹 撃破せよ ' : '👹 接近中 ') : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
@@ -899,7 +907,7 @@ function coachTip() {
   const t = SAVE.tut || {};
   if (!t.built) return S.queue.length ? ['⏱', '建造中…できあがると拠点から出撃する'] : ['🔧', '右下の「建造」でロボットを作ろう', 'build'];
   if (!t.sel && S.robots.length && !sel) return ['👆', 'ロボットをタップして選ぼう', 'robot'];
-  if (!t.rode && t.moved && S.t > 35 && S.robots.length && !sel) return ['🎮', 'ロボットを選んで「乗る」と、自分で操縦できる'];
+  if (S.allow.pilot && !t.rode && S.t > 8 && S.robots.length && !sel) return ['🎮', 'ロボットを選んで「乗る」と、自分で操縦できる'];
   return null;
 }
 function updInfo() {
@@ -907,7 +915,7 @@ function updInfo() {
   const key = sel ? 'sel' + sel.id + (SAVE.tut && SAVE.tut.moved ? 'm' : '') : tip ? 'tip' + tip[1] : 'hint' + (S && S.robots.length ? 1 : S && S.queue.length ? 2 : 0);
   if (hudCache.infoKey !== key) {
     hudCache.infoKey = key;
-    if (sel) el.innerHTML = '<div class="selp"><span class="num">' + sel.slot + '</span><div class="sn"><b>' + esc(sel.body.name) + ' <span class="wi">' + sel.weapons.map(w => w.def.icon).join('') + '</span></b><span class="hpb"><i></i></span></div><button class="ride" data-ride>🎮 乗る</button><button class="desel" data-desel aria-label="選択をやめる">✕</button></div>' +
+    if (sel) el.innerHTML = '<div class="selp"><span class="num">' + sel.slot + '</span><div class="sn"><b>' + esc(sel.body.name) + ' <span class="wi">' + sel.weapons.map(w => w.def.icon).join('') + '</span></b><span class="hpb"><i></i></span></div>' + (S.allow.pilot ? '<button class="ride" data-ride>🎮 乗る</button>' : '') + '<button class="desel" data-desel aria-label="選択をやめる">✕</button></div>' +
       '<div class="selhint"><span class="slow">◷スロー</span>' + (SAVE.tut && SAVE.tut.moved ? '地面をタップで移動' : '<b>地面をタップすると、そこへ移動する</b>') + '</div>';
     else if (tip) el.innerHTML = '<div class="coach"><span>' + tip[0] + '</span>' + esc(tip[1]) + '</div>';
     else el.innerHTML = '<div class="hint">' + esc(S && S.robots.length ? 'ロボットをタップ → 地面をタップで移動' : S && S.queue.length ? '建造中…完成したら出撃する' : '🔧 建造からロボットを作ろう') + '</div>';
@@ -935,23 +943,26 @@ function bodyRow(b, attrs, cls) {
 }
 function renderBuild() {
   $('bPts').textContent = S.pts;
+  $('bLine').style.display = S.allow.line2 ? '' : 'none';
   $('bLine').innerHTML = '🏗 建造ライン <b>' + S.lines + '/2</b>' + (S.lines < 2 ? '<button id="lineBtn" class="chip"' + (S.pts < CFG.line2Cost ? ' disabled' : '') + '>2本目を開放 ⭐' + CFG.line2Cost + '</button><span class="dim">同時に2機建造できる</span>' : '<span class="dim">2機同時に建造できる</span>');
   if ($('lineBtn')) $('lineBtn').onclick = () => { const err = buyLine(S); if (err) toast(err, 'warn'); renderBuild(); };
   const step2 = !!uiBody;
-  $('bTabs').style.display = step2 ? 'none' : '';
+  const anyWork = Object.keys(WORKS).some(id => S.allow[id]); if (!anyWork) uiTab = 'robot';
+  $('bTabs').style.display = step2 || !anyWork ? 'none' : '';
   $('bTabs').innerHTML = '<button data-tab="robot" class="' + (uiTab === 'robot' ? 'on' : '') + '">🤖 ロボット</button><button data-tab="works" class="' + (uiTab === 'works' ? 'on' : '') + (S.baseHP < CFG.baseHP * .5 ? ' warn' : '') + '">🏗 拠点工事 <small>🏠' + Math.ceil(S.baseHP) + '</small></button>';
   $('bStep1').style.display = !step2 && uiTab === 'robot' ? '' : 'none';
   $('bWorksPane').style.display = !step2 && uiTab === 'works' ? '' : 'none';
   $('bFoot1').style.display = step2 ? 'none' : '';
   $('bStep2').style.display = step2 ? '' : 'none';
   if (!step2) {
-    const minW = Math.min(...Object.values(WEAPONS).map(w => w.cost)), full = S.queue.length >= CFG.queueMax;
-    $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します</div>' : '';
-    $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || S.pts < b.cost + minW) ? 'dis' : '')).join('');
+    const minW = Math.min(...Object.keys(WEAPONS).filter(id => RD.weaponAllowed(S, id)).map(id => WEAPONS[id].cost)), full = S.queue.length >= CFG.queueMax;
+    $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">' + (S.allow.reserve ? '出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します' : '出撃枠がいっぱいです（' + CFG.deployCap + '機）。誰かが倒れると作れる') + '</div>' : '';
+    const capFull = !S.allow.reserve && S.robots.length + S.queue.filter(q => !q.work).length >= CFG.deployCap;
+    $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || capFull || S.pts < b.cost + minW) ? 'dis' : '')).join('');
     const qn = id => S.queue.filter(q => q.work === id).length;
     $('bWorks').innerHTML = '<div class="dim" style="margin:6px 0">工事を選んでから、下のボタンで頼む。建造ラインの時間を使うが、出撃数には数えない</div>' +
       '<div class="basest">🏠拠点HP <b>' + Math.ceil(S.baseHP) + '/' + CFG.baseHP + '</b> ・ 砲台 <b>' + (S.works.turret || 0) + '/' + WORKS.turret.max + '</b> ・ 盾 <b>' + (S.homeShield > 0 ? Math.ceil(S.homeShield) : 'なし') + '</b></div>' +
-      '<div class="wgrid">' + Object.entries(WORKS).map(([id, w]) => {
+      '<div class="wgrid">' + Object.entries(WORKS).filter(([id]) => S.allow[id]).map(([id, w]) => {
         const err = workCheck(S, id), n = qn(id);
         return '<button class="wcard' + (uiWork === id ? ' on' : '') + (err && err !== 'ポイントが足りません' ? ' dis' : '') + '" data-work="' + id + '"><div class="wn"><span class="chk">' + (uiWork === id ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div><div class="ws"><span class="cost">⭐' + workCost(S, id) + '</span><span>⏱' + w.build + 's</span>' + (n ? '<span class="rsv">予約中' + (n > 1 ? '×' + n : '') + '</span>' : '') + '</div><div class="wd">' + esc(w.desc) + '</div></button>';
       }).join('') + '</div>';
@@ -969,7 +980,7 @@ function renderBuild() {
   if (uiAt >= 0 && !(S.outposts[uiAt] && S.outposts[uiAt].owner === 'p')) uiAt = -1;
   $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩陣地' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
   const wb = uiBody.wbMul || 1;
-  $('wList').innerHTML = Object.entries(WEAPONS).filter(([id, w]) => !w.evo || S.loadout.includes(id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
+  $('wList').innerHTML = Object.entries(WEAPONS).filter(([id]) => RD.weaponAllowed(S, id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
     '<button class="wcard' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
     '<div class="wn"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div>' +
     '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + '</div>' +
@@ -1017,6 +1028,18 @@ const stById = id => STAGES.find(s => s.id === id);
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
 function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
 let uiCh = null;
+// 段階的な解禁：その作戦で使えるもの・その作戦で初めて出るもの
+const allowOf = id => RD.allowFor(id, cleared, !!SAVE.allOpen);
+const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of ORDER) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
+function newFeatures(id) { return id === ORDER[0] ? [] : Object.keys(RD.FEATURES).filter(f => RD.FEATURES[f] === id); } // 最初の作戦は「最初から使えるもの」なので出さない
+function featLine(f) { const w = WEAPONS[f]; return w ? [w.icon, w.name, w.desc] : [RD.FEATURE_INFO[f].icon, RD.FEATURE_INFO[f].name, RD.FEATURE_INFO[f].desc]; }
+function newHTML(id) {
+  const fs = newFeatures(id), es = FIRST_ENEMY[id] || [];
+  if (!fs.length && !es.length) return '';
+  return '<div class="sec">NEW <span class="dim">この作戦から</span></div><div class="newl">' +
+    fs.map(f => { const [i, n, d] = featLine(f); return '<div class="nw"><span class="nb">解禁</span><b>' + i + ' ' + esc(n) + '</b><span>' + esc(d) + '</span></div>'; }).join('') +
+    es.map(t => '<div class="nw en"><span class="nb">新しい敵</span><b>' + esc(ENEMIES[t].name) + '</b><span>' + esc(ENEMIES[t].desc) + '</span></div>').join('') + '</div>';
+}
 // 管制AI「アイ」の通信。行ごとに少しずつ表示する
 function commHTML(lines, big) { return '<div class="comm' + (big ? ' big' : '') + '"><div class="who">📡 管制 アイ</div>' + lines.map((l, i) => '<p style="animation-delay:' + (i * (big ? .55 : .25)) + 's">' + esc(l) + '</p>').join('') + '</div>'; }
 function chapterCard(c, kind, next) {
@@ -1059,7 +1082,7 @@ function howTo(back) {
   $('howOk').onclick = back;
 }
 function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name); }
-function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : '🛡 ' + fmtT(st.time) + ' 守る'; }
+function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : st.goal === 'boss' ? '👹 模倣機 撃破' : st.goal === 'clear' ? '👾 全滅させる' : '🛡 ' + fmtT(st.time) + ' 守る'; }
 function stageNo(st) { return st.name.replace('序章-', ''); }
 function stageSelect() {
   mode = 'select'; setMenu(true);
@@ -1086,23 +1109,24 @@ function stageSelect() {
   $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => openStage(b.dataset.st));
   $('ovCard').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { uiCh = b.dataset.ch; stageSelect(); });
   if ($('story')) $('story').onclick = () => chapterCard(c, c.stages.every(cleared) && c.outro ? 'outro' : 'intro', stageSelect);
-  $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; saveNow(); stageSelect(); };
+  $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; SAVE.allOpen = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
 }
 // 作戦の詳細：説明・出現する敵・報酬・持ち込みを1枚にまとめ、ここから出撃する
 function stageDetail(stId) {
   curStage = stId;
-  const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen);
+  const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen), lockedEvo = open.length && !allowOf(stId).loadout;
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
   const rw = UNLOCKS.filter(u => u.stage === st.id), c = SAVE.clear && SAVE.clear[st.id];
   showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
     (st.brief ? commHTML(st.brief) : '') +
     '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
-    '<p>' + esc(st.intro) + '</p>' +
+    '<p>' + esc(st.intro) + '</p>' + newHTML(st.id) +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
     (rw.length ? '<div class="sec">クリア報酬</div>' + rw.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ 解禁済み：' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '<span class="dim">（' + esc(WEAPONS[WEAPONS[u.id].base].name) + 'の進化）</span></div>').join('') : '') +
-    (open.length ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
+    (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
+    (lockedEvo ? '<div class="dim" style="margin-top:8px">🧬 進化パーツの持ち込みは ' + esc(stById(RD.FEATURES.loadout).name) + ' から（コアの解析待ち）</div>' : '') +
     '<div class="btns sticky"><button class="ghost" id="sdBack">← 戻る</button><button class="primary big" id="sdGo">▶ 出撃</button></div>');
   $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
     const id = b.dataset.lo, i = SAVE.loadout.indexOf(id);
@@ -1115,7 +1139,7 @@ function startGame(stId) {
   if (stId) curStage = stId;
   exitPilot();
   clearViews(); for (const f of fxs) scene.remove(f.m); fxs.length = 0;
-  S = newState(curStage, { loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S;
+  S = newState(curStage, { allow: allowOf(curStage), loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S; runSeenE = new Set();
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
   mode = 'play'; paused = false; sel = null; uiBody = null; setMenu(false); cam = oCam;
@@ -1123,6 +1147,7 @@ function startGame(stId) {
   hideOv(); updInfo(); fit(); resetView();
   AU.init(); AU.bgmStart(!!S.st.wide); combo.times = []; combo.n = 0; combo.best = 0; parts.length = 0;
   banner(S.st.name + '「' + S.st.sub + '」', goalText(S.st), 'start', 2.6);
+  for (const f of newFeatures(S.st.id)) { const [i, n] = featLine(f); toast('NEW ' + i + n + ' が使えるようになった', 'good'); }
   toast('ボディ ' + S.bodies.length + '種を確保。開始ポイント ' + S.pts + (S.loadout.length ? '。持ち込み：' + S.loadout.map(id => WEAPONS[id].name).join('・') : ''));
 }
 function endGame() {
@@ -1131,8 +1156,8 @@ function endGame() {
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
   if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; }
   saveNow();
-  const head = win ? (g === 'points' ? '補給線確保' : g === 'bases' ? '敵拠点制圧' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
-  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : '時間まで拠点を守り抜いた')
+  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? '模倣機撃破' : g === 'clear' ? '殲滅完了' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
+  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で模倣機を撃破した' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : '時間切れ。目標を達成できなかった');
   const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
   const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
@@ -1142,6 +1167,7 @@ function endGame() {
     (win && S.st.win ? commHTML([S.st.win]) : '') +
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
+    (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
     '<details class="more"><summary>くわしい記録</summary><div class="res">' +
     (combo.best >= 8 ? '<span>最大連続撃破</span><b>×' + combo.best + '</b>' : '') +
@@ -1195,7 +1221,7 @@ function frame(now) {
   if (S) {
     for (const f of S.fx) addFx(f); S.fx.length = 0;
     for (const m of S.msgs) toast(m.text, m.kind); S.msgs.length = 0;
-    sync(dt); updHud(); updTags(); updEdges();
+    sync(dt); updHud(); updTags(); updEdges(); if (mode === 'play') checkNewEnemies();
     canvas.classList.toggle('slowmo', !!sel && mode === 'play' && !building);
     if (mode === 'play' && S.over) { // 勝敗の告知を見せてから結果画面へ
       exitPilot(); mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();

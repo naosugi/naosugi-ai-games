@@ -115,48 +115,51 @@ const ENEMIES = {
 // waves: [出現開始秒, 種類, 数, 間隔秒, 経路番号（'*'は経路を順番に使う）]
 const STAGES = [
   {
-    id: 's1', name: '序章-1', sub: '一本道', brief: ['敵影、北西より接近。経路は一本。', '残存機材にて機体を組み、迎撃せよ。'], win: '第一波、撃退。防衛機能、正常。', goal: 'time', time: 120, startPoints: 120, hpRamp: 1.2,
-    intro: '敵の経路は1本。拠点の周りを回り込んでくる。まずはここで戦い方を覚える。',
+    id: 's1', name: '序章-1', sub: '起動', goal: 'points', goalPts: 260, time: 150, startPoints: 100, hpRamp: .4,
+    brief: ['敵影、北西より接近。経路は一本。', '残存機材にて機体を組み、迎撃せよ。撃破した敵機より資源を回収する。'], win: '資源、目標量に到達。防衛機能、正常。',
+    intro: '敵の経路は1本。ロボットを作って、経路の脇に置こう。倒した敵がポイントになる。',
+    drawCount: { low: 3 },
     map: { minX: -11, maxX: 11, minZ: -17, maxZ: 15 }, base: { x: 0, z: 0 }, factory: { x: -2.6, z: -2.4 },
     paths: [[[-8, -15], [-8, -6], [6, -6], [6, 12], [-5, 12], [-5, 4], [0, 4], [0, 0]]],
-    ebases: [{ path: 0, hp: 450, pts: 120 }],
     waves: [
-      [1, 'normal', 4, 1.4], [10, 'normal', 6, 1], [22, 'shooter', 2, 2.5], [28, 'normal', 8, .8], [42, 'shooter', 3, 2],
-      [48, 'normal', 10, .7], [62, 'normal', 6, .5], [64, 'shooter', 4, 1.6], [78, 'normal', 14, .55], [90, 'shooter', 5, 1.4],
-      [98, 'normal', 18, .45], [104, 'shooter', 4, 1.5], [36, 'swarm', 20, .2], [86, 'swarm', 30, .15],
+      [2, 'normal', 3, 1.6], [12, 'normal', 5, 1.2], [24, 'normal', 6, 1], [38, 'normal', 8, .85], [52, 'normal', 9, .75],
+      [66, 'normal', 10, .7], [80, 'normal', 12, .6], [96, 'normal', 13, .55], [112, 'normal', 15, .5], [128, 'normal', 16, .45],
     ],
   },
   {
-    id: 's2', name: '序章-2', sub: '挟撃', brief: ['北西および南東に敵拠点。挟撃を受けている。', '突進型、装甲型を確認。配置に留意せよ。'], win: '挟撃、退けた。', goal: 'time', time: 120, startPoints: 110, hpRamp: 1,
-    intro: '北西と南東の2方向から挟み撃ち。突進型・装甲型・特攻型が現れる。',
+    id: 's2', name: '序章-2', sub: '群れ', goal: 'points', goalPts: 340, time: 160, startPoints: 110, hpRamp: .4,
+    brief: ['北西および南東より侵攻。', '小型の群体を確認。数が多い。広く撃てる武器が有効と推定。'], win: '群体、退けた。',
+    intro: '敵が2方向から来る。小さな群体がまとめて押し寄せる。スプレッドのような範囲攻撃が効く。',
+    drawCount: { low: 3, mid: 2 },
     map: { minX: -13, maxX: 13, minZ: -18, maxZ: 18 }, base: { x: 0, z: 0 }, factory: { x: 2.4, z: -2.2 },
     paths: [
       [[-11, -16], [-11, 4], [-5, 4], [-5, -4], [0, -4], [0, 0]],
       [[11, 16], [11, -4], [5, -4], [5, 4], [0, 4], [0, 0]],
     ],
-    ebases: [{ path: 0, hp: 500, pts: 120 }, { path: 1, hp: 500, pts: 120, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } }],
     waves: [
-      [1, 'normal', 4, 1.4, 0], [4, 'normal', 4, 1.4, 1], [14, 'normal', 6, 1, '*'], [24, 'dasher', 3, 2, 1], [30, 'armor', 2, 3, 0],
-      [40, 'normal', 10, .7, '*'], [52, 'shooter', 3, 2, 0], [56, 'dasher', 4, 1.5, 1], [60, 'kamikaze', 8, .25, 0], [66, 'armor', 3, 2.5, '*'],
-      [72, 'normal', 12, .55, '*'], [86, 'shooter', 4, 1.6, 1], [90, 'dasher', 5, 1.2, 0], [94, 'kamikaze', 10, .25, 1], [98, 'normal', 16, .45, '*'], [104, 'armor', 4, 2, '*'], [46, 'swarm', 24, .15, '*'], [80, 'swarmFast', 20, .15, '*'],
+      [2, 'normal', 3, 1.5, 0], [6, 'normal', 3, 1.5, 1], [16, 'normal', 6, 1, '*'], [26, 'swarm', 16, .2, 0], [36, 'normal', 8, .8, '*'],
+      [46, 'swarm', 20, .18, 1], [56, 'normal', 10, .7, '*'], [66, 'swarm', 24, .15, '*'], [78, 'normal', 12, .6, '*'], [90, 'swarm', 30, .13, '*'],
+      [102, 'normal', 14, .5, '*'], [114, 'swarm', 36, .12, '*'], [126, 'normal', 16, .45, '*'], [138, 'swarm', 40, .1, '*'],
     ],
   },
   {
-    id: 's3', name: '序章-3', sub: '補給線', brief: ['補給、依然途絶。', '撃破した敵機より資源を回収する。目標量に達するまで戦闘を継続せよ。'], win: '資源、目標量に到達。', goal: 'points', goalPts: 350, time: 140, startPoints: 60, hpRamp: 1,
-    drawCount: { low: 3, mid: 3, high: 1 },
-    intro: '補給が途絶えた。拠点を渦巻くように回る長い経路。時間内にポイントを貯めよ（所持ポイントで判定）。',
+    id: 's3', name: '序章-3', sub: '接続', goal: 'points', goalPts: 300, time: 190, startPoints: 120, hpRamp: .4,
+    brief: ['機体数、不足。', '指揮官ユニットより機体への直接接続を許可する。射撃型を確認。距離を取って撃ってくる。'], win: '直接接続、良好。資源、目標量に到達。',
+    intro: 'ロボットに「乗って」自分で戦えるようになる。乗ると連射・威力・射程が上がる。射撃型は立ち止まって撃ってくる。',
+    drawCount: { low: 3, mid: 3 },
     map: { minX: -13, maxX: 13, minZ: -18.5, maxZ: 13 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.6 },
     paths: [[[-11, -17.5], [-11, 10], [8, 10], [8, -10], [-5, -10], [-5, 4], [0, 4], [0, 0]]],
-    ebases: [{ path: 0, hp: 600, pts: 150 }],
     waves: [
-      [1, 'normal', 5, 1.2], [10, 'splitter', 3, 2.5], [20, 'normal', 8, .8], [30, 'healer', 1, 0], [31, 'normal', 8, .8], [44, 'splitter', 5, 1.6],
-      [50, 'kamikaze', 8, .3], [56, 'shooter', 3, 2], [62, 'healer', 2, 3], [64, 'normal', 12, .6], [80, 'splitter', 6, 1.2],
-      [94, 'normal', 14, .5], [100, 'kamikaze', 12, .25], [104, 'healer', 2, 3], [106, 'shooter', 4, 1.5], [115, 'splitter', 8, 1], [125, 'normal', 16, .4], [40, 'swarm', 30, .15], [90, 'swarmHeavy', 15, .4], [120, 'swarm', 40, .1],
+      [2, 'normal', 6, 1.1], [14, 'shooter', 2, 2.5], [22, 'normal', 12, .6], [32, 'swarm', 24, .15], [42, 'shooter', 2, 2],
+      [50, 'normal', 14, .5], [62, 'swarm', 30, .13], [72, 'shooter', 3, 1.8], [82, 'normal', 18, .45], [94, 'swarm', 36, .12],
+      [104, 'shooter', 3, 1.6], [114, 'normal', 20, .4], [126, 'swarm', 40, .1], [136, 'shooter', 4, 1.4], [148, 'normal', 24, .35], [165, 'normal', 20, .4],
     ],
   },
   {
-    id: 's4', name: '序章-4', sub: '逆侵攻', brief: ['敵拠点三か所を特定。攻勢に転じる。', '敵拠点内部に高密度の反応あり。破壊せよ。'], win: '敵拠点、全壊。内部の反応体を回収した。解析は後とする。', goal: 'bases', time: 150, startPoints: 160, hpRamp: 1,
-    intro: '三方に敵拠点。すべて壊せば勝ち。壊した拠点からは出撃が止まる。北と南東の拠点は砲台付き。',
+    id: 's4', name: '序章-4', sub: '逆侵攻', goal: 'bases', time: 180, startPoints: 200, hpRamp: 1,
+    brief: ['敵拠点三か所を特定。攻勢に転じる。', '敵拠点内部に高密度の反応あり。破壊せよ。突進型に注意。'], win: '敵拠点、全壊。内部の反応体を回収した。解析は後とする。',
+    intro: '三方に敵拠点。すべて壊せば勝ち。壊した拠点からは敵が来なくなる。北と南東の拠点は砲台付き。突進型はロボットに体当たりする。',
+    drawCount: { low: 2, mid: 3, high: 1 },
     map: { minX: -16, maxX: 16, minZ: -22, maxZ: 20 }, base: { x: 0, z: 0 }, factory: { x: -2.8, z: -2.2 },
     paths: [
       [[0, -21], [0, -16], [-9, -16], [-9, -8], [4, -8], [4, -3], [0, -3], [0, 0]],
@@ -169,14 +172,17 @@ const STAGES = [
       { path: 2, hp: 700, pts: 120, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
     ],
     waves: [
-      [6, 'normal', 4, 1.3, 0], [7, 'normal', 4, 1.3, 1], [8, 'normal', 4, 1.3, 2], [14, 'shooter', 2, 2.5, '*'], [22, 'shield', 3, 2, 0], [30, 'normal', 8, .8, '*'],
-      [42, 'shield', 3, 2, 1], [48, 'shooter', 3, 2, '*'], [58, 'normal', 10, .6, '*'], [64, 'kamikaze', 8, .3, '*'], [70, 'shield', 4, 1.6, '*'], [80, 'shooter', 4, 1.6, '*'],
-      [90, 'normal', 14, .5, '*'], [105, 'shield', 5, 1.4, '*'], [115, 'normal', 16, .45, '*'], [128, 'shooter', 5, 1.2, '*'], [52, 'swarm', 24, .15, '*'], [96, 'swarmBomb', 20, .15, '*'],
+      [6, 'normal', 4, 1.3, 0], [7, 'normal', 4, 1.3, 1], [8, 'normal', 4, 1.3, 2], [16, 'shooter', 3, 2, '*'], [24, 'dasher', 3, 2, '*'], [32, 'swarm', 24, .15, '*'],
+      [42, 'normal', 9, .7, '*'], [50, 'dasher', 4, 1.6, '*'], [58, 'shooter', 4, 1.6, '*'], [66, 'swarm', 30, .12, '*'], [76, 'normal', 12, .55, '*'],
+      [86, 'dasher', 5, 1.3, '*'], [96, 'shooter', 5, 1.4, '*'], [106, 'swarm', 36, .1, '*'], [118, 'normal', 15, .45, '*'], [130, 'dasher', 6, 1.1, '*'],
+      [142, 'shooter', 6, 1.2, '*'], [154, 'swarm', 40, .1, '*'], [166, 'normal', 18, .4, '*'],
     ],
   },
   {
-    id: 's5', name: '序章-5', sub: '三方面', brief: ['三方向より同時侵攻。', '北方に大型反応。照合中。……我が方の機体と構造が一致する。'], win: '三方面、防衛完了。大型機の構造を記録した。侵略者は、我々を学習している。', goal: 'time', time: 150, startPoints: 200, hpRamp: 1,
-    intro: '北・南西・東の三方から。75秒で模倣機（ボス）が北から来る。',
+    id: 's5', name: '序章-5', sub: '模倣', goal: 'boss', time: 210, startPoints: 220, hpRamp: .5, bossHp: 700,
+    brief: ['三方向より侵攻。北方に大型反応。', '照合中。……我が方の機体と構造が一致する。これを撃破せよ。'], win: '大型機、撃破。侵略者は、我々を学習している。',
+    intro: '40秒ごろ、こちらのロボットを真似た模倣機が北から来る。倒せば勝ち。乗って戦えば強い。',
+    drawCount: { low: 2, mid: 3, high: 2 },
     map: { minX: -17, maxX: 17, minZ: -23, maxZ: 22 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.8 },
     paths: [
       [[0, -22], [0, -15], [-9, -15], [-9, -6], [-2, -6], [-2, 0], [0, 0]],
@@ -184,22 +190,21 @@ const STAGES = [
       [[16, -12], [10, -12], [10, 8], [4, 8], [4, 0], [0, 0]],
     ],
     ebases: [
-      { path: 0, hp: 700, pts: 150, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
-      { path: 1, hp: 700, pts: 150 },
-      { path: 2, hp: 700, pts: 150, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
+      { path: 1, hp: 600, pts: 120 },
+      { path: 2, hp: 600, pts: 120, turret: { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 } },
     ],
     waves: [
-      [5, 'normal', 4, 1.2, 0], [7, 'normal', 4, 1.2, 2], [12, 'mine', 3, 1.5, 1], [18, 'shield', 3, 2, '*'], [26, 'normal', 9, .7, '*'],
-      [34, 'armor', 3, 2.5, '*'], [44, 'splitter', 4, 1.6, '*'], [52, 'mine', 4, 1.2, '*'], [56, 'kamikaze', 9, .25, '*'], [60, 'shooter', 4, 1.5, '*'],
-      [68, 'normal', 12, .55, '*'], [75, 'boss', 1, 0, 0], [78, 'shield', 4, 1.5, '*'], [84, 'dasher', 5, 1.2, '*'],
-      [100, 'normal', 16, .45, '*'], [108, 'kamikaze', 12, .2, '*'], [110, 'armor', 4, 2, '*'], [118, 'mine', 6, 1, '*'], [126, 'splitter', 6, 1.1, '*'], [135, 'normal', 18, .4, '*'], [40, 'swarm', 30, .12, '*'], [90, 'swarmFly', 20, .2, '*'], [115, 'swarmHeavy', 18, .3, '*'],
+      [4, 'normal', 4, 1.2, 1], [6, 'normal', 4, 1.2, 2], [14, 'shooter', 3, 2, '*'], [22, 'swarm', 24, .15, '*'], [30, 'dasher', 4, 1.5, '*'],
+      [40, 'boss', 1, 0, 0], [46, 'normal', 10, .6, '*'], [56, 'swarm', 30, .12, '*'], [66, 'shooter', 5, 1.4, '*'], [76, 'dasher', 5, 1.3, '*'],
+      [88, 'normal', 14, .5, '*'], [100, 'swarm', 36, .1, '*'], [112, 'shooter', 6, 1.2, '*'], [124, 'dasher', 6, 1.1, '*'], [138, 'normal', 18, .4, '*'],
+      [152, 'swarm', 40, .1, '*'], [166, 'shooter', 8, 1, '*'], [180, 'normal', 20, .35, '*'],
     ],
   },
 ];
 // ---------- 本編（地図移動が前提の広いステージ） ----------
 STAGES.push({
-  id: 'w1', name: '1-1', sub: '四方の前線', brief: ['包囲網、四方に展開。戦域、拡大。', '陣地を確保し、出撃地点とせよ。模倣機、再出現の兆候あり。'], win: '四方の前線、維持。', goal: 'time', time: 180, startPoints: 300, hpRamp: .8, wide: true,
-  intro: '広い戦場。四方の敵拠点から長い経路で押し寄せる。地図を動かして戦況を見よ。100秒で模倣機が北から来る。',
+  id: 'w1', name: '1-1', sub: '四方の前線', brief: ['包囲網、四方に展開。戦域、拡大。', '陣地を確保し、出撃地点とせよ。装甲型と盾持ちを確認。'], win: '資源、目標量に到達。前線、維持。', goal: 'points', goalPts: 600, time: 240, startPoints: 300, hpRamp: .6, wide: true,
+  intro: '広い戦場。四方の敵拠点から長い経路で押し寄せる。青い陣地は出撃地点に選べる。装甲型は弱い弾を減らし、盾持ちは正面の弾を防ぐ。100秒で模倣機。',
   map: { minX: -30, maxX: 30, minZ: -40, maxZ: 40 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 },
   view: { zoom: 2.6 },
   // 陣地：[x, z, 名前, 状態]。p＝最初から確保済み（拠点寄り）/ 省略＝中立 / e＝敵占領（守備隊が居座る。敵拠点寄り）
@@ -218,19 +223,15 @@ STAGES.push({
     { path: 3, hp: 700, pts: 150 },
   ],
   waves: [
-    [3, 'normal', 3, 1.4, 0], [8, 'normal', 3, 1.4, 2], [14, 'normal', 3, 1.4, 1], [19, 'normal', 3, 1.4, 3],
-    [24, 'shooter', 4, 2, '*'], [32, 'dasher', 4, 1.5, '*'], [40, 'kamikaze', 10, .25, 1], [44, 'shield', 4, 1.6, '*'],
-    [52, 'armor', 4, 2.2, '*'], [58, 'splitter', 4, 1.5, '*'], [64, 'healer', 2, 4, '*'], [66, 'normal', 16, .5, '*'],
-    [74, 'mine', 6, 1, '*'], [80, 'kamikaze', 12, .2, 3], [88, 'shooter', 6, 1.2, '*'], [100, 'boss', 1, 0, 0],
-    [104, 'shield', 6, 1.2, '*'], [112, 'armor', 6, 1.6, '*'], [120, 'normal', 24, .35, '*'], [130, 'kamikaze', 16, .2, '*'],
-    [140, 'splitter', 8, 1, '*'], [150, 'dasher', 8, .9, '*'], [160, 'normal', 28, .3, '*'], [168, 'armor', 6, 1.2, '*'],
-    [70, 'flyer', 5, .8, '*'], [90, 'artillery', 1, 0, 1], [110, 'engineer', 2, 5, '*'], [150, 'engineer', 2, 5, '*'],
-    [50, 'swarm', 40, .1, '*'], [95, 'swarmFast', 40, .08, '*'], [135, 'swarmBomb', 30, .1, '*'], [155, 'swarmFly', 30, .12, '*'],
+    [3, 'normal', 4, 1.4, 0], [8, 'normal', 4, 1.4, 2], [14, 'normal', 4, 1.4, 1], [19, 'normal', 4, 1.4, 3], [26, 'shooter', 4, 2, '*'], [34, 'swarm', 40, .1, '*'],
+    [42, 'armor', 4, 2.2, '*'], [50, 'dasher', 4, 1.5, '*'], [58, 'normal', 16, .5, '*'], [66, 'shield', 4, 1.6, '*'], [76, 'swarm', 50, .08, '*'], [86, 'shooter', 6, 1.2, '*'],
+    [100, 'boss', 1, 0, 0], [106, 'armor', 6, 1.6, '*'], [116, 'normal', 24, .35, '*'], [128, 'shield', 6, 1.2, '*'], [140, 'swarm', 60, .07, '*'], [152, 'dasher', 8, .9, '*'],
+    [164, 'normal', 28, .3, '*'], [176, 'armor', 6, 1.2, '*'], [188, 'shooter', 8, 1, '*'], [200, 'swarm', 70, .06, '*'], [212, 'shield', 8, 1, '*'], [224, 'normal', 30, .3, '*'],
   ],
 });
 STAGES.push({
-  id: 'w2', name: '1-2', sub: '大群', brief: ['敵、物量戦に移行。推定、千体以上。', '範囲兵器の使用を許可する。友軍の損耗は許容範囲内とする。'], win: '大群、殲滅。損耗率、許容範囲内。', goal: 'time', time: 120, startPoints: 300, hpRamp: .5, wide: true,
-  intro: '2分間で約1000体が押し寄せる。範囲攻撃と前線拠点で一網打尽にせよ。輸送艦・飛行型・砲撃型・工兵も来る。',
+  id: 'w2', name: '1-2', sub: '大群', brief: ['敵、物量戦に移行。推定、千体以上。', '範囲兵器の使用を許可する。友軍の損耗は許容範囲内とする。殲滅せよ。'], win: '大群、殲滅。損耗率、許容範囲内。', goal: 'clear', time: 170, startPoints: 300, hpRamp: .5, wide: true,
+  intro: '約1000体が押し寄せる。すべて倒せば勝ち。特攻型はロボットに突っ込んで自爆し、分裂型は倒すと3体に分かれる。範囲攻撃で一網打尽にせよ。',
   map: { minX: -26, maxX: 26, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 3, z: -3 },
   view: { zoom: 2.2 },
   outposts: [[-8, -6, 'A', 'p'], [10, -4, 'B', 'p'], [0, 12, 'C', 'p']],
@@ -245,11 +246,10 @@ STAGES.push({
     { path: 2, hp: 900, pts: 200 },
   ],
   waves: [
-    [2, 'swarm', 30, .15, 0], [4, 'swarm', 30, .15, 1], [6, 'swarm', 30, .15, 2],
-    [14, 'swarm', 45, .12, '*'], [20, 'flyer', 6, .8, '*'], [24, 'swarm', 60, .1, '*'], [30, 'carrier', 1, 0, 0], [32, 'shooter', 6, 1, '*'],
-    [38, 'swarm', 60, .1, '*'], [44, 'kamikaze', 15, .15, '*'], [50, 'swarm', 70, .08, '*'], [55, 'carrier', 1, 0, 1], [56, 'carrier', 1, 0, 2],
-    [60, 'armor', 6, 1.5, '*'], [64, 'swarmFast', 80, .07, '*'], [70, 'flyer', 10, .5, '*'], [74, 'artillery', 3, 3, '*'], [78, 'swarm', 90, .06, '*'],
-    [84, 'engineer', 3, 4, '*'], [88, 'carrier', 1, 0, 0], [90, 'swarm', 100, .05, '*'], [96, 'kamikaze', 20, .12, '*'], [100, 'swarmHeavy', 60, .06, '*'], [104, 'swarmBomb', 40, .1, '*'], [108, 'swarm', 100, .05, '*'], [112, 'swarmFly', 40, .1, '*'],
+    [2, 'swarm', 30, .15, 0], [4, 'swarm', 30, .15, 1], [6, 'swarm', 30, .15, 2], [14, 'swarm', 45, .12, '*'], [20, 'kamikaze', 8, .3, '*'], [24, 'swarm', 60, .1, '*'],
+    [30, 'splitter', 6, 1, '*'], [32, 'shooter', 6, 1, '*'], [38, 'swarm', 60, .1, '*'], [44, 'kamikaze', 15, .15, '*'], [50, 'swarm', 70, .08, '*'], [55, 'splitter', 8, .8, '*'],
+    [60, 'armor', 6, 1.5, '*'], [64, 'swarmFast', 80, .07, '*'], [70, 'kamikaze', 12, .2, '*'], [74, 'armor', 4, 1.5, '*'], [78, 'swarm', 90, .06, '*'], [84, 'shooter', 6, 1, '*'],
+    [88, 'splitter', 8, .8, '*'], [90, 'swarm', 100, .05, '*'], [96, 'kamikaze', 20, .12, '*'], [100, 'swarmHeavy', 60, .06, '*'], [108, 'swarm', 100, .05, '*'],
   ],
 });
 (() => {
@@ -259,11 +259,11 @@ STAGES.push({
   for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; paths.push([P(30, a), P(22, a), P(22, a + .18), P(13, a + .18), P(13, a - .1), P(6, a - .1), P(3, a), [0, 0]]); }
   const waves = [], kinds = ['swarm', 'swarmFast', 'swarm', 'swarmHeavy', 'swarmBomb', 'swarm', 'swarmFly'];
   for (let k = 0, t = 3; t <= 140; t += 7, k++) waves.push([t, kinds[k % kinds.length], Math.round(40 + t * .5), .04, '*']);
-  waves.push([40, 'carrier', 2, 2, '*'], [80, 'carrier', 2, 2, '*'], [120, 'carrier', 2, 2, '*'], [60, 'flyer', 10, .4, '*'], [110, 'flyer', 14, .3, '*'],
-    [90, 'boss', 1, 0, 0], [100, 'artillery', 2, 3, '*'], [70, 'engineer', 3, 3, '*'], [130, 'engineer', 3, 3, '*'], [30, 'shooter', 8, .8, '*'], [75, 'armor', 6, 1, '*'], [95, 'kamikaze', 24, .1, '*']);
+  waves.push([40, 'splitter', 8, .6, '*'], [80, 'splitter', 8, .6, '*'], [120, 'armor', 8, .8, '*'], [60, 'flyer', 10, .4, '*'], [110, 'flyer', 14, .3, '*'],
+    [90, 'boss', 1, 0, 0], [100, 'shield', 8, .8, '*'], [30, 'shooter', 8, .8, '*'], [75, 'armor', 6, 1, '*'], [95, 'kamikaze', 24, .1, '*']);
   STAGES.push({
-    id: 'w3', name: '1-3', sub: '包囲', brief: ['八方より侵攻。完全包囲。', '持ちこたえよ。救援は、ない。'], win: '包囲、持ちこたえた。北端に指揮拠点の反応を捕捉。', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
-    intro: '八方から2分半で1500体以上。群体の全種が来る。前線拠点は経路のすぐ脇にあり、奪い合いになる。90秒で模倣機。',
+    id: 'w3', name: '1-3', sub: '包囲', brief: ['八方より侵攻。完全包囲。', '長距離中継器を再起動する。完了まで二分半。持ちこたえよ。'], win: '中継器、再起動。北端に指揮拠点の反応を捕捉。', holdWhy: '中継器の再起動まで拠点を守る', goal: 'time', time: 150, startPoints: 400, hpRamp: .6, wide: true,
+    intro: '八方から2分半で1500体以上。飛行型・飛行群体は経路を無視して拠点へ飛んでくる。自爆群体はロボットのそばで弾ける。陣地は経路のすぐ脇で、奪い合いになる。90秒で模倣機。',
     map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 1.7, z: -3.6 },
     view: { zoom: 2.2 },
     outposts: [0, 1, 2, 3].map(k => P(11, Math.PI / 8 + k * Math.PI / 2).concat(['ABCD'[k], 'p'])),
@@ -277,7 +277,7 @@ STAGES.push({
 STAGES.push({
   id: 'w4', name: '1-4', sub: '突破', goal: 'bases', time: 210, startPoints: 350, hpRamp: .8, wide: true,
   brief: ['包囲網の北端に指揮拠点を確認。', '陣地を伝って北上し、これを破壊せよ。突破口を開く。'], win: '指揮拠点、破壊。包囲網に穴が開いた。反攻に移る。',
-  intro: '縦に長い戦場。北端の指揮拠点はとても硬く、砲台付き。左右の拠点も壊せば勝ち。北へ進むほど陣地は敵の手にある。',
+  intro: '縦に長い戦場。北端の指揮拠点はとても硬く、砲台付き。左右の拠点も壊せば勝ち。北へ進むほど陣地は敵の手にある。回復ドローンは周りの敵を治し、機雷は近づくと爆発する。',
   map: { minX: -26, maxX: 26, minZ: -40, maxZ: 32 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 },
   view: { zoom: 2.4 },
   outposts: [[-8, 12, 'A', 'p'], [10, 10, 'B', 'p'], [0, -4, 'C'], [-14, -16, 'D', 'e'], [14, -16, 'E', 'e'], [8, -30, 'F', 'e']],
@@ -295,12 +295,41 @@ STAGES.push({
   waves: [
     [3, 'normal', 4, 1.2, '*'], [10, 'shooter', 3, 1.8, '*'], [16, 'swarm', 30, .12, '*'], [24, 'dasher', 4, 1.4, '*'], [30, 'shield', 4, 1.5, '*'],
     [38, 'kamikaze', 10, .25, 0], [44, 'armor', 4, 2, '*'], [50, 'swarmFast', 40, .08, '*'], [56, 'splitter', 5, 1.2, '*'], [62, 'healer', 2, 4, '*'],
-    [68, 'flyer', 6, .8, '*'], [74, 'normal', 18, .4, '*'], [80, 'artillery', 1, 0, 0], [86, 'mine', 6, 1, '*'], [92, 'swarm', 50, .08, '*'],
-    [100, 'engineer', 2, 5, '*'], [110, 'boss', 1, 0, 0], [116, 'shield', 6, 1.2, '*'], [124, 'swarmHeavy', 40, .08, '*'], [132, 'kamikaze', 14, .2, '*'],
+    [68, 'flyer', 6, .8, '*'], [74, 'normal', 18, .4, '*'], [80, 'healer', 2, 3, '*'], [86, 'mine', 6, 1, '*'], [92, 'swarm', 50, .08, '*'],
+    [100, 'shooter', 6, 1, '*'], [110, 'boss', 1, 0, 0], [116, 'shield', 6, 1.2, '*'], [124, 'swarmHeavy', 40, .08, '*'], [132, 'kamikaze', 14, .2, '*'],
     [140, 'armor', 6, 1.4, '*'], [148, 'swarmBomb', 30, .1, '*'], [156, 'shooter', 8, 1, '*'], [164, 'swarmFly', 30, .12, '*'], [172, 'normal', 30, .3, '*'],
-    [180, 'artillery', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
+    [180, 'healer', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
   ],
 });
+// ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
+const FEATURES = {
+  blaster: 's1', spread: 's1', heavy: 's2', missile: 's4', breaker: 'w1', homing: 'w2', bomb: 'w2', laser: 'w3',
+  tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
+  pilot: 's3', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
+};
+// 解禁したときに見せる説明（武器・ボディ以外）
+const FEATURE_INFO = {
+  pilot: { icon: '🎮', name: '自操作', desc: 'ロボットに乗って自分で戦う。連射・威力・射程が上がるが、機体は動かず前しか見えない' },
+  repair: { icon: '🔧', name: '拠点修理', desc: '建造画面の「拠点工事」で、拠点のHPを回復できる' },
+  reserve: { icon: '📋', name: '予約', desc: '出撃中が上限でも作れる。誰かが倒れたら、すぐ出撃する' },
+  line2: { icon: '🏗', name: '建造ライン2本目', desc: 'ポイントで開放すると、2機同時に建造できる' },
+  turret: { icon: '🗼', name: '拠点砲台', desc: '拠点に簡易砲台を付けられる' },
+  shield: { icon: '🛡', name: '拠点シールド', desc: '拠点に盾を張れる' },
+  loadout: { icon: '🧬', name: '進化パーツの持ち込み', desc: '解禁した進化パーツを、出撃前に選んで持ち込める' },
+  tier_mid: { icon: '🤖', name: '中ランクのボディ', desc: '配備されるボディに中ランクが混ざる' },
+  tier_high: { icon: '🤖', name: '高ランクのボディ', desc: '配備されるボディに高ランクが混ざる' },
+  mass: { icon: '🤖', name: '量産フレーム', desc: '武器の建造時間が短いボディが配備されるようになる' },
+  shieldbody: { icon: '🤖', name: 'シールドフレーム', desc: 'シールド付きのボディが配備されるようになる' },
+};
+// その作戦で使えるもの。cleared(id) はクリア済みか、all は全解禁（試作用）
+function allowFor(stId, cleared, all) {
+  const order = CHAPTERS.flatMap(c => c.stages), idx = order.indexOf(stId), a = {};
+  for (const f in FEATURES) a[f] = !!all || order.indexOf(FEATURES[f]) <= idx || (cleared ? !!cleared(FEATURES[f]) : false);
+  return a;
+}
+const ALLOW_ALL = (() => { const a = {}; for (const f in FEATURES) a[f] = true; return a; })();
+function bodyAllowed(S, b) { const A = S.allow; return A['tier_' + b.tier] && (FEATURES[b.id] ? A[b.id] : true); }
+
 // ---------- 章（物語の区切り。作戦は順に並べる。分岐はしない） ----------
 // 語り手は基地の管制AI「アイ」。硬い無線の調子で話す
 const CHAPTERS = [
@@ -355,9 +384,10 @@ function pathPos(P, d, off) {
 }
 
 // ---------- 状態 ----------
-function drawBodies(dc) {
-  const out = [];
-  for (const tier in dc) out.push(...shuffle(BODIES.filter(b => b.tier === tier)).slice(0, dc[tier]));
+function drawBodies(dc, allow) {
+  const out = [], ok = b => !allow || (allow['tier_' + b.tier] && (FEATURES[b.id] ? allow[b.id] : true));
+  for (const tier in dc) out.push(...shuffle(BODIES.filter(b => b.tier === tier && ok(b))).slice(0, dc[tier]));
+  if (!out.length) out.push(...shuffle(BODIES.filter(b => b.tier === 'low')).slice(0, 3));
   return out.sort((a, b) => a.cost - b.cost);
 }
 function newState(stageId, opt) {
@@ -382,7 +412,7 @@ function newState0(stageId, opt) {
     spawned: 0,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
-    bodies: drawBodies(st.drawCount || DRAW_DEFAULT), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo),
+    allow: opt.allow || ALLOW_ALL, bodies: drawBodies(st.drawCount || DRAW_DEFAULT, opt.allow), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo && (!opt.allow || opt.allow.loadout)),
     kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
     over: null, fx: [], msgs: [], warnT: 0, baseWarnT: 0, baseDmg: 0,
   };
@@ -397,9 +427,13 @@ function buildCost(body, wids) {
   time = Math.round(time * 10) / 10;
   return { cost, time };
 }
+function weaponAllowed(S, w) { const d = WEAPONS[w]; return d.evo ? S.loadout.includes(w) : FEATURES[w] ? !!S.allow[w] : true; }
 function buildCheck(S, body, wids) {
   if (!body) return 'ボディを選んでください';
   if (!wids.length) return '武器を1つ以上選んでください';
+  if (!bodyAllowed(S, body)) return 'このボディはまだ使えません';
+  for (const w of wids) if (!weaponAllowed(S, w)) return WEAPONS[w].name + 'はまだ使えません';
+  if (!S.allow.reserve && S.robots.length + S.queue.filter(q => !q.work).length >= CFG.deployCap) return '出撃枠がいっぱいです（' + CFG.deployCap + '機）';
   if (S.queue.length >= CFG.queueMax) return '予約は' + CFG.queueMax + '機までです';
   if (S.pts < buildCost(body, wids).cost) return 'ポイントが足りません';
   return null;
@@ -414,6 +448,7 @@ const HOME_GUN = { name: '拠点砲台', range: 6, dmg: 7, cd: .7, speed: 20, pe
 function workCost(S, id) { const w = WORKS[id]; return w.cost + (w.costUp || 0) * (S.works[id] || 0); }
 function workCheck(S, id) {
   const w = WORKS[id];
+  if (!S.allow[id]) return 'まだ使えません';
   if (S.queue.length >= CFG.queueMax) return '予約は' + CFG.queueMax + '機までです';
   if (w.max && (S.works[id] || 0) >= w.max) return '最大まで強化済みです';
   if (w.max && (S.works[id] || 0) + S.queue.filter(q => q.work === id).length >= w.max) return '予約分を含めて最大です';
@@ -442,6 +477,7 @@ function updHomeGun(S, dt) {
 }
 function buyLine(S) {
   if (S.lines >= 2) return '開放済みです';
+  if (!S.allow.line2) return 'まだ使えません';
   if (S.pts < CFG.line2Cost) return 'ポイントが足りません';
   S.pts -= CFG.line2Cost; S.spent += CFG.line2Cost; S.lines = 2; say(S, '🏗 建造ライン2を開放。2機同時に建造できる', 'good');
   return null;
@@ -629,6 +665,7 @@ function lockTarget(S, r, d, range) {
 }
 function pmul(r) { const P = r.piloted ? CFG.pilot : null; return { rate: r.rateMul * (P ? P.rate : 1), dmg: r.dmgMul * (P ? P.dmg : 1), range: r.rangeMul * (P ? P.range : 1) }; }
 function setPilot(S, r) {
+  if (r && !S.allow.pilot) return;
   for (const o of S.robots) { o.piloted = false; o.lock = null; }
   if (r && !r.dead) { r.piloted = true; r.tx = r.x; r.tz = r.z; r.aimYaw = r.face; }
 }
@@ -673,9 +710,9 @@ function updRobot(S, r, dt) {
 
 // ---------- 敵 ----------
 function spawnEnemy(S, type, pi, d0, from) {
-  const def = ENEMIES[type], hm = def.noRamp ? 1 : 1 + S.st.hpRamp * Math.min(1, S.t / S.st.time);
+  const def = ENEMIES[type], hm = def.noRamp ? 1 : 1 + S.st.hpRamp * Math.min(1, S.t / S.st.time), hp0 = def.boss && S.st.bossHp ? S.st.bossHp : def.hp; // bossHp：作戦ごとのボスの硬さ
   const e = {
-    id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: def.hp * hm, maxHp: def.hp * hm, r: def.r,
+    id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
   };
   if (def.boss) { e.off = 0; e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); say(S, '🚨 模倣機（ボス）が出現', 'bad'); S.fx.push({ type: 'boss' }); }
@@ -962,14 +999,20 @@ function step(S, dt) {
   if (S.baseHP <= 0) { S.baseHP = 0; S.over = 'lose'; }
   else if (g === 'points' && S.pts >= S.st.goalPts) S.over = 'win';
   else if (g === 'bases' && S.ebases.every(b => b.dead)) S.over = 'win';
+  else if (g === 'boss' && S.bossKilled) S.over = 'win';
+  else if (g === 'clear' && S.waveIdx >= W.length && !S.spawners.length && !S.enemies.some(e => e.state !== 'guard')) S.over = 'win';
   else if (S.t >= S.st.time) { S.t = S.st.time; S.over = g === 'time' ? 'win' : 'lose'; }
 }
+function waveTotal(st) { return st.waves.reduce((a, w) => a + w[2], 0); }
 function goalText(st) {
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
-  return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' 拠点を守り抜く';
+  const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
+  if (st.goal === 'boss') return '模倣機を撃破する' + lim;
+  if (st.goal === 'clear') return '押し寄せる敵をすべて倒す' + lim;
+  return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
 
-return { CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

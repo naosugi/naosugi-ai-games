@@ -8,7 +8,7 @@ vm.runInContext(src.slice(src.indexOf('/*SIM-BEGIN*/'), src.indexOf('/*SIM-END*/
 const RD = ctx.RD, N = +process.argv[3] || 200, ONLY = process.argv[4];
 if (process.env.MISSILE_COST) RD.WEAPONS.missile.cost = +process.env.MISSILE_COST;
 
-const cheapest = (S, tier) => S.bodies.filter(b => b.tier === tier).sort((a, b) => a.cost - b.cost)[0];
+const cheapest = (S, tier) => S.bodies.filter(b => b.tier === tier).sort((a, b) => a.cost - b.cost)[0] || S.bodies.filter(b => b.tier !== 'high').slice(-1)[0] || S.bodies[0];
 const strategies = {
   'なにもしない': () => null,
   '安+ブラスター': S => [cheapest(S, 'low'), ['blaster']],
@@ -41,7 +41,12 @@ const strategies = {
 };
 
 function runOne(stId, pol) {
-  const S = RD.newState(stId, { loadout: Object.keys(RD.WEAPONS).filter(k => RD.WEAPONS[k].evo) }), spots = []; // 進化パーツはすべて持ち込める前提（使うかは戦略しだい）
+  // 初めて遊ぶ人と同じ解禁状態（ALL=1 なら全解禁）。進化パーツは、持ち込みが解禁されていればすべて持ち込める前提
+  const allow = RD.allowFor(stId, null, !!process.env.ALL);
+  const S = RD.newState(stId, { allow, loadout: Object.keys(RD.WEAPONS).filter(k => RD.WEAPONS[k].evo) }), spots = [];
+  // 戦略が使えない武器・ボディを指定したら、使えるもので代える
+  const fix = c => { if (!c || !c[0]) return c; let [b, w, ...rest] = c; if (!RD.bodyAllowed(S, b)) b = S.bodies.filter(x => x.tier === b.tier)[0] || S.bodies[S.bodies.length - 1];
+    w = w.filter(x => RD.weaponAllowed(S, x)); if (!w.length) w = [RD.weaponAllowed(S, 'spread') ? 'spread' : 'blaster']; return [b, w, ...rest]; };
   // 守備位置は経路から自動で作る：各経路の拠点寄り・中ほど・手前の3か所（経路の脇2.6）
   // bases ステージでは、各敵拠点の手前（経路沿い5.5）を攻撃位置にする
   if (S.st.goal === 'bases') for (const b of S.ebases) { const q = RD.pathPos(S.paths[b.path], 5.5, 2.4); spots.push({ p: [q.x, q.z], atk: true }); }
@@ -54,7 +59,7 @@ function runOne(stId, pol) {
     r.spot = best; RD.moveRobot(r, best.p[0] + (Math.random() - .5), best.p[1] + (Math.random() - .5), S);
   };
   while (!S.over) {
-    let c = pol(S);
+    let c = fix(pol(S));
     // 立ち上がり：狙いの構成が買えず、ロボットも1機もいないときは最安ボディ＋ブラスターで稼ぐ（買えないまま詰むのを防ぐ）
     if (c && c[0] && !S.robots.length && !S.queue.length && S.pts < RD.buildCost(c[0], c[1]).cost) c = [S.bodies[0], ['blaster']];
     // ライン2：作れる機体がいっぱいでも建造待ちが出る場面に備え、余裕があれば開放する
@@ -78,7 +83,7 @@ function runOne(stId, pol) {
 for (const st of RD.STAGES) {
   if (ONLY && st.id !== ONLY) continue;
   console.log('\n■ ' + st.id + ' ' + st.name + '「' + st.sub + '」 勝利条件：' + RD.goalText(st) + ' 開始⭐' + st.startPoints);
-  console.log('戦略'.padEnd(18, '　') + ' 勝率  拠点HP  終了  撃破  建造  損失(誤射)  ' + (st.goal === 'points' ? '最終⭐' : st.goal === 'bases' ? '敵拠点破壊' : st.waves.some(w => w[1] === 'boss') ? 'ボス撃破' : ''));
+  console.log('戦略'.padEnd(18, '　') + ' 勝率  拠点HP  終了  撃破  建造  損失(誤射)  ' + (st.goal === 'points' ? '最終⭐' : st.goal === 'bases' ? '敵拠点破壊' : st.goal === 'clear' ? '残り敵' : st.waves.some(w => w[1] === 'boss') ? 'ボス撃破' : ''));
   for (const [name, pol] of Object.entries(strategies)) {
     if (name.startsWith('節約') && st.goal !== 'points') continue;
     const a = { win: 0, hp: 0, t: 0, kills: 0, built: 0, lost: 0, ffk: 0, pts: 0, eb: 0, boss: 0 };
