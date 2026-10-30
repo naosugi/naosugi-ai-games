@@ -39,8 +39,10 @@ a{color:var(--cyan)}
 .basebar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .2s}
 .basebar.hurt i{background:linear-gradient(90deg,#ff4d6d,#ffa94d)}
 
-#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 74px);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:6}
-.toast{background:#0d1830e8;border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;padding:5px 10px;font-size:13px;transition:opacity .4s,transform .4s;max-width:92%}
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 72px);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:6}
+.toast{background:#0a1328d9;border-left:3px solid var(--cyan);border-radius:4px;padding:2px 8px;font-size:12px;line-height:1.5;transition:opacity .4s,transform .4s;max-width:88%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast:not(:first-child){opacity:.75;font-size:11px}
+.toast.good{border-left-color:var(--green)}
 .toast::before{content:"📡 ";opacity:.8}
 .toast.warn{border-left-color:var(--gold)}
 .toast.bad{border-left-color:var(--red)}
@@ -105,15 +107,46 @@ a{color:var(--cyan)}
 .rcard .rs.bad{color:var(--red)} .rcard .rs.fight{color:var(--gold)} .rcard .rs.move{color:var(--cyan)}
 
 /* 下部 */
-#bottom{position:fixed;left:0;right:0;bottom:0;padding:10px calc(env(safe-area-inset-right) + 10px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 10px);background:linear-gradient(#050a1c00,#050a1cf2 30%);z-index:5;display:flex;flex-direction:column;gap:8px}
-#info{min-height:20px;font-size:13px;color:var(--dim);text-align:center}
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:4px calc(env(safe-area-inset-right) + 10px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 10px);background:linear-gradient(#050a1c00,#050a1ce6 40%);z-index:5;display:flex;flex-direction:column;gap:4px}
+#info{min-height:16px;font-size:12px;color:var(--dim);text-align:center}
 #info b{color:var(--fg)}
 #info.sel{color:var(--cyan)}
 #queue{display:flex;gap:6px;overflow:hidden;flex:1;min-width:0}
 .qchip{position:relative;flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px;overflow:hidden;max-width:46%}
 .qchip i{position:absolute;left:0;bottom:0;height:3px;background:var(--cyan)}
 .qchip.wait{opacity:.6}
-#buildBtn{padding:12px 18px;font-size:16px;font-weight:800;flex:0 0 auto}
+#buildBtn{padding:10px 16px;font-size:15px;font-weight:800;flex:0 0 auto}
+
+/* 時間停止中 */
+canvas#c{transition:filter .2s}
+canvas#c.frozen{filter:saturate(.35) brightness(.55)}
+/* 告知バナー */
+.banner{position:fixed;left:0;right:0;top:38%;z-index:8;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transform:scale(1.15);transition:opacity .3s,transform .3s;padding:14px 0;background:linear-gradient(90deg,transparent,#050a1ccc 20%,#050a1ccc 80%,transparent)}
+.banner.show{opacity:1;transform:none}
+.banner b{font-size:26px;letter-spacing:.12em;color:var(--cyan);text-shadow:0 0 12px #65f6ff99}
+.banner span{font-size:13px;color:var(--fg)}
+.banner.boss{background:repeating-linear-gradient(135deg,#3a0a14d9 0 14px,#1a0408d9 14px 28px)}
+.banner.boss b{color:var(--red);text-shadow:0 0 14px #ff4d6daa;animation:blink .4s steps(2) infinite}
+.banner.good b{color:var(--gold);text-shadow:0 0 14px #ffd166aa}
+@keyframes blink{50%{opacity:.4}}
+/* 連続撃破 */
+#combo{position:fixed;right:calc(env(safe-area-inset-right) + 54px);top:calc(env(safe-area-inset-top) + 140px);z-index:6;pointer-events:none;text-align:right;opacity:0;transition:opacity .25s}
+#combo.show{opacity:1}
+#combo b{display:block;font-size:30px;font-weight:900;color:var(--gold);text-shadow:0 2px 6px #000,0 0 12px #ffd16688;font-variant-numeric:tabular-nums;animation:pop .25s}
+#combo.big b{font-size:40px;color:#fff;text-shadow:0 0 16px #ffd166,0 2px 6px #000}
+#combo span{font-size:13px;font-weight:800;color:var(--gold);text-shadow:0 1px 3px #000}
+@keyframes pop{from{transform:scale(1.4)}to{transform:none}}
+/* 武器の格子 */
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wcard{text-align:left;padding:7px 8px;border-radius:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.wcard.on{border-color:var(--cyan);background:#16345a;box-shadow:0 0 0 1px var(--cyan) inset}
+.wcard.evo{border-color:#b48cff}
+.wcard.evo.on{box-shadow:0 0 0 1px #b48cff inset}
+.wcard .wn{display:flex;align-items:center;gap:5px;min-width:0}
+.wcard .wn b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wcard .ws{display:flex;gap:8px;font-size:12px;color:var(--dim);align-items:center}
+.wcard .wd{font-size:10.5px;color:var(--dim);line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.wcard.on .chk{background:var(--cyan);color:#04142a;border-color:var(--cyan)}
 
 /* モーダル */
 .modal{position:fixed;inset:0;display:none;background:#020510b0;z-index:20;justify-content:center;align-items:flex-end}
@@ -163,8 +196,10 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
 <div id="floats"></div>
 <div id="tags"></div>
 <div id="edges"></div>
+<div id="banner" class="banner"></div>
+<div id="combo"></div>
 <div id="hud">
-  <div class="row"><a class="back" href="../../">← ゲーム一覧</a><span class="ttl">ROBOT DEFENSE <small>試作</small></span><span class="sp"></span><button id="viewBtn" title="全体表示">⤢</button><button id="spdBtn">×1</button><button id="pauseBtn">Ⅱ</button></div>
+  <div class="row"><a class="back" href="../../">← ゲーム一覧</a><span class="ttl">ROBOT DEFENSE <small>試作</small></span><span class="sp"></span><button id="muteBtn" title="音">🔊</button><button id="viewBtn" title="全体表示">⤢</button><button id="spdBtn">×1</button><button id="pauseBtn">Ⅱ</button></div>
   <div class="row stats">
     <span class="st">⏱<b id="hTime">2:00</b></span>
     <span class="st" id="hGoal" style="display:none"></span>
@@ -192,8 +227,8 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
   <div id="bStep2">
     <div class="sec">② 武器を選ぶ <span class="dim">複数選択可</span></div>
     <div id="bChosen"></div>
-    <div id="wList" class="list"></div>
     <div id="bAt"></div>
+    <div id="wList" class="wgrid"></div>
     <div class="foot"><div id="bSum" class="sum"></div>
     <div class="btns"><button id="bBack" class="ghost">← ボディ選択へ</button><button id="bGo" class="primary">建造する</button></div></div>
   </div>

@@ -383,8 +383,8 @@ function makeRobot(S, q) {
     face: Math.PI, moving: false, warned: false, dead: false, flash: 0, fireT: -9, hitT: -9,
   };
   r.tx = r.x; r.tz = r.z;
-  S.robots.push(r); S.built++;
-  say(S, '🔧 ' + r.name + ' 完成' + (op && op.owner === 'p' ? '（前線拠点' + op.label + 'から出撃）' : ''));
+  S.robots.push(r); S.built++; S.fx.push({ type: 'spawn', x: r.x, z: r.z, id: r.id });
+  say(S, '🔧 ' + r.name + ' 完成' + (op && op.owner === 'p' ? '（陣地' + op.label + 'から出撃）' : ''));
   return r;
 }
 function moveRobot(r, x, z, S) {
@@ -443,7 +443,7 @@ function killEnemy(S, e, owner) {
   e.dead = true; S.kills++; if (e.def.inst) S.swarmKills++;
   const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1));
   S.pts += g; S.earned += g;
-  S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss });
+  S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss, small: !!e.def.inst, kind: e.type });
   if (e.def.boss) { S.bossKilled = true; say(S, '★ 模倣機を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
   if (e.def.mine && e.armed) mineBlast(S, e);
@@ -504,6 +504,7 @@ function robotTarget(S, r, d, range) {
 }
 function fireWeapon(S, src, d, tg, team, mul) {
   const a = Math.atan2(tg.x - src.x, tg.z - src.z);
+  if (team === 'p') S.fx.push({ type: 'fire', x: src.x, z: src.z, a, kind: d.blast ? 'm' : d.size ? 'h' : d.pellets > 1 ? 's' : 'b', id: src.id });
   const range = d.range * (mul.range || 1);
   for (let i = 0; i < d.pellets; i++) {
     const aa = a + (d.pellets > 1 ? (i / (d.pellets - 1) - .5) * d.fan : 0);
@@ -560,7 +561,7 @@ function spawnEnemy(S, type, pi, d0, from) {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: def.hp * hm, maxHp: def.hp * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
   };
-  if (def.boss) { e.off = 0; e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); say(S, '🚨 模倣機（ボス）が出現', 'bad'); }
+  if (def.boss) { e.off = 0; e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); say(S, '🚨 模倣機（ボス）が出現', 'bad'); S.fx.push({ type: 'boss' }); }
   const p = pathPos(S.paths[pi], e.d, e.off); e.x = from ? from.x + rnd(-.5, .5) : p.x; e.z = from ? from.z + rnd(-.5, .5) : p.z;
   if (from) e.state = 'return';
   if (def.fly) e.state = 'fly';
@@ -786,7 +787,7 @@ function updOutpost(S, o, dt) {
   if (rob && !en && o.prog < 1) {
     o.prog = Math.min(1, o.prog + v);
     if (o.owner === 'e' && o.prog >= 0) { o.owner = null; say(S, '🚩 敵占領の陣地' + o.label + 'を制圧。このまま確保する', 'good'); }
-    if (o.prog >= 1) { o.owner = 'p'; if (o.enemyOrig && !o.freed) { o.freed = true; S.pts += CFG.liberatePts; S.earned += CFG.liberatePts; } say(S, '🚩 陣地' + o.label + 'を確保。ここから出撃できる' + (o.enemyOrig && o.freed ? '（+' + CFG.liberatePts + '）' : ''), 'good'); }
+    if (o.prog >= 1) { o.owner = 'p'; if (o.enemyOrig && !o.freed) { o.freed = true; S.pts += CFG.liberatePts; S.earned += CFG.liberatePts; } S.fx.push({ type: 'capture', x: o.x, z: o.z }); say(S, '🚩 陣地' + o.label + 'を確保。ここから出撃できる' + (o.enemyOrig && o.freed ? '（+' + CFG.liberatePts + '）' : ''), 'good'); }
   } else if (en && !rob) {
     const floor = o.enemyOrig ? -1 : 0; // 敵占領だった陣地は、敵に取り返される
     if (o.prog > floor) {

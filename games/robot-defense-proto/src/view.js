@@ -115,6 +115,7 @@ const M = {
   shotM: new T.MeshBasicMaterial({ color: 0xffd166 }),
   shotE: new T.MeshBasicMaterial({ color: 0xff6a3d }),
   line: new T.LineBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .45 }),
+  rangeRing: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .35, side: T.DoubleSide, depthWrite: false }),
   aimLine: new T.LineBasicMaterial({ color: 0xff2d55 }),
 };
 
@@ -198,12 +199,14 @@ function mechMesh(weaponIds, sc, mats) {
   return { g, inner, body };
 }
 function roboMesh(r) {
-  const sc = TIER[r.body.tier].scale * 1.3;
+  const sc = TIER[r.body.tier].scale * 1.45;
   const { g, inner, body } = mechMesh(r.weapons.map(w => w.id), sc, { body: M.robo, head: M.head, dark: M.roboDark });
   const ring = new T.Mesh(G.ring, M.selRing); ring.rotation.x = -Math.PI / 2; ring.position.y = .05; ring.scale.setScalar(sc * 1.05); ring.visible = false;
+  const R = Math.max(...r.weapons.map(w => (w.def.range || w.def.trigger || 1) * r.rangeMul));
+  const range = new T.Mesh(new T.RingGeometry(R - .08, R, 56), M.rangeRing); range.rotation.x = -Math.PI / 2; range.position.y = .04; range.visible = false; g.add(range);
   g.add(ring);
   const beams = r.weapons.map(w => { if (w.def.type !== 'beam') return null; return Array.from({ length: w.def.beams || 1 }, () => { const b = new T.Mesh(G.box, M.beam); b.visible = false; return b; }); });
-  return { obj: g, inner, body, ring, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
+  return { obj: g, inner, body, ring, range, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
 }
 function enemyMesh(e) {
   if (e.type === 'boss') {
@@ -316,9 +319,11 @@ function sync(dt) {
     seen.add(r.id);
     v.obj.position.set(r.x, 0, r.z);
     v.obj.rotation.y = lerpAngle(v.obj.rotation.y, r.face, k);
-    v.inner.position.y = r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0;
+    if (pendingDrop.has(r.id)) { pendingDrop.delete(r.id); v.dropT = .45; }
+    if (v.dropT > 0) v.dropT -= dt;
+    v.inner.position.y = (v.dropT > 0 ? (v.dropT / .45) ** 2 * 7 : 0) + (r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0);
     v.body.material = r.flash > 0 ? M.white : M.robo;
-    v.ring.visible = sel === r;
+    v.ring.visible = sel === r; v.range.visible = sel === r;
     setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp);
     if (r.moving) setLine(v.line, r.x, r.z, r.tx, r.tz); else v.line.visible = false;
   }
@@ -410,6 +415,122 @@ function updTags() {
   for (const [id, el] of tags) if (!alive.has(id)) { el.remove(); tags.delete(id); }
 }
 
+// ---------- 音（WebAudio で合成。音声ファイルは使わない） ----------
+const AU = (() => {
+  let ctx = null, master = null, sfx = null, bgmG = null, noiseBuf = null, muted = false, seq = null;
+  try { muted = localStorage.getItem('robodef_mute') === '1'; } catch (_) {}
+  const last = {};
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    try {
+      ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : .7; master.connect(ctx.destination);
+      sfx = ctx.createGain(); sfx.gain.value = .55; sfx.connect(master);
+      bgmG = ctx.createGain(); bgmG.gain.value = .16; bgmG.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (_) { ctx = null; }
+  }
+  // 同じ音が短い間に重なりすぎないようにする
+  const ok = (key, gap) => { if (!ctx || muted) return false; const t = ctx.currentTime; if (last[key] !== undefined && t - last[key] < gap) return false; last[key] = t; return true; };
+  function tone(o) {
+    const t = ctx.currentTime + (o.at || 0), osc = ctx.createOscillator(), g = ctx.createGain(), d = o.d || .1;
+    osc.type = o.type || 'square'; osc.frequency.setValueAtTime(o.f || 440, t); if (o.f2) osc.frequency.exponentialRampToValueAtTime(o.f2, t + d);
+    g.gain.setValueAtTime(o.v || .2, t); g.gain.exponentialRampToValueAtTime(.0008, t + d);
+    osc.connect(g); g.connect(o.dest || sfx); osc.start(t); osc.stop(t + d + .02);
+  }
+  function noise(o) {
+    const t = ctx.currentTime + (o.at || 0), src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(), d = o.d || .3;
+    src.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.setValueAtTime(o.lp || 1200, t); if (o.lp2) f.frequency.exponentialRampToValueAtTime(o.lp2, t + d);
+    g.gain.setValueAtTime(o.v || .3, t); g.gain.exponentialRampToValueAtTime(.0008, t + d);
+    src.connect(f); f.connect(g); g.connect(o.dest || sfx); src.start(t, Math.random() * .5); src.stop(t + d + .02);
+  }
+  const notes = (arr, step, o) => arr.forEach((f, i) => tone(Object.assign({ f, at: i * step }, o)));
+  const S = {
+    shot(k) {
+      if (k === 'm') { if (ok('shotm', .12)) { noise({ d: .25, v: .12, lp: 2500, lp2: 400 }); tone({ f: 220, f2: 90, d: .25, type: 'sawtooth', v: .05 }); } }
+      else if (k === 'h') { if (ok('shoth', .1)) { tone({ f: 160, f2: 50, d: .22, type: 'square', v: .14 }); noise({ d: .12, v: .15, lp: 3000 }); } }
+      else if (k === 's') { if (ok('shots', .07)) noise({ d: .08, v: .1, lp: 5000, lp2: 1200 }); }
+      else if (ok('shotb', .05)) tone({ f: 1100, f2: 520, d: .05, type: 'square', v: .035 });
+    },
+    blast(big) { if (!ok(big ? 'blastB' : 'blast', big ? .1 : .06)) return; noise({ d: big ? .7 : .35, v: big ? .5 : .28, lp: big ? 900 : 1600, lp2: 120 }); tone({ f: big ? 80 : 110, f2: 35, d: big ? .6 : .3, type: 'sine', v: big ? .5 : .3 }); },
+    kill(small) { if (!ok(small ? 'killS' : 'kill', small ? .035 : .05)) return; tone({ f: small ? 1600 + Math.random() * 400 : 900, f2: small ? 900 : 300, d: small ? .04 : .08, type: 'triangle', v: small ? .035 : .07 }); },
+    built() { if (ok('built', .3)) notes([523, 659, 784, 1047], .06, { d: .12, type: 'triangle', v: .09 }); },
+    lost() { if (ok('lost', .3)) { tone({ f: 600, f2: 120, d: .45, type: 'sawtooth', v: .1 }); noise({ d: .4, v: .2, lp: 1200, lp2: 200 }); } },
+    alarm() { if (ok('alarm', 1.4)) { tone({ f: 880, d: .14, type: 'square', v: .07 }); tone({ f: 660, d: .14, type: 'square', v: .07, at: .16 }); } },
+    boss() { if (ok('boss', 2)) for (let i = 0; i < 3; i++) tone({ f: 330, f2: 660, d: .45, type: 'sawtooth', v: .1, at: i * .5 }); },
+    capture() { if (ok('cap', .5)) notes([392, 523, 659], .08, { d: .15, type: 'square', v: .06 }); },
+    combo(n) { if (ok('combo', .25)) tone({ f: 400 + Math.min(n, 60) * 18, d: .12, type: 'triangle', v: .08 }); },
+    ui() { if (ok('ui', .04)) tone({ f: 1400, d: .03, type: 'square', v: .03 }); },
+    win() { if (ok('win', 1)) notes([523, 659, 784, 1047, 784, 1047], .12, { d: .22, type: 'square', v: .08 }); },
+    lose() { if (ok('lose', 1)) notes([440, 392, 330, 262], .2, { d: .35, type: 'sawtooth', v: .08 }); },
+  };
+  // BGM：ベース・アルペジオ・ハイハットの簡単な繰り返し。激しさ（intense）でテンポと音を変える
+  function bgmStart(intense) {
+    if (!ctx) return; bgmStop();
+    const bpm = intense ? 150 : 128, sp = 60 / bpm / 2;
+    const root = intense ? 45 : 43, prog = [0, 0, 3, 5, 0, 0, 7, 5], arp = [0, 7, 12, 15, 12, 7];
+    let step = 0, next = ctx.currentTime + .1;
+    const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+    seq = setInterval(() => {
+      if (!ctx || muted) { next = ctx ? ctx.currentTime + .1 : 0; return; }
+      while (next < ctx.currentTime + .25) {
+        const bar = Math.floor(step / 8) % prog.length, at = next - ctx.currentTime, r = root + prog[bar];
+        if (step % 2 === 0) tone({ f: mtof(r), d: sp * 1.6, type: 'sawtooth', v: .5, at, dest: bgmG });
+        tone({ f: mtof(r + 24 + arp[step % arp.length]), d: sp * .8, type: 'triangle', v: .18, at, dest: bgmG });
+        if (step % 2 === 1) noise({ d: .04, v: .25, lp: 9000, at, dest: bgmG });
+        if (intense && step % 4 === 0) tone({ f: 60, f2: 40, d: .12, type: 'sine', v: .9, at, dest: bgmG });
+        next += sp; step++;
+      }
+    }, 60);
+  }
+  function bgmStop() { if (seq) clearInterval(seq); seq = null; }
+  function setMute(m) { muted = m; try { localStorage.setItem('robodef_mute', m ? '1' : '0'); } catch (_) {} if (master) master.gain.value = m ? 0 : .7; }
+  return { init, S, bgmStart, bgmStop, setMute, get muted() { return muted; } };
+})();
+
+// ---------- 粒子（破片・発砲光）：まとめて1回で描く ----------
+const PMAX = 2200, parts = [], pCol = new T.Color();
+const partMesh = new T.InstancedMesh(G.box, new T.MeshBasicMaterial({ color: 0xffffff }), PMAX);
+partMesh.count = 0; partMesh.frustumCulled = false; partMesh.setColorAt(0, pCol); scene.add(partMesh);
+function burst(x, z, color, n, spd, size, life, y = .6, up = 1) {
+  for (let i = 0; i < n && parts.length < PMAX; i++) {
+    const a = Math.random() * Math.PI * 2, v = spd * (.4 + Math.random() * .8);
+    parts.push({ x, y, z, vx: Math.sin(a) * v, vy: (1 + Math.random() * 2) * up, vz: Math.cos(a) * v, life: life * (.6 + Math.random() * .6), max: life, size: size * (.6 + Math.random() * .7), color, g: up ? 9 : 0 });
+  }
+}
+function flash(x, z, color, size, life, y = .7) { if (parts.length < PMAX) parts.push({ x, y, z, vx: 0, vy: 0, vz: 0, life, max: life, size, color, g: 0, flash: true }); }
+function updParts(dt) {
+  let n = 0;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.life -= dt;
+    if (p.life <= 0) { parts[i] = parts[parts.length - 1]; parts.pop(); continue; }
+    p.vy -= p.g * dt; p.x += p.vx * dt; p.y = Math.max(.05, p.y + p.vy * dt); p.z += p.vz * dt;
+    const k = p.life / p.max, s = p.flash ? p.size * (.4 + k) : p.size * (.3 + .7 * k);
+    dummy.position.set(p.x, p.y, p.z); dummy.rotation.set(p.life * 7, p.life * 5, 0); dummy.scale.setScalar(s); dummy.updateMatrix();
+    partMesh.setMatrixAt(n, dummy.matrix); partMesh.setColorAt(n, pCol.setHex(p.color)); n++;
+  }
+  partMesh.count = n; partMesh.instanceMatrix.needsUpdate = true; if (partMesh.instanceColor) partMesh.instanceColor.needsUpdate = true;
+}
+
+// ---------- 画面の揺れ・告知バナー・連続撃破 ----------
+let shakeT = 0, shakeMag = 0;
+function shake(mag, t) { if (mag >= shakeMag || shakeT <= 0) { shakeMag = mag; shakeT = t; } }
+function banner(main, sub, kind, dur = 2.2) {
+  const b = $('banner'); b.className = 'banner ' + (kind || ''); b.innerHTML = '<b>' + esc(main) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '');
+  void b.offsetWidth; b.classList.add('show'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('show'), dur * 1000);
+}
+const combo = { times: [], n: 0, t: 0, best: 0 };
+function comboKill(gt) {
+  combo.times.push(gt); while (combo.times.length && gt - combo.times[0] > 1.2) combo.times.shift();
+  const n = combo.times.length;
+  if (n >= 8) {
+    combo.n = Math.max(n, combo.n); combo.t = 1.2; combo.best = Math.max(combo.best, n);
+    const el = $('combo'); el.innerHTML = '<b>×' + combo.n + '</b><span>' + (combo.n >= 30 ? '一騎当千！' : combo.n >= 15 ? '一網打尽！' : '連続撃破') + '</span>';
+    el.classList.add('show'); el.classList.toggle('big', combo.n >= 15); AU.S.combo(n);
+  }
+}
+function updCombo(dt) { if (combo.t > 0) { combo.t -= dt; if (combo.t <= 0) { combo.n = 0; $('combo').classList.remove('show'); } } }
+
 // ---------- エフェクト ----------
 const fxs = []; let lastFlash = 0;
 function fxMesh(geo, color, x, z, y, from, to, dur, flat) {
@@ -417,26 +538,47 @@ function fxMesh(geo, color, x, z, y, from, to, dur, flat) {
   const m = new T.Mesh(geo, mat); m.position.set(x, y, z); if (flat) m.rotation.x = -Math.PI / 2; m.scale.setScalar(from);
   scene.add(m); fxs.push({ m, from, to, dur, t: 0 });
 }
+function fxColumn(x, z, color) {
+  const mat = new T.MeshBasicMaterial({ color, transparent: true, opacity: .7, depthWrite: false });
+  const m = new T.Mesh(G.cyl, mat); m.position.set(x, 7, z); m.scale.set(1.2, 14, 1.2); scene.add(m); fxs.push({ m, from: 1.2, to: 0, dur: .45, t: 0, col: true });
+}
+const pendingDrop = new Set();
+const FIRE_COL = { b: 0x9df8ff, s: 0x7fd0ff, m: 0xffd166, h: 0xffffff };
+const KILL_COL = { swarm: 0xff5c8a, swarmFast: 0xffd166, swarmHeavy: 0xa0283c, swarmBomb: 0xffa94d, swarmFly: 0xff8ad8 };
 function addFx(f) {
-  if (f.type === 'chain') { const l = makeLine(new T.LineBasicMaterial({ color: 0x9df8ff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .5; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 120); return; }
-  if (f.type === 'splash') { fxMesh(G.ring, 0xffa94d, f.x, f.z, .1, .3, f.rad, .25, true); return; }
-  if (f.type === 'kill') { fxMesh(G.ring, 0xff6a7a, f.x, f.z, .1, .3, f.big ? 5 : 1.4, f.big ? .8 : .35, true); if (f.big) fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); floatText(f.x, f.z, '+' + f.pts); }
-  else if (f.type === 'blast') { const e = f.team === 'e'; fxMesh(G.sph, e ? 0xff4d6d : 0xffa94d, f.x, f.z, .4, .3, f.rad * 2, .4); fxMesh(G.ring, e ? 0xff2d55 : 0xffd166, f.x, f.z, .08, .3, f.rad * 1.05, .45, true); }
-  else if (f.type === 'rebuild') { fxMesh(G.ring, 0xff4d6d, f.x, f.z, .1, 4, .5, .8, true); }
-  else if (f.type === 'block') { fxMesh(G.ring, 0xffc2ef, f.x, f.z, .6, .1, .6, .2, true); }
-  else if (f.type === 'ebase') { fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, 1, 5, .8, true); floatText(f.x, f.z, '+' + f.pts); }
-  else if (f.type === 'boom') { fxMesh(G.sph, 0xffa94d, f.x, f.z, .5, .4, f.rad * 2, .5); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, .5, f.rad * 1.1, .6, true); }
-  else if (f.type === 'robodie') { fxMesh(G.sph, 0x65f6ff, f.x, f.z, .6, .4, 2.2, .45); fxMesh(G.ring, 0x4dabff, f.x, f.z, .1, .4, 2, .5, true); }
-  else if (f.type === 'basehit') {
-    fxMesh(G.ring, 0xff2d55, f.x, f.z, .2, .3, 1.4, .4, true);
-    const now = performance.now();
-    if (now - lastFlash > 900) { lastFlash = now; const h = $('hitFlash'); h.classList.add('on'); requestAnimationFrame(() => h.classList.remove('on')); }
+  switch (f.type) {
+    case 'fire': flash(f.x + Math.sin(f.a) * .9, f.z + Math.cos(f.a) * .9, FIRE_COL[f.kind], f.kind === 'h' ? .7 : .42, .07); AU.S.shot(f.kind); return;
+    case 'chain': { const l = makeLine(new T.LineBasicMaterial({ color: 0x9df8ff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .5; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 120); return; }
+    case 'splash': burst(f.x, f.z, 0xffa94d, 4, 4, .14, .3, .5, .6); return;
+    case 'kill':
+      comboKill(S.t);
+      if (f.small) { burst(f.x, f.z, KILL_COL[f.kind] || 0xff5c8a, 3, 3, .14, .45); AU.S.kill(true); return; }
+      burst(f.x, f.z, 0xff4d6d, f.big ? 40 : 8, f.big ? 8 : 4, f.big ? .35 : .18, f.big ? 1.2 : .6);
+      fxMesh(G.ring, 0xff6a7a, f.x, f.z, .1, .3, f.big ? 5 : 1.4, f.big ? .8 : .35, true); floatText(f.x, f.z, '+' + f.pts); AU.S.kill(false);
+      if (f.big) { fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); shake(.6, .6); AU.S.blast(true); banner('模倣機 撃破', '+' + f.pts, 'good', 1.8); }
+      return;
+    case 'blast': { const e = f.team === 'e'; fxMesh(G.sph, e ? 0xff4d6d : 0xffa94d, f.x, f.z, .4, .3, f.rad * 2, .4); fxMesh(G.ring, e ? 0xff2d55 : 0xffd166, f.x, f.z, .08, .3, f.rad * 1.05, .45, true); burst(f.x, f.z, e ? 0xff4d6d : 0xffa94d, 10, 6, .2, .5); AU.S.blast(false); shake(.12, .15); return; }
+    case 'boom': fxMesh(G.sph, 0xffa94d, f.x, f.z, .5, .4, f.rad * 2, .5); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, .5, f.rad * 1.1, .6, true); burst(f.x, f.z, 0xffd166, 22, 9, .25, .8); AU.S.blast(true); shake(.35, .35); return;
+    case 'robodie': fxMesh(G.sph, 0x65f6ff, f.x, f.z, .6, .4, 2.2, .45); fxMesh(G.ring, 0x4dabff, f.x, f.z, .1, .4, 2, .5, true); burst(f.x, f.z, 0x4dabff, 16, 6, .22, .9); AU.S.lost(); shake(.2, .25); return;
+    case 'rebuild': fxMesh(G.ring, 0xff4d6d, f.x, f.z, .1, 4, .5, .8, true); return;
+    case 'block': fxMesh(G.ring, 0xffc2ef, f.x, f.z, .6, .1, .6, .2, true); return;
+    case 'ebase': fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, 1, 5, .8, true); burst(f.x, f.z, 0xff4d6d, 40, 10, .35, 1.3); floatText(f.x, f.z, '+' + f.pts); AU.S.blast(true); shake(.6, .5); return;
+    case 'spawn': fxColumn(f.x, f.z, 0x65f6ff); fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .3, 2.2, .4, true); pendingDrop.add(f.id); AU.S.built(); return;
+    case 'capture': fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .5, 4, .6, true); burst(f.x, f.z, 0x65f6ff, 14, 5, .18, .7); AU.S.capture(); return;
+    case 'boss': banner('WARNING', '模倣機（ボス）接近', 'boss', 2.8); AU.S.boss(); shake(.25, .8); return;
+    case 'basehit': {
+      fxMesh(G.ring, 0xff2d55, f.x, f.z, .2, .3, 1.4, .4, true);
+      const now = performance.now();
+      if (now - lastFlash > 900) { lastFlash = now; const h = $('hitFlash'); h.classList.add('on'); requestAnimationFrame(() => h.classList.remove('on')); shake(.12, .2); AU.S.alarm(); }
+      return;
+    }
   }
 }
 function updFx(dt) {
   for (let i = fxs.length - 1; i >= 0; i--) {
     const f = fxs[i]; f.t += dt; const k = Math.min(1, f.t / f.dur);
-    f.m.scale.setScalar(f.from + (f.to - f.from) * k); f.m.material.opacity = .9 * (1 - k);
+    if (f.col) { const w = f.from * (1 - k * .8); f.m.scale.set(w, 14, w); } else f.m.scale.setScalar(f.from + (f.to - f.from) * k);
+    f.m.material.opacity = .9 * (1 - k);
     if (k >= 1) { scene.remove(f.m); f.m.material.dispose(); fxs.splice(i, 1); }
   }
 }
@@ -449,8 +591,9 @@ function floatText(x, z, text) {
 function toast(text, kind = 'info') {
   const box = $('toasts'), d = document.createElement('div');
   d.className = 'toast ' + kind; d.textContent = text; box.prepend(d);
-  setTimeout(() => d.classList.add('out'), 2300); setTimeout(() => d.remove(), 2800);
-  while (box.children.length > 4) box.lastChild.remove();
+  const life = kind === 'bad' ? 3200 : kind === 'warn' || kind === 'good' ? 2600 : 1800;
+  setTimeout(() => d.classList.add('out'), life); setTimeout(() => d.remove(), life + 400);
+  while (box.children.length > 3) box.lastChild.remove();
 }
 
 // ---------- 入力：タップで選択・移動 ----------
@@ -577,11 +720,11 @@ function updInfo() {
 function plusText(p) { return Object.keys(p).map(k => PLUS[k].icon + PLUS[k].name + PLUS[k].fmt(p[k])).join(' '); }
 function openBuild() {
   if (mode !== 'play') return;
-  building = true; sel = null; updInfo();
+  building = true; sel = null; updInfo(); canvas.classList.add('frozen');
   uiBody = null; uiW = new Set(); // 毎回まっさらな状態から選ぶ
   renderBuild(); $('buildM').classList.add('show'); $('buildM').querySelector('.card').scrollTop = 0;
 }
-function closeBuild() { building = false; $('buildM').classList.remove('show'); }
+function closeBuild() { building = false; $('buildM').classList.remove('show'); canvas.classList.remove('frozen'); }
 function bodyRow(b, attrs, cls) {
   return '<button class="item ' + (cls || '') + '" ' + attrs + '>' +
     '<div class="l1"><span class="tier ' + b.tier + '">' + TIER[b.tier].name + '</span><b>' + esc(b.name) + '</b><span class="sp"></span><span class="cost">⭐' + b.cost + '</span></div>' +
@@ -606,9 +749,10 @@ function renderBuild() {
   $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩陣地' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
   const wb = uiBody.wbMul || 1;
   $('wList').innerHTML = Object.entries(WEAPONS).filter(([id, w]) => !w.evo || S.loadout.includes(id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
-    '<button class="item' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
-    '<div class="l1"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b>' + (w.evo ? '<span class="evotag">進化・持ち込み</span>' : '') + '<span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div>' +
-    '<div class="l2"><span>⏱建造 +' + Math.round(w.build * wb * 10) / 10 + 's</span><span>' + esc(w.desc) + '</span></div></button>').join('');
+    '<button class="wcard' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
+    '<div class="wn"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div>' +
+    '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + '</div>' +
+    '<div class="wd">' + esc(w.desc) + '</div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
   $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + activeCount(S) + '/' + CFG.deployCap +
     (S.queue.length ? '<div class="dim">建造ライン' + S.lines + '本で順番に建造（予約 ' + S.queue.length + '機）</div>' : '') +
@@ -697,7 +841,8 @@ function startGame(stId) {
   mode = 'play'; paused = false; sel = null; uiBody = null;
   for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false);
   hideOv(); updInfo(); fit(); resetView();
-  toast(S.st.name + '「' + S.st.sub + '」 ' + goalText(S.st), 'warn');
+  AU.init(); AU.bgmStart(!!S.st.wide); combo.times = []; combo.n = 0; combo.best = 0; parts.length = 0;
+  banner(S.st.name + '「' + S.st.sub + '」', goalText(S.st), 'start', 2.6);
   toast('ボディ ' + S.bodies.length + '種を確保。開始ポイント ' + S.pts + (S.loadout.length ? '。持ち込み：' + S.loadout.map(id => WEAPONS[id].name).join('・') : ''));
 }
 function endGame() {
@@ -712,6 +857,7 @@ function endGame() {
     '<p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」 ' + msg + '</p>' +
     '<div class="res">' +
     '<span>撃破</span><b>' + S.kills + '</b>' +
+    (combo.best >= 8 ? '<span>最大連続撃破</span><b>×' + combo.best + '</b>' : '') +
     (S.ebases.length ? '<span>破壊した敵拠点</span><b>' + S.ebKills + ' / ' + S.ebases.length + '</b>' : '') +
     (S.st.waves.some(w => w[1] === 'boss') ? '<span>模倣機（ボス）</span><b>' + (S.bossKilled ? '撃破' : '未撃破') + '</b>' : '') +
     '<span>建造したロボット</span><b>' + S.built + '</b>' +
@@ -737,6 +883,9 @@ function togglePause() {
 }
 $('pauseBtn').addEventListener('click', togglePause);
 $('viewBtn').addEventListener('click', toggleView);
+const muteLabel = () => { $('muteBtn').textContent = AU.muted ? '🔇' : '🔊'; };
+$('muteBtn').addEventListener('click', () => { AU.init(); AU.setMute(!AU.muted); muteLabel(); }); muteLabel();
+document.addEventListener('click', e => { if (e.target.closest('button')) { AU.init(); AU.S.ui(); } }, true);
 $('spdBtn').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; $('spdBtn').textContent = '×' + speed; });
 addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'p') togglePause(); if (e.key === 'b' && !building) openBuild(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused && !building) togglePause(); });
@@ -753,13 +902,22 @@ function frame(now) {
     for (const f of S.fx) addFx(f); S.fx.length = 0;
     for (const m of S.msgs) toast(m.text, m.kind); S.msgs.length = 0;
     sync(dt); updHud(); updTags(); updEdges();
-    if (mode === 'play' && S.over) endGame();
+    if (mode === 'play' && S.over) { // 勝敗の告知を見せてから結果画面へ
+      mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();
+      const win = S.over === 'win'; if (win) AU.S.win(); else AU.S.lose();
+      banner(win ? 'MISSION COMPLETE' : 'MISSION FAILED', win ? '作戦成功' : (S.baseHP <= 0 ? '拠点陥落' : '時間切れ'), win ? 'good' : 'boss', 1.6);
+      if (!win) shake(.5, .8);
+      setTimeout(endGame, 1500);
+    }
   }
   for (const gt of M.gates || []) { gt.rotation.y += dt * 1.5; gt.rotation.x = Math.sin(now / 900) * .3; }
   if (M.baseRing) M.baseRing.position.y = 1.5 + Math.sin(now / 500) * .08;
   if (markerT > 0) { markerT -= dt; marker.material.opacity = Math.max(0, markerT / .6); marker.scale.setScalar(1 + (.6 - markerT)); if (markerT <= 0) marker.visible = false; }
-  updFx(dt);
+  updFx(dt); updParts(dt); updCombo(dt);
+  let sx = 0, sz = 0;
+  if (shakeT > 0) { shakeT -= dt; const m = shakeMag * Math.max(0, shakeT) * 2 / (camS.zoom || 1); sx = (Math.random() - .5) * m; sz = (Math.random() - .5) * m; cam.position.x += sx; cam.position.z += sz; if (shakeT <= 0) shakeMag = 0; }
   renderer.render(scene, cam);
+  if (sx || sz) { cam.position.x -= sx; cam.position.z -= sz; }
 }
 // 試走・デバッグ用：ワールド座標→画面座標
 window.RD_proj = (x, z, y = 0) => { const p = new T.Vector3(x, y, z).project(cam); return { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight }; };
