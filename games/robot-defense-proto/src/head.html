@@ -372,6 +372,13 @@ body.coachRobot .tag:not(.op){animation:tagPulse 1s ease-in-out infinite}
 .nw b{font-size:14px} .nw span:last-child{font-size:12px;color:var(--dim);line-height:1.45}
 .toast.new{white-space:normal;max-width:92%;border-left-color:var(--red);background:#2a0d18f0;font-size:13px;padding:5px 10px;opacity:1 !important}
 .toast.new::before{content:"⚠ "}
+/* 下の欄：透明な所は地図に触れる。選択中は建造の列を隠して欄を低くする */
+#bottom{pointer-events:none}
+#bottom button,#bottom .selp,#bottom .coach{pointer-events:auto}
+body.selecting #bottom .row{display:none}
+.selp .desel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:52px;border:1px solid var(--line) !important;background:#0a1328 !important;color:var(--fg) !important;border-radius:11px;font-size:17px;line-height:1}
+.selp .desel small{font-size:10px;opacity:.8;margin-top:2px}
+.selhint .dim{font-size:11px}
 </style>
 </head>
 <body>

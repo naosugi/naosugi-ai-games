@@ -372,6 +372,13 @@ body.coachRobot .tag:not(.op){animation:tagPulse 1s ease-in-out infinite}
 .nw b{font-size:14px} .nw span:last-child{font-size:12px;color:var(--dim);line-height:1.45}
 .toast.new{white-space:normal;max-width:92%;border-left-color:var(--red);background:#2a0d18f0;font-size:13px;padding:5px 10px;opacity:1 !important}
 .toast.new::before{content:"⚠ "}
+/* 下の欄：透明な所は地図に触れる。選択中は建造の列を隠して欄を低くする */
+#bottom{pointer-events:none}
+#bottom button,#bottom .selp,#bottom .coach{pointer-events:auto}
+body.selecting #bottom .row{display:none}
+.selp .desel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:52px;border:1px solid var(--line) !important;background:#0a1328 !important;color:var(--fg) !important;border-radius:11px;font-size:17px;line-height:1}
+.selp .desel small{font-size:10px;opacity:.8;margin-top:2px}
+.selhint .dim{font-size:11px}
 </style>
 </head>
 <body>
@@ -5754,7 +5761,8 @@ function viewArea() {
   return { W, H, top, avail: Math.max(120, H - top - bot) };
 }
 function fit() {
-  const { W, H, avail } = viewArea();
+  const va = viewArea(); camS.vt = va.top; camS.va = va.avail;
+  const { W, H, avail } = va;
   renderer.setSize(W, H, false);
   camS.s0 = Math.max((mapW + 1.2) / W, (mapD * Math.cos(TILT) + 2.4) / avail);
   applyCam();
@@ -5764,11 +5772,12 @@ function fit() {
   const ph = $('pHint'); if (ph) ph.style.top = ($('hud').offsetHeight + 36) + 'px';
 }
 function applyCam() {
-  const { W, H, top, avail } = viewArea();
+  const { W, H } = viewArea(), top = camS.vt, avail = camS.va;
   camS.zoom = Math.max(1, Math.min(ZOOM_MAX, camS.zoom));
   const s = camS.s0 / camS.zoom;
   // 地図の外に出すぎないように中心を制限
-  const mx = Math.max(0, mapW / 2 + 1 - W / 2 * s), mz = Math.max(0, mapD / 2 + 1.5 - avail / 2 * s / Math.cos(TILT));
+  const slack = 170 * s / Math.cos(TILT); // 下の欄（選択中の欄など）に隠れた所も、引き上げて触れるように
+  const mx = Math.max(0, mapW / 2 + 1 - W / 2 * s) + 40 * s, mz = Math.max(0, mapD / 2 + 1.5 - avail / 2 * s / Math.cos(TILT)) + slack;
   camS.x = Math.max(mapCX - mx, Math.min(mapCX + mx, camS.x));
   camS.z = Math.max(mapCZ - mz, Math.min(mapCZ + mz, camS.z));
   const yc = top + avail / 2;
@@ -6419,6 +6428,7 @@ function tap(px, py) {
   }
   if (best) { sel = sel === best ? null : best; if (sel) tutDone('sel'); updInfo(); return; }
   if (sel) {
+    if (w.x < MAP.minX - .5 || w.x > MAP.maxX + .5 || w.z < MAP.minZ - .5 || w.z > MAP.maxZ + .5) { sel = null; updInfo(); toast('選択を解除'); return; } // 戦場の外は移動先にしない
     moveRobot(sel, w.x, w.z, S); tutDone('moved');
     marker.position.set(sel.tx, .06, sel.tz); marker.visible = true; markerT = .6;
     sel = null; updInfo();
@@ -6625,11 +6635,12 @@ function updInfo() {
   const key = sel ? 'sel' + sel.id + (SAVE.tut && SAVE.tut.moved ? 'm' : '') : tip ? 'tip' + tip[1] : 'hint' + (S && S.robots.length ? 1 : S && S.queue.length ? 2 : 0);
   if (hudCache.infoKey !== key) {
     hudCache.infoKey = key;
-    if (sel) el.innerHTML = '<div class="selp"><span class="num">' + sel.slot + '</span><div class="sn"><b>' + esc(sel.body.name) + ' <span class="wi">' + sel.weapons.map(w => w.def.icon).join('') + '</span></b><span class="hpb"><i></i></span></div>' + (S.allow.pilot ? '<button class="ride" data-ride>🎮 乗る</button>' : '') + '<button class="desel" data-desel aria-label="選択をやめる">✕</button></div>' +
-      '<div class="selhint"><span class="slow">◷スロー</span>' + (SAVE.tut && SAVE.tut.moved ? '地面をタップで移動' : '<b>地面をタップすると、そこへ移動する</b>') + '</div>';
+    if (sel) el.innerHTML = '<div class="selp"><span class="num">' + sel.slot + '</span><div class="sn"><b>' + esc(sel.body.name) + ' <span class="wi">' + sel.weapons.map(w => w.def.icon).join('') + '</span></b><span class="hpb"><i></i></span></div>' + (S.allow.pilot ? '<button class="ride" data-ride>🎮 乗る</button>' : '') + '<button class="desel" data-desel>✕<small>解除</small></button></div>' +
+      '<div class="selhint"><span class="slow">◷スロー</span>' + (SAVE.tut && SAVE.tut.moved ? '地面をタップで移動' : '<b>地面をタップすると、そこへ移動する</b>') + '<span class="dim">　解除は ✕ か、ロボットをもう一度タップ</span></div>';
     else if (tip) el.innerHTML = '<div class="coach"><span>' + tip[0] + '</span>' + esc(tip[1]) + '</div>';
     else el.innerHTML = '<div class="hint">' + esc(S && S.robots.length ? 'ロボットをタップ → 地面をタップで移動' : S && S.queue.length ? '建造中…完成したら出撃する' : '🔧 建造からロボットを作ろう') + '</div>';
     el.className = sel ? 'sel' : tip ? 'tip' : '';
+    document.body.classList.toggle('selecting', !!sel);
   }
   if (sel) { const i = el.querySelector('.hpb i'); if (i) { const k = Math.max(0, sel.hp / sel.maxHp); i.style.width = (k * 100) + '%'; i.className = k < .3 ? 'low' : ''; } }
   const tg = tip && tip[2];
@@ -6916,6 +6927,7 @@ document.addEventListener('click', e => { if (e.target.closest('button')) { AU.i
 $('spdBtn').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; $('spdBtn').textContent = '×' + speed; });
 addEventListener('keydown', e => {
   if (pilot && (e.key === 'ArrowLeft' || e.key === 'a')) turnTo(pYawT + .4); if (pilot && (e.key === 'ArrowRight' || e.key === 'd')) turnTo(pYawT - .4); if (pilot && e.key === 's') turnTo(pYawT + Math.PI);
+  if (e.key === 'Escape' && sel && mode === 'play' && !building) { sel = null; updInfo(); return; }
   if (e.key === 'Escape' || e.key === 'p') togglePause(); if (e.key === 'b' && !building) openBuild(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused && !building) togglePause(); });
 
