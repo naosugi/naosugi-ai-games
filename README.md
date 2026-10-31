@@ -17,6 +17,7 @@
 | [独裁者AI国家シミュレーター](games/dictator-ai-simulator/) | 独裁者として25ターンでAI国家を築くカード選択シミュレーション。8つのエンディングと図鑑つき（[dictator-ai-simulator](https://github.com/naosugi/dictator-ai-simulator) の1ファイル移植版） |
 | [おうちとひらがな](games/ouchi-hiragana/) | 子ども向けひらがな探し。見つけるたびにおうちが育ち、記録を保存して遊ぶほど豪華に。音声読み上げつき（[moji_learn_mining](https://github.com/naosugi/moji_learn_mining) のスマホ操作改善・1ファイル版） |
 | [キーボード☆ドライバー](games/keyboard-driver/) | こども向け日本語入力れんしゅう。文字を打ってロケットで荷物をとどけ、強化すると漢字変換・記号・全角半角などの問題が解放される |
+| [アーッ！とゴルフ](games/aatto-golf/) | 心のスタミナを削り合うゴルフ。風や芝を読んで球を操り、相手の様子から心を読む。CPU戦・マッチプレーつき |
 
 ## 構成
 

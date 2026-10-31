@@ -1,0 +1,1449 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#14532D">
+<title>アーッ！とゴルフ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7FAF8;--white:#fff;--ink:#17241C;--muted:#5F7368;--line:#DCE6DF;
+  --green:#14532D;--green2:#2F7D4A;--greenSoft:#E6F1EA;
+  --blue:#1E6FB8;--blueSoft:#E3EEF8;--warn:#C2453A;
+  --font:'Zen Kaku Gothic New',system-ui,-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;
+  --num:'Barlow Condensed','Zen Kaku Gothic New',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;overscroll-behavior:none;overflow:hidden;-webkit-user-select:none;user-select:none}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+
+/* ボタン */
+.btn{font:inherit;font-size:15px;font-weight:500;color:var(--ink);background:var(--white);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;transition:background .15s,border-color .15s,transform .08s}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+.btn.ghost{background:transparent}
+.btn.toggle.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.light{background:#fff;border-color:#fff;color:var(--green);font-weight:700}
+.btn.wide{width:100%}
+.chipbtn{padding:6px 11px;font-size:13.5px;border-radius:999px}
+.chipbtn.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* タイトル〜キャラ作成 */
+#screen{height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hero{position:relative;height:46vh;min-height:260px;background:var(--blue);overflow:hidden}
+.hero-text{position:absolute;left:24px;right:24px;top:calc(18% + env(safe-area-inset-top));color:#fff}
+.hero h1{font-weight:700;font-size:54px;line-height:1.08;letter-spacing:.04em}
+.hero p{margin-top:12px;font-size:18px;letter-spacing:.3em;opacity:.95}
+.hills{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:42%}
+.flag{position:absolute;right:20%;bottom:20%;width:34px;height:60px}
+.pane{max-width:460px;margin:0 auto;padding:22px 20px calc(28px + env(safe-area-inset-bottom))}
+.pane h2{font-size:21px;font-weight:700;line-height:1.4}
+.pane .lead{margin-top:6px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.segbtn{padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:0;font-size:13px}
+.segbtn .num{font-size:34px;font-weight:600;line-height:1;color:var(--green)}
+.howto{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+.howto summary{cursor:pointer;font-weight:700;color:var(--green);list-style:none}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::after{content:"＋";float:right;color:var(--muted)}
+.howto[open] summary::after{content:"－"}
+.howto ol{margin:10px 0 0 20px;font-size:14px;line-height:1.75;color:#33463b}
+.step{font-size:13px;color:var(--muted)}
+.prog{height:4px;background:var(--line);border-radius:2px;margin:8px 0 20px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--green2);transition:width .3s}
+.field{margin-top:14px;font-size:16px;font:inherit;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);width:100%}
+.field:focus{outline:2px solid var(--blue);outline-offset:1px}
+.qopt{display:block;width:100%;text-align:left;margin-top:10px;padding:16px;line-height:1.55;font-size:15.5px}
+.qopt:active{background:var(--greenSoft);border-color:var(--green2)}
+.mt{margin-top:22px}
+.typename{font-size:34px;font-weight:700;color:var(--green);line-height:1.25;margin-top:6px}
+.tag{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:999px;background:var(--blueSoft);color:var(--blue);font-size:13.5px;font-weight:700}
+.desc{margin-top:18px}
+.desc p{padding:2px 0 2px 14px;border-left:3px solid var(--greenSoft);margin-top:12px;line-height:1.8}
+.reveal .typename,.reveal .tag,.reveal .desc p{animation:rise .5s both}
+.reveal .tag{animation-delay:.15s}
+.reveal .desc p:nth-child(1){animation-delay:.3s}.reveal .desc p:nth-child(2){animation-delay:.42s}
+.reveal .desc p:nth-child(3){animation-delay:.54s}.reveal .desc p:nth-child(4){animation-delay:.66s}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.modes{display:grid;gap:10px;margin-top:14px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px;text-align:left}
+.mode b{font-size:19px;color:var(--green)}.mode span{font-size:13px;color:var(--muted)}
+.label{margin-top:18px;font-size:13px;color:var(--muted);font-weight:700}
+.seats{margin-top:6px}.seat{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.seat .opt{flex:1}.seat .rm{flex:0 0 auto}
+.warnTxt{margin-top:10px;color:var(--warn);font-size:13px}
+.lineup{margin-top:14px}.lu{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.lu b{font-size:16px}.lu small{display:block;color:var(--muted);font-size:13px}
+.cpuTag{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;background:var(--blueSoft);color:var(--blue);font-size:11.5px;font-weight:700;vertical-align:middle}
+.scwrap{overflow-x:auto;margin-top:6px}
+.totals{margin-top:10px;font-size:14px}.totals b{font-size:18px;margin-left:2px}
+.finalHead{font-size:20px;font-weight:700;margin-top:10px}.finalHead .num{font-size:26px;color:var(--blue)}
+.homeLink{position:absolute;left:max(16px,calc(50% - 230px));top:calc(12px + env(safe-area-inset-top));z-index:2;color:#fff;font-size:13px;font-weight:700;text-decoration:none;opacity:.9;padding:6px 2px}
+.homeLink:focus-visible,.homeLink2:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.homeLink2{color:var(--muted);font-size:13px;font-weight:700;text-decoration:none}
+@media (min-width:700px){
+  body{background:#E9F0EB}
+  .hero-text{left:max(24px,calc(50% - 230px));right:auto;width:460px}
+  #game{max-width:480px;margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:0 0 0 100vmax #E9F0EB}
+  #overlay.full .handoff{max-width:480px}
+}
+/* ゲーム画面 */
+#game{height:100%;height:100dvh;display:flex;flex-direction:column;background:var(--paper)}
+#hud{background:#fff;border-bottom:1px solid var(--line);padding:calc(5px + env(safe-area-inset-top)) 8px 5px}
+.hud-top{display:flex;align-items:center;gap:8px}
+.holeNo{width:30px;height:30px;flex:0 0 auto;border-radius:8px;background:var(--green);color:#fff;display:grid;place-items:center;font-family:var(--num);font-weight:700;font-size:22px}
+.holeMeta{display:flex;flex-direction:column;line-height:1.1}
+.holeMeta{flex:0 0 auto}.holeMeta b{font-family:var(--num);font-size:15px;font-weight:600}
+.holeMeta span{font-family:var(--num);font-size:13px;color:var(--muted)}
+.wind{flex:0 0 auto;display:flex;align-items:center;gap:5px;color:var(--blue)}
+.wind .spd{font-family:var(--num);font-size:20px;font-weight:600;line-height:1}
+.wind .spd small{font-size:13px;margin-left:1px}
+.wind .up{font-size:10px;color:var(--muted);line-height:1.15;white-space:nowrap}
+#board{flex:1;min-width:0;display:flex;gap:4px}
+.pl{flex:1;min-width:0;padding:1px 2px 2px;border-bottom:2px solid transparent}
+.pl.cur{border-bottom-color:var(--green)}
+.pl-top{display:flex;align-items:center;gap:3px;font-size:11.5px;white-space:nowrap}
+.pl-top .nm{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.pl-top .sc{font-size:14px;font-weight:600}
+.pl small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl.cur small{color:var(--green);font-weight:700}
+.pdot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 auto;vertical-align:middle}
+#mapWrap{flex:1;position:relative;min-height:0;overflow:hidden}
+#map{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#press{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 30%,rgba(55,6,6,.78) 100%)}
+#press.beat{animation:beat 1.05s ease-in-out infinite}
+@keyframes beat{0%,100%{filter:none}12%{filter:brightness(1.35)}24%{filter:none}36%{filter:brightness(1.2)}}
+.mapBtns{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.mapBtns .btn{width:38px;height:38px;padding:0;border-radius:50%;font-size:18px;font-weight:700;color:var(--green);border-color:rgba(255,255,255,.9);background:rgba(255,255,255,.92)}
+.mapBtns .btn.small{font-size:11.5px}
+.mapBtns .btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+#banner{position:absolute;left:0;right:0;top:38%;text-align:center;pointer-events:none;z-index:4;opacity:0}
+#banner b{display:inline-block;padding:6px 20px;font-size:30px;font-weight:700;color:#fff;letter-spacing:.04em;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+#banner.show{animation:banner 1.6s ease-out both}
+#banner.blue b{color:#fff;background:var(--blue);border-radius:10px;text-shadow:none}
+#banner.white b{color:var(--green);background:#fff;border-radius:10px;text-shadow:none}
+@keyframes banner{0%{opacity:0;transform:scale(.85)}12%{opacity:1;transform:scale(1.04)}20%{transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+
+/* パネル */
+#panel{background:#fff;border-top:1px solid var(--line);border-radius:16px 16px 0 0;margin-top:-12px;position:relative;z-index:3;overflow:hidden;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.stedge{position:absolute;left:0;right:0;top:0;height:4px;background:var(--line)}.stedge i{display:block;height:100%}.stedge i.ok{background:var(--green2)}.stedge i.mid{background:var(--blue)}.stedge i.low{background:var(--warn)}
+.stn{font-size:12px;color:var(--muted);white-space:nowrap}.stn b{font-family:var(--num);font-size:16px;font-weight:600;color:var(--ink);margin-left:2px}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.who{display:flex;align-items:center;gap:7px;font-size:16px;min-width:0}
+.who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .muted{font-size:13.5px;white-space:nowrap}
+.yd{display:flex;align-items:baseline;gap:3px}
+.yd .muted{font-size:12px;margin-right:3px}
+.yd b{font-family:var(--num);font-size:30px;font-weight:600;line-height:.95;color:var(--green)}
+.yd .u{font-family:var(--num);font-size:16px;color:var(--muted)}
+.stam{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
+.bar{flex:1;height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;transition:width .9s ease,background-color .9s}
+.bar i.ok{background:var(--green2)}.bar i.mid{background:var(--blue)}.bar i.low{background:var(--warn)}
+.stam b{font-family:var(--num);font-size:17px;font-weight:600;color:var(--ink);min-width:24px;text-align:right}
+.stam .dl{font-family:var(--num);font-size:15px;font-weight:600;min-width:28px}
+.dl.up{color:var(--green2)}.dl.down{color:var(--warn)}
+.curve{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.curve input{flex:1;accent-color:var(--green);height:30px}
+.curve b{color:var(--ink);font-weight:500;min-width:96px;text-align:right;font-size:13px}
+.sumline{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;gap:8px;margin-top:8px}
+.actions .btn{flex:1;padding:11px 6px}
+.actions .ghost{flex:0 0 auto;padding:12px 14px}
+#bDet::after{content:" ▾";color:var(--muted)}
+#bDet[aria-expanded="true"]::after{content:" ▴"}
+#det{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);max-height:28vh;overflow-y:auto}
+.lie{font-size:13px}
+.opt{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.opt>span{font-size:12.5px;color:var(--muted);width:2.2em}
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+.carry{font-size:13px;margin-top:8px}
+.carry .num{font-size:16px;font-weight:600}
+.result{font-size:18px;font-weight:700;margin-top:6px}
+.tnote{font-size:13px;color:var(--blue);margin-top:2px}
+.news{margin-top:6px}
+.news p{font-size:13.5px;color:#33463b;margin-top:3px;line-height:1.55}
+.swingHint{flex:1;font-size:12.5px;color:var(--muted);line-height:1.45;align-self:center}
+#swingCv{position:absolute;left:10px;right:10px;bottom:22px;height:56%;width:calc(100% - 20px);touch-action:none;display:block;background:rgba(255,255,255,.9);border-radius:16px;z-index:3}
+
+/* オーバーレイ */
+#overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(10,30,18,.55);overflow-y:auto}
+#overlay.full{background:var(--green);padding:0;align-items:stretch}
+.card{background:#fff;border-radius:18px;padding:20px;max-width:440px;width:100%;max-height:92vh;overflow-y:auto}
+.intro-head{display:flex;align-items:center;gap:12px}
+.holeNo.big{width:52px;height:52px;font-size:34px;border-radius:12px}
+.intro-head .holeMeta b{font-size:24px}.intro-head .holeMeta span{font-size:17px}
+.intro-head .r{margin-left:auto;font-size:13px}
+.thumb{display:block;width:100%;height:200px;border-radius:12px;margin-top:14px;background:#1B3A26}
+.conds{margin-top:12px}
+.conds div{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.conds dt{width:4.5em;color:var(--muted);font-size:13px}
+.conds dd{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.card .news{margin-top:12px}
+.card .btn.wide{margin-top:16px}
+.card h2{font-size:20px}
+.handoff{position:relative;width:100%;min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:calc(40px + env(safe-area-inset-top)) 28px calc(32px + env(safe-area-inset-bottom));color:#fff;max-width:520px;margin:0 auto}
+.handoff::before{content:"";position:fixed;left:0;right:0;top:0;height:6px;background:var(--pc)}
+.ho-label{font-size:14px;opacity:.75}
+.ho-name{font-size:46px;font-weight:700;line-height:1.15;margin-top:4px;word-break:break-all}
+.ho-meta{margin-top:10px;font-size:15px;opacity:.85}
+.ho-meta .num{font-size:19px}
+.ho-news{margin-top:34px;min-height:3em}
+.ho-news p{font-size:16.5px;line-height:1.7;margin-top:8px;opacity:0;animation:rise .6s forwards}
+.ho-pass{margin-top:auto;padding-top:36px;font-size:13.5px;opacity:.7}
+.handoff .btn{margin-top:12px;padding:15px}
+.sctable{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+.sctable th,.sctable td{padding:6px 3px;text-align:center;border-bottom:1px solid var(--line)}
+.sctable th:first-child{text-align:left;font-weight:500;white-space:nowrap;max-width:9em;overflow:hidden;text-overflow:ellipsis}
+.sctable thead th{font-family:var(--num);font-size:15px;color:var(--muted);font-weight:500}
+.sctable thead th.now{color:var(--green);font-weight:700}
+.sctable tr.par td{font-family:var(--num);color:var(--muted)}
+.sctable td{font-family:var(--num);font-size:18px}
+.sctable td.tot{font-weight:700;color:var(--green)}
+.sc{display:inline-grid;place-items:center;width:25px;height:25px}
+.sc.birdie{border:1.5px solid var(--ink);border-radius:50%}
+.sc.eagle{border:1.5px solid var(--ink);border-radius:50%;box-shadow:0 0 0 2.5px #fff,0 0 0 4px var(--ink)}
+.sc.bogey{border:1.5px solid var(--ink)}
+.sc.dbl{border:1.5px solid var(--ink);box-shadow:0 0 0 2.5px #fff,0 0 0 4px var(--ink)}
+.rank{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.rank .pos{font-family:var(--num);font-size:28px;font-weight:700;color:var(--green);width:1.2em}
+.rank .nm{flex:1;min-width:0}
+.rank .nm small{display:block;color:var(--muted);font-size:12.5px}
+.rank .tot{font-family:var(--num);font-size:30px;font-weight:600}
+.rank.first .pos,.rank.first .tot{color:var(--blue)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.ho-news p{opacity:1}}
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<div id="game" class="hidden">
+  <div id="hud">
+    <div class="hud-top">
+      <div class="holeNo" id="holeNo">1</div>
+      <div class="holeMeta"><b id="holePar"></b><span id="holeYd"></span></div>
+      <div id="board"></div>
+      <div class="wind" aria-label="風"><span id="windIcon"></span><div><div class="spd"><span id="windSpd"></span><small>m</small></div><div class="up" id="windUp"></div></div></div>
+    </div>
+  </div>
+  <div id="mapWrap">
+    <canvas id="map"></canvas>
+    <div id="press"></div>
+    <div id="banner"></div>
+    <div class="mapBtns"><button class="btn" id="zIn" aria-label="拡大">＋</button><button class="btn" id="zOut" aria-label="縮小">－</button><button class="btn small" id="gRead" aria-pressed="false">高低</button><button class="btn small hidden" id="tPlace">置く</button></div>
+  </div>
+  <div id="panel"></div>
+</div>
+<div id="overlay" class="hidden"></div>
+
+<script>
+'use strict';
+// ================= 定数 =================
+const COLORS=['#1E6FB8','#E0A21B','#D9534F','#7E57C2'];
+const G=10.7; // yd/s^2
+const FRIC={green:.65,fringe:1.6,fairway:2.8,tee:2.8,rough:7,deep:14,bunker:30};
+const SURF_NAME={tee:'ティー',fairway:'フェアウェイ',rough:'ラフ',deep:'深いラフ',bunker:'バンカー',green:'グリーン',fringe:'カラー',water:'池',ob:'OB'};
+const LIE={tee:{mul:1,rand:1,diff:0},fairway:{mul:1,rand:1,diff:0},fringe:{mul:.95,rand:1,diff:.02},rough:{mul:.88,rand:1.3,diff:.08},deep:{mul:.65,rand:1.9,diff:.25},bunker:{mul:.6,rand:1.6,diff:.2},green:{mul:1,rand:1,diff:0}};
+const MAXC={tee:{low:215,mid:245,high:225},other:{low:195,mid:220,high:190}};
+const ROLLF={low:.22,mid:.12,high:.06};
+const SPINM={stop:.35,normal:1,run:1.8};
+const WINDH={low:.35,mid:1,high:1.3};
+const HDIFF={low:-.03,mid:.04,high:.12};
+const SDIFF={stop:.12,normal:0,run:-.06};
+const SURFM={green:1,fringe:.9,fairway:1,tee:1,rough:.4,deep:.15,bunker:.05};
+const MOD={
+ divot:{mul:.92,rand:1.4,diff:.12,apex:.85,noSpin:true,name:'ディボット跡（低く出てスピンがかからない）'},
+ up:{mul:1.02,rand:1.1,diff:-.03,flier:true,noSpin:true,name:'浮いている（フライヤーで飛びすぎることも）'},
+ down:{mul:.8,rand:1.5,diff:.12,name:'沈んでいる（飛ばずブレやすい）'},
+ egg:{mul:.45,rand:4,diff:.45,noSpin:true,eggRoll:true,name:'目玉（大きく飛ばせず、よく転がる）'},
+ tree:{mul:.6,rand:1.2,diff:.1,lowOnly:true,name:'木の下（低い球しか打てない）'}
+};
+const COND={
+ speed:[{n:'遅い',f:1.25,h:'同じ強さでも転がらない'},{n:'普通',f:1,h:''},{n:'速い',f:.8,h:'同じ強さでもよく転がる'}],
+ firm:[{n:'柔らかい',m:.6},{n:'普通',m:1},{n:'硬い',m:1.5}],
+ ground:[{n:'雨上がり',m:.5},{n:'普通',m:1},{n:'乾いて硬い',m:1.5}],
+ gust:[{n:'安定',g:false},{n:'突風あり',g:true}]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const FOCUS={'1':{cost:25,jit:.3,rand:.5},'0':{cost:18,jit:.5,rand:.65},'-1':{cost:12,jit:.7,rand:.8}};
+const RECOVER={'1':2,'0':4,'-1':6};
+const MISSM={'-1':1.5,'0':1,'1':.6};
+const GOODM={'-1':1.2,'0':1,'1':.7};
+
+// ================= ベクトル =================
+const v=(x,y)=>({x,y});
+const add=(a,b)=>v(a.x+b.x,a.y+b.y),sub=(a,b)=>v(a.x-b.x,a.y-b.y),mul=(a,k)=>v(a.x*k,a.y*k);
+const len=a=>Math.hypot(a.x,a.y),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const norm=a=>{const l=len(a)||1;return v(a.x/l,a.y/l)};
+const dot=(a,b)=>a.x*b.x+a.y*b.y;
+const leftP=a=>v(-a.y,a.x);
+const rot=(a,deg)=>{const r=deg*Math.PI/180,c=Math.cos(r),s=Math.sin(r);return v(a.x*c-a.y*s,a.x*s+a.y*c)};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function gauss(){let u=0,w=0;while(!u)u=Math.random();while(!w)w=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w)}
+function bez(a,c,b,t){const u=1-t;return v(u*u*a.x+2*u*t*c.x+t*t*b.x,u*u*a.y+2*u*t*c.y+t*t*b.y)}
+function distSeg(p,a,b){const ab=sub(b,a),l2=dot(ab,ab);const t=l2?clamp(dot(sub(p,a),ab)/l2,0,1):0;return dist(p,add(a,mul(ab,t)))}
+function distPoly(p,pts){let m=1e9;for(let i=0;i<pts.length-1;i++)m=Math.min(m,distSeg(p,pts[i],pts[i+1]));return m}
+function ellR(p,e){return Math.sqrt(((p.x-e.x)/e.rx)**2+((p.y-e.y)/e.ry)**2)}
+const inEll=(p,e)=>ellR(p,e)<=1;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+
+// ================= コース =================
+const HOLES=[
+{name:'1番',par:4,yards:385,seed:1.3,tee:v(0,0),
+ center:[v(0,-8),v(0,230),v(30,385),v(31,405)],corridor:55,
+ fairway:[v(0,45),v(0,230),v(26,355)],fw:34,
+ green:{x:30,y:385,rx:14,ry:16},
+ bunkers:[{x:20,y:248,rx:8,ry:6},{x:12,y:378,rx:5,ry:8},{x:45,y:370,rx:6,ry:5}],
+ water:[],
+ trees:[{x:-30,y:170,r:9,h:16},{x:-34,y:200,r:10,h:17},{x:-31,y:232,r:9,h:16},{x:36,y:235,r:10,h:18},{x:45,y:262,r:9,h:16},{x:48,y:300,r:9,h:17},{x:-12,y:410,r:8,h:15},{x:-25,y:330,r:9,h:16}],
+ pins:[v(30,392),v(24,378),v(36,380)],pinNames:['奥','手前左','手前右'],gs:v(0,.017)},
+{name:'2番',par:3,yards:165,seed:2.7,tee:v(0,0),
+ center:[v(0,-8),v(-5,185)],corridor:45,
+ fairway:[v(-1,138),v(-4,150)],fw:24,
+ green:{x:-5,y:165,rx:13,ry:11},
+ bunkers:[{x:-20,y:160,rx:5,ry:7},{x:8,y:177,rx:8,ry:4}],
+ water:[{x:0,y:100,rx:34,ry:24}],
+ trees:[{x:-32,y:185,r:9,h:16},{x:22,y:195,r:9,h:17},{x:-36,y:50,r:9,h:16},{x:36,y:60,r:9,h:16}],
+ pins:[v(-5,170),v(-10,160),v(1,161)],pinNames:['奥','手前左','右'],gs:v(.011,.014)},
+{name:'3番',par:5,yards:520,seed:4.1,tee:v(0,0),
+ center:[v(0,-8),v(0,260),v(-45,420),v(-56,540)],corridor:60,
+ fairway:[v(0,45),v(0,260),v(-40,402),v(-50,470)],fw:36,
+ green:{x:-55,y:520,rx:15,ry:13},
+ bunkers:[{x:17,y:285,rx:8,ry:6},{x:-22,y:262,rx:7,ry:5},{x:-72,y:515,rx:5,ry:8},{x:-55,y:537,rx:8,ry:4}],
+ water:[{x:-28,y:488,rx:11,ry:22}],
+ trees:[{x:-32,y:150,r:9,h:16},{x:-34,y:185,r:10,h:17},{x:-40,y:290,r:10,h:18},{x:-52,y:318,r:10,h:18},{x:-62,y:350,r:9,h:16},{x:14,y:380,r:10,h:17},{x:-5,y:430,r:9,h:16}],
+ pins:[v(-55,527),v(-61,515),v(-49,514)],pinNames:['奥','手前左','手前右'],gs:v(-.015,.01)},
+{name:'4番',par:4,yards:410,seed:5.2,tee:v(0,0),
+ center:[v(0,-8),v(0,250),v(-40,400),v(-44,425)],corridor:55,
+ fairway:[v(0,45),v(0,250),v(-36,385)],fw:32,
+ green:{x:-42,y:405,rx:14,ry:15},
+ bunkers:[{x:-20,y:262,rx:8,ry:6},{x:20,y:240,rx:7,ry:5},{x:-27,y:410,rx:5,ry:7},{x:-55,y:392,rx:6,ry:5}],
+ water:[],
+ trees:[{x:-30,y:220,r:10,h:18},{x:-38,y:250,r:10,h:18},{x:-37,y:288,r:9,h:17},{x:35,y:200,r:9,h:16},{x:38,y:300,r:9,h:16},{x:-60,y:425,r:8,h:15}],
+ pins:[v(-42,412),v(-48,398),v(-36,397)],pinNames:['奥','手前左','手前右'],gs:v(.01,.014)},
+{name:'5番',par:3,yards:190,seed:6.3,tee:v(0,0),
+ center:[v(0,-8),v(4,205)],corridor:45,
+ fairway:[v(1,40),v(3,170)],fw:26,
+ green:{x:4,y:190,rx:14,ry:12},
+ bunkers:[{x:-13,y:188,rx:5,ry:8},{x:21,y:184,rx:5,ry:7},{x:6,y:206,rx:9,ry:3.5}],
+ water:[],
+ trees:[{x:-30,y:120,r:9,h:16},{x:32,y:140,r:9,h:17},{x:-28,y:200,r:9,h:16},{x:30,y:210,r:9,h:16}],
+ pins:[v(4,196),v(-3,186),v(10,184)],pinNames:['奥','左','右'],gs:v(-.012,.01)},
+{name:'6番',par:4,yards:340,seed:7.1,tee:v(0,0),
+ center:[v(0,-8),v(0,200),v(10,330),v(10,350)],corridor:55,
+ fairway:[v(0,40),v(0,200),v(8,305)],fw:30,
+ green:{x:10,y:330,rx:13,ry:14},
+ bunkers:[{x:18,y:210,rx:7,ry:5},{x:26,y:334,rx:5,ry:7}],
+ water:[{x:-30,y:230,rx:12,ry:70},{x:-8,y:318,rx:8,ry:10}],
+ trees:[{x:35,y:150,r:9,h:16},{x:36,y:262,r:9,h:16},{x:38,y:110,r:8,h:15}],
+ pins:[v(12,337),v(4,325),v(16,322)],pinNames:['奥','手前左','手前右'],gs:v(.012,.008)},
+{name:'7番',par:5,yards:545,seed:8.4,tee:v(0,0),
+ center:[v(0,-8),v(0,300),v(20,450),v(22,560)],corridor:58,
+ fairway:[v(0,45),v(0,300),v(20,450),v(21,505)],fw:34,
+ green:{x:22,y:535,rx:14,ry:14},
+ bunkers:[{x:-18,y:270,rx:7,ry:5},{x:36,y:470,rx:7,ry:5},{x:6,y:530,rx:5,ry:7},{x:38,y:540,rx:5,ry:7}],
+ water:[{x:0,y:308,rx:62,ry:6}],
+ trees:[{x:-35,y:150,r:9,h:16},{x:35,y:180,r:9,h:17},{x:-28,y:420,r:9,h:16},{x:48,y:400,r:9,h:16},{x:2,y:568,r:8,h:15}],
+ pins:[v(22,543),v(16,528),v(28,527)],pinNames:['奥','手前左','手前右'],gs:v(0,.015)},
+{name:'8番',par:4,yards:320,seed:9.6,tee:v(0,0),
+ center:[v(0,-8),v(-10,300),v(-12,325)],corridor:50,
+ fairway:[v(0,40),v(-8,250)],fw:30,
+ green:{x:-11,y:305,rx:12,ry:13},
+ bunkers:[{x:-26,y:300,rx:5,ry:8},{x:4,y:298,rx:5,ry:8},{x:-11,y:285,rx:9,ry:4},{x:-4,y:321,rx:7,ry:3.5}],
+ water:[],
+ trees:[{x:-35,y:180,r:9,h:16},{x:25,y:200,r:9,h:16},{x:-33,y:262,r:9,h:16},{x:20,y:265,r:9,h:16}],
+ pins:[v(-11,311),v(-16,300),v(-6,298)],pinNames:['奥','左','右'],gs:v(.01,-.01)},
+{name:'9番',par:4,yards:430,seed:10.2,tee:v(0,0),
+ center:[v(0,-8),v(0,240),v(35,420),v(37,445)],corridor:58,
+ fairway:[v(0,45),v(0,240),v(30,395)],fw:34,
+ green:{x:36,y:425,rx:15,ry:14},
+ bunkers:[{x:-18,y:250,rx:8,ry:6},{x:20,y:410,rx:5,ry:7}],
+ water:[{x:58,y:410,rx:10,ry:22}],
+ trees:[{x:30,y:225,r:10,h:18},{x:40,y:258,r:10,h:18},{x:46,y:300,r:9,h:16},{x:-35,y:200,r:9,h:16},{x:-25,y:330,r:9,h:16}],
+ pins:[v(36,432),v(42,418),v(30,416)],pinNames:['奥','手前右','手前左'],gs:v(-.012,.012)}
+];
+
+function surfaceAt(h,p){
+  for(const w of h.water)if(inEll(p,w))return'water';
+  for(const b of h.bunkers)if(inEll(p,b))return'bunker';
+  const r=ellR(p,h.green);
+  if(r<=1)return'green';
+  if(inEll(p,{x:h.green.x,y:h.green.y,rx:h.green.rx+2.5,ry:h.green.ry+2.5}))return'fringe';
+  if(Math.abs(p.x-h.tee.x)<5&&Math.abs(p.y-h.tee.y)<6)return'tee';
+  if(distPoly(p,h.center)>h.corridor)return'ob';
+  const df=distPoly(p,h.fairway);
+  if(df<h.fw/2)return'fairway';
+  if(df<h.fw/2+10)return'rough';
+  return'deep';
+}
+function heightAt(h,p){
+  const g=h.green,r=ellR(p,g),s=h.seed;
+  const a=clamp((r-1.5)/1.5,0,1);
+  const gw=1-clamp((r-1.15)/.45,0,1);
+  const course=.6*Math.sin(p.x/17+s)*Math.cos(p.y/23+s*1.7)+.8*Math.sin((p.x+p.y)/31+s*2.3);
+  const green=h.gs.x*(p.x-g.x)+h.gs.y*(p.y-g.y)+.06*Math.sin(p.x/4+s)*Math.sin(p.y/5+s*2);
+  return a*course+gw*green;
+}
+function gradAt(h,p){const e=.25;return v((heightAt(h,v(p.x+e,p.y))-heightAt(h,v(p.x-e,p.y)))/(2*e),(heightAt(h,v(p.x,p.y+e))-heightAt(h,v(p.x,p.y-e)))/(2*e))}
+
+// ================= 質問・性格 =================
+const QUIZ=[
+ {q:'ジャンケンで3連勝した。4回目の前の気分は？',a:[
+  {t:'今日はツイてる。負ける気がしない',d:{A:1}},
+  {t:'そろそろ負けそうで、ちょっとドキドキする',d:{A:-1}},
+  {t:'次の1回に全神経を集中する',d:{C:1}}]},
+ {q:'行列に並んでいたら、横入りされた。',a:[
+  {t:'その場ではっきり注意する',d:{D:1}},
+  {t:'モヤっとするけど「まあいいか」と流す',d:{B:1}},
+  {t:'その人のことが気になって、しばらく落ち着かない',d:{B:-1,D:-1}}]},
+ {q:'テスト前日。範囲の半分しか終わっていない。',a:[
+  {t:'「ここからが本番」と燃えてくる',d:{A:-1,B:1}},
+  {t:'終わった部分を完璧にして守りを固める',d:{A:1}},
+  {t:'サボった昨日の自分を責めてしまう',d:{B:-1}}]},
+ {q:'友人が自分より先に合格・昇進した。',a:[
+  {t:'正直悔しい。次は自分だと火がつく',d:{D:1,C:1}},
+  {t:'嬉しいけど、少し焦る',d:{D:-1}},
+  {t:'自分は自分のペースでいく',d:{C:-1}}]},
+ {q:'長いゲームで、大差をつけてリードしている。',a:[
+  {t:'最後まで気を抜かず、淡々と進める',d:{A:1,C:-1}},
+  {t:'逆転されないか、だんだん不安になってくる',d:{A:-1}},
+  {t:'一気に決めにいく',d:{C:1}}]},
+ {q:'大事な発表の最初の一言で噛んでしまった。',a:[
+  {t:'笑ってごまかし、すぐ立て直す',d:{B:1}},
+  {t:'聞いている人の反応が気になって仕方ない',d:{D:-1}},
+  {t:'頭が真っ白になって、しばらく戻れない',d:{B:-1}}]}
+];
+const NOUN={'1,1':'ムードメーカー','1,0':'楽天家','1,-1':'気分屋','0,1':'勝負師','0,0':'職人','0,-1':'繊細派','-1,1':'激情家','-1,0':'完璧主義者','-1,-1':'心配性'};
+const CADJ={'1':'一発勝負の','0':'','-1':'粘り強い'};
+const ATAG={'1':'逃げ切り型','0':'マイペース型','-1':'追い込み型'};
+const DESC={
+ A:{'1':'前に立つほど呼吸が整うタイプ。リードしている時ほど落ち着いてプレーできる。その代わり、大きく離されると焦りが顔を出す。',
+    '0':'順位にはあまり左右されない。首位でも追う立場でも、だいたい普段どおり。ただ、首位に立つと少しだけ重さを感じる。',
+    '-1':'追いかける時に本領を発揮する。差が開くほど集中が研ぎ澄まされる一方、自分が首位に立つと急に足元が気になり始める。'},
+ B:{'1':'ミスはその場に置いていける。崩れにくいが、好調の波に乗り続けるのは少し苦手。',
+    '0':'失敗も成功も、ほどほどに受け止める。',
+    '-1':'一つのミスが尾を引きやすい。そのぶん、うまくいった時の手応えも人一倍大きい。'},
+ C:{'1':'ここ一番で全てを注ぎ込む。集中した時の精度は高いが、消耗が激しく回復も遅い。',
+    '0':'集中と回復のバランスがとれている。',
+    '-1':'力を小出しにして長く戦う。集中の切れ味は控えめだが、心の消耗が少なく回復も早い。'},
+ D:{'1':'相手の好プレーは、むしろ燃料になる。',
+    '0':'他人のプレーはあまり気にならない。',
+    '-1':'相手の好プレーが目に入ると、心がざわつきやすい。'}
+};
+function buildProfile(ans){
+  const sum={A:0,B:0,C:0,D:0};
+  ans.forEach((ai,qi)=>{const d=QUIZ[qi].a[ai].d;for(const k in d)sum[k]+=d[k]});
+  const ax={};for(const k in sum)ax[k]=sum[k]>=1?1:sum[k]<=-1?-1:0;
+  return{ax,typeName:CADJ[ax.C]+NOUN[ax.B+','+ax.D],tag:ATAG[ax.A],desc:['A','B','C','D'].map(k=>DESC[k][ax[k]])};
+}
+
+// ================= 状態 =================
+const S={players:[],hole:0,h:null,pin:null,wind:v(0,0),cur:null,mode:'',plan:null,info:null,cam:{x:0,y:0,s:2},camPts:null,camMin:60,camSnap:false,anim:null,animBall:null,honor:[],W:0,H:0,drawPts:null,sw:null};
+const NEWS=[];
+const news=t=>NEWS.push(t);
+const takeNews=()=>NEWS.splice(0);
+function st(p,d){p.st=clamp(Math.round(p.st+d),0,100)}
+function yousu(s){return s>=75?'落ち着いている':s>=55?'普段どおり':s>=40?'素振りが増えている':s>=25?'表情が硬い':'手が小刻みに震えている'}
+const fmtD=d=>d<30?d.toFixed(1)+'y':Math.round(d)+'y';
+const fmtRel=r=>r===0?'E':(r>0?'+'+r:''+r);
+function scoreName(strokes,par){if(strokes===1)return'ホールインワン';const r=strokes-par;return{'-3':'アルバトロス','-2':'イーグル','-1':'バーディ','0':'パー','1':'ボギー','2':'ダブルボギー','3':'トリプルボギー'}[r]||('+'+r)}
+
+
+// ================= 共通UI =================
+const scr=$('#screen');
+const pdot=p=>`<span class="pdot" style="background:${p.color}"></span>`;
+const newsHtml=(arr,cls='news')=>arr.length?`<div class="${cls}">${arr.map((x,i)=>`<p style="animation-delay:${.35+i*.55}s">${esc(x)}</p>`).join('')}</div>`:'';
+function windSvg(w,size){const a=Math.atan2(w.x,w.y)*180/Math.PI,calm=len(w)<.5;
+  return`<svg width="${size}" height="${size}" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="#1E6FB8" stroke-width="1.6"/>${calm?'<circle cx="15" cy="15" r="2.5" fill="#1E6FB8"/>':`<g transform="rotate(${a} 15 15)"><path d="M15 5 L20 13 L16.5 12 L16.5 24 L13.5 24 L13.5 12 L10 13Z" fill="#1E6FB8"/></g>`}</svg>`}
+function showScreen(){scr.classList.remove('hidden');$('#game').classList.add('hidden');$('#overlay').classList.add('hidden');scr.scrollTop=0}
+function overlay(html,onOk,cls=''){
+  const o=$('#overlay');o.className=cls;o.innerHTML=html;o.scrollTop=0;
+  const b=o.querySelector('#ok');if(b){b.onclick=()=>{o.classList.add('hidden');onOk&&onOk()};setTimeout(()=>b.focus({preventScroll:true}),50)}
+}
+
+// ================= 画面：タイトル〜設定 =================
+const SAVE_KEY='aattogolf_save_v1';
+function loadSave(){try{const t=localStorage.getItem(SAVE_KEY);return t?JSON.parse(t):null}catch(e){return null}}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
+function saveGame(){
+  if(!S.cfg||S.cfg.mode!=='versus')return;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({cfg:S.cfg,hole:S.hole,cond:S.cond,honor:S.honor.map(p=>S.players.indexOf(p)),
+    players:S.players.map(p=>({name:p.name,color:p.color,cpu:!!p.cpu,level:p.level||0,ax:p.ax,typeName:p.typeName,tag:p.tag,desc:p.desc,st:p.st,total:p.total,scores:p.scores,up:p.up||0}))}))}catch(e){}
+}
+const CPU_NAMES=['高城','霧島','水野','佐伯','東雲','柏木','真壁','久遠'];
+const LEVEL_NAME=['初級','中級','上級'];
+const HERO=`<svg class="hills" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 64 C70 36 150 50 228 58 S352 34 400 46 L400 120 L0 120Z" fill="#2F7D4A"/><path d="M0 92 C96 70 186 78 262 86 S362 74 400 80 L400 120 L0 120Z" fill="#14532D"/></svg>
+  <svg class="flag" viewBox="0 0 34 60" aria-hidden="true"><line x1="6" y1="4" x2="6" y2="56" stroke="#fff" stroke-width="2.2"/><path d="M7 5 L30 12 L7 19Z" fill="#fff"/><ellipse cx="6" cy="57" rx="5" ry="1.8" fill="#0b2e18"/></svg>`;
+function renderTitle(){
+  showScreen();const sv=loadSave();
+  scr.innerHTML=`<section class="hero"><a class="homeLink" href="../../">← ゲーム一覧</a><div class="hero-text"><h1>アーッ！と<br>ゴルフ</h1><p>心の格闘技</p></div>${HERO}</section>
+  <section class="pane">
+    ${sv?`<button class="btn primary wide" id="resume">続きから　${sv.hole+1}番ホール（全${sv.cfg.holes}ホール）</button>`:''}
+    <div class="modes">
+      <button class="btn mode" id="mVs"><b>対戦</b><span>2〜4人で回る。CPUとも戦える</span></button>
+      <button class="btn mode" id="mTr"><b>トレーニング</b><span>ホールと条件を選んで自由に練習する</span></button>
+    </div>
+    <details class="howto"><summary>遊び方</summary><ol>
+      <li>マップをタップして落とし所を決める。弾道の中ほどの丸いつまみを左右に動かすと曲がる球になる</li>
+      <li>「詳細」で球の高さと止め方を選ぶ。低い球は風に強く、高い球は止まりやすい</li>
+      <li>「構える」を押し、枠の中を真下に引く。震える青い線が緑の目標線に重なった瞬間に離す</li>
+      <li>心のスタミナが減るほど線の震えが大きくなる。「集中」でスタミナを使えば、その一打だけ震えが収まる</li>
+      <li>相手のスタミナは数字では見えない。打席交代のときの様子から読む</li>
+      <li>右上の「高低」でグリーンの高さを表示。青い（低い）所に乗せればピンへ上りのパットが残る</li>
+      <li>マッチプレーでは、相手の短いパットに「OK」を出すか、あえて打たせるかを選べる</li>
+    </ol></details>
+  </section>`;
+  if(sv)$('#resume').onclick=()=>resumeGame(sv);
+  $('#mVs').onclick=renderVsSetup;
+  $('#mTr').onclick=renderTrainSetup;
+}
+S.setup={holes:9,format:'stroke',seats:[{cpu:false},{cpu:true,level:1}]};
+function renderVsSetup(){
+  const su=S.setup,n=su.seats.length,okMatch=su.format!=='match'||n===2,hasHuman=su.seats.some(s=>!s.cpu);
+  const ch=(key,opts)=>opts.map(([k,l])=>`<button class="btn chipbtn ${su[key]===k?'on':''}" data-k="${key}" data-v="${k}">${l}</button>`).join('');
+  scr.innerHTML=`<section class="pane" style="padding-top:calc(24px + env(safe-area-inset-top))">
+    <button class="btn ghost chipbtn" id="back">タイトルに戻る</button>
+    <h2 class="mt" style="margin-top:14px">対戦の設定</h2>
+    <p class="label">ホール数</p><div class="opt">${ch('holes',[[3,'3（お試し）'],[9,'9ホール'],[18,'18ホール']])}</div>
+    <p class="label">形式</p><div class="opt">${ch('format',[['stroke','ストローク'],['match','マッチ（2人）']])}</div>
+    <p class="note">${su.format==='match'?'マッチ：ホールごとに打数の少ない方が勝ち。勝ったホールの数で競う。相手の短いパットに「OK」を出すかどうかも駆け引きになる。':'ストローク：全ホールの合計打数で競う。'}</p>
+    <p class="label">プレイヤー</p>
+    <div class="seats">${su.seats.map((s,i)=>`<div class="seat"><span class="pdot" style="background:${COLORS[i]}"></span>
+      <div class="opt" style="margin:0">${[['h','人'],[0,'CPU 初級'],[1,'CPU 中級'],[2,'CPU 上級']].map(([k,l])=>`<button class="btn chipbtn ${(k==='h'?!s.cpu:s.cpu&&s.level===k)?'on':''}" data-seat="${i}" data-v="${k}">${l}</button>`).join('')}</div>
+      ${n>1?`<button class="btn ghost chipbtn rm" data-rm="${i}" aria-label="外す">外す</button>`:''}</div>`).join('')}</div>
+    ${n<4?'<button class="btn ghost wide" style="margin-top:8px" id="addSeat">プレイヤーを追加</button>':''}
+    ${!okMatch?'<p class="warnTxt">マッチは2人で遊ぶ形式です。人数を2人にしてください</p>':''}
+    ${!hasHuman?'<p class="warnTxt">人のプレイヤーが1人以上必要です</p>':''}
+    <button class="btn primary wide mt" id="go" ${okMatch&&hasHuman?'':'disabled'}>名前と性格を決める</button></section>`;
+  $('#back').onclick=renderTitle;
+  scr.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;su[b.dataset.k]=isNaN(+v)?v:+v;renderVsSetup()});
+  scr.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>{const s=su.seats[+b.dataset.seat],v=b.dataset.v;if(v==='h'){s.cpu=false}else{s.cpu=true;s.level=+v}renderVsSetup()});
+  scr.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{su.seats.splice(+b.dataset.rm,1);renderVsSetup()});
+  const a=$('#addSeat');if(a)a.onclick=()=>{su.seats.push({cpu:true,level:1});renderVsSetup()};
+  $('#go').onclick=()=>{
+    const used=new Set();
+    S.players=su.seats.map((s,i)=>{
+      if(!s.cpu)return{name:'プレイヤー'+(i+1),color:COLORS[i],cpu:false};
+      let nm;do nm=pick(CPU_NAMES);while(used.has(nm));used.add(nm);
+      const p={name:nm,color:COLORS[i],cpu:true,level:s.level};
+      Object.assign(p,buildProfile(QUIZ.map(()=>Math.floor(Math.random()*3))));return p;
+    });
+    renderName(nextHuman(-1));
+  };
+}
+const humans=()=>S.players.filter(p=>!p.cpu);
+function nextHuman(i){for(let k=i+1;k<S.players.length;k++)if(!S.players[k].cpu)return k;return-1}
+function renderName(i){
+  const p=S.players[i],hs=humans();
+  scr.innerHTML=`<section class="pane" style="padding-top:calc(36px + env(safe-area-inset-top))">
+    <p class="step">${hs.indexOf(p)+1}人目 / ${hs.length}人</p>
+    <h2 class="mt" style="margin-top:8px">${pdot(p)} 名前を入れてください</h2>
+    <input class="field" id="nm" maxlength="8" value="${esc(p.name)}" autocomplete="off">
+    <p class="lead mt">このあと6つの質問に答えると、あなたの「心の性格」が決まります。考えすぎず、直感で選んでください。</p>
+    <button class="btn primary wide mt" id="go">質問に答える</button></section>`;
+  $('#go').onclick=()=>{p.name=($('#nm').value.trim()||p.name).slice(0,8);renderQ(i,0,[])};
+}
+function renderQ(i,k,ans){
+  const p=S.players[i],q=QUIZ[k];
+  scr.innerHTML=`<section class="pane" style="padding-top:calc(36px + env(safe-area-inset-top))">
+    <p class="step">${pdot(p)} ${esc(p.name)}さん　質問 ${k+1} / ${QUIZ.length}</p>
+    <div class="prog"><i style="width:${k/QUIZ.length*100}%"></i></div>
+    <h2>${q.q}</h2>
+    ${q.a.map((a,j)=>`<button class="btn qopt" data-j="${j}">${a.t}</button>`).join('')}</section>`;
+  requestAnimationFrame(()=>{const b=scr.querySelector('.prog i');if(b)b.style.width=((k+1)/QUIZ.length*100)+'%'});
+  scr.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{
+    const a=[...ans,+b.dataset.j];
+    if(k+1<QUIZ.length)renderQ(i,k+1,a);else{Object.assign(p,buildProfile(a));renderProfile(i)}
+  });
+}
+function renderProfile(i){
+  const p=S.players[i],nx=nextHuman(i),hasCpu=S.players.some(q=>q.cpu);
+  scr.innerHTML=`<section class="pane reveal" style="padding-top:calc(36px + env(safe-area-inset-top))">
+    <p class="step">${pdot(p)} ${esc(p.name)}さんの心の性格</p>
+    <div class="typename">${esc(p.typeName)}</div>
+    <span class="tag">${p.tag}</span>
+    <div class="desc">${p.desc.map(d=>`<p>${d}</p>`).join('')}</div>
+    <button class="btn primary wide mt" id="next">${nx>=0?'次の人へ':hasCpu?'対戦相手を見る':'ラウンドを始める'}</button>
+    <button class="btn ghost wide" style="margin-top:8px" id="redo">答え直す</button></section>`;
+  $('#next').onclick=()=>nx>=0?renderName(nx):hasCpu?renderLineup():startRound();
+  $('#redo').onclick=()=>renderQ(i,0,[]);
+}
+function renderLineup(){
+  scr.innerHTML=`<section class="pane reveal" style="padding-top:calc(36px + env(safe-area-inset-top))">
+    <h2>今日の組</h2>
+    <p class="lead">${S.setup.holes}ホール・${S.setup.format==='match'?'マッチプレー':'ストロークプレー'}</p>
+    <div class="lineup">${S.players.map(p=>`<div class="lu"><span class="pdot" style="background:${p.color}"></span><div><b>${esc(p.name)}</b>${p.cpu?`<span class="cpuTag">CPU ${LEVEL_NAME[p.level]}</span>`:''}<small>${esc(p.typeName)}・${p.tag}</small></div></div>`).join('')}</div>
+    <p class="note">CPUの心のスタミナも数字では見えない。様子から読む。</p>
+    <button class="btn primary wide mt" id="go">ラウンドを始める</button></section>`;
+  $('#go').onclick=startRound;
+}
+
+// ================= コース構成 =================
+function mirrorHole(h,no){
+  const mx=p=>({...p,x:-p.x});
+  return{...h,no,_stakes:null,seed:h.seed+7,tee:mx(h.tee),center:h.center.map(mx),fairway:h.fairway.map(mx),green:mx(h.green),
+    bunkers:h.bunkers.map(mx),water:h.water.map(mx),trees:h.trees.map(mx),pins:h.pins.map(mx),
+    pinNames:h.pinNames.map(s=>s.replace('左','#').replace('右','左').replace('#','右')),gs:v(-h.gs.x,h.gs.y)};
+}
+function buildCourse(n){
+  const base=HOLES.slice(0,Math.min(n,9)).map((h,i)=>({...h,no:i+1,_stakes:null}));
+  if(n===18)HOLES.forEach((h,i)=>base.push(mirrorHole(h,i+10)));
+  return base;
+}
+
+// ================= ラウンド進行 =================
+function beginGameScreen(){scr.classList.add('hidden');$('#game').classList.remove('hidden');$('#tPlace').classList.toggle('hidden',S.cfg.mode!=='train')}
+function startRound(){
+  S.cfg={mode:'versus',holes:S.setup.holes,format:S.setup.format};
+  S.course=buildCourse(S.cfg.holes);
+  S.players.forEach(p=>{p.st=70;p.total=0;p.scores=[];p.up=0});
+  S.cond={speed:pick(COND.speed),firm:pick(COND.firm),ground:pick(COND.ground),gust:pick(COND.gust)};
+  S.honor=[...S.players];S.hole=0;NEWS.length=0;
+  beginGameScreen();startHole();
+}
+function resumeGame(sv){
+  S.cfg=sv.cfg;S.course=buildCourse(S.cfg.holes);S.players=sv.players;S.hole=sv.hole;S.cond=sv.cond;
+  S.honor=sv.honor.map(i=>S.players[i]);NEWS.length=0;S.setup.holes=S.cfg.holes;S.setup.format=S.cfg.format;
+  beginGameScreen();startHole();
+}
+const standing=p=>S.cfg.format==='match'?-(p.up||0):p.total;
+const upText=u=>u===0?'タイ':u>0?`${u}アップ`:`${-u}ダウン`;
+function matchStatusText(){const[a,b]=S.players,u=a.up||0;return u===0?'タイ（オールスクエア）':`${u>0?a.name:b.name}さんの${Math.abs(u)}アップ`}
+function randomWind(lo,hi){const ws=rnd(lo,hi),wa=rnd(0,Math.PI*2);return v(Math.sin(wa)*ws,Math.cos(wa)*ws)}
+function setupHole(){
+  const h=S.h=S.course[S.hole];
+  const pi=Math.floor(Math.random()*h.pins.length);
+  S.pin={...h.pins[pi]};S.pinName=h.pinNames[pi];
+  {const ga=rnd(0,Math.PI*2);h.grain=v(Math.sin(ga),Math.cos(ga))}
+  S.players.forEach(p=>{p.pos={...h.tee};p.lie='tee';p.mod=null;p.strokes=0;p.done=false;p.gaveUp=false;p.conceded=false;p.reactedLast=false;p.drag=0;p.okAsked=-1});
+  S.cur=null;S.mode='intro';S.camPts=[h.tee,S.pin];S.camMin=120;S.camSnap=true;S.fx=[];S.trail=[];S.placing=false;
+  return h;
+}
+function introCard(h,extra,btn){
+  const w2=len(S.wind);
+  return`<div class="card">
+    <div class="intro-head"><span class="holeNo big">${h.no}</span><div class="holeMeta"><b>Par ${h.par}</b><span>${h.yards}y</span></div><span class="muted r">${S.cfg.mode==='train'?'トレーニング':`${S.hole+1} / ${S.course.length}ホール`}</span></div>
+    <canvas class="thumb" id="thumb"></canvas>
+    <dl class="conds">
+      <div><dt>風</dt><dd>${windSvg(S.wind,22)}<span class="num" style="font-size:18px">${w2.toFixed(1)}</span>m　上空 ${(w2*1.8).toFixed(1)}m　${S.cond.gust.n}</dd></div>
+      <div><dt>ピン</dt><dd>${S.pinName}</dd></div>
+      <div><dt>グリーン</dt><dd>${S.cond.speed.n}　${S.cond.firm.n}</dd></div>
+      <div><dt>地面</dt><dd>${S.cond.ground.n}</dd></div>
+      ${S.cfg.format==='match'&&S.cfg.mode==='versus'?`<div><dt>マッチ</dt><dd>${esc(matchStatusText())}</dd></div>`:''}
+    </dl>${extra||''}
+    <button class="btn primary wide" id="ok">${btn}</button></div>`;
+}
+function startHole(){
+  saveGame();
+  const h=setupHole();
+  S.wind=randomWind(0,6);
+  if(S.players.length>1&&S.hole>0){
+    const best=Math.min(...S.players.map(standing));
+    const leaders=S.players.filter(p=>standing(p)===best);
+    if(leaders.length===1){
+      const L=leaders[0],a=L.ax.A;st(L,a===1?4:a===0?-3:-7);
+      news(a===1?`首位の${L.name}さん、落ち着いた様子でティーに向かう。`:a===0?`首位の${L.name}さん、少し肩に力が入っている。`:`首位に立った${L.name}さん、どこか落ち着かない。`);
+    }
+    S.players.forEach(p=>{if(standing(p)-best>=2){
+      if(p.ax.A===-1){st(p,5);news(`追う${p.name}さんの目つきが変わった。`)}
+      else if(p.ax.A===1){st(p,-4);news(`${p.name}さんは差が気になっているようだ。`)}
+    }});
+  }
+  if(S.hole===S.course.length-1&&S.players.length>1){S.players.forEach(p=>st(p,-5));news('最終ホール。空気が張りつめる。')}
+  renderHud();$('#panel').innerHTML='';
+  overlay(introCard(h,newsHtml(takeNews()),'ティーへ'),()=>nextTurn());
+  requestAnimationFrame(()=>drawThumb($('#thumb'),h));
+}
+function matchCheck(){
+  if(S.cfg.format!=='match')return;
+  const[a,b]=S.players;
+  for(const[x,y]of[[a,b],[b,a]])if(x.done&&!x.gaveUp&&!y.done&&y.strokes+1>x.strokes){y.strokes++;y.done=true;y.conceded=true;news(`${y.name}さんはこのホールを譲った。`)}
+}
+function nextTurn(){
+  matchCheck();
+  const rem=S.players.filter(p=>!p.done);
+  if(!rem.length)return endHole();
+  let p;
+  const teeing=rem.filter(q=>q.lie==='tee'&&dist(q.pos,S.h.tee)<1);
+  if(teeing.length)p=S.honor.find(x=>teeing.includes(x));
+  else p=rem.reduce((a,b)=>dist(b.pos,S.pin)>dist(a.pos,S.pin)?b:a);
+  if(S.cfg.format==='match'&&p.lie==='green'&&dist(p.pos,S.pin)<2.2&&p.okAsked!==p.strokes){p.okAsked=p.strokes;return askConcession(p)}
+  startTurn(p);
+}
+function startTurn(p){
+  S.cur=p;S.mode='wait';S.camPts=[p.pos,S.pin];S.camMin=60;
+  renderHud();$('#panel').innerHTML='';
+  if(p.cpu)return cpuTurn(p);
+  const nw=takeNews(),d=dist(p.pos,S.pin);
+  if(humans().length>1){
+    overlay(`<div class="handoff" style="--pc:${p.color}">
+      <p class="ho-label">次の打席</p>
+      <h1 class="ho-name">${esc(p.name)}</h1>
+      <p class="ho-meta">${p.strokes+1}打目　${SURF_NAME[p.lie]}　ピンまで <span class="num">${d<30?d.toFixed(1):Math.round(d)}</span>y</p>
+      ${newsHtml(nw,'ho-news')||'<div class="ho-news"></div>'}
+      <p class="ho-pass">端末を${esc(p.name)}さんに渡してください</p>
+      <button class="btn light wide" id="ok">打席に入る</button></div>`,()=>beginPlan(),'full');
+  }else if(nw.length){
+    overlay(`<div class="card"><p class="step">${pdot(p)} ${esc(p.name)}さんの打席</p>${newsHtml(nw)}<button class="btn primary wide" id="ok">打席に入る</button></div>`,()=>beginPlan());
+  }else beginPlan();
+}
+function askConcession(p){
+  const o=S.players.find(q=>q!==p),d=dist(p.pos,S.pin);
+  if(o.cpu){
+    const give=d<.9||(d<1.6&&Math.random()<(o.ax.D===1?.15:.45));
+    return resolveOK(p,o,give);
+  }
+  overlay(`<div class="card"><p class="step">${pdot(o)} ${esc(o.name)}さんへ</p>
+    <h2 style="margin-top:6px">${esc(p.name)}さんのパット　<span class="num" style="font-size:26px">${d.toFixed(1)}</span>y</h2>
+    <p class="lead">OKを出すと、${esc(p.name)}さんは次の1打で入ったことになる。あえて打たせてプレッシャーをかけることもできる。</p>
+    <p class="note">端末を${esc(o.name)}さんに渡して決めてもらってください</p>
+    <div class="actions"><button class="btn" id="ng">打たせる</button><button class="btn primary" id="ok">OKを出す</button></div></div>`,()=>resolveOK(p,o,true));
+  $('#ng').onclick=()=>{$('#overlay').classList.add('hidden');resolveOK(p,o,false)};
+}
+function resolveOK(p,o,give){
+  if(give){p.strokes++;p.done=true;p.pos={...S.pin};st(p,2);news(`${o.name}さんがOKを出した。`);showBanner('OK','white');renderHud();setTimeout(nextTurn,S.cpuFast?0:500)}
+  else{st(p,-(p.ax.D===-1?5:3));news(`${o.name}さんはOKを出さなかった。`);startTurn(p)}
+}
+function scoreCell(s,par){if(s==null)return'<td></td>';const r=s-par;const c=r<=-2?'eagle':r===-1?'birdie':r===1?'bogey':r>=2?'dbl':'';return`<td><span class="sc ${c}">${s}</span></td>`}
+function scorecardHtml(cur){
+  const parts=[];for(let i=0;i<S.course.length;i+=9)parts.push([i,S.course.slice(i,i+9)]);
+  return parts.map(([o,hs],ci)=>{const sumPar=hs.reduce((a,h)=>a+h.par,0);
+    return`<div class="scwrap"><table class="sctable"><thead><tr><th>ホール</th>${hs.map((h,j)=>`<th class="${o+j===cur?'now':''}">${h.no}</th>`).join('')}<th>${parts.length>1?(ci?'IN':'OUT'):'計'}</th></tr>
+    <tr class="par"><th class="muted">Par</th>${hs.map(h=>`<td>${h.par}</td>`).join('')}<td>${sumPar}</td></tr></thead>
+    <tbody>${S.players.map(p=>{const sc=hs.map((h,j)=>p.scores[o+j]).filter(x=>x!=null);return`<tr><th>${pdot(p)} ${esc(p.name)}</th>${hs.map((h,j)=>scoreCell(p.scores[o+j],h.par)).join('')}<td class="tot">${sc.length?sc.reduce((a,b)=>a+b,0):''}</td></tr>`}).join('')}</tbody></table></div>`}).join('')
+  +`<p class="totals">${S.cfg.format==='match'?esc(matchStatusText()):S.players.map(p=>`${pdot(p)} ${esc(p.name)} <b class="num">${fmtRel(p.total)}</b>`).join('　')}</p>`;
+}
+function matchDecided(){if(S.cfg.format!=='match')return false;return Math.abs(S.players[0].up||0)>S.course.length-(S.hole+1)}
+function endHole(){
+  const h=S.h;S.mode='holeEnd';
+  S.players.forEach(p=>{
+    const sc=p.strokes;p.scores.push(sc);const rel=sc-h.par;p.total+=rel;const ax=p.ax;
+    if(rel<=-1){st(p,8*GOODM[ax.B]);news(`${p.name}さんの${scoreName(sc,h.par)}。`);if(!p.reactedLast)react(p)}
+    else if(rel>=2){st(p,-8*MISSM[ax.B]);news(`${p.name}さんは悔しさを隠せない。`)}
+    if(rel>=1){if(ax.B===-1){st(p,-4);news(`${p.name}さんは、まだこのホールを引きずっているようだ。`)}else if(ax.B===1)st(p,3)}
+    st(p,RECOVER[ax.C]+(62-p.st)*.3);
+  });
+  let headline='';
+  if(S.cfg.format==='match'){
+    const[a,b]=S.players,r=a.strokes-b.strokes;
+    if(r){const w=r<0?a:b,l=r<0?b:a;w.up=(w.up||0)+1;l.up=(l.up||0)-1;st(w,4*GOODM[w.ax.B]);st(l,-4*MISSM[l.ax.B]);news(`${w.name}さんがこのホールを取った。`);headline=`${w.name}さんの勝ち`}
+    else{news('このホールは分け。');headline='分け'}
+    S.honor=r?[r<0?a:b,r<0?b:a]:S.honor;
+  }else S.honor=[...S.honor].sort((a,b)=>a.scores[a.scores.length-1]-b.scores[b.scores.length-1]);
+  S.cur=null;renderHud();
+  const last=S.hole===S.course.length-1||matchDecided();
+  overlay(`<div class="card"><h2>${h.no}番ホール終了${headline?`　<span class="muted" style="font-size:16px">${esc(headline)}</span>`:''}</h2>${scorecardHtml(S.hole)}
+    ${newsHtml(takeNews())}
+    <button class="btn primary wide" id="ok">${last?'最終結果を見る':'次のホールへ'}</button></div>`,()=>{
+    if(last)showFinal();else{S.hole++;startHole()}
+  });
+}
+function showFinal(){
+  clearSave();
+  let head='';
+  if(S.cfg.format==='match'){
+    const[a,b]=S.players,u=a.up||0,rem=S.course.length-(S.hole+1);
+    head=u===0?`<p class="finalHead">引き分け</p>`:`<p class="finalHead">${pdot(u>0?a:b)} ${esc((u>0?a:b).name)}さんの勝ち　<span class="num">${rem>0?`${Math.abs(u)}&${rem}`:`${Math.abs(u)}アップ`}</span></p>`;
+  }else{
+    const ranked=[...S.players].sort((a,b)=>a.total-b.total);
+    head=ranked.map(p=>{const pos=ranked.findIndex(q=>q.total===p.total)+1;return`<div class="rank ${pos===1?'first':''}"><span class="pos">${pos}</span><div class="nm">${pdot(p)} ${esc(p.name)}${p.cpu?`<span class="cpuTag">CPU</span>`:''}<small>${esc(p.typeName)}</small></div><span class="tot">${fmtRel(p.total)}</span></div>`}).join('');
+  }
+  overlay(`<div class="card"><h2>最終結果</h2>${head}${scorecardHtml(-1)}
+    <button class="btn primary wide" id="again">同じメンバーでもう一度</button>
+    <button class="btn ghost wide" style="margin-top:8px" id="title">タイトルへ</button>
+    <p style="text-align:center;margin-top:12px"><a class="homeLink2" href="../../">← ゲーム一覧</a></p></div>`);
+  $('#again').onclick=()=>{$('#overlay').classList.add('hidden');startRound()};
+  $('#title').onclick=()=>renderTitle();
+}
+
+// ================= HUD =================
+function renderHud(){
+  const h=S.h,ws=len(S.wind);
+  $('#holeNo').textContent=h.no;
+  $('#holePar').textContent='Par '+h.par;
+  $('#holeYd').textContent=h.yards+'y';
+  $('#windIcon').innerHTML=windSvg(S.wind,26);
+  $('#windSpd').textContent=ws.toFixed(1);
+  $('#windUp').innerHTML=`上空 ${(ws*1.8).toFixed(1)}m${S.cond.gust.g?'<br>突風あり':''}`;
+  const score=p=>S.cfg.mode==='train'?`${p.strokes}打`:S.cfg.format==='match'?upText(p.up||0):fmtRel(p.total);
+  $('#board').innerHTML=S.players.map(p=>`<div class="pl ${p===S.cur?'cur':''}"><div class="pl-top">${pdot(p)}<span class="nm">${esc(p.name)}</span><span class="num sc">${score(p)}</span></div><small>${S.cfg.mode==='train'?'練習中':p===S.cur?(p.cpu?'CPUの打席':'打席'):p.done?'ホールアウト':yousu(p.st)}</small></div>`).join('');
+}
+
+// ================= CPU =================
+const LV=[{r:.07,dx:.06,read:2.6,rd:.12},{r:.045,dx:.035,read:1.3,rd:.06},{r:.026,dx:.02,read:.5,rd:.03}];
+function cpuNoise(p,focus){
+  const L=LV[p.level],s=p.st/100,F=focus?FOCUS[p.ax.C]:{jit:1},amp=(.012+.11*Math.pow(1-s,1.5))*F.jit,tw=tempoWindow(s);
+  let tempo=(tw[0]+tw[1])/2;if(Math.random()<(1-s)*.35*(1.3-p.level*.3))tempo=Math.random()<.5?tw[0]*.7:tw[1]*1.25;
+  return{ratio:1+gauss()*L.r+gauss()*amp/.8,dx:gauss()*L.dx+gauss()*amp*.7,tempo};
+}
+function windDrift(pl,info){
+  const w=mul(S.wind,(1+.8*Math.min(1,info.apex/35))*WINDH[pl.height]);let dr=mul(w,(.5+info.apex*.17)*.4);
+  const lp=leftP(info.dir),wl=dot(dr,lp),cf=pl.curveF||0;
+  if(Math.abs(cf)>.05&&Math.abs(wl)>.01){const k=cf*wl<0?1-Math.min(.6,Math.abs(cf)*.6):1+Math.abs(cf)*.4;dr=add(dr,mul(lp,wl*(k-1)))}
+  const head=dot(w,info.dir);if(head<0)dr=add(dr,mul(info.dir,head*(.5+info.apex*.17)*.12));return dr;
+}
+function expAt(pos,sf){
+  const d=dist(pos,S.pin);
+  if(sf==='green')return d<.8?1:Math.min(2.4,1.25+.075*d);
+  const a={fringe:-.15,fairway:0,tee:0,rough:.25,deep:.6,bunker:d<40?.35:.6}[sf];
+  let e=2.3+(a==null?.3:a)+Math.min(2.2,d*.0048)+(d<30?-.15:0);
+  if(S.h.trees.some(t=>dist(pos,t)<t.r+1))e+=.6;
+  return e;
+}
+function expLeft(sim,from,fromLie){
+  if(sim.end==='holed')return 0;
+  if(sim.end==='ob')return 1+expAt(from,fromLie==='tee'?'fairway':fromLie);
+  if(sim.end==='water'){const d=dropFrom(sim.entry,from);return 1+expAt(d,surfaceAt(S.h,d))}
+  return expAt(sim.rest,surfaceAt(S.h,sim.rest));
+}
+function pointAlongCenter(p,want){
+  const h=S.h,dPin=dist(p.pos,S.pin);let best=null,bd=1e9;const c=h.center;
+  for(let i=0;i<c.length-1;i++)for(let k=0;k<=40;k++){const q=add(c[i],mul(sub(c[i+1],c[i]),k/40));if(dist(q,S.pin)>=dPin)continue;const e=Math.abs(dist(q,p.pos)-want);if(e<bd){bd=e;best=q}}
+  return best||add(p.pos,mul(norm(sub(S.pin,p.pos)),want));
+}
+function cpuPlan(p){
+  const pl=S.plan,L=LV[p.level];
+  if(p.lie==='green'){
+    const from=p.pos,d=sub(S.pin,from),Ld=Math.max(len(d),.5);let best=null,bl=1e9,ba=0,bk=1;
+    const tryAim=(a,k)=>{const t=add(from,mul(rot(d,a/Ld*57.3),k));pl.target=t;const info=planInfo(p,pl);const sim=simulate(p,pl,info,{ratio:1,dx:0,tempo:1},100);return sim.end==='holed'?0:(sim.rest?dist(sim.rest,S.pin):9)};
+    for(let a=-1.4;a<=1.4;a+=.2)for(let k=.4;k<=2.2;k+=.1){const l=tryAim(a,k);if(l<bl){bl=l;ba=a;bk=k}}
+    for(let a=ba-.2;a<=ba+.2;a+=.05)for(let k=bk-.1;k<=bk+.1;k+=.025){const l=tryAim(a,k);if(l<bl){bl=l;best=[a,k]}}
+    const[a,k]=best||[ba,bk];
+    pl.target=add(from,mul(rot(d,a/Ld*57.3+gauss()*L.read),k*(1+gauss()*L.rd)));
+    clampTarget();
+    pl.focus=p.level>=1&&p.st>=FOCUS[p.ax.C].cost+20&&Ld<2.5&&Ld>.9&&Math.random()<.5;
+    return;
+  }
+  const heights=p.level===0?['mid']:lowOnly(p)?['low']:['low','mid','high'];
+  const spins=p.level===2?['stop','normal','run']:['normal'];
+  const curves=p.level===2?[0,1]:[0];
+  const windComp=p.level>=1;
+  let bestPl=null,bestV=1e9;const cands=[];
+  for(const hgt of heights)for(const sp of spins)for(const cv of curves){
+    const max=maxCarry(p,hgt),dPin=dist(p.pos,S.pin);
+    const goals=dPin<=max?[S.pin,v(S.h.green.x,S.h.green.y)]:[pointAlongCenter(p,max*.92),pointAlongCenter(p,max*.75)];
+    for(const G of goals){
+      const c={target:{...G},curve:0,curveF:0,height:hgt,spin:sp,focus:false};S.plan=c;
+      if(cv){const wl=dot(S.wind,leftP(norm(sub(G,p.pos))));if(Math.abs(wl)<1)continue;c.curveF=wl>0?-.6:.6}
+      for(let it=0;it<3;it++){clampTarget();const info=planInfo(p,c);let t=sub(G,mul(info.endDir,info.rollEst));
+        if(windComp)t=sub(t,windDrift(c,info));
+        if(sp==='stop'&&canSpin(p)){const hd=dot(S.wind,info.dir);if(hd<0)t=add(p.pos,mul(sub(t,p.pos),1/(1-.03*-hd)))}
+        c.target=t}
+      clampTarget();const info=planInfo(p,c);
+      let tot=0;const K=5;for(let k=0;k<K;k++){const sim=simulate(p,c,info,cpuNoise(p,false),p.st);tot+=expLeft(sim,p.pos,p.lie)}
+      cands.push({c:{...c,target:{...c.target}},v:tot/K});
+    }
+  }
+  cands.sort((a,b)=>a.v-b.v);
+  for(const cd of cands.slice(0,3)){S.plan=cd.c;const info=planInfo(p,cd.c);let tot=0;const K=14;for(let k=0;k<K;k++){const sim=simulate(p,cd.c,info,cpuNoise(p,false),p.st);tot+=expLeft(sim,p.pos,p.lie)}
+    const val=(cd.v*5+tot)/(5+K);if(val<bestV){bestV=val;bestPl=cd.c}}
+  S.plan=bestPl||pl;clampTarget();
+  const info=planInfo(p,S.plan);
+  S.plan.focus=p.level>=1&&p.st>=FOCUS[p.ax.C].cost+25&&info.diff>=.65&&Math.random()<.6;
+}
+function cpuTurn(p){
+  S.mode='cputhink';
+  const nw=takeNews();
+  $('#panel').innerHTML=`${planHead(p,false)}<p class="tnote">${esc(p.name)}さん（CPU ${LEVEL_NAME[p.level]}）が狙いを考えている</p>${nw.length?`<div class="news">${nw.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`:''}`;
+  setTimeout(()=>{
+    prepPlan(p);cpuPlan(p);S.info=planInfo(p,S.plan);S.mode='cpuplan';
+    S.camPts=[p.pos,S.plan.target,S.pin].filter(q=>dist(q,p.pos)<S.info.max*1.3+20);S.camMin=S.info.putt?11:60;
+    const pl=S.plan,c=Math.round(Math.abs(pl.curve));
+    $('#panel').innerHTML=`${planHead(p,false)}<p class="sumline">${S.info.club} ${S.info.putt?fmtD(S.info.dist):Math.round(S.info.dist)+'y'}${S.info.putt?'':`　${{low:'低い球',mid:'普通の高さ',high:'高い球'}[pl.height]}　${{stop:'止める',normal:'',run:'転がす'}[pl.spin]}${pl.curve>.5?`　左へ${c}y`:pl.curve<-.5?`　右へ${c}y`:''}`}${pl.focus?'　集中':''}</p>${nw.length?`<div class="news">${nw.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`:''}`;
+    setTimeout(()=>{S.sw={sPre:p.st};doShot(cpuNoise(p,S.plan.focus))},S.cpuFast?0:1300);
+  },S.cpuFast?0:650);
+}
+
+// ================= トレーニング =================
+S.train={hole:0,wind:'rand',st:70};
+function renderTrainSetup(){
+  const t=S.train;
+  const ch=(key,opts)=>opts.map(([k,l])=>`<button class="btn chipbtn ${t[key]===k?'on':''}" data-k="${key}" data-v="${k}">${l}</button>`).join('');
+  scr.innerHTML=`<section class="pane" style="padding-top:calc(24px + env(safe-area-inset-top))">
+    <button class="btn ghost chipbtn" id="back">タイトルに戻る</button>
+    <h2 class="mt" style="margin-top:14px">トレーニング</h2>
+    <p class="label">ホール</p><div class="opt">${HOLES.map((h,i)=>`<button class="btn chipbtn ${t.hole===i?'on':''}" data-k="hole" data-v="${i}">${i+1}番 <span class="muted">Par${h.par}</span></button>`).join('')}</div>
+    <p class="label">風</p><div class="opt">${ch('wind',[['none','なし'],['weak','弱い'],['strong','強い'],['rand','おまかせ']])}</div>
+    <p class="label">心のスタミナ　<b class="num" id="stv" style="font-size:18px;color:var(--ink)">${t.st}</b></p>
+    <input type="range" id="st" min="10" max="100" step="5" value="${t.st}" style="width:100%;accent-color:var(--green)" aria-label="心のスタミナ">
+    <p class="note">低くするほど手が震える。プレッシャーのかかった場面の練習になる。トレーニング中はスタミナが変わらない。</p>
+    <button class="btn primary wide mt" id="go">練習を始める</button></section>`;
+  $('#back').onclick=renderTitle;
+  scr.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;t[b.dataset.k]=isNaN(+v)?v:+v;renderTrainSetup()});
+  $('#st').oninput=e=>{t.st=+e.target.value;$('#stv').textContent=t.st};
+  $('#go').onclick=startTrain;
+}
+function startTrain(){
+  const t=S.train;
+  S.cfg={mode:'train',holes:9,format:'stroke'};S.course=buildCourse(9);
+  S.players=[{name:'あなた',color:COLORS[0],cpu:false,ax:{A:0,B:0,C:0,D:0},typeName:'練習',tag:'',desc:[],st:t.st,total:0,scores:[]}];
+  S.cond={speed:pick(COND.speed),firm:pick(COND.firm),ground:pick(COND.ground),gust:COND.gust[0]};
+  S.honor=[...S.players];S.hole=t.hole;NEWS.length=0;
+  beginGameScreen();startTrainHole();
+}
+function startTrainHole(){
+  const t=S.train,h=setupHole();
+  S.wind=t.wind==='none'?v(0,0):t.wind==='weak'?randomWind(1,3):t.wind==='strong'?randomWind(5,8):randomWind(0,6);
+  S.players[0].st=t.st;
+  renderHud();$('#panel').innerHTML='';
+  overlay(introCard(h,'','練習を始める'),()=>{S.cur=S.players[0];beginPlan()});
+  requestAnimationFrame(()=>drawThumb($('#thumb'),h));
+}
+function trainFeedback(p,info,sim){
+  if(sim.end==='holed'||!sim.rest)return'';
+  if(info.putt){const a=dot(sub(sim.rest,S.pin),info.dir);return`パットは${a>0?'オーバー':'ショート'} ${Math.abs(a).toFixed(1)}y`}
+  const d=sub(sim.rest,sim.plannedRest),a=dot(d,info.dir),l=dot(d,leftP(info.dir));
+  return`狙いより${Math.abs(l)<1?'左右はほぼ合っていて':`${l>0?'左':'右'}に${Math.round(Math.abs(l))}y、`}${Math.abs(a)<1.5?'距離はぴったり':`${a>0?'奥':'手前'}に${Math.round(Math.abs(a))}y`}`;
+}
+function trainResultPanel(p,msg,info,sim){
+  const fb=trainFeedback(p,info,sim);
+  $('#panel').innerHTML=`<div class="ph"><div class="who">${pdot(p)}<b>${S.prevBall.strokes+1}打目の結果</b>${p.strokes>S.prevBall.strokes+1?'<span class="muted">（罰打を含め'+p.strokes+'打）</span>':''}</div></div>
+   <p class="result">${esc(msg)}</p>${fb?`<p class="tnote">${fb}</p>`:''}${sim.tnote?`<p class="tnote">${sim.tnote}</p>`:''}
+   <div class="actions">${p.done?`<button class="btn" id="tAgain">もう一度このホール</button><button class="btn primary" id="tNext">次のホールへ</button>`:`<button class="btn" id="tRetry">打ち直す</button><button class="btn primary" id="tGo">この位置から続ける</button>`}</div>
+   <div class="actions" style="margin-top:6px"><button class="btn ghost" id="tSet" style="flex:1">設定を変える</button></div>`;
+  const on=(id,f)=>{const b=$(id);if(b)b.onclick=f};
+  on('#tRetry',()=>{const pb=S.prevBall;Object.assign(p,{pos:pb.pos,lie:pb.lie,mod:pb.mod,strokes:pb.strokes,done:false});beginPlan()});
+  on('#tGo',()=>beginPlan());
+  on('#tAgain',()=>startTrainHole());
+  on('#tNext',()=>{S.train.hole=(S.hole+1)%9;S.hole=S.train.hole;startTrainHole()});
+  on('#tSet',()=>{removeSwing();S.h=null;showScreen();renderTrainSetup()});
+}
+
+function stLevel(v){return v>=55?'ok':v>=30?'mid':'low'}
+function stamBar(p,from){
+  const f=from==null?p.st:from,d=p.st-f;
+  return`<div class="stam"><span>心のスタミナ</span><div class="bar"><i class="${stLevel(f)}" data-to="${p.st}" style="width:${f}%"></i></div><b data-to="${p.st}">${f}</b>${from!=null&&d?`<span class="dl ${d>0?'up':'down'}">${d>0?'+':''}${d}</span>`:''}</div>`;
+}
+function animateStam(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  const i=$('#panel .bar i'),b=$('#panel .stam b');if(!i)return;const to=+i.dataset.to;i.style.width=to+'%';i.className=stLevel(to);if(b)b.textContent=to}))}
+function showBanner(text,kind=''){const b=$('#banner');b.className='';b.innerHTML=`<b>${text}</b>`;void b.offsetWidth;b.className='show '+kind}
+
+// ================= 計画 =================
+function lieOf(p){const L=LIE[p.lie]||LIE.fairway,M=p.mod&&MOD[p.mod];if(!M)return L;return{mul:L.mul*M.mul,rand:L.rand*M.rand,diff:L.diff+M.diff}}
+function canSpin(p){return!(p.lie==='rough'||p.lie==='deep')&&!(p.mod&&MOD[p.mod].noSpin)}
+function lowOnly(p){return!!(p.mod&&MOD[p.mod].lowOnly)}
+function maxCarry(p,height){return MAXC[p.lie==='tee'?'tee':'other'][height]*lieOf(p).mul}
+function puttLine(from){const d=sub(S.pin,from),L=len(d),dir=norm(d);let g=v(0,0);
+  for(let i=0;i<5;i++)g=add(g,gradAt(S.h,add(from,mul(d,(i+.5)/5))));g=mul(g,1/5);
+  const al=dot(g,dir);return{up:Math.max(0,al),down:Math.max(0,-al),side:Math.abs(dot(g,leftP(dir))),grain:dot(S.h.grain,dir),L}}
+function puttLineText(pl){const a=pl.up>.006?'上り':pl.down>.006?'下り':'ほぼ平ら',b=pl.side>.008?'・横傾斜':'';return a+b}
+function grainText(p,dir){const g=S.h.grain,c=dot(g,dir);return c>.5?'順目（速い）':c<-.5?'逆目（重い）':(dot(g,leftP(dir))>0?'横目（左へ流れる）':'横目（右へ流れる）')}
+function decideMod(p,sim){
+  const h=S.h,pos=p.pos;
+  if(h.trees.some(t=>dist(pos,t)<t.r+1))return'tree';
+  if(p.lie==='bunker'&&sim.landSurf==='bunker'&&!sim.treeHit&&Math.random()<.1+sim.apex/60)return'egg';
+  if(p.lie==='fairway'&&Math.random()<.08)return'divot';
+  if(p.lie==='rough'){const r=Math.random();return r<.3?'up':r<.5?'down':null}
+  if(p.lie==='deep'&&Math.random()<.4)return'down';
+  return null;
+}
+function defaultTarget(p){
+  const h=S.h,max=maxCarry(p,'mid'),dPin=dist(p.pos,S.pin);
+  if(dPin<=max*.98)return{...S.pin};
+  const want=max*.92;let best=null,bd=1e9;const c=h.center;
+  for(let i=0;i<c.length-1;i++)for(let k=0;k<=40;k++){
+    const q=add(c[i],mul(sub(c[i+1],c[i]),k/40));
+    if(dist(q,S.pin)>=dPin)continue;
+    const e=Math.abs(dist(q,p.pos)-want);if(e<bd){bd=e;best=q}
+  }
+  return best||add(p.pos,mul(norm(sub(S.pin,p.pos)),want));
+}
+function clampTarget(){
+  const p=S.cur,pl=S.plan;if(lowOnly(p))pl.height='low';let d=sub(pl.target,p.pos),l=len(d);
+  if(l<.3){d=sub(S.pin,p.pos);l=.3}
+  const max=p.lie==='green'?40:maxCarry(p,pl.height);
+  const nl=clamp(l,p.lie==='green'?.3:1,max);
+  pl.target=add(p.pos,mul(norm(d),nl));
+  const mc=p.lie==='green'?0:Math.min(35,nl*.2);pl.curve=(pl.curveF||0)*mc;
+}
+function planInfo(p,pl){
+  const h=S.h,tgt=pl.target,d=sub(tgt,p.pos),dist0=len(d),dir=norm(d);
+  if(p.lie==='green'){const ln=puttLine(p.pos);
+    const diff=clamp(.1+dist0/40+12*ln.down+6*ln.side+.1*Math.max(0,ln.grain)-5*ln.up,.05,1);
+    return{putt:true,line:ln,dist:dist0,dir,diff,club:'パター',max:40,along:0,side:0,curveBias:0,apex:0,rollEst:0,endDir:dir,lieText:`グリーン・ピンまで${puttLineText(ln)}・芝目は${grainText(p,dir)}・速さ ${S.cond.speed.n}${S.cond.speed.h?'（'+S.cond.speed.h+'）':''}`}}
+  const isTee=p.lie==='tee',L=lieOf(p);
+  const g=isTee?v(0,0):gradAt(h,p.pos);
+  const along=dot(g,dir),side=dot(g,leftP(dir));
+  const max=maxCarry(p,pl.height),dd=Math.min(dist0,max),mc=Math.max(1,Math.min(35,dd*.2));
+  let apex={low:Math.min(16,3+dd*.06),mid:Math.min(30,4+dd*.12),high:Math.min(40,6+dd*.17)}[pl.height];
+  apex*=clamp(1+along*4,.6,1.4)*((p.mod&&MOD[p.mod].apex)||1);
+  const curveBias=-side*dd*1.5;
+  let diff=.08+.35*Math.pow(dd/max,2)+.45*Math.min(1,Math.abs(pl.curve)/mc)+HDIFF[pl.height]+SDIFF[pl.spin]+L.diff+Math.min(.2,(Math.abs(along)+Math.abs(side))*3);
+  if(p.lie==='bunker'&&dd>60)diff+=.15;
+  diff=Math.min(1.2,diff);
+  const Cp=add(mul(add(p.pos,tgt),.5),mul(leftP(dir),2*pl.curve));
+  const endDir=norm(sub(tgt,Cp));
+  const ls=surfaceAt(h,tgt);
+  let sm=SPINM[pl.spin];if(!canSpin(p)&&pl.spin==='stop')sm=SPINM.normal;if(p.lie==='rough'||p.mod==='up')sm*=1.4;if(p.mod==='egg')sm*=2;
+  const cm=(ls==='green'||ls==='fringe')?S.cond.firm.m:S.cond.ground.m;
+  const rollEst=dd*ROLLF[pl.height]*sm*(SURFM[ls]||0)*(along<-.02?1.3:1)*cm;
+  const t=[SURF_NAME[p.lie]];if(p.mod)t.push(MOD[p.mod].name);
+  if(p.lie==='rough'&&!p.mod)t.push('スピンがかかりにくい');
+  if(p.lie==='deep')t.push('飛ばずブレやすい');
+  if(p.lie==='bunker')t.push('飛ばずブレやすい');
+  if(!isTee){
+    if(along>.02)t.push('左足上がり（上がりやすく飛ばない）');else if(along<-.02)t.push('左足下がり（低く出て転がる）');
+    if(side>.02)t.push('つま先下がり（右に曲がりやすい）');else if(side<-.02)t.push('つま先上がり（左に曲がりやすい）');
+  }
+  let club;
+  if(isTee&&dd>200)club='ドライバー';else if(dd>195)club='ウッド';else if(dd>170)club='ユーティリティ';else if(dd>135)club='ミドルアイアン';else if(dd>95)club='ショートアイアン';else if(dd>40)club='ウェッジ';else club='アプローチ';
+  return{putt:false,dist:dd,dir,diff,club,max,along,side,curveBias,apex,rollEst,endDir,Cp,lieText:t.join('・')};
+}
+function prepPlan(p){
+  S.cur=p;
+  S.plan={target:p.lie==='green'?{...S.pin}:defaultTarget(p),curve:0,curveF:0,height:'mid',spin:'normal',focus:false};
+  clampTarget();S.zoom=1;
+  const d=dist(p.pos,S.pin);
+  if(p.lie==='green'){S.camPts=[p.pos,S.pin];S.camMin=11}
+  else if(d<=maxCarry(p,'mid')*1.05){S.camPts=[p.pos,S.pin];S.camMin=d<60?30:70}
+  else{S.camPts=[p.pos,S.plan.target];S.camMin=80}
+}
+function beginPlan(){const p=S.cur;prepPlan(p);S.mode='plan';renderHud();renderPlanPanel()}
+function stars(d){const n=clamp(Math.ceil(d*5),1,5);return'★'.repeat(n)+'☆'.repeat(5-n)}
+
+S.detOpen=false;
+function planHead(p,withSt=true){const d=dist(p.pos,S.pin);
+  return`${withSt?`<div class="stedge"><i class="${stLevel(p.st)}" style="width:${p.st}%"></i></div>`:''}<div class="ph"><div class="who">${pdot(p)}<b>${esc(p.name)}</b><span class="muted">${p.strokes+1}打目</span>${withSt?`<span class="stn">心のスタミナ<b>${p.st}</b></span>`:''}</div><div class="yd"><span class="muted">ピンまで</span><b>${d<30?d.toFixed(1):Math.round(d)}</b><span class="u">y</span></div></div>`}
+function renderPlanPanel(){
+  const p=S.cur,pl=S.plan,fc=FOCUS[p.ax.C].cost;
+  S.info=planInfo(p,pl);
+  $('#panel').innerHTML=`${planHead(p)}
+  <div class="sumline" id="pSum"></div>
+  <div id="det" ${S.detOpen?'':'hidden'}></div>
+  <div class="actions"><button class="btn ghost" id="bDet" aria-expanded="${S.detOpen}">詳細</button><button class="btn toggle" id="bF">集中 −${fc}</button><button class="btn primary" id="bGo">構える</button></div>`;
+  $('#bDet').onclick=()=>{S.detOpen=!S.detOpen;renderPlanPanel()};
+  $('#bF').onclick=()=>{pl.focus=!pl.focus;updatePlan()};
+  $('#bGo').onclick=enterSwing;
+  updatePlan();
+}
+function optNote(pl){
+  const h={low:'低い球：風に強くブレにくいが、よく転がる。',mid:'',high:'高い球：止まりやすく木を越えるが、上空の風を受ける。'}[pl.height];
+  const s={stop:'止める球：ランが消えるが距離を合わせにくく、戻ることもある。向かい風では吹き上がる。',normal:'',run:'転がす球：ブレにくいが、どこまで転がるか読みにくい。'}[pl.spin];
+  const c=Math.abs(pl.curveF||0)>.05?'曲げる球：横風にぶつけると流されにくく、風に乗せると大きく流れる。':'';
+  return(h+s+c)||'普通の高さと球。基準になる打ち方。';
+}
+function updatePlan(){
+  const p=S.cur,pl=S.plan,info=S.info=planInfo(p,pl),fc=FOCUS[p.ax.C].cost,canF=p.st>=fc;
+  if(!canF)pl.focus=false;
+  const bF=$('#bF');if(!bF)return;
+  bF.disabled=!canF;bF.classList.toggle('on',pl.focus);bF.setAttribute('aria-pressed',pl.focus);
+  const c=Math.round(Math.abs(pl.curve));
+  const ct=pl.curve>.5?`左へ${c}y`:pl.curve<-.5?`右へ${c}y`:'まっすぐ';
+  const lieShort=info.putt?puttLineText(info.line)+'　'+grainText(p,info.dir).split('（')[0]:SURF_NAME[p.lie]+(p.mod?'　'+MOD[p.mod].name.split('（')[0]:'')+(Math.abs(info.along)>.02||Math.abs(info.side)>.02?'　傾斜あり':'');
+  $('#pSum').textContent=`${info.club} ${info.putt?fmtD(info.dist):Math.round(info.dist)+'y'}${info.putt?'':'　'+ct}　難度${stars(info.diff)}　${lieShort}`;
+  const det=$('#det');
+  if(S.detOpen){
+    const bt=(key,opts)=>opts.map(([k,l])=>`<button class="btn chipbtn ${pl[key]===k?'on':''}" data-k="${key}" data-v="${k}" ${key==='height'&&k!=='low'&&lowOnly(p)?'disabled':''}>${l}</button>`).join('');
+    det.innerHTML=`<p class="lie"><span class="muted">ライ　</span>${info.lieText}</p>
+    ${info.putt?'':`<div class="opt"><span>曲げ</span><b style="font-weight:500">${pl.curve>.5?`左へ${c}y（ドロー）`:pl.curve<-.5?`右へ${c}y（フェード）`:'まっすぐ'}</b>${Math.abs(pl.curveF||0)>.05?'<button class="btn chipbtn" id="bStraight">まっすぐに戻す</button>':''}</div>
+    <div class="opt"><span>高さ</span>${bt('height',[['low','低い'],['mid','普通'],['high','高い']])}</div>
+    <div class="opt"><span>球</span>${bt('spin',[['stop','止める'],['normal','普通'],['run','転がす']])}</div>
+    <p class="carry">キャリー <span class="num">${Math.round(info.dist)}</span>y　ラン約 <span class="num">${Math.round(info.rollEst)}</span>y　最高点 約<span class="num">${Math.round(info.apex)}</span>y　最大 <span class="num">${Math.round(info.max)}</span>y</p>
+    <p class="note">${optNote(pl)}</p>`}
+    <p class="note">${info.putt?'グリーン上をタップして狙う点を決める。奥を狙うほど強く打つ。矢印は下りの向き。':'マップをタップ（ドラッグで微調整）して落とし所を決める。弾道の中ほどの丸いつまみを左右に動かすと曲がる球になる。風は自分で読んで狙いをずらす。'}右上の「高低」でグリーンの高さを色で見られる（青が低く、橙が高い）。</p>`;
+    det.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{pl[b.dataset.k]=b.dataset.v;clampTarget();updatePlan()});
+    const bs=$('#bStraight');if(bs)bs.onclick=()=>{pl.curveF=0;clampTarget();updatePlan()};
+  }
+}
+// ================= スイング =================
+function tempoWindow(s){return[.6-.25*s,1.1+.7*s]}
+function jit(t){const a=S.sw.amp,ph=S.sw.ph,u=t/1000;return{y:a*(.6*Math.sin(2*Math.PI*3.1*u+ph[0])+.4*Math.sin(2*Math.PI*5.3*u+ph[1])),x:a*.7*(.6*Math.sin(2*Math.PI*2.7*u+ph[2])+.4*Math.sin(2*Math.PI*4.6*u+ph[3]))}}
+
+function enterSwing(){
+  S.mode='swing';
+  const p=S.cur,info=S.info,s=p.st/100,F=S.plan.focus?FOCUS[p.ax.C]:{jit:1};
+  S.sw={sPre:p.st,amp:(.012+.11*Math.pow(1-s,1.5))*F.jit,ph:[rnd(0,6.3),rnd(0,6.3),rnd(0,6.3),rnd(0,6.3)],start:null,pull:0,dx:0,T:.8,band:.04*(1-.4*Math.min(1,info.diff))};
+  $('#panel').innerHTML=`${planHead(p)}
+  <div class="actions"><button class="btn ghost" id="bBack">戻る</button><p class="swingHint">${info.club}${S.plan.focus?'　<b style="color:var(--blue)">集中</b>':''}<br>白い枠の中を真下に引き、青い線が緑の線に重なった瞬間に離す</p></div>`;
+  $('#bBack').onclick=()=>{removeSwing();S.mode='plan';renderPlanPanel()};
+  removeSwing();const sc=document.createElement('canvas');sc.id='swingCv';sc.setAttribute('aria-label','スイング');$('#mapWrap').appendChild(sc);
+  const gl=()=>sc.clientHeight-48;
+  sc.onpointerdown=e=>{sc.setPointerCapture(e.pointerId);S.sw.start={x:e.clientX,y:e.clientY,t:performance.now()};S.sw.pull=0;S.sw.dx=0};
+  sc.onpointermove=e=>{if(!S.sw.start)return;S.sw.pull=clamp((e.clientY-S.sw.start.y)/gl(),0,1);S.sw.dx=(e.clientX-S.sw.start.x)/gl()};
+  sc.onpointerup=()=>{
+    if(!S.sw.start)return;const now=performance.now(),j=jit(now),s0=S.sw.start;S.sw.start=null;
+    if(S.sw.pull<.08){S.sw.pull=0;return}
+    doShot({ratio:(S.sw.pull+j.y)/S.sw.T,dx:S.sw.dx+j.x,tempo:(now-s0.t)/1000});
+  };
+  sc.onpointercancel=()=>{S.sw.start=null;S.sw.pull=0};
+}
+function removeSwing(){const e=$('#swingCv');if(e)e.remove()}
+function drawSwing(t){
+  const sc=$('#swingCv');if(!sc||!S.sw)return;
+  const[W,H]=fitCanvas(sc),x=sc.getContext('2d');
+  x.clearRect(0,0,W,H);
+  const top=24,gl=H-48,cx=W/2,sw=S.sw;
+  x.fillStyle='#EEF3F0';x.beginPath();x.roundRect?x.roundRect(cx-30,top,60,gl,10):x.rect(cx-30,top,60,gl);x.fill();
+  x.strokeStyle='rgba(20,83,45,.18)';x.setLineDash([3,5]);x.lineWidth=1;x.beginPath();x.moveTo(cx,top);x.lineTo(cx,top+gl);x.stroke();x.setLineDash([]);
+  const ty=top+sw.T*gl,bh=sw.band*gl;
+  x.fillStyle='rgba(47,125,74,.2)';x.fillRect(cx-64,ty-bh,128,bh*2);
+  x.strokeStyle='#14532D';x.lineWidth=2.5;x.beginPath();x.moveTo(cx-64,ty);x.lineTo(cx+64,ty);x.stroke();
+  x.fillStyle='#14532D';x.font='500 12px "Zen Kaku Gothic New",sans-serif';x.fillText('目標',cx+70,ty+4);
+  x.fillStyle='#5F7368';x.fillText('ここから引く',cx+38,top+4);
+  const j=jit(t),pull=(sw.start?sw.pull:0)+j.y,iy=top+pull*gl,ix=cx+((sw.start?sw.dx:0)+j.x)*gl;
+  x.strokeStyle='#1E6FB8';x.lineWidth=3.5;x.lineCap='round';x.beginPath();x.moveTo(ix-30,iy);x.lineTo(ix+30,iy);x.stroke();
+  x.fillStyle='#1E6FB8';x.beginPath();x.arc(ix,iy,5.5,0,7);x.fill();
+  x.fillStyle='#17241C';x.font='600 30px "Barlow Condensed",sans-serif';x.fillText(Math.round(pull/sw.T*100)+'%',16,H-16);
+  if(sw.start){x.fillStyle='#5F7368';x.font='600 18px "Barlow Condensed",sans-serif';x.fillText(((t-sw.start.t)/1000).toFixed(1)+'s',W-46,H-16)}
+}
+
+// ================= 物理 =================
+function rollSim(h,p0,vel,frames){
+  let pos={...p0},vv={...vel},lipped=false;const pin=S.pin,dt=1/120;
+  for(let i=0;i<120*25;i++){
+    const sf=surfaceAt(h,pos);
+    if(sf==='water')return{end:'water',entry:pos};
+    if(sf==='ob')return{end:'ob'};
+    const sp=len(vv);let sa=mul(gradAt(h,pos),-G),fr=FRIC[sf];
+    if(sf==='green'){fr*=S.cond.speed.f;if(sp>0){fr*=1-.15*dot(norm(vv),h.grain);sa=add(sa,mul(h.grain,.05*Math.min(1,sp)))}}
+    if(sp<.05&&len(sa)<fr*.8){frames.push({x:pos.x,y:pos.y,z:0});return{end:'rest',rest:pos}}
+    const dp=dist(pos,pin);
+    if(dp<.075){if(sp<clamp(1.6+40*dot(mul(sa,-1/G),norm(vv)),1,2.4)){frames.push({x:pin.x,y:pin.y,z:0});return{end:'holed',rest:{...pin}}}
+      else if(!lipped){vv=mul(rot(vv,rnd(-25,25)),.7);lipped=true}}
+    else if(dp>.2)lipped=false;
+    let acc=sa;if(sp>0)acc=add(acc,mul(vv,-fr/sp));
+    const nv=add(vv,mul(acc,dt));
+    if(sp>0&&dot(nv,vv)<0&&len(sa)<fr*.8){frames.push({x:pos.x,y:pos.y,z:0});return{end:'rest',rest:pos}}
+    vv=nv;pos=add(pos,mul(vv,dt));
+    if(i%2===0)frames.push({x:pos.x,y:pos.y,z:0});
+  }
+  return{end:'rest',rest:pos};
+}
+function simulate(p,pl,info,ex,sPre){
+  const h=S.h,S0=p.pos,s=sPre/100,F=pl.focus?FOCUS[p.ax.C]:{rand:1},L=lieOf(p);
+  const randK=(.35+1.0*(1-s))*F.rand*L.rand;
+  const tw=tempoWindow(s);let tp=0;
+  if(ex.tempo<tw[0])tp=(tw[0]-ex.tempo)/tw[0];else if(ex.tempo>tw[1])tp=(ex.tempo-tw[1])/tw[1];
+  tp=Math.min(1,tp);
+  const tnote=tp>0?(ex.tempo<tw[0]?'テンポ：振り急いだ':'テンポ：間が長すぎた'):'';
+  const frames=[];
+  if(info.putt){
+    const ln=info.line,k=clamp(1+60*ln.down+.5*Math.max(0,ln.grain)-15*ln.up,.6,3); // 下り・順目はタッチが繊細
+    const raw=ex.ratio*(1+gauss()*randK*.03+gauss()*.06*tp);
+    const ratio=Math.max(.05,1+(raw-1)*k*clamp(ln.L/Math.max(info.dist,.3),.5,3)); // 誤差は実際に転がる距離に効く
+    const ang=(ex.dx*8+gauss()*randK*.7+gauss()*2*tp)*(1+20*ln.side);
+    const v0=Math.sqrt(2*FRIC.green*info.dist*ratio);
+    const r=rollSim(h,S0,mul(rot(info.dir,ang),v0),frames);
+    return{...r,frames,flightN:0,tnote,plannedRest:pl.target};
+  }
+  let carry=info.dist*ex.ratio*(1+gauss()*randK*(.01+.08*info.diff)+gauss()*.08*tp);
+  carry*=(1-1.2*info.along);
+  carry=clamp(carry,1,info.max*1.12);
+  const ang=ex.dx*18+gauss()*randK*(.4+4.5*info.diff)+gauss()*4*tp;
+  const dir=rot(info.dir,ang),lp=leftP(dir);
+  const head0=dot(S.wind,info.dir);
+  if(pl.spin==='stop'&&head0<0&&canSpin(p))carry*=1-.03*(-head0); // 向かい風で吹き上がる
+  if(p.mod==='up')carry*=1+Math.random()*.07; // フライヤー
+  if(p.lie==='deep')carry*=1-Math.random()*.12; // 芝に食われる
+  const curveAct=pl.curve*(1+gauss()*randK*.35*info.diff)+info.curveBias+gauss()*randK*carry*.012;
+  const L0=add(add(S0,mul(dir,carry)),mul(lp,(curveAct-pl.curve)*1.6));
+  const apex=info.apex,hang=.5+apex*.17;
+  const gw=S.cond.gust.g?mul(rot(S.wind,gauss()*15),1+gauss()*.25):S.wind; // 突風
+  const w=mul(gw,(1+.8*Math.min(1,apex/35))*WINDH[pl.height]);
+  let drift=mul(w,hang*.4);
+  // 曲げと横風：風にぶつければ流されにくく、風に乗せれば大きく流れる
+  const wl=dot(drift,lp),cf=pl.curveF||0;
+  if(Math.abs(cf)>.05&&Math.abs(wl)>.01){
+    const k=cf*wl<0?1-Math.min(.6,Math.abs(cf)*.6):1+Math.abs(cf)*.4;
+    drift=add(drift,mul(lp,wl*(k-1)));
+  }
+  const head=dot(w,dir);if(head<0)drift=add(drift,mul(dir,head*hang*.12));
+  const C=add(mul(add(S0,L0),.5),mul(leftP(norm(sub(L0,S0))),2*curveAct));
+  const N=Math.round(clamp(40+carry*.3,40,110));
+  let land=add(L0,drift),treeHit=false;
+  for(let i=0;i<=N;i++){
+    const t=i/N,pos=add(bez(S0,C,L0,t),mul(drift,Math.pow(t,1.6))),z=4*apex*t*(1-t);
+    frames.push({x:pos.x,y:pos.y,z});
+    if(i>2&&i<N&&h.trees.some(tr=>z<tr.h&&dist(pos,tr)<tr.r)){
+      treeHit=true;land=add(pos,v(rnd(-2,2),rnd(-2,2)));
+      for(let k=1;k<=10;k++)frames.push({x:pos.x+(land.x-pos.x)*k/10,y:pos.y+(land.y-pos.y)*k/10,z:z*(1-k/10)});
+      break;
+    }
+  }
+  const flightN=frames.length;
+  const plannedRest=add(pl.target,mul(info.endDir,info.rollEst));
+  const ls=surfaceAt(h,land);
+  if(ls==='water')return{end:'water',entry:land,frames,flightN,treeHit,plannedRest,tnote,landSurf:ls,apex};
+  if(ls==='ob')return{end:'ob',frames,flightN,treeHit,plannedRest,tnote,landSurf:ls,apex};
+  let rollDist;
+  if(treeHit)rollDist=rnd(0,3);
+  else{let sm=SPINM[pl.spin];if(!canSpin(p)&&pl.spin==='stop')sm=SPINM.normal;if(p.lie==='rough'||p.mod==='up')sm*=1.4;if(p.mod==='egg')sm*=2;
+    const cm=(ls==='green'||ls==='fringe')?S.cond.firm.m*(pl.spin==='stop'&&S.cond.firm.m<1?.7:1):S.cond.ground.m;
+    rollDist=carry*ROLLF[pl.height]*sm*(SURFM[ls]||1)*(info.along<-.02?1.3:1)*cm;
+    const spinOK=pl.spin==='stop'&&canSpin(p);
+    if(spinOK&&(ls==='green'||ls==='fringe'))rollDist*=1+gauss()*1.2; // 止める球：効きすぎて戻ることもある
+    else if(pl.height==='low'||pl.spin==='run')rollDist*=Math.max(0,1+gauss()*.25);}
+  let endDir=treeHit?norm(v(rnd(-1,1),rnd(-1,1))):norm(sub(L0,C));
+  if(rollDist<0){endDir=mul(endDir,-1);rollDist=-rollDist}
+  const r=rollSim(h,land,mul(endDir,Math.sqrt(2*FRIC[ls]*rollDist)),frames);
+  return{...r,frames,flightN,treeHit,plannedRest,tnote,landSurf:ls,apex};
+}
+function dropFrom(entry,from){
+  const h=S.h,dir=norm(sub(from,entry));let q={...entry};
+  for(let i=0;i<300;i++){const sf=surfaceAt(h,q);if(sf!=='water'&&sf!=='ob')break;q=add(q,dir)}
+  return add(q,mul(dir,2));
+}
+
+
+// ================= ショット実行と結果 =================
+function doShot(ex){
+  const p=S.cur,pl=S.plan,info=S.info,sPre=S.sw?S.sw.sPre:p.st;
+  p.stBefore=p.st;S.prevBall={pos:{...p.pos},lie:p.lie,mod:p.mod,strokes:p.strokes};
+  if(pl.focus)st(p,-FOCUS[p.ax.C].cost);
+  p.strokes++;p.reactedLast=false;
+  const sim=simulate(p,pl,info,ex,sPre);
+  removeSwing();S.mode='anim';S.trail=[];S.landed=false;
+  $('#panel').innerHTML=`${planHead(p,false)}<p class="tnote">${sim.tnote||'　'}</p>`;
+  const pts=[p.pos];for(let i=0;i<sim.frames.length;i+=8)pts.push(sim.frames[i]);pts.push(sim.frames[sim.frames.length-1]);
+  S.camPts=pts;S.camMin=info.putt?8:45;
+  if(S.cpuFast){afterShot(p,pl,info,sim);return}
+  S.anim={frames:sim.frames,i:0,flightN:sim.flightN,end:sim.end,onDone:()=>afterShot(p,pl,info,sim)};
+}
+function react(p){
+  p.reactedLast=true;
+  const k=1/Math.sqrt(Math.max(1,S.players.length-1)); // 大人数ほど1人あたりの影響は薄まる
+  S.players.forEach(o=>{if(o===p)return;
+    if(o.ax.D===-1){st(o,-6*k);news(`${o.name}さんの表情が一瞬こわばった。`)}
+    else if(o.ax.D===1){st(o,3*k);news(`${o.name}さんの目つきが変わった。`)}
+    else st(o,-2*k);
+  });
+}
+
+function afterShot(p,pl,info,sim){
+  const h=S.h,n=p.name,ax=p.ax,before={pos:p.pos,lie:p.lie};let msg,penalty=false,banner=null;
+  if(sim.end==='ob'){p.strokes++;msg='OB。1打罰で打ち直し';penalty=true;banner=['OB','white']}
+  else if(sim.end==='water'){p.strokes++;addFx('splash',sim.entry);p.pos=dropFrom(sim.entry,before.pos);p.lie=surfaceAt(h,p.pos);p.mod=null;msg='池につかまった。1打罰';penalty=true;banner=['池','blue']}
+  else if(sim.end==='holed'){p.pos={...S.pin};p.done=true;p.mod=null;addFx('cup',S.pin);msg=p.strokes===1?'ホールインワン':info.putt?'カップイン':'チップイン';banner=[msg,'white']}
+  else{
+    p.pos=sim.rest;p.lie=surfaceAt(h,p.pos);p.mod=decideMod(p,sim);const dp=dist(p.pos,S.pin);
+    msg=(sim.treeHit?'木に当たった。':'')+
+      (p.lie==='green'?(before.lie==='green'?`あと ${fmtD(dp)}`:`グリーンオン。ピンまで ${fmtD(dp)}`):`${SURF_NAME[p.lie]}${p.mod?'（'+MOD[p.mod].name.split('（')[0]+'）':''}。ピンまで ${fmtD(dp)}`);
+    if(p.lie==='green'&&before.lie!=='green')banner=[dp<3?'ナイスオン':'グリーンオン','white'];
+    else if(p.lie==='bunker')banner=['バンカー',''];
+    else if(sim.treeHit)banner=['木に当たった',''];
+  }
+  if(penalty){st(p,-14*MISSM[ax.B]);news(ax.B===-1?`${n}さんは、しばらくその場を動けなかった。`:`${n}さんは天を仰いだ。`);if(ax.B===-1)p.drag=1}
+  else{
+    if(p.drag){st(p,-4);p.drag=0}
+    if(sim.end==='holed'){
+      const d0=dist(before.pos,S.pin);
+      if(!info.putt){st(p,12*GOODM[ax.B]);news(`${n}さんが拳を握った。`);react(p)}
+      else if(d0>5){st(p,10*GOODM[ax.B]);news(`${n}さんの長いパットが沈んだ。`);react(p)}
+    }else if(info.putt){
+      if(dist(before.pos,S.pin)<2.5){const dn=info.line&&info.line.down>.006;st(p,-(dn?14:10)*MISSM[ax.B]);news(dn?`${n}さん、下りの短いパットに手が縮んだ。`:`${n}さん、短いパットを外して唇をかんだ。`)}
+    }else{
+      const ok=dist(p.pos,sim.plannedRest)<Math.max(4,info.dist*.07);
+      if(ok&&info.diff>=.5){st(p,8*GOODM[ax.B]);news(`${n}さん、狙いどおりの難しい一打。小さくうなずいた。`);react(p);if(!banner)banner=['狙いどおり','white']}
+      else if(ok&&info.diff<.3)st(p,ax.C===-1?4:2);
+      else if(!ok&&(p.lie==='deep'||p.lie==='bunker')&&surfaceAt(h,pl.target)!==p.lie){st(p,-6*MISSM[ax.B]);news(`${n}さんは首をかしげている。`)}
+    }
+  }
+  const train=S.cfg.mode==='train';
+  if(!train&&!p.done&&p.strokes>=h.par+5){p.done=true;p.gaveUp=true;msg+='（上限打数でギブアップ）'}
+  if(banner&&!S.cpuFast)showBanner(banner[0],banner[1]);
+  S.camPts=[p.pos,S.pin];S.camMin=p.lie==='green'?10:60;
+  S.mode='result';
+  if(train){p.st=S.train.st;NEWS.length=0;renderHud();trainResultPanel(p,msg,info,sim);return}
+  renderHud();
+  if(S.cpuFast){NEWS.length=0;return nextTurn()}
+  const nw=takeNews();
+  $('#panel').innerHTML=`<div class="ph"><div class="who">${pdot(p)}<b>${esc(p.name)}</b><span class="muted">${p.strokes}打終了</span></div></div>
+   <p class="result">${esc(msg)}</p>${sim.tnote&&!p.cpu?`<p class="tnote">${sim.tnote}</p>`:''}
+   ${nw.length?`<div class="news">${nw.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`:''}
+   ${p.cpu?'':stamBar(p,p.stBefore)}
+   <div class="actions"><button class="btn primary" id="bNext">次へ</button></div>`;
+  if(!p.cpu)animateStam();
+  $('#bNext').onclick=()=>nextTurn();
+}
+
+// ================= 描画 =================
+const cv=$('#map');let C=cv.getContext('2d');
+const V={W:0,H:0,cam:S.cam};
+function fitCanvas(c){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
+  c.getContext('2d').setTransform(dpr,0,0,dpr,0,0);return[w,h];
+}
+function camFit(pts,minSpan,W=S.W,H=S.H){
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  pts.forEach(p=>{x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);y0=Math.min(y0,p.y);y1=Math.max(y1,p.y)});
+  const w=Math.max((x1-x0)*1.3+8,minSpan),hh=Math.max((y1-y0)*1.25+8,minSpan);
+  return{x:(x0+x1)/2,y:(y0+y1)/2,s:Math.min(W/w,H/hh)};
+}
+const W2S=p=>({x:V.W/2+(p.x-V.cam.x)*V.cam.s,y:V.H/2-(p.y-V.cam.y)*V.cam.s});
+const S2W=(x,y)=>v(V.cam.x+(x-V.W/2)/V.cam.s,V.cam.y-(y-V.H/2)/V.cam.s);
+function polyPath(pts){C.beginPath();pts.forEach((q,i)=>{const s=W2S(q);i?C.lineTo(s.x,s.y):C.moveTo(s.x,s.y)})}
+function ellPath(e,g=0){const c=W2S(e);C.beginPath();C.ellipse(c.x,c.y,Math.max(.1,(e.rx+g)*V.cam.s),Math.max(.1,(e.ry+g)*V.cam.s),0,0,Math.PI*2)}
+function arrow(a,b,head=5){const an=Math.atan2(b.y-a.y,b.x-a.x);C.beginPath();C.moveTo(a.x,a.y);C.lineTo(b.x,b.y);C.lineTo(b.x-head*Math.cos(an-.5),b.y-head*Math.sin(an-.5));C.moveTo(b.x,b.y);C.lineTo(b.x-head*Math.cos(an+.5),b.y-head*Math.sin(an+.5));C.stroke()}
+let stripeCanvas=null;
+function stripePattern(){
+  if(!stripeCanvas){stripeCanvas=document.createElement('canvas');stripeCanvas.width=1;stripeCanvas.height=16;const x=stripeCanvas.getContext('2d');x.fillStyle='#5DA34B';x.fillRect(0,0,1,8);x.fillStyle='#68AF55';x.fillRect(0,8,1,8)}
+  const pat=C.createPattern(stripeCanvas,'repeat');
+  try{const o=W2S(v(0,0));pat.setTransform(new DOMMatrix().translateSelf(o.x,o.y).scaleSelf(V.cam.s,V.cam.s))}catch(e){}
+  return pat;
+}
+function obStakes(h){
+  if(h._stakes)return h._stakes;const out=[];const c=h.center;
+  for(let i=0;i<c.length-1;i++){const a=c[i],b=c[i+1],d=sub(b,a),L=len(d),n=leftP(norm(d));
+    for(let t=0;t<=L;t+=16)for(const sg of[1,-1]){const q=add(add(a,mul(norm(d),t)),mul(n,sg*h.corridor));if(distPoly(q,c)>h.corridor-1)out.push(q)}}
+  return h._stakes=out;
+}
+function drawCourse(h,opt={}){
+  const s=V.cam.s;
+  C.fillStyle='#1B3A26';C.fillRect(0,0,V.W,V.H);
+  C.lineCap='round';C.lineJoin='round';
+  polyPath(h.center);C.strokeStyle='#2C5E34';C.lineWidth=2*h.corridor*s;C.stroke();
+  C.fillStyle='rgba(255,255,255,.85)';obStakes(h).forEach(q=>{const c=W2S(q);C.beginPath();C.arc(c.x,c.y,Math.max(1.3,.45*s),0,7);C.fill()});
+  polyPath(h.fairway);C.strokeStyle='#3E7A3A';C.lineWidth=(h.fw+20)*s;C.stroke();
+  C.strokeStyle=stripePattern();C.lineWidth=h.fw*s;C.stroke();
+  const t1=W2S(v(h.tee.x-5,h.tee.y+6));C.fillStyle='#68AF55';C.fillRect(t1.x,t1.y,10*s,12*s);
+  C.fillStyle='#1E6FB8';[-3,3].forEach(dx=>{const c=W2S(v(h.tee.x+dx,h.tee.y+2));C.beginPath();C.arc(c.x,c.y,Math.max(1.5,.5*s),0,7);C.fill()});
+  ellPath(h.green,2.5);C.fillStyle='#78BD63';C.fill();
+  ellPath(h.green);C.fillStyle='#8ACB72';C.fill();
+  if(h.grain){C.save();ellPath(h.green);C.clip();const gc=W2S(h.green),gd=v(h.grain.x,-h.grain.y),gp=v(-gd.y,gd.x),R=(h.green.rx+h.green.ry)*s;
+    C.strokeStyle='rgba(255,255,255,.12)';C.lineWidth=Math.max(1,1.2*s);
+    for(let k=-R;k<=R;k+=Math.max(4,2.4*s)){C.beginPath();C.moveTo(gc.x+gp.x*k-gd.x*R,gc.y+gp.y*k-gd.y*R);C.lineTo(gc.x+gp.x*k+gd.x*R,gc.y+gp.y*k+gd.y*R);C.stroke()}
+    C.restore()}
+  if(S.greenRead&&!opt.thumb){const g=h.green,step=s>6?1:2,cells=[];let lo=1e9,hi=-1e9;
+    for(let x=g.x-g.rx-2.5;x<=g.x+g.rx+2.5;x+=step)for(let y=g.y-g.ry-2.5;y<=g.y+g.ry+2.5;y+=step){const q=v(x,y);if(!inEll(q,{x:g.x,y:g.y,rx:g.rx+2.5,ry:g.ry+2.5}))continue;const e=heightAt(h,q);cells.push([q,e]);lo=Math.min(lo,e);hi=Math.max(hi,e)}
+    const off=elevCanvas(),ox=off.getContext('2d');ox.clearRect(0,0,off.width,off.height);
+    cells.forEach(([q,e])=>{const t=(e-lo)/((hi-lo)||1),c=W2S(v(q.x-step/2,q.y+step/2));ox.fillStyle=elevColor(t);ox.fillRect(c.x,c.y,step*s+1,step*s+1)});
+    C.save();ellPath(g,2.5);C.clip();C.globalAlpha=.5;C.drawImage(off,0,0,V.W,V.H);C.restore()}
+  if(s>8&&!opt.thumb){
+    const g=h.green,step=Math.max(1,Math.ceil(44/s));C.strokeStyle='rgba(15,55,25,.6)';C.lineWidth=1.4;
+    for(let x=g.x-g.rx;x<=g.x+g.rx;x+=step)for(let y=g.y-g.ry;y<=g.y+g.ry;y+=step){
+      const q=v(x,y);if(!inEll(q,g))continue;const gr=gradAt(h,q),m=len(gr);if(m<.002)continue;
+      const dn=mul(norm(gr),-1),L=Math.min(1,m/.03)*step*.8*s,c=W2S(q);
+      arrow(v(c.x-dn.x*L/2,c.y+dn.y*L/2),v(c.x+dn.x*L/2,c.y-dn.y*L/2),4)}}
+  h.bunkers.forEach(b=>{ellPath(b,.6);C.fillStyle='#C9B98C';C.fill();ellPath(b);C.fillStyle='#EADBB0';C.fill()});
+  h.water.forEach(w=>{ellPath(w,.8);C.fillStyle='#5E8F5A';C.fill();ellPath(w);C.fillStyle='#2E78B7';C.fill();
+    const c=W2S(w);C.strokeStyle='rgba(255,255,255,.25)';C.lineWidth=1.5;C.beginPath();C.ellipse(c.x-w.rx*s*.2,c.y-w.ry*s*.25,w.rx*s*.45,w.ry*s*.3,0,3.6,5.4);C.stroke()});
+  h.trees.forEach(t=>{const c=W2S(t),r=t.r*s;C.fillStyle='rgba(0,20,5,.3)';C.beginPath();C.arc(c.x+r*.28,c.y+r*.28,r,0,7);C.fill();
+    C.fillStyle='#1D4A25';C.beginPath();C.arc(c.x,c.y,r,0,7);C.fill();
+    C.fillStyle='#26592E';C.beginPath();C.arc(c.x-r*.18,c.y-r*.2,r*.7,0,7);C.fill();
+    C.fillStyle='#2F6A37';C.beginPath();C.arc(c.x-r*.32,c.y-r*.34,r*.38,0,7);C.fill()});
+  const pc=W2S(S.pin);
+  C.fillStyle='#0f2a17';C.beginPath();C.arc(pc.x,pc.y,Math.max(3.5,.06*s),0,7);C.fill();
+  const fh=opt.thumb?16:26,wave=opt.thumb?0:Math.sin(performance.now()/400)*1.5;
+  C.strokeStyle='#fff';C.lineWidth=2;C.beginPath();C.moveTo(pc.x,pc.y);C.lineTo(pc.x,pc.y-fh);C.stroke();
+  C.fillStyle='#fff';C.beginPath();C.moveTo(pc.x+1,pc.y-fh);C.quadraticCurveTo(pc.x+8,pc.y-fh+1+wave,pc.x+15,pc.y-fh+5);C.quadraticCurveTo(pc.x+8,pc.y-fh+9-wave,pc.x+1,pc.y-fh+10);C.fill();
+  if(h.grain&&s>2&&!opt.thumb){const gd=v(h.grain.x,-h.grain.y),a=v(pc.x-24,pc.y+22);C.strokeStyle='rgba(255,255,255,.95)';C.lineWidth=2;arrow(a,v(a.x+gd.x*16,a.y+gd.y*16));
+    C.fillStyle='#fff';C.font='500 10px "Zen Kaku Gothic New",sans-serif';C.fillText('芝目',a.x-6,a.y+15)}
+}
+let _elev=null;function elevCanvas(){if(!_elev)_elev=document.createElement('canvas');if(_elev.width!==Math.ceil(V.W)||_elev.height!==Math.ceil(V.H)){_elev.width=Math.ceil(V.W);_elev.height=Math.ceil(V.H)}return _elev}
+function elevColor(t){const A=[30,111,184],M=[240,244,240],B=[226,122,58];const k=t<.5?t*2:(t-.5)*2,P=t<.5?A:M,Q=t<.5?M:B;
+  return`rgb(${P.map((x,i)=>Math.round(x+(Q[i]-x)*k)).join(',')})`}
+function drawThumb(c,h){
+  if(!c)return;const[W,H]=fitCanvas(c);const save={C,W:V.W,H:V.H,cam:V.cam};
+  C=c.getContext('2d');V.W=W;V.H=H;V.cam=camFit([...h.center,v(h.green.x,h.green.y+h.green.ry)],80,W,H);
+  drawCourse(h,{thumb:true});
+  C.fillStyle='#fff';C.font='600 13px "Barlow Condensed",sans-serif';const t=W2S(h.tee);C.fillText('TEE',t.x+8,t.y+4);
+  C=save.C;V.W=save.W;V.H=save.H;V.cam=save.cam;
+}
+function addFx(type,pos){(S.fx=S.fx||[]).push({type,pos:{...pos},t0:performance.now()})}
+function drawFx(now){
+  S.fx=(S.fx||[]).filter(f=>now-f.t0<1100);
+  S.fx.forEach(f=>{const k=(now-f.t0)/1100,c=W2S(f.pos);
+    const rings=f.type==='land'?1:f.type==='cup'?2:3,col=f.type==='splash'?'30,111,184':'255,255,255';
+    for(let i=0;i<rings;i++){const kk=clamp(k*1.3-i*.18,0,1);if(kk<=0)continue;C.strokeStyle=`rgba(${col},${(1-kk)*.9})`;C.lineWidth=2;C.beginPath();C.arc(c.x,c.y,4+kk*(f.type==='land'?14:22),0,7);C.stroke()}});
+}
+function drawMap(now){
+  const h=S.h,s=V.cam.s;
+  drawCourse(h);
+  if((S.mode==='plan'||S.mode==='swing'||S.mode==='cpuplan')&&S.info&&S.cur&&S.plan){
+    const info=S.info,P=S.cur.pos,T=S.plan.target,Pc=W2S(P),Tc=W2S(T);
+    C.lineWidth=2;
+    if(!info.putt){
+      C.strokeStyle='rgba(255,255,255,.18)';C.setLineDash([3,6]);C.beginPath();C.arc(Pc.x,Pc.y,info.max*s,0,7);C.stroke();
+      C.strokeStyle='rgba(255,255,255,.95)';C.setLineDash([8,6]);C.lineDashOffset=-now/60;C.beginPath();
+      for(let i=0;i<=30;i++){const q=W2S(bez(P,info.Cp,T,i/30));i?C.lineTo(q.x,q.y):C.moveTo(q.x,q.y)}C.stroke();C.lineDashOffset=0;
+      if(info.rollEst>.5){const R=W2S(add(T,mul(info.endDir,info.rollEst)));C.setLineDash([2,4]);C.strokeStyle='rgba(255,255,255,.7)';C.beginPath();C.moveTo(Tc.x,Tc.y);C.lineTo(R.x,R.y);C.stroke()}
+    }else{C.strokeStyle='rgba(255,255,255,.9)';C.setLineDash([5,5]);C.beginPath();C.moveTo(Pc.x,Pc.y);C.lineTo(Tc.x,Tc.y);C.stroke()}
+    C.setLineDash([]);
+    if(!info.putt&&S.mode==='plan'){const m=W2S(bez(P,info.Cp,T,.5));
+      C.fillStyle='rgba(255,255,255,.95)';C.beginPath();C.arc(m.x,m.y,11,0,7);C.fill();C.strokeStyle='#1E6FB8';C.lineWidth=2;C.stroke();
+      C.fillStyle='#1E6FB8';const dd=norm(sub(Tc,Pc)),pp=v(-dd.y,dd.x);
+      [1,-1].forEach(sg=>{const tip=v(m.x+pp.x*7*sg,m.y+pp.y*7*sg),b1=v(m.x+pp.x*2*sg+dd.x*4,m.y+pp.y*2*sg+dd.y*4),b2=v(m.x+pp.x*2*sg-dd.x*4,m.y+pp.y*2*sg-dd.y*4);C.beginPath();C.moveTo(tip.x,tip.y);C.lineTo(b1.x,b1.y);C.lineTo(b2.x,b2.y);C.fill()})}
+    C.strokeStyle='#fff';C.lineWidth=2;C.beginPath();C.arc(Tc.x,Tc.y,8,0,7);C.stroke();
+    C.fillStyle='#1E6FB8';C.beginPath();C.arc(Tc.x,Tc.y,3,0,7);C.fill();
+    const lbl=fmtD(info.dist);C.font='600 15px "Barlow Condensed",sans-serif';const tw=C.measureText(lbl).width;
+    C.fillStyle='rgba(255,255,255,.95)';C.beginPath();C.roundRect?C.roundRect(Tc.x+11,Tc.y-24,tw+10,19,5):C.rect(Tc.x+11,Tc.y-24,tw+10,19);C.fill();
+    C.fillStyle='#14532D';C.fillText(lbl,Tc.x+16,Tc.y-9);
+  }
+  if(S.trail&&S.trail.length>1){for(let i=1;i<S.trail.length;i++){const a=S.trail[i-1],b=S.trail[i],A=W2S(a),B=W2S(b),oa=Math.min(a.z*s*.5,90),ob=Math.min(b.z*s*.5,90);
+    C.strokeStyle=`rgba(255,255,255,${i/S.trail.length*.7})`;C.lineWidth=2;C.beginPath();C.moveTo(A.x,A.y-oa);C.lineTo(B.x,B.y-ob);C.stroke()}}
+  drawFx(now);
+  S.players.forEach(p=>{
+    if(p.done)return;let pos=p.pos,z=0;
+    if(S.anim&&p===S.cur&&S.animBall){pos=S.animBall;z=S.animBall.z||0}
+    const c=W2S(pos),r=Math.max(3.8,.047*s)*(1+z/40),off=Math.min(z*s*.5,90);
+    C.fillStyle='rgba(0,0,0,.3)';C.beginPath();C.arc(c.x+1,c.y+1,r*.95,0,7);C.fill();
+    C.fillStyle='#fff';C.beginPath();C.arc(c.x,c.y-off,r,0,7);C.fill();
+    C.strokeStyle=p.color;C.lineWidth=2;C.stroke();
+    if(p===S.cur&&S.mode==='plan'){C.strokeStyle='rgba(255,255,255,'+(.4+.4*Math.sin(now/220))+')';C.lineWidth=1.5;C.beginPath();C.arc(c.x,c.y,r+6,0,7);C.stroke()}
+  });
+  if((S.mode==='plan'||S.mode==='swing')&&S.info&&S.cur&&!S.info.putt){
+    const x0=8,y0=8,w=108,hh=48,gy=y0+hh-10,ap=S.info.apex;
+    C.fillStyle='rgba(255,255,255,.92)';C.beginPath();C.roundRect?C.roundRect(x0,y0,w,hh,10):C.rect(x0,y0,w,hh);C.fill();
+    C.strokeStyle='#2F7D4A';C.lineWidth=2;C.beginPath();C.moveTo(x0+10,gy);C.lineTo(x0+w-10,gy);C.stroke();
+    C.strokeStyle='#1E6FB8';C.lineWidth=2;C.beginPath();
+    for(let i=0;i<=20;i++){const t=i/20,X=x0+10+t*(w-20),Y=gy-4*t*(1-t)*(ap/40)*(hh-22);i?C.lineTo(X,Y):C.moveTo(X,Y)}C.stroke();
+    C.fillStyle='#5F7368';C.font='500 10px "Zen Kaku Gothic New",sans-serif';C.fillText('最高点',x0+8,y0+13);
+    C.fillStyle='#17241C';C.font='600 13px "Barlow Condensed",sans-serif';C.fillText(`${Math.round(ap)}y`,x0+40,y0+14);
+  }
+}
+function updatePressure(){
+  const el=$('#press');const p=S.cur;
+  if(!p||p.cpu||!(S.mode==='plan'||S.mode==='swing'||S.mode==='anim')){el.style.opacity=0;el.classList.remove('beat');return}
+  const lv=clamp((55-p.st)/55,0,1)*(S.mode==='swing'?1:.75);
+  el.style.opacity=lv.toFixed(2);el.classList.toggle('beat',p.st<30&&S.mode==='swing');
+}
+function loop(t){
+  requestAnimationFrame(loop);
+  if($('#game').classList.contains('hidden')||!S.h)return;
+  const[W,H]=fitCanvas(cv);S.W=W;S.H=H;V.W=W;V.H=H;V.cam=S.cam;C=cv.getContext('2d');
+  if(!W||!H)return;
+  if(S.camPts&&!S.dragging){const ct=camFit(S.camPts,S.camMin),c=S.cam;
+    if((S.mode==='plan'||S.mode==='swing')&&S.zoom>1&&S.plan){ct.s*=S.zoom;const f=1-1/S.zoom;ct.x+=(S.plan.target.x-ct.x)*f;ct.y+=(S.plan.target.y-ct.y)*f}
+    if(S.camSnap||!c.s||!isFinite(c.s)){Object.assign(c,ct);S.camSnap=false}
+    else{c.x+=(ct.x-c.x)*.12;c.y+=(ct.y-c.y)*.12;c.s*=Math.pow(ct.s/c.s,.12)}}
+  if(S.anim){const a=S.anim;a.i+=a.i<a.flightN?1:1.6;
+    if(a.i>=a.frames.length-1){S.animBall=a.frames[a.frames.length-1];S.anim=null;a.onDone()}
+    else{S.animBall=a.frames[Math.floor(a.i)];
+      if(a.i<a.flightN){S.trail.push(S.animBall);if(S.trail.length>26)S.trail.shift()}
+      else{if(!S.landed&&a.flightN>0){S.landed=true;addFx('land',a.frames[a.flightN-1])}if(S.trail.length)S.trail.shift()}}}
+  drawMap(t);
+  updatePressure();
+  if(S.mode==='swing')drawSwing(t);
+}
+// マップ入力
+function evPt(e){const r=cv.getBoundingClientRect();return v(e.clientX-r.left,e.clientY-r.top)}
+function setTargetFromEvent(e){const q=evPt(e);S.plan.target=S2W(q.x,q.y);clampTarget();updatePlan()}
+function setCurveFromEvent(e){const p=S.cur,P=p.pos,T=S.plan.target,q=evPt(e),w=S2W(q.x,q.y),mid=mul(add(P,T),.5),lp=leftP(norm(sub(T,P)));
+  const mc=Math.max(.01,Math.min(35,dist(P,T)*.2));S.plan.curveF=clamp(dot(sub(w,mid),lp)/mc,-1,1);if(Math.abs(S.plan.curveF)<.08)S.plan.curveF=0;clampTarget();updatePlan()}
+function onHandle(e){if(!S.info||!S.cur||!S.plan||S.info.putt)return false;const m=W2S(bez(S.cur.pos,S.info.Cp,S.plan.target,.5)),q=evPt(e);return Math.hypot(q.x-m.x,q.y-m.y)<26}
+cv.addEventListener('pointerdown',e=>{if(S.mode!=='plan')return;
+  if(S.placing){const q=evPt(e),w=S2W(q.x,q.y),sf=surfaceAt(S.h,w);if(sf==='ob'||sf==='water'){showBanner('そこには置けない','white');return}
+    const p=S.cur;p.pos=w;p.lie=sf;p.mod=null;S.placing=false;$('#tPlace').classList.remove('on');beginPlan();return}cv.setPointerCapture(e.pointerId);S.dragging=onHandle(e)?'curve':'target';if(S.dragging==='target')setTargetFromEvent(e)});
+cv.addEventListener('pointermove',e=>{if(S.mode!=='plan'||!S.dragging)return;S.dragging==='curve'?setCurveFromEvent(e):setTargetFromEvent(e)});
+cv.addEventListener('pointerup',()=>{S.dragging=false});
+cv.addEventListener('pointercancel',()=>{S.dragging=false});
+$('#zIn').onclick=()=>{S.zoom=Math.min(4,(S.zoom||1)*1.6)};
+$('#zOut').onclick=()=>{S.zoom=Math.max(1,(S.zoom||1)/1.6)};
+$('#tPlace').onclick=()=>{if(S.mode!=='plan')return;S.placing=!S.placing;$('#tPlace').classList.toggle('on',S.placing);if(S.placing)showBanner('置く場所をタップ','white')};
+$('#gRead').onclick=()=>{S.greenRead=!S.greenRead;const b=$('#gRead');b.classList.toggle('on',S.greenRead);b.setAttribute('aria-pressed',S.greenRead)};
+
+renderTitle();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
