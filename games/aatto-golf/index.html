@@ -198,6 +198,8 @@ html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(-
 .ho-meta .num{font-size:19px}
 .ho-news{margin-top:34px;min-height:3em}
 .ho-news p{font-size:16.5px;line-height:1.7;margin-top:8px;opacity:0;animation:rise .6s forwards}
+.ho-news .ho-head{font-size:13px;opacity:.7;animation:none}
+.ho-news .ho-sub{font-size:14.5px;margin:2px 0 0 18px;line-height:1.55}
 .ho-pass{margin-top:auto;padding-top:36px;font-size:13.5px;opacity:.7}
 .handoff .btn{margin-top:12px;padding:15px}
 .sctable{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
@@ -261,7 +263,18 @@ const G=10.7; // yd/s^2
 const FRIC={green:.65,fringe:1.6,fairway:2.8,tee:2.8,rough:7,deep:14,bunker:30};
 const SURF_NAME={tee:'ティー',fairway:'フェアウェイ',rough:'ラフ',deep:'深いラフ',bunker:'バンカー',green:'グリーン',fringe:'カラー',water:'池',ob:'OB'};
 const LIE={tee:{mul:1,rand:1,diff:0},fairway:{mul:1,rand:1,diff:0},fringe:{mul:.95,rand:1,diff:.02},rough:{mul:.88,rand:1.3,diff:.08},deep:{mul:.65,rand:1.9,diff:.25},bunker:{mul:.6,rand:1.6,diff:.2},green:{mul:1,rand:1,diff:0}};
-const MAXC={tee:{low:215,mid:245,high:225},other:{low:195,mid:220,high:190}};
+const HMAX={low:.88,mid:1,high:.9};
+// クラブ：max=普通の高さのキャリー、diff=基本の難しさ、rand=ブレ、apex=高さ、roll=転がり、spin=止める球の効き、lie=ラフ・バンカーでの当たりにくさ（1が基準）
+const CLUBS=[
+ {id:'dr',s:'1W',n:'ドライバー',max:245,teeOnly:true,diff:.22,rand:1.3,apex:.8,roll:1.5,spin:.3,lie:3,note:'いちばん飛ぶが、曲がりやすく、よく転がる。ティーショット専用。'},
+ {id:'wd',s:'3W',n:'ウッド',max:220,diff:.2,rand:1.15,apex:.9,roll:1.3,spin:.45,lie:1.6,note:'地面から打てる中でいちばん飛ぶ。止まりにくく、ラフやバンカーでは当たりにくい。'},
+ {id:'ut',s:'UT',n:'ユーティリティ',max:198,diff:.14,rand:1.05,apex:1,roll:1.1,spin:.6,lie:.8,note:'ラフからでも打ちやすい。'},
+ {id:'mi',s:'7I',n:'ミドルアイアン',max:172,diff:.09,rand:1,apex:1.05,roll:1,spin:.8,lie:1,note:'飛距離と止まりやすさの中間。'},
+ {id:'si',s:'9I',n:'ショートアイアン',max:145,diff:.05,rand:.9,apex:1.15,roll:.8,spin:1,lie:1,note:'ブレが少なく、グリーンで止まりやすい。'},
+ {id:'wg',s:'PW',n:'ウェッジ',max:112,diff:.02,rand:.8,apex:1.3,roll:.55,spin:1.15,lie:1,note:'高く上がってよく止まる。'},
+ {id:'sw',s:'SW',n:'サンドウェッジ',max:82,diff:0,rand:.8,apex:1.4,roll:.45,spin:1.2,lie:1,sand:.4,note:'バンカーから出しやすい。飛距離は短い。'}
+];
+const CLUB=Object.fromEntries(CLUBS.map(c=>[c.id,c]));
 const ROLLF={low:.22,mid:.12,high:.06};
 const SPINM={stop:.35,normal:1,run:1.8};
 const WINDH={low:.35,mid:1,high:1.3};
@@ -461,7 +474,8 @@ const S={players:[],hole:0,h:null,pin:null,wind:v(0,0),cur:null,mode:'',plan:nul
 const NEWS=[];
 const news=t=>NEWS.push(t);
 const takeNews=()=>NEWS.splice(0);
-function st(p,d){p.st=clamp(Math.round(p.st+d),0,100)}
+// 1ホールの中で減り続けると、減り方がゆるやかになる（池・OB・大叩きが重なって一気に削れすぎないように）。集中のコストは表示どおり引く
+function st(p,d,exact){if(d<0&&!exact&&p.holeLoss!=null){d/=1+p.holeLoss/25;p.holeLoss-=d}p.st=clamp(Math.round(p.st+d),0,100)}
 function yousu(s){return s>=75?'落ち着いている':s>=55?'普段どおり':s>=40?'素振りが増えている':s>=25?'表情が硬い':'手が小刻みに震えている'}
 const fmtD=d=>d<30?d.toFixed(1)+'y':Math.round(d)+'y';
 const fmtRel=r=>r===0?'E':(r>0?'+'+r:''+r);
@@ -711,7 +725,7 @@ function setupHole(){
   const pi=Math.floor(Math.random()*h.pins.length);
   S.pin={...h.pins[pi]};S.pinName=h.pinNames[pi];
   {const ga=rnd(0,Math.PI*2);h.grain=v(Math.sin(ga),Math.cos(ga))}
-  S.players.forEach(p=>{p.pos={...h.tee};p.lie='tee';p.mod=null;p.strokes=0;p.done=false;p.gaveUp=false;p.conceded=false;p.reactedLast=false;p.drag=0;p.okAsked=-1});
+  S.players.forEach(p=>{p.pos={...h.tee};p.lie='tee';p.mod=null;p.strokes=0;p.done=false;p.gaveUp=false;p.conceded=false;p.reactedLast=false;p.drag=0;p.okAsked=-1;p.holeLoss=0;p.seen=0});S.shotLog=[];
   S.cur=null;S.mode='intro';S.camPts=[h.tee,S.pin];S.camMin=120;S.camSnap=true;S.fx=[];S.trail=[];S.placing=false;
   return h;
 }
@@ -745,7 +759,7 @@ function startHole(){
       else if(p.ax.A===1){st(p,-4);news(`${p.name}さんは差が気になっているようだ。`)}
     }});
   }
-  if(S.hole===S.course.length-1&&S.players.length>1){S.players.forEach(p=>st(p,-5));news('最終ホール。空気が張りつめる。')}
+  if(S.hole===S.course.length-1&&S.players.length>1){S.players.forEach(p=>st(p,-3));news('最終ホール。空気が張りつめる。')}
   renderHud();$('#panel').innerHTML='';
   overlay(introCard(h,newsHtml(takeNews()),'ティーへ'),()=>nextTurn());
   requestAnimationFrame(()=>drawThumb($('#thumb'),h));
@@ -772,11 +786,16 @@ function startTurn(p){
   if(p.cpu)return cpuTurn(p);
   const nw=takeNews(),d=dist(p.pos,S.pin);
   if(humans().length>1){
+    // 端末を渡している間の、ほかの人の打球と、それを見た反応
+    const seen=(S.shotLog||[]).slice(p.seen||0).filter(e=>e.p!==p).slice(-5);p.seen=(S.shotLog||[]).length;
+    let k=0;const dl=()=>`style="animation-delay:${(.35+.45*k++).toFixed(2)}s"`;
+    const recap=seen.map(e=>`<p ${dl()}>${pdot(e.p)} <b>${esc(e.p.name)}</b>　${e.no}打目：${esc(e.msg)}</p>${e.nw.map(x=>`<p class="ho-sub" ${dl()}>${esc(x)}</p>`).join('')}`).join('')
+      +nw.map(x=>`<p ${dl()}>${esc(x)}</p>`).join('');
     overlay(`<div class="handoff" style="--pc:${p.color}">
       <p class="ho-label">次の打席</p>
       <h1 class="ho-name">${esc(p.name)}</h1>
       <p class="ho-meta">${p.strokes+1}打目　${SURF_NAME[p.lie]}　ピンまで <span class="num">${d<30?d.toFixed(1):Math.round(d)}</span>y</p>
-      ${newsHtml(nw,'ho-news')||'<div class="ho-news"></div>'}
+      <div class="ho-news">${seen.length?'<p class="ho-head">あなたが見ていない間に</p>':''}${recap}</div>
       <p class="ho-pass">端末を${esc(p.name)}さんに渡してください</p>
       <button class="btn light wide" id="ok">打席に入る</button></div>`,()=>beginPlan(),'full');
   }else if(nw.length){
@@ -1021,10 +1040,16 @@ function animateStam(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
 function showBanner(text,kind=''){const b=$('#banner');b.className='';b.innerHTML=`<b>${text}</b>`;void b.offsetWidth;b.className='show '+kind}
 
 // ================= 計画 =================
-function lieOf(p){const L=LIE[p.lie]||LIE.fairway,M=p.mod&&MOD[p.mod];if(!M)return L;return{mul:L.mul*M.mul,rand:L.rand*M.rand,diff:L.diff+M.diff}}
+function lieOf(p,ck){let L=LIE[p.lie]||LIE.fairway;const M=p.mod&&MOD[p.mod];
+  if(ck&&(p.lie==='rough'||p.lie==='deep'||p.lie==='bunker')){const k=p.lie==='bunker'&&ck.sand?ck.sand:ck.lie;L={mul:Math.max(.2,1-(1-L.mul)*k),rand:1+(L.rand-1)*k,diff:L.diff*k}}
+  if(!M)return L;return{mul:L.mul*M.mul,rand:L.rand*M.rand,diff:L.diff+M.diff}}
+const clubsFor=p=>CLUBS.filter(c=>!c.teeOnly||p.lie==='tee');
 function canSpin(p){return!(p.lie==='rough'||p.lie==='deep')&&!(p.mod&&MOD[p.mod].noSpin)}
 function lowOnly(p){return!!(p.mod&&MOD[p.mod].lowOnly)}
-function maxCarry(p,height){return MAXC[p.lie==='tee'?'tee':'other'][height]*lieOf(p).mul}
+function maxCarry(p,height,ck){if(ck)return ck.max*HMAX[height]*lieOf(p,ck).mul;return Math.max(...clubsFor(p).map(c=>maxCarry(p,height,c)))}
+function autoClub(p,dd,height){const cs=clubsFor(p).slice().reverse();for(const c of cs)if(maxCarry(p,height,c)>=dd-.5)return c;return cs.reduce((a,b)=>maxCarry(p,height,b)>maxCarry(p,height,a)?b:a)}
+function planClub(p,pl,dd){const c=pl.club&&CLUB[pl.club];return c&&(!c.teeOnly||p.lie==='tee')?c:autoClub(p,dd,pl.height)}
+function spinSm(p,pl,ck){let sm=SPINM[pl.spin];if(pl.spin==='stop')sm=canSpin(p)?1-(1-SPINM.stop)*ck.spin:SPINM.normal;if(p.lie==='rough'||p.mod==='up')sm*=1.4;if(p.mod==='egg')sm*=2;return sm}
 function puttLine(from){const d=sub(S.pin,from),L=len(d),dir=norm(d);let g=v(0,0);
   for(let i=0;i<5;i++)g=add(g,gradAt(S.h,add(from,mul(d,(i+.5)/5))));g=mul(g,1/5);
   const al=dot(g,dir);return{up:Math.max(0,al),down:Math.max(0,-al),side:Math.abs(dot(g,leftP(dir))),grain:dot(S.h.grain,dir),L}}
@@ -1053,7 +1078,8 @@ function defaultTarget(p){
 function clampTarget(){
   const p=S.cur,pl=S.plan;if(lowOnly(p))pl.height='low';let d=sub(pl.target,p.pos),l=len(d);
   if(l<.3){d=sub(S.pin,p.pos);l=.3}
-  const max=p.lie==='green'?40:maxCarry(p,pl.height);
+  const mc0=pl.club&&CLUB[pl.club]&&(!CLUB[pl.club].teeOnly||p.lie==='tee')?CLUB[pl.club]:null;
+  const max=p.lie==='green'?40:maxCarry(p,pl.height,mc0);
   const nl=clamp(l,p.lie==='green'?.3:1,max);
   pl.target=add(p.pos,mul(norm(d),nl));
   const mc=p.lie==='green'?0:Math.min(35,nl*.2);pl.curve=(pl.curveF||0)*mc;
@@ -1063,22 +1089,24 @@ function planInfo(p,pl){
   if(p.lie==='green'){const ln=puttLine(p.pos);
     const diff=clamp(.1+dist0/40+12*ln.down+6*ln.side+.1*Math.max(0,ln.grain)-5*ln.up,.05,1);
     return{putt:true,line:ln,dist:dist0,dir,diff,club:'パター',max:40,along:0,side:0,curveBias:0,apex:0,rollEst:0,endDir:dir,lieText:`グリーン・ピンまで${puttLineText(ln)}・芝目は${grainText(p,dir)}・速さ ${S.cond.speed.n}${S.cond.speed.h?'（'+S.cond.speed.h+'）':''}`}}
-  const isTee=p.lie==='tee',L=lieOf(p);
+  const isTee=p.lie==='tee';
   const g=isTee?v(0,0):gradAt(h,p.pos);
   const along=dot(g,dir),side=dot(g,leftP(dir));
-  const max=maxCarry(p,pl.height),dd=Math.min(dist0,max),mc=Math.max(1,Math.min(35,dd*.2));
+  const ck=planClub(p,pl,Math.min(dist0,maxCarry(p,pl.height))),L=lieOf(p,ck);
+  const max=maxCarry(p,pl.height,ck),dd=Math.min(dist0,max),mc=Math.max(1,Math.min(35,dd*.2)),sr=dd/max;
   let apex={low:Math.min(16,3+dd*.06),mid:Math.min(30,4+dd*.12),high:Math.min(40,6+dd*.17)}[pl.height];
-  apex*=clamp(1+along*4,.6,1.4)*((p.mod&&MOD[p.mod].apex)||1);
+  apex=Math.min(45,apex*ck.apex*clamp(1+along*4,.6,1.4)*((p.mod&&MOD[p.mod].apex)||1));
   const curveBias=-side*dd*1.5;
-  let diff=.08+.35*Math.pow(dd/max,2)+.45*Math.min(1,Math.abs(pl.curve)/mc)+HDIFF[pl.height]+SDIFF[pl.spin]+L.diff+Math.min(.2,(Math.abs(along)+Math.abs(side))*3);
+  // 目いっぱい振るほど、また軽く振るほど距離が合わせにくい
+  let diff=.08+ck.diff+.15*Math.pow(clamp((sr-.85)/.15,0,1),2)+.08*clamp((.6-sr)/.6,0,1)+.45*Math.min(1,Math.abs(pl.curve)/mc)+HDIFF[pl.height]+SDIFF[pl.spin]+L.diff+Math.min(.2,(Math.abs(along)+Math.abs(side))*3);
   if(p.lie==='bunker'&&dd>60)diff+=.15;
   diff=Math.min(1.2,diff);
   const Cp=add(mul(add(p.pos,tgt),.5),mul(leftP(dir),2*pl.curve));
   const endDir=norm(sub(tgt,Cp));
   const ls=surfaceAt(h,tgt);
-  let sm=SPINM[pl.spin];if(!canSpin(p)&&pl.spin==='stop')sm=SPINM.normal;if(p.lie==='rough'||p.mod==='up')sm*=1.4;if(p.mod==='egg')sm*=2;
+  const sm=spinSm(p,pl,ck);
   const cm=(ls==='green'||ls==='fringe')?S.cond.firm.m:S.cond.ground.m;
-  const rollEst=dd*ROLLF[pl.height]*sm*(SURFM[ls]||0)*(along<-.02?1.3:1)*cm;
+  const rollEst=dd*ROLLF[pl.height]*ck.roll*sm*(SURFM[ls]||0)*(along<-.02?1.3:1)*cm;
   const t=[SURF_NAME[p.lie]];if(p.mod)t.push(MOD[p.mod].name);
   if(p.lie==='rough'&&!p.mod)t.push('スピンがかかりにくい');
   if(p.lie==='deep')t.push('飛ばずブレやすい');
@@ -1087,13 +1115,11 @@ function planInfo(p,pl){
     if(along>.02)t.push('左足上がり（上がりやすく飛ばない）');else if(along<-.02)t.push('左足下がり（低く出て転がる）');
     if(side>.02)t.push('つま先下がり（右に曲がりやすい）');else if(side<-.02)t.push('つま先上がり（左に曲がりやすい）');
   }
-  let club;
-  if(isTee&&dd>200)club='ドライバー';else if(dd>195)club='ウッド';else if(dd>170)club='ユーティリティ';else if(dd>135)club='ミドルアイアン';else if(dd>95)club='ショートアイアン';else if(dd>40)club='ウェッジ';else club='アプローチ';
-  return{putt:false,dist:dd,dir,diff,club,max,along,side,curveBias,apex,rollEst,endDir,Cp,lieText:t.join('・')};
+  return{putt:false,dist:dd,dir,diff,club:ck.n,ck,sr,max,along,side,curveBias,apex,rollEst,endDir,Cp,lieText:t.join('・')};
 }
 function prepPlan(p){
   S.cur=p;
-  S.plan={target:p.lie==='green'?{...S.pin}:defaultTarget(p),curve:0,curveF:0,height:'mid',spin:'normal',focus:false};
+  S.plan={target:p.lie==='green'?{...S.pin}:defaultTarget(p),curve:0,curveF:0,height:'mid',spin:'normal',club:'auto',focus:false};
   clampTarget();S.zoom=1;
   const d=dist(p.pos,S.pin);
   if(p.lie==='green'){S.camPts=[p.pos,S.pin];S.camMin=11}
@@ -1138,9 +1164,11 @@ function updatePlan(){
     const bt=(key,opts)=>opts.map(([k,l])=>`<button class="btn chipbtn ${pl[key]===k?'on':''}" data-k="${key}" data-v="${k}" ${key==='height'&&k!=='low'&&lowOnly(p)?'disabled':''}>${l}</button>`).join('');
     det.innerHTML=`<p class="lie"><span class="muted">ライ　</span>${info.lieText}</p>
     ${info.putt?'':`<div class="opt"><span>曲げ</span><b style="font-weight:500">${pl.curve>.5?`左へ${c}y（ドロー）`:pl.curve<-.5?`右へ${c}y（フェード）`:'まっすぐ'}</b>${Math.abs(pl.curveF||0)>.05?'<button class="btn chipbtn" id="bStraight">まっすぐに戻す</button>':''}</div>
+    <div class="opt"><span>番手</span><button class="btn chipbtn ${pl.club==='auto'?'on':''}" data-k="club" data-v="auto">おまかせ</button>${clubsFor(p).map(c=>`<button class="btn chipbtn ${pl.club===c.id?'on':''}" data-k="club" data-v="${c.id}">${c.s}</button>`).join('')}</div>
     <div class="opt"><span>高さ</span>${bt('height',[['low','低い'],['mid','普通'],['high','高い']])}</div>
     <div class="opt"><span>球</span>${bt('spin',[['stop','止める'],['normal','普通'],['run','転がす']])}</div>
     <p class="carry">キャリー <span class="num">${Math.round(info.dist)}</span>y　ラン約 <span class="num">${Math.round(info.rollEst)}</span>y　最高点 約<span class="num">${Math.round(info.apex)}</span>y　最大 <span class="num">${Math.round(info.max)}</span>y</p>
+    <p class="note"><b style="font-weight:500;color:var(--ink)">${info.club}</b>（最大 ${Math.round(info.max)}y）：${info.ck.note}${info.sr<.6?'軽く振るぶん、距離を合わせにくい。':info.sr>.95?'目いっぱい振るので、ブレやすい。':''}</p>
     <p class="note">${optNote(pl)}</p>`}
     <p class="note">${info.putt?'グリーン上をタップして狙う点を決める。奥を狙うほど強く打つ。矢印は下りの向き。':'マップをタップ（ドラッグで微調整）して落とし所を決める。弾道の中ほどの丸いつまみを左右に動かすと曲がる球になる。風は自分で読んで狙いをずらす。'}右上の「高低」でグリーンの高さを色で見られる（青が低く、橙が高い）。</p>`;
     det.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{pl[b.dataset.k]=b.dataset.v;clampTarget();updatePlan()});
@@ -1212,8 +1240,8 @@ function rollSim(h,p0,vel,frames){
   return{end:'rest',rest:pos};
 }
 function simulate(p,pl,info,ex,sPre){
-  const h=S.h,S0=p.pos,s=sPre/100,F=pl.focus?FOCUS[p.ax.C]:{rand:1},L=lieOf(p);
-  const randK=(.35+1.0*(1-s))*F.rand*L.rand;
+  const h=S.h,S0=p.pos,s=sPre/100,F=pl.focus?FOCUS[p.ax.C]:{rand:1},L=lieOf(p,info.ck);
+  const randK=(.35+1.0*(1-s))*F.rand*L.rand*(info.ck?info.ck.rand:1);
   const tw=tempoWindow(s);let tp=0;
   if(ex.tempo<tw[0])tp=(tw[0]-ex.tempo)/tw[0];else if(ex.tempo>tw[1])tp=(ex.tempo-tw[1])/tw[1];
   tp=Math.min(1,tp);
@@ -1269,9 +1297,9 @@ function simulate(p,pl,info,ex,sPre){
   if(ls==='ob')return{end:'ob',frames,flightN,treeHit,plannedRest,tnote,landSurf:ls,apex};
   let rollDist;
   if(treeHit)rollDist=rnd(0,3);
-  else{let sm=SPINM[pl.spin];if(!canSpin(p)&&pl.spin==='stop')sm=SPINM.normal;if(p.lie==='rough'||p.mod==='up')sm*=1.4;if(p.mod==='egg')sm*=2;
+  else{const sm=spinSm(p,pl,info.ck);
     const cm=(ls==='green'||ls==='fringe')?S.cond.firm.m*(pl.spin==='stop'&&S.cond.firm.m<1?.7:1):S.cond.ground.m;
-    rollDist=carry*ROLLF[pl.height]*sm*(SURFM[ls]||1)*(info.along<-.02?1.3:1)*cm;
+    rollDist=carry*ROLLF[pl.height]*info.ck.roll*sm*(SURFM[ls]||1)*(info.along<-.02?1.3:1)*cm;
     const spinOK=pl.spin==='stop'&&canSpin(p);
     if(spinOK&&(ls==='green'||ls==='fringe'))rollDist*=1+gauss()*1.2; // 止める球：効きすぎて戻ることもある
     else if(pl.height==='low'||pl.spin==='run')rollDist*=Math.max(0,1+gauss()*.25);}
@@ -1291,7 +1319,7 @@ function dropFrom(entry,from){
 function doShot(ex){
   const p=S.cur,pl=S.plan,info=S.info,sPre=S.sw?S.sw.sPre:p.st;
   p.stBefore=p.st;S.prevBall={pos:{...p.pos},lie:p.lie,mod:p.mod,strokes:p.strokes};
-  if(pl.focus)st(p,-FOCUS[p.ax.C].cost);
+  if(pl.focus)st(p,-FOCUS[p.ax.C].cost,true);
   p.strokes++;p.reactedLast=false;
   const sim=simulate(p,pl,info,ex,sPre);
   removeSwing();S.mode='anim';S.trail=[];S.landed=false;
@@ -1351,6 +1379,7 @@ function afterShot(p,pl,info,sim){
   renderHud();
   if(S.cpuFast){NEWS.length=0;return nextTurn()}
   const nw=takeNews();
+  S.shotLog.push({p,no:S.prevBall.strokes+1,msg,nw});
   $('#panel').innerHTML=`<div class="ph"><div class="who">${pdot(p)}<b>${esc(p.name)}</b><span class="muted">${p.strokes}打終了</span></div></div>
    <p class="result">${esc(msg)}</p>${sim.tnote&&!p.cpu?`<p class="tnote">${sim.tnote}</p>`:''}
    ${nw.length?`<div class="news">${nw.map(x=>`<p>${esc(x)}</p>`).join('')}</div>`:''}
