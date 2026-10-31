@@ -71,9 +71,11 @@ const WEAPONS = {
   homing: { name: 'ホーミング', icon: '🌀', cost: 25, build: 2, type: 'gun', range: 7, dmg: 10, cd: .8, speed: 8, pellets: 2, fan: .9, homing: 3.5, noShield: true, desc: '敵を追いかける遅い弾を2発。盾に防がれない。威力は低く装甲に弱い' },
   spread: { name: 'スプレッド', icon: '🔱', cost: 30, build: 3, type: 'gun', range: 4.5, dmg: 14, cd: .9, speed: 16, pellets: 5, fan: .8, pierce: 3, desc: '扇状に5発、4体まで貫通。群れと速い敵に強いが射程が短い' },
   heavy: { name: 'ヘビーショット', icon: '🎯', cost: 55, build: 4, type: 'gun', range: 14, dmg: 90, cd: 2.4, speed: 26, pellets: 1, fan: 0, pierce: 2, noArmor: true, size: .3, pick: 'tough', desc: '狙撃用の大口径砲。射程が非常に長く、射程内で一番硬い敵（ボス・装甲・輸送艦など）を狙う。装甲を貫き3体まで貫通。連射が遅い' },
-  missile: { name: 'ミサイル', icon: '🚀', cost: 60, build: 5, type: 'gun', range: 8, dmg: 55, cd: 2.6, speed: 9, pellets: 1, fan: 0, blast: 2.6, cluster: true, desc: '敵が一番固まっている所を狙い、着弾で爆発。弾が遅く速い敵に弱い。装甲・盾を無視。爆風は味方も巻き込む' },
+  missile: { evo: true, base: 'homing', name: 'ミサイル', icon: '🚀', cost: 60, build: 5, type: 'gun', range: 8, dmg: 55, cd: 2.6, speed: 9, pellets: 1, fan: 0, blast: 2.6, cluster: true, desc: '敵が一番固まっている所を狙い、着弾で爆発。弾が遅く速い敵に弱い。装甲・盾を無視。爆風は味方も巻き込む' },
   laser: { name: 'レーザー', icon: '🔦', cost: 70, build: 5, type: 'beam', range: 10, dps: 15, width: .4, ffMul: 1.5, noBase: true, desc: '前方へビームを照射し続ける。直線上をすべて貫き、装甲・盾を無視。直線上の味方には1.5倍で当たる。敵拠点は自動では狙わない' },
   // ---- 進化パーツ（INFINITE SHOT 3D II の進化形）。アンロックして、出撃前の持ち込み枠に入れたものだけ使える ----
+  // 全作戦クリア後に解禁する試作兵器：戦場全体へ衝撃波。誤射のルールはそのまま（自機以外の味方ロボットと拠点も巻き込む）
+  nova: { special: true, name: '試作型ノヴァ', icon: '☄️', cost: 420, build: 18, type: 'nova', cd: 16, dmg: 160, ffMul: .5, homeDmg: 25, desc: '約16秒ごとに戦場全体へ衝撃波。すべての敵と敵拠点に大ダメージ。自機以外の味方ロボットと拠点も巻き込む。発動3秒前に警告' },
   magnum: { evo: true, base: 'blaster', name: 'マグナム', icon: '🔷', cost: 30, build: 2, type: 'gun', range: 6.5, dmg: 24, cd: .5, speed: 24, pellets: 1, fan: 0, pierce: 1, noArmor: true, size: .24, desc: '大きな弾で威力2倍以上。装甲を貫き2体まで貫通' },
   chain: { evo: true, base: 'blaster', name: 'チェイン', icon: '⚡', cost: 30, build: 2, type: 'gun', range: 6, dmg: 10, cd: .4, speed: 22, pellets: 1, fan: 0, chain: { n: 3, mul: .55, range: 3.2 }, desc: '命中すると近くの敵3体へ電撃が連鎖する（威力55%）。群体に強い' },
   flare: { evo: true, base: 'spread', name: 'フレア', icon: '🔥', cost: 45, build: 3, type: 'gun', range: 4.5, dmg: 14, cd: .9, speed: 16, pellets: 5, fan: .8, pierce: 1, splash: { r: 1.3, mul: .6 }, desc: '扇状の弾が命中すると炸裂し、周りも巻き込む。炸裂は味方にも当たる' },
@@ -303,7 +305,7 @@ STAGES.push({
 });
 // ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
 const FEATURES = {
-  blaster: 's1', spread: 's1', heavy: 's2', missile: 's4', breaker: 'w1', homing: 'w2', bomb: 'w2', laser: 'w3',
+  blaster: 's1', spread: 's1', heavy: 's2', homing: 's4', breaker: 'w1', bomb: 'w2', laser: 'w3',
   tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
   pilot: 's3', evolve: 's5', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
 };
@@ -326,9 +328,10 @@ const FEATURE_INFO = {
 function allowFor(stId, cleared, all) {
   const order = CHAPTERS.flatMap(c => c.stages), idx = order.indexOf(stId), a = {};
   for (const f in FEATURES) a[f] = !!all || order.indexOf(FEATURES[f]) <= idx || (cleared ? !!cleared(FEATURES[f]) : false);
+  a.nova = !!all || (cleared ? order.every(cleared) : false); // 全作戦クリア後
   return a;
 }
-const ALLOW_ALL = (() => { const a = {}; for (const f in FEATURES) a[f] = true; return a; })();
+const ALLOW_ALL = (() => { const a = { nova: true }; for (const f in FEATURES) a[f] = true; return a; })();
 function bodyAllowed(S, b) { const A = S.allow; return A['tier_' + b.tier] && (FEATURES[b.id] ? A[b.id] : true); }
 
 // ---------- 章（物語の区切り。作戦は順に並べる。分岐はしない） ----------
@@ -389,14 +392,25 @@ function newState(stageId, opt) {
   // 敵占領の陣地に守備隊を置く（その場から動かない）
   for (const o of S.outposts) if (o.owner === 'e') (S.st.garrison || []).forEach((type, k) => {
     const a = k / S.st.garrison.length * Math.PI * 2, def = ENEMIES[type];
-    const e = { id: S.nid++, type, def, pi: 0, d: 0, off: 0, hp: def.hp, maxHp: def.hp, r: def.r, cd: rnd(.4, 1), x: o.x + Math.sin(a) * 1.4, z: o.z + Math.cos(a) * 1.4, face: 0, dead: false, flash: 0, firing: false, state: 'guard', armed: true };
+    const e = { id: S.nid++, type, def, pi: 0, d: 0, off: 0, hp: def.hp * (S.st.hpMul || 1), maxHp: def.hp * (S.st.hpMul || 1), r: def.r, cd: rnd(.4, 1), x: o.x + Math.sin(a) * 1.4, z: o.z + Math.cos(a) * 1.4, face: 0, dead: false, flash: 0, firing: false, state: 'guard', armed: true };
     S.enemies.push(e);
   });
   return S;
 }
+// 高難度（全作戦クリア後のやりこみ）：敵が多く・硬く・攻撃が重い。倒したときのポイントは少し多い。数値はおおまか
+const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1.2, goal: 1.4, ebase: 1.5, boss: 1.6, start: 1.4 };
+function hardStage(st) {
+  return Object.assign({}, st, {
+    hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: HARD.pts, startPoints: Math.round(st.startPoints * HARD.start),
+    waves: st.waves.map(w => [w[0], w[1], w[1] === 'boss' ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
+    goalPts: st.goalPts ? Math.round(st.goalPts * HARD.goal / 10) * 10 : st.goalPts,
+    bossHp: (st.bossHp || ENEMIES.boss.hp) * HARD.boss / HARD.hp, // ボスは hpMul も掛かるので、合わせて HARD.boss 倍
+    ebases: (st.ebases || []).map(b => Object.assign({}, b, { hp: Math.round(b.hp * HARD.ebase) })),
+  });
+}
 function newState0(stageId, opt) {
   opt = opt || {};
-  const st = STAGES.find(s => s.id === stageId) || STAGES[0];
+  const st0 = STAGES.find(s => s.id === stageId) || STAGES[0], st = opt.hard ? hardStage(st0) : st0;
   return {
     st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
     ebases: (st.ebases || []).map((b, i) => ({ id: 'eb' + i, x: st.paths[b.path][0][0], z: st.paths[b.path][0][1], ...b, maxHp: b.hp, cd: 1, dead: false, flash: 0, ebase: true, r: CFG.ebaseR })),
@@ -421,7 +435,7 @@ function buildCost(body, wids) {
   time = Math.round(time * 10) / 10;
   return { cost, time };
 }
-function weaponAllowed(S, w) { const d = WEAPONS[w]; return d.evo ? S.loadout.includes(w) : FEATURES[w] ? !!S.allow[w] : true; }
+function weaponAllowed(S, w) { const d = WEAPONS[w]; return d.special ? !!S.allow.nova : d.evo ? S.loadout.includes(w) : FEATURES[w] ? !!S.allow[w] : true; }
 function buildCheck(S, body, wids) {
   if (!body) return 'ボディを選んでください';
   if (!wids.length) return '武器を1つ以上選んでください';
@@ -502,7 +516,7 @@ function makeRobot(S, q) {
     x: f.x, z: f.z, tx: 0, tz: 0,
     hp: b.hp, maxHp: b.hp, spd: b.speed, shield: b.shield || 0, maxShield: b.shield || 0,
     dmgMul: 1 + (p.dmg || 0), rateMul: 1 + (p.rate || 0), crit: p.crit || 0, ptsMul: 1 + (p.pts || 0), rangeMul: 1 + (p.range || 0),
-    weapons: q.wids.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(0, .3) })),
+    weapons: q.wids.map(w => ({ id: w, def: WEAPONS[w], cd: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : rnd(0, .3), cdMax: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : 0 })),
     face: Math.PI, moving: false, warned: false, dead: false, flash: 0, fireT: -9, hitT: -9,
   };
   r.tx = r.x; r.tz = r.z;
@@ -564,7 +578,7 @@ function hurtEnemy(S, e, dmg, owner, noArmor) {
 }
 function killEnemy(S, e, owner) {
   e.dead = true; S.kills++; if (e.def.inst) S.swarmKills++;
-  const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1));
+  const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1) * (S.st.ptsMul || 1));
   S.pts += g; S.earned += g;
   S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss, small: !!e.def.inst, kind: e.type });
   if (e.def.boss) { S.bossKilled = true; say(S, '★ 模倣機を撃破', 'good'); }
@@ -581,7 +595,8 @@ function hurtEbase(S, b, dmg) {
   }
 }
 // 拠点へのダメージ。盾があれば先に盾が受け止める
-function homeTake(S, dmg) {
+function homeTake(S, dmg, raw) {
+  if (!raw) dmg *= S.st.dmgMul || 1; // 高難度：敵の攻撃が重い
   if (S.homeShield > 0) { const a = Math.min(S.homeShield, dmg); S.homeShield -= a; dmg -= a; if (S.homeShield <= 0) { S.homeShield = 0; say(S, '🛡 拠点シールドが破れた', 'bad'); } }
   S.baseHP -= dmg; S.baseDmg += dmg;
 }
@@ -593,6 +608,7 @@ function hurtHome(S, dmg, x, z) {
 function hurtRobot(S, r, dmg, by) {
   if (r.dead || dmg <= 0) return;
   r.flash = .1; r.hitT = S.t;
+  if (!by) dmg *= S.st.dmgMul || 1;
   if (r.shield > 0) { const a = Math.min(r.shield, dmg); r.shield -= a; dmg -= a; if (dmg <= 0) return; }
   r.hp -= dmg;
   const ff = !!by;
@@ -604,6 +620,13 @@ function hurtRobot(S, r, dmg, by) {
   } else if (!r.warned && r.hp < r.maxHp * .3) {
     r.warned = true; say(S, '⚠ ' + r.name + ' 損傷大', 'warn');
   }
+}
+function novaBlast(S, r, d) {
+  for (const e of S.enemies) if (!e.dead) hurtEnemy(S, e, d.dmg, r, true);
+  for (const b of S.ebases) if (!b.dead) hurtEbase(S, b, d.dmg);
+  for (const o of S.robots) if (o !== r && !o.dead) hurtRobot(S, o, d.dmg * d.ffMul * CFG.friendlyFire, r);
+  homeTake(S, d.homeDmg, true); S.fx.push({ type: 'basehit', x: S.home.x, z: S.home.z });
+  S.fx.push({ type: 'nova', x: r.x, z: r.z }); say(S, '☄ 試作型ノヴァ 発動', 'bad');
 }
 function explode(S, r, d) {
   r.dead = true; S.bombs++;
@@ -691,6 +714,14 @@ function updRobot(S, r, dt) {
     const d = w.def;
     if (d.type === 'bomb') { if (nearest(S.enemies, r.x, r.z, d.trigger, true)) { explode(S, r, d); return; } continue; }
     if (d.type === 'beam') { beam(S, r, w, d, dt); continue; }
+    if (d.type === 'nova') { // 試作型ノヴァ：溜めて、戦場全体へ
+      const any = S.enemies.length || S.ebases.some(b => !b.dead);
+      if (!any) { w.cd = Math.max(w.cd, 3.2); continue; } // 敵がいないときは発動直前で待つ
+      w.cd -= dt;
+      if (!w.warned && w.cd <= 3) { w.warned = true; S.fx.push({ type: 'novaWarn', x: r.x, z: r.z }); say(S, '☄ ' + r.name + ' 試作型ノヴァ、発動まで3秒（味方と拠点も巻き込む）', 'warn'); }
+      if (w.cd <= 0) { novaBlast(S, r, d); w.cd = w.cdMax = d.cd; w.warned = false; r.fireT = S.t; }
+      continue;
+    }
     w.cd -= dt; if (w.cd > 0) continue;
     const lk = lockTarget(S, r, d, d.range * pm.range), tg = lk || robotTarget(S, r, d, d.range * pm.range);
     w.onLock = !!lk;
@@ -704,7 +735,7 @@ function updRobot(S, r, dt) {
 
 // ---------- 敵 ----------
 function spawnEnemy(S, type, pi, d0, from) {
-  const def = ENEMIES[type], hm = def.noRamp ? 1 : 1 + S.st.hpRamp * Math.min(1, S.t / S.st.time), hp0 = def.boss && S.st.bossHp ? S.st.bossHp : def.hp; // bossHp：作戦ごとのボスの硬さ
+  const def = ENEMIES[type], hm = (def.noRamp ? 1 : 1 + S.st.hpRamp * Math.min(1, S.t / S.st.time)) * (S.st.hpMul || 1), hp0 = def.boss && S.st.bossHp ? S.st.bossHp : def.hp; // bossHp：作戦ごとのボスの硬さ
   const e = {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
@@ -1007,6 +1038,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
 
-return { FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

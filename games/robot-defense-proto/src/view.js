@@ -114,6 +114,7 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
+  novaCore: new T.MeshBasicMaterial({ color: 0xfff1b0 }), novaRing: new T.MeshBasicMaterial({ color: 0xffa94d }),
   visor: new T.MeshBasicMaterial({ color: 0xaefcff }), visorE: new T.MeshBasicMaterial({ color: 0xffe14d }),
   shadow: new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false }),
   selRing: new T.MeshBasicMaterial({ color: 0x65f6ff, side: T.DoubleSide, transparent: true, opacity: .9 }),
@@ -240,11 +241,12 @@ function mechMesh(weaponIds, sc, mats) {
   inner.add(body, head, legL, legR, visor);
   const slots = [[.6, .7, .12], [-.6, .7, .12], [0, .98, -.42], [0, 1.3, .05]];
   weaponIds.forEach((id0, i) => {
-    const id = (WEAPONS[id0] && WEAPONS[id0].base) || id0;
+    const id = id0 === 'missile' || id0 === 'nova' ? id0 : (WEAPONS[id0] && WEAPONS[id0].base) || id0;
     const [x, y, z] = slots[i % slots.length], p = new T.Group(); p.position.set(x, y, z);
     if (id === 'blaster') { const b = new T.Mesh(G.cyl, M.blaster); b.scale.set(.16, .75, .16); b.rotation.x = Math.PI / 2; b.position.z = .3; p.add(b); }
     else if (id === 'spread') { for (let k = -1; k <= 1; k++) { const b = new T.Mesh(G.cyl, M.spread); b.scale.set(.1, .5, .1); b.rotation.x = Math.PI / 2; b.rotation.y = k * .35; b.position.set(k * .1, 0, .22); p.add(b); } const blk = new T.Mesh(G.box, M.spread); blk.scale.set(.32, .22, .3); p.add(blk); }
     else if (id === 'missile') { const pod = new T.Mesh(G.box, M.missile); pod.scale.set(.42, .26, .42); p.add(pod); for (const k of [-1, 1]) { const m = new T.Mesh(G.cyl, M.bomb); m.scale.set(.09, .3, .09); m.rotation.x = Math.PI / 2.6; m.position.set(k * .1, .12, .1); p.add(m); } }
+    else if (id === 'nova') { const c = new T.Mesh(G.ico, M.novaCore); c.scale.setScalar(.75); c.position.set(0, .15, -.1); p.add(c); const r = new T.Mesh(new T.TorusGeometry(.45, .05, 6, 20), M.novaRing); r.rotation.x = Math.PI / 2; r.position.y = .15; p.add(r); }
     else if (id === 'bomb') { const b = new T.Mesh(G.sph, M.bomb); b.scale.setScalar(.42); p.add(b); }
     else if (id === 'laser') { const b = new T.Mesh(G.cyl, M.laser); b.scale.set(.1, .95, .1); b.rotation.x = Math.PI / 2; b.position.z = .35; p.add(b); const t = new T.Mesh(G.sph, M.blaster); t.scale.setScalar(.16); t.position.z = .82; p.add(t); }
     else if (id === 'heavy') { const b = new T.Mesh(G.cyl, M.heavy); b.scale.set(.28, .6, .28); b.rotation.x = Math.PI / 2; b.position.z = .25; p.add(b); }
@@ -629,6 +631,13 @@ function addFx(f) {
     case 'work': fxMesh(G.ring, 0x7dffa8, S.home.x, S.home.z, .1, 1, 4, .6, true); burst(S.home.x, S.home.z, 0x7dffa8, 14, 4, .18, .7, 1.5); AU.S.built(); return;
     case 'spawn': fxColumn(f.x, f.z, 0x65f6ff); fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .3, 2.2, .4, true); pendingDrop.add(f.id); AU.S.built(); return;
     case 'capture': fxMesh(G.ring, 0x65f6ff, f.x, f.z, .06, .5, 4, .6, true); burst(f.x, f.z, 0x65f6ff, 14, 5, .18, .7); AU.S.capture(); return;
+    case 'novaWarn': fxMesh(G.ring, 0xffd166, f.x, f.z, .1, .5, 6, 1, true); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, .5, 6, 1.6, true); banner('☄ NOVA', '発動まで3秒　味方と拠点も巻き込む', 'boss', 2.4); AU.S.alarm(); return;
+    case 'nova': {
+      const R = Math.max(mapW, mapD) * 1.2;
+      fxMesh(G.sph, 0xfff1b0, f.x, f.z, .5, 1, 9, .5); fxMesh(G.ring, 0xffd166, f.x, f.z, .2, 1, R, 1.1, true); fxMesh(G.ring, 0xffffff, f.x, f.z, .3, 1, R * .8, .8, true);
+      burst(f.x, f.z, 0xfff1b0, 60, 16, .35, 1.2, 1, 1.5); const h = $('hitFlash'); h.classList.add('nova', 'on'); setTimeout(() => h.classList.remove('on', 'nova'), 120);
+      AU.S.blast(true); setTimeout(() => AU.S.blast(true), 120); shake(1.2, .9); return;
+    }
     case 'boss': banner('WARNING', '模倣機（ボス）接近', 'boss', 2.8); AU.S.boss(); shake(.25, .8); return;
     case 'basehit': {
       fxMesh(G.ring, 0xff2d55, f.x, f.z, .2, .3, 1.4, .4, true);
@@ -984,10 +993,10 @@ function renderBuild() {
   if (uiAt >= 0 && !(S.outposts[uiAt] && S.outposts[uiAt].owner === 'p')) uiAt = -1;
   $('bAt').innerHTML = ops.length ? '<div class="sec">出撃地点</div><div class="chips">' + [['拠点', -1]].concat(ops.map(([o, i]) => ['🚩陣地' + o.label, i])).map(([n, i]) => '<button class="chip' + (uiAt === i ? ' on' : '') + '" data-at="' + i + '">' + n + '</button>').join('') + '</div>' : '';
   const wb = uiBody.wbMul || 1;
-  $('wList').innerHTML = Object.entries(WEAPONS).filter(([id]) => RD.weaponAllowed(S, id)).sort((a, b) => !!b[1].evo - !!a[1].evo).map(([id, w]) =>
-    '<button class="wcard' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + '" data-w="' + id + '">' +
+  $('wList').innerHTML = Object.entries(WEAPONS).filter(([id]) => RD.weaponAllowed(S, id)).sort((a, b) => (!!b[1].special * 2 + !!b[1].evo) - (!!a[1].special * 2 + !!a[1].evo)).map(([id, w]) =>
+    '<button class="wcard' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + (w.special ? ' special' : '') + '" data-w="' + id + '">' +
     '<div class="wn"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div>' +
-    '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + '</div>' +
+    '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + (w.special ? '<span class="evotag sp">試作</span>' : '') + '</div>' +
     '<div class="wd">' + esc(w.desc) + '</div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
   $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + S.robots.length + '/' + CFG.deployCap + ' ・ 予約 ' + S.queue.length + '/' + CFG.queueMax +
@@ -1031,7 +1040,9 @@ const nextStage = () => ORDER.find(id => !cleared(id)) || null;
 const stById = id => STAGES.find(s => s.id === id);
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
 function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
-let uiCh = null;
+let uiCh = null, curHard = false;
+const allClear = () => ORDER.every(cleared);
+const clearedH = id => !!(SAVE.clearH && SAVE.clearH[id]);
 // 段階的な解禁：その作戦で使えるもの・その作戦で初めて出るもの
 const allowOf = id => RD.allowFor(id, cleared, !!SAVE.allOpen);
 const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of ORDER) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
@@ -1066,6 +1077,7 @@ function titleScreen() {
       return '<button class="primary big" id="goBtn">' + (st ? (any ? '▶ 続きから' : '▶ はじめる') + '<small>' + esc(st.name + '「' + st.sub + '」') + '</small>' : '▶ 作戦を選ぶ') + '</button>' +
         (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
     '<button class="ghost" id="howBtn">遊び方</button>' +
+    (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
     '<div class="ver">試作版</div></div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
 }
@@ -1102,7 +1114,7 @@ function stageSelect() {
       html += '<button class="scard' + (cleared(id) ? ' clear' : '') + (id === nx ? ' next' : '') + '" data-st="' + id + '">' +
         '<span class="sno">' + stageNo(st) + '</span>' +
         '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
-        '<span class="sr">' + (id === nx ? '<i class="nx">▶ 次</i>' : '') + (cleared(id) ? '<i class="ok">✓ クリア</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
+        '<span class="sr">' + (id === nx ? '<i class="nx">▶ 次</i>' : '') + (cleared(id) ? '<i class="ok">✓ クリア</i>' : '') + (clearedH(id) ? '<i class="hd">🔥 高難度</i>' : '') + rw.map(u => '<i class="rw' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '' : '🎁') + WEAPONS[u.id].icon + '</i>').join('') + '</span></button>';
     }
     html += '</div>';
   }
@@ -1126,7 +1138,9 @@ function stageDetail(stId) {
   const A = allowOf(st.id), rw = A.evolve ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
   showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
     (st.brief ? commHTML(st.brief) : '') +
-    '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
+    (allClear() ? '<div class="tabs diff"><button data-hard="0" class="' + (curHard ? '' : 'on') + '">通常' + (cleared(st.id) ? '<small> ✓</small>' : '') + '</button><button data-hard="1" class="' + (curHard ? 'on hard' : '') + '">🔥 高難度' + (clearedH(st.id) ? '<small> ✓</small>' : '') + '</button></div>' +
+      (curHard ? '<div class="dim" style="margin:-2px 0 4px">敵の数 ×' + RD.HARD.count + '・硬さ ×' + RD.HARD.hp + '・攻撃 ×' + RD.HARD.dmg + '。開始ポイント ×' + RD.HARD.start + '・倒したときのポイント ×' + RD.HARD.pts + '。目標ポイント ×' + RD.HARD.goal + '</div>' : '') : '') +
+    '<div class="goalbox">🎯 ' + esc(goalText(curHard && allClear() ? RD.hardStage(st) : st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' + newHTML(st.id) +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
@@ -1140,19 +1154,20 @@ function stageDetail(stId) {
     saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
   });
   $('sdBack').onclick = () => { uiCh = chOf(stId).id; stageSelect(); }; $('sdGo').onclick = () => startGame(stId);
+  $('ovCard').querySelectorAll('[data-hard]').forEach(b => b.onclick = () => { curHard = b.dataset.hard === '1'; const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y; });
 }
 function startGame(stId) {
   if (stId) curStage = stId;
   exitPilot();
   clearViews(); for (const f of fxs) scene.remove(f.m); fxs.length = 0;
-  S = newState(curStage, { allow: allowOf(curStage), loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S; runSeenE = new Set();
+  S = newState(curStage, { hard: curHard && allClear(), allow: allowOf(curStage), loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S; runSeenE = new Set();
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
   mode = 'play'; paused = false; sel = null; uiBody = null; setMenu(false); cam = oCam;
   for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false); hudCache.infoKey = null;
   hideOv(); updInfo(); fit(); resetView();
   AU.init(); AU.bgmStart(!!S.st.wide); combo.times = []; combo.n = 0; combo.best = 0; parts.length = 0;
-  banner(S.st.name + '「' + S.st.sub + '」', goalText(S.st), 'start', 2.6);
+  banner((S.st.hard ? '🔥高難度　' : '') + S.st.name + '「' + S.st.sub + '」', goalText(S.st), 'start', 2.6);
   for (const f of newFeatures(S.st.id)) { const [i, n] = featLine(f); toast('NEW ' + i + n + ' が使えるようになった', 'good'); }
   toast('ボディ ' + S.bodies.length + '種を確保。開始ポイント ' + S.pts + (S.loadout.length ? '。持ち込み：' + S.loadout.map(id => WEAPONS[id].name).join('・') : ''));
 }
@@ -1160,7 +1175,9 @@ function endGame() {
   mode = 'over'; closeBuild(); sel = null;
   const newly = checkUnlocks(S, SAVE);
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
-  if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; }
+  const wasAll = allClear();
+  if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = SAVE.clear[S.st.id] || { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; if (S.st.hard) { SAVE.clearH = SAVE.clearH || {}; SAVE.clearH[S.st.id] = { t: Math.round(S.t) }; } }
+  const allNow = !wasAll && allClear();
   saveNow();
   const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? '模倣機撃破' : g === 'clear' ? '殲滅完了' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で模倣機を撃破した' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
@@ -1169,11 +1186,12 @@ function endGame() {
   const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
   const tile = (icon, v, label) => '<div class="tile"><span>' + icon + '</span><b>' + v + '</b><small>' + label + '</small></div>';
   showOv(
-    '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
+    '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (S.st.hard ? '🔥 HARD　' : '') + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
     (win && S.st.win ? commHTML([S.st.win]) : '') +
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
+    (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
     '<details class="more"><summary>くわしい記録</summary><div class="res">' +
     (combo.best >= 8 ? '<span>最大連続撃破</span><b>×' + combo.best + '</b>' : '') +

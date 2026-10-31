@@ -43,7 +43,7 @@ const strategies = {
 function runOne(stId, pol) {
   // 初めて遊ぶ人と同じ解禁状態（ALL=1 なら全解禁）。進化パーツは、持ち込みが解禁されていればすべて持ち込める前提
   const allow = RD.allowFor(stId, null, !!process.env.ALL);
-  const S = RD.newState(stId, { allow, loadout: Object.keys(RD.WEAPONS).filter(k => RD.WEAPONS[k].evo) }), spots = [];
+  const S = RD.newState(stId, { hard: !!process.env.HARD, allow, loadout: Object.keys(RD.WEAPONS).filter(k => RD.WEAPONS[k].evo) }), spots = [];
   // 戦略が使えない武器・ボディを指定したら、使えるもので代える
   const fix = c => { if (!c || !c[0]) return c; let [b, w, ...rest] = c; if (!RD.bodyAllowed(S, b)) b = S.bodies.filter(x => x.tier === b.tier)[0] || S.bodies[S.bodies.length - 1];
     w = w.filter(x => RD.weaponAllowed(S, x)); if (!w.length) w = [RD.weaponAllowed(S, 'spread') ? 'spread' : 'blaster']; return [b, w, ...rest]; };
