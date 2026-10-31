@@ -135,5 +135,20 @@
     "controls": "ドラッグ / WASD・矢印キー",
     "playtime": "約5分",
     "added": "2026-10-29"
+  },
+  {
+    "id": "robot-defense",
+    "title": "ROBOT DEFENSE",
+    "description": "侵略者から前線基地を守るタワーディフェンス。ボディと武器を組んだロボットを建造して配置し、自分で乗って戦うこともできる。味方の弾も当たる戦場で、全5章の物語と進化パーツ・高難度を遊べる。",
+    "path": "games/robot-defense/",
+    "thumbnail": "games/robot-defense/thumb.jpg",
+    "tags": [
+      "シミュレーション",
+      "アクション",
+      "3D"
+    ],
+    "controls": "タップ・ドラッグ / マウス・キーボード",
+    "playtime": "1作戦 約2〜4分",
+    "added": "2026-10-31"
   }
 ]

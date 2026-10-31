@@ -83,6 +83,16 @@ const WEAPONS = {
   buster: { evo: true, base: 'heavy', name: 'バスター', icon: '💥', cost: 65, build: 4, type: 'gun', range: 12, dmg: 80, cd: 2.4, speed: 22, pellets: 1, fan: 0, noArmor: true, size: .32, pick: 'tough', splash: { r: 2.4, mul: .6 }, desc: '狙撃弾が着弾で爆発し、周りも巻き込む。爆発は味方にも当たる' },
   swarmer: { evo: true, base: 'homing', name: 'スウォーム', icon: '🐝', cost: 35, build: 2, type: 'gun', range: 7, dmg: 7, cd: .8, speed: 8, pellets: 4, fan: 1.4, homing: 3.5, noShield: true, desc: '追尾弾が4発に増える。盾に防がれない' },
   pile: { evo: true, base: 'breaker', name: 'パイル', icon: '📌', cost: 40, build: 3, type: 'gun', range: 12, dmg: 150, cd: 3.4, speed: 30, pellets: 1, fan: 0, pierce: 1, noArmor: true, noShield: true, size: .22, pick: 'tough', desc: '遠くまで届く杭を撃ち込む。射程内で一番硬い敵を狙い、装甲も盾も貫く' },
+  rush: { evo: true, base: 'blaster', name: 'ラッシュ', icon: '💨', cost: 30, build: 2, type: 'gun', range: 6, dmg: 10, cd: .4, speed: 22, pellets: 1, fan: 0, streak: { max: 6, rate: .1, reset: 5 }, desc: '続けて倒すほど連射が上がる（最大+60%。5秒倒さないと戻る）' },
+  storm: { evo: true, base: 'spread', name: 'ストーム', icon: '🌪', cost: 45, build: 3, type: 'gun', range: 4.5, dmg: 13, cd: .9, speed: 16, pellets: 5, fan: .9, pierce: 2, streak: { max: 6, rate: .06, reset: 4, pellets: true }, desc: '倒すほど弾数と連射が増える（最大+3発・+36%。4秒倒さないと戻る）' },
+  wall: { evo: true, base: 'spread', name: 'ウォール', icon: '🧱', cost: 40, build: 3, type: 'gun', range: 4.5, dmg: 16, cd: .9, speed: 16, pellets: 5, fan: .8, pierce: 3, cancel: 1, desc: '弾が敵の弾を1発ずつ打ち消す。威力+15%。射撃型や模倣機の弾から味方を守る' },
+  jackpot: { evo: true, base: 'heavy', name: 'ジャックポット', icon: '🎰', cost: 60, build: 4, type: 'gun', range: 14, dmg: 99, cd: 2.4, speed: 26, pellets: 1, fan: 0, pierce: 3, noArmor: true, size: .3, pick: 'tough', jackpot: true, desc: '1発で2体目以降を倒すと、その敵のポイントが2倍。威力+10%、4体まで貫通' },
+  bulwark: { evo: true, base: 'heavy', name: 'ブルワーク', icon: '🛡', cost: 60, build: 4, type: 'gun', range: 12, dmg: 85, cd: 2.2, speed: 24, pellets: 1, fan: 0, pierce: 2, noArmor: true, size: .34, pick: 'tough', cancel: 3, stun: 1, desc: '弾が敵の弾を3つまで打ち消す。当たった敵は1秒止まる' },
+  hunter: { evo: true, base: 'homing', name: 'ハンター', icon: '🦅', cost: 30, build: 2, type: 'gun', range: 8, dmg: 12, cd: .8, speed: 9, pellets: 2, fan: .9, homing: 4, noShield: true, pick: 'danger', desc: '危険な敵（射撃・突進・回復・機雷・特攻・砲撃・模倣機）を優先して追う。威力+20%' },
+  drain: { evo: true, base: 'breaker', name: 'ドレイン', icon: '🩸', cost: 25, build: 2, type: 'gun', range: 2.8, dmg: 22, cd: .7, speed: 14, pellets: 6, fan: .9, noArmor: true, noShield: true, drain: 6, desc: 'このロボットが敵を倒すたびにHPが6回復する。威力+10%' },
+  parry: { evo: true, base: 'breaker', name: 'パリィ', icon: '🤺', cost: 30, build: 2, type: 'gun', range: 2.8, dmg: 20, cd: .7, speed: 14, pellets: 6, fan: .9, noArmor: true, noShield: true, parry: true, desc: '正面近くに来た敵の弾を弾き返し、1.5倍にして敵へ返す' },
+  drill: { evo: true, base: 'laser', name: 'ドリル', icon: '🔩', cost: 75, build: 5, type: 'beam', range: 10, dps: 14, width: .4, ffMul: 1.5, noBase: true, drill: true, desc: '同じ敵に当て続けるほど威力が上がる（最大1.8倍）。硬い敵やボスに。直線上の味方には1.5倍' },
+  sniper: { evo: true, base: 'laser', name: 'スナイパー', icon: '🔭', cost: 75, build: 5, type: 'beam', range: 13, dps: 13, width: .3, ffMul: 1.5, noBase: true, sniper: true, desc: '射程が長く、遠くの敵ほど威力が上がる（最大1.5倍）。直線上の味方には1.5倍' },
   bomb: { name: '自爆ユニット', icon: '💣', cost: 5, build: 1, type: 'bomb', trigger: 1.4, radius: 5, dmg: 300, desc: '敵が近づくと広範囲を吹き飛ばして自爆する。近くの味方も巻き込む' },
 };
 
@@ -107,6 +117,15 @@ const ENEMIES = {
   carrier: { name: '輸送艦', hp: 320, speed: .8, r: 1.2, pts: 60, baseDps: 3, drop: { type: 'swarm', n: 5, every: 3.5 }, desc: '経路を進みながら群体を降ろし続ける' },
   artillery: { name: '砲撃型', hp: 90, speed: 1.1, r: .7, pts: 40, baseDps: 2, artillery: { range: 15, dmg: 14, cd: 3.2, shotSpeed: 7 }, desc: '拠点から遠くで止まり、拠点を砲撃し続ける' },
   engineer: { name: '工兵', hp: 60, speed: 1.4, r: .5, pts: 35, baseDps: .5, rebuild: { time: 8, hpRate: .5 }, desc: '壊された敵拠点を再建する。出撃が止まった方面からでも現れる' },
+  // 第3章：模倣兵（ロボットを真似た小型機。ボスと同じく武器で撃つ）
+  mimic: { name: '模倣兵', hp: 90, speed: 1.2, r: .6, pts: 30, baseDps: 2, weapons: ['spread'], hold: 4, fireMul: 1.8, mscale: 1.15, desc: 'ロボットを真似た小型機。散弾で撃ってくる' },
+  mimicArt: { name: '模倣砲', hp: 120, speed: 1, r: .7, pts: 45, baseDps: 2, weapons: ['missile'], hold: 7.5, fireMul: 1.6, mscale: 1.35, desc: 'ミサイルを撃つ模倣機。固まったロボットを爆風でまとめて削る' },
+  boss2: { name: '模倣機・改', hp: 1300, speed: .8, noRamp: true, r: 1.2, pts: 400, baseDps: 0, fireMul: 1.4, hold: 6.5, boss: true, weapons: ['heavy', 'missile', 'spread'], mscale: 2.5, desc: '改良された模倣機。狙撃・ミサイル・散弾を使い分ける' },
+  // 第4章：深淵の敵
+  wraith: { name: '深淵体', hp: 35, speed: 2.3, r: .45, pts: 10, baseDps: 1.5, phase: { on: 2, off: 1 }, desc: '時々姿が揺らぎ、その間は攻撃が当たらない' },
+  warper: { name: '跳躍体', hp: 70, speed: 1.2, r: .55, pts: 25, baseDps: 2, warp: { every: 4, dist: 5 }, desc: '数秒ごとに経路の先へ跳ぶ' },
+  aegis: { name: '障壁体', hp: 140, speed: 1, r: .7, pts: 40, baseDps: 2, aura: { range: 3.2 }, desc: '周りの敵が受けるダメージを半分にする。先に倒したい' },
+  omega: { name: 'OMEGA原型', hp: 3600, speed: .45, noRamp: true, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
   // ボス：こちらのロボットと同じ「ボディ＋武器」で組まれた敵。体当たりはせず、射撃でロボットと拠点を攻撃する
   boss: { name: '模倣機', hp: 1000, speed: .9, noRamp: true, r: 1.1, pts: 300, baseDps: 0, fireMul: 1.6, hold: 5.5, boss: true, body: 'fortress', weapons: ['blaster', 'missile'], desc: 'こちらのロボットを模倣した赤い機体。ロボットや拠点が射程に入ると立ち止まって撃つ' },
 };
@@ -303,15 +322,225 @@ STAGES.push({
     [180, 'healer', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
   ],
 });
+// ---------- 第2〜4章 ----------
+// 出現表をまとめて作る：[種類, 開始秒, 終了秒, 間隔秒, 数, 出現間隔, 経路]。後半ほど数が少し増える
+function waveGen(list) {
+  const out = [];
+  for (const [type, t0, t1, every, n, gap, path] of list) {
+    for (let t = t0; t <= t1; t += every) out.push([t, type, Math.max(1, Math.round(n * (1 + .6 * (t - t0) / Math.max(1, t1 - t0)))), gap, path === undefined ? '*' : path]);
+  }
+  return out;
+}
+// 中央の拠点へ放射状に伸びる経路（途中で2回曲がる）
+function radialPaths(n, R, rot, bend) {
+  const P = (r, a) => [Math.round(Math.sin(a) * r * 10) / 10, Math.round(-Math.cos(a) * r * 10) / 10];
+  const out = [];
+  for (let i = 0; i < n; i++) { const a = rot + i * Math.PI * 2 / n; out.push([P(R, a), P(R * .72, a), P(R * .72, a + bend), P(R * .42, a + bend), P(R * .42, a - bend * .6), P(R * .18, a - bend * .6), P(3, a), [0, 0]]); }
+  return out;
+}
+const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
+(() => {
+  // ===== 第2章 反攻 =====
+  STAGES.push({
+    id: 'a1', name: '2-1', sub: '回収', goal: 'points', goalPts: 900, time: 240, startPoints: 320, hpRamp: .6, wide: true,
+    brief: ['敵拠点群より、コア反応を多数確認。', '輸送艦を確認。群体を降ろし続ける。優先して撃破せよ。資源を回収し、反攻の準備を整える。'], win: '資源、確保。反攻準備、完了。',
+    intro: '輸送艦は経路を進みながら群体を降ろし続ける。硬いので狙撃やミサイルで早めに落としたい。',
+    map: { minX: -26, maxX: 26, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.1 },
+    outposts: [[-8, -3, 'A', 'p'], [8, -6, 'B', 'p'], [0, 12, 'C'], [-18, -16, 'D', 'e'], [18, 20, 'E', 'e']],
+    garrison: ['shooter', 'shooter', 'armor', 'normal', 'normal'],
+    paths: [
+      [[0, -28], [0, -18], [-12, -18], [-12, -8], [-3, -8], [-3, -2], [0, 0]],
+      [[24, 26], [24, 12], [10, 12], [10, 4], [3, 4], [0, 0]],
+      [[-24, 26], [-24, 14], [-14, 14], [-14, 5], [-4, 5], [0, 0]],
+    ],
+    ebases: [{ path: 0, hp: 800, pts: 180, turret: TUR }, { path: 1, hp: 700, pts: 150 }, { path: 2, hp: 700, pts: 150 }],
+    waves: waveGen([
+      ['normal', 3, 220, 18, 10, .5], ['shooter', 12, 220, 26, 3, 1.4], ['swarm', 20, 220, 22, 30, .1], ['armor', 40, 220, 34, 3, 1.6],
+      ['carrier', 30, 200, 45, 1, 0], ['kamikaze', 50, 220, 40, 8, .25], ['shield', 70, 220, 38, 4, 1.2], ['dasher', 90, 220, 30, 4, 1.2],
+    ]),
+  });
+  STAGES.push({
+    id: 'a2', name: '2-2', sub: '補給路', goal: 'escort', time: 260, startPoints: 340, hpRamp: .6, wide: true,
+    brief: ['北の前線陣地へ、解析用のコアを輸送する。', '補給車を護衛せよ。砲撃型を確認。遠くから拠点を撃ってくる。'], win: '補給車、到着。コアの解析に着手する。',
+    intro: '補給車は点線の道を北へ進む。敵が近くにいると止まって攻撃を受ける。道を空けてやろう。砲撃型は遠くで止まって拠点を砲撃する。',
+    map: { minX: -24, maxX: 24, minZ: -36, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.2 },
+    convoy: { path: [[0, 22], [0, 14], [-8, 14], [-8, 0], [6, 0], [6, -14], [0, -14], [0, -31]], hp: 500, speed: .6 },
+    outposts: [[-14, 20, 'A', 'p'], [12, 16, 'B', 'p'], [14, -6, 'C'], [-14, -18, 'D', 'e']],
+    garrison: ['shooter', 'shooter', 'armor', 'normal'],
+    paths: [
+      [[-22, -30], [-22, -6], [-12, -6], [-12, 8], [-4, 8], [-4, 20], [0, 26]],
+      [[22, -34], [22, -20], [12, -20], [12, 6], [2, 6], [2, 18], [0, 26]],
+      [[20, 28], [20, 22], [8, 22], [8, 26], [0, 26]],
+    ],
+    ebases: [{ path: 0, hp: 750, pts: 160, turret: TUR }, { path: 1, hp: 750, pts: 160 }],
+    waves: waveGen([
+      ['normal', 3, 240, 16, 8, .55], ['shooter', 14, 240, 28, 3, 1.4], ['swarm', 24, 240, 24, 26, .12], ['armor', 44, 240, 36, 3, 1.6],
+      ['artillery', 60, 220, 55, 1, 0], ['dasher', 30, 240, 32, 4, 1.2], ['kamikaze', 70, 240, 44, 8, .25], ['carrier', 100, 220, 70, 1, 0],
+    ]),
+  });
+  (() => {
+    const paths = radialPaths(4, 30, Math.PI / 4, .3);
+    STAGES.push({
+      id: 'a3', name: '2-3', sub: '解析', goal: 'time', time: 180, holdWhy: 'コアの解析完了まで拠点を守る', startPoints: 420, hpRamp: .5, wide: true,
+      brief: ['コアの解析を開始。完了まで三分。', '解析中は基地の処理能力が落ちる。持ちこたえよ。工兵を確認。壊した敵拠点を再建する。'], win: '解析、完了。コアは、侵略者の学習器官と推定。',
+      intro: '時間まで拠点を守れば勝ち。工兵は壊された敵拠点を建て直す。再建されると、その方面の敵がまた増える。',
+      map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2, z: -3.4 }, view: { zoom: 2.3 },
+      outposts: [0, 1, 2, 3].map(k => [Math.round(Math.sin(k * Math.PI / 2) * 11), Math.round(-Math.cos(k * Math.PI / 2) * 11), 'ABCD'[k], 'p']),
+      paths,
+      ebases: paths.map((_, i) => ({ path: i, hp: 600, pts: 140, turret: i % 2 ? null : TUR })),
+      waves: waveGen([
+        ['normal', 3, 170, 16, 7, .5], ['swarm', 10, 170, 20, 28, .09], ['shooter', 16, 170, 28, 3, 1.3], ['engineer', 50, 160, 40, 2, 3],
+        ['carrier', 50, 150, 60, 1, 0], ['artillery', 90, 160, 80, 1, 0], ['splitter', 30, 170, 34, 4, .9], ['shield', 60, 170, 34, 3, 1.1], ['flyer', 100, 170, 34, 5, .5],
+      ]),
+    });
+  })();
+  STAGES.push({
+    id: 'a4', name: '2-4', sub: '楔', goal: 'boss', bossName: '模倣機・改', time: 240, startPoints: 380, hpRamp: .6, wide: true,
+    brief: ['敵前線に大型反応。照合……模倣機の改良型。', '侵略者の学習速度、想定以上。これを撃破し、反攻の楔とする。'], win: '改良型、撃破。だが、敵の学習は止まらない。',
+    intro: '60秒ごろ、改良された模倣機が北から来る。狙撃・ミサイル・散弾を使い分ける。倒せば勝ち。',
+    map: { minX: -24, maxX: 24, minZ: -38, maxZ: 26 }, base: { x: 0, z: 20 }, factory: { x: 2.5, z: 17.5 }, view: { zoom: 2.3 },
+    outposts: [[-9, 8, 'A', 'p'], [9, 8, 'B', 'p'], [0, -8, 'C'], [-14, -22, 'D', 'e'], [14, -22, 'E', 'e']],
+    garrison: ['shooter', 'shooter', 'shield', 'armor'],
+    paths: [
+      [[0, -36], [0, -26], [-6, -26], [-6, -14], [6, -14], [6, 0], [-3, 0], [-3, 12], [0, 20]],
+      [[-22, -30], [-22, -6], [-14, -6], [-14, 14], [-5, 14], [0, 20]],
+      [[22, -30], [22, -6], [14, -6], [14, 14], [5, 14], [0, 20]],
+    ],
+    ebases: [{ path: 1, hp: 700, pts: 160, turret: TUR }, { path: 2, hp: 700, pts: 160, turret: TUR }],
+    waves: [[60, 'boss2', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 230, 16, 9, .5], ['shooter', 12, 230, 24, 4, 1.2], ['swarm', 20, 230, 22, 34, .1], ['armor', 40, 230, 34, 4, 1.4],
+      ['dasher', 30, 230, 30, 5, 1], ['artillery', 80, 220, 60, 1, 0], ['engineer', 100, 220, 50, 2, 3], ['healer', 70, 230, 40, 2, 3], ['carrier', 120, 200, 60, 1, 0],
+    ])),
+  });
+  // ===== 第3章 模倣 =====
+  STAGES.push({
+    id: 'm1', name: '3-1', sub: '写し身', goal: 'points', goalPts: 800, time: 240, startPoints: 360, hpRamp: .6, wide: true,
+    brief: ['敵、小型の模倣機を量産。我が方の兵装を使用している。', '模倣兵と呼称する。散弾を撃つ。距離を取って対処せよ。'], win: '資源、確保。模倣兵の構造を記録した。',
+    intro: '模倣兵はロボットを真似た小型機で、散弾で撃ってくる。射程の外から削るか、乗って一気に倒そう。',
+    map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, -4, 'A', 'p'], [9, 5, 'B', 'p'], [-14, 14, 'C'], [16, -16, 'D', 'e']],
+    garrison: ['mimic', 'mimic', 'shooter', 'armor'],
+    paths: radialPaths(3, 30, Math.PI / 6, .35),
+    ebases: [{ path: 0, hp: 800, pts: 170, turret: TUR }, { path: 1, hp: 800, pts: 170 }, { path: 2, hp: 800, pts: 170 }],
+    waves: waveGen([
+      ['normal', 3, 230, 16, 10, .45], ['mimic', 20, 230, 26, 3, 1.4], ['swarm', 14, 230, 20, 36, .09], ['shooter', 30, 230, 30, 4, 1.2],
+      ['armor', 50, 230, 36, 4, 1.3], ['kamikaze', 60, 230, 40, 10, .2], ['flyer', 80, 230, 36, 6, .5], ['carrier', 70, 200, 60, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'm2', name: '3-2', sub: '砲列', goal: 'bases', time: 240, startPoints: 400, hpRamp: .6, wide: true,
+    brief: ['敵、ミサイル装備の模倣機を配備。', '模倣砲と呼称する。爆風で密集した機体をまとめて狙う。散開して敵拠点を叩け。'], win: '砲列、沈黙。敵拠点、全壊。',
+    intro: '敵拠点3つをすべて壊せば勝ち。模倣砲はミサイルを撃つ。ロボットを固めて置くと、まとめてやられる。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-8, 8, 'A', 'p'], [8, 8, 'B', 'p'], [0, -12, 'C'], [-18, -14, 'D', 'e'], [18, -14, 'E', 'e']],
+    garrison: ['mimicArt', 'mimic', 'shooter', 'armor'],
+    paths: radialPaths(3, 28, 0, .4),
+    ebases: [{ path: 0, hp: 800, pts: 200, turret: TUR }, { path: 1, hp: 700, pts: 180, turret: TUR }, { path: 2, hp: 700, pts: 180 }],
+    waves: waveGen([
+      ['normal', 3, 230, 16, 8, .5], ['mimicArt', 40, 230, 46, 1, 0], ['mimic', 16, 230, 28, 3, 1.3], ['swarm', 20, 230, 22, 34, .1],
+      ['shield', 40, 230, 32, 4, 1.2], ['healer', 60, 230, 44, 2, 3], ['engineer', 90, 220, 50, 2, 3], ['splitter', 50, 230, 34, 5, .9],
+    ]),
+  });
+  STAGES.push({
+    id: 'm3', name: '3-3', sub: '双子', goal: 'boss', bossCount: 2, bossName: '模倣機', time: 270, startPoints: 420, hpRamp: .6, wide: true,
+    brief: ['大型反応、二。模倣機と、その改良型。', '同時に相手取るのは危険。片方ずつ、確実に撃破せよ。'], win: '二機、撃破。損耗率、許容範囲内。',
+    intro: '40秒に模倣機、100秒に模倣機・改が別の方向から来る。2機とも倒せば勝ち。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, 12, 'C', 'p'], [0, -16, 'D', 'e']],
+    garrison: ['mimic', 'mimic', 'mimicArt', 'shooter'],
+    paths: radialPaths(4, 28, 0, .3),
+    ebases: [{ path: 1, hp: 800, pts: 170 }, { path: 3, hp: 800, pts: 170, turret: TUR }],
+    waves: [[40, 'boss', 1, 0, 0], [100, 'boss2', 1, 0, 2]].concat(waveGen([
+      ['normal', 3, 260, 18, 7, .5], ['mimic', 24, 260, 40, 2, 1.3], ['swarm', 12, 260, 22, 30, .09], ['mimicArt', 90, 260, 70, 1, 0],
+      ['dasher', 30, 260, 36, 4, 1], ['kamikaze', 50, 260, 44, 8, .2], ['armor', 70, 260, 40, 3, 1.3],
+    ])),
+  });
+  STAGES.push({
+    id: 'm4', name: '3-4', sub: '工場', goal: 'clear', time: 230, startPoints: 420, hpRamp: .5, wide: true,
+    brief: ['模倣機の生産拠点を特定。', '内部より大量に出撃中。すべて撃破せよ。一機も残すな。'], win: '生産拠点、沈黙。最後の通信を傍受。発信源は、地下深部。',
+    intro: '押し寄せる敵をすべて倒せば勝ち。模倣兵と模倣砲が大量に混ざる。',
+    map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2, z: -3.4 }, view: { zoom: 2.3 },
+    outposts: [0, 1, 2, 3].map(k => [Math.round(Math.sin(Math.PI / 4 + k * Math.PI / 2) * 11), Math.round(-Math.cos(Math.PI / 4 + k * Math.PI / 2) * 11), 'ABCD'[k], 'p']),
+    paths: radialPaths(4, 30, 0, .3),
+    ebases: [0, 1, 2, 3].map(i => ({ path: i, hp: 700, pts: 150, turret: i % 2 ? TUR : null })),
+    waves: waveGen([
+      ['swarm', 2, 150, 10, 40, .06], ['mimic', 10, 150, 16, 4, 1], ['mimicArt', 30, 150, 30, 2, 1.5], ['normal', 5, 150, 14, 10, .4],
+      ['swarmFast', 40, 150, 26, 40, .06], ['kamikaze', 25, 150, 30, 10, .2], ['armor', 50, 150, 30, 4, 1.2], ['swarmHeavy', 80, 150, 30, 30, .08],
+    ]),
+  });
+  // ===== 第4章 深淵 =====
+  STAGES.push({
+    id: 'v1', name: '4-1', sub: '裂け目', goal: 'points', goalPts: 1100, time: 240, startPoints: 420, hpRamp: .6, wide: true,
+    pathOpen: { 2: 70, 3: 140 },
+    brief: ['地下深部より、未知の反応。地表に裂け目が開きつつある。', '深淵体と呼称する。時々、攻撃が通らない。新たな裂け目に備えよ。'], win: '資源、確保。裂け目の拡大、継続中。',
+    intro: '途中で新しい裂け目（敵の出口）が開く。深淵体は姿が揺らいでいる間、攻撃が当たらない。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, -5, 'A', 'p'], [9, 5, 'B', 'p'], [-12, 14, 'C'], [14, -14, 'D']],
+    paths: radialPaths(4, 28, Math.PI / 8, .35),
+    waves: waveGen([
+      ['normal', 3, 230, 14, 10, .45], ['wraith', 10, 230, 18, 6, .5], ['swarm', 16, 230, 20, 36, .09], ['mimic', 30, 230, 30, 3, 1.3],
+      ['shooter', 24, 230, 28, 4, 1.2], ['armor', 50, 230, 34, 4, 1.3], ['wraith', 90, 230, 22, 10, .3], ['flyer', 70, 230, 36, 6, .5],
+    ]),
+  });
+  STAGES.push({
+    id: 'v2', name: '4-2', sub: '闇', goal: 'time', time: 180, holdWhy: '裂け目が閉じるまで拠点を守る', dark: 7.5, startPoints: 420, hpRamp: .7, wide: true,
+    pathOpen: { 3: 60 },
+    brief: ['裂け目より黒い霧。視界、著しく低下。', '敵は、ロボットと拠点の近くでしか視認できない。跳躍体を確認。経路を跳んで迫る。裂け目が閉じるまで持ちこたえよ。'], win: '裂け目、閉鎖。霧が晴れる。',
+    intro: '暗い戦場。敵はロボット・拠点・陣地の近くでしか見えない。跳躍体は数秒ごとに経路の先へ跳ぶ。時間まで拠点を守れば勝ち。',
+    map: { minX: -28, maxX: 28, minZ: -28, maxZ: 28 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, 12, 'C', 'p'], [0, -12, 'D', 'p']],
+    paths: radialPaths(4, 26, 0, .32),
+    waves: waveGen([
+      ['normal', 3, 170, 11, 14, .4], ['wraith', 8, 170, 14, 12, .35], ['warper', 20, 170, 20, 5, 1], ['swarm', 14, 170, 16, 50, .07], ['armor', 40, 170, 30, 4, 1.2],
+      ['kamikaze', 30, 170, 26, 10, .2], ['mimic', 40, 170, 30, 3, 1.2], ['flyer', 50, 170, 30, 6, .5], ['swarmFly', 80, 170, 30, 30, .1],
+    ]),
+  });
+  STAGES.push({
+    id: 'v3', name: '4-3', sub: '障壁', goal: 'bases', time: 260, startPoints: 440, hpRamp: .6, wide: true,
+    pathOpen: { 3: 90 },
+    brief: ['裂け目の奥に、敵拠点を確認。', '障壁体を確認。周りの敵の損傷を半減させる。先に排除せよ。敵拠点を破壊し、深部への道を開く。'], win: '敵拠点、全壊。深部への進路、確保。',
+    intro: '敵拠点3つをすべて壊せば勝ち。障壁体の周りの敵はダメージが半分になる。先に倒そう。90秒で新しい裂け目が開く。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, 6, 'A', 'p'], [9, 6, 'B', 'p'], [0, -10, 'C'], [-16, -16, 'D', 'e'], [16, -16, 'E', 'e']],
+    garrison: ['aegis', 'mimic', 'mimic', 'shooter'],
+    paths: radialPaths(4, 28, Math.PI / 4, .3),
+    ebases: [{ path: 0, hp: 1000, pts: 200, turret: TUR }, { path: 1, hp: 900, pts: 180, turret: TUR }, { path: 2, hp: 900, pts: 180 }],
+    waves: waveGen([
+      ['normal', 3, 250, 14, 10, .45], ['aegis', 20, 250, 30, 1, 0], ['wraith', 10, 250, 18, 8, .4], ['warper', 30, 250, 26, 3, 1.2],
+      ['mimic', 24, 250, 28, 3, 1.2], ['mimicArt', 50, 250, 44, 1, 0], ['swarm', 14, 250, 20, 38, .08], ['healer', 60, 250, 40, 2, 3], ['armor', 40, 250, 34, 4, 1.3],
+    ]),
+  });
+  STAGES.push({
+    id: 'v4', name: '4-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA原型', time: 420, startPoints: 600, hpRamp: .5, wide: true, dark: 9,
+    pathOpen: { 1: 100, 3: 200 },
+    brief: ['深部より、最大級の反応。', '照合……我が方の全機体、全兵装の特徴を含む。侵略者は、これを「OMEGA」と呼んでいる。', '全機、出撃。これを止めよ。'],
+    win: 'OMEGA原型、沈黙。……反応、消失せず。深淵へ、後退していく。',
+    intro: '最終作戦。OMEGA原型は損傷が進むと形を変え、深淵の敵を呼ぶ。暗い戦場で、途中に裂け目も開く。倒せば作戦完了。',
+    map: { minX: -32, maxX: 32, minZ: -36, maxZ: 32 }, base: { x: 0, z: 4 }, factory: { x: 2.5, z: 1.5 }, view: { zoom: 2.3 },
+    outposts: [[-10, 8, 'A', 'p'], [10, 8, 'B', 'p'], [0, -8, 'C', 'p'], [-18, -14, 'D'], [18, -14, 'E']],
+    paths: [
+      [[0, -34], [0, -22], [-8, -22], [-8, -12], [4, -12], [4, -2], [0, -2], [0, 4]],
+      [[-30, -20], [-20, -20], [-20, 0], [-10, 0], [-10, 6], [0, 4]],
+      [[30, -20], [20, -20], [20, 0], [10, 0], [10, 6], [0, 4]],
+      [[0, 30], [0, 20], [-8, 20], [-8, 12], [0, 12], [0, 4]],
+    ],
+    waves: [[30, 'omega', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 400, 16, 7, .45], ['wraith', 10, 400, 20, 6, .4], ['swarm', 16, 400, 24, 30, .09], ['mimic', 30, 400, 40, 2, 1.3],
+      ['warper', 40, 400, 28, 3, 1.2], ['aegis', 60, 400, 50, 1, 0], ['mimicArt', 80, 400, 50, 1, 0], ['kamikaze', 50, 400, 36, 10, .2], ['flyer', 90, 400, 40, 6, .5],
+    ])),
+  });
+})();
+
 // ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
 const FEATURES = {
   blaster: 's1', spread: 's1', heavy: 's2', homing: 's4', breaker: 'w1', bomb: 'w2', laser: 'w3',
   tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
-  pilot: 's3', evolve: 's5', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
+  pilot: 's3', evolve: 's5', slot3: 'm1', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
 };
 // 解禁したときに見せる説明（武器・ボディ以外）
 const FEATURE_INFO = {
   pilot: { icon: '🎮', name: '自操作', desc: 'ロボットに乗って自分で戦う。連射・威力・射程が上がるが、機体は動かず前しか見えない' },
+  slot3: { icon: '🧬', name: '持ち込み枠 +1', desc: '進化パーツを3つまで持ち込める' },
   evolve: { icon: '🧬', name: '進化パーツの開発', desc: '使った武器でクリアすると、その武器の進化パーツが解禁される（持ち込みは第1章から）' },
   repair: { icon: '🔧', name: '拠点修理', desc: '建造画面の「拠点工事」で、拠点のHPを回復できる' },
   reserve: { icon: '📋', name: '予約', desc: '出撃中が上限でも作れる。誰かが倒れたら、すぐ出撃する' },
@@ -343,9 +572,15 @@ const CHAPTERS = [
   { id: 'c1', no: '第1章', title: '四方の前線', stages: ['w1', 'w2', 'w3', 'w4'],
     intro: ['包囲網、四方に展開。', '敵拠点群を確認。戦域を拡大する。', '前線を維持し、突破口を開け。'],
     outro: ['包囲網、北端を突破。', '敵拠点より回収した反応体を「コア」と呼称する。', '解析を開始。反攻に移る。'] },
-  { id: 'c2', no: '第2章', title: '反攻', stages: [], soon: true },
-  { id: 'c3', no: '第3章', title: '模倣', stages: [], soon: true },
-  { id: 'c4', no: '第4章', title: '深淵', stages: [], soon: true },
+  { id: 'c2', no: '第2章', title: '反攻', stages: ['a1', 'a2', 'a3', 'a4'],
+    intro: ['コアの解析に着手する。', '侵略者の拠点から、さらにコアを回収せよ。', '反攻を開始する。'],
+    outro: ['コアは、侵略者の学習器官と判明。', '侵略者は、倒した相手を学び、写し取る。', '敵の生産拠点より、模倣機の量産を確認。'] },
+  { id: 'c3', no: '第3章', title: '模倣', stages: ['m1', 'm2', 'm3', 'm4'],
+    intro: ['敵、我が方の兵装を写した機体を量産。', '戦うほど、敵は我々に似ていく。', '生産拠点を叩け。'],
+    outro: ['生産拠点、沈黙。', '傍受した通信の発信源は、地下深部。', '地表に、裂け目が開き始めている。'] },
+  { id: 'c4', no: '第4章', title: '深淵', stages: ['v1', 'v2', 'v3', 'v4'],
+    intro: ['裂け目の奥、深部より未知の反応。', '侵略者の中枢と推定。', '最終作戦に移行する。'],
+    outro: ['OMEGA原型、深淵へ後退。追跡、不能。', '前線基地、防衛完了。', '……指揮官ユニット、任務継続を推奨する。'] },
 ];
 
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
@@ -393,6 +628,7 @@ function newState(stageId, opt) {
   for (const o of S.outposts) if (o.owner === 'e') (S.st.garrison || []).forEach((type, k) => {
     const a = k / S.st.garrison.length * Math.PI * 2, def = ENEMIES[type];
     const e = { id: S.nid++, type, def, pi: 0, d: 0, off: 0, hp: def.hp * (S.st.hpMul || 1), maxHp: def.hp * (S.st.hpMul || 1), r: def.r, cd: rnd(.4, 1), x: o.x + Math.sin(a) * 1.4, z: o.z + Math.cos(a) * 1.4, face: 0, dead: false, flash: 0, firing: false, state: 'guard', armed: true };
+    if (def.weapons) e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) }));
     S.enemies.push(e);
   });
   return S;
@@ -417,7 +653,8 @@ function newState0(stageId, opt) {
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
     homeObj: { id: 'home', name: '拠点砲台', x: st.base.x, z: st.base.z, cd: 0, face: 0, ptsMul: 1 }, homeGun: 0, homeShield: 0, homeShieldMax: 0, works: {},
     outposts: (st.outposts || []).map((o, i) => ({ id: 'op' + i, x: o[0], z: o[1], owner: o[3] || null, prog: o[3] === 'p' ? 1 : o[3] === 'e' ? -1 : 0, enemyOrig: o[3] === 'e', label: o[2] || String.fromCharCode(65 + i) })),
-    spawned: 0,
+    spawned: 0, opened: {}, bossKills: 0,
+    convoy: st.convoy ? (() => { const P = makePath(st.convoy.path); return { P, d: 0, x: st.convoy.path[0][0], z: st.convoy.path[0][1], face: 0, hp: st.convoy.hp, maxHp: st.convoy.hp, speed: st.convoy.speed, done: false }; })() : null,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
     allow: opt.allow || ALLOW_ALL, bodies: drawBodies(st.drawCount || DRAW_DEFAULT, opt.allow), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo && (!opt.allow || opt.allow.loadout)),
@@ -519,6 +756,7 @@ function makeRobot(S, q) {
     weapons: q.wids.map(w => ({ id: w, def: WEAPONS[w], cd: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : rnd(0, .3), cdMax: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : 0 })),
     face: Math.PI, moving: false, warned: false, dead: false, flash: 0, fireT: -9, hitT: -9,
   };
+  r.drain = r.weapons.reduce((a, w) => a + (w.def.drain || 0), 0); r.parry = r.weapons.some(w => w.def.parry); r.streak = 0; r.lastKill = -99;
   r.tx = r.x; r.tz = r.z;
   S.robots.push(r); S.built++; S.fx.push({ type: 'spawn', x: r.x, z: r.z, id: r.id });
   say(S, '🔧 ' + r.name + ' 完成' + (op && op.owner === 'p' ? '（陣地' + op.label + 'から出撃）' : ''));
@@ -529,6 +767,11 @@ function moveRobot(r, x, z, S) {
   r.tx = m ? clamp(x, m.minX, m.maxX) : x; r.tz = m ? clamp(z, m.minZ, m.maxZ) : z;
 }
 
+function nearestIf(list, x, z, range, pred) {
+  let best = null, bd = Infinity;
+  for (const e of list) { if (e.dead || !pred(e)) continue; const rr = range + e.r, d = (e.x - x) ** 2 + (e.z - z) ** 2; if (d <= rr * rr && d < bd) { bd = d; best = e; } }
+  return best;
+}
 function nearest(list, x, z, range, extraR) {
   let best = null, bd = Infinity;
   for (const e of list) {
@@ -563,6 +806,7 @@ function blast(S, x, z, rad, dmg, owner, team) {
   if (team === 'e') {
     for (const r of S.robots) if (!r.dead && Math.hypot(r.x - x, r.z - z) <= rad + CFG.robotR) hurtRobot(S, r, dmg, null);
     if (Math.hypot(S.home.x - x, S.home.z - z) <= rad + S.home.r) hurtHome(S, dmg, x, z);
+    if (S.convoy && Math.hypot(S.convoy.x - x, S.convoy.z - z) <= rad + 1) S.convoy.hp -= dmg * .5;
   } else {
     for (const e of S.enemies) if (!e.dead && Math.hypot(e.x - x, e.z - z) <= rad + e.r) hurtEnemy(S, e, dmg, owner, true);
     for (const b of S.ebases) if (!b.dead && Math.hypot(b.x - x, b.z - z) <= rad + b.r) hurtEbase(S, b, dmg);
@@ -572,6 +816,9 @@ function blast(S, x, z, rad, dmg, owner, team) {
 }
 function hurtEnemy(S, e, dmg, owner, noArmor) {
   if (e.dead) return;
+  if (e.phased) return; // 深淵体：姿が揺らいでいる間は当たらない
+  if (e.auraT > 0) dmg *= .5; // 障壁体の近く：半減
+  if (e.guardMul) dmg *= e.guardMul;
   if (e.def.armor && !noArmor) dmg = Math.max(dmg * CFG.armorFloor, dmg - e.def.armor);
   e.hp -= dmg; e.flash = .08;
   if (e.hp <= 0) killEnemy(S, e, owner);
@@ -581,7 +828,8 @@ function killEnemy(S, e, owner) {
   const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1) * (S.st.ptsMul || 1));
   S.pts += g; S.earned += g;
   S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss, small: !!e.def.inst, kind: e.type });
-  if (e.def.boss) { S.bossKilled = true; say(S, '★ 模倣機を撃破', 'good'); }
+  if (owner && owner.weapons) { owner.streak = (S.t - owner.lastKill < 5 ? owner.streak : 0) + 1; owner.lastKill = S.t; if (owner.drain && !owner.dead) owner.hp = Math.min(owner.maxHp, owner.hp + owner.drain); }
+  if (e.def.boss) { S.bossKilled = true; S.bossKills = (S.bossKills || 0) + 1; say(S, e.def.final ? '★ ' + e.def.name + '、沈黙' : '★ ' + e.def.name + 'を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
   if (e.def.mine && e.armed) mineBlast(S, e);
 }
@@ -648,7 +896,9 @@ function toughest(list, x, z, range) {
   for (const e of list) { if (e.dead || (e.x - x) ** 2 + (e.z - z) ** 2 > (range + (e.r || 0)) ** 2) continue; if (e.hp > bh) { bh = e.hp; best = e; } }
   return best;
 }
+const isDanger = e => { const d = e.def; return !!(d.range || d.dash || d.heal || d.mine || d.kamikaze || d.artillery || d.weapons || d.aura || d.warp); };
 function robotTarget(S, r, d, range) {
+  if (d.pick === 'danger') return nearestIf(S.enemies, r.x, r.z, range, isDanger) || nearest(S.enemies, r.x, r.z, range) || nearest(S.ebases, r.x, r.z, range, true);
   if (d.pick === 'tough') return toughest(S.enemies, r.x, r.z, range) || nearest(S.ebases, r.x, r.z, range, true);
   if (d.noBase) return d.cluster ? densest(S.enemies, r.x, r.z, range, d.blast, d.blast + CFG.missileSafety) : nearest(S.enemies, r.x, r.z, range);
   let tg = d.cluster ? densest(S.enemies, r.x, r.z, range, d.blast, d.blast + CFG.missileSafety) : nearest(S.enemies, r.x, r.z, range);
@@ -659,15 +909,16 @@ function fireWeapon(S, src, d, tg, team, mul) {
   const a = Math.atan2(tg.x - src.x, tg.z - src.z);
   if (team === 'p') S.fx.push({ type: 'fire', x: src.x, z: src.z, a, kind: d.blast ? 'm' : d.size ? 'h' : d.pellets > 1 ? 's' : 'b', id: src.id });
   const range = d.range * (mul.range || 1);
-  for (let i = 0; i < d.pellets; i++) {
-    const aa = a + (d.pellets > 1 ? (i / (d.pellets - 1) - .5) * d.fan : 0);
+  const np = d.pellets + (mul.extra || 0), fan = d.fan + (mul.extra ? .12 * mul.extra : 0);
+  for (let i = 0; i < np; i++) {
+    const aa = a + (np > 1 ? (i / (np - 1) - .5) * fan : 0);
     const dmg = d.dmg * (mul.dmg || 1) * (Math.random() < (mul.crit || 0) ? CFG.critMul : 1);
     S.shots.push({
       id: S.nid++, team, x: src.x, z: src.z, vx: Math.sin(aa) * d.speed, vz: Math.cos(aa) * d.speed, dmg,
       life: (d.blast ? Math.hypot(tg.x - src.x, tg.z - src.z) : range) / d.speed * (d.homing ? 1.6 : 1) + .05, r: d.size || (d.blast ? .25 : .18),
       owner: team === 'p' ? src : null, src, pierce: d.pierce || 0, hits: [], w: d.name, blast: d.blast || 0,
       arm: d.blast ? (d.blast + CFG.missileSafety) / d.speed : 0,
-      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null,
+      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null, cancel: d.cancel || 0, stun: d.stun || 0, jackpot: !!d.jackpot, kc: 0,
     });
   }
   return a;
@@ -691,13 +942,15 @@ function beam(S, r, w, d, dt) {
   const m = pmul(r), range = d.range * m.range, tg = lockTarget(S, r, d, range) || robotTarget(S, r, d, range);
   if (!tg) { w.beam = null; return; }
   const a0 = Math.atan2(tg.x - r.x, tg.z - r.z), n = d.beams || 1; r.fireT = S.t; if (!r.moving && !r.piloted) r.face = a0;
-  const dmg = d.dps * dt * m.dmg * (1 + r.crit * (CFG.critMul - 1));
+  if (d.drill) { if (w.drillTg === tg) w.drillT += dt; else { w.drillTg = tg; w.drillT = 0; } }
+  const drillMul = d.drill ? 1 + Math.min(tg.def && tg.def.boss ? .45 : .8, w.drillT * .25) : 1;
+  const dmg = d.dps * dt * m.dmg * (1 + r.crit * (CFG.critMul - 1)) * drillMul;
   w.beam = [];
   for (let k = 0; k < n; k++) {
     const a = a0 + (n > 1 ? (k / (n - 1) - .5) * 2 * d.spread : 0), ux = Math.sin(a), uz = Math.cos(a);
     w.beam.push({ x2: r.x + ux * range, z2: r.z + uz * range });
     const onLine = (t, rr) => { const px = t.x - r.x, pz = t.z - r.z, along = px * ux + pz * uz; return along > 0 && along < range + rr && Math.abs(px * uz - pz * ux) < d.width + rr; };
-    for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) { hurtEnemy(S, e, dmg, r, true); if (d.slow) e.slowT = .6; }
+    for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) { hurtEnemy(S, e, d.sniper ? dmg * (1 + .5 * Math.min(1, Math.hypot(e.x - r.x, e.z - r.z) / range)) : dmg, r, true); if (d.slow) e.slowT = .6; }
     for (const b of S.ebases) if (!b.dead && onLine(b, b.r)) hurtEbase(S, b, dmg);
     for (const o of S.robots) if (o !== r && !o.dead && onLine(o, CFG.robotR)) hurtRobot(S, o, dmg * CFG.friendlyFire * (d.ffMul || 1), r);
   }
@@ -727,8 +980,9 @@ function updRobot(S, r, dt) {
     w.onLock = !!lk;
     if (!tg) { w.cd = 0; continue; }
     if (d.blast && r.moving && !blastSafe(r, tg, d)) { w.cd = .1; continue; } // 移動中：着弾時に自分が爆風に入るなら撃たない
-    const a = fireWeapon(S, r, d, tg, 'p', { dmg: pm.dmg, crit: r.crit, range: pm.range, lock: !!lk });
-    w.cd = d.cd / pm.rate; w.cdMax = w.cd; r.fireT = S.t;
+    const stk = d.streak && S.t - r.lastKill < d.streak.reset ? Math.min(d.streak.max, r.streak) : 0;
+    const a = fireWeapon(S, r, d, tg, 'p', { dmg: pm.dmg, crit: r.crit, range: pm.range, lock: !!lk, extra: d.streak && d.streak.pellets ? Math.min(3, Math.floor(stk / 2)) : 0 });
+    w.cd = d.cd / (pm.rate * (1 + stk * (d.streak ? d.streak.rate : 0))); w.cdMax = w.cd; r.fireT = S.t;
     if (!r.moving && !r.piloted) r.face = a;
   }
 }
@@ -740,7 +994,10 @@ function spawnEnemy(S, type, pi, d0, from) {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
   };
-  if (def.boss) { e.off = 0; e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); say(S, '🚨 模倣機（ボス）が出現', 'bad'); S.fx.push({ type: 'boss' }); }
+  if (def.weapons) { e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); }
+  if (def.boss) { e.off = 0; e.phaseN = 0; say(S, '🚨 ' + def.name + 'が出現', 'bad'); S.fx.push({ type: 'boss', final: !!def.final, name: def.name }); }
+  if (def.phase) e.phaseT = rnd(0, def.phase.on);
+  if (def.warp) e.warpT = def.warp.every;
   const p = pathPos(S.paths[pi], e.d, e.off); e.x = from ? from.x + rnd(-.5, .5) : p.x; e.z = from ? from.z + rnd(-.5, .5) : p.z;
   if (from) e.state = 'return';
   if (def.fly) e.state = 'fly';
@@ -774,14 +1031,33 @@ function attackBase(S, e, dt) {
   e.atkT -= dt; if (e.atkT <= 0) { e.atkT = 1; S.fx.push({ type: 'basehit', x: e.x, z: e.z }); }
   if (S.baseWarnT <= 0) { S.baseWarnT = 6; say(S, '🚨 拠点が攻撃を受けている', 'bad'); }
 }
+// 最終ボス：HPが2/3・1/3を切るたびに形を変え、深淵の敵を呼ぶ
+function omegaPhase(S, e) {
+  const k = e.hp / e.maxHp, want = k < .34 ? 2 : k < .67 ? 1 : 0;
+  if (want <= e.phaseN) return;
+  e.phaseN = want;
+  const call = (type, n) => { for (let i = 0; i < n; i++) spawnEnemy(S, type, e.pi, Math.max(0, e.d - 1 - i * .4), e); };
+  if (want === 1) { e.weapons.push({ id: 'swarmer', def: WEAPONS.swarmer, cd: 1 }); call('wraith', 8); call('aegis', 1); say(S, '⚠ OMEGA原型、形態変化。深淵体を呼んだ', 'bad'); }
+  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: WEAPONS.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
+  S.fx.push({ type: 'omegaPhase', x: e.x, z: e.z, n: want });
+}
 function updEnemy(S, e, dt) {
   const def = e.def;
-  e.flash = Math.max(0, e.flash - dt); if (e.slowT > 0) e.slowT -= dt;
+  e.flash = Math.max(0, e.flash - dt); if (e.slowT > 0) e.slowT -= dt; if (e.auraT > 0) e.auraT -= dt;
+  if (e.stunT > 0) { e.stunT -= dt; return; } // ブルワークで止まっている
+  if (def.phase) { e.phaseT -= dt; if (e.phaseT <= 0) { e.phased = !e.phased; e.phaseT = e.phased ? def.phase.off : def.phase.on; } }
+  if (def.aura) for (const o of S.enemies) if (o !== e && !o.dead && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.aura.range ** 2) o.auraT = .25;
+  if (def.warp && e.state === 'path') { e.warpT -= dt; if (e.warpT <= 0) { e.warpT = def.warp.every; const fx0 = { x: e.x, z: e.z }; e.d = Math.min(S.paths[e.pi].len - 1, e.d + def.warp.dist); const p = pathPos(S.paths[e.pi], e.d, e.off); e.x = p.x; e.z = p.z; S.fx.push({ type: 'warp', x: fx0.x, z: fx0.z, x2: e.x, z2: e.z }); } }
+  if (def.final) omegaPhase(S, e);
   // 回復ドローン：周りの敵を回復
   if (def.heal) {
     for (const o of S.enemies) if (o !== e && !o.dead && o.hp < o.maxHp && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.heal.range ** 2) o.hp = Math.min(o.maxHp, o.hp + def.heal.hps * dt);
   }
   // 守備隊：陣地から動かない。射撃型は撃ち、それ以外は触れたロボットを殴る
+  if (e.state === 'guard' && def.weapons) {
+    for (const w of e.weapons) { w.cd -= dt; if (w.cd > 0) continue; const tg = nearest(S.robots, e.x, e.z, w.def.range); if (!tg) { w.cd = 0; continue; } e.face = fireWeapon(S, e, w.def, tg, 'e', {}); w.cd = w.def.cd * (def.fireMul || 1); }
+    return;
+  }
   if (e.state === 'guard') {
     const tg = nearest(S.robots, e.x, e.z, def.range || 6);
     if (tg) e.face = Math.atan2(tg.x - e.x, tg.z - e.z);
@@ -822,8 +1098,8 @@ function updEnemy(S, e, dt) {
   }
   // 機雷：ロボットに近づくと爆発
   if (def.mine && nearest(S.robots, e.x, e.z, def.mine.trigger)) { e.dead = true; mineBlast(S, e); return; }
-  // ボス：歩きながら武器で撃つ（拠点に着いたら拠点も攻撃）
-  if (def.boss) {
+  // ボス・模倣兵：歩きながら武器で撃つ（拠点に着いたら拠点も攻撃）
+  if (def.weapons) {
     // 狙い：射程内のロボット、いなければ射程内の自拠点
     const homeIn = r => Math.hypot(S.home.x - e.x, S.home.z - e.z) - S.home.r <= r;
     for (const w of e.weapons) {
@@ -937,6 +1213,14 @@ function updShots(S, dt) {
       }
       continue;
     }
+    if (s.team === 'p' && s.cancel > 0) { // ウォール・ブルワーク：敵の弾を打ち消す
+      for (const o of S.shots) if (!o.dead && o.team === 'e' && (o.x - s.x) ** 2 + (o.z - s.z) ** 2 < (o.r + s.r + .2) ** 2) { o.dead = true; s.cancel--; S.fx.push({ type: 'block', x: o.x, z: o.z }); if (s.cancel <= 0) break; }
+    }
+    if (s.team === 'e' && !s.parried) { // パリィ：正面近くの敵弾を弾き返す
+      let pr = null;
+      for (const r of S.robots) if (r.parry && !r.dead && (r.x - s.x) ** 2 + (r.z - s.z) ** 2 < 3.6) { let da = Math.atan2(s.x - r.x, s.z - r.z) - r.face; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; if (Math.abs(da) < 1.2) { pr = r; break; } }
+      if (pr) { s.team = 'p'; s.parried = true; s.owner = pr; s.src = pr; s.vx = -s.vx; s.vz = -s.vz; s.dmg *= 1.5; s.life = 1.4; s.hits = []; s.pierce = 0; s.arm = 0; S.fx.push({ type: 'block', x: s.x, z: s.z }); continue; }
+    }
     if (s.team === 'p') {
       // 敵・敵拠点・味方ロボットのうち、当たったものすべて（貫通数まで）
       const lists = [S.enemies, S.ebases, S.robots];
@@ -947,7 +1231,7 @@ function updShots(S, dt) {
         if (li === 0 && t.def.shield && !s.noShield && shieldBlocks(t, s)) { s.dead = true; S.fx.push({ type: 'block', x: s.x, z: s.z }); break; }
         if (li === 2) hurtRobot(S, t, s.dmg * CFG.friendlyFire, s.owner);
         else if (li === 1) hurtEbase(S, t, s.dmg);
-        else hurtEnemy(S, t, s.dmg, s.owner, s.noArmor);
+        else { const was = t.dead; hurtEnemy(S, t, s.dmg, s.owner, s.noArmor); if (s.stun && !t.def.boss) t.stunT = s.stun; if (!was && t.dead && ++s.kc >= 2 && s.jackpot) { const g = Math.round(t.def.pts * (S.st.ptsMul || 1)); S.pts += g; S.earned += g; S.fx.push({ type: 'kill', x: t.x, z: t.z, pts: g, jackpot: true }); } }
         if (li !== 2) onHitExtra(S, s, t);
         if (s.pierce > 0) { s.pierce--; s.hits.push(t); } else { s.dead = true; break; }
       }
@@ -979,14 +1263,27 @@ function updOutpost(S, o, dt) {
 }
 
 // ---------- 1ステップ ----------
+const pathOpen = (S, i) => !S.st.pathOpen || !(S.st.pathOpen[i] > S.t);
 function pickPath(S, sp) {
-  const n = S.paths.length, pi = sp.path === '*' ? (sp.k++ % n) : sp.path;
+  const n = S.paths.length;
+  let pi = sp.path === '*' ? (sp.k++ % n) : sp.path;
+  if (!pathOpen(S, pi)) { if (sp.path !== '*') return -1; for (let k = 0; k < n && !pathOpen(S, pi); k++) pi = sp.k++ % n; if (!pathOpen(S, pi)) return -1; } // まだ開いていない裂け目からは出ない
   const eb = S.ebases.find(b => b.path === pi);
   if (eb && eb.dead && !ENEMIES[sp.type].rebuild) { // 壊した敵拠点の経路：出現が減る（bases ステージでは止まる）
     const rate = S.st.goal === 'bases' ? 0 : CFG.deadSpawnRate;
     if (Math.random() >= rate) return -1;
   }
   return pi;
+}
+// 補給車：決まった道を進む。敵が近くにいると止まって攻撃を受ける。終点に着けば勝ち
+function updConvoy(S, dt) {
+  const C = S.convoy; if (C.done || C.hp <= 0) return;
+  let block = false, dps = 0;
+  for (const e of S.enemies) if (!e.dead && e.state !== 'guard' && (e.x - C.x) ** 2 + (e.z - C.z) ** 2 < (e.r + 1.1) ** 2) { block = true; dps += Math.max(1, e.def.baseDps) * 2; }
+  if (dps) { C.hp -= dps * dt * (S.st.dmgMul || 1); C.hitT = S.t; if (S.t - (C.warnT || -9) > 6) { C.warnT = S.t; say(S, '🚚 補給車が攻撃を受けている', 'bad'); } }
+  C.blocked = block;
+  if (!block) { C.d = Math.min(C.P.len, C.d + C.speed * dt); const p = pathPos(C.P, C.d, 0); C.face = Math.atan2(p.dx, p.dz); C.x = p.x; C.z = p.z; }
+  if (C.d >= C.P.len - .01) { C.done = true; say(S, '🚚 補給車、到着', 'good'); }
 }
 function step(S, dt) {
   if (S.over) return;
@@ -998,7 +1295,7 @@ function step(S, dt) {
   }
   for (const sp of S.spawners) {
     sp.next -= dt;
-    while (sp.next <= 0 && sp.n > 0) { const pi = pickPath(S, sp); if (pi >= 0) spawnEnemy(S, sp.type, pi, 0); sp.n--; sp.next += sp.gap; if (sp.gap <= 0) sp.next = 0; }
+    while (sp.next <= 0 && sp.n > 0) { const pi = pickPath(S, sp); if (pi === -1 && sp.path !== '*' && !pathOpen(S, sp.path)) { sp.next = .5; break; } if (pi >= 0) spawnEnemy(S, sp.type, pi, 0); sp.n--; sp.next += sp.gap; if (sp.gap <= 0) sp.next = 0; }
   }
   S.spawners = S.spawners.filter(s => s.n > 0);
   // 建造：完成していない予約を先頭からライン数ぶん同時に進める。完成したものは出撃枠が空き次第すぐ出撃
@@ -1015,6 +1312,8 @@ function step(S, dt) {
   for (let i = 0; i < S.enemies.length; i++) { const e = S.enemies[i]; if (!e.dead) updEnemy(S, e, dt); }
   for (const b of S.ebases) if (!b.dead) updEbase(S, b, dt);
   for (const o of S.outposts) updOutpost(S, o, dt);
+  if (S.convoy) updConvoy(S, dt);
+  if (S.st.pathOpen) for (const i in S.st.pathOpen) if (!S.opened[i] && S.t >= S.st.pathOpen[i]) { S.opened[i] = true; say(S, '🌀 新たな裂け目が開いた（' + dirName(S, S.st.paths[i][0]) + '）', 'bad'); S.fx.push({ type: 'rift', i: +i }); }
   updHomeGun(S, dt);
   updShots(S, dt);
   S.robots = S.robots.filter(r => !r.dead);
@@ -1024,7 +1323,9 @@ function step(S, dt) {
   if (S.baseHP <= 0) { S.baseHP = 0; S.over = 'lose'; }
   else if (g === 'points' && S.pts >= S.st.goalPts) S.over = 'win';
   else if (g === 'bases' && S.ebases.every(b => b.dead)) S.over = 'win';
-  else if (g === 'boss' && S.bossKilled) S.over = 'win';
+  else if (g === 'boss' && (S.bossKills || 0) >= (S.st.bossCount || 1)) S.over = 'win';
+  else if (g === 'escort' && S.convoy && S.convoy.done) S.over = 'win';
+  else if (S.convoy && S.convoy.hp <= 0) { S.convoy.hp = 0; S.over = 'lose'; S.loseWhy = '補給車が破壊された'; }
   else if (g === 'clear' && S.waveIdx >= W.length && !S.spawners.length && !S.enemies.some(e => e.state !== 'guard')) S.over = 'win';
   else if (S.t >= S.st.time) { S.t = S.st.time; S.over = g === 'time' ? 'win' : 'lose'; }
 }
@@ -1033,7 +1334,8 @@ function goalText(st) {
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
-  if (st.goal === 'boss') return '模倣機を撃破する' + lim;
+  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
+  if (st.goal === 'escort') return '補給車を目的地まで護衛する' + lim;
   if (st.goal === 'clear') return '押し寄せる敵をすべて倒す' + lim;
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }

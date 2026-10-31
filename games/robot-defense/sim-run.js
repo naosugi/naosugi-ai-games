@@ -85,6 +85,7 @@ for (const st of RD.STAGES) {
   console.log('\n■ ' + st.id + ' ' + st.name + '「' + st.sub + '」 勝利条件：' + RD.goalText(st) + ' 開始⭐' + st.startPoints);
   console.log('戦略'.padEnd(18, '　') + ' 勝率  拠点HP  終了  撃破  建造  損失(誤射)  ' + (st.goal === 'points' ? '最終⭐' : st.goal === 'bases' ? '敵拠点破壊' : st.goal === 'clear' ? '残り敵' : st.waves.some(w => w[1] === 'boss') ? 'ボス撃破' : ''));
   for (const [name, pol] of Object.entries(strategies)) {
+    if (process.env.STRAT && !new RegExp(process.env.STRAT).test(name)) continue;
     if (name.startsWith('節約') && st.goal !== 'points') continue;
     const a = { win: 0, hp: 0, t: 0, kills: 0, built: 0, lost: 0, ffk: 0, pts: 0, eb: 0, boss: 0 };
     for (let i = 0; i < N; i++) {

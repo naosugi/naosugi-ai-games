@@ -17,6 +17,7 @@
 | [独裁者AI国家シミュレーター](games/dictator-ai-simulator/) | 独裁者として25ターンでAI国家を築くカード選択シミュレーション。8つのエンディングと図鑑つき（[dictator-ai-simulator](https://github.com/naosugi/dictator-ai-simulator) の1ファイル移植版） |
 | [おうちとひらがな](games/ouchi-hiragana/) | 子ども向けひらがな探し。見つけるたびにおうちが育ち、記録を保存して遊ぶほど豪華に。音声読み上げつき（[moji_learn_mining](https://github.com/naosugi/moji_learn_mining) のスマホ操作改善・1ファイル版） |
 | [キーボード☆ドライバー](games/keyboard-driver/) | こども向け日本語入力れんしゅう。文字を打ってロケットで荷物をとどけ、強化すると漢字変換・記号・全角半角などの問題が解放される |
+| [ROBOT DEFENSE](games/robot-defense/) | 前線基地を守るタワーディフェンス。ロボットを組んで配置し、乗って戦う。全5章・21作戦、進化パーツと高難度つき |
 
 ## 構成
 
@@ -58,6 +59,6 @@ games/<id>/thumb.jpg  一覧用サムネイル（16:9 推奨）
 
 同梱しているサードパーティ製ソフトウェア:
 
-- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html` と `games/infinite-shot-3d-2/index.html` に埋め込み（どちらも r186）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
+- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html`・`games/infinite-shot-3d-2/index.html`・`games/robot-defense/index.html` に埋め込み（いずれも r186。robot-defense は使う部品だけをまとめた版）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
 - `games/blue-dash/index.html` は three.js（r128）を cdnjs から読み込みます（同梱はしていません）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。

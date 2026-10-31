@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>ROBOT DEFENSE（試作）</title>
+<title>ROBOT DEFENSE</title>
 <style>
 :root{color-scheme:dark;--bg:#050a1c;--panel:#0d1830;--panel2:#132544;--line:#2f4c74;--fg:#eef7ff;--dim:#9fb6d6;--cyan:#65f6ff;--blue:#4dabff;--red:#ff4d6d;--gold:#ffd166;--green:#7dffa8;--orange:#ffa94d}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -389,6 +389,32 @@ body.selecting #bottom .row{display:none}
 i.hd{font-style:normal;font-size:12px;color:#ff9a5c;font-weight:700}
 .goal.big{font-size:15px;line-height:1.7;text-align:center}
 #hitFlash.nova{box-shadow:inset 0 0 240px #fff1b0;background:#fff1b055}
+/* タイトルの小ボタン */
+.minis{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(300px,100%)}
+.minis button{padding:10px 6px;font-size:14px;background:#0d1830aa}
+/* 設定 */
+.sets{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.setrow{display:flex;align-items:center;gap:10px}
+.setrow>span{flex:0 0 120px;font-size:14px}
+.setrow input[type=range]{flex:1;accent-color:var(--cyan)}
+.setrow b{min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
+button.danger{border-color:var(--red);color:#ffb3c0}
+/* 図鑑 */
+.zlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.zi{display:flex;flex-direction:column;gap:3px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.zi b{font-size:14px} .zi span{font-size:12px;color:var(--dim);line-height:1.5} .zi .zs{color:var(--gold)}
+.zi.unk{opacity:.5} .zi.boss{border-color:#7a1d3a}
+.zev{display:flex;flex-direction:column;gap:3px;margin-top:4px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;color:#e2d4ff}
+.zev .unk{color:var(--dim)}
+/* エンディング */
+#ov.ending #ovCard{max-width:520px;height:94%;display:flex;flex-direction:column}
+.roll{flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent)}
+.rollIn{position:absolute;left:0;right:0;top:100%;text-align:center;animation:roll 40s linear forwards;display:flex;flex-direction:column;gap:6px}
+@keyframes roll{to{transform:translateY(calc(-100% - 70vh))}}
+.ch{font-size:30px;font-weight:900;letter-spacing:.1em;color:var(--cyan);text-shadow:0 0 18px #65f6ff66}
+.cs{font-size:15px;color:var(--fg)} .ct{font-size:12px;color:var(--cyan);letter-spacing:.2em;margin-top:6px} .cn{font-size:17px;font-weight:700} .cm{font-size:11px;color:var(--dim)}
+.cg{height:34px} .cl{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;font-size:13px;color:var(--dim);padding:0 10px}
+body.darkst #vig{background:radial-gradient(ellipse at 50% 55%,transparent 20%,#000000c8 75%)}
 </style>
 </head>
 <body>
@@ -401,7 +427,7 @@ i.hd{font-style:normal;font-size:12px;color:#ff9a5c;font-weight:700}
 <div id="banner" class="banner"></div>
 <div id="combo"></div>
 <div id="hud">
-  <div class="row"><a class="back" href="../../">← ゲーム一覧</a><span class="ttl">ROBOT DEFENSE <small>試作</small></span><span class="sp"></span><button id="muteBtn" title="音">🔊</button><button id="viewBtn" title="全体表示">⤢</button><button id="spdBtn">×1</button><button id="pauseBtn">Ⅱ</button></div>
+  <div class="row"><a class="back" href="../../">← ゲーム一覧</a><span class="ttl">ROBOT DEFENSE</span><span class="sp"></span><button id="muteBtn" title="音">🔊</button><button id="viewBtn" title="全体表示">⤢</button><button id="spdBtn">×1</button><button id="pauseBtn">Ⅱ</button></div>
   <div class="row stats">
     <span class="st">⏱<b id="hTime">2:00</b></span>
     <span class="st" id="hGoal" style="display:none"></span>
@@ -4792,6 +4818,16 @@ const WEAPONS = {
   buster: { evo: true, base: 'heavy', name: 'バスター', icon: '💥', cost: 65, build: 4, type: 'gun', range: 12, dmg: 80, cd: 2.4, speed: 22, pellets: 1, fan: 0, noArmor: true, size: .32, pick: 'tough', splash: { r: 2.4, mul: .6 }, desc: '狙撃弾が着弾で爆発し、周りも巻き込む。爆発は味方にも当たる' },
   swarmer: { evo: true, base: 'homing', name: 'スウォーム', icon: '🐝', cost: 35, build: 2, type: 'gun', range: 7, dmg: 7, cd: .8, speed: 8, pellets: 4, fan: 1.4, homing: 3.5, noShield: true, desc: '追尾弾が4発に増える。盾に防がれない' },
   pile: { evo: true, base: 'breaker', name: 'パイル', icon: '📌', cost: 40, build: 3, type: 'gun', range: 12, dmg: 150, cd: 3.4, speed: 30, pellets: 1, fan: 0, pierce: 1, noArmor: true, noShield: true, size: .22, pick: 'tough', desc: '遠くまで届く杭を撃ち込む。射程内で一番硬い敵を狙い、装甲も盾も貫く' },
+  rush: { evo: true, base: 'blaster', name: 'ラッシュ', icon: '💨', cost: 30, build: 2, type: 'gun', range: 6, dmg: 10, cd: .4, speed: 22, pellets: 1, fan: 0, streak: { max: 6, rate: .1, reset: 5 }, desc: '続けて倒すほど連射が上がる（最大+60%。5秒倒さないと戻る）' },
+  storm: { evo: true, base: 'spread', name: 'ストーム', icon: '🌪', cost: 45, build: 3, type: 'gun', range: 4.5, dmg: 13, cd: .9, speed: 16, pellets: 5, fan: .9, pierce: 2, streak: { max: 6, rate: .06, reset: 4, pellets: true }, desc: '倒すほど弾数と連射が増える（最大+3発・+36%。4秒倒さないと戻る）' },
+  wall: { evo: true, base: 'spread', name: 'ウォール', icon: '🧱', cost: 40, build: 3, type: 'gun', range: 4.5, dmg: 16, cd: .9, speed: 16, pellets: 5, fan: .8, pierce: 3, cancel: 1, desc: '弾が敵の弾を1発ずつ打ち消す。威力+15%。射撃型や模倣機の弾から味方を守る' },
+  jackpot: { evo: true, base: 'heavy', name: 'ジャックポット', icon: '🎰', cost: 60, build: 4, type: 'gun', range: 14, dmg: 99, cd: 2.4, speed: 26, pellets: 1, fan: 0, pierce: 3, noArmor: true, size: .3, pick: 'tough', jackpot: true, desc: '1発で2体目以降を倒すと、その敵のポイントが2倍。威力+10%、4体まで貫通' },
+  bulwark: { evo: true, base: 'heavy', name: 'ブルワーク', icon: '🛡', cost: 60, build: 4, type: 'gun', range: 12, dmg: 85, cd: 2.2, speed: 24, pellets: 1, fan: 0, pierce: 2, noArmor: true, size: .34, pick: 'tough', cancel: 3, stun: 1, desc: '弾が敵の弾を3つまで打ち消す。当たった敵は1秒止まる' },
+  hunter: { evo: true, base: 'homing', name: 'ハンター', icon: '🦅', cost: 30, build: 2, type: 'gun', range: 8, dmg: 12, cd: .8, speed: 9, pellets: 2, fan: .9, homing: 4, noShield: true, pick: 'danger', desc: '危険な敵（射撃・突進・回復・機雷・特攻・砲撃・模倣機）を優先して追う。威力+20%' },
+  drain: { evo: true, base: 'breaker', name: 'ドレイン', icon: '🩸', cost: 25, build: 2, type: 'gun', range: 2.8, dmg: 22, cd: .7, speed: 14, pellets: 6, fan: .9, noArmor: true, noShield: true, drain: 6, desc: 'このロボットが敵を倒すたびにHPが6回復する。威力+10%' },
+  parry: { evo: true, base: 'breaker', name: 'パリィ', icon: '🤺', cost: 30, build: 2, type: 'gun', range: 2.8, dmg: 20, cd: .7, speed: 14, pellets: 6, fan: .9, noArmor: true, noShield: true, parry: true, desc: '正面近くに来た敵の弾を弾き返し、1.5倍にして敵へ返す' },
+  drill: { evo: true, base: 'laser', name: 'ドリル', icon: '🔩', cost: 75, build: 5, type: 'beam', range: 10, dps: 14, width: .4, ffMul: 1.5, noBase: true, drill: true, desc: '同じ敵に当て続けるほど威力が上がる（最大1.8倍）。硬い敵やボスに。直線上の味方には1.5倍' },
+  sniper: { evo: true, base: 'laser', name: 'スナイパー', icon: '🔭', cost: 75, build: 5, type: 'beam', range: 13, dps: 13, width: .3, ffMul: 1.5, noBase: true, sniper: true, desc: '射程が長く、遠くの敵ほど威力が上がる（最大1.5倍）。直線上の味方には1.5倍' },
   bomb: { name: '自爆ユニット', icon: '💣', cost: 5, build: 1, type: 'bomb', trigger: 1.4, radius: 5, dmg: 300, desc: '敵が近づくと広範囲を吹き飛ばして自爆する。近くの味方も巻き込む' },
 };
 
@@ -4816,6 +4852,15 @@ const ENEMIES = {
   carrier: { name: '輸送艦', hp: 320, speed: .8, r: 1.2, pts: 60, baseDps: 3, drop: { type: 'swarm', n: 5, every: 3.5 }, desc: '経路を進みながら群体を降ろし続ける' },
   artillery: { name: '砲撃型', hp: 90, speed: 1.1, r: .7, pts: 40, baseDps: 2, artillery: { range: 15, dmg: 14, cd: 3.2, shotSpeed: 7 }, desc: '拠点から遠くで止まり、拠点を砲撃し続ける' },
   engineer: { name: '工兵', hp: 60, speed: 1.4, r: .5, pts: 35, baseDps: .5, rebuild: { time: 8, hpRate: .5 }, desc: '壊された敵拠点を再建する。出撃が止まった方面からでも現れる' },
+  // 第3章：模倣兵（ロボットを真似た小型機。ボスと同じく武器で撃つ）
+  mimic: { name: '模倣兵', hp: 90, speed: 1.2, r: .6, pts: 30, baseDps: 2, weapons: ['spread'], hold: 4, fireMul: 1.8, mscale: 1.15, desc: 'ロボットを真似た小型機。散弾で撃ってくる' },
+  mimicArt: { name: '模倣砲', hp: 120, speed: 1, r: .7, pts: 45, baseDps: 2, weapons: ['missile'], hold: 7.5, fireMul: 1.6, mscale: 1.35, desc: 'ミサイルを撃つ模倣機。固まったロボットを爆風でまとめて削る' },
+  boss2: { name: '模倣機・改', hp: 1300, speed: .8, noRamp: true, r: 1.2, pts: 400, baseDps: 0, fireMul: 1.4, hold: 6.5, boss: true, weapons: ['heavy', 'missile', 'spread'], mscale: 2.5, desc: '改良された模倣機。狙撃・ミサイル・散弾を使い分ける' },
+  // 第4章：深淵の敵
+  wraith: { name: '深淵体', hp: 35, speed: 2.3, r: .45, pts: 10, baseDps: 1.5, phase: { on: 2, off: 1 }, desc: '時々姿が揺らぎ、その間は攻撃が当たらない' },
+  warper: { name: '跳躍体', hp: 70, speed: 1.2, r: .55, pts: 25, baseDps: 2, warp: { every: 4, dist: 5 }, desc: '数秒ごとに経路の先へ跳ぶ' },
+  aegis: { name: '障壁体', hp: 140, speed: 1, r: .7, pts: 40, baseDps: 2, aura: { range: 3.2 }, desc: '周りの敵が受けるダメージを半分にする。先に倒したい' },
+  omega: { name: 'OMEGA原型', hp: 3600, speed: .45, noRamp: true, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
   // ボス：こちらのロボットと同じ「ボディ＋武器」で組まれた敵。体当たりはせず、射撃でロボットと拠点を攻撃する
   boss: { name: '模倣機', hp: 1000, speed: .9, noRamp: true, r: 1.1, pts: 300, baseDps: 0, fireMul: 1.6, hold: 5.5, boss: true, body: 'fortress', weapons: ['blaster', 'missile'], desc: 'こちらのロボットを模倣した赤い機体。ロボットや拠点が射程に入ると立ち止まって撃つ' },
 };
@@ -5012,15 +5057,225 @@ STAGES.push({
     [180, 'healer', 2, 3, '*'], [186, 'dasher', 8, .8, '*'], [194, 'swarm', 70, .06, '*'], [200, 'armor', 8, 1, '*'],
   ],
 });
+// ---------- 第2〜4章 ----------
+// 出現表をまとめて作る：[種類, 開始秒, 終了秒, 間隔秒, 数, 出現間隔, 経路]。後半ほど数が少し増える
+function waveGen(list) {
+  const out = [];
+  for (const [type, t0, t1, every, n, gap, path] of list) {
+    for (let t = t0; t <= t1; t += every) out.push([t, type, Math.max(1, Math.round(n * (1 + .6 * (t - t0) / Math.max(1, t1 - t0)))), gap, path === undefined ? '*' : path]);
+  }
+  return out;
+}
+// 中央の拠点へ放射状に伸びる経路（途中で2回曲がる）
+function radialPaths(n, R, rot, bend) {
+  const P = (r, a) => [Math.round(Math.sin(a) * r * 10) / 10, Math.round(-Math.cos(a) * r * 10) / 10];
+  const out = [];
+  for (let i = 0; i < n; i++) { const a = rot + i * Math.PI * 2 / n; out.push([P(R, a), P(R * .72, a), P(R * .72, a + bend), P(R * .42, a + bend), P(R * .42, a - bend * .6), P(R * .18, a - bend * .6), P(3, a), [0, 0]]); }
+  return out;
+}
+const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
+(() => {
+  // ===== 第2章 反攻 =====
+  STAGES.push({
+    id: 'a1', name: '2-1', sub: '回収', goal: 'points', goalPts: 900, time: 240, startPoints: 320, hpRamp: .6, wide: true,
+    brief: ['敵拠点群より、コア反応を多数確認。', '輸送艦を確認。群体を降ろし続ける。優先して撃破せよ。資源を回収し、反攻の準備を整える。'], win: '資源、確保。反攻準備、完了。',
+    intro: '輸送艦は経路を進みながら群体を降ろし続ける。硬いので狙撃やミサイルで早めに落としたい。',
+    map: { minX: -26, maxX: 26, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.1 },
+    outposts: [[-8, -3, 'A', 'p'], [8, -6, 'B', 'p'], [0, 12, 'C'], [-18, -16, 'D', 'e'], [18, 20, 'E', 'e']],
+    garrison: ['shooter', 'shooter', 'armor', 'normal', 'normal'],
+    paths: [
+      [[0, -28], [0, -18], [-12, -18], [-12, -8], [-3, -8], [-3, -2], [0, 0]],
+      [[24, 26], [24, 12], [10, 12], [10, 4], [3, 4], [0, 0]],
+      [[-24, 26], [-24, 14], [-14, 14], [-14, 5], [-4, 5], [0, 0]],
+    ],
+    ebases: [{ path: 0, hp: 800, pts: 180, turret: TUR }, { path: 1, hp: 700, pts: 150 }, { path: 2, hp: 700, pts: 150 }],
+    waves: waveGen([
+      ['normal', 3, 220, 18, 10, .5], ['shooter', 12, 220, 26, 3, 1.4], ['swarm', 20, 220, 22, 30, .1], ['armor', 40, 220, 34, 3, 1.6],
+      ['carrier', 30, 200, 45, 1, 0], ['kamikaze', 50, 220, 40, 8, .25], ['shield', 70, 220, 38, 4, 1.2], ['dasher', 90, 220, 30, 4, 1.2],
+    ]),
+  });
+  STAGES.push({
+    id: 'a2', name: '2-2', sub: '補給路', goal: 'escort', time: 260, startPoints: 340, hpRamp: .6, wide: true,
+    brief: ['北の前線陣地へ、解析用のコアを輸送する。', '補給車を護衛せよ。砲撃型を確認。遠くから拠点を撃ってくる。'], win: '補給車、到着。コアの解析に着手する。',
+    intro: '補給車は点線の道を北へ進む。敵が近くにいると止まって攻撃を受ける。道を空けてやろう。砲撃型は遠くで止まって拠点を砲撃する。',
+    map: { minX: -24, maxX: 24, minZ: -36, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.2 },
+    convoy: { path: [[0, 22], [0, 14], [-8, 14], [-8, 0], [6, 0], [6, -14], [0, -14], [0, -31]], hp: 500, speed: .6 },
+    outposts: [[-14, 20, 'A', 'p'], [12, 16, 'B', 'p'], [14, -6, 'C'], [-14, -18, 'D', 'e']],
+    garrison: ['shooter', 'shooter', 'armor', 'normal'],
+    paths: [
+      [[-22, -30], [-22, -6], [-12, -6], [-12, 8], [-4, 8], [-4, 20], [0, 26]],
+      [[22, -34], [22, -20], [12, -20], [12, 6], [2, 6], [2, 18], [0, 26]],
+      [[20, 28], [20, 22], [8, 22], [8, 26], [0, 26]],
+    ],
+    ebases: [{ path: 0, hp: 750, pts: 160, turret: TUR }, { path: 1, hp: 750, pts: 160 }],
+    waves: waveGen([
+      ['normal', 3, 240, 16, 8, .55], ['shooter', 14, 240, 28, 3, 1.4], ['swarm', 24, 240, 24, 26, .12], ['armor', 44, 240, 36, 3, 1.6],
+      ['artillery', 60, 220, 55, 1, 0], ['dasher', 30, 240, 32, 4, 1.2], ['kamikaze', 70, 240, 44, 8, .25], ['carrier', 100, 220, 70, 1, 0],
+    ]),
+  });
+  (() => {
+    const paths = radialPaths(4, 30, Math.PI / 4, .3);
+    STAGES.push({
+      id: 'a3', name: '2-3', sub: '解析', goal: 'time', time: 180, holdWhy: 'コアの解析完了まで拠点を守る', startPoints: 420, hpRamp: .5, wide: true,
+      brief: ['コアの解析を開始。完了まで三分。', '解析中は基地の処理能力が落ちる。持ちこたえよ。工兵を確認。壊した敵拠点を再建する。'], win: '解析、完了。コアは、侵略者の学習器官と推定。',
+      intro: '時間まで拠点を守れば勝ち。工兵は壊された敵拠点を建て直す。再建されると、その方面の敵がまた増える。',
+      map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2, z: -3.4 }, view: { zoom: 2.3 },
+      outposts: [0, 1, 2, 3].map(k => [Math.round(Math.sin(k * Math.PI / 2) * 11), Math.round(-Math.cos(k * Math.PI / 2) * 11), 'ABCD'[k], 'p']),
+      paths,
+      ebases: paths.map((_, i) => ({ path: i, hp: 600, pts: 140, turret: i % 2 ? null : TUR })),
+      waves: waveGen([
+        ['normal', 3, 170, 16, 7, .5], ['swarm', 10, 170, 20, 28, .09], ['shooter', 16, 170, 28, 3, 1.3], ['engineer', 50, 160, 40, 2, 3],
+        ['carrier', 50, 150, 60, 1, 0], ['artillery', 90, 160, 80, 1, 0], ['splitter', 30, 170, 34, 4, .9], ['shield', 60, 170, 34, 3, 1.1], ['flyer', 100, 170, 34, 5, .5],
+      ]),
+    });
+  })();
+  STAGES.push({
+    id: 'a4', name: '2-4', sub: '楔', goal: 'boss', bossName: '模倣機・改', time: 240, startPoints: 380, hpRamp: .6, wide: true,
+    brief: ['敵前線に大型反応。照合……模倣機の改良型。', '侵略者の学習速度、想定以上。これを撃破し、反攻の楔とする。'], win: '改良型、撃破。だが、敵の学習は止まらない。',
+    intro: '60秒ごろ、改良された模倣機が北から来る。狙撃・ミサイル・散弾を使い分ける。倒せば勝ち。',
+    map: { minX: -24, maxX: 24, minZ: -38, maxZ: 26 }, base: { x: 0, z: 20 }, factory: { x: 2.5, z: 17.5 }, view: { zoom: 2.3 },
+    outposts: [[-9, 8, 'A', 'p'], [9, 8, 'B', 'p'], [0, -8, 'C'], [-14, -22, 'D', 'e'], [14, -22, 'E', 'e']],
+    garrison: ['shooter', 'shooter', 'shield', 'armor'],
+    paths: [
+      [[0, -36], [0, -26], [-6, -26], [-6, -14], [6, -14], [6, 0], [-3, 0], [-3, 12], [0, 20]],
+      [[-22, -30], [-22, -6], [-14, -6], [-14, 14], [-5, 14], [0, 20]],
+      [[22, -30], [22, -6], [14, -6], [14, 14], [5, 14], [0, 20]],
+    ],
+    ebases: [{ path: 1, hp: 700, pts: 160, turret: TUR }, { path: 2, hp: 700, pts: 160, turret: TUR }],
+    waves: [[60, 'boss2', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 230, 16, 9, .5], ['shooter', 12, 230, 24, 4, 1.2], ['swarm', 20, 230, 22, 34, .1], ['armor', 40, 230, 34, 4, 1.4],
+      ['dasher', 30, 230, 30, 5, 1], ['artillery', 80, 220, 60, 1, 0], ['engineer', 100, 220, 50, 2, 3], ['healer', 70, 230, 40, 2, 3], ['carrier', 120, 200, 60, 1, 0],
+    ])),
+  });
+  // ===== 第3章 模倣 =====
+  STAGES.push({
+    id: 'm1', name: '3-1', sub: '写し身', goal: 'points', goalPts: 800, time: 240, startPoints: 360, hpRamp: .6, wide: true,
+    brief: ['敵、小型の模倣機を量産。我が方の兵装を使用している。', '模倣兵と呼称する。散弾を撃つ。距離を取って対処せよ。'], win: '資源、確保。模倣兵の構造を記録した。',
+    intro: '模倣兵はロボットを真似た小型機で、散弾で撃ってくる。射程の外から削るか、乗って一気に倒そう。',
+    map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, -4, 'A', 'p'], [9, 5, 'B', 'p'], [-14, 14, 'C'], [16, -16, 'D', 'e']],
+    garrison: ['mimic', 'mimic', 'shooter', 'armor'],
+    paths: radialPaths(3, 30, Math.PI / 6, .35),
+    ebases: [{ path: 0, hp: 800, pts: 170, turret: TUR }, { path: 1, hp: 800, pts: 170 }, { path: 2, hp: 800, pts: 170 }],
+    waves: waveGen([
+      ['normal', 3, 230, 16, 10, .45], ['mimic', 20, 230, 26, 3, 1.4], ['swarm', 14, 230, 20, 36, .09], ['shooter', 30, 230, 30, 4, 1.2],
+      ['armor', 50, 230, 36, 4, 1.3], ['kamikaze', 60, 230, 40, 10, .2], ['flyer', 80, 230, 36, 6, .5], ['carrier', 70, 200, 60, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'm2', name: '3-2', sub: '砲列', goal: 'bases', time: 240, startPoints: 400, hpRamp: .6, wide: true,
+    brief: ['敵、ミサイル装備の模倣機を配備。', '模倣砲と呼称する。爆風で密集した機体をまとめて狙う。散開して敵拠点を叩け。'], win: '砲列、沈黙。敵拠点、全壊。',
+    intro: '敵拠点3つをすべて壊せば勝ち。模倣砲はミサイルを撃つ。ロボットを固めて置くと、まとめてやられる。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-8, 8, 'A', 'p'], [8, 8, 'B', 'p'], [0, -12, 'C'], [-18, -14, 'D', 'e'], [18, -14, 'E', 'e']],
+    garrison: ['mimicArt', 'mimic', 'shooter', 'armor'],
+    paths: radialPaths(3, 28, 0, .4),
+    ebases: [{ path: 0, hp: 800, pts: 200, turret: TUR }, { path: 1, hp: 700, pts: 180, turret: TUR }, { path: 2, hp: 700, pts: 180 }],
+    waves: waveGen([
+      ['normal', 3, 230, 16, 8, .5], ['mimicArt', 40, 230, 46, 1, 0], ['mimic', 16, 230, 28, 3, 1.3], ['swarm', 20, 230, 22, 34, .1],
+      ['shield', 40, 230, 32, 4, 1.2], ['healer', 60, 230, 44, 2, 3], ['engineer', 90, 220, 50, 2, 3], ['splitter', 50, 230, 34, 5, .9],
+    ]),
+  });
+  STAGES.push({
+    id: 'm3', name: '3-3', sub: '双子', goal: 'boss', bossCount: 2, bossName: '模倣機', time: 270, startPoints: 420, hpRamp: .6, wide: true,
+    brief: ['大型反応、二。模倣機と、その改良型。', '同時に相手取るのは危険。片方ずつ、確実に撃破せよ。'], win: '二機、撃破。損耗率、許容範囲内。',
+    intro: '40秒に模倣機、100秒に模倣機・改が別の方向から来る。2機とも倒せば勝ち。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, 12, 'C', 'p'], [0, -16, 'D', 'e']],
+    garrison: ['mimic', 'mimic', 'mimicArt', 'shooter'],
+    paths: radialPaths(4, 28, 0, .3),
+    ebases: [{ path: 1, hp: 800, pts: 170 }, { path: 3, hp: 800, pts: 170, turret: TUR }],
+    waves: [[40, 'boss', 1, 0, 0], [100, 'boss2', 1, 0, 2]].concat(waveGen([
+      ['normal', 3, 260, 18, 7, .5], ['mimic', 24, 260, 40, 2, 1.3], ['swarm', 12, 260, 22, 30, .09], ['mimicArt', 90, 260, 70, 1, 0],
+      ['dasher', 30, 260, 36, 4, 1], ['kamikaze', 50, 260, 44, 8, .2], ['armor', 70, 260, 40, 3, 1.3],
+    ])),
+  });
+  STAGES.push({
+    id: 'm4', name: '3-4', sub: '工場', goal: 'clear', time: 230, startPoints: 420, hpRamp: .5, wide: true,
+    brief: ['模倣機の生産拠点を特定。', '内部より大量に出撃中。すべて撃破せよ。一機も残すな。'], win: '生産拠点、沈黙。最後の通信を傍受。発信源は、地下深部。',
+    intro: '押し寄せる敵をすべて倒せば勝ち。模倣兵と模倣砲が大量に混ざる。',
+    map: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 }, base: { x: 0, z: 0 }, factory: { x: 2, z: -3.4 }, view: { zoom: 2.3 },
+    outposts: [0, 1, 2, 3].map(k => [Math.round(Math.sin(Math.PI / 4 + k * Math.PI / 2) * 11), Math.round(-Math.cos(Math.PI / 4 + k * Math.PI / 2) * 11), 'ABCD'[k], 'p']),
+    paths: radialPaths(4, 30, 0, .3),
+    ebases: [0, 1, 2, 3].map(i => ({ path: i, hp: 700, pts: 150, turret: i % 2 ? TUR : null })),
+    waves: waveGen([
+      ['swarm', 2, 150, 10, 40, .06], ['mimic', 10, 150, 16, 4, 1], ['mimicArt', 30, 150, 30, 2, 1.5], ['normal', 5, 150, 14, 10, .4],
+      ['swarmFast', 40, 150, 26, 40, .06], ['kamikaze', 25, 150, 30, 10, .2], ['armor', 50, 150, 30, 4, 1.2], ['swarmHeavy', 80, 150, 30, 30, .08],
+    ]),
+  });
+  // ===== 第4章 深淵 =====
+  STAGES.push({
+    id: 'v1', name: '4-1', sub: '裂け目', goal: 'points', goalPts: 1100, time: 240, startPoints: 420, hpRamp: .6, wide: true,
+    pathOpen: { 2: 70, 3: 140 },
+    brief: ['地下深部より、未知の反応。地表に裂け目が開きつつある。', '深淵体と呼称する。時々、攻撃が通らない。新たな裂け目に備えよ。'], win: '資源、確保。裂け目の拡大、継続中。',
+    intro: '途中で新しい裂け目（敵の出口）が開く。深淵体は姿が揺らいでいる間、攻撃が当たらない。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, -5, 'A', 'p'], [9, 5, 'B', 'p'], [-12, 14, 'C'], [14, -14, 'D']],
+    paths: radialPaths(4, 28, Math.PI / 8, .35),
+    waves: waveGen([
+      ['normal', 3, 230, 14, 10, .45], ['wraith', 10, 230, 18, 6, .5], ['swarm', 16, 230, 20, 36, .09], ['mimic', 30, 230, 30, 3, 1.3],
+      ['shooter', 24, 230, 28, 4, 1.2], ['armor', 50, 230, 34, 4, 1.3], ['wraith', 90, 230, 22, 10, .3], ['flyer', 70, 230, 36, 6, .5],
+    ]),
+  });
+  STAGES.push({
+    id: 'v2', name: '4-2', sub: '闇', goal: 'time', time: 180, holdWhy: '裂け目が閉じるまで拠点を守る', dark: 7.5, startPoints: 420, hpRamp: .7, wide: true,
+    pathOpen: { 3: 60 },
+    brief: ['裂け目より黒い霧。視界、著しく低下。', '敵は、ロボットと拠点の近くでしか視認できない。跳躍体を確認。経路を跳んで迫る。裂け目が閉じるまで持ちこたえよ。'], win: '裂け目、閉鎖。霧が晴れる。',
+    intro: '暗い戦場。敵はロボット・拠点・陣地の近くでしか見えない。跳躍体は数秒ごとに経路の先へ跳ぶ。時間まで拠点を守れば勝ち。',
+    map: { minX: -28, maxX: 28, minZ: -28, maxZ: 28 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, 12, 'C', 'p'], [0, -12, 'D', 'p']],
+    paths: radialPaths(4, 26, 0, .32),
+    waves: waveGen([
+      ['normal', 3, 170, 11, 14, .4], ['wraith', 8, 170, 14, 12, .35], ['warper', 20, 170, 20, 5, 1], ['swarm', 14, 170, 16, 50, .07], ['armor', 40, 170, 30, 4, 1.2],
+      ['kamikaze', 30, 170, 26, 10, .2], ['mimic', 40, 170, 30, 3, 1.2], ['flyer', 50, 170, 30, 6, .5], ['swarmFly', 80, 170, 30, 30, .1],
+    ]),
+  });
+  STAGES.push({
+    id: 'v3', name: '4-3', sub: '障壁', goal: 'bases', time: 260, startPoints: 440, hpRamp: .6, wide: true,
+    pathOpen: { 3: 90 },
+    brief: ['裂け目の奥に、敵拠点を確認。', '障壁体を確認。周りの敵の損傷を半減させる。先に排除せよ。敵拠点を破壊し、深部への道を開く。'], win: '敵拠点、全壊。深部への進路、確保。',
+    intro: '敵拠点3つをすべて壊せば勝ち。障壁体の周りの敵はダメージが半分になる。先に倒そう。90秒で新しい裂け目が開く。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, 6, 'A', 'p'], [9, 6, 'B', 'p'], [0, -10, 'C'], [-16, -16, 'D', 'e'], [16, -16, 'E', 'e']],
+    garrison: ['aegis', 'mimic', 'mimic', 'shooter'],
+    paths: radialPaths(4, 28, Math.PI / 4, .3),
+    ebases: [{ path: 0, hp: 1000, pts: 200, turret: TUR }, { path: 1, hp: 900, pts: 180, turret: TUR }, { path: 2, hp: 900, pts: 180 }],
+    waves: waveGen([
+      ['normal', 3, 250, 14, 10, .45], ['aegis', 20, 250, 30, 1, 0], ['wraith', 10, 250, 18, 8, .4], ['warper', 30, 250, 26, 3, 1.2],
+      ['mimic', 24, 250, 28, 3, 1.2], ['mimicArt', 50, 250, 44, 1, 0], ['swarm', 14, 250, 20, 38, .08], ['healer', 60, 250, 40, 2, 3], ['armor', 40, 250, 34, 4, 1.3],
+    ]),
+  });
+  STAGES.push({
+    id: 'v4', name: '4-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA原型', time: 420, startPoints: 600, hpRamp: .5, wide: true, dark: 9,
+    pathOpen: { 1: 100, 3: 200 },
+    brief: ['深部より、最大級の反応。', '照合……我が方の全機体、全兵装の特徴を含む。侵略者は、これを「OMEGA」と呼んでいる。', '全機、出撃。これを止めよ。'],
+    win: 'OMEGA原型、沈黙。……反応、消失せず。深淵へ、後退していく。',
+    intro: '最終作戦。OMEGA原型は損傷が進むと形を変え、深淵の敵を呼ぶ。暗い戦場で、途中に裂け目も開く。倒せば作戦完了。',
+    map: { minX: -32, maxX: 32, minZ: -36, maxZ: 32 }, base: { x: 0, z: 4 }, factory: { x: 2.5, z: 1.5 }, view: { zoom: 2.3 },
+    outposts: [[-10, 8, 'A', 'p'], [10, 8, 'B', 'p'], [0, -8, 'C', 'p'], [-18, -14, 'D'], [18, -14, 'E']],
+    paths: [
+      [[0, -34], [0, -22], [-8, -22], [-8, -12], [4, -12], [4, -2], [0, -2], [0, 4]],
+      [[-30, -20], [-20, -20], [-20, 0], [-10, 0], [-10, 6], [0, 4]],
+      [[30, -20], [20, -20], [20, 0], [10, 0], [10, 6], [0, 4]],
+      [[0, 30], [0, 20], [-8, 20], [-8, 12], [0, 12], [0, 4]],
+    ],
+    waves: [[30, 'omega', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 400, 16, 7, .45], ['wraith', 10, 400, 20, 6, .4], ['swarm', 16, 400, 24, 30, .09], ['mimic', 30, 400, 40, 2, 1.3],
+      ['warper', 40, 400, 28, 3, 1.2], ['aegis', 60, 400, 50, 1, 0], ['mimicArt', 80, 400, 50, 1, 0], ['kamikaze', 50, 400, 36, 10, .2], ['flyer', 90, 400, 40, 6, .5],
+    ])),
+  });
+})();
+
 // ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
 const FEATURES = {
   blaster: 's1', spread: 's1', heavy: 's2', homing: 's4', breaker: 'w1', bomb: 'w2', laser: 'w3',
   tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
-  pilot: 's3', evolve: 's5', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
+  pilot: 's3', evolve: 's5', slot3: 'm1', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
 };
 // 解禁したときに見せる説明（武器・ボディ以外）
 const FEATURE_INFO = {
   pilot: { icon: '🎮', name: '自操作', desc: 'ロボットに乗って自分で戦う。連射・威力・射程が上がるが、機体は動かず前しか見えない' },
+  slot3: { icon: '🧬', name: '持ち込み枠 +1', desc: '進化パーツを3つまで持ち込める' },
   evolve: { icon: '🧬', name: '進化パーツの開発', desc: '使った武器でクリアすると、その武器の進化パーツが解禁される（持ち込みは第1章から）' },
   repair: { icon: '🔧', name: '拠点修理', desc: '建造画面の「拠点工事」で、拠点のHPを回復できる' },
   reserve: { icon: '📋', name: '予約', desc: '出撃中が上限でも作れる。誰かが倒れたら、すぐ出撃する' },
@@ -5052,9 +5307,15 @@ const CHAPTERS = [
   { id: 'c1', no: '第1章', title: '四方の前線', stages: ['w1', 'w2', 'w3', 'w4'],
     intro: ['包囲網、四方に展開。', '敵拠点群を確認。戦域を拡大する。', '前線を維持し、突破口を開け。'],
     outro: ['包囲網、北端を突破。', '敵拠点より回収した反応体を「コア」と呼称する。', '解析を開始。反攻に移る。'] },
-  { id: 'c2', no: '第2章', title: '反攻', stages: [], soon: true },
-  { id: 'c3', no: '第3章', title: '模倣', stages: [], soon: true },
-  { id: 'c4', no: '第4章', title: '深淵', stages: [], soon: true },
+  { id: 'c2', no: '第2章', title: '反攻', stages: ['a1', 'a2', 'a3', 'a4'],
+    intro: ['コアの解析に着手する。', '侵略者の拠点から、さらにコアを回収せよ。', '反攻を開始する。'],
+    outro: ['コアは、侵略者の学習器官と判明。', '侵略者は、倒した相手を学び、写し取る。', '敵の生産拠点より、模倣機の量産を確認。'] },
+  { id: 'c3', no: '第3章', title: '模倣', stages: ['m1', 'm2', 'm3', 'm4'],
+    intro: ['敵、我が方の兵装を写した機体を量産。', '戦うほど、敵は我々に似ていく。', '生産拠点を叩け。'],
+    outro: ['生産拠点、沈黙。', '傍受した通信の発信源は、地下深部。', '地表に、裂け目が開き始めている。'] },
+  { id: 'c4', no: '第4章', title: '深淵', stages: ['v1', 'v2', 'v3', 'v4'],
+    intro: ['裂け目の奥、深部より未知の反応。', '侵略者の中枢と推定。', '最終作戦に移行する。'],
+    outro: ['OMEGA原型、深淵へ後退。追跡、不能。', '前線基地、防衛完了。', '……指揮官ユニット、任務継続を推奨する。'] },
 ];
 
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
@@ -5102,6 +5363,7 @@ function newState(stageId, opt) {
   for (const o of S.outposts) if (o.owner === 'e') (S.st.garrison || []).forEach((type, k) => {
     const a = k / S.st.garrison.length * Math.PI * 2, def = ENEMIES[type];
     const e = { id: S.nid++, type, def, pi: 0, d: 0, off: 0, hp: def.hp * (S.st.hpMul || 1), maxHp: def.hp * (S.st.hpMul || 1), r: def.r, cd: rnd(.4, 1), x: o.x + Math.sin(a) * 1.4, z: o.z + Math.cos(a) * 1.4, face: 0, dead: false, flash: 0, firing: false, state: 'guard', armed: true };
+    if (def.weapons) e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) }));
     S.enemies.push(e);
   });
   return S;
@@ -5126,7 +5388,8 @@ function newState0(stageId, opt) {
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
     homeObj: { id: 'home', name: '拠点砲台', x: st.base.x, z: st.base.z, cd: 0, face: 0, ptsMul: 1 }, homeGun: 0, homeShield: 0, homeShieldMax: 0, works: {},
     outposts: (st.outposts || []).map((o, i) => ({ id: 'op' + i, x: o[0], z: o[1], owner: o[3] || null, prog: o[3] === 'p' ? 1 : o[3] === 'e' ? -1 : 0, enemyOrig: o[3] === 'e', label: o[2] || String.fromCharCode(65 + i) })),
-    spawned: 0,
+    spawned: 0, opened: {}, bossKills: 0,
+    convoy: st.convoy ? (() => { const P = makePath(st.convoy.path); return { P, d: 0, x: st.convoy.path[0][0], z: st.convoy.path[0][1], face: 0, hp: st.convoy.hp, maxHp: st.convoy.hp, speed: st.convoy.speed, done: false }; })() : null,
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
     allow: opt.allow || ALLOW_ALL, bodies: drawBodies(st.drawCount || DRAW_DEFAULT, opt.allow), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo && (!opt.allow || opt.allow.loadout)),
@@ -5228,6 +5491,7 @@ function makeRobot(S, q) {
     weapons: q.wids.map(w => ({ id: w, def: WEAPONS[w], cd: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : rnd(0, .3), cdMax: WEAPONS[w].type === 'nova' ? WEAPONS[w].cd : 0 })),
     face: Math.PI, moving: false, warned: false, dead: false, flash: 0, fireT: -9, hitT: -9,
   };
+  r.drain = r.weapons.reduce((a, w) => a + (w.def.drain || 0), 0); r.parry = r.weapons.some(w => w.def.parry); r.streak = 0; r.lastKill = -99;
   r.tx = r.x; r.tz = r.z;
   S.robots.push(r); S.built++; S.fx.push({ type: 'spawn', x: r.x, z: r.z, id: r.id });
   say(S, '🔧 ' + r.name + ' 完成' + (op && op.owner === 'p' ? '（陣地' + op.label + 'から出撃）' : ''));
@@ -5238,6 +5502,11 @@ function moveRobot(r, x, z, S) {
   r.tx = m ? clamp(x, m.minX, m.maxX) : x; r.tz = m ? clamp(z, m.minZ, m.maxZ) : z;
 }
 
+function nearestIf(list, x, z, range, pred) {
+  let best = null, bd = Infinity;
+  for (const e of list) { if (e.dead || !pred(e)) continue; const rr = range + e.r, d = (e.x - x) ** 2 + (e.z - z) ** 2; if (d <= rr * rr && d < bd) { bd = d; best = e; } }
+  return best;
+}
 function nearest(list, x, z, range, extraR) {
   let best = null, bd = Infinity;
   for (const e of list) {
@@ -5272,6 +5541,7 @@ function blast(S, x, z, rad, dmg, owner, team) {
   if (team === 'e') {
     for (const r of S.robots) if (!r.dead && Math.hypot(r.x - x, r.z - z) <= rad + CFG.robotR) hurtRobot(S, r, dmg, null);
     if (Math.hypot(S.home.x - x, S.home.z - z) <= rad + S.home.r) hurtHome(S, dmg, x, z);
+    if (S.convoy && Math.hypot(S.convoy.x - x, S.convoy.z - z) <= rad + 1) S.convoy.hp -= dmg * .5;
   } else {
     for (const e of S.enemies) if (!e.dead && Math.hypot(e.x - x, e.z - z) <= rad + e.r) hurtEnemy(S, e, dmg, owner, true);
     for (const b of S.ebases) if (!b.dead && Math.hypot(b.x - x, b.z - z) <= rad + b.r) hurtEbase(S, b, dmg);
@@ -5281,6 +5551,9 @@ function blast(S, x, z, rad, dmg, owner, team) {
 }
 function hurtEnemy(S, e, dmg, owner, noArmor) {
   if (e.dead) return;
+  if (e.phased) return; // 深淵体：姿が揺らいでいる間は当たらない
+  if (e.auraT > 0) dmg *= .5; // 障壁体の近く：半減
+  if (e.guardMul) dmg *= e.guardMul;
   if (e.def.armor && !noArmor) dmg = Math.max(dmg * CFG.armorFloor, dmg - e.def.armor);
   e.hp -= dmg; e.flash = .08;
   if (e.hp <= 0) killEnemy(S, e, owner);
@@ -5290,7 +5563,8 @@ function killEnemy(S, e, owner) {
   const g = Math.round(e.def.pts * (owner ? owner.ptsMul : 1) * (S.st.ptsMul || 1));
   S.pts += g; S.earned += g;
   S.fx.push({ type: 'kill', x: e.x, z: e.z, pts: g, big: !!e.def.boss, small: !!e.def.inst, kind: e.type });
-  if (e.def.boss) { S.bossKilled = true; say(S, '★ 模倣機を撃破', 'good'); }
+  if (owner && owner.weapons) { owner.streak = (S.t - owner.lastKill < 5 ? owner.streak : 0) + 1; owner.lastKill = S.t; if (owner.drain && !owner.dead) owner.hp = Math.min(owner.maxHp, owner.hp + owner.drain); }
+  if (e.def.boss) { S.bossKilled = true; S.bossKills = (S.bossKills || 0) + 1; say(S, e.def.final ? '★ ' + e.def.name + '、沈黙' : '★ ' + e.def.name + 'を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
   if (e.def.mine && e.armed) mineBlast(S, e);
 }
@@ -5357,7 +5631,9 @@ function toughest(list, x, z, range) {
   for (const e of list) { if (e.dead || (e.x - x) ** 2 + (e.z - z) ** 2 > (range + (e.r || 0)) ** 2) continue; if (e.hp > bh) { bh = e.hp; best = e; } }
   return best;
 }
+const isDanger = e => { const d = e.def; return !!(d.range || d.dash || d.heal || d.mine || d.kamikaze || d.artillery || d.weapons || d.aura || d.warp); };
 function robotTarget(S, r, d, range) {
+  if (d.pick === 'danger') return nearestIf(S.enemies, r.x, r.z, range, isDanger) || nearest(S.enemies, r.x, r.z, range) || nearest(S.ebases, r.x, r.z, range, true);
   if (d.pick === 'tough') return toughest(S.enemies, r.x, r.z, range) || nearest(S.ebases, r.x, r.z, range, true);
   if (d.noBase) return d.cluster ? densest(S.enemies, r.x, r.z, range, d.blast, d.blast + CFG.missileSafety) : nearest(S.enemies, r.x, r.z, range);
   let tg = d.cluster ? densest(S.enemies, r.x, r.z, range, d.blast, d.blast + CFG.missileSafety) : nearest(S.enemies, r.x, r.z, range);
@@ -5368,15 +5644,16 @@ function fireWeapon(S, src, d, tg, team, mul) {
   const a = Math.atan2(tg.x - src.x, tg.z - src.z);
   if (team === 'p') S.fx.push({ type: 'fire', x: src.x, z: src.z, a, kind: d.blast ? 'm' : d.size ? 'h' : d.pellets > 1 ? 's' : 'b', id: src.id });
   const range = d.range * (mul.range || 1);
-  for (let i = 0; i < d.pellets; i++) {
-    const aa = a + (d.pellets > 1 ? (i / (d.pellets - 1) - .5) * d.fan : 0);
+  const np = d.pellets + (mul.extra || 0), fan = d.fan + (mul.extra ? .12 * mul.extra : 0);
+  for (let i = 0; i < np; i++) {
+    const aa = a + (np > 1 ? (i / (np - 1) - .5) * fan : 0);
     const dmg = d.dmg * (mul.dmg || 1) * (Math.random() < (mul.crit || 0) ? CFG.critMul : 1);
     S.shots.push({
       id: S.nid++, team, x: src.x, z: src.z, vx: Math.sin(aa) * d.speed, vz: Math.cos(aa) * d.speed, dmg,
       life: (d.blast ? Math.hypot(tg.x - src.x, tg.z - src.z) : range) / d.speed * (d.homing ? 1.6 : 1) + .05, r: d.size || (d.blast ? .25 : .18),
       owner: team === 'p' ? src : null, src, pierce: d.pierce || 0, hits: [], w: d.name, blast: d.blast || 0,
       arm: d.blast ? (d.blast + CFG.missileSafety) / d.speed : 0,
-      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null,
+      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null, cancel: d.cancel || 0, stun: d.stun || 0, jackpot: !!d.jackpot, kc: 0,
     });
   }
   return a;
@@ -5400,13 +5677,15 @@ function beam(S, r, w, d, dt) {
   const m = pmul(r), range = d.range * m.range, tg = lockTarget(S, r, d, range) || robotTarget(S, r, d, range);
   if (!tg) { w.beam = null; return; }
   const a0 = Math.atan2(tg.x - r.x, tg.z - r.z), n = d.beams || 1; r.fireT = S.t; if (!r.moving && !r.piloted) r.face = a0;
-  const dmg = d.dps * dt * m.dmg * (1 + r.crit * (CFG.critMul - 1));
+  if (d.drill) { if (w.drillTg === tg) w.drillT += dt; else { w.drillTg = tg; w.drillT = 0; } }
+  const drillMul = d.drill ? 1 + Math.min(tg.def && tg.def.boss ? .45 : .8, w.drillT * .25) : 1;
+  const dmg = d.dps * dt * m.dmg * (1 + r.crit * (CFG.critMul - 1)) * drillMul;
   w.beam = [];
   for (let k = 0; k < n; k++) {
     const a = a0 + (n > 1 ? (k / (n - 1) - .5) * 2 * d.spread : 0), ux = Math.sin(a), uz = Math.cos(a);
     w.beam.push({ x2: r.x + ux * range, z2: r.z + uz * range });
     const onLine = (t, rr) => { const px = t.x - r.x, pz = t.z - r.z, along = px * ux + pz * uz; return along > 0 && along < range + rr && Math.abs(px * uz - pz * ux) < d.width + rr; };
-    for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) { hurtEnemy(S, e, dmg, r, true); if (d.slow) e.slowT = .6; }
+    for (const e of S.enemies) if (!e.dead && onLine(e, e.r)) { hurtEnemy(S, e, d.sniper ? dmg * (1 + .5 * Math.min(1, Math.hypot(e.x - r.x, e.z - r.z) / range)) : dmg, r, true); if (d.slow) e.slowT = .6; }
     for (const b of S.ebases) if (!b.dead && onLine(b, b.r)) hurtEbase(S, b, dmg);
     for (const o of S.robots) if (o !== r && !o.dead && onLine(o, CFG.robotR)) hurtRobot(S, o, dmg * CFG.friendlyFire * (d.ffMul || 1), r);
   }
@@ -5436,8 +5715,9 @@ function updRobot(S, r, dt) {
     w.onLock = !!lk;
     if (!tg) { w.cd = 0; continue; }
     if (d.blast && r.moving && !blastSafe(r, tg, d)) { w.cd = .1; continue; } // 移動中：着弾時に自分が爆風に入るなら撃たない
-    const a = fireWeapon(S, r, d, tg, 'p', { dmg: pm.dmg, crit: r.crit, range: pm.range, lock: !!lk });
-    w.cd = d.cd / pm.rate; w.cdMax = w.cd; r.fireT = S.t;
+    const stk = d.streak && S.t - r.lastKill < d.streak.reset ? Math.min(d.streak.max, r.streak) : 0;
+    const a = fireWeapon(S, r, d, tg, 'p', { dmg: pm.dmg, crit: r.crit, range: pm.range, lock: !!lk, extra: d.streak && d.streak.pellets ? Math.min(3, Math.floor(stk / 2)) : 0 });
+    w.cd = d.cd / (pm.rate * (1 + stk * (d.streak ? d.streak.rate : 0))); w.cdMax = w.cd; r.fireT = S.t;
     if (!r.moving && !r.piloted) r.face = a;
   }
 }
@@ -5449,7 +5729,10 @@ function spawnEnemy(S, type, pi, d0, from) {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
   };
-  if (def.boss) { e.off = 0; e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); say(S, '🚨 模倣機（ボス）が出現', 'bad'); S.fx.push({ type: 'boss' }); }
+  if (def.weapons) { e.weapons = def.weapons.map(w => ({ id: w, def: WEAPONS[w], cd: rnd(.5, 1.5) })); }
+  if (def.boss) { e.off = 0; e.phaseN = 0; say(S, '🚨 ' + def.name + 'が出現', 'bad'); S.fx.push({ type: 'boss', final: !!def.final, name: def.name }); }
+  if (def.phase) e.phaseT = rnd(0, def.phase.on);
+  if (def.warp) e.warpT = def.warp.every;
   const p = pathPos(S.paths[pi], e.d, e.off); e.x = from ? from.x + rnd(-.5, .5) : p.x; e.z = from ? from.z + rnd(-.5, .5) : p.z;
   if (from) e.state = 'return';
   if (def.fly) e.state = 'fly';
@@ -5483,14 +5766,33 @@ function attackBase(S, e, dt) {
   e.atkT -= dt; if (e.atkT <= 0) { e.atkT = 1; S.fx.push({ type: 'basehit', x: e.x, z: e.z }); }
   if (S.baseWarnT <= 0) { S.baseWarnT = 6; say(S, '🚨 拠点が攻撃を受けている', 'bad'); }
 }
+// 最終ボス：HPが2/3・1/3を切るたびに形を変え、深淵の敵を呼ぶ
+function omegaPhase(S, e) {
+  const k = e.hp / e.maxHp, want = k < .34 ? 2 : k < .67 ? 1 : 0;
+  if (want <= e.phaseN) return;
+  e.phaseN = want;
+  const call = (type, n) => { for (let i = 0; i < n; i++) spawnEnemy(S, type, e.pi, Math.max(0, e.d - 1 - i * .4), e); };
+  if (want === 1) { e.weapons.push({ id: 'swarmer', def: WEAPONS.swarmer, cd: 1 }); call('wraith', 8); call('aegis', 1); say(S, '⚠ OMEGA原型、形態変化。深淵体を呼んだ', 'bad'); }
+  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: WEAPONS.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
+  S.fx.push({ type: 'omegaPhase', x: e.x, z: e.z, n: want });
+}
 function updEnemy(S, e, dt) {
   const def = e.def;
-  e.flash = Math.max(0, e.flash - dt); if (e.slowT > 0) e.slowT -= dt;
+  e.flash = Math.max(0, e.flash - dt); if (e.slowT > 0) e.slowT -= dt; if (e.auraT > 0) e.auraT -= dt;
+  if (e.stunT > 0) { e.stunT -= dt; return; } // ブルワークで止まっている
+  if (def.phase) { e.phaseT -= dt; if (e.phaseT <= 0) { e.phased = !e.phased; e.phaseT = e.phased ? def.phase.off : def.phase.on; } }
+  if (def.aura) for (const o of S.enemies) if (o !== e && !o.dead && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.aura.range ** 2) o.auraT = .25;
+  if (def.warp && e.state === 'path') { e.warpT -= dt; if (e.warpT <= 0) { e.warpT = def.warp.every; const fx0 = { x: e.x, z: e.z }; e.d = Math.min(S.paths[e.pi].len - 1, e.d + def.warp.dist); const p = pathPos(S.paths[e.pi], e.d, e.off); e.x = p.x; e.z = p.z; S.fx.push({ type: 'warp', x: fx0.x, z: fx0.z, x2: e.x, z2: e.z }); } }
+  if (def.final) omegaPhase(S, e);
   // 回復ドローン：周りの敵を回復
   if (def.heal) {
     for (const o of S.enemies) if (o !== e && !o.dead && o.hp < o.maxHp && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.heal.range ** 2) o.hp = Math.min(o.maxHp, o.hp + def.heal.hps * dt);
   }
   // 守備隊：陣地から動かない。射撃型は撃ち、それ以外は触れたロボットを殴る
+  if (e.state === 'guard' && def.weapons) {
+    for (const w of e.weapons) { w.cd -= dt; if (w.cd > 0) continue; const tg = nearest(S.robots, e.x, e.z, w.def.range); if (!tg) { w.cd = 0; continue; } e.face = fireWeapon(S, e, w.def, tg, 'e', {}); w.cd = w.def.cd * (def.fireMul || 1); }
+    return;
+  }
   if (e.state === 'guard') {
     const tg = nearest(S.robots, e.x, e.z, def.range || 6);
     if (tg) e.face = Math.atan2(tg.x - e.x, tg.z - e.z);
@@ -5531,8 +5833,8 @@ function updEnemy(S, e, dt) {
   }
   // 機雷：ロボットに近づくと爆発
   if (def.mine && nearest(S.robots, e.x, e.z, def.mine.trigger)) { e.dead = true; mineBlast(S, e); return; }
-  // ボス：歩きながら武器で撃つ（拠点に着いたら拠点も攻撃）
-  if (def.boss) {
+  // ボス・模倣兵：歩きながら武器で撃つ（拠点に着いたら拠点も攻撃）
+  if (def.weapons) {
     // 狙い：射程内のロボット、いなければ射程内の自拠点
     const homeIn = r => Math.hypot(S.home.x - e.x, S.home.z - e.z) - S.home.r <= r;
     for (const w of e.weapons) {
@@ -5646,6 +5948,14 @@ function updShots(S, dt) {
       }
       continue;
     }
+    if (s.team === 'p' && s.cancel > 0) { // ウォール・ブルワーク：敵の弾を打ち消す
+      for (const o of S.shots) if (!o.dead && o.team === 'e' && (o.x - s.x) ** 2 + (o.z - s.z) ** 2 < (o.r + s.r + .2) ** 2) { o.dead = true; s.cancel--; S.fx.push({ type: 'block', x: o.x, z: o.z }); if (s.cancel <= 0) break; }
+    }
+    if (s.team === 'e' && !s.parried) { // パリィ：正面近くの敵弾を弾き返す
+      let pr = null;
+      for (const r of S.robots) if (r.parry && !r.dead && (r.x - s.x) ** 2 + (r.z - s.z) ** 2 < 3.6) { let da = Math.atan2(s.x - r.x, s.z - r.z) - r.face; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; if (Math.abs(da) < 1.2) { pr = r; break; } }
+      if (pr) { s.team = 'p'; s.parried = true; s.owner = pr; s.src = pr; s.vx = -s.vx; s.vz = -s.vz; s.dmg *= 1.5; s.life = 1.4; s.hits = []; s.pierce = 0; s.arm = 0; S.fx.push({ type: 'block', x: s.x, z: s.z }); continue; }
+    }
     if (s.team === 'p') {
       // 敵・敵拠点・味方ロボットのうち、当たったものすべて（貫通数まで）
       const lists = [S.enemies, S.ebases, S.robots];
@@ -5656,7 +5966,7 @@ function updShots(S, dt) {
         if (li === 0 && t.def.shield && !s.noShield && shieldBlocks(t, s)) { s.dead = true; S.fx.push({ type: 'block', x: s.x, z: s.z }); break; }
         if (li === 2) hurtRobot(S, t, s.dmg * CFG.friendlyFire, s.owner);
         else if (li === 1) hurtEbase(S, t, s.dmg);
-        else hurtEnemy(S, t, s.dmg, s.owner, s.noArmor);
+        else { const was = t.dead; hurtEnemy(S, t, s.dmg, s.owner, s.noArmor); if (s.stun && !t.def.boss) t.stunT = s.stun; if (!was && t.dead && ++s.kc >= 2 && s.jackpot) { const g = Math.round(t.def.pts * (S.st.ptsMul || 1)); S.pts += g; S.earned += g; S.fx.push({ type: 'kill', x: t.x, z: t.z, pts: g, jackpot: true }); } }
         if (li !== 2) onHitExtra(S, s, t);
         if (s.pierce > 0) { s.pierce--; s.hits.push(t); } else { s.dead = true; break; }
       }
@@ -5688,14 +5998,27 @@ function updOutpost(S, o, dt) {
 }
 
 // ---------- 1ステップ ----------
+const pathOpen = (S, i) => !S.st.pathOpen || !(S.st.pathOpen[i] > S.t);
 function pickPath(S, sp) {
-  const n = S.paths.length, pi = sp.path === '*' ? (sp.k++ % n) : sp.path;
+  const n = S.paths.length;
+  let pi = sp.path === '*' ? (sp.k++ % n) : sp.path;
+  if (!pathOpen(S, pi)) { if (sp.path !== '*') return -1; for (let k = 0; k < n && !pathOpen(S, pi); k++) pi = sp.k++ % n; if (!pathOpen(S, pi)) return -1; } // まだ開いていない裂け目からは出ない
   const eb = S.ebases.find(b => b.path === pi);
   if (eb && eb.dead && !ENEMIES[sp.type].rebuild) { // 壊した敵拠点の経路：出現が減る（bases ステージでは止まる）
     const rate = S.st.goal === 'bases' ? 0 : CFG.deadSpawnRate;
     if (Math.random() >= rate) return -1;
   }
   return pi;
+}
+// 補給車：決まった道を進む。敵が近くにいると止まって攻撃を受ける。終点に着けば勝ち
+function updConvoy(S, dt) {
+  const C = S.convoy; if (C.done || C.hp <= 0) return;
+  let block = false, dps = 0;
+  for (const e of S.enemies) if (!e.dead && e.state !== 'guard' && (e.x - C.x) ** 2 + (e.z - C.z) ** 2 < (e.r + 1.1) ** 2) { block = true; dps += Math.max(1, e.def.baseDps) * 2; }
+  if (dps) { C.hp -= dps * dt * (S.st.dmgMul || 1); C.hitT = S.t; if (S.t - (C.warnT || -9) > 6) { C.warnT = S.t; say(S, '🚚 補給車が攻撃を受けている', 'bad'); } }
+  C.blocked = block;
+  if (!block) { C.d = Math.min(C.P.len, C.d + C.speed * dt); const p = pathPos(C.P, C.d, 0); C.face = Math.atan2(p.dx, p.dz); C.x = p.x; C.z = p.z; }
+  if (C.d >= C.P.len - .01) { C.done = true; say(S, '🚚 補給車、到着', 'good'); }
 }
 function step(S, dt) {
   if (S.over) return;
@@ -5707,7 +6030,7 @@ function step(S, dt) {
   }
   for (const sp of S.spawners) {
     sp.next -= dt;
-    while (sp.next <= 0 && sp.n > 0) { const pi = pickPath(S, sp); if (pi >= 0) spawnEnemy(S, sp.type, pi, 0); sp.n--; sp.next += sp.gap; if (sp.gap <= 0) sp.next = 0; }
+    while (sp.next <= 0 && sp.n > 0) { const pi = pickPath(S, sp); if (pi === -1 && sp.path !== '*' && !pathOpen(S, sp.path)) { sp.next = .5; break; } if (pi >= 0) spawnEnemy(S, sp.type, pi, 0); sp.n--; sp.next += sp.gap; if (sp.gap <= 0) sp.next = 0; }
   }
   S.spawners = S.spawners.filter(s => s.n > 0);
   // 建造：完成していない予約を先頭からライン数ぶん同時に進める。完成したものは出撃枠が空き次第すぐ出撃
@@ -5724,6 +6047,8 @@ function step(S, dt) {
   for (let i = 0; i < S.enemies.length; i++) { const e = S.enemies[i]; if (!e.dead) updEnemy(S, e, dt); }
   for (const b of S.ebases) if (!b.dead) updEbase(S, b, dt);
   for (const o of S.outposts) updOutpost(S, o, dt);
+  if (S.convoy) updConvoy(S, dt);
+  if (S.st.pathOpen) for (const i in S.st.pathOpen) if (!S.opened[i] && S.t >= S.st.pathOpen[i]) { S.opened[i] = true; say(S, '🌀 新たな裂け目が開いた（' + dirName(S, S.st.paths[i][0]) + '）', 'bad'); S.fx.push({ type: 'rift', i: +i }); }
   updHomeGun(S, dt);
   updShots(S, dt);
   S.robots = S.robots.filter(r => !r.dead);
@@ -5733,7 +6058,9 @@ function step(S, dt) {
   if (S.baseHP <= 0) { S.baseHP = 0; S.over = 'lose'; }
   else if (g === 'points' && S.pts >= S.st.goalPts) S.over = 'win';
   else if (g === 'bases' && S.ebases.every(b => b.dead)) S.over = 'win';
-  else if (g === 'boss' && S.bossKilled) S.over = 'win';
+  else if (g === 'boss' && (S.bossKills || 0) >= (S.st.bossCount || 1)) S.over = 'win';
+  else if (g === 'escort' && S.convoy && S.convoy.done) S.over = 'win';
+  else if (S.convoy && S.convoy.hp <= 0) { S.convoy.hp = 0; S.over = 'lose'; S.loseWhy = '補給車が破壊された'; }
   else if (g === 'clear' && S.waveIdx >= W.length && !S.spawners.length && !S.enemies.some(e => e.state !== 'guard')) S.over = 'win';
   else if (S.t >= S.st.time) { S.t = S.st.time; S.over = g === 'time' ? 'win' : 'lose'; }
 }
@@ -5742,7 +6069,8 @@ function goalText(st) {
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
-  if (st.goal === 'boss') return '模倣機を撃破する' + lim;
+  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
+  if (st.goal === 'escort') return '補給車を目的地まで護衛する' + lim;
   if (st.goal === 'clear') return '押し寄せる敵をすべて倒す' + lim;
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
@@ -5772,6 +6100,10 @@ let SAVE = { unlocked: {}, swarmKills: 0, loadout: [] };
 try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (v && typeof v === 'object') SAVE = Object.assign(SAVE, v); } catch (_) {}
 function saveNow() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (_) {} }
 const isOpen = id => !!(SAVE.unlocked && SAVE.unlocked[id]);
+const SET_KEY = 'robodef_settings';
+let SET = { bgm: .7, se: .8, shake: true, nums: true };
+try { const v = JSON.parse(localStorage.getItem(SET_KEY) || 'null'); if (v && typeof v === 'object') SET = Object.assign(SET, v); } catch (_) {}
+function saveSet() { try { localStorage.setItem(SET_KEY, JSON.stringify(SET)); } catch (_) {} }
 
 // ---------- three.js ----------
 const canvas = $('c');
@@ -5831,7 +6163,7 @@ function resetView() { const b = S ? S.st.base : { x: mapCX, z: mapCZ }; camS.x 
 function toggleView() { if (ZOOM_START > 1 && camS.zoom > 1.05) { camS.x = mapCX; camS.z = mapCZ; camS.zoom = 1; applyCam(); } else resetView(); }
 addEventListener('resize', fit);
 
-scene.add(new T.HemisphereLight(0xb0dcff, 0x2a1838, 1.45));
+const hemi = new T.HemisphereLight(0xb0dcff, 0x2a1838, 1.45); scene.add(hemi);
 const FOG_P = new T.Fog(0x050a1c, 22, 75); const FOG_M = new T.Fog(0x050a1c, 40, 115); // 自操作：遠くを暗くして奥行きを出す（見通しの悪さも表す）
 const sun = new T.DirectionalLight(0xfff0dc, 1.7); sun.position.set(6, 14, 9); scene.add(sun);
 
@@ -5866,6 +6198,11 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
+  omega: lam(0x5a1a8a, 0x2a0a40), omegaHead: lam(0xd28cff, 0x5a2a8a), omegaDark: lam(0x1a0828, 0x0a0214), visorO: new T.MeshBasicMaterial({ color: 0xff3bd0 }),
+  mimic: lam(0xc8324a, 0x3a0a14), mimicHead: lam(0xff9aa8, 0x4a1a20),
+  wraith: new T.MeshBasicMaterial({ color: 0xb06cff, transparent: true, opacity: .75 }), warper: lam(0x9a5cff, 0x3a1a6a), aegis: lam(0x7a4cff, 0x2a1060),
+  auraRing: new T.MeshBasicMaterial({ color: 0xb06cff, transparent: true, opacity: .22, side: T.DoubleSide, depthWrite: false }),
+  convoy: lam(0xe8f4ff, 0x2a3a5a), convoyCab: lam(0x2f7dff, 0x0a2250), route: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .28, depthWrite: false }),
   novaCore: new T.MeshBasicMaterial({ color: 0xfff1b0 }), novaRing: new T.MeshBasicMaterial({ color: 0xffa94d }),
   visor: new T.MeshBasicMaterial({ color: 0xaefcff }), visorE: new T.MeshBasicMaterial({ color: 0xffe14d }),
   shadow: new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false }),
@@ -5951,8 +6288,14 @@ function buildMap(st, paths) {
   st.paths.forEach((p, i) => {
     if ((st.ebases || []).some(b => b.path === i)) return;
     const gate = new T.Mesh(new T.TorusGeometry(1.1, .14, 8, 28), new T.MeshBasicMaterial({ color: 0xff4d6d }));
-    gate.position.set(p[0][0], 1.1, p[0][1]); g.add(gate); M.gates.push(gate);
+    gate.position.set(p[0][0], 1.1, p[0][1]); gate.userData.pi = i; g.add(gate); M.gates.push(gate);
   });
+  if (st.convoy) { // 補給車の道（点線）と目的地
+    const P = st.convoy.path;
+    for (let i = 1; i < P.length; i++) { const a = P[i - 1], b = P[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]); for (let t = .5; t < len; t += 1.2) { const m = new T.Mesh(G.box, M.route); m.scale.set(.35, .03, .6); m.position.set(a[0] + (b[0] - a[0]) * t / len, .05, a[1] + (b[1] - a[1]) * t / len); m.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]); g.add(m); } }
+    const e = P[P.length - 1], ring = new T.Mesh(new T.RingGeometry(1.6, 1.9, 40), M.flagP); ring.rotation.x = -Math.PI / 2; ring.position.set(e[0], .05, e[1]); g.add(ring);
+    const pole = new T.Mesh(G.cyl, M.flagP); pole.scale.set(.1, 2.6, .1); pole.position.set(e[0], 1.3, e[1]); g.add(pole);
+  }
   // 拠点
   const base = new T.Group();
   const b1 = new T.Mesh(new T.CylinderGeometry(1.5, 1.8, .8, 6), M.robo); b1.position.y = .4;
@@ -6023,9 +6366,12 @@ function roboMesh(r) {
   return { obj: g, inner, body, ring, range, bubble, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
 }
 function enemyMesh(e) {
-  if (e.type === 'boss') {
-    const { g, inner, body } = mechMesh(e.def.weapons, 2.2, { body: M.boss, head: M.bossHead, dark: M.bossDark, visor: M.visorE });
-    return { obj: g, inner, body, bar: makeBar(3, M.barGold), barY: 2.8, baseMat: M.boss, face: true, always: true };
+  if (e.def.weapons) {
+    const fin = e.def.final, sc = e.def.mscale || 2.2, big = !!e.def.boss;
+    const mats = fin ? { body: M.omega, head: M.omegaHead, dark: M.omegaDark, visor: M.visorO } : big ? { body: M.boss, head: M.bossHead, dark: M.bossDark, visor: M.visorE } : { body: M.mimic, head: M.mimicHead, dark: M.bossDark, visor: M.visorE };
+    const { g, inner, body } = mechMesh(e.def.weapons, sc, mats);
+    if (fin) { const halo = new T.Mesh(new T.TorusGeometry(2.6, .12, 8, 40), M.visorO); halo.rotation.x = Math.PI / 2; halo.position.y = 3.6; g.add(halo); }
+    return { obj: g, inner, body, bar: makeBar(big ? sc * 1.3 : 1.3, big ? M.barGold : M.barRed), barY: sc * 1.25, baseMat: mats.body, face: true, always: big };
   }
   const g = new T.Group(), inner = new T.Group();
   g.add(shadowDisc(e.r * 1.7));
@@ -6067,6 +6413,13 @@ function enemyMesh(e) {
       body = add(G.ico, M.enemyM, .85, .85, .85, 0, .55, 0);
       for (const [x, y, z] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, -1]]) { const s = add(G.cone, M.mineSpike, .18, .35, .18, x * .5, .55 + y * .5, z * .5); s.lookAt(x * 9, .55 + y * 9, z * 9); s.rotateX(Math.PI / 2); }
       spin = true; break;
+    case 'wraith':
+      body = add(G.oct, M.wraith, .8, 1.3, .8, 0, .8, 0); spin = true; break;
+    case 'warper':
+      body = add(G.cone, M.warper, .8, 1.1, .8, 0, .6, 0); { const t = new T.Mesh(new T.TorusGeometry(.6, .06, 6, 20), M.visorO); t.rotation.x = Math.PI / 2; t.position.y = .3; inner.add(t); } spin = true; break;
+    case 'aegis':
+      body = add(G.sph, M.aegis, 1.1, 1, 1.1, 0, .7, 0); add(G.ico, M.omegaHead, .5, .5, .5, 0, 1.4, 0);
+      { const r = new T.Mesh(G.disc, M.auraRing); r.rotation.x = -Math.PI / 2; r.position.y = .05; r.scale.setScalar(ENEMIES.aegis.aura.range / .6); g.add(r); } spin = true; break;
     default:
       body = add(G.oct, M.enemyN, 1, 1.15, 1, 0, .62, 0); spin = true;
   }
@@ -6120,7 +6473,7 @@ marker.rotation.x = -Math.PI / 2; marker.position.y = .06; marker.visible = fals
 let markerT = 0;
 
 function dropView(v) { scene.remove(v.obj); if (v.bar) scene.remove(v.bar); if (v.line) scene.remove(v.line); if (v.aim) scene.remove(v.aim); if (v.beams) for (const b of v.beams) if (b) for (const m of b) scene.remove(m); }
-function clearViews() { for (const v of views.values()) dropView(v); views.clear(); }
+function clearViews() { for (const v of views.values()) dropView(v); views.clear(); if (M.convoyObj) { scene.remove(M.convoyObj, M.convoyBar); M.convoyObj = null; } }
 function sync(dt) {
   const seen = new Set(), k = 1 - Math.exp(-14 * dt);
   for (const r of S.robots) {
@@ -6142,9 +6495,23 @@ function sync(dt) {
     setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp); if (pilot === r) v.bar.visible = false;
     if (r.moving) setLine(v.line, r.x, r.z, r.tx, r.tz); else v.line.visible = false;
   }
+  if (S.convoy) {
+    const C = S.convoy;
+    if (!M.convoyObj) {
+      const g = new T.Group(), b = new T.Mesh(G.box, M.convoy); b.scale.set(1.1, .8, 2); b.position.y = .6; const c = new T.Mesh(G.box, M.convoyCab); c.scale.set(1, .7, .7); c.position.set(0, .7, 1.25);
+      g.add(shadowDisc(1.3), b, c); for (const [x, z] of [[-.55, -.6], [.55, -.6], [-.55, .9], [.55, .9]]) { const w = new T.Mesh(G.cyl, M.roboDark); w.scale.set(.4, .2, .4); w.rotation.z = Math.PI / 2; w.position.set(x, .2, z); g.add(w); }
+      scene.add(g); M.convoyObj = g; M.convoyBody = b; M.convoyBar = makeBar(1.6, M.barBlue); scene.add(M.convoyBar);
+    }
+    M.convoyObj.position.set(C.x, 0, C.z); M.convoyObj.rotation.y = lerpAngle(M.convoyObj.rotation.y, C.face, k);
+    M.convoyBody.material = S.t - (C.hitT || -9) < .1 ? M.white : M.convoy;
+    setBar(M.convoyBar, C.x, 1.9, C.z, C.hp / C.maxHp);
+  }
   const ni = {}; for (const k in swarmInst) ni[k] = 0; const spin = performance.now() / 500;
+  const D = S.st.dark, lights = D ? S.robots.map(r => [r.x, r.z, D]).concat([[S.home.x, S.home.z, D + 3]], S.outposts.filter(o => o.owner === 'p').map(o => [o.x, o.z, D * .8]), S.convoy ? [[S.convoy.x, S.convoy.z, D * .7]] : []) : null;
   for (const e of S.enemies.concat(S.ebases)) {
     if (e.dead) continue;
+    e.lit = !D || e.ebase || (e.def && e.def.boss) || lights.some(l => (l[0] - e.x) ** 2 + (l[1] - e.z) ** 2 < l[2] * l[2]);
+    if (!e.lit) { const v0 = views.get(e.id); if (v0) { v0.obj.visible = false; v0.bar.visible = false; seen.add(e.id); } continue; }
     if (e.def && e.def.inst) { // 群体：まとめ描画
       const key = swarmInst[e.type] ? e.type : 'swarm', L = SWARM_LOOK[key], im = swarmInst[key];
       if (ni[key] < 2500) { dummy.position.set(e.x, L.y, e.z); dummy.rotation.set(0, spin + e.id, 0); dummy.scale.set(L.s[0], L.s[1], L.s[2]); dummy.updateMatrix(); im.setMatrixAt(ni[key]++, dummy.matrix); }
@@ -6152,7 +6519,7 @@ function sync(dt) {
     }
     let v = views.get(e.id);
     if (!v) { v = e.ebase ? ebaseMesh(e) : enemyMesh(e); scene.add(v.obj, v.bar); if (v.aim) scene.add(v.aim); views.set(e.id, v); v.obj.position.set(e.x, 0, e.z); v.obj.rotation.y = e.face || 0; }
-    seen.add(e.id);
+    seen.add(e.id); v.obj.visible = !e.phased || Math.sin(performance.now() / 45) > .3;
     v.obj.position.x += (e.x - v.obj.position.x) * k; v.obj.position.z += (e.z - v.obj.position.z) * k;
     if (v.face) v.obj.rotation.y = lerpAngle(v.obj.rotation.y, e.face || 0, k);
     if (v.spin) v.inner.rotation.y += dt * 2;
@@ -6183,6 +6550,7 @@ function updEdges() {
     const W = innerWidth, H = innerHeight, top = $('hud').offsetHeight + 8, bot = H - $('bottom').offsetHeight - 8, l = 10, r = W - 10;
     const cx = W / 2, cy = (top + bot) / 2, buckets = new Map();
     for (const e of S.enemies) {
+      if (e.lit === false) continue;
       const dh = Math.hypot(e.x - S.home.x, e.z - S.home.z), boss = e.def.boss, art = e.def.artillery && e.firing;
       if (!boss && !art && !e.def.fly && dh > 16 && !e.atBase) continue; // 拠点に迫っていない敵は出さない
       pv.set(e.x, .5, e.z).project(cam);
@@ -6234,7 +6602,7 @@ function updTags() {
 
 // ---------- 音（WebAudio で合成。音声ファイルは使わない） ----------
 const AU = (() => {
-  let ctx = null, master = null, sfx = null, bgmG = null, noiseBuf = null, muted = false, seq = null;
+  let ctx = null, master = null, sfx = null, bgmG = null, noiseBuf = null, muted = false, seq = null; const vol = { bgm: SET.bgm, se: SET.se };
   try { muted = localStorage.getItem('robodef_mute') === '1'; } catch (_) {}
   const last = {};
   function init() {
@@ -6242,8 +6610,8 @@ const AU = (() => {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     try {
       ctx = new AC(); master = ctx.createGain(); master.gain.value = muted ? 0 : .7; master.connect(ctx.destination);
-      sfx = ctx.createGain(); sfx.gain.value = .55; sfx.connect(master);
-      bgmG = ctx.createGain(); bgmG.gain.value = .16; bgmG.connect(master);
+      sfx = ctx.createGain(); sfx.gain.value = .55 * vol.se; sfx.connect(master);
+      bgmG = ctx.createGain(); bgmG.gain.value = .16 * vol.bgm; bgmG.connect(master);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     } catch (_) { ctx = null; }
   }
@@ -6302,7 +6670,8 @@ const AU = (() => {
   }
   function bgmStop() { if (seq) clearInterval(seq); seq = null; }
   function setMute(m) { muted = m; try { localStorage.setItem('robodef_mute', m ? '1' : '0'); } catch (_) {} if (master) master.gain.value = m ? 0 : .7; }
-  return { init, S, bgmStart, bgmStop, setMute, get muted() { return muted; } };
+  function setVol(b, e) { vol.bgm = b; vol.se = e; if (sfx) sfx.gain.value = .55 * e; if (bgmG) bgmG.gain.value = .16 * b; }
+  return { init, S, bgmStart, bgmStop, setMute, setVol, get muted() { return muted; } };
 })();
 
 // ---------- 粒子（破片・発砲光）：まとめて1回で描く ----------
@@ -6331,7 +6700,7 @@ function updParts(dt) {
 
 // ---------- 画面の揺れ・告知バナー・連続撃破 ----------
 let shakeT = 0, shakeMag = 0;
-function shake(mag, t) { if (mag >= shakeMag || shakeT <= 0) { shakeMag = mag; shakeT = t; } }
+function shake(mag, t) { if (!SET.shake) return; if (mag >= shakeMag || shakeT <= 0) { shakeMag = mag; shakeT = t; } }
 function banner(main, sub, kind, dur = 2.2) {
   const b = $('banner'); b.className = 'banner ' + (kind || ''); b.innerHTML = '<b>' + esc(main) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '');
   void b.offsetWidth; b.classList.add('show'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('show'), dur * 1000);
@@ -6372,7 +6741,8 @@ function addFx(f) {
       if (f.small) { burst(f.x, f.z, KILL_COL[f.kind] || 0xff5c8a, 3, 3, .14, .45); AU.S.kill(true); return; }
       burst(f.x, f.z, 0xff4d6d, f.big ? 40 : 8, f.big ? 8 : 4, f.big ? .35 : .18, f.big ? 1.2 : .6);
       fxMesh(G.ring, 0xff6a7a, f.x, f.z, .1, .3, f.big ? 5 : 1.4, f.big ? .8 : .35, true); floatText(f.x, f.z, '+' + f.pts); AU.S.kill(false);
-      if (f.big) { fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); shake(.6, .6); AU.S.blast(true); banner('模倣機 撃破', '+' + f.pts, 'good', 1.8); }
+      if (f.jackpot) floatText(f.x, f.z + .8, 'JACKPOT');
+      if (f.big) { fxMesh(G.sph, 0xff4d6d, f.x, f.z, 1, .5, 6, .7); shake(.6, .6); AU.S.blast(true); banner(ENEMIES[f.kind] ? ENEMIES[f.kind].name + ' 撃破' : '撃破', '+' + f.pts, 'good', 1.8); }
       return;
     case 'blast': { const e = f.team === 'e'; fxMesh(G.sph, e ? 0xff4d6d : 0xffa94d, f.x, f.z, .4, .3, f.rad * 2, .4); fxMesh(G.ring, e ? 0xff2d55 : 0xffd166, f.x, f.z, .08, .3, f.rad * 1.05, .45, true); burst(f.x, f.z, e ? 0xff4d6d : 0xffa94d, 10, 6, .2, .5); AU.S.blast(false); shake(.12, .15); return; }
     case 'boom': fxMesh(G.sph, 0xffa94d, f.x, f.z, .5, .4, f.rad * 2, .5); fxMesh(G.ring, 0xffd166, f.x, f.z, .1, .5, f.rad * 1.1, .6, true); burst(f.x, f.z, 0xffd166, 22, 9, .25, .8); AU.S.blast(true); shake(.35, .35); return;
@@ -6390,7 +6760,10 @@ function addFx(f) {
       burst(f.x, f.z, 0xfff1b0, 60, 16, .35, 1.2, 1, 1.5); const h = $('hitFlash'); h.classList.add('nova', 'on'); setTimeout(() => h.classList.remove('on', 'nova'), 120);
       AU.S.blast(true); setTimeout(() => AU.S.blast(true), 120); shake(1.2, .9); return;
     }
-    case 'boss': banner('WARNING', '模倣機（ボス）接近', 'boss', 2.8); AU.S.boss(); shake(.25, .8); return;
+    case 'boss': banner(f.final ? 'OMEGA' : 'WARNING', (f.name || '模倣機') + ' 接近', 'boss', 3); AU.S.boss(); shake(f.final ? .6 : .25, .8); return;
+    case 'omegaPhase': fxMesh(G.ring, 0xff3bd0, f.x, f.z, .1, 1, 18, 1.2, true); fxMesh(G.sph, 0xb06cff, f.x, f.z, 1.5, 1, 8, .7); banner('OMEGA原型', f.n === 2 ? '最終形態' : '形態変化', 'boss', 2.4); AU.S.boss(); shake(.7, .8); return;
+    case 'warp': { const l = makeLine(new T.LineBasicMaterial({ color: 0xb06cff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .6; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 160); fxMesh(G.ring, 0xb06cff, f.x2, f.z2, .1, .3, 1.6, .4, true); return; }
+    case 'rift': banner('RIFT', '新たな裂け目が開いた', 'boss', 2); AU.S.alarm(); return;
     case 'basehit': {
       fxMesh(G.ring, 0xff2d55, f.x, f.z, .2, .3, 1.4, .4, true);
       const now = performance.now();
@@ -6408,6 +6781,7 @@ function updFx(dt) {
   }
 }
 function floatText(x, z, text) {
+  if (!SET.nums) return;
   const p = new T.Vector3(x, 1, z).project(cam); if (p.z > 1) return;
   const d = document.createElement('div'); d.className = 'float'; d.textContent = text;
   d.style.left = ((p.x + 1) / 2 * innerWidth) + 'px'; d.style.top = ((1 - p.y) / 2 * innerHeight) + 'px';
@@ -6646,7 +7020,7 @@ function updHud() {
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
   const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? (S.enemies.some(e => e.def.boss) ? '👹 撃破せよ ' : '👹 接近中 ') : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
@@ -6784,7 +7158,7 @@ $('buildBtn').addEventListener('click', openBuild);
 // ---------- 画面遷移 ----------
 function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = 'modal center show' + (cls ? ' ' + cls : ''); $('ovCard').scrollTop = 0; }
 function hideOv() { $('ov').classList.remove('show'); }
-function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { cam = pCam; scene.fog = FOG_M; } else scene.fog = null; }
+function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { document.body.classList.remove('darkst'); cam = pCam; scene.fog = FOG_M; hemi.intensity = 1.45; sun.intensity = 1.7; scene.background.setHex(0x050a1c); } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
 const CH = RD.CHAPTERS, ORDER = CH.flatMap(c => c.stages);
 const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
@@ -6828,10 +7202,11 @@ function titleScreen() {
     (() => { const nx = nextStage(), any = ORDER.some(cleared), st = nx && stById(nx);
       return '<button class="primary big" id="goBtn">' + (st ? (any ? '▶ 続きから' : '▶ はじめる') + '<small>' + esc(st.name + '「' + st.sub + '」') + '</small>' : '▶ 作戦を選ぶ') + '</button>' +
         (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
-    '<button class="ghost" id="howBtn">遊び方</button>' +
+    '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
-    '<div class="ver">試作版</div></div>', 'hero');
+    '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
+  $('zkBtn').onclick = () => zukanScreen(titleScreen); $('rcBtn').onclick = () => recordScreen(titleScreen); $('stBtn').onclick = () => settingsScreen(titleScreen);
 }
 // 遊び方：1項目1行。細かいことはプレイ中の案内で出す
 const HOW = [
@@ -6850,7 +7225,7 @@ function howTo(back) {
   $('howOk').onclick = back;
 }
 function stageEnemies(st) { return [...new Set(st.waves.map(w => w[1]))].map(t => ENEMIES[t].name); }
-function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : st.goal === 'boss' ? '👹 模倣機 撃破' : st.goal === 'clear' ? '👾 全滅させる' : '🛡 ' + fmtT(st.time) + ' 守る'; }
+function goalChip(st) { return st.goal === 'points' ? '⭐' + st.goalPts + ' 貯める' : st.goal === 'bases' ? '🏭 ' + (st.ebases || []).length + 'か所 破壊' : st.goal === 'boss' ? '👹 ' + (st.bossName || '模倣機') + ' 撃破' : st.goal === 'escort' ? '🚚 補給車 護衛' : st.goal === 'clear' ? '👾 全滅させる' : '🛡 ' + fmtT(st.time) + ' 守る'; }
 function stageNo(st) { return st.name.replace('序章-', ''); }
 function stageSelect() {
   mode = 'select'; setMenu(true);
@@ -6874,19 +7249,19 @@ function stageSelect() {
   html += '<details class="more"><summary>🧬 進化パーツ（' + UNLOCKS.filter(u => isOpen(u.id)).length + '/' + UNLOCKS.length + '）</summary>' +
     '<div class="dim" style="margin:4px 0 6px">' + esc(stById(RD.FEATURES.evolve).name) + 'から、進化元の武器を使って作戦をクリアすると解禁。持ち込みは' + esc(stById(RD.FEATURES.loadout).name) + 'から</div>' +
     UNLOCKS.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🔒 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + (isOpen(u.id) ? '' : '：' + esc(u.cond)) + '</div>').join('') + '</details>' +
-    '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button><button class="ghost small" id="allOpen">全解禁（試作用）</button></div>';
+    '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button></div>';
   showOv(html);
   $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => openStage(b.dataset.st));
   $('ovCard').querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { uiCh = b.dataset.ch; stageSelect(); });
   if ($('story')) $('story').onclick = () => chapterCard(c, c.stages.every(cleared) && c.outro ? 'outro' : 'intro', stageSelect);
-  $('allOpen').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; SAVE.allOpen = true; saveNow(); stageSelect(); };
   $('toTitle').onclick = titleScreen;
 }
 // 作戦の詳細：説明・出現する敵・報酬・持ち込みを1枚にまとめ、ここから出撃する
 function stageDetail(stId) {
   curStage = stId;
   const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen), lockedEvo = open.length && !allowOf(stId).loadout;
-  SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
+  const SLOTS = CFG.loadoutSlots + (allowOf(stId).slot3 ? 1 : 0);
+  SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, SLOTS);
   const A = allowOf(st.id), rw = A.evolve ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
   showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
     (st.brief ? commHTML(st.brief) : '') +
@@ -6897,12 +7272,12 @@ function stageDetail(stId) {
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
     (rw.length ? '<div class="sec">🧬 進化パーツ <span class="dim">使った武器でクリアすると解禁</span></div><div class="evoh">' + rw.map(u => '<span>' + WEAPONS[u.base].icon + esc(WEAPONS[u.base].name) + ' → ' + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '</span>').join('') + '</div>' : '') +
-    (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
+    (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + SLOTS + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
     (lockedEvo ? '<div class="dim" style="margin-top:8px">🧬 進化パーツの持ち込みは ' + esc(stById(RD.FEATURES.loadout).name) + ' から（コアの解析待ち）</div>' : '') +
     '<div class="btns sticky"><button class="ghost" id="sdBack">← 戻る</button><button class="primary big" id="sdGo">▶ 出撃</button></div>');
   $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
     const id = b.dataset.lo, i = SAVE.loadout.indexOf(id);
-    if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < CFG.loadoutSlots) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
+    if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < SLOTS) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
     saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
   });
   $('sdBack').onclick = () => { uiCh = chOf(stId).id; stageSelect(); }; $('sdGo').onclick = () => startGame(stId);
@@ -6916,6 +7291,8 @@ function startGame(stId) {
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
   mode = 'play'; paused = false; sel = null; uiBody = null; setMenu(false); cam = oCam;
+  document.body.classList.toggle('darkst', !!S.st.dark);
+  hemi.intensity = S.st.dark ? .55 : 1.45; sun.intensity = S.st.dark ? .6 : 1.7; scene.background.setHex(S.st.dark ? 0x02030a : 0x050a1c);
   for (const el of rosterEls.values()) el.remove(); rosterEls.clear(); setRoster(false); hudCache.infoKey = null;
   hideOv(); updInfo(); fit(); resetView();
   AU.init(); AU.bgmStart(!!S.st.wide); combo.times = []; combo.n = 0; combo.best = 0; parts.length = 0;
@@ -6931,11 +7308,13 @@ function endGame() {
   if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = SAVE.clear[S.st.id] || { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; if (S.st.hard) { SAVE.clearH = SAVE.clearH || {}; SAVE.clearH[S.st.id] = { t: Math.round(S.t) }; } }
   const allNow = !wasAll && allClear();
   saveNow();
-  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? '模倣機撃破' : g === 'clear' ? '殲滅完了' : '防衛成功') : (fell ? '拠点陥落' : '作戦失敗');
-  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で模倣機を撃破した' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
-    : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : '時間切れ。目標を達成できなかった');
+  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
+  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
+    : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : S.loseWhy ? fmtT(S.t) + ' ' + S.loseWhy : '時間切れ。目標を達成できなかった');
   const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
   const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
+  addStats(S); saveNow();
+  const toEnding = win && S.st.id === ORDER[ORDER.length - 1] && !seen('ending');
   const tile = (icon, v, label) => '<div class="tile"><span>' + icon + '</span><b>' + v + '</b><small>' + label + '</small></div>';
   showOv(
     '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>' + (S.st.hard ? '🔥 HARD　' : '') + (win ? 'MISSION COMPLETE' : 'MISSION FAILED') + '</small><h1>' + head + '</h1><p>' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　' + msg + '</p></div>' +
@@ -6953,13 +7332,117 @@ function endGame() {
     '<span>誤射ダメージ / 誤射で撃破</span><b>' + Math.round(S.ffDmg) + ' / ' + S.ffKills + '</b>' +
     '<span>獲得 / 使ったポイント</span><b>' + S.earned + ' / ' + S.spent + '</b>' +
     '<span>拠点に取り付いた敵 / 被ダメージ</span><b>' + S.leaked + ' / ' + Math.round(S.baseDmg) + '</b></div></details>' +
-    '<div class="btns col">' + (chDone ? '<button class="primary big" id="nextSt">📡 通信を受信（' + esc(ch.no) + ' 完了）</button>' : next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
+    '<div class="btns col">' + (toEnding && !chDone ? '<button class="primary big" id="toEnd">🎬 エンディングへ</button>' : '') + (chDone ? '<button class="primary big" id="nextSt">📡 通信を受信（' + esc(ch.no) + ' 完了）</button>' : next ? '<button class="primary big" id="nextSt">次の作戦へ ▶ ' + esc(next.sub) + '</button>' : '') +
     '<div class="btns"><button class="ghost" id="toSel">作戦選択</button><button class="' + (next || chDone ? 'ghost' : 'primary') + '" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
-  $('again').onclick = () => startGame(curStage);
-  if (chDone) $('nextSt').onclick = () => chapterCard(ch, 'outro', () => { if (next) openStage(next.id); else { const ci = CH.indexOf(ch); uiCh = (CH[ci + 1] || ch).id; stageSelect(); } });
+  $('again').onclick = () => startGame(curStage); if ($('toEnd')) $('toEnd').onclick = () => showEnding(titleScreen);
+  if (chDone) $('nextSt').onclick = () => chapterCard(ch, 'outro', () => { if (toEnding) showEnding(titleScreen); else if (next) openStage(next.id); else { const ci = CH.indexOf(ch); uiCh = (CH[ci + 1] || ch).id; stageSelect(); } });
   else if (next) $('nextSt').onclick = () => openStage(next.id);
   $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
 }
+// ---------- 設定（音量・揺れ・数字表示）：保存キーは robodef_settings ----------
+// ---------- 図鑑・記録・エンディング ----------
+function settingsScreen(back) {
+  const row = (label, html) => '<div class="setrow"><span>' + label + '</span>' + html + '</div>';
+  showOv('<h1>設定</h1><div class="sets">' +
+    row('🎵 BGM', '<input type="range" min="0" max="100" step="5" id="stBgm" value="' + Math.round(SET.bgm * 100) + '"><b id="stBgmV">' + Math.round(SET.bgm * 100) + '</b>') +
+    row('🔊 効果音', '<input type="range" min="0" max="100" step="5" id="stSe" value="' + Math.round(SET.se * 100) + '"><b id="stSeV">' + Math.round(SET.se * 100) + '</b>') +
+    row('📳 画面の揺れ', '<button class="chip' + (SET.shake ? ' on' : '') + '" id="stShake">' + (SET.shake ? 'あり' : 'なし') + '</button>') +
+    row('💬 ポイントの数字', '<button class="chip' + (SET.nums ? ' on' : '') + '" id="stNums">' + (SET.nums ? '表示する' : '表示しない') + '</button>') +
+    '</div><div class="sec">データ</div><div class="pmenu">' +
+    '<button id="stTut">初めての案内をもう一度出す</button>' +
+    '<button id="stAll">' + (SAVE.allOpen ? '✅ すべて解禁済み（確認用）' : 'すべての武器と機能を解禁する（確認用）') + '</button>' +
+    '<button id="stReset" class="danger">保存データをすべて消す</button></div>' +
+    '<div class="btns"><button class="primary" id="stOk">戻る</button></div>');
+  const sl = (id, key) => { $(id).oninput = e => { SET[key] = +e.target.value / 100; $(id + 'V').textContent = e.target.value; saveSet(); AU.init(); AU.setVol(SET.bgm, SET.se); if (key === 'se') AU.S.ui(); }; };
+  sl('stBgm', 'bgm'); sl('stSe', 'se');
+  $('stShake').onclick = () => { SET.shake = !SET.shake; saveSet(); settingsScreen(back); };
+  $('stNums').onclick = () => { SET.nums = !SET.nums; saveSet(); settingsScreen(back); };
+  $('stAll').onclick = () => { for (const u of UNLOCKS) SAVE.unlocked[u.id] = true; SAVE.allOpen = true; saveNow(); settingsScreen(back); };
+  $('stTut').onclick = () => { SAVE.tut = {}; SAVE.seenE = {}; saveNow(); toast('案内をもう一度出します', 'good'); };
+  $('stReset').onclick = () => {
+    const b = $('stReset');
+    if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = '本当に消す（元に戻せません）'; return; }
+    try { localStorage.removeItem(SAVE_KEY); } catch (_) {}
+    SAVE = { unlocked: {}, swarmKills: 0, loadout: [] }; uiCh = null; curHard = false; toast('保存データを消しました', 'warn'); titleScreen();
+  };
+  $('stOk').onclick = back;
+}
+// 図鑑：敵（出会ったものだけ）・武器・ボディ
+let zukanTab = 'enemy';
+function zukanScreen(back) {
+  const tabs = [['enemy', '👾 敵'], ['weapon', '🔧 武器'], ['body', '🤖 ボディ']];
+  let body = '';
+  if (zukanTab === 'enemy') {
+    const list = Object.keys(ENEMIES).filter(k => ENEMIES[k].desc);
+    const seenN = list.filter(k => SAVE.seenE && SAVE.seenE[k]).length;
+    body = '<div class="dim">出会った敵 ' + seenN + '/' + list.length + '</div><div class="zlist">' + list.map(k => {
+      const e = ENEMIES[k], ok = SAVE.seenE && SAVE.seenE[k];
+      return '<div class="zi' + (ok ? '' : ' unk') + (e.boss ? ' boss' : '') + '"><b>' + (ok ? esc(e.name) : '？？？') + '</b>' + (ok ? '<span class="zs">HP ' + (e.hp) + ' ・ ⭐' + e.pts + (e.inst ? ' ・ 群体' : '') + (e.fly ? ' ・ 飛行' : '') + '</span><span>' + esc(e.desc) + '</span>' : '<span>まだ出会っていない</span>') + '</div>';
+    }).join('') + '</div>';
+  } else if (zukanTab === 'weapon') {
+    const base = Object.keys(WEAPONS).filter(k => !WEAPONS[k].evo && !WEAPONS[k].special);
+    const evoOf = b => UNLOCKS.filter(u => u.base === b);
+    body = '<div class="dim">進化パーツ ' + UNLOCKS.filter(u => isOpen(u.id)).length + '/' + UNLOCKS.length + '　（進化元の武器を使って作戦をクリアすると解禁）</div><div class="zlist">' + base.map(b => {
+      const w = WEAPONS[b], ev = evoOf(b);
+      return '<div class="zi"><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="zs">⭐' + w.cost + ' ・ ⏱' + w.build + 's</span><span>' + esc(w.desc) + '</span>' +
+        (ev.length ? '<div class="zev">' + ev.map(u => { const e = WEAPONS[u.id], ok = isOpen(u.id); return '<div class="' + (ok ? '' : 'unk') + '">' + (ok ? e.icon + ' <b>' + esc(e.name) + '</b>　' + esc(e.desc) : '🔒 ？？？') + '</div>'; }).join('') + '</div>' : '') + '</div>';
+    }).join('') + '<div class="zi' + (allClear() ? '' : ' unk') + ' boss"><b>' + (allClear() ? '☄️ 試作型ノヴァ' : '🔒 ？？？') + '</b><span>' + (allClear() ? esc(WEAPONS.nova.desc) : 'すべての作戦をクリアすると解禁') + '</span></div></div>';
+  } else {
+    body = '<div class="zlist">' + RD.BODIES.map(b => '<div class="zi"><b><span class="tier ' + b.tier + '">' + TIER[b.tier].name + '</span> ' + esc(b.name) + '</b><span class="zs">⭐' + b.cost + ' ・ ❤' + b.hp + ' ・ 👟' + b.speed + ' ・ ⏱' + b.build + 's</span><span>' + esc(b.note || plusText(b.plus) || '特性なし') + '</span></div>').join('') + '</div>';
+  }
+  showOv('<h1>図鑑</h1><div class="tabs">' + tabs.map(([id, n]) => '<button data-zt="' + id + '" class="' + (zukanTab === id ? 'on' : '') + '">' + n + '</button>').join('') + '</div>' + body +
+    '<div class="btns sticky"><button class="primary" id="zkOk">戻る</button></div>');
+  $('ovCard').querySelectorAll('[data-zt]').forEach(b => b.onclick = () => { zukanTab = b.dataset.zt; zukanScreen(back); });
+  $('zkOk').onclick = back;
+}
+// 記録：累計の数字と進み具合
+function recordScreen(back) {
+  const st = SAVE.stats || {}, n = ORDER.filter(cleared).length;
+  const r = (k, v) => '<span>' + k + '</span><b>' + v + '</b>';
+  showOv('<h1>記録</h1><div class="res">' +
+    r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
+    r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
+    r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +
+    r('出撃回数 / 勝利', (st.plays || 0) + ' / ' + (st.wins || 0)) + r('累計撃破', (st.kills || 0).toLocaleString()) +
+    r('建造したロボット / 失ったロボット', (st.built || 0) + ' / ' + (st.lost || 0)) + r('最大連続撃破', '×' + (st.bestCombo || 0)) +
+    r('模倣機の撃破', st.bosses || 0) + r('プレイ時間', Math.floor((st.time || 0) / 3600) + '時間' + Math.floor((st.time || 0) % 3600 / 60) + '分') +
+    '</div>' + (seen('ending') ? '<div class="pmenu"><button id="rcEnd">🎬 エンディングをもう一度見る</button></div>' : '') +
+    '<div class="btns"><button class="primary" id="rcOk">戻る</button></div>');
+  if ($('rcEnd')) $('rcEnd').onclick = () => showEnding(() => recordScreen(back));
+  $('rcOk').onclick = back;
+}
+function addStats(S) {
+  const st = SAVE.stats = SAVE.stats || {};
+  st.plays = (st.plays || 0) + 1; if (S.over === 'win') st.wins = (st.wins || 0) + 1;
+  st.kills = (st.kills || 0) + S.kills; st.built = (st.built || 0) + S.built; st.lost = (st.lost || 0) + S.lost;
+  st.bestCombo = Math.max(st.bestCombo || 0, combo.best); st.bosses = (st.bosses || 0) + (S.bossKills || 0); st.time = (st.time || 0) + Math.round(S.t);
+}
+// エンディング：締めの通信 → スタッフロール
+const CREDITS = [
+  ['h', 'ROBOT DEFENSE'], ['s', '前線基地防衛記録'], ['g'],
+  ['t', '企画・監修'], ['n', 'naosugi'], ['g'],
+  ['t', 'ゲームデザイン・プログラム'], ['n', 'Claude（Anthropic）'], ['g'],
+  ['t', 'グラフィック・サウンド'], ['n', 'three.js と WebAudio による手作り'], ['g'],
+  ['t', '原案世界'], ['n', 'INFINITE SHOT 3D II'], ['g'],
+  ['t', '管制'], ['n', 'アイ'], ['g'],
+  ['t', '出撃したロボット'], ['l', () => RD.BODIES.map(b => b.name)], ['g'],
+  ['t', '交戦した侵略者'], ['l', () => Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).map(k => ENEMIES[k].name)], ['g'],
+  ['t', '使用ライブラリ'], ['n', 'three.js r186'], ['m', 'MIT License / © 2010-2026 three.js authors'], ['g'],
+  ['t', '指揮'], ['n', 'あなた'], ['g'], ['g'],
+  ['s', 'OMEGA原型は深淵へ消えた。'], ['s', '戦いは、INFINITE SHOT へ続く。'], ['g'],
+  ['h', 'Thank you for playing'],
+];
+function showEnding(done) {
+  markSeen('ending'); mode = 'select'; setMenu(true); AU.init(); AU.bgmStart(false);
+  const html = CREDITS.map(([k, v]) => k === 'g' ? '<div class="cg"></div>' : k === 'l' ? '<div class="cl">' + v().map(x => '<span>' + esc(x) + '</span>').join('') + '</div>' : '<div class="c' + k + '">' + esc(v) + '</div>').join('');
+  showOv('<div class="roll"><div class="rollIn" id="rollIn">' + html + '</div></div><div class="btns"><button class="ghost" id="rollSkip">スキップ</button></div>', 'story ending');
+  const el = $('rollIn'), H = el.scrollHeight, dur = Math.max(28, H / 38);
+  el.style.animationDuration = dur + 's';
+  const fin = () => { clearTimeout(showEnding.t); done(); };
+  showEnding.t = setTimeout(fin, dur * 1000 + 600);
+  $('rollSkip').onclick = fin;
+}
+
 function togglePause() {
   if (mode !== 'play' || building) return;
   paused = !paused;
@@ -6967,11 +7450,11 @@ function togglePause() {
 }
 function pauseMenu() {
   showOv('<h1>一時停止</h1><p class="dim">' + esc(S.st.name) + '「' + esc(S.st.sub) + '」　🎯 ' + esc(goalText(S.st)) + '</p><div class="pmenu">' +
-    '<button class="primary big" id="re">▶ 再開</button><button id="howP">遊び方</button><button id="muteP">' + (AU.muted ? '🔇 音：オフ' : '🔊 音：オン') + '</button>' +
+    '<button class="primary big" id="re">▶ 再開</button><button id="howP">遊び方</button><button id="muteP">' + (AU.muted ? '🔇 音：オフ' : '🔊 音：オン') + '</button><button id="setP">⚙ 設定</button>' +
     '<button id="rs">やり直す（ボディ再抽選）</button><button id="qs">作戦選択へ戻る</button></div>');
   $('re').onclick = togglePause; $('rs').onclick = () => { paused = false; startGame(); };
   $('qs').onclick = () => { paused = false; exitPilot(); stageSelect(); };
-  $('howP').onclick = () => howTo(pauseMenu);
+  $('howP').onclick = () => howTo(pauseMenu); $('setP').onclick = () => settingsScreen(pauseMenu);
   $('muteP').onclick = () => { AU.init(); AU.setMute(!AU.muted); muteLabel(); pauseMenu(); };
 }
 $('pauseBtn').addEventListener('click', togglePause);
@@ -7003,12 +7486,12 @@ function frame(now) {
     if (mode === 'play' && S.over) { // 勝敗の告知を見せてから結果画面へ
       exitPilot(); mode = 'ending'; closeBuild(); sel = null; AU.bgmStop();
       const win = S.over === 'win'; if (win) AU.S.win(); else AU.S.lose();
-      banner(win ? 'MISSION COMPLETE' : 'MISSION FAILED', win ? '作戦成功' : (S.baseHP <= 0 ? '拠点陥落' : '時間切れ'), win ? 'good' : 'boss', 1.6);
+      banner(win ? 'MISSION COMPLETE' : 'MISSION FAILED', win ? '作戦成功' : (S.baseHP <= 0 ? '拠点陥落' : S.loseWhy || '時間切れ'), win ? 'good' : 'boss', 1.6);
       if (!win) shake(.5, .8);
       setTimeout(endGame, 1500);
     }
   }
-  for (const gt of M.gates || []) { gt.rotation.y += dt * 1.5; gt.rotation.x = Math.sin(now / 900) * .3; }
+  for (const gt of M.gates || []) { gt.rotation.y += dt * 1.5; gt.rotation.x = Math.sin(now / 900) * .3; gt.visible = !S || !S.st.pathOpen || !(S.st.pathOpen[gt.userData.pi] > S.t); }
   if (S && M.baseGun) {
     M.baseGun.visible = S.homeGun > 0; M.baseBarrels.forEach((b, i) => b.visible = S.homeGun > i);
     M.baseGun.rotation.y = lerpAngle(M.baseGun.rotation.y, S.homeObj.face || 0, .3);
