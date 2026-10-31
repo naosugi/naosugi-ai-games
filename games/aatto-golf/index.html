@@ -220,6 +220,16 @@ html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(-
 .rank .tot{font-family:var(--num);font-size:30px;font-weight:600}
 .rank.first .pos,.rank.first .tot{color:var(--blue)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.ho-news p{opacity:1}}
+/* プレイ日誌 */
+.dStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 6px}
+.dStats div{background:#f3f6f1;border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.dStats b{font-size:18px;color:var(--green)} .dStats span{font-size:11px;color:var(--muted);line-height:1.35}
+.dEntry{background:#fffdf6;border:1px solid #eadfc4;border-radius:14px;padding:14px 16px;margin-top:12px;box-shadow:0 1px 0 #eadfc4}
+.dEntry h3{font-size:16px;margin:4px 0 8px;line-height:1.5}
+.dEntry p{font-size:14px;line-height:1.8;color:#3b3527}
+.dMeta{font-size:12px !important;color:var(--muted) !important}
+.dClose{margin-top:6px;font-style:italic;color:#6b5a32 !important}
+.dScore{margin-top:8px;font-size:12px !important;color:var(--muted) !important;border-top:1px dashed #eadfc4;padding-top:6px}
 </style>
 </head>
 <body>
@@ -477,7 +487,7 @@ function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 function saveGame(){
   if(!S.cfg||S.cfg.mode!=='versus')return;
   try{localStorage.setItem(SAVE_KEY,JSON.stringify({cfg:S.cfg,hole:S.hole,cond:S.cond,honor:S.honor.map(p=>S.players.indexOf(p)),
-    players:S.players.map(p=>({name:p.name,color:p.color,cpu:!!p.cpu,level:p.level||0,ax:p.ax,typeName:p.typeName,tag:p.tag,desc:p.desc,st:p.st,total:p.total,scores:p.scores,up:p.up||0}))}))}catch(e){}
+    players:S.players.map(p=>({name:p.name,color:p.color,cpu:!!p.cpu,level:p.level||0,ax:p.ax,typeName:p.typeName,tag:p.tag,desc:p.desc,st:p.st,total:p.total,scores:p.scores,up:p.up||0})),dlog:S.dlog||[]}))}catch(e){}
 }
 const CPU_NAMES=['高城','霧島','水野','佐伯','東雲','柏木','真壁','久遠'];
 const LEVEL_NAME=['初級','中級','上級'];
@@ -491,6 +501,7 @@ function renderTitle(){
     <div class="modes">
       <button class="btn mode" id="mVs"><b>対戦</b><span>2〜4人で回る。CPUとも戦える</span></button>
       <button class="btn mode" id="mTr"><b>トレーニング</b><span>ホールと条件を選んで自由に練習する</span></button>
+      <button class="btn mode" id="mDi"><b>📔 プレイ日誌</b><span>${(()=>{const n=loadDiary().entries.length;return n?`これまでの${n}ラウンドの出来事`:'対戦を回ると、出来事が書き残される'})()}</span></button>
     </div>
     <details class="howto"><summary>遊び方</summary><ol>
       <li>マップをタップして落とし所を決める。弾道の中ほどの丸いつまみを左右に動かすと曲がる球になる</li>
@@ -505,6 +516,7 @@ function renderTitle(){
   if(sv)$('#resume').onclick=()=>resumeGame(sv);
   $('#mVs').onclick=renderVsSetup;
   $('#mTr').onclick=renderTrainSetup;
+  $('#mDi').onclick=renderDiary;
 }
 S.setup={holes:9,format:'stroke',seats:[{cpu:false},{cpu:true,level:1}]};
 function renderVsSetup(){
@@ -600,6 +612,81 @@ function buildCourse(n){
   return base;
 }
 
+// ================= プレイ日誌 =================
+// 対戦のラウンドごとに、出来事から日誌を1件書いて残す（最新60件）。累計の数字も数える
+const DIARY_KEY='aattogolf_diary_v1';
+function loadDiary(){try{const d=JSON.parse(localStorage.getItem(DIARY_KEY)||'null');if(d&&Array.isArray(d.entries))return d}catch(e){}return{entries:[],stats:{}}}
+function saveDiary(d){try{localStorage.setItem(DIARY_KEY,JSON.stringify(d))}catch(e){}}
+function dlog(p,t,x){if(!S.cfg||S.cfg.mode!=='versus')return;(S.dlog=S.dlog||[]).push(Object.assign({n:p.name,h:S.h.no,t},x||{}))}
+const who=p=>p.cpu?`${p.name}（CPU${LEVEL_NAME[p.level]}）`:p.name;
+function writeDiary(){
+  const d=loadDiary(),st=d.stats,L=S.dlog||[],hs=S.players.filter(p=>!p.cpu),me=hs[0];
+  const cnt=(t,n)=>L.filter(e=>e.t===t&&(!n||e.n===n)).length;
+  // 結果
+  let title,win=false,tie=false;
+  if(S.cfg.format==='match'){
+    const[a,b]=S.players,u=a.up||0;
+    if(u===0){title=`${who(a)}と${who(b)}、引き分け`;tie=true}
+    else{const w=u>0?a:b,l=u>0?b:a;title=`${who(w)}が${who(l)}にマッチで勝利（${Math.abs(u)}アップ）`;win=!w.cpu&&w===me}
+  }else{
+    const r=[...S.players].sort((a,b)=>a.total-b.total),top=r.filter(p=>p.total===r[0].total);
+    if(top.length>1){title=`${top.map(who).join('と')}が${fmtRel(r[0].total)}で並んだ`;tie=top.includes(me)}
+    else{title=`${who(r[0])}が${fmtRel(r[0].total)}で1位`;win=r[0]===me;const sec=r[1];if(sec)title+=`（${who(sec)}に${sec.total-r[0].total}打差）`}
+  }
+  // 出来事（目立つものから）
+  const T={
+    hio:e=>`${e.h}番、${e.n}さんがホールインワン。しばらく誰も声が出なかった。`,
+    chip:e=>pick([`${e.h}番、${e.n}さんがグリーンの外から放り込んだ。チップイン。`,`${e.h}番、${e.n}さんのチップイン。本人がいちばん驚いていた。`]),
+    long:e=>pick([`${e.h}番、${e.n}さんの長いパットが吸い込まれる。`,`${e.h}番、${e.n}さんの${e.d}yのパットが沈んだ。`]),
+    ob:e=>e.c>1?`${e.h}番、${e.n}さんはOBを${e.c}回。アーッ！`:pick([`${e.h}番、${e.n}さんの球が林の向こうへ消えた。OB。`,`${e.h}番、${e.n}さんの一打は白い杭の外へ。アーッ！`]),
+    water:e=>e.c>1?`${e.h}番、${e.n}さんは池に${e.c}回つかまった。水面の輪がしばらく残った。`:pick([`${e.h}番、${e.n}さんの球が池に消えた。アーッ！`,`${e.h}番、ポチャン。${e.n}さんは天を仰いだ。`]),
+    miss:e=>pick([`${e.h}番、${e.n}さんが短いパットを外す。アーッ！`,`${e.h}番、${e.n}さんの${e.d}yのパットがカップの縁で止まった。`,`${e.h}番、${e.n}さん、入れれば終わりのパットに手が縮んだ。`]),
+    bunker:e=>`${e.h}番、${e.n}さんはバンカーから${e.c}回打った。砂の音が耳に残る。`,
+    tree:e=>pick([`${e.h}番、${e.n}さんの球が木に当たって跳ね返った。`,`${e.h}番、木が${e.n}さんの一打を止めた。`]),
+    nice:e=>pick([`${e.h}番、${e.n}さんの狙いどおりの一打。小さくうなずいていた。`,`${e.h}番、${e.n}さん会心の一打。`]),
+    ok:e=>`${e.h}番、${e.o}さんが${e.n}さんにOKを出した。`,
+    nook:e=>`${e.h}番、${e.o}さんは${e.n}さんにOKを出さなかった。空気が少し冷えた。`,
+    shaky:e=>`${e.h}番を終えたころ、${e.n}さんの手は小刻みに震えていた。`,
+  };
+  const prio=['hio','chip','long','water','ob','miss','nook','shaky','bunker','tree','ok','nice'];
+  // 同じ人・同じホール・同じ種類はまとめて回数にする
+  const grp=new Map();for(const e of L){const k=e.t+'|'+e.n+'|'+e.h;const g=grp.get(k);if(g)g.c++;else grp.set(k,Object.assign({c:1},e))}
+  const ev=[...grp.values()].filter(e=>T[e.t]&&(e.t!=='bunker'||e.c>=3)).sort((a,b)=>prio.indexOf(a.t)-prio.indexOf(b.t));
+  const lines=[];for(const e of ev){if(lines.length>=5)break;if(e.t==='nice'&&lines.length>=3)continue;lines.push({h:e.h,s:T[e.t](e)})}
+  // 人それぞれの、いちばん良いホールと悪いホール
+  for(const p of hs){
+    let bi=-1,wi=-1;p.scores.forEach((s,i)=>{const r=s-S.course[i].par;if(bi<0||r<p.scores[bi]-S.course[bi].par)bi=i;if(wi<0||r>p.scores[wi]-S.course[wi].par)wi=i});
+    if(bi>=0&&p.scores[bi]-S.course[bi].par<=-1&&!lines.some(l=>l.h===S.course[bi].no))lines.push({h:S.course[bi].no,s:`${S.course[bi].no}番は${p.name}さんの${scoreName(p.scores[bi],S.course[bi].par)}。`});
+    if(wi>=0&&p.scores[wi]-S.course[wi].par>=3)lines.push({h:S.course[wi].no,s:pick([`${S.course[wi].no}番、${p.name}さんは${p.scores[wi]}打。思い出したくない。`,`${S.course[wi].no}番の${p.scores[wi]}打は、なかったことにしたい。`])});
+  }
+  lines.sort((a,b)=>a.h-b.h);
+  if(!lines.length)lines.push({h:0,s:pick(['静かなラウンドだった。風の音だけが残っている。','大きな事件はなかった。それもまたゴルフ。'])});
+  const close=hs.length?(tie?'決着はつかなかった。お互い、譲らなかった。':win?pick(['いい一日だった。帰り道、少しだけ遠回りした。','勝った。今夜はよく眠れそうだ。','心は最後まで折れなかった。']):pick(['次こそは。','悔しい。素振りを100回しよう。','心のスタミナが、あと少し足りなかった。','明日はきっと、手は震えない。'])):'';
+  // 累計
+  st.rounds=(st.rounds||0)+1;if(win)st.wins=(st.wins||0)+1;
+  for(const k of['hio','chip','long','ob','water','miss'])st[k]=(st[k]||0)+L.filter(e=>e.t===k&&hs.some(p=>p.name===e.n)).length;
+  for(const p of hs){const k='best'+S.course.length,b=st[k];if(S.cfg.format!=='match'&&(b==null||p.total<b))st[k]=p.total}
+  const dt=new Date();
+  d.entries.unshift({no:st.rounds,date:`${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`,meta:`${S.course.length}ホール・${S.cfg.format==='match'?'マッチ':'ストローク'}`,title,lines:lines.map(l=>l.s),close,
+    score:S.players.map(p=>`${p.name} ${S.cfg.format==='match'?upText(p.up||0):fmtRel(p.total)}`).join('　')});
+  d.entries=d.entries.slice(0,60);saveDiary(d);
+  return d.entries[0];
+}
+function diaryHtml(e){return`<div class="dEntry"><p class="dMeta">No.${e.no}　${esc(e.date)}　${esc(e.meta)}</p><h3>${esc(e.title)}</h3>${e.lines.map(l=>`<p>${esc(l)}</p>`).join('')}${e.close?`<p class="dClose">${esc(e.close)}</p>`:''}<p class="dScore">${esc(e.score)}</p></div>`}
+function renderDiary(){
+  showScreen();const d=loadDiary(),st=d.stats;
+  const best=[3,9,18].filter(n=>st['best'+n]!=null).map(n=>`${n}H ${fmtRel(st['best'+n])}`).join('・')||'－';
+  const aat=(st.ob||0)+(st.water||0)+(st.miss||0);
+  scr.innerHTML=`<section class="pane" style="padding-top:calc(24px + env(safe-area-inset-top))">
+    <button class="btn ghost chipbtn" id="back">タイトルに戻る</button>
+    <h2 class="mt" style="margin-top:14px">プレイ日誌</h2>
+    <div class="dStats"><div><b>${st.rounds||0}</b><span>ラウンド</span></div><div><b>${st.wins||0}</b><span>勝利</span></div><div><b>${best}</b><span>ベスト</span></div>
+      <div><b>${st.hio||0}</b><span>ホールインワン</span></div><div><b>${(st.chip||0)+(st.long||0)}</b><span>チップイン・ロングパット</span></div><div><b>${aat}</b><span>アーッ！（OB・池・短いパット）</span></div></div>
+    ${d.entries.length?d.entries.map(diaryHtml).join(''):'<p class="lead mt">まだ何も書かれていない。対戦を1ラウンド回ると、ここに日誌が増えていく。</p>'}
+  </section>`;
+  $('#back').onclick=renderTitle;
+}
+
 // ================= ラウンド進行 =================
 function beginGameScreen(){scr.classList.add('hidden');$('#game').classList.remove('hidden');$('#tPlace').classList.toggle('hidden',S.cfg.mode!=='train')}
 function startRound(){
@@ -607,12 +694,12 @@ function startRound(){
   S.course=buildCourse(S.cfg.holes);
   S.players.forEach(p=>{p.st=70;p.total=0;p.scores=[];p.up=0});
   S.cond={speed:pick(COND.speed),firm:pick(COND.firm),ground:pick(COND.ground),gust:pick(COND.gust)};
-  S.honor=[...S.players];S.hole=0;NEWS.length=0;
+  S.honor=[...S.players];S.hole=0;NEWS.length=0;S.dlog=[];
   beginGameScreen();startHole();
 }
 function resumeGame(sv){
   S.cfg=sv.cfg;S.course=buildCourse(S.cfg.holes);S.players=sv.players;S.hole=sv.hole;S.cond=sv.cond;
-  S.honor=sv.honor.map(i=>S.players[i]);NEWS.length=0;S.setup.holes=S.cfg.holes;S.setup.format=S.cfg.format;
+  S.honor=sv.honor.map(i=>S.players[i]);NEWS.length=0;S.dlog=sv.dlog||[];S.setup.holes=S.cfg.holes;S.setup.format=S.cfg.format;
   beginGameScreen();startHole();
 }
 const standing=p=>S.cfg.format==='match'?-(p.up||0):p.total;
@@ -710,6 +797,7 @@ function askConcession(p){
   $('#ng').onclick=()=>{$('#overlay').classList.add('hidden');resolveOK(p,o,false)};
 }
 function resolveOK(p,o,give){
+  dlog(p,give?'ok':'nook',{o:o.name});
   if(give){p.strokes++;p.done=true;p.pos={...S.pin};st(p,2);news(`${o.name}さんがOKを出した。`);showBanner('OK','white');renderHud();setTimeout(nextTurn,S.cpuFast?0:500)}
   else{st(p,-(p.ax.D===-1?5:3));news(`${o.name}さんはOKを出さなかった。`);startTurn(p)}
 }
@@ -730,6 +818,7 @@ function endHole(){
     if(rel<=-1){st(p,8*GOODM[ax.B]);news(`${p.name}さんの${scoreName(sc,h.par)}。`);if(!p.reactedLast)react(p)}
     else if(rel>=2){st(p,-8*MISSM[ax.B]);news(`${p.name}さんは悔しさを隠せない。`)}
     if(rel>=1){if(ax.B===-1){st(p,-4);news(`${p.name}さんは、まだこのホールを引きずっているようだ。`)}else if(ax.B===1)st(p,3)}
+    if(!p.cpu&&p.st<25&&!(S.dlog||[]).some(e=>e.t==='shaky'&&e.n===p.name))dlog(p,'shaky');
     st(p,RECOVER[ax.C]+(62-p.st)*.3);
   });
   let headline='';
@@ -749,6 +838,7 @@ function endHole(){
 }
 function showFinal(){
   clearSave();
+  const de=writeDiary();
   let head='';
   if(S.cfg.format==='match'){
     const[a,b]=S.players,u=a.up||0,rem=S.course.length-(S.hole+1);
@@ -758,6 +848,7 @@ function showFinal(){
     head=ranked.map(p=>{const pos=ranked.findIndex(q=>q.total===p.total)+1;return`<div class="rank ${pos===1?'first':''}"><span class="pos">${pos}</span><div class="nm">${pdot(p)} ${esc(p.name)}${p.cpu?`<span class="cpuTag">CPU</span>`:''}<small>${esc(p.typeName)}</small></div><span class="tot">${fmtRel(p.total)}</span></div>`}).join('');
   }
   overlay(`<div class="card"><h2>最終結果</h2>${head}${scorecardHtml(-1)}
+    <p class="label" style="margin-top:14px">📔 今日の日誌</p>${diaryHtml(de)}
     <button class="btn primary wide" id="again">同じメンバーでもう一度</button>
     <button class="btn ghost wide" style="margin-top:8px" id="title">タイトルへ</button>
     <p style="text-align:center;margin-top:12px"><a class="homeLink2" href="../../">← ゲーム一覧</a></p></div>`);
@@ -779,10 +870,12 @@ function renderHud(){
 }
 
 // ================= CPU =================
-const LV=[{r:.07,dx:.06,read:2.6,rd:.12},{r:.045,dx:.035,read:1.3,rd:.06},{r:.026,dx:.02,read:.5,rd:.03}];
+const LV=[{r:.12,dx:.1,read:4.5,rd:.19,blunder:.1},{r:.045,dx:.035,read:1.3,rd:.06},{r:.026,dx:.02,read:.5,rd:.03}];
 function cpuNoise(p,focus){
   const L=LV[p.level],s=p.st/100,F=focus?FOCUS[p.ax.C]:{jit:1},amp=(.012+.11*Math.pow(1-s,1.5))*F.jit,tw=tempoWindow(s);
   let tempo=(tw[0]+tw[1])/2;if(Math.random()<(1-s)*.35*(1.3-p.level*.3))tempo=Math.random()<.5?tw[0]*.7:tw[1]*1.25;
+  // 初級：ときどき大きくミスする（ダフり・トップ・大きな引っかけ）
+  if(L.blunder&&Math.random()<L.blunder)return{ratio:1+(Math.random()<.5?-1:1)*rnd(.25,.45),dx:(Math.random()<.5?-1:1)*rnd(.12,.25),tempo};
   return{ratio:1+gauss()*L.r+gauss()*amp/.8,dx:gauss()*L.dx+gauss()*amp*.7,tempo};
 }
 function windDrift(pl,info){
@@ -1220,13 +1313,14 @@ function react(p){
 
 function afterShot(p,pl,info,sim){
   const h=S.h,n=p.name,ax=p.ax,before={pos:p.pos,lie:p.lie};let msg,penalty=false,banner=null;
-  if(sim.end==='ob'){p.strokes++;msg='OB。1打罰で打ち直し';penalty=true;banner=['OB','white']}
-  else if(sim.end==='water'){p.strokes++;addFx('splash',sim.entry);p.pos=dropFrom(sim.entry,before.pos);p.lie=surfaceAt(h,p.pos);p.mod=null;msg='池につかまった。1打罰';penalty=true;banner=['池','blue']}
+  if(sim.end==='ob'){dlog(p,'ob');p.strokes++;msg='OB。1打罰で打ち直し';penalty=true;banner=['OB','white']}
+  else if(sim.end==='water'){dlog(p,'water');p.strokes++;addFx('splash',sim.entry);p.pos=dropFrom(sim.entry,before.pos);p.lie=surfaceAt(h,p.pos);p.mod=null;msg='池につかまった。1打罰';penalty=true;banner=['池','blue']}
   else if(sim.end==='holed'){p.pos={...S.pin};p.done=true;p.mod=null;addFx('cup',S.pin);msg=p.strokes===1?'ホールインワン':info.putt?'カップイン':'チップイン';banner=[msg,'white']}
   else{
     p.pos=sim.rest;p.lie=surfaceAt(h,p.pos);p.mod=decideMod(p,sim);const dp=dist(p.pos,S.pin);
     msg=(sim.treeHit?'木に当たった。':'')+
       (p.lie==='green'?(before.lie==='green'?`あと ${fmtD(dp)}`:`グリーンオン。ピンまで ${fmtD(dp)}`):`${SURF_NAME[p.lie]}${p.mod?'（'+MOD[p.mod].name.split('（')[0]+'）':''}。ピンまで ${fmtD(dp)}`);
+    if(p.lie==='bunker')dlog(p,'bunker');if(sim.treeHit)dlog(p,'tree');
     if(p.lie==='green'&&before.lie!=='green')banner=[dp<3?'ナイスオン':'グリーンオン','white'];
     else if(p.lie==='bunker')banner=['バンカー',''];
     else if(sim.treeHit)banner=['木に当たった',''];
@@ -1236,13 +1330,14 @@ function afterShot(p,pl,info,sim){
     if(p.drag){st(p,-4);p.drag=0}
     if(sim.end==='holed'){
       const d0=dist(before.pos,S.pin);
+      if(p.strokes===1)dlog(p,'hio');else if(!info.putt)dlog(p,'chip');else if(d0>5)dlog(p,'long',{d:Math.round(d0)});
       if(!info.putt){st(p,12*GOODM[ax.B]);news(`${n}さんが拳を握った。`);react(p)}
       else if(d0>5){st(p,10*GOODM[ax.B]);news(`${n}さんの長いパットが沈んだ。`);react(p)}
     }else if(info.putt){
-      if(dist(before.pos,S.pin)<2.5){const dn=info.line&&info.line.down>.006;st(p,-(dn?14:10)*MISSM[ax.B]);news(dn?`${n}さん、下りの短いパットに手が縮んだ。`:`${n}さん、短いパットを外して唇をかんだ。`)}
+      if(dist(before.pos,S.pin)<2.5){dlog(p,'miss',{d:dist(before.pos,S.pin).toFixed(1)});const dn=info.line&&info.line.down>.006;st(p,-(dn?14:10)*MISSM[ax.B]);news(dn?`${n}さん、下りの短いパットに手が縮んだ。`:`${n}さん、短いパットを外して唇をかんだ。`)}
     }else{
       const ok=dist(p.pos,sim.plannedRest)<Math.max(4,info.dist*.07);
-      if(ok&&info.diff>=.5){st(p,8*GOODM[ax.B]);news(`${n}さん、狙いどおりの難しい一打。小さくうなずいた。`);react(p);if(!banner)banner=['狙いどおり','white']}
+      if(ok&&info.diff>=.5){dlog(p,'nice');st(p,8*GOODM[ax.B]);news(`${n}さん、狙いどおりの難しい一打。小さくうなずいた。`);react(p);if(!banner)banner=['狙いどおり','white']}
       else if(ok&&info.diff<.3)st(p,ax.C===-1?4:2);
       else if(!ok&&(p.lie==='deep'||p.lie==='bunker')&&surfaceAt(h,pl.target)!==p.lie){st(p,-6*MISSM[ax.B]);news(`${n}さんは首をかしげている。`)}
     }
