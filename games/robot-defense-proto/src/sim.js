@@ -180,8 +180,8 @@ const STAGES = [
   },
   {
     id: 's5', name: '序章-5', sub: '模倣', goal: 'boss', time: 210, startPoints: 220, hpRamp: .5, bossHp: 700,
-    brief: ['三方向より侵攻。北方に大型反応。', '照合中。……我が方の機体と構造が一致する。これを撃破せよ。'], win: '大型機、撃破。侵略者は、我々を学習している。',
-    intro: '40秒ごろ、こちらのロボットを真似た模倣機が北から来る。倒せば勝ち。乗って戦えば強い。',
+    brief: ['三方向より侵攻。北方に大型反応。', '照合中。……我が方の機体と構造が一致する。これを撃破せよ。'], win: '大型機、撃破。侵略者は、我々を学習している。我々も学習する。使用兵装の改良型、試作に着手。',
+    intro: '40秒ごろ、こちらのロボットを真似た模倣機が北から来る。倒せば勝ち。乗って戦えば強い。この作戦から、使った武器でクリアするとその進化パーツが解禁される。',
     drawCount: { low: 2, mid: 3, high: 2 },
     map: { minX: -17, maxX: 17, minZ: -23, maxZ: 22 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.8 },
     paths: [
@@ -305,11 +305,12 @@ STAGES.push({
 const FEATURES = {
   blaster: 's1', spread: 's1', heavy: 's2', missile: 's4', breaker: 'w1', homing: 'w2', bomb: 'w2', laser: 'w3',
   tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
-  pilot: 's3', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
+  pilot: 's3', evolve: 's5', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
 };
 // 解禁したときに見せる説明（武器・ボディ以外）
 const FEATURE_INFO = {
   pilot: { icon: '🎮', name: '自操作', desc: 'ロボットに乗って自分で戦う。連射・威力・射程が上がるが、機体は動かず前しか見えない' },
+  evolve: { icon: '🧬', name: '進化パーツの開発', desc: '使った武器でクリアすると、その武器の進化パーツが解禁される（持ち込みは第1章から）' },
   repair: { icon: '🔧', name: '拠点修理', desc: '建造画面の「拠点工事」で、拠点のHPを回復できる' },
   reserve: { icon: '📋', name: '予約', desc: '出撃中が上限でも作れる。誰かが倒れたら、すぐ出撃する' },
   line2: { icon: '🏗', name: '建造ライン2本目', desc: 'ポイントで開放すると、2機同時に建造できる' },
@@ -345,23 +346,16 @@ const CHAPTERS = [
 ];
 
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
-const UNLOCKS = [
-  { id: 'magnum', cond: '序章-1をクリア', stage: 's1' },
-  { id: 'chain', cond: '序章-2をクリア', stage: 's2' },
-  { id: 'swarmer', cond: '序章-3をクリア', stage: 's3' },
-  { id: 'pile', cond: '序章-4をクリア', stage: 's4' },
-  { id: 'buster', cond: '模倣機（ボス）を撃破する', boss: true },
-  { id: 'flare', cond: '群体を累計500体倒す', swarmKills: 500 },
-  { id: 'prism', cond: '1-2「大群」をクリア', stage: 'w2' },
-];
-// 1回のプレイの結果と、これまでの累計からアンロックを判定。新しく解禁したものを返す
+// 進化パーツ：進化元の武器を使って（その武器を積んだロボットを建造して）作戦をクリアすると解禁。序章-5から。
+// 進化元が同じものが複数あるとき（ブラスター→マグナム・チェイン）は、クリアするたびに1つずつ解禁する
+const UNLOCKS = Object.keys(WEAPONS).filter(k => WEAPONS[k].evo).map(id => ({ id, base: WEAPONS[id].base, cond: WEAPONS[WEAPONS[id].base].name + 'を使って作戦をクリア' }));
 function checkUnlocks(S, save) {
   save.unlocked = save.unlocked || {}; save.swarmKills = (save.swarmKills || 0) + S.swarmKills;
   const got = [];
-  for (const u of UNLOCKS) {
-    if (save.unlocked[u.id]) continue;
-    const ok = u.stage ? (S.over === 'win' && S.st.id === u.stage) : u.boss ? S.bossKilled : u.swarmKills ? save.swarmKills >= u.swarmKills : false;
-    if (ok) { save.unlocked[u.id] = true; got.push(u.id); }
+  if (S.over !== 'win' || !S.allow.evolve) return got;
+  for (const base of S.usedBase) {
+    const u = UNLOCKS.find(x => x.base === base && !save.unlocked[x.id]);
+    if (u) { save.unlocked[u.id] = true; got.push(u.id); }
   }
   return got;
 }
@@ -413,7 +407,7 @@ function newState0(stageId, opt) {
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
     allow: opt.allow || ALLOW_ALL, bodies: drawBodies(st.drawCount || DRAW_DEFAULT, opt.allow), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo && (!opt.allow || opt.allow.loadout)),
-    kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
+    usedBase: new Set(), kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
     over: null, fx: [], msgs: [], warnT: 0, baseWarnT: 0, baseDmg: 0,
   };
 }
@@ -485,7 +479,7 @@ function buyLine(S) {
 function orderBuild(S, body, wids, at) {
   const err = buildCheck(S, body, wids); if (err) return err;
   const { cost, time } = buildCost(body, wids);
-  S.pts -= cost; S.spent += cost;
+  S.pts -= cost; S.spent += cost; for (const w of wids) S.usedBase.add(WEAPONS[w].base || w);
   S.queue.push({ body, wids: [...wids], time, prog: 0, no: ++S.serial, at: at === undefined ? -1 : at });
   return null;
 }

@@ -379,6 +379,8 @@ body.selecting #bottom .row{display:none}
 .selp .desel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:52px;border:1px solid var(--line) !important;background:#0a1328 !important;color:var(--fg) !important;border-radius:11px;font-size:17px;line-height:1}
 .selp .desel small{font-size:10px;opacity:.8;margin-top:2px}
 .selhint .dim{font-size:11px}
+.evoh{display:flex;flex-wrap:wrap;gap:5px}
+.evoh span{font-size:12px;padding:3px 9px;border-radius:12px;background:#1d1438;border:1px solid #b48cff;color:#e2d4ff}
 </style>
 </head>
 <body>
@@ -4879,8 +4881,8 @@ const STAGES = [
   },
   {
     id: 's5', name: '序章-5', sub: '模倣', goal: 'boss', time: 210, startPoints: 220, hpRamp: .5, bossHp: 700,
-    brief: ['三方向より侵攻。北方に大型反応。', '照合中。……我が方の機体と構造が一致する。これを撃破せよ。'], win: '大型機、撃破。侵略者は、我々を学習している。',
-    intro: '40秒ごろ、こちらのロボットを真似た模倣機が北から来る。倒せば勝ち。乗って戦えば強い。',
+    brief: ['三方向より侵攻。北方に大型反応。', '照合中。……我が方の機体と構造が一致する。これを撃破せよ。'], win: '大型機、撃破。侵略者は、我々を学習している。我々も学習する。使用兵装の改良型、試作に着手。',
+    intro: '40秒ごろ、こちらのロボットを真似た模倣機が北から来る。倒せば勝ち。乗って戦えば強い。この作戦から、使った武器でクリアするとその進化パーツが解禁される。',
     drawCount: { low: 2, mid: 3, high: 2 },
     map: { minX: -17, maxX: 17, minZ: -23, maxZ: 22 }, base: { x: 0, z: 0 }, factory: { x: 2.6, z: -2.8 },
     paths: [
@@ -5004,11 +5006,12 @@ STAGES.push({
 const FEATURES = {
   blaster: 's1', spread: 's1', heavy: 's2', missile: 's4', breaker: 'w1', homing: 'w2', bomb: 'w2', laser: 'w3',
   tier_low: 's1', tier_mid: 's2', tier_high: 's4', mass: 'w2', shieldbody: 'w3',
-  pilot: 's3', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
+  pilot: 's3', evolve: 's5', repair: 'w1', reserve: 'w1', line2: 'w2', turret: 'w3', shield: 'w3', loadout: 'w1',
 };
 // 解禁したときに見せる説明（武器・ボディ以外）
 const FEATURE_INFO = {
   pilot: { icon: '🎮', name: '自操作', desc: 'ロボットに乗って自分で戦う。連射・威力・射程が上がるが、機体は動かず前しか見えない' },
+  evolve: { icon: '🧬', name: '進化パーツの開発', desc: '使った武器でクリアすると、その武器の進化パーツが解禁される（持ち込みは第1章から）' },
   repair: { icon: '🔧', name: '拠点修理', desc: '建造画面の「拠点工事」で、拠点のHPを回復できる' },
   reserve: { icon: '📋', name: '予約', desc: '出撃中が上限でも作れる。誰かが倒れたら、すぐ出撃する' },
   line2: { icon: '🏗', name: '建造ライン2本目', desc: 'ポイントで開放すると、2機同時に建造できる' },
@@ -5044,23 +5047,16 @@ const CHAPTERS = [
 ];
 
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
-const UNLOCKS = [
-  { id: 'magnum', cond: '序章-1をクリア', stage: 's1' },
-  { id: 'chain', cond: '序章-2をクリア', stage: 's2' },
-  { id: 'swarmer', cond: '序章-3をクリア', stage: 's3' },
-  { id: 'pile', cond: '序章-4をクリア', stage: 's4' },
-  { id: 'buster', cond: '模倣機（ボス）を撃破する', boss: true },
-  { id: 'flare', cond: '群体を累計500体倒す', swarmKills: 500 },
-  { id: 'prism', cond: '1-2「大群」をクリア', stage: 'w2' },
-];
-// 1回のプレイの結果と、これまでの累計からアンロックを判定。新しく解禁したものを返す
+// 進化パーツ：進化元の武器を使って（その武器を積んだロボットを建造して）作戦をクリアすると解禁。序章-5から。
+// 進化元が同じものが複数あるとき（ブラスター→マグナム・チェイン）は、クリアするたびに1つずつ解禁する
+const UNLOCKS = Object.keys(WEAPONS).filter(k => WEAPONS[k].evo).map(id => ({ id, base: WEAPONS[id].base, cond: WEAPONS[WEAPONS[id].base].name + 'を使って作戦をクリア' }));
 function checkUnlocks(S, save) {
   save.unlocked = save.unlocked || {}; save.swarmKills = (save.swarmKills || 0) + S.swarmKills;
   const got = [];
-  for (const u of UNLOCKS) {
-    if (save.unlocked[u.id]) continue;
-    const ok = u.stage ? (S.over === 'win' && S.st.id === u.stage) : u.boss ? S.bossKilled : u.swarmKills ? save.swarmKills >= u.swarmKills : false;
-    if (ok) { save.unlocked[u.id] = true; got.push(u.id); }
+  if (S.over !== 'win' || !S.allow.evolve) return got;
+  for (const base of S.usedBase) {
+    const u = UNLOCKS.find(x => x.base === base && !save.unlocked[x.id]);
+    if (u) { save.unlocked[u.id] = true; got.push(u.id); }
   }
   return got;
 }
@@ -5112,7 +5108,7 @@ function newState0(stageId, opt) {
     t: 0, pts: st.startPoints, baseHP: CFG.baseHP,
     robots: [], enemies: [], shots: [], queue: [], spawners: [], waveIdx: 0,
     allow: opt.allow || ALLOW_ALL, bodies: drawBodies(st.drawCount || DRAW_DEFAULT, opt.allow), nid: 1, serial: 0, lines: 1, loadout: (opt.loadout || []).filter(id => WEAPONS[id] && WEAPONS[id].evo && (!opt.allow || opt.allow.loadout)),
-    kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
+    usedBase: new Set(), kills: 0, swarmKills: 0, built: 0, lost: 0, bombs: 0, ffDmg: 0, ffKills: 0, leaked: 0, earned: 0, spent: 0, ebKills: 0, bossKilled: false,
     over: null, fx: [], msgs: [], warnT: 0, baseWarnT: 0, baseDmg: 0,
   };
 }
@@ -5184,7 +5180,7 @@ function buyLine(S) {
 function orderBuild(S, body, wids, at) {
   const err = buildCheck(S, body, wids); if (err) return err;
   const { cost, time } = buildCost(body, wids);
-  S.pts -= cost; S.spent += cost;
+  S.pts -= cost; S.spent += cost; for (const w of wids) S.usedBase.add(WEAPONS[w].base || w);
   S.queue.push({ body, wids: [...wids], time, prog: 0, no: ++S.serial, at: at === undefined ? -1 : at });
   return null;
 }
@@ -6815,7 +6811,7 @@ function stageSelect() {
   else {
     html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
     for (const id of c.stages) {
-      const st = stById(id), rw = UNLOCKS.filter(u => u.stage === id);
+      const st = stById(id), rw = [];
       html += '<button class="scard' + (cleared(id) ? ' clear' : '') + (id === nx ? ' next' : '') + '" data-st="' + id + '">' +
         '<span class="sno">' + stageNo(st) + '</span>' +
         '<span class="sm"><b>' + esc(st.sub) + '</b><span class="sg">' + goalChip(st) + '</span></span>' +
@@ -6823,8 +6819,10 @@ function stageSelect() {
     }
     html += '</div>';
   }
-  const other = UNLOCKS.filter(u => !u.stage);
-  html += (other.length ? '<details class="more"><summary>作戦以外の解禁条件</summary>' + other.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '：' + esc(u.cond) + (u.swarmKills && !isOpen(u.id) ? '（' + Math.min(SAVE.swarmKills || 0, u.swarmKills) + '/' + u.swarmKills + '）' : '') + '</div>').join('') + '</details>' : '') +
+  // 進化パーツの一覧：解禁済みか、どうすれば解禁できるか
+  html += '<details class="more"><summary>🧬 進化パーツ（' + UNLOCKS.filter(u => isOpen(u.id)).length + '/' + UNLOCKS.length + '）</summary>' +
+    '<div class="dim" style="margin:4px 0 6px">' + esc(stById(RD.FEATURES.evolve).name) + 'から、進化元の武器を使って作戦をクリアすると解禁。持ち込みは' + esc(stById(RD.FEATURES.loadout).name) + 'から</div>' +
+    UNLOCKS.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ ' : '🔒 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + (isOpen(u.id) ? '' : '：' + esc(u.cond)) + '</div>').join('') + '</details>' +
     '<div class="btns"><button class="ghost" id="toTitle">← タイトル</button><button class="ghost small" id="allOpen">全解禁（試作用）</button></div>';
   showOv(html);
   $('ovCard').querySelectorAll('[data-st]').forEach(b => b.onclick = () => openStage(b.dataset.st));
@@ -6838,14 +6836,14 @@ function stageDetail(stId) {
   curStage = stId;
   const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen), lockedEvo = open.length && !allowOf(stId).loadout;
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, CFG.loadoutSlots);
-  const rw = UNLOCKS.filter(u => u.stage === st.id), c = SAVE.clear && SAVE.clear[st.id];
+  const A = allowOf(st.id), rw = A.evolve ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
   showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
     (st.brief ? commHTML(st.brief) : '') +
     '<div class="goalbox">🎯 ' + esc(goalText(st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' + newHTML(st.id) +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
-    (rw.length ? '<div class="sec">クリア報酬</div>' + rw.map(u => '<div class="reward' + (isOpen(u.id) ? ' got' : '') + '">' + (isOpen(u.id) ? '✅ 解禁済み：' : '🎁 ') + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '<span class="dim">（' + esc(WEAPONS[WEAPONS[u.id].base].name) + 'の進化）</span></div>').join('') : '') +
+    (rw.length ? '<div class="sec">🧬 進化パーツ <span class="dim">使った武器でクリアすると解禁</span></div><div class="evoh">' + rw.map(u => '<span>' + WEAPONS[u.base].icon + esc(WEAPONS[u.base].name) + ' → ' + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '</span>').join('') + '</div>' : '') +
     (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + CFG.loadoutSlots + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
     (lockedEvo ? '<div class="dim" style="margin-top:8px">🧬 進化パーツの持ち込みは ' + esc(stById(RD.FEATURES.loadout).name) + ' から（コアの解析待ち）</div>' : '') +
     '<div class="btns sticky"><button class="ghost" id="sdBack">← 戻る</button><button class="primary big" id="sdGo">▶ 出撃</button></div>');
