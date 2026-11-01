@@ -135,6 +135,7 @@ html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(-
 /* パネル */
 #panel{background:#fff;border-top:1px solid var(--line);border-radius:16px 16px 0 0;margin-top:-12px;position:relative;z-index:3;overflow:hidden;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
 .stedge{position:absolute;left:0;right:0;top:0;height:4px;background:var(--line)}.stedge i{display:block;height:100%}.stedge i.ok{background:var(--green2)}.stedge i.mid{background:var(--blue)}.stedge i.low{background:var(--warn)}
+.tens{flex:0 0 auto;font-size:11.5px;font-weight:700;color:#fff;background:var(--warn);border-radius:999px;padding:1px 8px;white-space:nowrap}
 .stn{font-size:12px;color:var(--muted);white-space:nowrap}.stn b{font-family:var(--num);font-size:16px;font-weight:600;color:var(--ink);margin-left:2px}
 .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
 .who{display:flex;align-items:center;gap:7px;font-size:16px;min-width:0}
@@ -475,7 +476,10 @@ const NEWS=[];
 const news=t=>NEWS.push(t);
 const takeNews=()=>NEWS.splice(0);
 // 1ホールの中で減り続けると、減り方がゆるやかになる（池・OB・大叩きが重なって一気に削れすぎないように）。集中のコストは表示どおり引く
-function st(p,d,exact){if(d<0&&!exact&&p.holeLoss!=null){d/=1+p.holeLoss/25;p.holeLoss-=d}p.st=clamp(Math.round(p.st+d),0,100)}
+// 上がり3ホール（9・18ホールの対戦）：ここまでの全ホールと同じくらい心を削られる
+const STRETCH={mul:1.15,shot:1,rec:.6};
+const inStretch=()=>!!(S.cfg&&S.cfg.mode==='versus'&&S.course&&S.course.length>=9&&S.hole>=S.course.length-3);
+function st(p,d,exact){if(d<0&&!exact&&inStretch())d*=STRETCH.mul;if(d<0&&!exact&&p.holeLoss!=null){d/=1+p.holeLoss/25;p.holeLoss-=d}p.st=clamp(Math.round(p.st+d),0,100)}
 function yousu(s){return s>=75?'落ち着いている':s>=55?'普段どおり':s>=40?'素振りが増えている':s>=25?'表情が硬い':'手が小刻みに震えている'}
 const fmtD=d=>d<30?d.toFixed(1)+'y':Math.round(d)+'y';
 const fmtRel=r=>r===0?'E':(r>0?'+'+r:''+r);
@@ -523,6 +527,7 @@ function renderTitle(){
       <li>「構える」を押し、枠の中を真下に引く。震える青い線が緑の目標線に重なった瞬間に離す</li>
       <li>心のスタミナが減るほど線の震えが大きくなる。「集中」でスタミナを使えば、その一打だけ震えが収まる</li>
       <li>相手のスタミナは数字では見えない。打席交代のときの様子から読む</li>
+      <li>9・18ホールの最後の3ホールは「上がり」。1打ごとに心が削られ、ホールの間もほとんど回復しない</li>
       <li>右上の「高低」でグリーンの高さを表示。青い（低い）所に乗せればピンへ上りのパットが残る</li>
       <li>マッチプレーでは、相手の短いパットに「OK」を出すか、あえて打たせるかを選べる</li>
     </ol></details>
@@ -759,6 +764,7 @@ function startHole(){
       else if(p.ax.A===1){st(p,-4);news(`${p.name}さんは差が気になっているようだ。`)}
     }});
   }
+  if(inStretch()&&S.hole===S.course.length-3)news(S.course.length>=18?'ここから上がり3ホール。それまでの15ホールと同じだけ心を使うという。':'ここから上がり3ホール。ここまでと同じだけ心を使うという。');
   if(S.hole===S.course.length-1&&S.players.length>1){S.players.forEach(p=>st(p,-3));news('最終ホール。空気が張りつめる。')}
   renderHud();$('#panel').innerHTML='';
   overlay(introCard(h,newsHtml(takeNews()),'ティーへ'),()=>nextTurn());
@@ -782,6 +788,8 @@ function nextTurn(){
 }
 function startTurn(p){
   S.cur=p;S.mode='wait';S.camPts=[p.pos,S.pin];S.camMin=60;
+  // 上がりでは1打ごとに心が削られる（OKの判断で打席に戻っても二重には引かない）
+  if(inStretch()&&p.tensionAt!==S.hole*100+p.strokes){p.tensionAt=S.hole*100+p.strokes;const b=p.st;st(p,-STRETCH.shot,true);p.tension=b-p.st}else if(!inStretch())p.tension=0;
   renderHud();$('#panel').innerHTML='';
   if(p.cpu)return cpuTurn(p);
   const nw=takeNews(),d=dist(p.pos,S.pin);
@@ -838,7 +846,7 @@ function endHole(){
     else if(rel>=2){st(p,-8*MISSM[ax.B]);news(`${p.name}さんは悔しさを隠せない。`)}
     if(rel>=1){if(ax.B===-1){st(p,-4);news(`${p.name}さんは、まだこのホールを引きずっているようだ。`)}else if(ax.B===1)st(p,3)}
     if(!p.cpu&&p.st<25&&!(S.dlog||[]).some(e=>e.t==='shaky'&&e.n===p.name))dlog(p,'shaky');
-    st(p,RECOVER[ax.C]+(62-p.st)*.3);
+    st(p,(RECOVER[ax.C]+(62-p.st)*.3)*(inStretch()?STRETCH.rec:1)); // 上がりでは息をつく間がない
   });
   let headline='';
   if(S.cfg.format==='match'){
@@ -878,7 +886,7 @@ function showFinal(){
 // ================= HUD =================
 function renderHud(){
   const h=S.h,ws=len(S.wind);
-  $('#holeNo').textContent=h.no;
+  $('#holeNo').textContent=h.no;$('#holeNo').style.background=inStretch()?'var(--warn)':'';
   $('#holePar').textContent='Par '+h.par;
   $('#holeYd').textContent=h.yards+'y';
   $('#windIcon').innerHTML=windSvg(S.wind,26);
@@ -1131,7 +1139,7 @@ function stars(d){const n=clamp(Math.ceil(d*5),1,5);return'★'.repeat(n)+'☆'.
 
 S.detOpen=false;
 function planHead(p,withSt=true){const d=dist(p.pos,S.pin);
-  return`${withSt?`<div class="stedge"><i class="${stLevel(p.st)}" style="width:${p.st}%"></i></div>`:''}<div class="ph"><div class="who">${pdot(p)}<b>${esc(p.name)}</b><span class="muted">${p.strokes+1}打目</span>${withSt?`<span class="stn">心のスタミナ<b>${p.st}</b></span>`:''}</div><div class="yd"><span class="muted">ピンまで</span><b>${d<30?d.toFixed(1):Math.round(d)}</b><span class="u">y</span></div></div>`}
+  return`${withSt?`<div class="stedge"><i class="${stLevel(p.st)}" style="width:${p.st}%"></i></div>`:''}<div class="ph"><div class="who">${pdot(p)}<b>${esc(p.name)}</b><span class="muted">${p.strokes+1}打目</span>${withSt?`<span class="stn">${inStretch()?`<span class="tens">上がり${p.tension?' −'+p.tension:''}</span>`:'心のスタミナ'}<b>${p.st}</b></span>`:''}</div><div class="yd"><span class="muted">ピンまで</span><b>${d<30?d.toFixed(1):Math.round(d)}</b><span class="u">y</span></div></div>`}
 function renderPlanPanel(){
   const p=S.cur,pl=S.plan,fc=FOCUS[p.ax.C].cost;
   S.info=planInfo(p,pl);
