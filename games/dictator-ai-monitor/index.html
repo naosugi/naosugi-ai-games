@@ -324,13 +324,14 @@ const CFG = {
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
-  stageRate: {admin: {economy: .06, power: -.04}, lab: {gap: -.02, economy: .015, power: -.08}, grid: {power: .24}, surv: {order: .05, power: -.06}, ai: {gap: -.035, power: -.16}, factory: {economy: .09, power: -.12}, mil: {gap: -.018, power: -.08}, space: {economy: .04, power: -.05}},
+  stageRate: {admin: {economy: .06, power: -.025}, lab: {gap: -.02, economy: .015, power: -.05}, grid: {power: .24}, surv: {order: .05, power: -.035}, ai: {gap: -.035, power: -.1}, factory: {economy: .09, power: -.075}, mil: {gap: -.018, power: -.05}, space: {economy: .04, power: -.03}},
   /* 再整備は、その分野に関係するものだけ戻す */
   recoverBy: {admin: {economy: 5, order: 5}, lab: {}, grid: {power: 12}, surv: {order: 7}, ai: {autonomy: -9}, factory: {economy: 7}, mil: {order: 5}, space: {economy: 3, power: 3}},
   recoverGap: {admin: 6, lab: 2, grid: 6, surv: 6, ai: 4, factory: 6, mil: 5, space: 6},
   /* ステージ固有の代償。秩序は本当の値に効く */
   stageCost: {admin: {order: -2}, lab: {}, grid: {}, surv: {order: -1.5}, ai: {autonomy: 3}, factory: {order: -.8}, mil: {economy: -3}, space: {economy: -4}},
   pace: {stage: .05, tier: .01},
+  shortage: {hold: 24, gap: .3, order: .22},
   milHold: 7,
   stageCatch: 4,   // どの分野でもAIに任せれば、その分だけ他国に追いつく
   humanCap: 2,               // 1ステージで閣下が見られる件数。超えた分はAIが処理する
@@ -346,7 +347,7 @@ const CFG = {
   recoverTicks: 10,
   upkeep: {economy: 0.07, order: 0.025, rival: 0.05},
   burstScale: 1.1,
-  fatalChance: .2,
+  fatalChance: .25,
   guardStrong: .6,
   vuln: {start: 10, perTier: 6.5, tick: .16, recover: 24, attackFrom: 16, attackRate: .1, fatalAt: 50},
   unrest: {scale: .25, tick: .04, bias: .1, surv: .08, foreign: .05},
@@ -943,7 +944,7 @@ const COLLAPSE = {
 };
 /* 崩壊の最大原因が外からのものなら、別の結末として扱う */
 const CAUSE_TITLE = {invasion: '他国による占領', sanction: '制裁による国家破綻', sabotage: '破壊工作による国土の麻痺'};
-const SOURCE_NAME = {response:'監視の対処費用', approval:'閣下の決裁待ち', llmDrift:'外国製モデル', upkeep:'日々の維持費と監視の負荷', sanction:'他国の制裁', sabotage:'他国の破壊工作', invasion:'他国の侵攻', falsealarm:'誤報への対応'};
+const SOURCE_NAME = {shortPower:'電力不足による停止', shortEconomy:'予算不足による停止', response:'監視の対処費用', approval:'閣下の決裁待ち', llmDrift:'外国製モデル', upkeep:'日々の維持費と監視の負荷', sanction:'他国の制裁', sabotage:'他国の破壊工作', invasion:'他国の侵攻', falsealarm:'誤報への対応'};
 
 /* ===== 乱数（状態に保存するので続きからでも結果が変わらない）===== */
 function rnd(s) {
@@ -1402,6 +1403,17 @@ function maybeAttack(s, st) {
   tlog(s, `未修正の弱点（${Math.round(v)}）を突く攻撃が始まった。`);
   onset(s, inc.id);
 }
+/* 資源が尽きてもすぐには終わらない。AIを止めて耐えるので、遅れと不満が積もる */
+function tickShortage(s) {
+  s.short = s.short || {power: 0, economy: 0};
+  for (const k of ['power', 'economy']) {
+    if (s.truth[k] > 0) { s.short[k] = 0; continue; }
+    if (++s.short[k] === 1) log(s, k === 'power' ? '電力が尽きた。作業AIの計算を止めて配給に切り替えた。' : '予算が尽きた。給与と調達の支払いを止めた。', 'alert');
+    hit(s, {gap: CFG.shortage.gap * pace(s), order: -CFG.shortage.order}, k === 'power' ? 'shortPower' : 'shortEconomy');
+    if (s.short[k] > CFG.shortage.hold) { finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title}); return true; }
+  }
+  return false;
+}
 function tick(s) {
   if (s.phase !== 'running') throw new Error('phase');
   const st = s.stage;
@@ -1485,7 +1497,8 @@ function tick(s) {
   } else s.siege = 0;
   if (s.truth.foreign >= CFG.puppetDeathForeign) { finishDeath(s, {type: 'puppet', title: '傀儡政権の樹立'}); return s; }
   if (s.truth.autonomy >= CFG.rogueDeath) { finishDeath(s, {type: 'rogue', title: '人間の手を離れた国'}); return s; }
-  for (const k of ['order', 'power', 'economy']) if (s.truth[k] <= 0) { finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title}); return s; }
+  if (s.truth.order <= 0) { finishDeath(s, {type: 'collapse', metric: 'order', title: COLLAPSE.order.title}); return s; }
+  if (tickShortage(s)) return s;
   // 流し読み
   if (s.log.length === before) {
     if (st.t % 5 === 0) log(s, `定時報告：経済 ${Math.round(s.truth.economy * CFG.displayScale)}／電力 ${Math.round(s.truth.power * CFG.displayScale)}／体制秩序（報告）${Math.round(reportedOrder(s) * CFG.displayScale)}。`, 'status');
@@ -1575,7 +1588,7 @@ function ackEvent(s) {
   s.offers = {rewards};
   s.phase = 'reward';
   // ステージの死はここまでに判定済み
-  for (const k of ['order', 'power', 'economy']) if (s.truth[k] <= 0) finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title});
+  if (s.truth.order <= 0) finishDeath(s, {type: 'collapse', metric: 'order', title: COLLAPSE.order.title});
 }
 function suddenCounter(s, pool) {
   const open = INCIDENTS.filter(i => i.sudden && !i.attack && !s.used.includes(i.id) && s.tiers[i.stage] >= 1 && s.tiers[i.stage] < 3 && i.tiers.includes(s.tiers[i.stage] + 1) && guardOf(s, i) < CFG.guardStrong);
@@ -1766,6 +1779,7 @@ function sourceName(k, metric) {
   if (k === 'response') return '監視の対処';
   if (k === 'falsealarm') return '誤報への対応';
   if (k === 'stage') return 'ステージの代償';
+  if (k === 'unrest') return '国民の不満';
   return INCIDENT[k] ? INCIDENT[k].name : EVENT[k] ? EVENT[k].name : SOURCE_NAME[k] || '不明';
 }
 const METRIC_NAME = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', vuln: '未修正の弱点', autonomy: 'AIの自律度', foreign: '他国の浸透度'};
@@ -2178,6 +2192,7 @@ function worldHTML() {
       <div><dt>側近</dt><dd>あなたのそばで働く人間です。AIに命令できるので、AIを私物化することもあります。</dd></div>
       <div><dt>ターン</dt><dd>ステージの中の時間の単位です。毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
       <div><dt>他国との差</dt><dd>主にAIと技術の開発競争の差です。増えるほど悪い数字です。監視で遅れるほど開き、制裁や破壊工作、侵攻を招きます。</dd></div>
+      <div><dt>電力と経済</dt><dd>尽きてもすぐには終わりません。AIや支払いを止めて耐える間に、他国に遅れ、不満が積もります。長く続くと統治は終わります。</dd></div>
       <div><dt>電力</dt><dd>主に、仕事を任せた作業AIが使います。任せる範囲を広げるほど増えます。監視カードそのものは、計算を繰り返すものを除いて少ししか使いません。</dd></div>
       <div><dt>慎重さ、迎合など</dt><dd>報告AIの性格を表す数字です。迎合は相手の喜ぶことを言う傾向、影響されやすさは読んだ内容に染まる傾向、試験の見抜きは試験だと気づく傾向です。</dd></div>
     </dl>`, false)}
