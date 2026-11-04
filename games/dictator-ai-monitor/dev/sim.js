@@ -84,6 +84,11 @@ function decideBot(s) {
   else c = d.conf >= 58 ? 'act' : 'dismiss';
   Core.decide(s, c);
 }
+/* 人間が見張るカードの取り消し。確信度が低ければ取り消す */
+function vetoBot(s) {
+  if (s.phase !== 'running' && s.phase !== 'decision') return;
+  for (const d of Core.view(s).vetoes || []) if (decisionBot === 'never' || (decisionBot !== 'always' && d.conf < 50)) Core.veto(s, d.vid);
+}
 /* ---- 1ラン ---- */
 function play(seed, cardBot, stageBot, meta) {
   const r = R(hash(seed, 77));
@@ -114,7 +119,7 @@ function play(seed, cardBot, stageBot, meta) {
       }
       if (idx < 0) idx = stagePick[stageBot](offers, s, r);
       Core.enterStage(s, idx);
-    } else if (s.phase === 'running') Core.tick(s);
+    } else if (s.phase === 'running') { Core.tick(s); vetoBot(s); }
     else if (s.phase === 'decision') decideBot(s);
     else if (s.phase === 'result') Core.ackResult(s);
     else if (s.phase === 'event') Core.ackEvent(s);
