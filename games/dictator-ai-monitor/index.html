@@ -1366,7 +1366,7 @@ function applyMeta(meta, s) {
   return m;
 }
 function newlyUnlocked(before, after) {
-  return CARDS.filter(c => !isUnlocked(c, before) && isUnlocked(c, after)).map(c => c.name || c.detect);
+  return CARDS.filter(c => !c.base && !isUnlocked(c, before) && isUnlocked(c, after)).map(c => c.name || c.detect);
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
@@ -1400,7 +1400,7 @@ const KEYS = ['economy', 'power', 'order', 'gap'];
 const MODE = {in: ['in the loop', '閣下の決裁が済むまで止まる'], on: ['on the loop', 'AIが対処し、閣下は取り消せる'], auto: ['自動', 'AIだけで対処する。閣下は関わらない']};
 /* 他国との差は増えるほど悪い */
 const tone = (k, v) => { const good = k === 'gap' ? v < 0 : v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
-const fmt = (v, d = 1) => { const a = Math.abs(v) < .05 ? 0 : v; return (a > 0 ? '+' : '') + a.toFixed(d); };
+const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
 
 /* 資料。実在の国名や組織名はここにだけ出す。本編は架空のまま */
 const CHECKED = '2026年11月4日';
@@ -1643,7 +1643,7 @@ function renderDecision(v) {
   overlay.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Core.decide(S, b.dataset.c); save(); render(); });
 }
 function savesHTML(list) {
-  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b><span class="mode ${x.mode}">${MODE[x.mode][0]}</span></div><p>${esc(x.detect)}を検知${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
+  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b><span class="mode ${x.mode}">${MODE[x.mode][0]}</span></div><p>${x.cardId ? `${esc(x.detect)}を検知` : '監視カードの範囲外で偶然見つかった'}${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
 }
 function renderResult(v) {
   const r = v.result, saved = v.saves.filter(x => x.stageNo === r.stageNo);
