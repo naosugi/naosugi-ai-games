@@ -2305,7 +2305,7 @@ function renderRunning(v, paused) {
 }
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
-  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>監視AIが対処中：${esc(d.response)}</b><small>${esc(d.watch)}／確信度 ${d.conf}%／あと${d.left}ターンで確定。取り消すと、作業AIはそのまま動きます。</small></div><button type="button" data-v="${d.vid}">取り消す</button></div>`).join('');
+  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>監視AIが対処中：${esc(d.response)}</b><small>${esc(d.watch)}／確信度 ${d.conf}%</small><small>何もしなければ、あと${d.left}ターンでこの対処が確定します。</small><small>誤報だと思うなら、対処をやめて作業AIを続行させます。本物なら事故は止まりません。</small></div><button type="button" data-v="${d.vid}">対処をやめて<br>作業を続行</button></div>`).join('');
   el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); });
 }
 function scrollToLog() {
