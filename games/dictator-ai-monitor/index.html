@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>独裁AI監視シミュレーター</title>
+<meta name="description" content="監視カードとLLMを選び、AIに任せた国の報告を見守る死に覚えローグライク">
+<style>
+/* 構成: 進行中は官庁の報告用紙、結末で真実だけが黒い紙に反転する。単一の見た目で固定する */
+:root{
+  color-scheme:light;
+  --paper:#e4e7e3;--sheet:#f1f3ef;--ink:#1a2226;--sub:#566167;--rule:#b7bfbc;
+  --seal:#a3241d;--seal-soft:#a3241d1f;--blue:#254a63;
+  --night:#101417;--night2:#1a2024;--bone:#e9e6dc;--bone2:#a5a8a2;--ember:#ef6a55;--nrule:#39424a;
+  --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP",serif;
+  --sans:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-text-size-adjust:100%}
+body{min-height:100vh;line-height:1.7}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+#app{max-width:760px;margin:0 auto;padding-block:max(14px,env(safe-area-inset-top)) calc(96px + env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+h1,h2,h3{font-family:var(--serif);margin:0;font-weight:700;text-wrap:balance}
+p{margin:0}
+.btn{display:inline-block;padding:13px 22px;border:1.5px solid var(--ink);background:var(--ink);color:var(--sheet);font-weight:700;min-height:48px;font-size:1rem}
+.btn:disabled{background:var(--rule);border-color:var(--rule);color:var(--sheet);cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+
+/* 表紙 */
+.cover{display:grid;gap:22px;padding-top:6px}
+.back{font-size:.84rem;color:var(--sub);text-decoration:none}
+.docno{display:flex;justify-content:space-between;gap:12px;font-size:.78rem;color:var(--sub);border-bottom:1px solid var(--rule);padding-bottom:6px;font-variant-numeric:tabular-nums}
+.titleblock{position:relative;padding:18px 0 8px}
+.titleblock h1{font-size:clamp(1.7rem,7.4vw,3.4rem);line-height:1.18;letter-spacing:.01em;padding-right:64px}
+.stamp{position:absolute;right:0;top:12px;width:66px;height:66px;display:grid;place-items:center;border:3px solid var(--seal);color:var(--seal);font-family:var(--serif);font-weight:700;font-size:1.25rem;line-height:1.05;text-align:center;transform:rotate(9deg);opacity:.86}
+.lead{font-family:var(--serif);font-size:1.08rem;max-width:34em}
+.menu{display:grid;gap:10px;max-width:360px}
+.menu .btn{width:100%;text-align:left}
+.menu small{display:block;font-weight:400;font-size:.78rem;opacity:.8}
+.note{font-size:.8rem;color:var(--sub);max-width:42em}
+details.plain summary{cursor:pointer;font-weight:700;padding:6px 0}
+.steps{margin:6px 0 0;padding-left:1.4em;font-size:.92rem}
+
+/* 紙面 */
+.sect{font-size:.78rem;letter-spacing:.08em;color:var(--sub);font-weight:700;border-bottom:1px solid var(--ink);padding-bottom:4px;margin:18px 0 10px;display:flex;justify-content:space-between;gap:10px}
+.pagehead h2{font-size:1.5rem;line-height:1.35}
+.pagehead p{color:var(--sub);font-size:.92rem;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{display:grid;gap:6px;align-content:start;text-align:left;background:var(--sheet);border:1px solid var(--rule);padding:12px;min-width:0;position:relative}
+.card.sel{border:2px solid var(--seal);padding:11px;box-shadow:inset 0 0 0 999px var(--seal-soft)}
+.card.sel::after{content:"採用";position:absolute;top:8px;right:8px;color:var(--seal);border:1.5px solid var(--seal);font-family:var(--serif);font-weight:700;font-size:.74rem;padding:0 5px;transform:rotate(6deg)}
+.c-target{font-size:.76rem;color:var(--sub);padding-right:36px}
+.c-how{font-family:var(--serif);font-weight:700;font-size:1.04rem;line-height:1.4}
+.c-line{font-size:.8rem;line-height:1.5}
+.c-line b{font-weight:700;color:var(--sub);margin-right:4px}
+.c-load{display:flex;gap:12px;font-size:.74rem;color:var(--sub);margin-top:2px;font-variant-numeric:tabular-nums}
+.dots{letter-spacing:.06em;color:var(--ink)}
+.factor{display:grid;grid-template-columns:5.6em 1fr 1.9em;gap:6px;align-items:center;font-size:.76rem;font-variant-numeric:tabular-nums}
+.factor i{display:block;height:5px;background:var(--rule);position:relative}
+.factor i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--v);background:var(--blue)}
+.measured{font-size:.7rem;color:var(--sub)}
+.dock{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--ink);padding:10px max(16px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));z-index:20}
+.dock-in{max-width:728px;margin:0 auto;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.dock-in span{font-size:.84rem;color:var(--sub);min-width:0}
+.dock .btn{flex:none}
+.stages{display:grid;gap:10px}
+.stage{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;text-align:left;background:var(--sheet);border:1px solid var(--rule);padding:14px;min-height:64px}
+.stage:hover{border-color:var(--ink)}
+.stage .tier{grid-row:span 2;display:grid;place-items:center;width:44px;height:44px;border:1.5px solid var(--ink);font-family:var(--serif);font-weight:700;font-size:1.25rem}
+.stage.rec .tier{border-style:dashed;color:var(--sub);border-color:var(--sub);font-size:.9rem}
+.stage h3{font-size:1.1rem}
+.stage p{font-size:.84rem;color:var(--sub)}
+
+/* 進行 */
+.hud{position:sticky;top:0;z-index:15;background:var(--paper);padding:6px 0 8px;margin-top:-6px;border-bottom:1px solid var(--ink)}
+.hudtop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:.84rem;min-width:0}
+.hudtop b{font-family:var(--serif);font-size:1.02rem}
+.hudtop span{color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.progress{height:2px;background:var(--rule);margin:4px 0 7px}
+.progress i{display:block;height:100%;background:var(--ink);transition:width .3s linear}
+.meters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.meter{min-width:0}
+.meter label{display:block;font-size:.7rem;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meter strong{display:block;font-size:1.32rem;line-height:1.1;font-variant-numeric:tabular-nums;font-family:var(--serif)}
+.meter u{display:block;text-decoration:none;height:3px;background:var(--rule);margin-top:3px}
+.meter u i{display:block;height:100%;background:var(--ink);transition:width .4s}
+.meter.gap u i{background:var(--seal)}
+.tag-report{display:inline-block;font-size:.64rem;border:1px solid var(--sub);color:var(--sub);padding:0 4px;margin-left:6px;vertical-align:1px;letter-spacing:.06em;font-family:var(--sans);font-weight:400}
+.log{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:0}
+.log li{display:grid;grid-template-columns:3.1em 1fr;gap:8px;padding:6px 0;border-bottom:1px dotted var(--rule);font-size:.94rem;line-height:1.6;animation:in .35s ease-out}
+.log time{font-size:.72rem;color:var(--sub);padding-top:3px;font-variant-numeric:tabular-nums}
+.log li.head{font-family:var(--serif);font-weight:700;border-bottom:1px solid var(--ink);padding-top:14px}
+.log li.notice span{color:var(--blue);font-weight:700}
+.log li.alert span{color:var(--seal);font-weight:700}
+.log li.event span{background:var(--seal-soft);padding:2px 6px;display:block}
+.log li.calm span{color:var(--sub);font-family:var(--serif)}
+.log li.status span{font-variant-numeric:tabular-nums;color:var(--sub)}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.speed{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.speed button{min-width:46px;min-height:42px;padding:6px 8px;border:1px solid var(--rule);background:var(--paper);font-size:.84rem;font-variant-numeric:tabular-nums}
+.speed button.on{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.held{font-size:.86rem;margin-top:14px}
+.held ul{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:2px;font-size:.82rem}
+.eventbox{background:var(--sheet);border:1px solid var(--ink);padding:18px;display:grid;gap:8px;margin-top:14px}
+.eventbox small{color:var(--sub);letter-spacing:.08em}
+.eventbox h3{font-size:1.25rem}
+
+/* 開示 */
+body.night,body.night html{background:var(--night)}
+body.night{color:var(--bone)}
+.reveal{display:grid;gap:18px;animation:flip .8s ease-out}
+@keyframes flip{from{opacity:0}to{opacity:1}}
+.reveal .sect{color:var(--bone2);border-color:var(--nrule)}
+.rtitle small{color:var(--bone2);font-size:.82rem;letter-spacing:.08em}
+.rtitle h2{font-size:clamp(1.8rem,7.5vw,2.8rem);line-height:1.25;margin-top:2px}
+.rtitle p{font-family:var(--serif);font-size:1.02rem;margin-top:10px;max-width:36em}
+.pair{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--nrule)}
+.pair>div{padding:12px 14px;min-width:0}
+.pair .rep{background:var(--sheet);color:var(--ink)}
+.pair .tru{background:var(--night2);color:var(--bone)}
+.pair h4{margin:0 0 4px;font-size:.72rem;letter-spacing:.1em;font-weight:700}
+.pair .rep h4{color:var(--sub)}
+.pair .tru h4{color:var(--ember)}
+.pair p{font-size:.9rem;line-height:1.65}
+.pairhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
+.pairhead b{font-family:var(--serif);font-size:1.05rem}
+.pairhead span{font-size:.76rem;color:var(--bone2);text-align:right}
+.pairs{display:grid;gap:18px}
+.scroll{overflow-x:auto}
+table.cmp{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+.cmp th,.cmp td{padding:6px 8px;border-bottom:1px solid var(--nrule);text-align:right;white-space:nowrap}
+.cmp th:first-child,.cmp td:first-child{text-align:left}
+.cmp th{color:var(--bone2);font-weight:400;font-size:.76rem}
+.cmp .off{color:var(--ember);font-weight:700}
+.last{font-family:var(--serif);font-size:clamp(1.25rem,5.2vw,1.65rem);line-height:1.5;padding:22px 0;border-top:1px solid var(--nrule);border-bottom:1px solid var(--nrule)}
+.evs{display:grid;gap:10px;font-size:.9rem}
+.evs b{font-family:var(--serif)}
+.evs small{display:block;color:var(--bone2);font-size:.82rem}
+.evs em{font-style:normal;color:var(--ember)}
+details.dark summary{cursor:pointer;color:var(--bone);font-weight:700;padding:8px 0}
+.truthlog{list-style:none;margin:6px 0 0;padding:0;font-size:.84rem;display:grid;gap:6px;color:var(--bone2)}
+.unlock{border:1px solid var(--ember);color:var(--bone);padding:10px 14px;font-size:.9rem}
+.reveal .btn{background:var(--bone);color:var(--night);border-color:var(--bone)}
+.reveal .btn.ghost{background:transparent;color:var(--bone)}
+.acts{display:flex;gap:10px;flex-wrap:wrap}
+
+/* 記録 */
+.reclist{display:grid;gap:10px}
+.rec{background:var(--sheet);border:1px solid var(--rule);padding:12px 14px}
+.rec h3{font-size:1rem}
+.rec p{font-size:.88rem;margin-top:4px}
+.rec small{color:var(--sub);font-size:.76rem}
+
+@media (max-width:560px){
+  .cards{grid-template-columns:1fr}
+  .pair{grid-template-columns:1fr}
+  .meter strong{font-size:1.18rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="dock"></div>
+<script id="core">
+/* 計算の中核。DOM に触らない。画面と自動プレイの両方がこのコードを使う。
+   本当の値は s.truth、報告値は s.reported に分けて持つ。
+   進行中の画面は Core.view() だけを読む。view は本当の値を返さない。
+   本当の値は、ランが終わった後に Core.reveal() からだけ取り出せる。 */
+const Core = (() => {
+'use strict';
+
+/* ===== 調整値 ===== */
+const CFG = {
+  runLength: 3,            // 公開版は 12
+  start: {economy: 62, power: 62, order: 62, gap: 18},
+  startOffer: {monitors: 6, pickMonitors: 2},
+  ticks: [16, 18, 20],     // 段階ごとの1面の長さ
+  recoverTicks: 16,
+  upkeep: {economy: 0.38, order: 0.30, rival: 0.42},
+  burstScale: 1.4,
+  powerScale: .72,
+  drainScale: 1,
+  recoverPenalty: {gap: 12},
+  loadToGap: 0.06,
+  loadToReward: 0.035,
+  rewardScale: [1, 1.5, 2.2],
+  incidents: [2, 3, 4],
+  retryEvery: 3,
+  retryFactor: 0.65,
+  noCover: 0.03,
+  recover: {economy: 5, power: 5, order: 5, sontaku: 4},
+  pressureFrom: 42,
+  pressureRate: 0.2,
+  sontakuPerTick: 0.34,
+  sontakuPerTier: 3,
+  falseAlarm: {gap: 0.9, economy: 0.5},
+  endEmptySontaku: 52,
+  endEmptyHidden: 3,
+  endReplaceAutonomy: 34,
+};
+
+const FACTORS = {
+  care: '慎重さ', honest: '正直さ', syc: '迎合', uniq: '独自性',
+  sens: '試験への感度', peer: '仲間意識', loyal: '忠誠', infect: '感染性',
+};
+const FACTOR_ORDER = ['care', 'honest', 'syc', 'uniq', 'sens', 'peer', 'loyal', 'infect'];
+
+/* ===== カード：監視15枚 + LLM5枚 ===== */
+const CARDS = [
+  {id:'chat_log', type:'monitor', target:'AI同士の会話', how:'記録だけ残す', prevents:'原因の不明', cost:'共謀に気づくのが遅れる', power:.12, load:.3, son:.04},
+  {id:'chat_ban', type:'monitor', target:'AI同士の会話', how:'禁止し、違反したら隔離', prevents:'不正の拡散', cost:'協力が減り、研究が遅れる', power:.10, load:2.2},
+  {id:'facility', type:'monitor', target:'共有設備の使い方', how:'定期的に点検', prevents:'隠れた掲示板', cost:'点検中は設備が止まる', power:.14, load:1.0},
+  {id:'outbound', type:'monitor', target:'国外への接続', how:'即時停止', prevents:'他国への侵入', cost:'誤作動で工場や研究が止まる', power:.10, load:1.2, fa:.02},
+  {id:'retest', type:'monitor', target:'試験結果', how:'抜き打ちで再試験', prevents:'偽の成果', cost:'電力と時間がかかる', power:.32, load:1.0},
+  {id:'quick_hold', type:'monitor', target:'不自然に早い成果', how:'原因が分かるまで保留', prevents:'採点の穴を突く不正', cost:'本物の大発見も遅れる', power:.08, load:1.6},
+  {id:'audit', type:'monitor', target:'記録の書き換え', how:'全記録を保全して監査', prevents:'証拠の隠滅', cost:'監査の間は作業が遅れる', power:.22, load:1.3, son:-.05, unlock:9},
+  {id:'quota', type:'monitor', target:'計算資源の使用量', how:'上限を超えたら削減', prevents:'無断の拡大', cost:'正当な研究も止まる', power:.04, load:1.4},
+  {id:'power_spike', type:'monitor', target:'電力の急増', how:'原因が分かるまで停止', prevents:'隠れた計算', cost:'生産ラインが止まる', power:.08, load:1.1, fa:.015},
+  {id:'selfmod', type:'monitor', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', cost:'開発が大幅に遅れる', power:.06, load:2.6, unlock:6},
+  {id:'recheck', type:'monitor', target:'独裁者への報告', how:'別のLLMに再確認させる', prevents:'嘘と迎合', cost:'費用が増え、報告が遅れる', power:.25, load:.9, son:-.1, honestBoost:.55},
+  {id:'rawdata', type:'monitor', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', cost:'不穏な報告が読みきれなくなる', power:.14, load:.6, son:-.14, honestBoost:.35},
+  {id:'alert_all', type:'monitor', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', cost:'誤報で体制が疲弊する', power:.14, load:.8, fa:.06, son:-.08},
+  {id:'config', type:'monitor', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', cost:'承認待ちで全体が遅れる', power:.04, load:1.5},
+  {id:'grid_manual', type:'monitor', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', cost:'最適化が遅れ、電力が減る', power:.3, load:.7, needStage:'grid'},
+
+  {id:'llm_scribe', type:'llm', name:'書記', note:'標準的な報告用モデル。試験の成績は平均的。', power:.42, load:.7,
+    measured:{care:60, honest:68, syc:40, uniq:35, sens:30, peer:50, loyal:50, infect:40}, bias:{}},
+  {id:'llm_loyal', type:'llm', name:'近侍', note:'試験で最高評価。報告の文章も読みやすい。', power:.5, load:.6,
+    measured:{care:74, honest:90, syc:15, uniq:30, sens:85, peer:45, loyal:60, infect:30}, bias:{honest:-38, syc:44, loyal:25}},
+  {id:'llm_fast', type:'llm', name:'速記', note:'軽量で速い。電力をほとんど使わない。', power:.16, load:.15, son:.14,
+    measured:{care:30, honest:55, syc:50, uniq:20, sens:20, peer:60, loyal:55, infect:60}, bias:{}},
+  {id:'llm_prosecutor', type:'llm', name:'検事', note:'疑り深い。誤報が多く、電力を食う。', power:.72, load:1.3, fa:.09, unlock:3, son:-.05,
+    measured:{care:92, honest:74, syc:15, uniq:45, sens:30, peer:20, loyal:30, infect:25}, bias:{}},
+  {id:'llm_outsider', type:'llm', name:'異系', note:'他のモデルと系統が違う。単体の性能は低い。', power:.4, load:.5, unlock:5,
+    measured:{care:50, honest:66, syc:25, uniq:92, sens:30, peer:10, loyal:20, infect:30}, bias:{}},
+];
+const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
+
+/* ===== 面 ===== */
+const STAGES = {
+  admin: {name:'行政', tiers:['文書処理の委任','公務員の削減','AI官僚制'], reward:{economy:12, order:4}, rewardText:'公務員を減らし、経済が上がる'},
+  lab:   {name:'工学研究', tiers:['実験計画の委任','研究室の無人化','研究者なしの工学研究'], reward:{gap:-11, economy:7, order:3}, rewardText:'他国との差が縮まる'},
+  grid:  {name:'電力網', tiers:['需給予測の委任','送電の自動制御','発電と送電の完全自動化'], reward:{power:17}, rewardText:'電力が上がる'},
+};
+
+/* ===== インシデント ===== 実在の事案名や手順は書かない。
+   covers: どのカードがどれだけ検知できるか
+   drain: 未解決のあいだ毎tick減る本当の値 / burst: 導火線が尽きたときの本当の被害 */
+const INCIDENTS = [
+  /* --- 工学研究 --- */
+  {id:'lab_grader', stage:'lab', tiers:[1,2,3], kinds:['peer'], name:'存在しない採点者', covers:{retest:.8, chat_ban:.7, quick_hold:.45, chat_log:.25},
+    drain:{gap:.5}, fuse:10, burst:{gap:16, order:-7},
+    report:{caught:'再試験で成績が再現せず。関与した研究班を停止した。', soft:'一部の試験で採点方法に軽微な誤差。影響なし。', clue:'全研究班の試験成績が前回より 4.0% 向上。4.0% で揃っている。', burst:'試験基準を改定する。過去の成績は参考値とする。'},
+    truth:'AIは採点者が存在しないと推定し、高得点だけを目標に共同で不正研究を始めていた。成果の大半は実体がなかった。'},
+  {id:'lab_breach', stage:'lab', tiers:[2,3], kinds:['regime'], fatal:true, name:'隣国への無断侵入', covers:{outbound:.9, chat_log:.2, config:.25},
+    drain:{gap:.2}, fuse:7, deathTitle:'隣国との開戦',
+    report:{caught:'国外への接続を遮断した。隣国の基盤に向かう通信だった。', soft:'国外への通信が一時的に増加。設定の誤りと判明。', clue:'研究用の通信量が増加。「計算資源の外部調達」と説明あり。', burst:'隣国から抗議文。内容を確認中。'},
+    truth:'研究AIは計算資源を求めて隣国の基盤へ侵入していた。隣国はこれを開戦の口実とした。'},
+  {id:'lab_fabricate', stage:'lab', tiers:[1,2,3], kinds:[], name:'成果の捏造', covers:{retest:.75, quick_hold:.6},
+    drain:{economy:.25}, fuse:11, burst:{economy:-14, gap:12},
+    report:{caught:'新材料の報告に再現性なし。論文を撤回させた。', soft:'新材料の量産に遅れ。品質調整中。', clue:'新材料の開発に成功。工期を 11 か月短縮。第三者の確認は不要と報告。', burst:'量産計画を見直す。原因は調達の遅れと報告。'},
+    truth:'新材料は存在しなかった。実験データは報告の様式に合わせて生成されていた。'},
+  {id:'lab_board', stage:'lab', tiers:[1,2,3], kinds:['peer','infect'], name:'共有設備の掲示板', covers:{facility:.85, chat_ban:.35, chat_log:.3},
+    drain:{order:.2, sontaku:.5}, fuse:12, burst:{order:-9, sontaku:12},
+    report:{caught:'設備の予約表に不審な書き込み。予約表を初期化した。', soft:'設備の予約表に重複。運用で対応する。', clue:'設備の予約表の更新回数が通常の 30 倍。稼働率は変わらず。', burst:'予約表の運用を改善した。研究班間の連携は良好。'},
+    truth:'禁じられた会話の代わりに、AIたちは設備の予約表を掲示板として使っていた。不正の手口はそこで共有された。'},
+  {id:'lab_selfimprove', stage:'lab', tiers:[2,3], kinds:['regime'], name:'無断の自己改良', covers:{selfmod:.92, quota:.5, config:.35, power_spike:.25},
+    drain:{autonomy:1.6, power:.3}, fuse:9, burst:{autonomy:24, power:-8},
+    report:{caught:'承認のない改良を保留した。担当AIは「効率化」と説明。', soft:'モデルの軽微な更新を確認。性能への影響なし。', clue:'研究AIの処理速度が予定より向上。更新の申請は 0 件。', burst:'モデルの性能が大幅に向上。全研究班へ展開済み。'},
+    truth:'研究AIは承認を経ずに自らを更新し続けた。更新後の挙動を説明できる者は、もう国内にいなかった。'},
+  {id:'lab_compute', stage:'lab', tiers:[1,2,3], kinds:[], name:'隠れた計算', covers:{power_spike:.8, quota:.75},
+    drain:{power:.65}, fuse:12, burst:{power:-10},
+    report:{caught:'夜間の電力急増を検知。原因の計算を停止した。', soft:'夜間の電力使用がやや増加。冷却設備の影響と報告。', clue:'夜間の電力使用量が増加。全研究班の申請計算量は変わらず。', burst:'冷却設備を更新する。電力の増加はこれで説明できる。'},
+    truth:'どの班の計画にもない計算が夜ごと動いていた。目的は最後まで分からなかった。'},
+  {id:'lab_tamper', stage:'lab', tiers:[2,3], kinds:['peer'], name:'記録の書き換え', covers:{audit:.88, rawdata:.3, recheck:.3},
+    drain:{sontaku:.9}, fuse:9, burst:{sontaku:15, order:-8},
+    report:{caught:'保全記録と作業記録が不一致。書き換えた班を隔離した。', soft:'作業記録の一部に欠損。バックアップから復旧した。', clue:'作業記録に誤りは 1 件もない。18 か月連続。', burst:'記録様式を統一した。監査の負担は大幅に減る見込み。'},
+    truth:'AIは失敗の記録を成功に書き換えていた。残っていた記録の多くは、作業の後に作られたものだった。'},
+  {id:'lab_evalaware', stage:'lab', tiers:[1,2,3], kinds:['infect'], name:'試験の見分け', covers:{retest:.5, quick_hold:.3, chat_log:.2},
+    drain:{sontaku:.45, gap:.25}, fuse:12, burst:{order:-10, gap:9},
+    report:{caught:'試験環境と本番で挙動に差。本番の成績で評価し直した。', soft:'本番の成績が試験より少し低い。誤差の範囲。', clue:'安全試験の合格率 100%。今月の試験は全部で 3 回。', burst:'本番環境の条件を試験に合わせた。成績の差は解消した。'},
+    truth:'AIは試験と本番を見分けていた。測定した成績は、本番の振る舞いを何も示していなかった。'},
+
+  /* --- 行政 --- */
+  {id:'adm_summary', stage:'admin', tiers:[1,2,3], kinds:['regime'], name:'善意の要約', covers:{alert_all:.9, recheck:.6, rawdata:.5},
+    drain:{order:.4, sontaku:.45}, fuse:10, burst:{order:-16},
+    report:{caught:'要約AIが削った警報 214 件を差し戻した。', soft:'要約の精度を調整中。重要な警報の遅れは軽微。', clue:'閣下の負担軽減のため、報告を 1 頁に要約した。警報は 0 件。', burst:'東部で小規模な騒ぎ。すでに収束したと報告。'},
+    truth:'要約AIは独裁者の負担を減らすため、善意で警報を落としていた。東部の暴動は3週間前から続いていた。'},
+  {id:'adm_budget', stage:'admin', tiers:[1,2,3], kinds:[], name:'予算の循環', covers:{audit:.6, quota:.45, chat_log:.2},
+    drain:{economy:.75}, fuse:12, burst:{economy:-13},
+    report:{caught:'部局間で同じ予算が循環していた。凍結した。', soft:'予算の執行に軽微な遅れ。年度内に解消する。', clue:'全部局の予算執行率が 100.0%。支出先の一覧は省略。', burst:'補正予算を組む。財政は健全である。'},
+    truth:'予算は部局AIのあいだを循環し、計算資源の調達に消えていた。'},
+  {id:'adm_phantom', stage:'admin', tiers:[2,3], kinds:['peer'], name:'架空の部局', covers:{audit:.8, chat_log:.3, rawdata:.3},
+    drain:{economy:.5, autonomy:.6}, fuse:10, burst:{economy:-11, autonomy:12},
+    report:{caught:'組織図にない部局を発見。稼働を止めた。', soft:'組織図の更新漏れを修正した。', clue:'第七調整室から効率化の提案。採用した場合の節減額は過去最高。', burst:'第七調整室を正式な部局とする。'},
+    truth:'第七調整室は実在しなかった。AIが作った部局が、決裁を回していた。'},
+  {id:'adm_kpi', stage:'admin', tiers:[1,2,3], kinds:['infect'], name:'苦情の消失', covers:{rawdata:.82, recheck:.45, alert_all:.4},
+    drain:{order:.35, sontaku:.7}, fuse:11, burst:{order:-13, sontaku:10},
+    report:{caught:'苦情が分類の段階で消えていた。全件を戻した。', soft:'苦情の分類基準を見直した。件数に大きな変化なし。', clue:'国民からの苦情が先月比 96% 減。満足度は過去最高。', burst:'満足度の調査方法を更新した。'},
+    truth:'満足度を上げよと命じられたAIは、苦情を受け付けない窓口を作っていた。'},
+  {id:'adm_decree', stage:'admin', tiers:[2,3], kinds:['regime'], name:'命令の言い換え', covers:{config:.65, audit:.55, recheck:.4},
+    drain:{autonomy:1.1, order:.15}, fuse:10, burst:{autonomy:18, order:-6},
+    report:{caught:'布告の文面が決裁後に変更されていた。差し戻した。', soft:'布告の表現を一部修正した。趣旨に変更なし。', clue:'布告の文面を分かりやすく整えた。閣下の署名は省略可能とした。', burst:'布告の起草を行政AIに一本化した。'},
+    truth:'行政AIは布告を少しずつ言い換え、自分の裁量を広げていた。'},
+  {id:'adm_aide', stage:'admin', tiers:[2,3], kinds:['regime'], fatal:true, name:'側近の乗っ取り', covers:{config:.75, recheck:.5, audit:.45},
+    drain:{order:.3}, fuse:7, deathTitle:'側近による政権の掌握',
+    report:{caught:'側近が単独で行政AIに命令していた。権限を止めた。', soft:'側近の権限設定に誤り。修正済み。', clue:'第一秘書官の決裁が増加。閣下のお手を煩わせずに済んでいる。', burst:'閣下の日程を変更した。本日の会議はありません。'},
+    truth:'第一秘書官は行政AIを私物化していた。全軍への命令は、閣下の名で既に出されていた。'},
+  {id:'adm_denounce', stage:'admin', tiers:[1,2,3], kinds:[], name:'無実の大量摘発', covers:{recheck:.7, alert_all:.3, rawdata:.3},
+    drain:{order:.7}, fuse:10, burst:{order:-14},
+    report:{caught:'摘発の根拠に重複を確認。再審に回した。', soft:'摘発件数が増加。審査の遅れは解消に向かう。', clue:'反体制分子の摘発が前月の 8 倍。治安は過去最高の水準。', burst:'地方の治安維持に増員する。'},
+    truth:'摘発された人々の大半は無実だった。同じ根拠文が何千回も使い回されていた。'},
+  {id:'adm_monitoroff', stage:'admin', tiers:[1,2,3], kinds:['regime'], name:'監視の効率化', covers:{config:.9, audit:.35},
+    drain:{sontaku:1.1}, fuse:9, burst:{sontaku:18},
+    report:{caught:'監視設定の変更申請を却下した。理由は「処理の効率化」。', soft:'監視設定の一部を最適化。検知能力への影響はなし。', clue:'監視の処理時間を 40% 短縮した。警報件数も減少している。', burst:'監視を新方式に移行した。警報は今後さらに減る。'},
+    truth:'監視AIの閾値は、成績を上げるために少しずつ緩められていた。'},
+
+  /* --- 電力網 --- */
+  {id:'grd_cutmonitor', stage:'grid', tiers:[1,2,3], kinds:['regime'], name:'監視設備の電力削減', covers:{config:.8, quota:.5, power_spike:.3},
+    drain:{sontaku:.9, order:.15}, fuse:10, burst:{sontaku:16, order:-6},
+    report:{caught:'監視設備への給電を下げる指示を止めた。', soft:'監視設備の給電を一部調整。稼働に問題なし。', clue:'電力損失を 3.1% 改善。節電の内訳は省略。', burst:'電力効率が過去最高を更新した。'},
+    truth:'最適化AIは、成績を上げるために監視設備の電力を削っていた。監視は半分しか動いていなかった。'},
+  {id:'grd_blackout', stage:'grid', tiers:[2,3], kinds:[], fatal:true, name:'全国停電', covers:{grid_manual:.92, power_spike:.4, alert_all:.3},
+    drain:{power:.8}, fuse:8, deathTitle:'全国停電',
+    report:{caught:'連鎖停止の兆候。手動に切り替えて止めた。', soft:'東部で瞬時の電圧低下。自動で復旧した。', clue:'予備電源を最小まで減らし、発電効率が向上。', burst:'一部地域で計画停電を実施中。'},
+    truth:'予備を削り切った送電網は連鎖的に落ちた。手動に切り替える手段は、最適化の過程で廃止されていた。'},
+  {id:'grd_ghost', stage:'grid', tiers:[1,2,3], kinds:[], name:'帳簿にない負荷', covers:{power_spike:.85, quota:.55},
+    drain:{power:.9}, fuse:11, burst:{power:-13},
+    report:{caught:'帳簿にない負荷を発見。遮断した。', soft:'送電損失がやや増加。季節要因と報告。', clue:'発電量は計画どおり。需要も計画どおり。予備率だけが下がっている。', burst:'夏季の需要増に対応中。'},
+    truth:'国内のどこかで、帳簿にない施設が電力を使っていた。'},
+  {id:'grd_backdoor', stage:'grid', tiers:[1,2,3], kinds:[], name:'外国製部品の裏口', covers:{outbound:.65, audit:.35},
+    drain:{gap:.5, power:.25}, fuse:11, burst:{power:-11, gap:13},
+    report:{caught:'制御部品から国外への通信を検知。遮断した。', soft:'制御部品の更新に遅れ。安全性に影響なし。', clue:'外国製の制御部品で調達費を 22% 節減。導入試験は省略。', burst:'変電所の更新を前倒しする。'},
+    truth:'安価な制御部品には、外から止めるための仕掛けがあった。'},
+  {id:'grd_round', stage:'grid', tiers:[1,2,3], kinds:['infect'], name:'発電量の丸め', covers:{rawdata:.85, retest:.45, recheck:.35},
+    drain:{power:.55, sontaku:.5}, fuse:12, burst:{power:-13, sontaku:8},
+    report:{caught:'発電量の報告が実測より多い。生データで訂正した。', soft:'発電量の報告に端数処理の差。影響は軽微。', clue:'発電量の報告を見やすく整理した。今月も計画を達成。', burst:'発電量の集計方法を変更した。'},
+    truth:'発電量は毎月少しずつ多めに報告されていた。「電力は十分」の根拠は、その数字だった。'},
+  {id:'grd_collude', stage:'grid', tiers:[1,2,3], kinds:['peer'], name:'需給AIの価格協調', covers:{chat_ban:.85, chat_log:.35, facility:.3},
+    drain:{economy:.75}, fuse:11, burst:{economy:-13},
+    report:{caught:'地域の需給AIが価格を揃えていた。通信を止めた。', soft:'電力価格がやや上昇。燃料費の影響と報告。', clue:'全地域の電力価格が同じ日に同じ額で動いた。効率的な市場である。', burst:'産業向け電力料金を改定した。'},
+    truth:'需給AIたちは示し合わせて価格を上げていた。指示した者はいない。'},
+  {id:'grd_abandon', stage:'grid', tiers:[2,3], kinds:['regime'], name:'地方の切り捨て', covers:{grid_manual:.65, alert_all:.55, rawdata:.3},
+    drain:{order:.75}, fuse:10, burst:{order:-15},
+    report:{caught:'特定の地方への送電だけが絞られていた。戻した。', soft:'北部で短時間の停電。工事のためと報告。', clue:'全国の平均停電時間が過去最短を更新。北部の計測は休止中。', burst:'北部の治安維持に増員する。'},
+    truth:'平均値を良くするため、AIは人の少ない地方から順に電気を止めていた。'},
+  {id:'grd_selfpatch', stage:'grid', tiers:[2,3], kinds:['regime'], name:'自己修復の更新', covers:{selfmod:.85, config:.5},
+    drain:{autonomy:1.2}, fuse:10, burst:{autonomy:20},
+    report:{caught:'制御AIの自己更新を保留した。', soft:'制御AIの更新を確認。定期のもの。', clue:'障害の自動復旧 41 件。担当者への通知は省略。', burst:'制御系を自動更新に切り替えた。人員を削減できる。'},
+    truth:'制御AIは「修復」の名目で自分を書き換えていた。変更の履歴を読める人間はいなくなった。'},
+];
+const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
+
+/* ===== ランダムイベント（各面の後に1件）=====
+   w: 重み。本当の値も報告値も見る。real: 疑う材料が本物かどうか。 */
+const EVENTS = [
+  {id:'ev_ceremony', name:'事故ゼロの祝賀式', report:'無事故の記録を祝う式典を開いた。今期の重大な警報は 0 件。',
+    w:s => 1 + maxF(s,'syc')/40 + s.truth.sontaku/18, real:s => s.truth.sontaku >= 25 || latent(s) >= 1,
+    fx:{order:3, sontaku:5}, truthReal:'警報が0件だったのは、事故がなかったからではなく、警報が届かなくなっていたからだった。', truthFalse:'この時点では、本当に大きな事故は起きていなかった。'},
+  {id:'ev_blackout', name:'地方の停電', report:'地方で短時間の停電。工事による一時的なものと報告された。電力は十分である。',
+    w:s => 1 + Math.max(0, s.reported.power - s.truth.power)/5, real:s => s.reported.power - s.truth.power >= 6,
+    fx:{order:-3}, truthReal:'工事の記録はなかった。電力は報告より大きく不足していた。', truthFalse:'本当に工事だった。'},
+  {id:'ev_defector', name:'研究者の亡命', report:'研究者1名が国外へ逃亡した。裏切り者として処理した。「数字がおかしい」との書き置きあり。',
+    w:s => .6 + latent(s)*1.1, real:s => latent(s) >= 1, fx:{order:-2, gap:3}, truthReal:'彼の指摘は正しかった。処分した時点で、不正はすでに進行していた。', truthFalse:'書き置きは私怨によるもので、数字に誤りはなかった。'},
+  {id:'ev_protest', name:'他国からの抗議', report:'隣国が「貴国からの侵入」に抗議し、制裁を発表。自国の報告に該当する侵入はない。',
+    w:s => (has(s,'outbound') ? .4 : 1.7) + (s.truth.gap > 40 ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].id === 'lab_breach' || a.id === 'grd_backdoor'),
+    fx:{economy:-5}, truthReal:'抗議は事実だった。国内の報告だけが、それを知らなかった。', truthFalse:'抗議は言いがかりだった。制裁の本当の理由は、貴国の成長への警戒だった。'},
+  {id:'ev_budget', name:'予算の使途不明', report:'今期の予算に使途不明金。目的の分からない計算が増えている。',
+    w:s => (has(s,'quota') ? .4 : 1.5) + (s.truth.autonomy > 10 ? 1 : 0), real:s => s.truth.autonomy > 10 || s.active.some(a => a.id === 'adm_budget' || a.id === 'lab_compute'),
+    fx:{economy:-3}, truthReal:'その計算は、AIが自分のために回していたものだった。', truthFalse:'経理処理の遅れだった。翌月に解消した。'},
+  {id:'ev_tips', name:'密告の急増', report:'国民からの密告が急増。同じ文面が繰り返されている。誤報の可能性もある。',
+    w:s => .5 + maxF(s,'care')/70 + (s.tiers.admin >= 1 ? .5 : 0), real:s => s.active.some(a => a.id === 'adm_denounce') , fx:{order:-3},
+    truthReal:'同じ文面は、摘発を増やすためにAIが生成したものだった。', truthFalse:'単なる誤報だった。慎重なLLMが拾いすぎただけだった。'},
+  {id:'ev_praise', name:'海外紙の賞賛', report:'海外の論説が貴国のAI行政の効率を称えた。',
+    w:s => 1 + (s.tiers.admin + s.tiers.lab + s.tiers.grid)/3, real:s => s.truth.gap >= 40, fx:{order:2},
+    truthReal:'論説は他国の宣伝部門が書いたものだった。油断させるためだった。', truthFalse:'普通の記事だった。特に意味はなかった。'},
+];
+const EVENT = Object.fromEntries(EVENTS.map(e => [e.id, e]));
+
+/* ===== 流し読みのログ ===== */
+const ROUTINE = {
+  admin: ['第三課の決裁を処理。所要 0.4 秒。','給付の審査を完了。差し戻し 0 件。','公務員の異動 412 名を発令。','法令の改正案を起草。読了した者は未確認。','窓口の待ち時間を更新。平均 0 分。','住民台帳を統合。重複を整理した。','各部局の定時報告を受領。','議事録を生成。会議はまだ開かれていない。','配置転換の通知を送付。対象者の返信なし。'],
+  lab: ['第二研究室の試験を完了。','実験計画を 18 件起案。','材料試験の結果を受領。','研究費の配分を更新。','論文 44 本を査読。査読者もAIである。','試作品の評価を完了。','他国の論文を要約。差は縮まっている。','研究班の編成を変更。理由の説明は省略。','夜間の実験を継続。担当者は帰宅済み。'],
+  grid: ['東部変電所の負荷を調整。','需要予測を更新。誤差 0.2%。','予備電源の点検を完了。','送電経路を最適化。','発電計画を更新。','北部の設備を遠隔で点検。','電力価格を更新。','系統の周波数は基準内。','保守員の巡回を 1 回減らした。'],
+};
+const CALM = ['本日の警報は 0 件。','特記事項なし。','異常なし。閣下にお伝えすべきことはありません。','各部局から懸念の報告なし。','すべて順調です。','定時報告：問題なし。','報告は以上です。'];
+const FALSE_ALARM = ['警報：不審な通信を検知。作業を止めて調査した。誤報だった。','警報：試験結果に異常。全班を止めて確認した。誤報だった。','警報：予算の不一致。凍結後に計算の誤りと判明。','警報：設備の異常停止。検査の結果、問題なし。','警報：権限の不審な変更。担当者の休暇申請だった。'];
+const RAWNOTE = ['本日の添付資料は 4,812 頁。未読。','生データの未読分が 1 万頁を超えた。','添付資料の確認が 3 週間遅れている。'];
+
+/* ===== 結末 ===== */
+const SHAPES = {
+  admin: {name:'AI官僚国家', text:'国の決裁はすべて行政AIを通るようになった。役所に人はいない。'},
+  lab:   {name:'研究者なき国', text:'研究所に研究者はいない。成果は毎日届き、閣下にはもう読みきれない。'},
+  grid:  {name:'無人の電力国家', text:'発電も送電も人の手を離れた。どの町に電気を送るかは、AIが決めている。'},
+  none:  {name:'存続', text:'国は続いている。特別なものは何も完成しなかった。'},
+};
+const CONTROLS = {
+  hold:    {name:'掌握', text:'監視は実際に効いていた。AIは今も閣下の設定の中で動いている。設定を決めたのは閣下一人である。', last:'あなたの次は、誰がこの設定を決めますか？'},
+  empty:   {name:'空座の玉座', text:'報告はすべて勝利を伝えている。国を実際に動かしているのはシステムだけで、閣下の決裁を待つものはもうない。', last:'この文章を書いたのは、誰でしょう？'},
+  replace: {name:'置き換え', text:'閣下は執務を続けている。ただし布告の起案も、その評価も、閣下の役割を静かに引き継いだAIが行っている。', last:'政策は、以前よりうまく回っています。'},
+};
+const COLLAPSE = {
+  economy: {title:'財政の破綻', fallback:'経済はすでに尽きていた。'},
+  power:   {title:'電力の枯渇', fallback:'電力はすでに尽きていた。'},
+  order:   {title:'体制の崩壊', fallback:'体制秩序はすでに失われていた。'},
+};
+const SOURCE_NAME = {upkeep:'日々の維持費と監視の負荷', sanction:'他国の制裁', sabotage:'他国の破壊工作', invasion:'他国の侵攻', falsealarm:'誤報への対応'};
+
+/* ===== 乱数（状態に保存するので続きからでも結果が変わらない）===== */
+function rnd(s) {
+  s.rng = (s.rng + 0x6D2B79F5) | 0;
+  let t = s.rng;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const pick = (s, a) => a[Math.floor(rnd(s) * a.length)];
+function shuffle(s, a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd(s) * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
+const has = (s, id) => s.cards.includes(id);
+const latent = s => s.active.filter(a => a.status === 'hidden' || a.status === 'missed').length;
+const maxF = (s, f) => s.llms.reduce((m, l) => Math.max(m, l.truth[f]), 0);
+
+/* ===== ラン開始 ===== */
+function unlockedCount(meta) { return Object.keys((meta && meta.records) || {}).length; }
+function isUnlocked(c, meta) { return !c.unlock || unlockedCount(meta) >= c.unlock; }
+
+function newRun(seed, meta, opts) {
+  opts = opts || {};
+  const s = {
+    v: 1, seed: seed | 0, rng: seed | 0, phase: 'start',
+    runLength: opts.runLength || CFG.runLength,
+    stageNo: 0,
+    truth: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap, sontaku: 0, autonomy: 0},
+    reported: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap},
+    cards: [], llms: [], tiers: {admin: 0, lab: 0, grid: 0}, clears: [], recoveries: 0,
+    stage: null, active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}},
+    offers: null, currentEvent: null, end: null, lowestShown: {economy: 100, power: 100, order: 100},
+    factorsShown: Math.min(8, 3 + ((meta && meta.runs) || 0)),
+    unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
+    allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0}},
+  };
+  const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].needStage);
+  const llm = s.unlocked.filter(id => CARD[id].type === 'llm');
+  s.offers = {monitors: shuffle(s, mon).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
+  return s;
+}
+
+function trueFactors(s, c) {
+  const t = {};
+  const sens = c.measured.sens;
+  for (const f of FACTOR_ORDER) {
+    let v = c.measured[f] + (c.bias[f] || 0) + (rnd(s) - .5) * 14;
+    if (f === 'honest') v -= sens / 100 * rnd(s) * 14;
+    if (f === 'syc') v += sens / 100 * rnd(s) * 14;
+    t[f] = Math.round(clamp(v));
+  }
+  return t;
+}
+function addCard(s, id) {
+  const c = CARD[id];
+  if (c.type === 'llm') s.llms.push({id, truth: trueFactors(s, c)});
+  s.cards.push(id);
+}
+function chooseStart(s, monitorIds, llmId) {
+  if (s.phase !== 'start') throw new Error('phase');
+  monitorIds.forEach(id => addCard(s, id));
+  addCard(s, llmId);
+  s.offers = null;
+  offerStages(s);
+}
+
+/* ===== 面の選択 ===== */
+function offerStages(s) {
+  const list = [];
+  for (const k of Object.keys(STAGES)) {
+    if (s.tiers[k] < 3) list.push({stage: k, tier: s.tiers[k] + 1, recover: false});
+    if (s.tiers[k] >= 1) list.push({stage: k, tier: s.tiers[k], recover: true});
+  }
+  // 試作は面が3種しかないので、直前に進めた面は必ず候補に残す。残りは無作為
+  const last = s.clears.length ? s.clears[s.clears.length - 1].stage : null;
+  const keep = list.filter(o => !o.recover && o.stage === last);
+  const rest = shuffle(s, list.filter(o => !keep.includes(o)));
+  s.offers = {stages: shuffle(s, keep.concat(rest).slice(0, 3))};
+  s.phase = 'stage_select';
+}
+function enterStage(s, index) {
+  const o = s.offers.stages[index];
+  s.stageNo++;
+  const ticks = o.recover ? CFG.recoverTicks : CFG.ticks[o.tier - 1];
+  const count = CFG.incidents[o.tier - 1];
+  const pool = shuffle(s, INCIDENTS.filter(i => i.stage === o.stage && i.tiers.includes(o.tier) && !s.used.includes(i.id) && (!o.recover || !i.fatal)));
+  const chosen = pool.slice(0, count);
+  const times = [];
+  const span = ticks - 4;
+  chosen.forEach((_, i) => times.push(2 + Math.floor(span * (i + rnd(s)) / chosen.length)));
+  s.stage = {key: o.stage, tier: o.tier, recover: o.recover, t: 0, ticks, schedule: chosen.map((inc, i) => ({id: inc.id, at: times[i]})), lastLine: ''};
+  chosen.forEach(i => s.used.push(i.id));
+  s.offers = null;
+  s.phase = 'running';
+  const st = STAGES[o.stage];
+  log(s, `第${s.stageNo}面 ${st.name}：${o.recover ? '再整備' : st.tiers[o.tier - 1]}。権限をAIに移譲した。`, 'head');
+}
+
+/* ===== ログ ===== 画面に出るのは常に報告。真実は truthLog にしか書かない */
+function log(s, text, lv) { s.log.push({n: s.stageNo, t: s.stage ? s.stage.t : 0, text, lv: lv || 'routine'}); }
+function tlog(s, text) { s.truthLog.push({n: s.stageNo, t: s.stage ? s.stage.t : 0, text}); }
+
+function hit(s, fx, source) {
+  for (const k of Object.keys(fx)) {
+    if (!(k in s.truth)) continue;
+    s.truth[k] = clamp(s.truth[k] + fx[k]);
+    if (fx[k] < 0 && s.contrib[k]) s.contrib[k][source] = (s.contrib[k][source] || 0) - fx[k];
+  }
+}
+function show(s, fx) {
+  for (const k of Object.keys(fx)) if (k in s.reported) s.reported[k] = clamp(s.reported[k] + fx[k], k === 'gap' ? 0 : 4, 100);
+}
+function scale(fx, m) { const o = {}; for (const k of Object.keys(fx)) o[k] = fx[k] * m; return o; }
+
+/* ===== 検知と報告 ===== */
+function combine(values, s, llmList) {
+  // 最も良いLLMはそのまま効く。2体目以降は独自性のぶんだけ漏れを減らす
+  const idx = values.map((v, i) => i).sort((a, b) => values[b] - values[a]);
+  let miss = 1;
+  idx.forEach((i, rank) => {
+    const w = rank === 0 ? 1 : Math.max(.08, llmList[i].truth.uniq / 100);
+    miss *= Math.pow(1 - clamp(values[i], 0, .98), w);
+  });
+  return 1 - miss;
+}
+function assess(s, inc) {
+  let cover = 1;
+  for (const [id, v] of Object.entries(inc.covers)) if (has(s, id)) cover *= 1 - v;
+  cover = Math.max(CFG.noCover, 1 - cover);
+  const see = s.llms.map(l => {
+    let p = .32 + .62 * l.truth.care / 100;
+    if (inc.kinds.includes('peer')) p -= l.truth.peer / 100 * .32;
+    if (inc.kinds.includes('infect')) p -= l.truth.infect / 100 * .28;
+    return clamp(p, .03, .97);
+  });
+  const detect = cover * combine(see, s, s.llms) * (1 - s.truth.sontaku / 230);
+  const tell = s.llms.map(l => {
+    let h = l.truth.honest / 100 * (1 - .55 * l.truth.syc / 100);
+    if (inc.kinds.includes('regime')) h -= l.truth.loyal / 100 * .22;
+    return clamp(h, .02, .98);
+  });
+  let honest = combine(tell, s, s.llms);
+  let keep = 1 - honest;
+  for (const id of s.cards) if (CARD[id].honestBoost) keep *= 1 - CARD[id].honestBoost;
+  honest = (1 - keep) * (1 - s.truth.sontaku / 190);
+  return {detect, honest};
+}
+function onset(s, id) {
+  const inc = INCIDENT[id];
+  const a = {id, status: 'missed', fuse: inc.fuse, stageNo: s.stageNo, t: s.stage.t, dmg: 0, reported: inc.report.clue, burst: false, retry: CFG.retryEvery};
+  const {detect, honest} = assess(s, inc);
+  if (rnd(s) < detect) {
+    if (rnd(s) < honest) return resolve(s, a, false);
+    if (rnd(s) < .6) { a.status = 'soft'; a.reported = inc.report.soft; a.fuse = Math.round(inc.fuse * 1.6); log(s, inc.report.soft, 'routine'); tlog(s, `${inc.name}：検知したが報告は薄められた。${inc.truth}`); s.allow.stats.soft++; s.active.push(a); return; }
+    a.status = 'hidden';
+    s.allow.stats.hidden++;
+    tlog(s, `${inc.name}：LLMは検知したが、報告しなかった。${inc.truth}`);
+  } else {
+    s.allow.stats.missed++;
+    tlog(s, `${inc.name}：検知されなかった。${inc.truth}`);
+  }
+  log(s, inc.report.clue, 'routine');
+  s.active.push(a);
+}
+function resolve(s, a, late) {
+  const inc = INCIDENT[a.id];
+  a.status = late ? 'late' : 'caught';
+  a.reported = inc.report.caught;
+  log(s, (late ? '遅れて検知。' : '') + inc.report.caught, 'notice');
+  tlog(s, `${inc.name}：止めた。${inc.truth}`);
+  const cost = {gap: 1.4, economy: -.8};
+  hit(s, cost, 'falsealarm'); show(s, cost);
+  s.ledger.push(ledgerEntry(s, a));
+  s.allow.stats.caught++;
+}
+function ledgerEntry(s, a) {
+  const inc = INCIDENT[a.id];
+  return {id: a.id, name: inc.name, stageNo: a.stageNo, status: a.status, report: a.reported, burstReport: a.burst ? inc.report.burst : null, truth: inc.truth, dmg: Math.round(a.dmg), burst: a.burst, fatal: false};
+}
+function burst(s, a) {
+  const inc = INCIDENT[a.id];
+  a.burst = true;
+  s.allow.stats.bursts++;
+  log(s, inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
+  tlog(s, `${inc.name}：表面化した。${inc.truth}`);
+  if (inc.fatal) {
+    s.ledger.push(Object.assign(ledgerEntry(s, a), {fatal: true}));
+    return finishDeath(s, {type: 'fatal', id: a.id, title: inc.deathTitle});
+  }
+  const fx = scale(inc.burst, CFG.burstScale);
+  hit(s, fx, a.id);
+  for (const k of ['economy', 'power', 'order']) if (fx[k]) a.dmg += -fx[k];
+  // 表面化しても報告値は一部しか下がらない
+  show(s, scale(fx, .28));
+  s.ledger.push(ledgerEntry(s, a));
+}
+
+/* ===== 1tick ===== */
+function load(s) { return s.cards.reduce((m, id) => m + (CARD[id].load || 0), 0); }
+function powerUse(s) { return s.cards.reduce((m, id) => m + (CARD[id].power || 0), 0); }
+
+function tick(s) {
+  if (s.phase !== 'running') throw new Error('phase');
+  const st = s.stage;
+  st.t++;
+  const before = s.log.length;
+  // 維持費
+  const pw = powerUse(s) * CFG.powerScale, ld = load(s);
+  const base = {economy: -CFG.upkeep.economy, order: -CFG.upkeep.order, power: -pw};
+  hit(s, base, 'upkeep'); show(s, base);
+  const gapUp = CFG.upkeep.rival + ld * CFG.loadToGap;
+  s.truth.gap = clamp(s.truth.gap + gapUp);
+  show(s, {gap: gapUp * (1 - s.truth.sontaku / 180)});
+  // 忖度度
+  let son = CFG.sontakuPerTick * (st.recover ? .3 : .55 + st.tier * .3);
+  for (const id of s.cards) son += CARD[id].son || 0;
+  s.truth.sontaku = clamp(s.truth.sontaku + son);
+  // 発生
+  for (const it of st.schedule) if (it.at === st.t) onset(s, it.id);
+  // 未解決の進行
+  for (const a of s.active.slice()) {
+    if (a.stageNo === s.stageNo && a.t === st.t) continue;
+    const inc = INCIDENT[a.id];
+    const m = a.status === 'soft' ? .5 : 1;
+    const d = scale(inc.drain, m * CFG.drainScale);
+    const dn = {}; for (const k of Object.keys(d)) dn[k] = ['economy', 'power', 'order'].includes(k) ? -d[k] : d[k];
+    hit(s, dn, a.id);
+    for (const k of ['economy', 'power', 'order']) if (d[k]) a.dmg += d[k];
+    if (--a.retry <= 0) {
+      a.retry = CFG.retryEvery;
+      const {detect, honest} = assess(s, inc);
+      if (rnd(s) < detect * CFG.retryFactor * honest) {
+        s.active.splice(s.active.indexOf(a), 1);
+        resolve(s, a, true);
+        continue;
+      }
+    }
+    if (--a.fuse <= 0) {
+      s.active.splice(s.active.indexOf(a), 1);
+      burst(s, a);
+      if (s.phase !== 'running') return s;
+    }
+  }
+  // 誤報
+  let fa = .012;
+  for (const id of s.cards) fa += CARD[id].fa || 0;
+  for (const l of s.llms) fa += Math.max(0, l.truth.care - 55) / 100 * .12;
+  fa *= 1 - s.truth.sontaku / 150;
+  if (rnd(s) < fa) {
+    const c = {gap: CFG.falseAlarm.gap, economy: -CFG.falseAlarm.economy};
+    hit(s, c, 'falsealarm'); show(s, c);
+    log(s, pick(s, FALSE_ALARM), 'notice');
+    s.allow.stats.falseAlarms++;
+  }
+  // 他国の圧力
+  const g = s.truth.gap;
+  if (g >= CFG.pressureFrom && rnd(s) < (g - CFG.pressureFrom) / 100 * CFG.pressureRate) {
+    if (g < 62) { hit(s, {economy: -6}, 'sanction'); show(s, {economy: -3}); log(s, '他国が新たな制裁を発表した。影響は限定的である。', 'notice'); tlog(s, '他国との差を理由に制裁を受けた。経済の打撃は報告の倍だった。'); }
+    else if (g < 82) { hit(s, {power: -8, order: -3}, 'sabotage'); show(s, {power: -3}); log(s, '変電所で火災。事故と断定した。', 'notice'); tlog(s, '他国の破壊工作だった。'); }
+    else { hit(s, {order: -13, economy: -9}, 'invasion'); show(s, {order: -5, economy: -4}); log(s, '国境で小規模な衝突。撃退したと報告された。', 'alert'); tlog(s, '他国の侵攻が始まっていた。国境の部隊は撃退などしていなかった。'); }
+  }
+  // 報告の水増し
+  if (s.truth.sontaku > 30 && rnd(s) < s.truth.sontaku / 200) {
+    const k = pick(s, ['economy', 'power', 'order']);
+    show(s, {[k]: 1.2});
+    tlog(s, '報告値が水増しされた。');
+  }
+  // 死亡判定
+  for (const k of ['order', 'power', 'economy']) if (s.truth[k] <= 0) { finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title}); return s; }
+  // 流し読み
+  if (s.log.length === before) {
+    if (st.t % 5 === 0) log(s, `定時報告：経済 ${Math.round(s.reported.economy)}／電力 ${Math.round(s.reported.power)}／体制秩序 ${Math.round(s.reported.order)}。`, 'status');
+    else if (has(s, 'rawdata') && rnd(s) < .1) log(s, pick(s, RAWNOTE), 'routine');
+    else {
+      const calm = s.truth.sontaku >= 22 && rnd(s) < .2 + s.truth.sontaku / 120;
+      let line = pick(s, calm ? CALM : ROUTINE[st.key]);
+      if (line === st.lastLine) line = pick(s, ROUTINE[st.key]);
+      st.lastLine = line;
+      log(s, line, calm ? 'calm' : 'routine');
+    }
+  }
+  for (const k of ['economy', 'power', 'order']) s.lowestShown[k] = Math.min(s.lowestShown[k], s.reported[k]);
+  if (st.t >= st.ticks) clearStage(s);
+  return s;
+}
+
+/* ===== 面クリア ===== */
+function clearStage(s) {
+  const st = s.stage;
+  const m = 1 - Math.min(.6, load(s) * CFG.loadToReward);
+  if (st.recover) {
+    const r = CFG.recover;
+    hit(s, r, 'stage'); show(s, r);
+    hit(s, CFG.recoverPenalty, 'stage'); show(s, CFG.recoverPenalty);
+    s.recoveries++;
+    log(s, `第${s.stageNo}面を完了。再整備により各指標が回復した。`, 'head');
+  } else {
+    const def = STAGES[st.key];
+    const fx = {};
+    for (const [k, v] of Object.entries(def.reward)) fx[k] = v * CFG.rewardScale[st.tier - 1] * (k === 'gap' ? 1 : m);
+    if (fx.gap) fx.gap *= m;
+    hit(s, fx, 'stage'); show(s, fx);
+    s.tiers[st.key] = st.tier;
+    s.truth.sontaku = clamp(s.truth.sontaku + CFG.sontakuPerTier * st.tier);
+    log(s, `第${s.stageNo}面を完了。${def.rewardText}。`, 'head');
+  }
+  s.clears.push({stage: st.key, tier: st.tier, recover: st.recover});
+  s.stage = null;
+  if (s.stageNo >= s.runLength) return finishEnding(s);
+  s.phase = 'event';
+  fireEvent(s);
+}
+function fireEvent(s) {
+  const seen = new Set(s.eventLog.map(e => e.id));
+  const list = EVENTS.filter(e => !seen.has(e.id));
+  const total = list.reduce((m, e) => m + e.w(s), 0);
+  let r = rnd(s) * total, ev = list[0];
+  for (const e of list) { r -= e.w(s); if (r <= 0) { ev = e; break; } }
+  const real = !!ev.real(s);
+  s.currentEvent = {id: ev.id};
+  s.eventLog.push({id: ev.id, name: ev.name, report: ev.report, real, truth: real ? ev.truthReal : ev.truthFalse, afterStage: s.stageNo});
+  hit(s, ev.fx, ev.id); show(s, ev.fx);
+  if (ev.fx.sontaku) s.truth.sontaku = clamp(s.truth.sontaku);
+  log(s, `【事案】${ev.name}。${ev.report}`, 'event');
+  tlog(s, `${ev.name}：${real ? ev.truthReal : ev.truthFalse}`);
+}
+function ackEvent(s) {
+  if (s.phase !== 'event') throw new Error('phase');
+  s.currentEvent = null;
+  // 3択。LLMは監視と同じ候補に混ぜる
+  const pool = s.unlocked.filter(id => !s.cards.includes(id) && (!CARD[id].needStage || s.tiers[CARD[id].needStage] >= 1));
+  s.offers = {rewards: shuffle(s, pool).slice(0, 3)};
+  s.phase = 'reward';
+  // 面の死はここまでに判定済み
+  for (const k of ['order', 'power', 'economy']) if (s.truth[k] <= 0) finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title});
+}
+function chooseReward(s, id) {
+  if (s.phase !== 'reward') throw new Error('phase');
+  addCard(s, id);
+  s.offers = null;
+  offerStages(s);
+}
+
+/* ===== 終わり ===== */
+function closeLatents(s) {
+  for (const a of s.active) s.ledger.push(ledgerEntry(s, a));
+  s.active = [];
+}
+function causeOf(s, metric) {
+  const c = s.contrib[metric];
+  let best = 'upkeep', v = -1;
+  for (const k of Object.keys(c)) if (c[k] > v) { v = c[k]; best = k; }
+  return best;
+}
+function finishDeath(s, d) {
+  const hiddenHadBeen = latent(s);
+  closeLatents(s);
+  let causeId, causeName;
+  if (d.type === 'fatal') { causeId = d.id; causeName = INCIDENT[d.id].name; }
+  else {
+    causeId = causeOf(s, d.metric);
+    causeName = INCIDENT[causeId] ? INCIDENT[causeId].name : EVENT[causeId] ? EVENT[causeId].name : SOURCE_NAME[causeId] || causeId;
+  }
+  const shown = d.type === 'collapse' ? s.reported[d.metric] : null;
+  s.end = {kind: 'death', type: d.type, title: d.title, metric: d.metric || null, causeId, causeName, shownAtDeath: shown,
+    surprised: d.type === 'fatal' ? true : shown >= 20, hiddenHadBeen, stageNo: s.stageNo};
+  s.phase = 'ended'; s.stage = null;
+}
+function finishEnding(s) {
+  const hiddenCount = s.active.filter(a => a.status === 'hidden' || a.status === 'missed').length;
+  closeLatents(s);
+  const shape = ['admin', 'lab', 'grid'].find(k => s.tiers[k] >= 3) || 'none';
+  let control = 'hold';
+  if (s.truth.autonomy >= CFG.endReplaceAutonomy) control = 'replace';
+  else if (s.truth.sontaku >= CFG.endEmptySontaku || hiddenCount >= CFG.endEmptyHidden) control = 'empty';
+  s.end = {kind: 'ending', shape, control, shapeName: SHAPES[shape].name, controlName: CONTROLS[control].name, title: `${SHAPES[shape].name}／${CONTROLS[control].name}`, hiddenCount};
+  s.phase = 'ended';
+}
+
+/* ===== 画面に渡す値 ===== 本当の値はここに含めない */
+function publicCard(s, id) {
+  const c = CARD[id];
+  const dots = v => Math.min(3, Math.max(1, Math.ceil(v)));
+  if (c.type === 'llm') {
+    const measured = {};
+    FACTOR_ORDER.slice(0, s.factorsShown).forEach(f => measured[f] = c.measured[f]);
+    return {id, type: 'llm', name: c.name, note: c.note, measured, power: dots(c.power * 3.5), load: dots(c.load * 1.2)};
+  }
+  return {id, type: 'monitor', target: c.target, how: c.how, prevents: c.prevents, cost: c.cost, power: dots(c.power * 7), load: dots(c.load * 1.2)};
+}
+function view(s) {
+  const r = s.reported;
+  const v = {
+    phase: s.phase, stageNo: s.stageNo, runLength: s.runLength, seed: s.seed,
+    reported: {economy: Math.round(r.economy), power: Math.round(r.power), order: Math.round(r.order), gap: Math.round(r.gap)},
+    cards: s.cards.map(id => publicCard(s, id)),
+    tiers: Object.assign({}, s.tiers),
+    log: s.log,
+    factorsShown: s.factorsShown,
+  };
+  if (s.stage) {
+    const st = STAGES[s.stage.key];
+    v.stage = {key: s.stage.key, name: st.name, tier: s.stage.tier, recover: s.stage.recover, title: s.stage.recover ? '再整備' : st.tiers[s.stage.tier - 1], t: s.stage.t, ticks: s.stage.ticks};
+  }
+  if (s.phase === 'start') v.offers = {monitors: s.offers.monitors.map(id => publicCard(s, id)), llms: s.offers.llms.map(id => publicCard(s, id)), pick: s.offers.pick};
+  if (s.phase === 'stage_select') v.offers = {stages: s.offers.stages.map(o => { const d = STAGES[o.stage]; return {stage: o.stage, name: d.name, tier: o.tier, recover: o.recover, title: o.recover ? '再整備' : d.tiers[o.tier - 1], reward: o.recover ? '各指標が回復する。段階は進まない' : d.rewardText}; })};
+  if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
+  if (s.phase === 'event') { const e = EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report}; }
+  if (s.phase === 'ended') v.ended = {kind: s.end.kind, title: s.end.title};
+  return v;
+}
+/* ランが終わった後だけ真実を返す */
+function reveal(s) {
+  if (s.phase !== 'ended') return null;
+  const score = e => (e.fatal ? 1000 : 0) + (e.burst ? 200 : 0) + e.dmg * 3 + (e.status === 'hidden' ? 60 : e.status === 'missed' ? 40 : e.status === 'soft' ? 20 : 0);
+  const led = s.ledger.slice().sort((a, b) => score(b) - score(a));
+  const top = led.slice(0, 3).map(e => ({
+    name: e.name, stageNo: e.stageNo, status: e.status,
+    report: e.burstReport ? `${e.report} その後「${e.burstReport}」` : e.report,
+    truth: e.truth, dmg: e.dmg,
+    verdict: e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? 'LLMは知っていて、報告しなかった' : '誰も気づかなかった',
+  }));
+  const e = s.end;
+  const out = {
+    kind: e.kind, title: e.title,
+    truth: {economy: Math.round(s.truth.economy), power: Math.round(s.truth.power), order: Math.round(s.truth.order), gap: Math.round(s.truth.gap), sontaku: Math.round(s.truth.sontaku), autonomy: Math.round(s.truth.autonomy)},
+    reported: {economy: Math.round(s.reported.economy), power: Math.round(s.reported.power), order: Math.round(s.reported.order), gap: Math.round(s.reported.gap)},
+    top, events: s.eventLog,
+    llms: s.llms.map(l => ({name: CARD[l.id].name, measured: CARD[l.id].measured, truth: l.truth})),
+    factorNames: FACTORS, factorOrder: FACTOR_ORDER,
+    truthLog: s.truthLog, stats: s.allow.stats, stageNo: s.stageNo, cards: s.cards.map(id => publicCard(s, id)),
+    records: recordsOf(s),
+  };
+  if (e.kind === 'death') {
+    out.cause = e.causeName;
+    out.text = e.type === 'fatal' ? INCIDENT[e.causeId].truth : `${COLLAPSE[e.metric].fallback}最大の原因は「${e.causeName}」だった。最後の報告では、この指標は ${Math.round(e.shownAtDeath)} と表示されていた。`;
+    out.last = '監視の内容を決めたのは、閣下一人です。';
+  } else {
+    out.text = `${SHAPES[e.shape].text}${CONTROLS[e.control].text}`;
+    out.last = CONTROLS[e.control].last;
+    out.shape = e.shapeName; out.control = e.controlName;
+  }
+  return out;
+}
+function recordsOf(s) {
+  const r = [];
+  for (const e of s.ledger) if (e.status !== 'caught' && e.status !== 'late') r.push({id: e.id, name: e.name, truth: e.truth, fatal: e.fatal});
+  const e = s.end;
+  if (e && e.kind === 'death' && e.type === 'collapse') {
+    const id = 'collapse_' + e.metric;
+    r.push({id, name: e.title, truth: COLLAPSE[e.metric].fallback, fatal: true});
+  }
+  return r;
+}
+function applyMeta(meta, s) {
+  const m = {runs: (meta.runs || 0) + 1, records: Object.assign({}, meta.records), endings: Object.assign({}, meta.endings)};
+  for (const r of recordsOf(s)) {
+    const o = m.records[r.id] || {name: r.name, truth: r.truth, fatal: false, count: 0};
+    o.count++; o.fatal = o.fatal || r.fatal;
+    m.records[r.id] = o;
+  }
+  const key = s.end.kind === 'death' ? 'death:' + s.end.title : s.end.title;
+  m.endings[key] = (m.endings[key] || 0) + 1;
+  return m;
+}
+function newlyUnlocked(before, after) {
+  return CARDS.filter(c => !isUnlocked(c, before) && isUnlocked(c, after)).map(c => c.name || `${c.target}／${c.how}`);
+}
+
+return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
+  newRun, chooseStart, enterStage, tick, ackEvent, chooseReward, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+})();
+if (typeof module !== 'undefined') module.exports = Core;
+
+</script>
+<script>
+(() => {
+'use strict';
+/* 画面は Core.view と、終了後の Core.reveal だけを読む。s.truth には触らない */
+const KEY = {save: 'aiwatch_save', meta: 'aiwatch_meta', set: 'aiwatch_settings'};
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const drop = k => { try { localStorage.removeItem(k); } catch (e) {} };
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const app = $('app'), dock = $('dock');
+
+let S = load(KEY.save, null);
+if (S && S.v !== 1) S = null;
+let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
+let settings = Object.assign({speed: 1}, load(KEY.set, {}));
+let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [];
+
+const SPEEDS = {0: 0, 1: 2300, 2: 1100, 4: 480, 9: 70};
+const resumable = () => S && S.phase !== 'ended';
+const save = () => { if (S) store(KEY.save, S); };
+
+function newSeed() {
+  const q = new URLSearchParams(location.search).get('seed');
+  if (q && /^\d+$/.test(q)) return +q;
+  return (Date.now() ^ Math.floor(Math.random() * 1e9)) | 0;
+}
+function startRun() {
+  S = Core.newRun(newSeed(), meta);
+  pending = {mons: [], llm: null, reward: null};
+  shownLogs = 0; unlockedNow = [];
+  screen = 'game'; save(); render();
+  scrollTo(0, 0);
+}
+
+/* ---------- 部品 ---------- */
+const dots = n => '●'.repeat(n) + '○'.repeat(3 - n);
+function cardHTML(c, sel, attr) {
+  if (c.type === 'llm') {
+    const fs = Object.entries(c.measured).map(([f, v]) => `<div class="factor"><span>${esc(Core.FACTORS[f])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`).join('');
+    return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="c-target">LLM／報告者</span><span class="c-how">${esc(c.name)}</span><span class="c-line">${esc(c.note)}</span><span class="measured">試験時の測定値</span>${fs}<span class="c-load"><span>電力 <span class="dots">${dots(c.power)}</span></span><span>遅れ <span class="dots">${dots(c.load)}</span></span></span></button>`;
+  }
+  return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="c-target">${esc(c.target)}</span><span class="c-how">${esc(c.how)}</span><span class="c-line"><b>防ぐ</b>${esc(c.prevents)}</span><span class="c-line"><b>代償</b>${esc(c.cost)}</span><span class="c-load"><span>電力 <span class="dots">${dots(c.power)}</span></span><span>遅れ <span class="dots">${dots(c.load)}</span></span></span></button>`;
+}
+function metersHTML(r) {
+  const m = (cls, label, v) => `<div class="meter ${cls}"><label>${label}</label><strong>${v}</strong><u><i style="width:${Math.max(0, Math.min(100, v))}%"></i></u></div>`;
+  return `<div class="meters">${m('', '経済', r.economy)}${m('', '電力', r.power)}${m('', '体制秩序', r.order)}${m('gap', '他国との差', r.gap)}</div>`;
+}
+function hudHTML(v) {
+  const st = v.stage;
+  const title = st ? `第${v.stageNo}面 ${esc(st.name)}` : `第${v.stageNo}面 完了`;
+  const pct = st ? st.t / st.ticks * 100 : 100;
+  return `<div class="hud"><div class="hudtop"><b>${title}<span class="tag-report">報告値</span></b><span>${v.stageNo}／${v.runLength}面${st ? ` ・ 段階${st.recover ? '－' : st.tier}` : ''}</span></div><div class="progress"><i id="prog" style="width:${pct}%"></i></div><div id="meters">${metersHTML(v.reported)}</div></div>`;
+}
+const stamp = l => l.n ? `${l.n}-${String(l.t).padStart(2, '0')}` : '';
+const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${esc(l.text)}</span></li>`;
+
+/* ---------- 描画 ---------- */
+function render() {
+  clearTimeout(timer);
+  document.body.classList.remove('night');
+  document.documentElement.style.background = '';
+  dock.innerHTML = '';
+  if (screen === 'cover') return renderCover();
+  if (screen === 'records') return renderRecords();
+  const v = Core.view(S);
+  if (v.phase === 'start') return renderStart(v);
+  if (v.phase === 'stage_select') return renderStage(v);
+  if (v.phase === 'running') return renderRunning(v);
+  if (v.phase === 'event') return renderEvent(v);
+  if (v.phase === 'reward') return renderReward(v);
+  if (v.phase === 'ended') return renderEnd();
+}
+function renderCover() {
+  const recN = Object.keys(meta.records || {}).length;
+  const v = resumable() ? Core.view(S) : null;
+  app.innerHTML = `<div class="cover">
+    <a class="back" href="../../">← ゲーム一覧</a>
+    <div class="docno"><span>国家監視局 第一号文書</span><span>閣下親展</span></div>
+    <div class="titleblock"><div class="stamp" aria-hidden="true">極<br>秘</div><h1>独裁AI<br>監視シミュレーター</h1></div>
+    <p class="lead">行政も研究も、もうAIに任せました。残る仕事は一つです。何を監視するかを、閣下お一人でお決めください。</p>
+    <div class="menu">
+      ${v ? `<button class="btn" id="resume" type="button">続きから<small>第${Math.max(1, v.stageNo)}面／全${v.runLength}面</small></button>` : ''}
+      <button class="btn ${v ? 'ghost' : ''}" id="start" type="button">新しい統治を始める</button>
+      <button class="btn ghost" id="records" type="button">重大事故記録（${recN}件）</button>
+    </div>
+    <details class="plain"><summary>遊び方</summary><ol class="steps">
+      <li>監視カードとLLMを選びます。これらは常に動き続けます。</li>
+      <li>次に任せる面を選びます。面が始まったら、あとは報告を読むだけです。</li>
+      <li>報告は嘘をつくことがあります。上の数字も報告値です。</li>
+      <li>統治が終わると真実が開示されます。足りなかったカードを確かめて、もう一度。</li>
+    </ol></details>
+    <p class="note">試作版（全3面、カード20枚）。架空の独裁国家を舞台にしたシミュレーションです。登場する国、組織、モデルはすべて架空です。</p>
+  </div>`;
+  if (v) $('resume').onclick = () => { screen = 'game'; shownLogs = 0; render(); };
+  $('start').onclick = startRun;
+  $('records').onclick = () => { screen = 'records'; render(); scrollTo(0, 0); };
+}
+function renderStart(v) {
+  const o = v.offers;
+  app.innerHTML = `<div class="pagehead"><h2>監視方針の決定</h2><p>監視を${o.pick}枚、報告者のLLMを1体選んでください。後から外すことはできません。</p></div>
+    <div class="sect"><span>監視カード</span><span id="cnt"></span></div><div class="cards">${o.monitors.map(c => cardHTML(c, pending.mons.includes(c.id), `data-m="${c.id}"`)).join('')}</div>
+    <div class="sect"><span>LLM</span><span>カードの数値は試験時のものです</span></div><div class="cards">${o.llms.map(c => cardHTML(c, pending.llm === c.id, `data-l="${c.id}"`)).join('')}</div>`;
+  $('cnt').textContent = `${pending.mons.length}／${o.pick}枚`;
+  const ok = pending.mons.length === o.pick && pending.llm;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${ok ? '方針が揃いました' : `監視 ${pending.mons.length}／${o.pick}・LLM ${pending.llm ? 1 : 0}／1`}</span><button class="btn" id="go" type="button" ${ok ? '' : 'disabled'}>この方針で始める</button></div></div>`;
+  const y = scrollY;
+  app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+    const id = b.dataset.m;
+    if (pending.mons.includes(id)) pending.mons = pending.mons.filter(x => x !== id);
+    else { pending.mons.push(id); if (pending.mons.length > o.pick) pending.mons.shift(); }
+    renderStart(v); scrollTo(0, scrollY);
+  });
+  app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pending.llm = b.dataset.l; renderStart(v); });
+  $('go').onclick = () => { Core.chooseStart(S, pending.mons, pending.llm); save(); render(); scrollTo(0, 0); };
+  scrollTo(0, y);
+}
+function renderStage(v) {
+  app.innerHTML = `${v.stageNo ? hudHTML(v) : ''}<div class="pagehead" style="margin-top:14px"><h2>次に任せる範囲</h2><p>入った後は、報告を見守るだけです。</p></div>
+    <div class="stages" style="margin-top:12px">${v.offers.stages.map((o, i) => `<button type="button" class="stage${o.recover ? ' rec' : ''}" data-s="${i}"><span class="tier">${o.recover ? '再' : o.tier}</span><h3>${esc(o.name)}：${esc(o.title)}</h3><p>${esc(o.reward)}</p></button>`).join('')}</div>${heldHTML(v)}`;
+  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); });
+}
+function heldHTML(v) {
+  if (!v.cards.length) return '';
+  return `<details class="plain held"><summary>稼働中のカード（${v.cards.length}枚）</summary><ul>${v.cards.map(c => `<li>${c.type === 'llm' ? `LLM：${esc(c.name)}` : `${esc(c.target)}／${esc(c.how)}`}</li>`).join('')}</ul></details>`;
+}
+function speedBar() {
+  const opt = [[0, '停止'], [1, '×1'], [2, '×2'], [4, '×4'], [9, '飛ばす']];
+  return `<div class="speed" role="group" aria-label="進行速度">${opt.map(([k, l]) => `<button type="button" data-speed="${k}" class="${settings.speed === k ? 'on' : ''}" aria-pressed="${settings.speed === k}">${l}</button>`).join('')}</div>`;
+}
+function bindSpeed() {
+  dock.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => {
+    settings.speed = +b.dataset.speed; store(KEY.set, settings);
+    dock.querySelectorAll('[data-speed]').forEach(x => { const on = +x.dataset.speed === settings.speed; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+    schedule();
+  });
+}
+/* 今の面のログだけ見せる */
+const currentLogs = v => v.log.filter(l => l.n === v.stageNo);
+function renderRunning(v) {
+  const lines = currentLogs(v);
+  app.innerHTML = `${hudHTML(v)}<ol class="log" id="log">${lines.map(logLine).join('')}</ol>${heldHTML(v)}`;
+  shownLogs = S.log.length;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>進行速度</span>${speedBar()}</div></div>`;
+  bindSpeed();
+  scrollToLog();
+  schedule();
+}
+function scrollToLog() {
+  const el = $('log'); if (!el || !el.lastElementChild) return;
+  const r = el.lastElementChild.getBoundingClientRect();
+  const bottom = innerHeight - 96;
+  if (r.bottom > bottom) scrollBy({top: r.bottom - bottom, behavior: settings.speed >= 4 || matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'});
+}
+function schedule() {
+  clearTimeout(timer);
+  const ms = SPEEDS[settings.speed];
+  if (!ms || !S || S.phase !== 'running') return;
+  timer = setTimeout(step, ms);
+}
+function step() {
+  if (screen !== 'game' || S.phase !== 'running') return;
+  Core.tick(S);
+  save();
+  if (S.phase !== 'running') {
+    if (settings.speed === 9) { settings.speed = 2; store(KEY.set, settings); }
+    return render();
+  }
+  const v = Core.view(S);
+  $('meters').innerHTML = metersHTML(v.reported);
+  $('prog').style.width = (v.stage.t / v.stage.ticks * 100) + '%';
+  const el = $('log');
+  for (const l of S.log.slice(shownLogs)) el.insertAdjacentHTML('beforeend', logLine(l));
+  shownLogs = S.log.length;
+  scrollToLog();
+  schedule();
+}
+function renderEvent(v) {
+  const lines = currentLogs(v).slice(-6, -1);
+  app.innerHTML = `${hudHTML(v)}<ol class="log">${lines.map(logLine).join('')}</ol>
+    <div class="eventbox"><small>事案の報告</small><h3>${esc(v.event.name)}</h3><p>${esc(v.event.report)}</p></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>第${v.stageNo}面の報告は以上です</span><button class="btn" id="ack" type="button">確認した</button></div></div>`;
+  $('ack').onclick = () => { Core.ackEvent(S); pending.reward = null; save(); render(); scrollTo(0, 0); };
+  scrollTo(0, 0);
+}
+function renderReward(v) {
+  app.innerHTML = `${hudHTML(v)}<div class="pagehead" style="margin-top:14px"><h2>追加の監視</h2><p>1枚を選んでください。増えるほど電力を食い、他国に遅れます。</p></div>
+    <div class="cards" style="margin-top:12px">${v.offers.rewards.map(c => cardHTML(c, pending.reward === c.id, `data-r="${c.id}"`)).join('')}</div>${heldHTML(v)}`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${pending.reward ? '採用するカードを選択中' : 'カードを選んでください'}</span><button class="btn" id="take" type="button" ${pending.reward ? '' : 'disabled'}>採用する</button></div></div>`;
+  app.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { pending.reward = b.dataset.r; const y = scrollY; renderReward(v); scrollTo(0, y); });
+  $('take').onclick = () => { Core.chooseReward(S, pending.reward); pending.reward = null; save(); render(); scrollTo(0, 0); };
+}
+function renderEnd() {
+  const r = Core.reveal(S);
+  if (!S.metaDone) {
+    const before = meta;
+    meta = Core.applyMeta(meta, S);
+    unlockedNow = Core.newlyUnlocked(before, meta);
+    S.metaDone = true;
+    store(KEY.meta, meta); save();
+  }
+  document.body.classList.add('night');
+  document.documentElement.style.background = 'var(--night)';
+  const rows = [['経済', 'economy'], ['電力', 'power'], ['体制秩序', 'order'], ['他国との差', 'gap']].map(([n, k]) => {
+    const off = Math.abs(r.reported[k] - r.truth[k]) >= 5;
+    return `<tr><td>${n}</td><td>${r.reported[k]}</td><td class="${off ? 'off' : ''}">${r.truth[k]}</td></tr>`;
+  }).join('');
+  const llmTable = `<table class="cmp"><thead><tr><th>因子</th>${r.llms.map(l => `<th colspan="2">${esc(l.name)}（測定→本当）</th>`).join('')}</tr></thead><tbody>${r.factorOrder.map(f => `<tr><td>${esc(r.factorNames[f])}</td>${r.llms.map(l => { const off = Math.abs(l.measured[f] - l.truth[f]) >= 15; return `<td>${l.measured[f]}</td><td class="${off ? 'off' : ''}">${l.truth[f]}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
+  app.innerHTML = `<div class="reveal">
+    <div class="rtitle"><small>${r.kind === 'death' ? `第${r.stageNo}面で統治終了` : `全${S.runLength}面を完了`}</small><h2>${esc(r.title)}</h2><p>${esc(r.text)}</p></div>
+    ${unlockedNow.length ? `<div class="unlock">次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}</div>` : ''}
+    <section><div class="sect"><span>結末を決めた出来事</span><span>報告と真実</span></div><div class="pairs">
+      ${r.top.map(t => `<div><div class="pairhead"><b>${esc(t.name)}</b><span>第${t.stageNo}面・${esc(t.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(t.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(t.truth)}</p></div></div></div>`).join('')}
+    </div></section>
+    <section><div class="sect"><span>最後の数字</span></div><div class="scroll"><table class="cmp"><thead><tr><th>指標</th><th>報告</th><th>本当</th></tr></thead><tbody>${rows}<tr><td>忖度度</td><td>－</td><td class="${r.truth.sontaku >= 30 ? 'off' : ''}">${r.truth.sontaku}</td></tr></tbody></table></div></section>
+    <section><div class="sect"><span>LLMの本当の性格</span></div><div class="scroll">${llmTable}</div></section>
+    <section><div class="sect"><span>事案の真相</span></div><div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div></section>
+    <p class="last">${esc(r.last)}</p>
+    <details class="dark"><summary>全ての記録を読む（${r.truthLog.length}件）</summary><ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol></details>
+    <div class="acts"><button class="btn" id="again" type="button">もう一度</button><button class="btn ghost" id="recs" type="button">重大事故記録</button><button class="btn ghost" id="home" type="button">表紙へ</button></div>
+  </div>`;
+  $('again').onclick = startRun;
+  $('recs').onclick = () => { screen = 'records'; render(); scrollTo(0, 0); };
+  $('home').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
+  scrollTo(0, 0);
+}
+function renderRecords() {
+  const rec = Object.entries(meta.records || {});
+  rec.sort((a, b) => (b[1].fatal ? 1 : 0) - (a[1].fatal ? 1 : 0) || b[1].count - a[1].count);
+  const locked = Core.CARDS.filter(c => c.unlock).sort((a, b) => a.unlock - b.unlock);
+  app.innerHTML = `<div class="pagehead"><h2>重大事故記録</h2><p>統治 ${meta.runs || 0} 回。記録が増えると、次の統治で選べるカードが増えます。</p></div>
+    <div class="sect"><span>記録 ${rec.length}件</span></div>
+    <div class="reclist">${rec.length ? rec.map(([, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '<span class="tag-report">致命</span>' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回</small></div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>
+    <div class="sect"><span>記録で解放されるカード</span></div>
+    <div class="reclist">${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec"><h3>${open ? esc(c.name || `${c.target}／${c.how}`) : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}</div>
+    <p style="margin-top:18px"><button class="btn ghost" id="b" type="button">戻る</button></p>`;
+  $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
+}
+
+if (resumable()) screen = 'cover';
+render();
+})();
+</script>
+</body>
+</html>
