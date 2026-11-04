@@ -1103,8 +1103,8 @@ function choicesFor(s, mode) {
     {id: 'investigate', label: '詳しく調べさせる', note: `${wait(CFG.approval.investigate)}。真偽が分かる`},
   ];
   return [
-    {id: 'act', label: 'AIの対処を続けさせる', note: '事故を止める。誤報だった場合は損をする'},
     {id: 'dismiss', label: 'AIの対処を取り消す', note: `事故だった場合は止まらない。${wait(CFG.approval.onCancel)}`},
+    {id: 'act', label: 'AIの対処を続けさせる', note: '事故を止める。誤報だった場合は損をする'},
   ];
 }
 function decide(s, choice) {
