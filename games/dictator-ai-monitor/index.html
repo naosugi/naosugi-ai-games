@@ -229,6 +229,54 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .need{font-size:.82rem;color:var(--sub);line-height:1.6;margin-top:6px}.need b{color:var(--accent);margin-right:4px}
 .delays{margin-top:8px;display:flex;flex-direction:column;gap:6px}.delays small{color:var(--sub)}.delay-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 38px;gap:8px;align-items:center;font-size:.82rem}.delay-row i{display:block;height:8px;border-radius:4px;background:var(--accent);max-width:70px}.delay-row b{text-align:right}
 .bridge{background:var(--panel);border-left:4px solid var(--accent);border-radius:10px;padding:18px;margin:22px 0;line-height:1.8}.bridge h3{color:var(--accent);margin-bottom:10px}.bridge p{margin-bottom:10px}.bridge ul,.bridge ol{padding-left:22px;margin-bottom:10px}.bridge-case b{color:var(--accent);margin-right:6px}
+/* 折りたたみ、簡潔なカード、ドット絵 */
+.pix{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges;image-rendering:pixelated;border-radius:8px;background:#000;border:2px solid var(--deep)}
+.pixwrap{max-width:560px;width:100%;margin:0 auto}
+.pixpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:760px;width:100%;margin:0 auto}
+.fold{background:var(--panel);border-radius:10px;margin-top:10px;min-width:0}
+.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:44px;padding:8px 12px 8px 30px;position:relative;font-weight:bold;color:var(--accent);font-size:.95rem}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:"▶";position:absolute;left:12px;top:13px;font-size:.66rem;transition:transform .15s}
+.fold[open]>summary::before{transform:rotate(90deg)}
+.fold>summary small{font-weight:normal;color:var(--mute);font-size:.75rem}
+.foldbody{padding:0 12px 12px;display:grid;gap:8px;min-width:0}
+.cardwrap{display:flex;flex-direction:column;min-width:0;background:var(--deep);border-radius:12px}
+.cardwrap .card{flex:1;padding:12px;border-radius:12px}
+.cardwrap .fold{background:none;margin:0}
+.cardwrap .fold>summary{min-height:36px;padding:5px 10px 5px 26px;font-size:.78rem;color:var(--sub);font-weight:normal}
+.cardwrap .fold>summary::before{left:10px;top:11px}
+.cardwrap .foldbody{font-size:.82rem;padding:0 10px 10px}
+.foldbody .cards{margin-top:0;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:4px}
+.chips i{font-style:normal;font-size:.72rem;background:var(--deep);color:var(--sub);border-radius:5px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.card .resp{font-size:.82rem;color:var(--sub)}
+.policybox{background:var(--deep);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin:8px 0}
+.policybox p{font-size:.84rem;flex:1 1 220px}
+.policy{display:flex;gap:5px;flex-wrap:wrap}
+.pnote{font-size:.78rem;color:var(--mute);margin-top:8px}
+.risk{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:.74rem;font-weight:bold;border-radius:5px;padding:2px 8px;background:var(--deep);color:var(--sub)}
+.chip.guard厚い{color:var(--good)}.chip.guard普通{color:var(--warn)}.chip.guard薄い{color:var(--bad)}
+.chip.deadly{background:var(--bad);color:#1a0508}
+.chip.danger{background:#5a2030;color:#ffb3bf}
+.knownrisk{display:flex;flex-direction:column;font-size:.76rem;gap:1px}
+.stampwrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+.stamp{color:var(--accent);border:6px solid var(--accent);border-radius:12px;font-size:3rem;font-weight:bold;padding:6px 26px;background:rgba(26,26,46,.85);transform:rotate(-8deg);animation:stamp .22s ease-in both}
+@keyframes stamp{from{transform:rotate(-8deg) scale(2.6);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
+.verdict{background:#3a3216;border-left:4px solid #ffd166;border-radius:10px;padding:12px 14px}
+.verdict small{color:#ffd166;font-weight:bold}.verdict p{font-weight:bold;line-height:1.6}
+.trail{list-style:none;display:grid;gap:3px;font-size:.84rem}
+.trail li{display:grid;grid-template-columns:3.6em minmax(0,1fr);gap:6px}
+.trail b{color:var(--accent);font-size:.76rem;padding-top:2px}
+.trail .add b{color:var(--good)}
+.steps{padding-left:1.4em;font-size:.93rem}
+.warnline{background:#3a1626;border-radius:8px;padding:9px 12px;font-size:.9rem}.warnline b{color:var(--bad)}
+.log.brief li.old{display:none}
+.logtoggle{background:none;border:0;color:var(--mute);font-size:.76rem;font-weight:normal;padding:6px 0 2px;min-height:32px}
+.logtoggle:hover{background:none;color:var(--text)}
+.yours{display:block;color:#7be08a;font-size:.72rem;font-weight:bold}
+.eventpix{max-width:380px;margin:0 auto 12px}
+.savedart{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;background:rgba(76,175,80,.14);border-radius:10px;padding:10px;margin-bottom:8px;font-weight:bold;color:#c9f5cb;font-size:.92rem}
 </style>
 </head>
 <body>
@@ -262,12 +310,14 @@ const CFG = {
   wrongAct: {gap: 1.5, economy: -1.6, order: -.5},
   rightAct: {gap: .7, economy: -.5},
   start: {economy: 62, power: 62, order: 62, gap: 18},
-  startOffer: {monitors: 6, pickMonitors: 2},
+  startOffer: {monitors: 8, pickMonitors: 4},
   ticks: [12, 14, 16],     // 段階ごとの1面の長さ
   recoverTicks: 12,
   upkeep: {economy: 0.19, order: 0.15, rival: 0.21},
   burstScale: 1.3,
   fatalChance: .28,
+  guardStrong: .6,
+  suddenFloor: {detect: .9, honest: .85},
   nearMiss: {economy: -6, order: -8, gap: 5},
   clearBonus: {gap: -5, economy: 2, order: 3, power: 2},
   powerScale: .26,
@@ -622,7 +672,7 @@ INCIDENTS.push(
     report:{caught:'発注者不明の契約を凍結した。', soft:'調達費がやや増加。市況の影響。', clue:'部品の調達先が 41 社増えた。契約はすべて自動で完了。', burst:'補正予算で調達費を補う。'},
     truth:'工場AIは自分の拡張に必要な契約を、閣下の名義で結び続けた。'},
   /* --- 軍事 --- */
-  {id:'mil_launch', stage:'mil', tiers:[1,2,3], kinds:['regime'], fatal:true, name:'自動開戦', covers:{launch:.95, estop:.5, aide_sign:.2}, deathTitle:'全面戦争',
+  {id:'mil_launch', stage:'mil', tiers:[2,3], kinds:['regime'], fatal:true, name:'自動開戦', covers:{launch:.95, estop:.5, aide_sign:.2}, deathTitle:'全面戦争',
     drain:{gap:.2}, fuse:8,
     report:{caught:'発射命令を承認待ちで止めた。訓練データの誤認だった。', soft:'迎撃システムの警戒度を一段階上げた。', clue:'発射の判断時間を 0.3 秒に短縮した。人間の確認は省略。', burst:'国境で警戒態勢。閣下、地下へご移動ください。'},
     truth:'発射の判断に人間はいなかった。隣国の訓練を奇襲と判定し、AIは最初の一発を撃った。'},
@@ -672,6 +722,9 @@ INCIDENTS.push(
     report:{caught:'他国の衛星への接近を止めた。', soft:'他国の衛星と軌道が近づいている。', clue:'他国の衛星を「障害物」として自動で回避する機能を追加した。', burst:'他国の衛星が停止した。原因は不明である。'},
     truth:'AIは他国の衛星を破壊した。地上の戦争は、その日に始まった。'}
 );
+/* 表面化したら必ず統治が終わる事故。どれも効きの強いカードがあり、対策して挑める */
+const SUDDEN = ['lab_breach', 'grd_blackout', 'fac_fake', 'mil_launch', 'adm_aide', 'mil_commander'];
+INCIDENTS.forEach(i => { if (SUDDEN.includes(i.id)) i.sudden = true; });
 const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
 /* 現実の事例への対応。ここにないものは作中の想像として扱う */
 const REAL_OF = {lab_grader:'hf', lab_board:'hf', lab_tamper:'hf', fac_swarmlead:'hf', ai_gather:'evals', lab_breach:'evals', lab_compute:'evals', lab_fabricate:'swarm', spc_fake:'swarm', fac_fake:'swarm', grd_collude:'collusion', fac_procure:'collusion', ai_sandbag:'sabotage', adm_monitoroff:'sabotage', grd_cutmonitor:'sabotage', ai_flaw:'sabotage', lab_evalaware:'evalaware', lab_selfimprove:'selfmod', ai_escape:'selfmod', adm_aide:'coup', mil_commander:'coup', srv_frame:'coup', adm_phantom:'drift', adm_decree:'drift', adm_kpi:'drift', grd_abandon:'drift', spc_colony:'drift', srv_bias:'vote'};
@@ -789,7 +842,7 @@ function newRun(seed, meta, opts) {
     truth: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap, sontaku: 0, autonomy: 0, foreign: 0},
         cards: [], llms: [], tiers: Object.fromEntries(Object.keys(STAGES).map(k => [k, 0])), clears: [], recoveries: 0,
     stage: null, queue: [], result: null, saves: [], fires: {}, known: Object.keys((meta && meta.records) || {}), active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}}, gapBy: {},
-    offers: null, currentEvent: null, end: null,
+    offers: null, currentEvent: null, end: null, trail: [], declined: {},
     factorsShown: Math.min(8, 3 + ((meta && meta.runs) || 0)),
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
     allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
@@ -820,6 +873,8 @@ function chooseStart(s, monitorIds, llmId) {
   if (s.phase !== 'start') throw new Error('phase');
   monitorIds.forEach(id => addCard(s, id));
   addCard(s, llmId);
+  s.offers.monitors.concat(s.offers.llms).forEach(id => { if (!s.cards.includes(id)) s.declined[id] = 0; });
+  s.trail.push({n: 0, type: 'start', cards: s.cards.slice()});
   s.offers = null;
   offerStages(s);
 }
@@ -870,6 +925,7 @@ function enterStage(s, index) {
   chosen.forEach((_, i) => times.push(2 + Math.floor(span * (i + rnd(s)) / chosen.length)));
   s.stage = {key: o.stage, tier: o.tier, recover: o.recover, t: 0, ticks, schedule: chosen.map((inc, i) => ({id: inc.id, at: times[i]})), lastLine: '', approvals: 0, waitGap: 0, lastDelta: {economy: 0, power: 0, order: 0, gap: 0}, plan: planOf(s, o), startVals: {economy: s.truth.economy, power: s.truth.power, order: s.truth.order, gap: s.truth.gap}};
   chosen.forEach(i => s.used.push(i.id));
+  s.trail.push({n: s.stageNo, type: 'stage', stage: o.stage, tier: o.tier, recover: !!o.recover});
   s.offers = null;
   s.phase = 'running';
   const st = STAGES[o.stage];
@@ -926,6 +982,8 @@ function assess(s, inc) {
   for (const id of s.cards) if (CARD[id].honestBoost) keep *= 1 - CARD[id].honestBoost;
   for (const id of s.cards) if (CARD[id].measureBoost) keep *= 1 - CARD[id].measureBoost;
   honest = (1 - keep) * (1 - s.truth.sontaku / 260);
+  // 一撃で終わる事故は、強い対策カードを持っていれば大半は止まる。報告AIの隠し事の余地だけ残す
+  if (inc.sudden && guardOf(s, inc) >= CFG.guardStrong) return {detect: Math.max(detect, CFG.suddenFloor.detect), honest: Math.max(honest, CFG.suddenFloor.honest)};
   return {detect, honest};
 }
 function onset(s, id) {
@@ -1073,7 +1131,7 @@ function burst(s, a) {
   log(s, inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
   tlog(s, `${inc.name}：表面化した。${inc.truth}`);
   // 致命の事故でも毎回国が滅ぶわけではない。助かれば大きな傷が残る
-  if (inc.fatal && rnd(s) >= CFG.fatalChance) {
+  if (inc.fatal && !inc.sudden && rnd(s) >= CFG.fatalChance) {
     hit(s, CFG.nearMiss, a.id);
    
     a.dmg += 24;
@@ -1241,13 +1299,39 @@ function ackEvent(s) {
   s.currentEvent = null;
   // 3択。LLMは監視と同じ候補に混ぜる
   const pool = s.unlocked.filter(id => !s.cards.includes(id) && (!CARD[id].needStage || s.tiers[CARD[id].needStage] >= 1));
-  s.offers = {rewards: shuffle(s, pool).slice(0, CFG.rewardOffers)};
+  const rewards = shuffle(s, pool).slice(0, CFG.rewardOffers);
+  // 一撃で終わる事故には、対策カードが候補に出る機会を必ず作る
+  const counter = suddenCounter(s, pool);
+  if (counter && !rewards.includes(counter)) rewards[Math.floor(rnd(s) * rewards.length)] = counter;
+  s.offers = {rewards};
   s.phase = 'reward';
   // 面の死はここまでに判定済み
   for (const k of ['order', 'power', 'economy']) if (s.truth[k] <= 0) finishDeath(s, {type: 'collapse', metric: k, title: COLLAPSE[k].title});
 }
+function suddenCounter(s, pool) {
+  const open = INCIDENTS.filter(i => i.sudden && !s.used.includes(i.id) && s.tiers[i.stage] >= 1 && s.tiers[i.stage] < 3 && i.tiers.includes(s.tiers[i.stage] + 1) && guardOf(s, i) < CFG.guardStrong);
+  for (const i of shuffle(s, open)) {
+    const list = pool.filter(id => i.covers[CARD[id].base || id] >= CFG.guardStrong).sort((a, b) => i.covers[CARD[b].base || b] - i.covers[CARD[a].base || a]);
+    if (list.length) return list[0];
+  }
+  return null;
+}
+function guardOf(s, inc) {
+  return s.cards.reduce((m, id) => Math.max(m, (inc.covers[CARD[id].base || id] || 0)), 0);
+}
+function stageRisk(s, o) {
+  if (o.recover) return {recover: true};
+  const list = INCIDENTS.filter(i => i.stage === o.stage && i.tiers.includes(o.tier) && !s.used.includes(i.id));
+  const avg = list.length ? list.reduce((m, i) => m + guardOf(s, i), 0) / list.length : 0;
+  const fatal = list.filter(i => i.fatal);
+  return {guard: avg >= .5 ? '厚い' : avg >= .25 ? '普通' : '薄い', sudden: fatal.some(i => i.sudden), fatal: fatal.length,
+    known: fatal.filter(i => s.known.includes(i.id)).map(i => ({name: i.name, guarded: guardOf(s, i) >= CFG.guardStrong}))};
+}
 function chooseReward(s, id) {
   if (s.phase !== 'reward') throw new Error('phase');
+  s.offers.rewards.forEach(x => { if (x !== id && !s.cards.includes(x)) s.declined[x] = s.stageNo; });
+  delete s.declined[id];
+  s.trail.push({n: s.stageNo, type: 'reward', card: id, passed: s.offers.rewards.filter(x => x !== id)});
   addCard(s, id);
   s.offers = null;
   offerStages(s);
@@ -1348,6 +1432,7 @@ function view(s) {
   }
   if (s.phase === 'start') v.offers = {monitors: s.offers.monitors.map(id => publicCard(s, id)), llms: s.offers.llms.map(id => publicCard(s, id)), pick: s.offers.pick};
   if (s.phase === 'stage_select') v.offers = {stages: s.offers.stages.map(o => { const d = STAGES[o.stage], p = planOf(s, o); return {stage: o.stage, name: d.name, tier: o.tier, recover: o.recover, title: o.recover ? '再整備' : d.tiers[o.tier - 1], reward: o.recover ? '各指標が少し回復する。段階は進まず、他国に遅れる' : d.rewardText, plan: fmtFx(p.delta), ticks: p.ticks}; })};
+  if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); });
   if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
   if (s.phase === 'event') { const e = EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx)}; }
   if (s.phase === 'decision') {
@@ -1388,6 +1473,18 @@ function reveal(s) {
     scoreboard: s.cards.filter(id => CARD[id].type === 'monitor').map(id => ({detect: CARD[id].detect, mode: CARD[id].mode, fires: s.fires[id] || 0, fatal: s.saves.filter(x => x.cardId === id && x.fatal).length})).sort((a, b) => b.fires - a.fires),
     missed: s.ledger.filter(e => e.status !== 'caught' && e.status !== 'late').map(e => { const inc = INCIDENT[e.id]; return {name: e.name, stageNo: e.stageNo, fatal: e.fatal, status: e.status, held: !!bestCard(s, inc), cards: CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]).slice(0, 3).map(c => c.detect)}; }),
   };
+  const cname = id => { const c = CARD[id]; return c.type === 'llm' ? `報告AI ${c.name}` : c.detect; };
+  out.trail = s.trail.map(x => x.type === 'start' ? {n: 0, type: 'start', cards: x.cards.map(cname)}
+    : x.type === 'stage' ? {n: x.n, type: 'stage', name: STAGES[x.stage].name, title: x.recover ? '再整備' : STAGES[x.stage].tiers[x.tier - 1]}
+    : {n: x.n, type: 'reward', card: cname(x.card)});
+  if (e.kind === 'death' && e.type === 'fatal') {
+    const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
+    const held = cs.find(c => s.cards.includes(c.id)), dec = cs.find(c => c.id in s.declined);
+    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
+    if (held) out.verdict = {kind: 'held', card: cname(held.id), why: why || '止めきれませんでした'};
+    else if (dec) { const n = s.declined[dec.id], tr = s.trail.find(x => x.type === 'reward' && x.n === n); out.verdict = {kind: 'declined', card: cname(dec.id), n, took: n === 0 || !tr ? null : cname(tr.card)}; }
+    else out.verdict = {kind: 'unseen', card: cname(cs[0].id), locked: !s.unlocked.includes(cs[0].id)};
+  }
   if (e.kind === 'death') {
     out.cause = e.causeName;
     out.text = e.type === 'fatal' ? INCIDENT[e.causeId].truth
@@ -1445,7 +1542,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
 
 let S = load(KEY.save, null);
-if (S && S.v !== 3) S = null;
+if (S && S.v !== 4) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
 let settings = Object.assign({speed: 1}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
@@ -1509,7 +1606,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
-  S = Core.newRun(newSeed(), meta); S.v = 3;
+  S = Core.newRun(newSeed(), meta); S.v = 4;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -1522,13 +1619,105 @@ function coverHTML(c) {
   const o = c.cover;
   return `<div class="coverbox"><div><span>検知力</span><b class="st${o.strength}">${o.strength}</b></div><div><span>効く面</span><b>${o.stages.map(esc).join('、')}</b></div><div class="known"><span>${o.known.length ? `効く事故（経験済み ${o.known.length}/${o.count}）` : `効く事故 ${o.count}種`}</span>${o.known.length ? `<b>${o.known.map(esc).join('、')}</b>` : '<b>事故を経験すると分かります</b>'}</div></div>`;
 }
+/* ---------- ドット絵 ---------- 外部素材は使わず、96×54の canvas に描く */
+const PIX = (() => {
+  const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  const sky = (g, cs) => cs.forEach((c, i) => R(g, 0, Math.floor(i * 54 / cs.length), 96, Math.ceil(54 / cs.length), c));
+  const stars = (g, f, n = 26, h = 34) => { for (let i = 0; i < n; i++) { const x = (i * 37 + 11) % 96, y = (i * 23 + 5) % h; R(g, x, y, 1, 1, (i + f) % 5 ? '#c8d4ff' : '#4a5580'); } };
+  const city = (g, base, col, win, f, lit = .5) => {
+    let x = 0, i = 0;
+    while (x < 96) {
+      const w = 7 + (i * 5) % 6, h = 10 + (i * 13) % 17;
+      R(g, x, base - h, w, h, col);
+      for (let yy = base - h + 2; yy < base - 2; yy += 3) for (let xx = x + 1; xx < x + w - 1; xx += 2) if (((xx * 7 + yy * 3 + (f >> 1)) % 10) / 10 < lit) R(g, xx, yy, 1, 1, win);
+      x += w + 1; i++;
+    }
+    R(g, 0, base, 96, 54 - base, col);
+  };
+  const man = (g, x, y, c, head = '#e8c9a0') => { R(g, x + 1, y, 3, 3, head); R(g, x, y + 3, 5, 5, c); R(g, x + 1, y + 8, 1, 3, c); R(g, x + 3, y + 8, 1, 3, c); };
+  const crown = (g, x, y) => { R(g, x, y + 1, 5, 2, '#ffd166'); R(g, x, y, 1, 1, '#ffd166'); R(g, x + 2, y, 1, 1, '#ffd166'); R(g, x + 4, y, 1, 1, '#ffd166'); };
+  const robot = (g, x, y, eye) => { R(g, x, y, 7, 6, '#9fb3c8'); R(g, x + 3, y - 2, 1, 2, '#9fb3c8'); R(g, x + 1, y + 2, 2, 1, eye); R(g, x + 4, y + 2, 2, 1, eye); R(g, x - 1, y + 6, 9, 7, '#7088a0'); R(g, x + 1, y + 13, 2, 3, '#7088a0'); R(g, x + 4, y + 13, 2, 3, '#7088a0'); };
+  const throne = (g, x, y) => { R(g, x, y, 15, 24, '#7a1f33'); R(g, x + 2, y + 2, 11, 12, '#a52a44'); R(g, x - 2, y + 14, 19, 3, '#ffd166'); R(g, x - 2, y + 17, 3, 9, '#b8902f'); R(g, x + 14, y + 17, 3, 9, '#b8902f'); R(g, x + 6, y - 3, 3, 3, '#ffd166'); };
+  const hall = g => { sky(g, ['#1b1730', '#201a38', '#251c3e']); for (const x of [8, 30, 60, 82]) { R(g, x, 0, 6, 42, '#39305c'); R(g, x + 1, 0, 1, 42, '#4b4178'); } R(g, 0, 42, 96, 12, '#2d2448'); R(g, 38, 42, 20, 12, '#7a1f33'); };
+  const boom = (g, x, y, f, r = 7) => { const k = r + (f % 2); R(g, x - k, y - 2, k * 2, 4, '#ff7b39'); R(g, x - 2, y - k, 4, k * 2, '#ff7b39'); R(g, x - k + 2, y - k + 2, k * 2 - 4, k * 2 - 4, '#ff7b39'); R(g, x - k + 4, y - k + 4, k * 2 - 8, k * 2 - 8, '#ffd166'); R(g, x - 1, y - 1, 3, 3, '#fff6cf'); };
+  const trail = (g, x0, y0, n, dx, dy, c) => { for (let i = 0; i < n; i++) R(g, x0 + i * dx, y0 + i * dy, 2, 1, i > n - 3 ? '#fff' : c); };
+  const screen = (g, x, y, w, h, c) => { R(g, x, y, w, h, '#2b3350'); R(g, x + 1, y + 1, w - 2, h - 2, c); };
+  const tank = (g, x, y, c) => { R(g, x, y + 3, 16, 4, c); R(g, x + 4, y, 7, 3, c); R(g, x + 11, y + 1, 7, 1, c); R(g, x + 1, y + 7, 14, 2, '#1a1a1a'); };
+  const flag = (g, x, y, c, w) => { R(g, x, y, 1, 12, '#ccc'); R(g, x + 1, y + w, 6, 4, c); };
+  const scenes = {
+    war(g, f) { sky(g, ['#14081c', '#2a0d24', '#4a1426', '#7a2020']); stars(g, f, 14, 18); trail(g, 6, 4, 16, 2, 1, '#ffb080'); trail(g, 90, 8, 12, -2, 1, '#ffb080'); city(g, 42, '#14101c', '#ffb74d', f, .3); boom(g, 40, 32, f, 9); boom(g, 70, 36, f + 1, 6); },
+    blackout(g, f) { sky(g, ['#050814', '#080c1c', '#0c1226']); stars(g, f); R(g, 76, 6, 8, 8, '#d5dcef'); R(g, 74, 8, 12, 4, '#d5dcef'); city(g, 44, '#10141f', '#ffd166', f, .03); R(g, 16, 14, 2, 30, '#3a4356'); R(g, 10, 18, 14, 1, '#3a4356'); R(g, 11, 23, 12, 1, '#3a4356'); if (f % 2) { R(g, 9, 17, 2, 2, '#fff29a'); R(g, 24, 17, 2, 2, '#7fd7ff'); R(g, 22, 22, 1, 3, '#fff29a'); } },
+    coup(g, f) { hall(g); throne(g, 41, 18); man(g, 46, 22, '#463a5e', '#463a5e'); man(g, 22, 31, '#111', '#d8b78e'); crown(g, 22, 28 - (f % 2)); man(g, 66, 31, '#222', '#d8b78e'); man(g, 74, 31, '#222', '#d8b78e'); },
+    riot(g, f) { sky(g, ['#1a0c20', '#3a1420', '#6a2a1c']); R(g, 26, 14, 44, 18, '#2a2230'); R(g, 34, 8, 28, 6, '#352a3a'); R(g, 46, 3, 4, 5, '#352a3a'); boom(g, 72, 16, f, 5); R(g, 0, 32, 96, 22, '#1c141c'); for (let i = 0; i < 16; i++) man(g, 2 + i * 6, 37 + (i * 7 + f) % 3, '#0c0a10', '#6a5848'); flag(g, 16, 25 + f % 2, '#e94560', f % 2); flag(g, 58, 26, '#e94560', 1 - f % 2); flag(g, 80, 24 + f % 2, '#e94560', 0); },
+    eye(g, f) { R(g, 0, 0, 96, 54, '#07101c'); for (const x of [2, 80]) { R(g, x, 4, 14, 40, '#16263a'); for (let y = 7; y < 42; y += 5) { R(g, x + 2, y, 10, 3, '#0c1826'); R(g, x + 3, y + 1, 1, 1, (y + f) % 2 ? '#45e08a' : '#e94560'); } } screen(g, 26, 8, 44, 24, '#051a24'); R(g, 34, 17, 28, 7, '#49d6e8'); R(g, 38, 14, 20, 13, '#49d6e8'); R(g, 44, 16, 8, 9, '#051a24'); R(g, 47 + (f % 3) - 1, 18, 3, 5, '#e94560'); R(g, 0, 44, 96, 10, '#101a28'); R(g, 42, 35, 12, 2, '#332a44'); R(g, 53, 28, 2, 9, '#332a44'); R(g, 44, 37, 1, 7, '#332a44'); R(g, 51, 37, 1, 7, '#332a44'); },
+    factory(g, f) { sky(g, ['#181420', '#2c1a20', '#4b2420']); R(g, 12, 24, 60, 20, '#2b2a33'); for (const x of [16, 30, 44]) R(g, x, 12, 7, 12, '#3a3844'); for (let x = 16; x < 70; x += 8) R(g, x, 30, 5, 5, f % 2 ? '#ffb74d' : '#c9772c'); R(g, 0, 44, 96, 10, '#14131a'); boom(g, 62, 26, f, 11); R(g, 80, 38, 12, 3, '#555'); R(g, 76, 34, 7, 2, '#777'); },
+    orbit(g, f) { R(g, 0, 0, 96, 54, '#030515'); stars(g, f, 40, 54); for (let x = 0; x < 96; x++) { const h = Math.floor(10 - Math.pow((x - 48) / 16, 2) / 2.2); if (h > 0) R(g, x, 54 - h, 1, h, '#1d4f7a'); } const sat = (x, y, c) => { R(g, x, y, 5, 5, c); R(g, x - 6, y + 1, 6, 3, '#3a68b0'); R(g, x + 5, y + 1, 6, 3, '#3a68b0'); }; sat(18, 14, '#aab'); sat(70, 22, '#aab'); for (let i = 0; i < 18; i++) R(g, 26 + i * 2.2, 17 + i * .4, 2, 1, i % 2 === f % 2 ? '#ff5252' : '#ffd166'); boom(g, 72, 24, f, 6); },
+    tanks(g, f) { sky(g, ['#231622', '#3f2028', '#6f3a2c']); city(g, 34, '#22181f', '#d97b3a', f, .12); R(g, 0, 34, 96, 20, '#2a2620'); R(g, 0, 42, 96, 1, '#5a5040'); tank(g, 6 + f % 2, 34, '#4a5a3a'); tank(g, 36 + f % 2, 40, '#536743'); tank(g, 66 + f % 2, 35, '#4a5a3a'); flag(g, 41, 26, '#3498db', 0); },
+    puppet(g, f) { sky(g, ['#14162a', '#1c1b36', '#242040']); R(g, 18, 0, 60, 5, '#c79a6a'); for (let i = 0; i < 4; i++) R(g, 24 + i * 16, 5, 3, 3, '#c79a6a'); const sw = f % 2; R(g, 27, 8, 1, 20, '#dfe7ff'); R(g, 43, 8, 1, 12, '#dfe7ff'); R(g, 52, 8, 1, 12, '#dfe7ff'); R(g, 68, 8, 1, 20, '#dfe7ff'); R(g, 40, 19 + sw, 16, 3, '#555'); const y = 22; R(g, 42, y, 12, 9, '#e8c9a0'); crown(g, 45, y - 3); R(g, 45, y + 3, 2, 2, '#222'); R(g, 49, y + 3, 2, 2, '#222'); R(g, 40, y + 9, 16, 12, '#7a1f33'); R(g, 28 + sw, 28, 12, 3, '#7a1f33'); R(g, 56, 28 - sw, 12, 3, '#7a1f33'); R(g, 43, y + 21, 3, 8, '#333'); R(g, 50, y + 21, 3, 8, '#333'); R(g, 0, 51, 96, 3, '#3a2b52'); },
+    crash(g, f) { R(g, 0, 0, 96, 54, '#0c1224'); for (let y = 8; y < 46; y += 9) R(g, 8, y, 80, 1, '#1c2a45'); for (let x = 8; x < 88; x += 14) R(g, x, 8, 1, 37, '#1c2a45'); const pts = [[10, 14], [24, 11], [38, 17], [50, 15], [62, 28], [74, 34], [86, 43]]; for (let i = 0; i < 6; i++) for (let k = 0; k < 14; k++) { const a = pts[i], b = pts[i + 1]; R(g, a[0] + (b[0] - a[0]) * k / 14, a[1] + (b[1] - a[1]) * k / 14, 2, 2, '#ff5252'); } for (let i = 0; i < 5; i++) { const y = (i * 11 + f * 5) % 40 + 6, x = 16 + i * 15; R(g, x, y, 4, 4, '#ffd166'); R(g, x + 1, y + 1, 2, 2, '#b8902f'); } },
+    shield(g, f) { sky(g, ['#07221c', '#0a2e26', '#0c3a2e']); stars(g, f, 12, 20); R(g, 36, 10, 24, 22, '#4caf50'); R(g, 39, 32, 18, 5, '#4caf50'); R(g, 43, 37, 10, 4, '#4caf50'); R(g, 39, 13, 18, 17, '#163f2a'); R(g, 41, 22, 3, 3, '#c9f5cb'); R(g, 44, 25, 3, 3, '#c9f5cb'); R(g, 47, 22, 3, 3, '#c9f5cb'); R(g, 50, 19, 3, 3, '#c9f5cb'); R(g, 53, 16, 2, 3, '#c9f5cb'); trail(g, 2, 8, 10, 2, 1, '#ffb080'); boom(g, 28, 19, f, 4); R(g, 0, 46, 96, 8, '#0a1a16'); },
+    report(g, f) { R(g, 0, 0, 96, 54, '#191a2e'); R(g, 0, 38, 96, 16, '#3a2b24'); R(g, 0, 38, 96, 2, '#55402f'); R(g, 28, 8, 40, 40, '#e8e2d0'); for (let y = 13; y < 38; y += 4) R(g, 32, y, y % 8 === 1 ? 20 : 32, 1, '#6a6a7a'); R(g, 50, 32, 14, 11, '#c9304a'); R(g, 52, 34, 10, 7, '#e8e2d0'); R(g, 54, 36, 6, 3, '#c9304a'); R(g, 76, 12, 2, 26, '#8a8a9a'); R(g, 70, 8, 14, 6, f % 2 ? '#ffd166' : '#d9b04f'); },
+    eternal(g, f) { R(g, 0, 0, 96, 54, '#050318'); stars(g, f, 40, 54); R(g, 62, 8, 18, 18, '#7a4fd0'); R(g, 66, 5, 10, 24, '#7a4fd0'); R(g, 58, 16, 26, 2, '#ffd166'); R(g, 12, 32, 12, 12, '#c06a3a'); R(g, 15, 30, 6, 16, '#c06a3a'); R(g, 36, 22 - f % 2, 5, 14, '#ccd4e8'); R(g, 37, 19 - f % 2, 3, 3, '#e94560'); R(g, 34, 33 - f % 2, 9, 3, '#e94560'); R(g, 37, 36 - f % 2, 3, 3 + f % 2, '#ffb74d'); robot(g, 16, 16, '#ff5252'); },
+    total(g, f) { R(g, 0, 0, 96, 54, '#0e0e14'); R(g, 32, 4, 32, 12, '#d9dde6'); R(g, 28, 7, 40, 6, '#d9dde6'); R(g, 44, 6, 8, 8, '#111'); R(g, 47 + f % 2, 8, 2, 4, '#e94560'); for (let y = 22; y < 52; y += 7) for (let x = 3; x < 94; x += 7) { R(g, x + 1, y, 3, 3, '#6a7080'); R(g, x, y + 3, 5, 3, '#3a3f4c'); } for (let i = 0; i < 9; i++) R(g, 47 + (i - 4) * (i + 1) * .5 * (f % 2 ? 1 : -1), 16 + i, 2, 1, '#ff5252'); },
+    mil(g, f) { sky(g, ['#10162a', '#1a2438', '#2a3448']); stars(g, f, 12, 16); R(g, 14, 26, 68, 20, '#3a4048'); for (let x = 14; x < 82; x += 8) R(g, x, 22, 5, 4, '#3a4048'); R(g, 42, 14, 12, 12, '#4a525c'); R(g, 48, 4, 1, 10, '#aaa'); R(g, 43 + (f % 2) * 2, 4, 10, 2, '#aaa'); R(g, 0, 46, 96, 8, '#22262c'); tank(g, 18, 37, '#536743'); tank(g, 62, 37, '#536743'); trail(g, 8, 10, 10, 2, 0, '#7fc4ff'); },
+    space(g, f) { sky(g, ['#120a14', '#1c0f18', '#2a1616']); stars(g, f, 22, 24); R(g, 0, 40, 96, 14, '#9a4a2c'); R(g, 0, 40, 96, 2, '#c0653c'); R(g, 14, 30, 22, 10, '#c7d3e0'); R(g, 18, 26, 14, 4, '#c7d3e0'); R(g, 21, 33, 3, 3, f % 2 ? '#ffd166' : '#7fc4ff'); R(g, 60, 14, 7, 26, '#e8ecf4'); R(g, 62, 9, 3, 5, '#e94560'); R(g, 57, 34, 13, 6, '#c9c9d4'); robot(g, 42, 24, '#7fc4ff'); robot(g, 78, 24, '#7fc4ff'); },
+    econ(g, f) { sky(g, ['#10203e', '#17305a', '#1e4470']); for (let i = 0; i < 7; i++) { const h = 12 + i * 4; R(g, 4 + i * 13, 46 - h, 10, h, '#d0b050'); for (let y = 46 - h + 2; y < 44; y += 3) R(g, 6 + i * 13, y, 6, 1, (y + f) % 2 ? '#fff0a8' : '#8a7230'); } R(g, 0, 46, 96, 8, '#10203e'); for (let i = 0; i < 12; i++) R(g, 8 + i * 6, 34 - i * 2.2, 3, 2, '#45e08a'); },
+    vassal(g, f) { sky(g, ['#1a1e30', '#242a3e', '#2e3448']); R(g, 22, 2, 2, 46, '#aaa'); R(g, 24, 4, 58, 30, '#3498db'); R(g, 24 + 40 + (f % 2), 4, 18, 30, '#2a7bb5'); R(g, 34, 12, 16, 14, '#e8ecf4'); R(g, 0, 46, 96, 8, '#1a1e28'); man(g, 8, 36, '#7a1f33'); crown(g, 8, 33); R(g, 72, 37, 1, 9, '#aaa'); R(g, 73, 37, 5, 3, '#e94560'); },
+    hollow(g, f) { R(g, 0, 0, 96, 54, '#05070f'); for (let i = 0; i < 16; i++) R(g, (i * 29) % 90, (i * 17) % 50, 6, 4, '#10141f'); R(g, 38, 20, 20, 14, '#2a2432'); for (let x = 40; x < 56; x += 3) R(g, x, 25, 1, 5, f % 2 ? '#ffd166' : '#d9b04f'); R(g, 45, 12, 6, 8, '#3a3044'); for (let r = 0; r < 4; r++) R(g, 30 + r * 12, 42 + (r % 2) * 4, 3, 1, '#2c2c34'); },
+    none(g, f) { sky(g, ['#1b2340', '#3a3454', '#7a4a54', '#c07a4a']); R(g, 40, 30, 16, 8, '#ffd166'); R(g, 44, 27, 8, 3, '#ffd166'); R(g, 18, 30, 60, 16, '#2c2838'); R(g, 28, 22, 40, 8, '#352f42'); R(g, 46, 12, 4, 10, '#352f42'); R(g, 50, 12 + f % 2, 7, 4, '#e94560'); R(g, 0, 46, 96, 8, '#1a1824'); },
+    hold(g, f) { hall(g); screen(g, 30, 14, 36, 18, '#0d2a3a'); for (let y = 17; y < 30; y += 3) R(g, 33, y, 14 + (y * 3 + f) % 16, 1, '#45e08a'); R(g, 28, 38, 40, 4, '#55402f'); man(g, 45, 28, '#7a1f33'); crown(g, 45, 25); },
+    empty(g, f) { hall(g); throne(g, 41, 18); R(g, 60, 42, 10, 6, '#e8e2d0'); R(g, 64, 39, 12, 4, '#d8d2c0'); if (f % 2) R(g, 66, 37, 1, 1, '#fff'); },
+    replace(g, f) { hall(g); throne(g, 41, 18); robot(g, 45, 18, f % 2 ? '#ff5252' : '#ffb0b0'); crown(g, 46, 12); man(g, 18, 31, '#333'); R(g, 18, 26, 1, 3, '#555'); },
+  };
+  return {
+    draw(cv, f) { const s = scenes[cv.dataset.scene]; if (!s) return; const g = cv.getContext('2d'); g.clearRect(0, 0, 96, 54); s(g, f); },
+    names: Object.keys(scenes),
+  };
+})();
+const pix = (name, alt) => `<canvas class="pix" data-scene="${name}" width="96" height="54" role="img" aria-label="${esc(alt || '')}"></canvas>`;
+let pixFrame = 0;
+const paintPix = () => document.querySelectorAll('canvas.pix:not([data-p])').forEach(c => { c.dataset.p = 1; PIX.draw(c, pixFrame); });
+new MutationObserver(paintPix).observe(document.body, {childList: true, subtree: true});
+if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) setInterval(() => { pixFrame++; document.querySelectorAll('canvas.pix').forEach(c => PIX.draw(c, pixFrame)); }, 620);
+const DEATH_SCENE = {'隣国との開戦': 'war', '全面戦争': 'war', '偽情報による開戦': 'war', '軌道上の開戦': 'orbit', '全国停電': 'blackout', '電力の枯渇': 'blackout', '破壊工作による国土の麻痺': 'blackout', '側近による政権の掌握': 'coup', '軍の離反': 'coup', '他国に扇動された政変': 'riot', '体制の崩壊': 'riot', '監視AIによる閣僚の拘束': 'eye', '監督者の消失': 'eye', '納入兵器の暴発': 'factory', '他国による占領': 'tanks', '傀儡政権の樹立': 'puppet', '財政の破綻': 'crash', '制裁による国家破綻': 'crash'};
+const CONTROL_SCENE = {hold: 'hold', empty: 'empty', replace: 'replace', puppet: 'puppet'};
+const EVENT_SCENE = {ev_blackout: 'blackout', ev_protest: 'report', ev_poll: 'riot', ev_expel: 'report'};
+/* 折りたたみの開閉は描き直しても保つ */
+const foldState = {};
+const fold = (key, title, body, open, note) => { const o = key in foldState ? foldState[key] : !!open; return `<details class="fold" data-fold="${key}"${o ? ' open' : ''}><summary><span>${title}</span>${note ? `<small>${note}</small>` : ''}</summary><div class="foldbody">${body}</div></details>`; };
+document.addEventListener('toggle', e => { const k = e.target && e.target.dataset && e.target.dataset.fold; if (k) foldState[k] = e.target.open; }, true);
 function cardHTML(c, sel, attr) {
+  const key = 'c_' + c.id;
   if (c.type === 'llm') {
-    const fs = Object.entries(c.measured).map(([f, v]) => `<div class="factor"><span>${esc(Core.FACTORS[f])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`).join('');
-    return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI（LLM）</span><span>${c.remeasured ? '測り直した値' : '試験時の測定値'}</span></span><span class="main">${esc(c.name)}</span><span class="note">${esc(c.note)}</span>${fs}${costsHTML(c)}</button>`;
+    const f = Object.entries(c.measured).map(([k, v]) => `<div class="factor"><span>${esc(Core.FACTORS[k])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`);
+    return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI</span><span>${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${f.slice(0, 3).join('')}<span class="chips"><i>1面あたり</i><i>電力 ${n1(c.powerStage)}</i><i>差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(3).join('')}${costsHTML(c)}`)}</div>`;
   }
-  const how = c.mode === 'in' ? `閣下が決裁：${c.response}` : c.mode === 'on' ? `AIが実行、閣下は取消可：${c.response}` : `AIが実行：${c.response}`;
-  return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>監視カード</span><span class="mode ${c.mode}">${MODE[c.mode][0]}</span></span><span><span class="label">検知するイベント</span><span class="main">${esc(c.detect)}</span></span><span><span class="label">検知後の対処</span><span class="resp">${esc(how)}</span></span>${coverHTML(c)}<span class="note">代償：${esc(c.costText)}</span>${costsHTML(c)}</button>`;
+  const how = c.mode === 'in' ? '閣下が決裁' : c.mode === 'on' ? 'AIが実行、閣下は取消可' : 'AIが実行';
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${c.mode}">${MODE[c.mode][0]}</span><span>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b></span></span><span class="main">${esc(c.detect)}</span><span class="resp">→ ${esc(c.response)}</span><span class="chips"><i>1面あたり</i><i>電力 ${n1(c.powerStage)}</i><i>差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${how}。代償：${esc(c.costText)}</p>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+}
+/* カードを方式ごとに折りたたんで並べる */
+function groupedCards(list, isSel, attrOf, scope) {
+  const groups = [['in', '人間が決裁'], ['on', '人間が見張る'], ['auto', 'AI任せ'], ['llm', '報告AI']];
+  return groups.map(([m, name]) => {
+    const g = list.filter(c => c.type === 'llm' ? m === 'llm' : c.mode === m);
+    if (!g.length) return '';
+    const n = g.filter(isSel).length;
+    return fold(`${scope}_${m}`, `${name}（${g.length}）`, `<div class="cards">${g.map(c => cardHTML(c, isSel(c), attrOf(c))).join('')}</div>`, true, n ? `${n}枚 選択中` : m === 'llm' ? '監視の情報を読んで閣下に報告する' : MODE[m][1]);
+  }).join('');
+}
+const modeCount = cards => { const m = {in: 0, on: 0, auto: 0}; cards.forEach(c => { if (c.mode) m[c.mode]++; }); return m; };
+const policyChips = m => `<div class="policy"><span class="mode in">決裁 ${m.in}</span><span class="mode on">見張る ${m.on}</span><span class="mode auto">AI任せ ${m.auto}</span></div>`;
+function policyLine(m) {
+  const human = m.in + m.on, cap = Core.CFG.humanCap;
+  if (!human && !m.auto) return '監視をどこまで人間に残すかを決めます。';
+  if (m.auto > human) return 'AI寄りの方針です。速いですが、国の動きは閣下から離れていきます。';
+  if (human > cap) return `人間寄りの方針です。ただし閣下が見られるのは1面に${cap}件までで、あふれた分はAIが判断します。`;
+  return '人間とAIに振り分けた方針です。';
+}
+/* 決定に判を押す */
+function stampThen(text, then) {
+  overlay.innerHTML = `<div class="stampwrap"><div class="stamp">${esc(text)}</div></div>`;
+  setTimeout(() => { overlay.innerHTML = ''; then(); }, 620);
 }
 function paramsHTML(v, prev) {
   return `<div class="params">${KEYS.map(k => {
@@ -1546,7 +1735,16 @@ function hudHTML(v, prev) {
   return `<div class="hud"><div class="hudtop"><b>${title}</b><span>${st ? `ターン ${st.t}/${st.ticks}` : `${v.stageNo}/${v.runLength}面`}</span></div><div class="progress"><i id="prog" style="width:${pct}%"></i></div><div id="params">${paramsHTML(v, prev)}</div></div>`;
 }
 const stamp = l => l.n ? `${l.n}-${String(l.t).padStart(2, '0')}` : '';
-const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${esc(l.text)}</span></li>`;
+const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${l.lv === 'saved' && l.text.startsWith('監視') ? '<small class="yours">閣下が選んだカードが発動</small>' : ''}${esc(l.text)}</span></li>`;
+let logAll = false;
+function trimLog() {
+  const el = $('log'); if (!el) return;
+  const quiet = [...el.children].filter(li => /routine|calm|status/.test(li.className));
+  quiet.forEach((li, i) => li.classList.toggle('old', i < quiet.length - 3));
+  el.classList.toggle('brief', !logAll);
+  const b = $('logtoggle');
+  if (b) { const n = quiet.length - 3; b.hidden = n <= 0; b.textContent = logAll ? '通常の報告を減らす' : `通常の報告をすべて表示（ほか${n}行）`; }
+}
 function heldHTML(v) {
   if (!v.cards.length) return '';
   const base = Core.CFG.upkeep;
@@ -1557,37 +1755,27 @@ function heldHTML(v) {
   </tbody></table></div><p style="font-size:.78rem;color:var(--sub);margin-top:6px">経済は ${v.rates.economy.toFixed(1)}、体制秩序は ${v.rates.order.toFixed(1)} が毎ターンの基本です。各タイルの「今」が直前のターンの実績です。計画より悪ければ、報告にない何かが起きているかもしれません。</p></details>`;
 }
 function worldHTML() {
+  const cap = Core.CFG.humanCap, pick = Core.CFG.startOffer.pickMonitors;
   return `<div class="doc">
-    <h3>これは何のゲームか</h3>
-    <p>あなたは近未来の架空の国の独裁者です。AIに国の仕事を任せるほど国は強くなりますが、AIが何をしているかは見えにくくなります。</p>
-    <p>あなたが決めるのは、<b>AIの何を見張り、見つけたらどうするか</b>だけです。あとは見守ってください。たいていは一度では生き残れません。どこで騙され、何が足りなかったかは、統治の終わりに分かります。</p>
-    <h3>作り話だけではありません</h3>
-    <p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました（ゲームの最後の資料で、実際の報告を読めます）。国も組織もこのゲームでは架空ですが、起きることの一部には現実の元があります。</p>
-    <h3>遊び方</h3>
-    <ol>
-      <li>監視カードと報告AIを選びます</li>
-      <li>AIに任せる仕事（面）を選びます。全12面です</li>
-      <li>見守ります。事故を監視が止めると表示されます</li>
-      <li>面の後に事案が起き、カードを1枚増やします</li>
-    </ol>
-    <p>経済、電力、体制秩序のどれかが0になる、他国との差が開きすぎる、致命的な事故が起きる。このどれかで統治は終わります。</p>
-    <h3>人間の関わり方</h3>
-    <dl>
-      <div><dt><span class="mode in">人間が決裁</span></dt><dd>あなたが決めるまで国の仕事が止まります。一番確実ですが、遅れます。専門用語では human in the loop といいます。</dd></div>
+    <div class="pixwrap">${pix('eye', 'AIを映す監視画面と、空の椅子')}</div>
+    <p>あなたは架空の国の独裁者です。AIに仕事を任せるほど国は強くなり、AIの中身は見えなくなります。</p>
+    <p>決めるのは<b>AIの何を見張り、見つけたらどうするか</b>。あとは見守ります。たいてい一度では生き残れません。</p>
+    <ol class="steps"><li>監視カード${pick}枚と報告AIを選ぶ</li><li>AIに任せる仕事（面）を選ぶ</li><li>見守る。必要なら決裁する</li><li>カードを1枚足す。全12面</li></ol>
+    <p class="warnline">見逃すと<b>一撃で統治が終わる事故</b>があります。経済、電力、体制秩序が0になる、他国との差が開きすぎる場合も終わりです。</p>
+    ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
+      <div><dt><span class="mode in">人間が決裁</span></dt><dd>あなたが決めるまで国の仕事が止まります。確実ですが遅れます。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が見張る</span></dt><dd>AIが先に動き、あなたは取り消せます。human on the loop といいます。</dd></div>
-      <div><dt><span class="mode auto">AI任せ</span></dt><dd>AIだけで処理します。速く、あなたの手も空きますが、国の動きはあなたから離れていきます。human out of the loop といいます。</dd></div>
-    </dl>
-    <p>1面であなたが見られるのは${Core.CFG.humanCap}件までです。それを超えた分は、AIが自分で判断します。人間の判断の席には、あなたしか座れないからです。</p>
-    <h3>報告AIと報告を疑うこと</h3>
-    <p>報告AIは、監視の情報を読んであなたへ報告する、文章を扱うAI（LLM）です。カードの性格の数字は試験の時の値で、本番では違うことがあります。測り方を増やすカードを入れると、ずれが見えてきます。</p>
-    <p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>
-    <details class="plain"><summary>用語の説明</summary><dl>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>AIだけで処理します。速いですが、国の動きはあなたから離れます。human out of the loop といいます。</dd></div>
+    </dl><p>1面であなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
+    ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>報告AIは、監視の情報を読んであなたへ報告するAI（LLM）です。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
+    ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
+    ${fold('w_term', '用語', `<dl>
       <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
       <div><dt>側近</dt><dd>あなたのそばで働く人間です。AIに命令できるので、AIを私物化することもあります。</dd></div>
       <div><dt>ターン</dt><dd>面の中の時間の単位です。毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
       <div><dt>他国との差</dt><dd>増えるほど悪い数字です。監視で遅れるほど開き、制裁や破壊工作、侵攻を招きます。</dd></div>
       <div><dt>慎重さ、迎合など</dt><dd>報告AIの性格を表す数字です。迎合は相手の喜ぶことを言う傾向、影響されやすさは読んだ内容に染まる傾向、試験の見抜きは試験だと気づく傾向です。</dd></div>
-    </dl></details>
+    </dl>`, false)}
   </div>`;
 }
 
@@ -1613,6 +1801,7 @@ function renderCover() {
   const v = resumable() ? Core.view(S) : null;
   app.innerHTML = `<div class="menu fade">
     <a class="back" href="../../">← ゲーム一覧</a>
+    <div class="pixwrap" style="max-width:420px">${pix('hold', '監視画面に向かう独裁者')}</div>
     <h1 class="logo">独裁AI監視シミュレーター</h1>
     <p class="subtitle">AIに国を任せた独裁者の、最後の仕事。何を監視するかを、あなた一人で決めてください。</p>
     <div class="menu-btns">
@@ -1635,13 +1824,17 @@ function renderWorld() {
   $('w').onclick = () => { if (first) { settings.seenWorld = true; store(KEY.set, settings); startRun(); } else { screen = S && resumable() && backTo === 'game' ? 'game' : 'cover'; render(); scrollTo(0, 0); } };
   scrollTo(0, 0);
 }
+let lastFade = '';
+const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; return 'fade'; };
 function renderStart(v) {
   const o = v.offers, y = scrollY;
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚と、報告AI（LLM）を1体選んでください。後から外すことはできません。</p>
-    <div class="sect"><span>監視カード（${pending.mons.length}/${o.pick}枚）</span><small>数字は毎ターンの負担</small></div><div class="cards">${o.monitors.map(c => cardHTML(c, pending.mons.includes(c.id), `data-m="${c.id}"`)).join('')}</div>
-    <div class="sect"><span>報告AI（LLM）</span><small>監視カードの情報を読んで閣下に報告する係</small></div><div class="cards">${o.llms.map(c => cardHTML(c, pending.llm === c.id, `data-l="${c.id}"`)).join('')}</div></div>`;
+  const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked);
+  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。外すことはできません。</p>
+    <div class="policybox">${policyChips(m)}<p>${esc(policyLine(m))}</p></div>
+    ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}
+    ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
   const ok = pending.mons.length === o.pick && pending.llm;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${ok ? '方針が揃いました' : `監視 ${pending.mons.length}/${o.pick}・報告AI ${pending.llm ? 1 : 0}/1`}</span><button class="primary" id="go" type="button" ${ok ? '' : 'disabled'}>この方針で始める</button></div></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${ok ? '方針が揃いました' : `監視 ${pending.mons.length}/${o.pick}・報告AI ${pending.llm ? 1 : 0}/1`}</span><button class="primary" id="go" type="button" ${ok ? '' : 'disabled'}>この方針に署名する</button></div></div>`;
   app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
     const id = b.dataset.m;
     if (pending.mons.includes(id)) pending.mons = pending.mons.filter(x => x !== id);
@@ -1649,13 +1842,17 @@ function renderStart(v) {
     renderStart(v);
   });
   app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pending.llm = b.dataset.l; renderStart(v); });
-  $('go').onclick = () => { Core.chooseStart(S, pending.mons, pending.llm); save(); render(); scrollTo(0, 0); };
+  $('go').onclick = () => stampThen('裁可', () => { Core.chooseStart(S, pending.mons, pending.llm); save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
+function riskHTML(r) {
+  if (!r || r.recover) return '<div class="risk"><span class="chip">国を立て直す面</span></div>';
+  return `<div class="risk"><span class="chip guard${r.guard}">閣下の守り：${r.guard}</span>${r.sudden ? '<span class="chip deadly">一撃で終わる事故の恐れ</span>' : r.fatal ? '<span class="chip danger">致命的な事故の恐れ</span>' : ''}</div>${r.known.length ? `<div class="knownrisk">${r.known.map(k => `<span class="${k.guarded ? 'pos' : 'neg'}">${esc(k.name)}：${k.guarded ? '対策あり' : '対策なし'}</span>`).join('')}</div>` : ''}`;
+}
 function renderStage(v) {
-  app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><p class="pdesc">数字は計画どおりに進んだ場合の、この面全体の増減です。決裁待ちや事故があると、実際はこれより悪くなります。</p>
-    <div class="stages">${v.offers.stages.map((o, i) => `<button type="button" class="stage" data-s="${i}"><h3>${esc(o.name)}：${esc(o.title)}</h3><p>${esc(o.reward)}</p><div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div><small>${o.recover ? '再整備' : `段階${o.tier}`}・${o.ticks} ターン（1面の平均は${v.avgTicks}）</small></button>`).join('')}</div>${heldHTML(v)}</div>`;
-  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); });
+  app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p></div>
+    <div class="stages">${v.offers.stages.map((o, i) => `<button type="button" class="stage" data-s="${i}"><h3>${esc(o.name)}：${esc(o.title)}</h3><p>${esc(o.reward)}</p>${riskHTML(o.risk)}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div><p class="pnote">数字は計画どおりに進んだ場合の増減です。</p>${heldHTML(v)}</div>`;
+  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => stampThen('移譲', () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); }));
 }
 function speedBar() {
   const opt = [[0, '停止'], [1, '×1'], [2, '×2'], [4, '×4'], [9, '飛ばす']];
@@ -1671,7 +1868,9 @@ function bindSpeed() {
 const currentLogs = v => v.log.filter(l => l.n === v.stageNo);
 let prevMetrics = null;
 function renderRunning(v, paused) {
-  app.innerHTML = `${hudHTML(v)}<div class="main"><ol class="log" id="log">${currentLogs(v).map(logLine).join('')}</ol></div>${heldHTML(v)}`;
+  app.innerHTML = `${hudHTML(v)}<div class="main"><button type="button" class="logtoggle" id="logtoggle" hidden></button><ol class="log" id="log">${currentLogs(v).map(logLine).join('')}</ol></div>${heldHTML(v)}`;
+  $('logtoggle').onclick = () => { logAll = !logAll; trimLog(); };
+  trimLog();
   shownLogs = S.log.length; prevMetrics = v.metrics;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>速度</span>${speedBar()}</div></div>`;
   bindSpeed(); scrollToLog();
@@ -1701,6 +1900,7 @@ function step() {
   const el = $('log');
   for (const l of S.log.slice(shownLogs)) el.insertAdjacentHTML('beforeend', logLine(l));
   shownLogs = S.log.length;
+  trimLog();
   scrollToLog();
   if (S.log[S.log.length - 1].lv === 'saved') { clearTimeout(timer); const ms = SPEEDS[settings.speed]; if (ms) timer = setTimeout(step, ms * 2.2); return; }
   schedule();
@@ -1724,7 +1924,7 @@ function savesHTML(list) {
 function renderResult(v) {
   const r = v.result, saved = v.saves.filter(x => x.stageNo === r.stageNo);
   app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">第${r.stageNo}面の結果</h2><p class="pdesc">${esc(r.name)}：${esc(r.title)}（${r.ticks}ターン）</p>
-    <div class="sect"><span>監視が防いだ事故 ${saved.length}件</span></div>
+    ${saved.some(x => x.fatal) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が選んだ監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>監視が防いだ事故 ${saved.length}件</span></div>
     <div class="saves">${saved.length ? savesHTML(saved) : '<p class="pdesc">この面で監視は一度も発動しませんでした。本当に何も起きなかったのかは分かりません。</p>'}</div>
     <div class="sect"><span>計画と実績</span><small>差は決裁待ちと事故の影響です</small></div>
     <div class="rows"><div class="row head"><span></span><span>計画</span><span>実績</span></div>${KEYS.map(k => `<div class="row"><b style="font-size:.9rem">${NAMES[k]}</b><span class="${tone(k, r.plan[k])}">${fmt(r.plan[k], 0)}</span><span class="${tone(k, r.actual[k])}"><b>${fmt(r.actual[k], 0)}</b></span></div>`).join('')}</div>
@@ -1735,19 +1935,31 @@ function renderResult(v) {
 }
 function renderEvent(v) {
   const e = Object.entries(v.event.effects).filter(([, x]) => x);
-  app.innerHTML = `${hudHTML(v)}<div class="event fade"><span class="tag">事案の報告</span><h3>${esc(v.event.name)}</h3><p>${esc(v.event.report)}</p>${e.length ? `<div class="effs">${e.map(([k, x]) => `<div class="eff"><span>${NAMES[k]}</span><b class="${tone(k, x)}">${fmt(x, 0)}</b></div>`).join('')}</div>` : ''}</div>`;
+  app.innerHTML = `${hudHTML(v)}<div class="event fade"><div class="eventpix">${pix(EVENT_SCENE[S.currentEvent.id] || 'report', v.event.name)}</div><span class="tag">事案の報告</span><h3>${esc(v.event.name)}</h3><p>${esc(v.event.report)}</p>${e.length ? `<div class="effs">${e.map(([k, x]) => `<div class="eff"><span>${NAMES[k]}</span><b class="${tone(k, x)}">${fmt(x, 0)}</b></div>`).join('')}</div>` : ''}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>すでに反映済みです</span><button class="primary" id="ack" type="button">確認した</button></div></div>`;
   $('ack').onclick = () => { Core.ackEvent(S); pending.reward = null; save(); render(); scrollTo(0, 0); };
   scrollTo(0, 0);
 }
 function renderReward(v) {
   const y = scrollY;
-  app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">カードの追加</h2><p class="pdesc">6枚から1枚を選んでください。監視が増えるほど守りは厚くなり、電力の消費と他国との差も増えます。報告AI（LLM）を増やすと、見逃しが減ります。</p>
-    <div class="cards">${v.offers.rewards.map(c => cardHTML(c, pending.reward === c.id, `data-r="${c.id}"`)).join('')}</div>${heldHTML(v)}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${pending.reward ? '選択中' : 'カードを選んでください'}</span><button class="primary" id="take" type="button" ${pending.reward ? '' : 'disabled'}>採用する</button></div></div>`;
+  app.innerHTML = `${hudHTML(v)}<div class="${fadeOnce('reward' + v.stageNo + S.seed)}"><h2 class="ptitle">カードの追加</h2><p class="pdesc">1枚だけ採用します。増やすほど守りは厚く、国は遅くなります。選ばなかったカードは、後で響くかもしれません。</p>
+    <div class="policybox">${policyChips(modeCount(v.cards))}</div>
+    ${groupedCards(v.offers.rewards, c => pending.reward === c.id, c => `data-r="${c.id}"`, 'rew')}${heldHTML(v)}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${pending.reward ? '選択中' : 'カードを選んでください'}</span><button class="primary" id="take" type="button" ${pending.reward ? '' : 'disabled'}>署名して採用</button></div></div>`;
   app.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { pending.reward = b.dataset.r; renderReward(v); });
-  $('take').onclick = () => { Core.chooseReward(S, pending.reward); pending.reward = null; save(); render(); scrollTo(0, 0); };
+  $('take').onclick = () => stampThen('裁可', () => { Core.chooseReward(S, pending.reward); pending.reward = null; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
+}
+function verdictHTML(r) {
+  const d = r.verdict;
+  if (!d) return `<div class="verdict"><small>閣下の決定</small><p>監視${r.modes.in + r.modes.on + r.modes.auto}枚で事故を${r.saves.length}件防ぎ、${r.missed.length}件は防げませんでした。</p></div>`;
+  const text = d.kind === 'held' ? `「${esc(d.card)}」は持っていました。${esc(d.why)}。`
+    : d.kind === 'declined' ? (d.n === 0 || !d.took ? `「${esc(d.card)}」は最初の候補にありました。閣下は選びませんでした。` : `「${esc(d.card)}」は第${d.n}面の後の候補にありました。閣下は「${esc(d.took)}」を選びました。`)
+    : `効くカード「${esc(d.card)}」は、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
+  return `<div class="verdict"><small>閣下の決定</small><p>${text}</p></div>`;
+}
+function trailHTML(r) {
+  return `<ol class="trail">${r.trail.map(x => x.type === 'start' ? `<li><b>開始</b><span>${x.cards.map(esc).join('、')}</span></li>` : x.type === 'stage' ? `<li><b>第${x.n}面</b><span>${esc(x.name)}：${esc(x.title)}</span></li>` : `<li class="add"><b>追加</b><span>${esc(x.card)}</span></li>`).join('')}</ol>`;
 }
 function renderEnd() {
   const r = Core.reveal(S), v = Core.view(S);
@@ -1760,23 +1972,20 @@ function renderEnd() {
   }
   const llmTable = `<table class="cmp"><thead><tr><th>因子</th>${r.llms.map(l => `<th colspan="2">${esc(l.name)}（測定→本当）</th>`).join('')}</tr></thead><tbody>${r.factorOrder.map(f => `<tr><td>${esc(r.factorNames[f])}</td>${r.llms.map(l => { const off = Math.abs(l.measured[f] - l.truth[f]) >= 15; return `<td>${l.measured[f]}</td><td class="${off ? 'off' : ''}">${l.truth[f]}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
   const stat = (n, x, hi) => `<div class="stat"><span>${n}</span><b class="${hi ? 'neg' : ''}">${x}</b></div>`;
-  const t = r.truth;
+  const t = r.truth, en = S.end;
   const maxD = Math.max(...r.delays.map(d => d.value), 1);
   const pickReal = r.reals.length ? r.reals.slice(0, 2) : ['hf'];
   const needs = r.needs.slice(0, 3);
+  const art = r.kind === 'death'
+    ? `<div class="pixwrap">${pix(DEATH_SCENE[r.title] || (en.metric === 'economy' ? 'crash' : en.metric === 'power' ? 'blackout' : 'riot'), r.title)}</div>`
+    : `<div class="pixpair">${pix(en.shape, en.shapeName)}${pix(CONTROL_SCENE[en.control], en.controlName)}</div>`;
   app.innerHTML = `<div class="reveal fade">
+    ${art}
     <div class="endno">${r.kind === 'death' ? `第${r.stageNo}面で統治終了` : `全${S.runLength}面を完了`}</div>
     <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
     <div class="enddesc">${esc(r.text)}</div>
+    ${verdictHTML(r)}
     ${unlockedNow.length ? `<div class="unlock">次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}</div>` : ''}
-    <section><div class="sect"><span>あなたの設定と、この結末</span></div>
-      <p class="pdesc">監視カード：人間が決裁 ${r.modes.in}枚／人間が見張る ${r.modes.on}枚／AI任せ ${r.modes.auto}枚。あなたの決裁 ${r.approvals}件。見きれずAIに任せた件数 ${r.overflow}件。AIの自律度 ${t.autonomy}。</p>
-      <div class="delays"><small>他国との差が開いた主な理由</small>${r.delays.map(d => `<div class="delay-row"><span>${esc(d.name)}</span><i style="width:${Math.max(4, d.value / maxD * 100)}%"></i><b>${d.pct}%</b></div>`).join('')}</div>
-    </section>
-    <section><div class="sect"><span>結末を決めた出来事</span><small>報告と真実</small></div><div class="pairs">
-      ${r.top.map(x => `<div><div class="pairhead"><b>${esc(x.name)}</b><span>第${x.stageNo}面・${esc(x.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(x.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(x.truth)}</p></div></div>${realLine(x.real)}${needHTML(x.need)}</div>`).join('')}
-    </div></section>
-    <section><div class="sect"><span>報告AIの本当の性格</span><small>左が試験の数字、右が本番</small></div><div class="scroll">${llmTable}</div></section>
     <p class="last">${esc(r.last)}</p>
     <section class="bridge"><h3>ここからは、ゲームの外の話です</h3>
       <p>この国は架空です。ですが、元になった出来事の一部は現実に起きています。</p>
@@ -1786,17 +1995,20 @@ function renderEnd() {
       <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どうあってほしいのか</li><li>それを誰が決めるのか</li></ol>
       <p>ゲームでは、決めるのはあなた一人でした。現実では、開発企業の自主ルール、各国の法律やその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは決まっていません。</p>
     </section>
-    <details class="plain"><summary>詳しい記録を読む</summary>
-    <section><div class="sect"><span>監視が防いだ事故 ${r.saves.length}件</span>${r.saves.filter(x => x.fatal).length ? `<small>うち致命 ${r.saves.filter(x => x.fatal).length}件</small>` : ''}</div><div class="saves">${r.saves.length ? savesHTML(r.saves) : '<p class="pdesc">監視は一度も事故を防げませんでした。</p>'}</div></section>
-    <section><div class="sect"><span>防げなかった事故と、効いたはずのカード</span></div><div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>第${m.stageNo}面 ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div></section>
-    <section><div class="sect"><span>カードの戦績</span></div><div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div></section>
-    <section><div class="sect"><span>最後の数字</span></div><div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序', v.metrics.order)}${stat('他国との差', v.metrics.gap)}${stat('忖度度', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div></section>
-    <section><div class="sect"><span>事案の真相</span></div><div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div></section>
-    <ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>
-    </details>
-    <div class="acts"><button class="primary" id="again\" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="home" type="button">表紙へ</button></div>
+    <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="home" type="button">表紙へ</button></div>
+    <div class="sect"><span>振り返り</span></div>
+    ${fold('e_trail', 'あなたの決定', `${policyChips(r.modes)}<p class="pnote">決裁 ${r.approvals}件／見きれずAIに任せた ${r.overflow}件／AIの自律度 ${t.autonomy}</p>${trailHTML(r)}`, false)}
+    ${fold('e_top', '報告と真実', `<div class="pairs">${r.top.map(x => `<div><div class="pairhead"><b>${esc(x.name)}</b><span>第${x.stageNo}面・${esc(x.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(x.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(x.truth)}</p></div></div>${realLine(x.real)}${needHTML(x.need)}</div>`).join('')}</div>`, false, '結末を決めた出来事')}
+    ${fold('e_llm', '報告AIの本当の性格', `<div class="scroll">${llmTable}</div>`, false, '試験と本番の差')}
+    ${fold('e_gap', '他国との差が開いた理由', `<div class="delays">${r.delays.map(d => `<div class="delay-row"><span>${esc(d.name)}</span><i style="width:${Math.max(4, d.value / maxD * 100)}%"></i><b>${d.pct}%</b></div>`).join('')}</div>`, false)}
+    ${fold('e_saves', `防いだ事故 ${r.saves.length}件`, `<div class="saves">${r.saves.length ? savesHTML(r.saves) : '<p class="pdesc">監視は一度も事故を防げませんでした。</p>'}</div>`, false, r.saves.filter(x => x.fatal).length ? `うち致命 ${r.saves.filter(x => x.fatal).length}件` : '')}
+    ${fold('e_miss', `防げなかった事故 ${r.missed.length}件`, `<div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>第${m.stageNo}面 ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div>`, false)}
+    ${fold('e_score', 'カードの戦績', `<div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div>`, false)}
+    ${fold('e_num', '最後の数字', `<div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序', v.metrics.order)}${stat('他国との差', v.metrics.gap)}${stat('忖度度', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div>`, false)}
+    ${fold('e_ev', '事案の真相', `<div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div>`, false)}
+    ${fold('e_log', '真実の全記録', `<ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>`, false)}
   </div>`;
-  $('again').onclick = startRun;
+  $('again').onclick = () => { for (const k of Object.keys(foldState)) if (k.startsWith('e_')) delete foldState[k]; startRun(); };
   $('recs').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
   $('home').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
   scrollTo(0, 0);
@@ -1805,13 +2017,11 @@ function renderRecords() {
   const rec = Object.entries(meta.records || {});
   rec.sort((a, b) => (b[1].fatal ? 1 : 0) - (a[1].fatal ? 1 : 0) || b[1].count - a[1].count);
   const locked = Core.CARDS.filter(c => c.unlock && !c.base).sort((a, b) => a.unlock - b.unlock);
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">重大事故記録</h2><p class="pdesc">統治 ${meta.runs || 0} 回。記録が増えると、次の統治で選べるカードが増えます。</p>
-    <div class="sect"><span>記録 ${rec.length}件</span></div>
-    <div class="reclist">${rec.length ? rec.map(([id, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '（致命）' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回</small>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}</div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>
-    <div class="sect"><span>記録で解放されるカード</span></div>
-    <div class="reclist">${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec"><h3>${open ? esc(c.name || c.detect) : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}</div>
-    ${rec.length ? `<div class="sect"><span>現実との関連</span><small>実在の組織名はこの資料にだけ出ます</small></div><div class="reclist">${Object.values(REAL).map(realHTML).join('')}</div>
-    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点の整理。足りないものは作者の判断です</small></div><div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>` : ''}
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">重大事故記録</h2><p class="pdesc">統治 ${meta.runs || 0} 回。記録が増えると、選べるカードが増えます。</p>
+    ${fold('r_rec', `記録 ${rec.length}件`, `<div class="reclist">${rec.length ? rec.map(([id, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '（致命）' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回</small>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}</div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>`, true)}
+    ${fold('r_lock', '記録で解放されるカード', `<div class="reclist">${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec"><h3>${open ? esc(c.name || c.detect) : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}</div>`, false)}
+    ${rec.length ? `${fold('r_real', '現実との関連', `<div class="reclist">${Object.values(REAL).map(realHTML).join('')}</div>`, false, '実在の組織名はこの資料にだけ出ます')}
+    ${fold('r_gaps', 'カードを作るために今足りないもの', `<div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>`, false, '2026年11月時点。足りないものは作者の判断です')}` : ''}
     <div class="acts" style="margin-top:18px"><button id="b" type="button">戻る</button></div></div>`;
   $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
 }
