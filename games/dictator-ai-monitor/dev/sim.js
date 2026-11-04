@@ -121,6 +121,7 @@ function play(seed, cardBot, stageBot, meta) {
     else if (s.phase === 'reward') {
       if (s.phase === 'reward') Core.chooseReward(s, P(s.offers.rewards, r));
     }
+    else if (s.phase === 'llm_pick') Core.chooseLlm(s, cardBot === 'speed' ? null : rpick(r, s.offers.llms));
   }
   if (s.phase !== 'ended') throw new Error('未完了のラン seed=' + seed);
   return s;
@@ -170,6 +171,7 @@ function leakCheck(n) {
     else if (s.phase === 'result') Core.ackResult(s);
       else if (s.phase === 'event') Core.ackEvent(s);
       else if (s.phase === 'reward') Core.chooseReward(s, s.offers.rewards[0]);
+      else if (s.phase === 'llm_pick') Core.chooseLlm(s, null);
       if (s.phase === 'ended') break;
       const v = Core.view(s);
       const js = JSON.stringify(v);
@@ -196,6 +198,7 @@ function saveCheck(n) {
     else if (s.phase === 'result') Core.ackResult(s);
         else if (s.phase === 'event') Core.ackEvent(s);
         else if (s.phase === 'reward') Core.chooseReward(s, s.offers.rewards[0]);
+      else if (s.phase === 'llm_pick') Core.chooseLlm(s, null);
         if (reload) s = JSON.parse(JSON.stringify(s));
       }
       return JSON.stringify(s);
