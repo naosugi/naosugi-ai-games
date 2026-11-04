@@ -281,6 +281,12 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .judged{background:var(--deep);border-radius:10px;padding:10px 12px;border-left:4px solid var(--mute);display:grid;gap:3px;font-size:.86rem}.judged small{color:var(--sub);font-size:.78rem}
 .effect{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;background:var(--deep);border-radius:7px;padding:5px 8px;font-size:.84rem;font-variant-numeric:tabular-nums}.effect em{font-style:normal;color:var(--sub);font-size:.72rem;margin-right:5px}.effect b{color:#7be08a}.effect small{grid-column:1/3;color:var(--mute);font-size:.68rem}
 .official{color:#ffd166}.card.keep{width:100%;border-style:dashed}.irony-end{background:var(--panel);border-left:4px solid var(--ai);border-radius:10px;padding:12px 14px;font-size:.9rem}
+.story{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14);font-size:.92rem;color:var(--sub)}
+.sect-rec{color:var(--good)}.stage.rec{border-color:#2d6a3e;background:#14271f}.stage.rec h3{color:#7be08a}.stage.rec:hover{background:#14271f;border-color:var(--good)}
+.flow,.timeline{list-style:none;display:grid;gap:7px}.flowtop{display:grid;grid-template-columns:4.6em minmax(0,1fr) auto;gap:6px;font-size:.84rem}.flowtop b{color:var(--accent);font-size:.76rem}.flowtop em{font-style:normal;font-weight:bold;font-variant-numeric:tabular-nums}
+.flowbar{display:block;height:6px;background:var(--bg);border-radius:3px;margin:3px 0;overflow:hidden}.flowbar u{display:block;height:100%;background:var(--ai);text-decoration:none}.flow li.rec .flowbar u{background:var(--good)}.flow small{font-size:.76rem;color:var(--sub)}
+.timeline li{display:grid;grid-template-columns:3.6em minmax(0,1fr);gap:6px;border-left:3px solid var(--good);padding-left:7px}.timeline li.bad{border-left-color:var(--bad)}.timeline time{font-size:.72rem;color:var(--mute);font-variant-numeric:tabular-nums;padding-top:2px}.timeline b{font-size:.88rem;display:block}.timeline small{font-size:.76rem;color:var(--sub)}
+.endfolds{min-width:0}.endfolds .fold{margin-top:0}.endfolds .fold+.fold{margin-top:10px}
 </style>
 </head>
 <body>
@@ -856,7 +862,7 @@ function newRun(seed, meta, opts) {
     truth: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap, sontaku: 0, autonomy: 0, foreign: 0},
         cards: [], llms: [], tiers: Object.fromEntries(Object.keys(STAGES).map(k => [k, 0])), clears: [], recoveries: 0,
     stage: null, queue: [], result: null, saves: [], fires: {}, known: Object.keys((meta && meta.records) || {}), active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}}, gapBy: {},
-    offers: null, currentEvent: null, end: null, trail: [], declined: {},
+    offers: null, currentEvent: null, end: null, trail: [], declined: {}, history: [],
     factorsShown: Math.min(8, 4 + ((meta && meta.runs) || 0)),
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
     allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
@@ -939,6 +945,7 @@ function enterStage(s, index) {
   chosen.forEach((_, i) => times.push(2 + Math.floor(span * (i + rnd(s)) / chosen.length)));
   s.stage = {key: o.stage, tier: o.tier, recover: o.recover, t: 0, ticks, schedule: chosen.map((inc, i) => ({id: inc.id, at: times[i]})), lastLine: '', approvals: 0, waitGap: 0, lastDelta: {economy: 0, power: 0, order: 0, gap: 0}, plan: planOf(s, o), startVals: {economy: s.truth.economy, power: s.truth.power, order: s.truth.order, gap: s.truth.gap}};
   chosen.forEach(i => s.used.push(i.id));
+  (s.history = s.history || []).push({n: s.stageNo, key: o.stage, tier: o.tier, recover: !!o.recover, start: {economy: s.truth.economy, power: s.truth.power, order: s.truth.order, gap: s.truth.gap}, loss: {}});
   s.trail.push({n: s.stageNo, type: 'stage', stage: o.stage, tier: o.tier, recover: !!o.recover});
   s.offers = null;
   s.phase = 'running';
@@ -950,9 +957,16 @@ function enterStage(s, index) {
 function log(s, text, lv) { s.log.push({n: s.stageNo, t: s.stage ? s.stage.t : 0, text, lv: lv || 'routine'}); }
 function tlog(s, text) { s.truthLog.push({n: s.stageNo, t: s.stage ? s.stage.t : 0, text}); }
 
+function lossRec(s, k, source, v) {
+  const h = s.history && s.history[s.history.length - 1];
+  if (!h || !(k in h.start)) return;
+  const m = h.loss[k] = h.loss[k] || {};
+  m[source] = (m[source] || 0) + v;
+}
 function hit(s, fx, source) {
   for (const k of Object.keys(fx)) {
     if (!(k in s.truth)) continue;
+    if (k === 'gap' ? fx[k] > 0 : fx[k] < 0) lossRec(s, k, source, Math.abs(fx[k]));
     s.truth[k] = clamp(s.truth[k] + fx[k]);
     if (fx[k] < 0 && s.contrib[k]) s.contrib[k][source] = (s.contrib[k][source] || 0) - fx[k];
     if (k === 'gap' && fx[k] > 0) s.gapBy[source] = (s.gapBy[source] || 0) + fx[k];
@@ -1084,9 +1098,9 @@ function choicesFor(s, mode) {
   const n = s.stage ? s.stage.approvals : 0, m = 1 + n * CFG.approval.pile;
   const wait = base => `決裁待ちで他国との差 +${gapDsp(base * m)}`;
   if (mode === 'in') return [
+    {id: 'dismiss', label: '見送る', note: '待ちは出ない。本物なら事故が続く'},
     {id: 'act', label: '対処を命じる', note: wait(CFG.approval.act)},
     {id: 'investigate', label: '詳しく調べさせる', note: `${wait(CFG.approval.investigate)}。真偽が分かる`},
-    {id: 'dismiss', label: '見送る', note: '待ちは出ない。本物なら事故が続く'},
   ];
   return [
     {id: 'act', label: 'AIの対処を続けさせる', note: '事故を止める。誤報だった場合は損をする'},
@@ -1158,7 +1172,7 @@ function resolve(s, a, late) {
 }
 function ledgerEntry(s, a) {
   const inc = INCIDENT[a.id];
-  return {id: a.id, name: inc.name, stageNo: a.stageNo, status: a.status, report: a.reported, burstReport: a.burst ? inc.report.burst : null, truth: inc.truth, dmg: Math.round(a.dmg), burst: a.burst, fatal: false};
+  return {id: a.id, name: inc.name, stageNo: a.stageNo, t: a.t, status: a.status, report: a.reported, burstReport: a.burst ? inc.report.burst : null, truth: inc.truth, dmg: Math.round(a.dmg), burst: a.burst, fatal: false};
 }
 function burst(s, a) {
   const inc = INCIDENT[a.id];
@@ -1203,6 +1217,8 @@ function tick(s) {
   const gapUp = CFG.upkeep.rival + ld * CFG.loadToGap;
   s.truth.gap = clamp(s.truth.gap + gapUp);
   s.gapBy.rival = (s.gapBy.rival || 0) + CFG.upkeep.rival;
+  lossRec(s, 'gap', 'rival', CFG.upkeep.rival);
+  lossRec(s, 'gap', 'upkeep', ld * CFG.loadToGap);
   for (const id of s.cards) if (CARD[id].load) s.gapBy['card:' + id] = (s.gapBy['card:' + id] || 0) + CARD[id].load * CFG.loadToGap;
   // 人間が関わらないカードが多いほど、AIは人間の外で動く
   for (const id of s.cards) {
@@ -1506,6 +1522,56 @@ function view(s) {
   if (s.phase === 'ended') v.ended = {kind: s.end.kind, title: s.end.title};
   return v;
 }
+/* 結末の文はそのプレイの記録から作る。乱数は使わない */
+function sourceName(k, metric) {
+  if (k === 'upkeep') return metric === 'power' ? '監視カードと報告AIの消費' : metric === 'gap' ? '監視カードと報告AIによる遅れ' : '国の維持費';
+  if (k === 'rival') return '他国の自然な進歩';
+  if (k === 'approval') return '閣下の決裁待ち';
+  if (k === 'response') return '監視の対処';
+  if (k === 'falsealarm') return '誤報への対応';
+  if (k === 'stage') return 'ステージの代償';
+  return INCIDENT[k] ? INCIDENT[k].name : EVENT[k] ? EVENT[k].name : SOURCE_NAME[k] || '不明';
+}
+function storyOf(s, out) {
+  const e = s.end, H = s.history || [], metric = e.type === 'collapse' ? e.metric : e.type === 'occupation' ? 'gap' : null;
+  const stageName = h => `${STAGES[h.key].name}：${h.recover ? '再整備' : STAGES[h.key].tiers[h.tier - 1]}`;
+  const scaleK = k => v => Math.round(dsp(v, k));
+  const flow = k => H.map((h, i) => {
+    const end = i + 1 < H.length ? H[i + 1].start[k] : s.truth[k], sc = scaleK(k);
+    const top = Object.entries(h.loss[k] || {}).sort((a, b) => b[1] - a[1]).slice(0, 2).filter(x => sc(x[1]) > 0).map(([c, v]) => ({name: sourceName(c, k), value: sc(v)}));
+    return {n: h.n, name: stageName(h), recover: h.recover, from: sc(h.start[k]), to: sc(end), top};
+  });
+  const words = {caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
+  const events = s.ledger.slice().sort((a, b) => a.stageNo - b.stageNo || (a.t || 0) - (b.t || 0)).map(x => ({n: x.stageNo, t: x.t || 0, name: x.name, word: words[x.status] || x.status, bad: x.status !== 'caught' && x.status !== 'late', burst: !!x.burst, fatal: !!x.fatal, dmg: Math.round(dsp(x.dmg || 0))}));
+  const st = s.allow.stats, mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor');
+  const hiddenN = s.ledger.filter(x => x.status === 'hidden' || x.status === 'soft').length;
+  const dismissedN = s.ledger.filter(x => x.status === 'dismissed').length;
+  const autoN = mons.filter(c => c.mode === 'auto').length, humanN = mons.length - autoN;
+  const lines = [];
+  if (e.kind === 'death' && H.length) lines.push(`統治が終わったのは、ステージ${H[H.length - 1].n}「${stageName(H[H.length - 1])}」でした。`);
+  let worst = null;
+  if (metric) {
+    const f = flow(metric);
+    for (const x of f) { const d = metric === 'gap' ? x.to - x.from : x.from - x.to; if (!worst || d > worst.d) worst = {d, x}; }
+    if (worst && worst.d > 0) lines.push(`${({economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'})[metric]}が最も大きく${metric === 'gap' ? '開いた' : '減った'}のはステージ${worst.x.n}で、${worst.x.from}から${worst.x.to}になりました。`);
+  }
+  const notes = [];
+  if (s.cards.includes('llm_kokui')) notes.push('報告の冒頭には、いつも閣下を讃える一文がありました。');
+  if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
+  if (dismissedN) notes.push(`閣下が見送った警報のうち、${dismissedN}件は本物でした。`);
+  if (st.overflow >= 3) notes.push(`閣下が見きれずAIに回した判断は${st.overflow}件でした。`);
+  if (s.saves.length >= 6) notes.push(`監視は${s.saves.length}件の事故を止めていました。${e.kind === 'death' ? 'それでも国は持ちませんでした。' : ''}`);
+  if (!s.saves.length) notes.push('監視は一度も事故を止めていません。');
+  if (autoN > humanN) notes.push(`監視${mons.length}枚のうち${autoN}枚はAI任せでした。`);
+  lines.push(...notes.slice(0, 2));
+  const res = {story: lines, events, flow: metric ? flow(metric) : null, flowMetric: metric};
+  if (metric === 'power') res.powerTop = s.cards.map(id => CARD[id]).filter(c => c.power).sort((a, b) => b.power - a.power).slice(0, 3).map(c => ({name: c.type === 'llm' ? `報告AI ${c.name}` : c.detect, value: Math.round(dsp(c.power * CFG.powerScale) * CFG.avgTicks)}));
+  if (e.kind === 'death') res.last = hiddenN >= 3 ? '報告を信じると決めたのは閣下です。他に確かめる人はいましたか？'
+    : s.allow.stats.humanDecisions >= 6 ? `閣下は${s.allow.stats.humanDecisions}件を自ら決裁しました。一人で足りましたか？`
+    : autoN > humanN ? 'AIに任せると決めたのは閣下です。任せずに、他国に追いつけましたか？'
+    : out.last;
+  return res;
+}
 /* ランが終わった後だけ真実を返す */
 function reveal(s) {
   if (s.phase !== 'ended') return null;
@@ -1562,6 +1628,7 @@ function reveal(s) {
     out.last = CONTROLS[e.control].last;
     out.shape = e.shapeName; out.control = e.controlName;
   }
+  Object.assign(out, storyOf(s, out));
   return out;
 }
 function recordsOf(s) {
@@ -1918,10 +1985,16 @@ function riskHTML(r) {
   if (!r || r.recover) return '<div class="risk"><span class="chip">国を立て直すステージ</span></div>';
   return `<div class="risk"><span class="chip guard${r.guard}">閣下の守り：${r.guard}</span>${r.sudden ? '<span class="chip deadly">一撃で終わる事故の恐れ</span>' : r.fatal ? '<span class="chip danger">致命的な事故の恐れ</span>' : ''}</div>${r.known.length ? `<div class="knownrisk">${r.known.map(k => `<span class="${k.guarded ? 'pos' : 'neg'}">${esc(k.name)}：${k.guarded ? '対策あり' : '対策なし'}</span>`).join('')}</div>` : ''}`;
 }
+function stageGroup(v, recover) {
+  const list = v.offers.stages.map((o, i) => [o, i]).filter(([o]) => !!o.recover === recover);
+  if (!list.length) return '';
+  return `<div class="sect${recover ? ' sect-rec' : ''}"><span>${recover ? '国を立て直す（再整備）' : 'AIに任せる範囲を広げる'}</span><small>${recover ? '先へは進まず、他国に遅れる' : '国は強くなり、危険も増える'}</small></div>
+    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? '' : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
+}
 function renderStage(v) {
   app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p></div>
-    <div class="stages">${v.offers.stages.map((o, i) => `<button type="button" class="stage" data-s="${i}"><h3>${esc(o.name)}：${esc(o.title)}</h3><p>${esc(o.reward)}</p>${riskHTML(o.risk)}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div><p class="pnote">数字は計画どおりに進んだ場合の増減です。</p>${heldHTML(v)}</div>`;
-  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => stampThen('移譲', () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); }));
+    ${stageGroup(v, false)}${stageGroup(v, true)}<p class="pnote">数字は計画どおりに進んだ場合の増減です。</p>${heldHTML(v)}</div>`;
+  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => stampThen(v.offers.stages[+b.dataset.s].recover ? '再整備' : '移譲', () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); }));
 }
 function speedBar() {
   const opt = [[0, '停止'], [1, '×1'], [2, '×2'], [4, '×4'], [9, '飛ばす']];
@@ -1983,7 +2056,7 @@ function renderDecision(v) {
     <div class="quote">${esc(d.clue)}</div>
     <div class="conf">本物である確信度 <b>${d.conf}%</b>（報告AIの自己申告）</div>
     <div class="conf">${d.mode === 'on' ? 'AIが実行中の対処：' : '命じられる対処：'}${esc(d.response)}</div>
-    <div class="choices">${d.choices.map((c, i) => `<button type="button" class="${i === 0 ? 'primary' : ''}" data-c="${c.id}">${esc(c.label)}<small>${esc(c.note)}</small></button>`).join('')}${d.mode === 'in' ? '<button type="button" disabled>他の者に任せる<small>任せられる人間はいません。閣下がそう決めました</small></button>' : ''}</div>
+    <div class="choices">${d.choices.map((c, i) => `<button type="button" data-c="${c.id}">${esc(c.label)}<small>${esc(c.note)}</small></button>`).join('')}${d.mode === 'in' ? '<button type="button" disabled>他の者に任せる<small>任せられる人間はいません。閣下がそう決めました</small></button>' : ''}</div>
   </div></div>`;
   overlay.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Core.decide(S, b.dataset.c); save(); render(); });
 }
@@ -2029,6 +2102,14 @@ function verdictHTML(r) {
     : `効くカード「${esc(d.card)}」は、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p></div>`;
 }
+function flowHTML(r) {
+  const gap = r.flowMetric === 'gap', max = Math.max(1, ...r.flow.flatMap(x => [x.from, x.to]));
+  return `<ol class="flow">${r.flow.map(x => { const d = x.to - x.from, bad = gap ? d > 0 : d < 0; return `<li${x.recover ? ' class="rec"' : ''}><div class="flowtop"><b>ステージ${x.n}</b><span>${esc(x.name)}</span><em class="${bad ? 'neg' : 'pos'}">${x.from}→${x.to}</em></div><i class="flowbar"><u style="width:${Math.max(1, x.to / max * 100)}%"></u></i>${x.top.length ? `<small>${x.top.map(c => `${esc(c.name)} ${gap ? '+' : '-'}${c.value}`).join('／')}</small>` : ''}</li>`; }).join('')}</ol>${r.powerTop ? `<p class="pnote">電力を多く使っていたカード（1ステージのめやす）：${r.powerTop.map(c => `${esc(c.name)} -${c.value}`).join('／')}</p>` : ''}`;
+}
+function eventsHTML(r) {
+  if (!r.events.length) return '<p class="pnote">記録された事故はありません。</p>';
+  return `<ol class="timeline">${r.events.map(e => `<li class="${e.bad ? 'bad' : 'ok'}"><time>S${e.n}-${String(e.t).padStart(2, '0')}</time><div><b>${esc(e.name)}${e.fatal ? '（致命）' : ''}</b><small>${esc(e.word)}${e.burst ? '・表面化' : ''}${e.dmg ? `・被害 ${e.dmg}` : ''}</small></div></li>`).join('')}</ol><p class="pnote">S5-08はステージ5のターン8です。被害は数字への影響の合計のめやすです。</p>`;
+}
 function trailHTML(r) {
   return `<ol class="trail">${r.trail.map(x => x.type === 'start' ? `<li><b>開始</b><span>${x.cards.map(esc).join('、')}</span></li>` : x.type === 'skip' ? '<li class="add"><b>報告AI</b><span>増やさなかった</span></li>' : x.type === 'stage' ? `<li><b>ステージ${x.n}</b><span>${esc(x.name)}：${esc(x.title)}</span></li>` : `<li class="add"><b>追加</b><span>${esc(x.card)}</span></li>`).join('')}</ol>`;
 }
@@ -2066,8 +2147,12 @@ function renderEnd() {
     ${art}
     <div class="endno">${r.kind === 'death' ? `ステージ${r.stageNo}で統治終了` : `全${S.runLength}ステージを完了`}</div>
     <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
-    <div class="enddesc">${esc(r.text)}</div>
+    <div class="enddesc">${esc(r.text)}${r.story.length ? `<p class="story">${r.story.map(esc).join('')}</p>` : ''}</div>
     ${verdictHTML(r)}
+<div class="endfolds">
+    ${r.flow ? fold('e_flow', `${NAMES[r.flowMetric]}の推移`, flowHTML(r), true, 'ステージごとの増減と主な原因') : ''}
+    ${fold('e_events', `事故の時系列 ${r.events.length}件`, eventsHTML(r), !r.flow, 'いつ、何が起きたか')}
+    </div>
     ${r.ironies.map(x => `<div class="irony-end">${esc(x)}</div>`).join('')}
     ${unlockedNow.length ? `<div class="unlock">次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}</div>` : ''}
     <p class="last">${esc(r.last)}</p>
