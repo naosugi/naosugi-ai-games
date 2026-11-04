@@ -165,5 +165,21 @@
     "controls": "タップ・ドラッグ / マウス・キーボード",
     "playtime": "1作戦 約2〜4分",
     "added": "2026-10-31"
+  },
+  {
+    "id": "dictator-ai-monitor",
+    "title": "独裁AI監視シミュレーター",
+    "description": "架空の独裁者としてAIに国を任せ、監視の内容だけを決める死に覚えローグライク。カードを選んだら、あとは報告を見守るだけ。報告は嘘をつくことがあり、真実は統治の終わりに明かされます。",
+    "path": "games/dictator-ai-monitor/",
+    "thumbnail": "games/dictator-ai-monitor/thumb.jpg",
+    "tags": [
+      "シミュレーション",
+      "戦略",
+      "カード",
+      "マルチエンド"
+    ],
+    "controls": "タップ / クリック",
+    "playtime": "約12分",
+    "added": "2026-11-04"
   }
 ]

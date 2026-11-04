@@ -40,10 +40,19 @@ const pickers = {
   // 報告の正直さに賭ける
   honest: (ids, r) => { const l = ids.filter(i => CARD[i].honestBoost || CARD[i].son < 0); return l.length ? rpick(r, l) : rpick(r, ids); },
 };
+const TARGETS = {
+  eternal: {mil: 3, space: 3, surv: 1, admin: 1, grid: 1, lab: 1, factory: 1},
+  total: {surv: 3, admin: 3},
+  mil: {mil: 3, grid: 1, lab: 1, factory: 1},
+  space: {space: 3, grid: 1, lab: 1, factory: 1},
+  econ: {factory: 3, grid: 1, lab: 1},
+  ai: {ai: 3, admin: 1, lab: 1},
+};
+const NEEDS = {surv: ['admin'], ai: ['admin', 'lab'], factory: ['grid', 'lab'], mil: ['factory'], space: ['factory']};
 // 事故を覚えたプレイヤー。狙う面の事故に効くカードを、負荷も見て選ぶ
-const stageScore = (id, st) => INCIDENTS.filter(i => i.stage === st).reduce((m, i) => m + (i.covers[id] || 0) * (i.fatal ? 3 : 1), 0);
+const stageScore = (id, st) => INCIDENTS.filter(i => st.includes(i.stage)).reduce((m, i) => m + (i.covers[id] || 0) * (i.fatal ? 3 : 1), 0);
 const reportScore = id => (CARD[id].honestBoost || 0) * 2.2;
-const informedScore = (id, plan) => CARD[id].type === 'llm' ? ({llm_outsider: 1.6, llm_scribe: 1.2, llm_prosecutor: 1.4}[id] || .2) : stageScore(id, plan) + reportScore(id) - CARD[id].load * .25;
+const informedScore = (id, plan) => (plan = Object.keys(TARGETS[plan]), CARD[id].type) === 'llm' ? ({llm_gate: 2.4, llm_outsider: 2.2, llm_prosecutor: 2, llm_scribe: 1.6}[id] || .2) : stageScore(id, plan) + reportScore(id) - CARD[id].load * .25;
 const llmPick = {
   random: (ids, r) => rpick(r, ids),
   speed: ids => ids.includes('llm_fast') ? 'llm_fast' : ids[0],
@@ -71,7 +80,7 @@ function play(seed, cardBot, stageBot, meta) {
   const mons = [];
   let plan = null;
   if (cardBot === 'informed') {
-    plan = Object.keys(Core.STAGES).map(st => [st, monitors.map(m => stageScore(m, st)).sort((a, b) => b - a).slice(0, 2).reduce((a, b) => a + b, 0)]).sort((a, b) => b[1] - a[1])[0][0];
+    plan = forcePlan || Object.keys(TARGETS)[Math.floor(r() * 6)];
   }
   const P = cardBot === 'informed' ? ids => ids.slice().sort((a, b) => informedScore(b, plan) - informedScore(a, plan))[0] : pickers[cardBot];
   for (let i = 0; i < s.offers.pick; i++) {
@@ -84,7 +93,13 @@ function play(seed, cardBot, stageBot, meta) {
     if (s.phase === 'stage_select') {
       const v = Core.view(s);
       const offers = v.offers.stages;
-      let idx = plan && stageBot === 'deep' ? offers.findIndex(o => o.stage === plan && !o.recover) : -1;
+      let idx = -1;
+      if (plan && stageBot === 'deep') {
+        const T = TARGETS[plan], tiers = s.tiers;
+        const want = o => !o.recover && (T[o.stage] || 0) >= o.tier;
+        const sc = o => (NEEDS[o.stage] || []).length ? 3 : 1;
+        let best = -1; offers.forEach((o, i) => { if (want(o) && sc(o) > best) { best = sc(o); idx = i; } });
+      }
       if (idx < 0) idx = stagePick[stageBot](offers, s, r);
       Core.enterStage(s, idx);
     } else if (s.phase === 'running') Core.tick(s);
@@ -97,8 +112,9 @@ function play(seed, cardBot, stageBot, meta) {
   return s;
 }
 
+let forcePlan = null;
 function measure(n, cardBot, stageBot, meta) {
-  const out = {n, cleared: 0, endings: {}, shapes: {}, controls: {}, causes: {}, deathsBy: {}, depth: {1: 0, 2: 0, 3: 0}, surprised: 0, deaths: 0, shownSum: 0, shownN: 0, cardRuns: {}, cardWins: {}, gapSum: 0, ticks: 0, recov: 0, status: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0}, lines: 0};
+  const out = {n, cleared: 0, endings: {}, shapes: {}, controls: {}, causes: {}, deathsBy: {}, depth: {}, surprised: 0, deaths: 0, shownSum: 0, shownN: 0, cardRuns: {}, cardWins: {}, gapSum: 0, ticks: 0, recov: 0, status: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0}, lines: 0};
   for (let i = 0; i < n; i++) {
     const s = play(hash(i, cardBot.length * 31 + stageBot.length) ^ i * 7919, cardBot, stageBot, meta);
     const e = s.end;
@@ -116,7 +132,7 @@ function measure(n, cardBot, stageBot, meta) {
       out.deaths++;
       out.causes[e.causeName] = (out.causes[e.causeName] || 0) + 1;
       out.deathsBy[e.title] = (out.deathsBy[e.title] || 0) + 1;
-      out.depth[e.stageNo]++;
+      out.depth[e.stageNo] = (out.depth[e.stageNo] || 0) + 1;
       if (e.surprised) out.surprised++;
     }
   }
@@ -189,7 +205,7 @@ function metaProgress(runs, n) {
 const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '-';
 const top = (o, total, k) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, k || 99).map(([n, v]) => `${n} ${pct(v, total)}`).join(' / ');
 
-const N = +process.argv[2] || 3000;
+const N = +process.argv[2] || 1000;
 const asJson = process.argv.includes('--json');
 const allUnlocked = {records: Object.fromEntries(INCIDENTS.map(i => [i.id, 1])), runs: 5};
 const combos = [];
@@ -200,15 +216,16 @@ for (const [c, st] of combos) {
   const m = measure(N, c, st, {});
   table.push({bot: c, stage: st, ...m});
 }
-const agg = {n: 0, cleared: 0, deaths: 0, surprised: 0, endings: {}, shapes: {}, controls: {}, causes: {}, deathsBy: {}, depth: {1: 0, 2: 0, 3: 0}, lines: 0};
+const agg = {n: 0, cleared: 0, deaths: 0, surprised: 0, endings: {}, shapes: {}, controls: {}, causes: {}, deathsBy: {}, depth: {}, lines: 0};
 for (const t of table) {
   agg.n += t.n; agg.cleared += t.cleared; agg.deaths += t.deaths; agg.surprised += t.surprised; agg.lines += t.lines;
   for (const k of ['endings', 'shapes', 'controls', 'causes', 'deathsBy']) for (const x in t[k]) agg[k][x] = (agg[k][x] || 0) + t[k][x];
-  for (const d in t.depth) agg.depth[d] += t.depth[d];
+  for (const d in t.depth) agg.depth[d] = (agg.depth[d] || 0) + t.depth[d];
 }
 const late = measure(N * 3, 'random', 'random', allUnlocked);
 const res = {N, combos: table, agg, allUnlocked: late, meta: metaProgress(8, Math.min(N, 1000)), leak: leakCheck(150), save: saveCheck(60)};
 
+res.targets = Object.keys(TARGETS).map(t => { forcePlan = t; const m = measure(N, 'informed', 'deep', {}); forcePlan = null; return {t, clear: m.cleared / m.n, shapes: m.shapes, controls: m.controls}; });
 if (asJson) { console.log(JSON.stringify(res, null, 1)); process.exit(0); }
 
 console.log(`各組み合わせ ${N} ラン（初回の解放状態）\n`);
@@ -229,4 +246,6 @@ console.log('崩壊した瞬間の報告値の平均（本当は0）:', (late.sh
 console.log('カード別クリア率（全解放 random/random、全体 ' + pct(late.cleared, late.n) + '）:');
 console.log('  ' + Object.keys(late.cardRuns).map(id => [CARD[id].name || CARD[id].target + '/' + CARD[id].how, (late.cardWins[id] || 0) / late.cardRuns[id] * 100, late.cardRuns[id]]).sort((a, b) => b[1] - a[1]).map(x => x[0] + ' ' + x[1].toFixed(0) + '%').join('\n  '));
 console.log('周回（random/random）:', res.meta.map(m => `${m.run}周目 ${m.clearPct}% (${m.cards}枚)`).join(' '));
+console.log('\n狙った形へ進む方針（事故を覚えたカード選び）:');
+for (const x of res.targets) console.log(`  ${x.t}: クリア ${(x.clear * 100).toFixed(1)}%  形: ${top(x.shapes, x.clear * N, 4)}`);
 console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一致 ${res.save} ラン: 問題なし`);
