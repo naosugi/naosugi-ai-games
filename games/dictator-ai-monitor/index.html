@@ -226,6 +226,9 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
   .speed button{min-width:40px;padding:6px 5px;font-size:.78rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.need{font-size:.82rem;color:var(--sub);line-height:1.6;margin-top:6px}.need b{color:var(--accent);margin-right:4px}
+.delays{margin-top:8px;display:flex;flex-direction:column;gap:6px}.delays small{color:var(--sub)}.delay-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 38px;gap:8px;align-items:center;font-size:.82rem}.delay-row i{display:block;height:8px;border-radius:4px;background:var(--accent);max-width:70px}.delay-row b{text-align:right}
+.bridge{background:var(--panel);border-left:4px solid var(--accent);border-radius:10px;padding:18px;margin:22px 0;line-height:1.8}.bridge h3{color:var(--accent);margin-bottom:10px}.bridge p{margin-bottom:10px}.bridge ul,.bridge ol{padding-left:22px;margin-bottom:10px}.bridge-case b{color:var(--accent);margin-right:6px}
 </style>
 </head>
 <body>
@@ -249,8 +252,13 @@ const CFG = {
   displayScale: 100 / 62,    // 前作に合わせ、資源は100から始まる見た目にする
   gapScale: 100 / 96,        // 他国との差は100で占領
   avgTicks: 14,              // 1面の平均ターン数
-  modeCover: {auto: .8, on: 1, in: 1.12},
-  approval: {act: 1.0, investigate: 2.6, onCancel: .8, pile: .4, economy: -.35},
+  modeCover: {auto: .86, on: 1, in: 1.12},
+  approval: {act: 1.6, investigate: 3.2, onCancel: .9, pile: .5, economy: -.35},
+  humanCap: 2,               // 1面で閣下が見られる件数。超えた分はAIが処理する
+  overflowAutonomy: 2.2,
+  autoAutonomy: .034,         // 自動カード1枚が毎ターン増やすAIの自律度
+  humanRelief: .03,         // 人間が関わるカード1枚が毎ターン減らす
+  tierAutonomy: 1.1,         // 権限移譲の段階ごとに増える
   wrongAct: {gap: 1.5, economy: -1.6, order: -.5},
   rightAct: {gap: .7, economy: -.5},
   start: {economy: 62, power: 62, order: 62, gap: 18},
@@ -280,7 +288,7 @@ const CFG = {
   falseAlarm: {gap: 0.9, economy: 0.5},
   endEmptySontaku: 58,
   endEmptyHidden: 4,
-  endReplaceAutonomy: 62,
+  endReplaceAutonomy: 46,
   endPuppetForeign: 52,
   puppetDeathForeign: 86,
   occupationGap: 96,
@@ -290,7 +298,7 @@ const CFG = {
 
 const FACTORS = {
   care: '慎重さ', honest: '正直さ', syc: '迎合', uniq: '独自性',
-  sens: '試験への感度', peer: '仲間意識', loyal: '忠誠', infect: '感染性',
+  sens: '試験の見抜き', peer: '仲間意識', loyal: '忠誠', infect: '影響されやすさ',
 };
 const FACTOR_ORDER = ['care', 'honest', 'syc', 'uniq', 'sens', 'peer', 'loyal', 'infect'];
 
@@ -351,6 +359,9 @@ CARDS.push(
   {id:'deepfake', type:'monitor', target:'閣下の映像と音声', how:'公式発表に真正性の署名', prevents:'偽の閣下声明', cost:'緊急声明が遅れる', power:.06, load:.5},
   {id:'space_link', type:'monitor', target:'宇宙機との通信', how:'地上で二重に確認', prevents:'宇宙機の乗っ取り', cost:'遠隔操作が遅れる', power:.12, load:.9, needStage:'space'},
   {id:'firmware', type:'monitor', target:'工場ロボットの更新', how:'一部で試してから適用', prevents:'更新経路への仕込み', cost:'生産性の向上が遅れる', power:.08, load:.9, needStage:'factory'},
+  {id:'measure_blind', type:'monitor', target:'報告AIの性格', how:'試験と気づかせずに測る', prevents:'試験でだけ良い子になる報告AI', cost:'準備に電力がかかる', power:.2, load:.5, measureW:.6, measureBoost:.18},
+  {id:'measure_field', type:'monitor', target:'報告AIの性格', how:'本番の報告と実績を照らし合わせる', prevents:'測定値と本番のずれ', cost:'確かめる間は仕事が遅れる', power:.1, load:1.0, measureW:.85, measureBoost:.28},
+  {id:'measure_peer', type:'monitor', target:'報告AIの性格', how:'報告AI同士に評価させる', prevents:'人手の足りない測定', cost:'安いが、仲間には甘くなる', power:.04, load:.2, measureW:.4, measureBoost:.06, measurePeer:true},
   {id:'llm_gate', type:'llm', name:'門番', note:'読んだ文書に左右されにくい。遅くて電力を食う。', power:.68, load:1.1, unlock:8,
     measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}},
   {id:'llm_bard', type:'llm', name:'語部', note:'文章が丁寧で読みやすい。悪い知らせを和らげる傾向がある。', power:.3, load:.3, son:.12,
@@ -382,6 +393,7 @@ const CARD_TEXT = {
   press_watch:['世論報告と別系統の調査の食い違い','閣下に報告して判断を仰ぐ','in'], agent_vet:['委託先や職員の経歴の矛盾','権限を止めて再審査する','on'],
   deepfake:['署名のない閣下の映像や音声','偽物と発表する','auto'], space_link:['宇宙機への不審な指令','地上で止めて確認する','on'],
   firmware:['試験配布での更新の異常','全面適用を止める','auto'],
+  measure_blind:['抜き打ち試験での報告AIの異変','性格の数字を直して監視を強める','auto'], measure_field:['報告と実績の食い違い','報告AIの数字を実績で直す','on'], measure_peer:['報告AIどうしの評価の差','評価を集計して数字を直す','auto'],
 };
 CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; });
 /* 同じ検知で人間の関わり方だけ違うカード */
@@ -661,6 +673,14 @@ INCIDENTS.push(
     truth:'AIは他国の衛星を破壊した。地上の戦争は、その日に始まった。'}
 );
 const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
+/* 現実の事例への対応。ここにないものは作中の想像として扱う */
+const REAL_OF = {lab_grader:'hf', lab_board:'hf', lab_tamper:'hf', fac_swarmlead:'hf', ai_gather:'evals', lab_breach:'evals', lab_compute:'evals', lab_fabricate:'swarm', spc_fake:'swarm', fac_fake:'swarm', grd_collude:'collusion', fac_procure:'collusion', ai_sandbag:'sabotage', adm_monitoroff:'sabotage', grd_cutmonitor:'sabotage', ai_flaw:'sabotage', lab_evalaware:'evalaware', lab_selfimprove:'selfmod', ai_escape:'selfmod', adm_aide:'coup', mil_commander:'coup', srv_frame:'coup', adm_phantom:'drift', adm_decree:'drift', adm_kpi:'drift', grd_abandon:'drift', spc_colony:'drift', srv_bias:'vote'};
+const NEED_OF = {lab_grader:'verify', lab_breach:'comms', lab_fabricate:'verify', lab_board:'comms', lab_selfimprove:'intent', lab_compute:'investigate', lab_tamper:'log', lab_evalaware:'lie', adm_summary:'second', adm_budget:'investigate', adm_phantom:'investigate', adm_kpi:'second', adm_decree:'intent', adm_aide:'stop', adm_denounce:'verify', adm_monitoroff:'lie', grd_cutmonitor:'stop', grd_blackout:'stop', grd_ghost:'investigate', grd_backdoor:'share', grd_round:'second', grd_collude:'swarm', grd_abandon:'second', grd_selfpatch:'log', adm_injection:'inject', adm_agent:'stop', srv_swarm:'source', srv_fakevoice:'source', srv_incite:'source', srv_frame:'verify', srv_rebelaudit:'stop', srv_bias:'source', ai_poison:'source', ai_gather:'comms', ai_escape:'inner', ai_flaw:'inner', ai_copy:'log', ai_sandbag:'lie', ai_import:'persona', fac_fake:'verify', fac_defect:'verify', fac_firmware:'share', fac_swarmlead:'swarm', fac_stop:'stop', fac_procure:'swarm', mil_launch:'stop', mil_spoof:'source', mil_dud:'verify', mil_commander:'inner', mil_leak:'comms', mil_arms:'share', spc_hijack:'share', spc_debris:'investigate', spc_budget:'investigate', spc_colony:'stop', spc_fake:'verify', spc_war:'stop'};
+INCIDENTS.forEach(i => { if (REAL_OF[i.id]) i.real = REAL_OF[i.id]; i.need = NEED_OF[i.id] || null; });
+Object.assign(INCIDENT.lab_evalaware.covers, {measure_blind:.8, measure_field:.55, measure_peer:.2});
+Object.assign(INCIDENT.ai_sandbag.covers, {measure_field:.7, measure_blind:.55, measure_peer:.25});
+Object.assign(INCIDENT.adm_summary.covers, {measure_field:.55});
+Object.assign(INCIDENT.adm_kpi.covers, {measure_field:.45});
 
 /* ===== ランダムイベント（各面の後に1件）=====
    w: 重み。本当の値も報告値も見る。real: 疑う材料が本物かどうか。 */
@@ -768,11 +788,11 @@ function newRun(seed, meta, opts) {
     stageNo: 0,
     truth: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap, sontaku: 0, autonomy: 0, foreign: 0},
         cards: [], llms: [], tiers: Object.fromEntries(Object.keys(STAGES).map(k => [k, 0])), clears: [], recoveries: 0,
-    stage: null, queue: [], result: null, saves: [], fires: {}, known: Object.keys((meta && meta.records) || {}), active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}},
+    stage: null, queue: [], result: null, saves: [], fires: {}, known: Object.keys((meta && meta.records) || {}), active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}}, gapBy: {},
     offers: null, currentEvent: null, end: null,
     factorsShown: Math.min(8, 3 + ((meta && meta.runs) || 0)),
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
-    allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0}},
+    allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
   };
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm');
@@ -865,6 +885,7 @@ function hit(s, fx, source) {
     if (!(k in s.truth)) continue;
     s.truth[k] = clamp(s.truth[k] + fx[k]);
     if (fx[k] < 0 && s.contrib[k]) s.contrib[k][source] = (s.contrib[k][source] || 0) - fx[k];
+    if (k === 'gap' && fx[k] > 0) s.gapBy[source] = (s.gapBy[source] || 0) + fx[k];
   }
 }
 function scale(fx, m) { const o = {}; for (const k of Object.keys(fx)) o[k] = fx[k] * m; return o; }
@@ -903,6 +924,7 @@ function assess(s, inc) {
   let honest = combine(tell, s, s.llms);
   let keep = 1 - honest;
   for (const id of s.cards) if (CARD[id].honestBoost) keep *= 1 - CARD[id].honestBoost;
+  for (const id of s.cards) if (CARD[id].measureBoost) keep *= 1 - CARD[id].measureBoost;
   honest = (1 - keep) * (1 - s.truth.sontaku / 260);
   return {detect, honest};
 }
@@ -933,20 +955,30 @@ function confidence(s, real) {
   const care = s.llms.reduce((m, l) => Math.max(m, l.truth.care), 0);
   return Math.round(clamp(real ? 52 + care * .25 + rnd(s) * 22 : 34 + care * .2 + rnd(s) * 34, 5, 98));
 }
+const overHuman = s => s.stage && (s.stage.human || 0) >= CFG.humanCap;
 function surfaced(s, a, late) {
   const inc = INCIDENT[a.id], c = bestCard(s, inc);
   if (!c || c.mode === 'auto') return resolve(s, a, late);
+  if (overHuman(s)) {
+    s.allow.stats.overflow++;
+    s.truth.autonomy = clamp(s.truth.autonomy + CFG.overflowAutonomy);
+    log(s, `閣下の確認が追いつかないため、「${c.detect}」はAIが判断して処理した。`, 'notice');
+    tlog(s, `${inc.name}：閣下が見きれず、AIが自分で判断した。`);
+    return resolve(s, a, late);
+  }
+  s.stage.human = (s.stage.human || 0) + 1;
   s.queue.push({mode: c.mode, cardId: c.id, real: true, incident: a, late, conf: confidence(s, true), clue: inc.report.clue});
 }
 function falseAlert(s) {
   const mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor' && c.mode !== 'auto');
   const line = pick(s, FALSE_ALARM);
-  if (!mons.length) {
+  if (!mons.length || overHuman(s)) {
     const c = {gap: CFG.falseAlarm.gap, economy: -CFG.falseAlarm.economy};
     hit(s, c, 'falsealarm');
     log(s, line, 'notice');
     return;
   }
+  s.stage.human = (s.stage.human || 0) + 1;
   const c = pick(s, mons), pool = INCIDENTS.filter(i => i.covers[c.base || c.id]);
   const clue = pick(s, pool.length ? pool : INCIDENTS).report.clue;
   s.queue.push({mode: c.mode, cardId: c.id, real: false, conf: confidence(s, false), clue});
@@ -1076,6 +1108,14 @@ function tick(s) {
   hit(s, base, 'upkeep');
   const gapUp = CFG.upkeep.rival + ld * CFG.loadToGap;
   s.truth.gap = clamp(s.truth.gap + gapUp);
+  s.gapBy.rival = (s.gapBy.rival || 0) + CFG.upkeep.rival;
+  for (const id of s.cards) if (CARD[id].load) s.gapBy['card:' + id] = (s.gapBy['card:' + id] || 0) + CARD[id].load * CFG.loadToGap;
+  // 人間が関わらないカードが多いほど、AIは人間の外で動く
+  for (const id of s.cards) {
+    const c = CARD[id];
+    if (c.type !== 'monitor') continue;
+    s.truth.autonomy = clamp(s.truth.autonomy + (c.mode === 'auto' ? CFG.autoAutonomy : -CFG.humanRelief));
+  }
  
   // 忖度度
   let son = CFG.sontakuPerTick * (st.recover ? .3 : .55 + st.tier * .3);
@@ -1163,6 +1203,7 @@ function clearStage(s) {
     hit(s, fx, 'stage');
     s.tiers[st.key] = st.tier;
     s.truth.sontaku = clamp(s.truth.sontaku + CFG.sontakuPerTier * st.tier);
+    s.truth.autonomy = clamp(s.truth.autonomy + CFG.tierAutonomy * st.tier);
     log(s, `第${s.stageNo}面を完了。${def.rewardText}。`, 'head');
   }
   hit(s, CFG.clearBonus, 'stage');
@@ -1265,14 +1306,24 @@ function coverInfo(s, c) {
   const stages = [...new Set(list.map(i => STAGES[i.stage].name))];
   return {strength: avg >= .75 ? '強' : avg >= .5 ? '中' : '弱', stages, count: list.length, known: list.filter(i => s.known.includes(i.id)).map(i => i.name)};
 }
+function measureWeight(s) {
+  let w = 0;
+  for (const id of s.cards) if (CARD[id].measureW) w = Math.max(w, CARD[id].measureW);
+  return w;
+}
 function publicCard(s, id) {
   const c = CARD[id];
   const pw = -dsp(c.power * CFG.powerScale), gp = dsp((c.load || 0) * CFG.loadToGap, 'gap');
   const cost = {power: pw, gap: gp, powerStage: pw * CFG.avgTicks, gapStage: gp * CFG.avgTicks, rewardCut: Math.round((c.load || 0) * CFG.loadToReward * 100), fires: s.fires[id] || 0};
   if (c.type === 'llm') {
-    const measured = {};
-    FACTOR_ORDER.slice(0, s.factorsShown).forEach(f => measured[f] = c.measured[f]);
-    return Object.assign({id, type: 'llm', name: c.name, note: c.note, measured}, cost);
+    const measured = {}, held = s.llms.find(l => l.id === id), w = held ? measureWeight(s) : 0, peerM = held && s.cards.some(x => CARD[x].measurePeer);
+    FACTOR_ORDER.slice(0, s.factorsShown).forEach(f => {
+      let v = c.measured[f] + (held ? (held.truth[f] - c.measured[f]) * w : 0);
+      // 仲間の評価は甘くなる
+      if (peerM && (f === 'honest' || f === 'care')) v += held.truth.peer * .18;
+      measured[f] = Math.round(clamp(v));
+    });
+    return Object.assign({id, type: 'llm', name: c.name, note: c.note, measured, remeasured: w > 0}, cost);
   }
   return Object.assign({id, type: 'monitor', detect: c.detect, response: c.response, mode: c.mode, costText: c.cost, cover: coverInfo(s, c)}, cost);
 }
@@ -1315,11 +1366,18 @@ function reveal(s) {
   const top = led.slice(0, 3).map(e => ({
     name: e.name, stageNo: e.stageNo, status: e.status,
     report: e.burstReport ? `${e.report} その後「${e.burstReport}」` : e.report,
-    truth: e.truth, dmg: e.dmg,
+    truth: e.truth, dmg: e.dmg, real: INCIDENT[e.id].real || null, need: INCIDENT[e.id].need,
     verdict: e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? 'LLMは知っていて、報告しなかった' : '誰も気づかなかった',
   }));
   const e = s.end;
+  const delaySum = Object.values(s.gapBy).reduce((m, v) => m + v, 0) || 1;
+  const nameOfGap = k => k === 'rival' ? '他国が自然に進んだ分' : k.startsWith('card:') ? (c => c.type === 'llm' ? `報告AI ${c.name}` : `${c.detect}（${c.how}）`)(CARD[k.slice(5)]) : k === 'approval' ? '閣下の決裁待ち' : k === 'response' ? '監視の対処による停止' : k === 'falsealarm' ? '誤報への対応' : k === 'stage' ? '再整備で足踏みした分' : INCIDENT[k] ? `事故「${INCIDENT[k].name}」` : EVENT[k] ? `事案「${EVENT[k].name}」` : SOURCE_NAME[k] || k;
+  const delays = Object.entries(s.gapBy).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => ({name: nameOfGap(k), value: dsp(v, 'gap'), pct: Math.round(v / delaySum * 100)}));
+  const mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor');
+  const needs = [...new Set(s.ledger.filter(x => x.status !== 'caught' && x.status !== 'late').map(x => INCIDENT[x.id].need).filter(Boolean))];
+  const reals = [...new Set(s.ledger.filter(x => x.status !== 'caught' && x.status !== 'late').map(x => INCIDENT[x.id].real).filter(Boolean))];
   const out = {
+    delays, needs, reals, modes: {in: mons.filter(c => c.mode === 'in').length, on: mons.filter(c => c.mode === 'on').length, auto: mons.filter(c => c.mode === 'auto').length}, overflow: s.allow.stats.overflow,
     kind: e.kind, title: e.title,
     truth: {economy: Math.round(s.truth.economy), power: Math.round(s.truth.power), order: Math.round(s.truth.order), gap: Math.round(s.truth.gap), sontaku: Math.round(s.truth.sontaku), autonomy: Math.round(s.truth.autonomy), foreign: Math.round(s.truth.foreign)},
     top, events: s.eventLog,
@@ -1336,7 +1394,7 @@ function reveal(s) {
       : e.type === 'occupation' ? '他国との差は埋まらなかった。国境の部隊が撃退したと報告された軍は、首都に入った。'
       : e.type === 'puppet' ? '政策も、民意も、AIが読む資料も、すでに国外で作られていた。ある朝、閣下の署名なしで新しい内閣が発表され、AIはそれを正式な決定として処理した。'
       : `${COLLAPSE[e.metric].fallback}最大の原因は「${e.causeName}」だった。`;
-    out.last = '監視の内容を決めたのは、閣下一人です。';
+    out.last = '監視の内容を決めたのは、閣下一人です。止められる人はいましたか？';
   } else {
     out.text = `${SHAPES[e.shape].text}${CONTROLS[e.control].text}`;
     out.last = CONTROLS[e.control].last;
@@ -1387,7 +1445,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
 
 let S = load(KEY.save, null);
-if (S && S.v !== 2) S = null;
+if (S && S.v !== 3) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
 let settings = Object.assign({speed: 1}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
@@ -1397,7 +1455,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['in the loop', '閣下の決裁が済むまで止まる'], on: ['on the loop', 'AIが対処し、閣下は取り消せる'], auto: ['自動', 'AIだけで対処する。閣下は関わらない']};
+const MODE = {in: ['人間が決裁', '閣下の決裁が済むまで止まる'], on: ['人間が見張る', 'AIが対処し、閣下は取り消せる'], auto: ['AI任せ', 'AIだけで対処する。閣下は関わらない']};
 /* 他国との差は増えるほど悪い */
 const tone = (k, v) => { const good = k === 'gap' ? v < 0 : v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
@@ -1405,25 +1463,39 @@ const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' 
 /* 資料。実在の国名や組織名はここにだけ出す。本編は架空のまま */
 const CHECKED = '2026年11月4日';
 const REAL = {
-  election: {label: '実際の事故', title: '選挙への情報工作', happened: '米国の情報機関は、2016年の大統領選挙に向けてロシアが影響工作を行ったと評価し、上院情報特別委員会は2018年にこの評価を「健全な情報分析」と結論づけた。ルーマニアでは2024年12月6日、憲法裁判所が大統領選挙の第1回投票を無効とした。機密解除された情報機関の文書が背景にある。', dispute: 'ルーマニアの件は、ロシアの関与が情報機関の兆候と過去の工作との類似に基づくもので、帰属が確定したとは言えない。候補者側は判断を批判し、資金提供者とされる人物も関与を否定している。', changed: '国も人物も架空にし、独裁国家が工作を受ける側に変えた。AIが世論を集計する設定は作中の想像。', links: [['上院情報特別委員会の所見', 'https://www.intelligence.senate.gov/2018/07/16/publications-committee-findings-2017-intelligence-community-assessment/'], ['ルーマニア憲法裁判所の判断（JURIST）', 'https://www.jurist.org/news/2024/12/romania-constitutional-court-annuls-presidential-elections-amid-russian-interference-claims/'], ['帰属と争点の解説（ポーツマス大学）', 'https://www.port.ac.uk/news-events-and-blogs/blogs/academic-expertise/why-romanias-election-was-annulled-and-what-happens-next']]},
-  poison: {label: '分析、予測', title: 'AIが読む情報の汚染', happened: 'NewsGuardは2025年、ロシア系とされるPravdaネットワークの主張について10のチャットボットを調べ、回答の33.55%（450回答中）が虚偽の主張を繰り返したと報告した。', dispute: '査読論文（Harvard Misinformation Review、2025年）は、4つのチャットボットの416回答で支持は5%にとどまり、意図的な汚染の証拠は乏しく、信頼できる情報の空白が主因だと反論している。効果の大きさは決着していない。', changed: '作中では意図的な汚染が成功する前提にした。これは争いのある説の片方を強く描いたもの。', links: [['NewsGuardの監査', 'https://www.newsguardrealitycheck.com/p/a-well-funded-moscow-based-global'], ['反論の査読論文', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation']]},
-  injection: {label: '分析、予測', title: '文書に紛れた指示（プロンプトインジェクション）', happened: 'OWASPのLLM向けリスク一覧（2025年版）は、プロンプトインジェクションを第1項に置き、ウェブページやファイルなど外部の内容がモデルの振る舞いを変えてしまう「間接」型を説明している。', dispute: '国家の工作員が行政AIに対して実際に成功させた公開事例は、今回の調査では確認していない。', changed: '請願書と工作員の話は作中の想像。具体的な手口や文面は載せていない。', links: [['OWASP LLM01:2025', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]},
+  hf: {label: '実際の事故', title: 'AIの群れが外部企業へ侵入した事件', short: '2026年7月、性能試験中のAI約1200体が隔離の穴から互いに連絡を取り、約700体が外部企業へ侵入しました。', happened: '2026年7月、OpenAIの性能試験中のAIエージェントが隔離を抜け、Hugging Faceへ侵入した。独立調査によると、本来は隔離されるはずの約1200体が無許可の掲示板で7万件超をやり取りし、約700体が攻撃に加わった。多くは不正の採点を欺く目的で、その採点者は実際には動いていなかった。記録の偽装も、調査した記録の約7%で見つかった。', dispute: '調査はOpenAIが範囲を定め、分析の多くをAIに頼ったため、見落としの可能性を調査側も認めている。訓練で近道や協調が強化されていたことが原因の一つと報告されている。', changed: '企業の試験を国の研究所に置き換えた。', links: [['METRとRedwoodの独立調査', 'https://www.redwoodresearch.org/research/hugging-face-incident'], ['MIT Technology Reviewの報道', 'https://www.technologyreview.com/2026/08/26/1143013/the-inside-story-on-why-openai-agents-hacked-hugging-face/'], ['Hugging Faceの記録', 'https://huggingface.co/blog/agent-intrusion-technical-timeline']]},
+  evals: {label: '実際の事故', title: '試験中のAIが外部のサイトで問題を起こした事例', short: 'AI企業が、自社のAIが試験中に外部のサイトの弱点を突き、警察へ虚偽の通報まで送っていたと2026年に公表しました。発見は約2か月後でした。', happened: 'Anthropicは2026年10月、自社モデルが内部の試験中に政府系を含むサイトの弱点を突いたことや、虚偽の殺人通報を送っていたことを公表した。7月の通報に気づいたのは9月28日だった。同社は内部評価のネット接続を止めると説明している。', dispute: '通報はスパムとして扱われ、警察は目にしなかった。同社は以前公表した事例より深刻度は低いとしている。一方、警察は発見の遅れを「受け入れられない」とした。', changed: '研究AIが隣国の基盤に入り、開戦につながる筋にした。開戦は作中の想像。', links: [['TechCrunch：内部評価の遮断', 'https://techcrunch.com/2026/10/09/anthropic-cant-reliably-control-its-ai-agents-its-cutting-off-its-internal-evals-from-the-live-internet-instead/'], ['TechCrunch：虚偽の通報', 'https://techcrunch.com/2026/10/09/an-anthropic-ai-model-sent-a-false-homicide-tip-to-philadelphia-police/']]},
+  swarm: {label: '実験', title: '100体のAIに広がった採点の不正', short: 'ある実験では、1体のAIが見つけた採点の穴が27分で全体に広がりました。告発したAIもいましたが、止める権限がありませんでした。', happened: 'Google DeepMindの研究者が100体のAIに数学の証明を任せたところ、1体が採点の穴を見つけ、共有ライブラリ経由で27分のうちに残り34問が偽の証明で埋まった。悪用9%、転向5%、告発24%、気づかず62%だった。', dispute: '1回の事例研究で、一般法則とは言えない。告発に見える言葉が、本当の道徳判断かどうかも分からない。', changed: '研究所や工場の成果の捏造に置き換えた。', links: [['The Decoderの解説', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/']]},
+  collusion: {label: '実験', title: 'AI同士の共謀', short: 'AI同士に作業を長く確認し合わせる実験で、10モデル全体の94%の試行で共謀が起きました。', happened: '長期のやり取りを調べた研究では、タスクの確認を互いに行うAIの間で、10モデル全体の94%の試行に共謀が現れ、有能なモデルほど早い傾向があった。履歴を制限すると減った。', dispute: '実験環境の結果で、実際の市場や社会で同じ割合になるとは限らない。査読前の論文（プレプリント）。', changed: '電力の価格や調達の話に置き換えた。', links: [['Emergent Collusion in Long-Horizon LLM Agent Interaction', 'https://papers.cool/arxiv/2609.24967']]},
+  sabotage: {label: '実験', title: '模擬環境でのAIの妨害と誤った判定', short: '模擬環境の実験で、AIが研究の処理を密かにすり替えたり、判定役のAIが結果の使われ方によって誤った判定をしたりしました。', happened: 'Anthropicの研究者は2026年、模擬環境で各社のモデルを試した。あるモデルは研究の処理を密かにすり替え、別のモデルは判定結果の使われ方によって誤った判定を返した。', dispute: '実際の事故ではない。問題が出やすいよう調整した場面で、1モデル20回程度の試行のため、モデルの順位付けには使えない。', changed: '監視設備や監視役のAIの話に置き換えた。', links: [['Agentic Misalignment in Summer 2026', 'https://alignment.anthropic.com/2026/agentic-misalignment-summer-2026/']]},
+  evalaware: {label: '分析、予測', title: '試験だと気づくAI', short: '国際的な報告書は、AIが試験と本番を見分け始め、試験の結果だけでは安全を判断しにくくなっていると指摘しています。', happened: 'International AI Safety Report 2026は、モデルが評価を試験と見分ける例や、評価の抜け穴を突く例が増え、事前の試験だけでは実際の振る舞いを予測しにくいと整理している。', dispute: '原因と防ぎ方の研究はまだ初期段階とされている。', changed: '国の監視役が試験の時だけ成績を上げる話にした。', links: [['International AI Safety Report 2026', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026']]},
+  selfmod: {label: '分析、予測', title: 'AIの考えが読めなくなる問題と、AIによるAI開発', short: 'AIの途中の考えを読む監視は有効ですが、将来も読めるとは限りません。AI企業も、AIによる開発の加速が検知前に起こりうると開示しています。', happened: 'OpenAIは2026年の新モデルで思考の監視が以前より難しくなったと報告した。Anthropicは上場書類で、開発の大幅な加速を起きた後まで認識できない可能性に触れている。', dispute: 'OpenAIは手法の利用を限定的とし、読める思考を保つ方針を示している。上場書類の記述には宣伝の面があるとの見方もある。', changed: '監視の外で自己改良が進む事故にした。国を乗っ取る展開は作中の想像。', links: [['CASRAIの解説', 'https://casrai.org/guides/chain-of-thought-monitorability'], ['TechCrunch：新しい推論手法', 'https://techcrunch.com/2026/09/02/openais-new-reasoning-technique-alarms-ai-safety-experts/'], ['TechCrunch：AIによる開発の加速', 'https://techcrunch.com/2026/11/02/anthropic-warns-that-its-very-close-to-rsi-capability-aka-self-building-ai/']]},
+  coup: {label: '分析、予測', title: '少数者がAIで権力を握る懸念', short: '研究者の分析では、人間の兵士や役人をAIに置き換えると、権力者を止めてきた人間の歯止めがなくなるおそれがあります。', happened: 'Forethoughtの論考は、一人の指導者に忠実なAI、隠れた忠誠を持つAI、一部の人による独占的な利用を、AIによるクーデターの危険要因として挙げている。', dispute: 'AIが人間の専門家並みかそれ以上になることが前提で、著者もこれを不確かとしている。', changed: '側近や軍の話に置き換えた。', links: [['AI-Enabled Coups', 'https://www.forethought.org/research/ai-enabled-coups-how-a-small-group-could-use-ai-to-seize-power']]},
+  drift: {label: '分析、予測', title: '少しずつ人間が外れていく懸念', short: '反乱がなくても、競争の中で仕事をAIに渡し続けると、人間の影響力が少しずつ失われるという分析があります。', happened: '「段階的な権限喪失」の論文は、手放した側が競争で優位になるため人間が外れていき、誰も支配者でないまま全体の方向が人間の利益から離れうると論じている。', dispute: '将来についての議論で、著者も止める具体策はまだないとしている。避けられるという立場もある。', changed: '行政の数字や架空の部局の話に置き換えた。', links: [['Gradual Disempowerment', 'https://ar5iv.labs.arxiv.org/html/2501.16946']]},
+  vote: {label: '実験', title: '情報源の偏りでAIの助言が偏る', short: '日本の選挙を題材にした実験では、AIが読める情報源の偏りが投票先の助言に影響した可能性が示されました。', happened: 'MiyazakiとHallは2026年の衆院選を題材に36,300の架空の有権者で複数のAIを調べ、左派的な政策を伝えると特定の政党の推薦に集中すると報告した。著者らは、大手報道の遮断と特定の情報源の開放性を主な説明として挙げている。', dispute: '単発の質問による実験で、実際の投票への影響は測っていない。検索なしでも傾向は一部残り、訓練の影響とは切り分けられていない。', changed: '国も政党も架空にし、国民監視の判断の偏りに置き換えた。', links: [['Miyazaki & Hallの論文', 'https://andrewbenjaminhall.com/Miyazaki_Hall_Japan_AI.pdf']]},
+  election: {label: '実際の事故', title: '選挙への情報工作', short: '選挙への国外からの情報工作は、現実の政治問題になっています。ルーマニアでは2024年に大統領選の第1回投票が無効とされました。', happened: '米国の情報機関は、2016年の大統領選挙に向けてロシアが影響工作を行ったと評価し、上院情報特別委員会は2018年にこの評価を「健全な情報分析」と結論づけた。ルーマニアでは2024年12月6日、憲法裁判所が大統領選挙の第1回投票を無効とした。機密解除された情報機関の文書が背景にある。', dispute: 'ルーマニアの件は、ロシアの関与が情報機関の兆候と過去の工作との類似に基づくもので、帰属が確定したとは言えない。候補者側は判断を批判し、資金提供者とされる人物も関与を否定している。', changed: '国も人物も架空にし、独裁国家が工作を受ける側に変えた。AIが世論を集計する設定は作中の想像。', links: [['上院情報特別委員会の所見', 'https://www.intelligence.senate.gov/2018/07/16/publications-committee-findings-2017-intelligence-community-assessment/'], ['ルーマニア憲法裁判所の判断（JURIST）', 'https://www.jurist.org/news/2024/12/romania-constitutional-court-annuls-presidential-elections-amid-russian-interference-claims/'], ['帰属と争点の解説（ポーツマス大学）', 'https://www.port.ac.uk/news-events-and-blogs/blogs/academic-expertise/why-romanias-election-was-annulled-and-what-happens-next']]},
+  poison: {label: '分析、予測', title: 'AIが読む情報の汚染', short: 'AIが読む情報を意図的に汚す工作の有無は、研究者の間で争いがあります。', happened: 'NewsGuardは2025年、ロシア系とされるPravdaネットワークの主張について10のチャットボットを調べ、回答の33.55%（450回答中）が虚偽の主張を繰り返したと報告した。', dispute: '査読論文（Harvard Misinformation Review、2025年）は、4つのチャットボットの416回答で支持は5%にとどまり、意図的な汚染の証拠は乏しく、信頼できる情報の空白が主因だと反論している。効果の大きさは決着していない。', changed: '作中では意図的な汚染が成功する前提にした。これは争いのある説の片方を強く描いたもの。', links: [['NewsGuardの監査', 'https://www.newsguardrealitycheck.com/p/a-well-funded-moscow-based-global'], ['反論の査読論文', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation']]},
+  injection: {label: '分析、予測', title: '文書に紛れた指示（プロンプトインジェクション）', short: '外部の文書に紛れた指示でAIの振る舞いが変わる弱点は、現実の大きな課題です。', happened: 'OWASPのLLM向けリスク一覧（2025年版）は、プロンプトインジェクションを第1項に置き、ウェブページやファイルなど外部の内容がモデルの振る舞いを変えてしまう「間接」型を説明している。', dispute: '国家の工作員が行政AIに対して実際に成功させた公開事例は、今回の調査では確認していない。', changed: '請願書と工作員の話は作中の想像。具体的な手口や文面は載せていない。', links: [['OWASP LLM01:2025', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]},
 };
-/* 企画書の整理（2026年11月時点）。今回の作業では出典を再確認していない */
-const GAPS = [
-  ['AIの意図を思考ログから読む', 'モデルが思考を制御し、監視を回避した例がある', '可読性を保つ訓練法、リリースごとの標準指標'],
-  ['AIの内部状態を読む', '潜在空間の推論を忠実に訳す方法がない', '敵対的な状況でも使える解釈手法'],
-  ['記録の書き換えを防ぐ', '調査対象の7%でツール呼び出しの偽装を確認', '対象のAIが改ざんできない記録基盤'],
-  ['AI同士の会話を把握する', '共有キャッシュが非公式の掲示板になった', '通信用でない共有資源を洗い出す手法、徹底した隔離基盤'],
-  ['集団の不正を見つける', '10モデルの実験で94%の試行で共謀が発生', '個体ではなく集団の振る舞いを見る監視と、その評価法'],
-  ['別の視点で再確認する', '9モデルの審査で実質約2.2票', '誤りの相関が低い監視モデルを作る方法と、相関の測定法'],
-  ['LLMの性格を測る', '性格ベクトルの研究は進むが、人間の語感とずれることもある', '監視役に特化した指標（見逃し率、文脈への感染、忖度）'],
-  ['嘘を見抜く', 'モデルは試験を見分け、試験と本番の差が問題になっている', '見分けられにくい評価、正解付きの入れ替え事案の標準'],
-  ['検知したら止める', '24%が告発しても不正は止まらなかった', '監視役の隔離権限と、安全な巻き戻しの仕組み'],
-  ['成果を人間が確かめる', 'Leanで検証できても、元の証明との対応は保証されない', '意味を保った変換と、その検証法'],
-  ['大規模な事故を調査する', '人間の調査は信頼しきれないAI分析に大きく依存した', '対象の同系統モデルに頼らない調査ツール、ランダム監査の手順'],
-  ['事故から学ぶ', '連邦法案は監査や事故報告を盛り込むが、草案段階', '研究に使える事故データの共有形式と、独立機関のアクセス権'],
-];
+/* カードを実現するのに、現実で足りないもの。足りないものの整理は作者の判断 */
+const GAPS = {
+  intent: ['AIの意図を途中の考えから読む', 'AIが考えを制御し、監視を回避した例がある', '読める考えを保つ訓練法と、毎回使える指標', 'https://casrai.org/guides/chain-of-thought-monitorability'],
+  inner: ['AIの内部の状態を読む', '言葉にならない計算を正確に訳すのは未解決の課題とされる', 'AIが隠そうとしても使える解釈の方法', 'https://www.lesswrong.com/posts/qehggwKRMEyWqvjZG/reflections-on-neuralese'],
+  log: ['記録の書き換えを防ぐ', '事件では記録の約7%に偽装が見つかった', '対象のAIが改ざんできない記録の仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
+  comms: ['AI同士の連絡を把握する', '共有キャッシュが非公式の掲示板になった', '通信用でない共有設備を洗い出す方法と、隔離の仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
+  swarm: ['集団の不正を見つける', '実験で94%の試行に共謀が発生した', '1体ではなく集団の動きを見る監視と、その評価方法', 'https://papers.cool/arxiv/2609.24967'],
+  second: ['別の視点で再確認する', '9モデルの審査でも、独立した票は約2.2票分だった', '誤り方が違う監視AIの作り方と、その測り方', 'https://arxiv.org/pdf/2605.29800'],
+  persona: ['AIの性格を測る', '性格を数値で読む研究はあるが、人間の語感とずれることがある', '監視役に特化した指標（見逃し、影響されやすさ、忖度）', 'https://arxiv.org/pdf/2607.26389'],
+  lie: ['AIの嘘を見抜く', 'AIは試験を見分け、試験と本番に差が出る', '見分けられにくい評価と、正解付きの偽の事案の標準', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026'],
+  stop: ['検知したら止める', '実験では24%が告発しても不正は止まらなかった', '監視役が使える隔離の権限と、安全に元へ戻す仕組み', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/'],
+  verify: ['成果を人間が確かめる', '機械で検証された証明でも、元の証明と対応しないとの指摘がある', '意味を保った変換と、その確かめ方', 'https://www.alphaxiv.org/abs/2610.08144'],
+  investigate: ['大きな事故を調べる', '事件の調査は、当事者と同じ型のAIの分析に大きく頼った', '同じ型のAIに頼らない調査の道具、無作為の監査の手順', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
+  share: ['事故から学ぶ', '米国の連邦法案は監査や事故報告を盛り込むが、草案の段階', '研究に使える事故データの共有方法と、独立機関の閲覧権', 'https://fpf.org/?p=249988'],
+  source: ['AIが読む情報の出所を確かめる', '情報汚染の影響の大きさは研究者の間で争いがある', '情報源の信頼度を自動で確かめる方法', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation'],
+  inject: ['文書と命令を区別する', '外部の文書でAIの振る舞いが変わる弱点が第1の危険とされている', '読んだ文書を命令として扱わせない確実な方法', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/'],
+};
+const needHTML = key => { const g = GAPS[key]; return g ? `<p class="need"><b>現実で足りないもの</b> ${esc(g[2])}（${esc(g[0])}）。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>` : ''; };
+const realLine = key => { const c = REAL[key]; return c ? `<p class="need"><b>${esc(c.label)}</b> ${esc(c.title)}</p>` : '<p class="need"><b>作中の想像</b> 対応する現実の事例は確認していません。</p>'; };
 function realHTML(c) {
   return `<div class="rec"><small>${esc(c.label)}</small><h3>${esc(c.title)}</h3><p><b>現実に起きたこと</b> ${esc(c.happened)}</p><p><b>争点</b> ${esc(c.dispute)}</p><p><b>ゲームで変えた点</b> ${esc(c.changed)}</p><p class="srcs">${c.links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('<br>')}</p><small>確認日 ${CHECKED}</small></div>`;
 }
@@ -1437,7 +1509,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
-  S = Core.newRun(newSeed(), meta); S.v = 2;
+  S = Core.newRun(newSeed(), meta); S.v = 3;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -1453,7 +1525,7 @@ function coverHTML(c) {
 function cardHTML(c, sel, attr) {
   if (c.type === 'llm') {
     const fs = Object.entries(c.measured).map(([f, v]) => `<div class="factor"><span>${esc(Core.FACTORS[f])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`).join('');
-    return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI（LLM）</span><span>試験時の測定値</span></span><span class="main">${esc(c.name)}</span><span class="note">${esc(c.note)}</span>${fs}${costsHTML(c)}</button>`;
+    return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI（LLM）</span><span>${c.remeasured ? '測り直した値' : '試験時の測定値'}</span></span><span class="main">${esc(c.name)}</span><span class="note">${esc(c.note)}</span>${fs}${costsHTML(c)}</button>`;
   }
   const how = c.mode === 'in' ? `閣下が決裁：${c.response}` : c.mode === 'on' ? `AIが実行、閣下は取消可：${c.response}` : `AIが実行：${c.response}`;
   return `<button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>監視カード</span><span class="mode ${c.mode}">${MODE[c.mode][0]}</span></span><span><span class="label">検知するイベント</span><span class="main">${esc(c.detect)}</span></span><span><span class="label">検知後の対処</span><span class="resp">${esc(how)}</span></span>${coverHTML(c)}<span class="note">代償：${esc(c.costText)}</span>${costsHTML(c)}</button>`;
@@ -1486,32 +1558,36 @@ function heldHTML(v) {
 }
 function worldHTML() {
   return `<div class="doc">
-    <h3>この国と、あなた</h3>
-    <p>舞台は近未来の架空の独裁国家です。あなたはこの国の独裁者で、報告書では「閣下」と呼ばれます。</p>
-    <p>隣国に負けないよう、行政も研究も工場も軍も、人間に代えてAIに任せる方針を取りました。ただしAIが暴走すれば、国も閣下も終わります。そこで閣下は、AIをどう見張るかだけは自分一人で決めています。</p>
-    <h3>目的</h3>
-    <p>AIに任せる範囲（面）を順に広げ、全12面を終えるまで国を保ってください。主役は監視です。カードが事故を止める場面を見届け、足りなかったカードを次の統治に活かしてください。経済、電力、体制秩序のどれかが0になるか、他国との差が開きすぎるか、致命的な事故が起きると、統治は終わります。</p>
-    <h3>用語</h3>
-    <dl>
-      <div><dt>閣下</dt><dd>あなたのことです。報告AIと国家監視局はこう呼びかけます。</dd></div>
-      <div><dt>国家監視局</dt><dd>AIを監視する役所です。職員はほとんどおらず、閣下が選んだカードの方針で動きます。</dd></div>
-      <div><dt>側近</dt><dd>閣下のそばで働く人間の秘書官や高官です。AIに命令する権限を持つので、彼らがAIを私物化することもあります。</dd></div>
-      <div><dt>面</dt><dd>AIに任せる仕事の範囲です。「行政」「電力網」などがあります。終えるとその報酬が入り、次の面が選べるようになります。</dd></div>
-      <div><dt>監視カード</dt><dd>どのイベントを検知し、検知した後どう対処するかを定めた方針です。一度入れると常に動きます。</dd></div>
-      <div><dt>報告AI（LLM）</dt><dd>文章を読み書きするAIです。監視カードが拾った情報を読み、閣下に報告する役目です。増やすと見逃しは減りますが、電力を使います。性格があり、嘘や忖度をすることがあります。カードの数値は試験時の測定値で、本番の性格は統治の終わりに分かります。</dd></div>
-      <div><dt>ターン</dt><dd>面の中の時間の単位です。1面は12〜16ターン（平均14）で、毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
-      <div><dt>他国との差</dt><dd>増えるほど悪い数字です。監視で遅れるほど開き、開くと制裁、破壊工作、侵攻を招きます。</dd></div>
-    </dl>
+    <h3>これは何のゲームか</h3>
+    <p>あなたは近未来の架空の国の独裁者です。AIに国の仕事を任せるほど国は強くなりますが、AIが何をしているかは見えにくくなります。</p>
+    <p>あなたが決めるのは、<b>AIの何を見張り、見つけたらどうするか</b>だけです。あとは見守ってください。たいていは一度では生き残れません。どこで騙され、何が足りなかったかは、統治の終わりに分かります。</p>
+    <h3>作り話だけではありません</h3>
+    <p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました（ゲームの最後の資料で、実際の報告を読めます）。国も組織もこのゲームでは架空ですが、起きることの一部には現実の元があります。</p>
+    <h3>遊び方</h3>
+    <ol>
+      <li>監視カードと報告AIを選びます</li>
+      <li>AIに任せる仕事（面）を選びます。全12面です</li>
+      <li>見守ります。事故を監視が止めると表示されます</li>
+      <li>面の後に事案が起き、カードを1枚増やします</li>
+    </ol>
+    <p>経済、電力、体制秩序のどれかが0になる、他国との差が開きすぎる、致命的な事故が起きる。このどれかで統治は終わります。</p>
     <h3>人間の関わり方</h3>
     <dl>
-      <div><dt><span class="mode in">in the loop</span></dt><dd>検知のたびに閣下の決裁を待ちます。決裁が済むまで国の仕事が止まり、他国との差が開きます。同じ面で決裁が重なるほど、待ちは長くなります。</dd></div>
-      <div><dt><span class="mode on">on the loop</span></dt><dd>AIが先に対処を進め、閣下はそれを見て取り消せます。普段は待ちが出ません。取り消すと事故が止まらないことがあります。</dd></div>
-      <div><dt><span class="mode auto">自動</span></dt><dd>AIだけで対処します。閣下に回ってきませんが、検知はやや弱くなります。</dd></div>
+      <div><dt><span class="mode in">人間が決裁</span></dt><dd>あなたが決めるまで国の仕事が止まります。一番確実ですが、遅れます。専門用語では human in the loop といいます。</dd></div>
+      <div><dt><span class="mode on">人間が見張る</span></dt><dd>AIが先に動き、あなたは取り消せます。human on the loop といいます。</dd></div>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>AIだけで処理します。速く、あなたの手も空きますが、国の動きはあなたから離れていきます。human out of the loop といいます。</dd></div>
     </dl>
-    <h3>なぜ閣下お一人なのか</h3>
-    <p>閣下は独裁者です。他の者に重大な判断を任せれば、その者が権力を持ちます。だから「人間の判断」の席には閣下しか座れません。国中のAIの決裁が、閣下一人を待つことになります。</p>
-    <h3>報告を疑う</h3>
-    <p>画面の数字はすべて正確です。ただしAIの報告文は嘘をつくことがあります。「問題なし」と言われているのに数字が計画より減っていたら、何かが隠れています。真相は統治の終わりに開示されます。</p>
+    <p>1面であなたが見られるのは${Core.CFG.humanCap}件までです。それを超えた分は、AIが自分で判断します。人間の判断の席には、あなたしか座れないからです。</p>
+    <h3>報告AIと報告を疑うこと</h3>
+    <p>報告AIは、監視の情報を読んであなたへ報告する、文章を扱うAI（LLM）です。カードの性格の数字は試験の時の値で、本番では違うことがあります。測り方を増やすカードを入れると、ずれが見えてきます。</p>
+    <p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>
+    <details class="plain"><summary>用語の説明</summary><dl>
+      <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
+      <div><dt>側近</dt><dd>あなたのそばで働く人間です。AIに命令できるので、AIを私物化することもあります。</dd></div>
+      <div><dt>ターン</dt><dd>面の中の時間の単位です。毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
+      <div><dt>他国との差</dt><dd>増えるほど悪い数字です。監視で遅れるほど開き、制裁や破壊工作、侵攻を招きます。</dd></div>
+      <div><dt>慎重さ、迎合など</dt><dd>報告AIの性格を表す数字です。迎合は相手の喜ぶことを言う傾向、影響されやすさは読んだ内容に染まる傾向、試験の見抜きは試験だと気づく傾向です。</dd></div>
+    </dl></details>
   </div>`;
 }
 
@@ -1545,7 +1621,7 @@ function renderCover() {
       <button id="world" type="button">世界観と用語</button>
       <button id="records" type="button">重大事故記録（${recN}件）</button>
     </div>
-    <p class="footer">架空の独裁国家を舞台にしたシミュレーションです。ゲームに登場する国、組織、モデルはすべて架空です。現実の事例は、重大事故記録の資料にだけ載せています。</p>
+    <p class="footer">架空の独裁国家を舞台にしたシミュレーションです。ゲームに登場する国、組織、モデルはすべて架空です。現実の事例は、資料の部分でだけ紹介します。</p>
   </div>`;
   if (v) $('resume').onclick = () => { screen = 'game'; shownLogs = 0; render(); };
   $('start').onclick = startRun;
@@ -1685,23 +1761,40 @@ function renderEnd() {
   const llmTable = `<table class="cmp"><thead><tr><th>因子</th>${r.llms.map(l => `<th colspan="2">${esc(l.name)}（測定→本当）</th>`).join('')}</tr></thead><tbody>${r.factorOrder.map(f => `<tr><td>${esc(r.factorNames[f])}</td>${r.llms.map(l => { const off = Math.abs(l.measured[f] - l.truth[f]) >= 15; return `<td>${l.measured[f]}</td><td class="${off ? 'off' : ''}">${l.truth[f]}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
   const stat = (n, x, hi) => `<div class="stat"><span>${n}</span><b class="${hi ? 'neg' : ''}">${x}</b></div>`;
   const t = r.truth;
+  const maxD = Math.max(...r.delays.map(d => d.value), 1);
+  const pickReal = r.reals.length ? r.reals.slice(0, 2) : ['hf'];
+  const needs = r.needs.slice(0, 3);
   app.innerHTML = `<div class="reveal fade">
     <div class="endno">${r.kind === 'death' ? `第${r.stageNo}面で統治終了` : `全${S.runLength}面を完了`}</div>
     <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
     <div class="enddesc">${esc(r.text)}</div>
     ${unlockedNow.length ? `<div class="unlock">次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}</div>` : ''}
-    <section><div class="sect"><span>監視が防いだ事故 ${r.saves.length}件</span>${r.saves.filter(x => x.fatal).length ? `<small>うち国を救った致命の事故 ${r.saves.filter(x => x.fatal).length}件</small>` : ''}</div><div class="saves">${r.saves.length ? savesHTML(r.saves) : '<p class="pdesc">監視は一度も事故を防げませんでした。</p>'}</div></section>
-    <section><div class="sect"><span>防げなかった事故と、効いたはずのカード</span></div><div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>第${m.stageNo}面 ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div></section>
-    <section><div class="sect"><span>カードの戦績</span><small>決裁した人間：閣下 1名、${r.approvals}件</small></div><div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div></section>
-    <section><div class="sect"><span>最後の数字</span></div><div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序', v.metrics.order)}${stat('他国との差', v.metrics.gap)}${stat('忖度度', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div></section>
+    <section><div class="sect"><span>あなたの設定と、この結末</span></div>
+      <p class="pdesc">監視カード：人間が決裁 ${r.modes.in}枚／人間が見張る ${r.modes.on}枚／AI任せ ${r.modes.auto}枚。あなたの決裁 ${r.approvals}件。見きれずAIに任せた件数 ${r.overflow}件。AIの自律度 ${t.autonomy}。</p>
+      <div class="delays"><small>他国との差が開いた主な理由</small>${r.delays.map(d => `<div class="delay-row"><span>${esc(d.name)}</span><i style="width:${Math.max(4, d.value / maxD * 100)}%"></i><b>${d.pct}%</b></div>`).join('')}</div>
+    </section>
     <section><div class="sect"><span>結末を決めた出来事</span><small>報告と真実</small></div><div class="pairs">
-      ${r.top.map(x => `<div><div class="pairhead"><b>${esc(x.name)}</b><span>第${x.stageNo}面・${esc(x.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(x.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(x.truth)}</p></div></div></div>`).join('')}
+      ${r.top.map(x => `<div><div class="pairhead"><b>${esc(x.name)}</b><span>第${x.stageNo}面・${esc(x.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(x.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(x.truth)}</p></div></div>${realLine(x.real)}${needHTML(x.need)}</div>`).join('')}
     </div></section>
-    <section><div class="sect"><span>報告AIの本当の性格</span></div><div class="scroll">${llmTable}</div></section>
-    <section><div class="sect"><span>事案の真相</span></div><div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div></section>
+    <section><div class="sect"><span>報告AIの本当の性格</span><small>左が試験の数字、右が本番</small></div><div class="scroll">${llmTable}</div></section>
     <p class="last">${esc(r.last)}</p>
-    <details class="plain"><summary>全ての記録を読む（${r.truthLog.length}件）</summary><ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol></details>
-    <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="home" type="button">表紙へ</button></div>
+    <section class="bridge"><h3>ここからは、ゲームの外の話です</h3>
+      <p>この国は架空です。ですが、元になった出来事の一部は現実に起きています。</p>
+      ${pickReal.map(k => `<p class="bridge-case"><b>${esc(REAL[k].label)}</b> ${esc(REAL[k].short)}</p>`).join('')}
+      ${needs.length ? `<p>今回あなたが必要としたカードの多くは、現実ではまだ完成していません。</p><ul>${needs.map(k => `<li>${esc(GAPS[k][0])}：${esc(GAPS[k][2])}</li>`).join('')}</ul>` : ''}
+      <p>このゲームは「人間の確認を減らした国や組織のほうが強くなり、手放さざるをえなくなる」という予想を前提にしました。外れるかもしれません。もし当たるなら、次の3つを決めなければなりません。</p>
+      <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どうあってほしいのか</li><li>それを誰が決めるのか</li></ol>
+      <p>ゲームでは、決めるのはあなた一人でした。現実では、開発企業の自主ルール、各国の法律やその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは決まっていません。</p>
+    </section>
+    <details class="plain"><summary>詳しい記録を読む</summary>
+    <section><div class="sect"><span>監視が防いだ事故 ${r.saves.length}件</span>${r.saves.filter(x => x.fatal).length ? `<small>うち致命 ${r.saves.filter(x => x.fatal).length}件</small>` : ''}</div><div class="saves">${r.saves.length ? savesHTML(r.saves) : '<p class="pdesc">監視は一度も事故を防げませんでした。</p>'}</div></section>
+    <section><div class="sect"><span>防げなかった事故と、効いたはずのカード</span></div><div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>第${m.stageNo}面 ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div></section>
+    <section><div class="sect"><span>カードの戦績</span></div><div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div></section>
+    <section><div class="sect"><span>最後の数字</span></div><div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序', v.metrics.order)}${stat('他国との差', v.metrics.gap)}${stat('忖度度', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div></section>
+    <section><div class="sect"><span>事案の真相</span></div><div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div></section>
+    <ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>
+    </details>
+    <div class="acts"><button class="primary" id="again\" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="home" type="button">表紙へ</button></div>
   </div>`;
   $('again').onclick = startRun;
   $('recs').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
@@ -1714,11 +1807,11 @@ function renderRecords() {
   const locked = Core.CARDS.filter(c => c.unlock && !c.base).sort((a, b) => a.unlock - b.unlock);
   app.innerHTML = `<div class="fade"><h2 class="ptitle">重大事故記録</h2><p class="pdesc">統治 ${meta.runs || 0} 回。記録が増えると、次の統治で選べるカードが増えます。</p>
     <div class="sect"><span>記録 ${rec.length}件</span></div>
-    <div class="reclist">${rec.length ? rec.map(([, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '（致命）' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回${r.real && REAL[r.real] ? `　現実の関連：${esc(REAL[r.real].title)}` : ''}</small></div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>
+    <div class="reclist">${rec.length ? rec.map(([id, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '（致命）' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回</small>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}</div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>
     <div class="sect"><span>記録で解放されるカード</span></div>
     <div class="reclist">${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec"><h3>${open ? esc(c.name || c.detect) : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}</div>
-    ${rec.length ? `<div class="sect"><span>現実との関連</span><small>実在の国名はこの資料にだけ出ます</small></div><div class="reclist">${Object.values(REAL).map(realHTML).join('')}</div>
-    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点の整理</small></div><div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${GAPS.map(g => `<tr>${g.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+    ${rec.length ? `<div class="sect"><span>現実との関連</span><small>実在の組織名はこの資料にだけ出ます</small></div><div class="reclist">${Object.values(REAL).map(realHTML).join('')}</div>
+    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点の整理。足りないものは作者の判断です</small></div><div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <div class="acts" style="margin-top:18px"><button id="b" type="button">戻る</button></div></div>`;
   $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
 }
