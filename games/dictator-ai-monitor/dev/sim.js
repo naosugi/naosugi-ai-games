@@ -84,10 +84,10 @@ function decideBot(s) {
   else c = d.conf >= 58 ? 'act' : 'dismiss';
   Core.decide(s, c);
 }
-/* 人間が見張るカードの取り消し。確信度が低ければ取り消す */
+/* 人間が見張るカード。確信度が高ければ止める */
 function vetoBot(s) {
   if (s.phase !== 'running' && s.phase !== 'decision') return;
-  for (const d of Core.view(s).vetoes || []) if (decisionBot === 'never' || (decisionBot !== 'always' && d.conf < 50)) Core.veto(s, d.vid);
+  for (const d of Core.view(s).vetoes || []) if (decisionBot === 'always' || (decisionBot !== 'never' && d.conf >= 50)) Core.veto(s, d.vid);
 }
 /* ---- 1ラン ---- */
 function play(seed, cardBot, stageBot, meta) {

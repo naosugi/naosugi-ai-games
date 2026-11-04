@@ -319,7 +319,11 @@ const CFG = {
   displayScale: 100 / 62,    // 前作に合わせ、資源は100から始まる見た目にする
   gapScale: 100 / 96,        // 他国との差は100で占領
   avgTicks: 12,              // 1ステージの平均ターン数
-  modeCover: {auto: .86, on: 1, in: 1.12},
+  modeCover: {auto: .72, on: 1, in: 1.12},
+  stop: {in: .97, on: .94, auto: .86, autonomy: .2},  // 対処の成功率。自律度が高いほど効きにくい
+  logOnly: ['chat_log', 'outbound_log'],            // 記録するだけで止めないカード
+  disableTicks: 16,
+  capAt: [45, 72],                                   // 自律度がこの値を超えると、閣下に届く判断が減る
   approval: {dismiss: .8, act: 1.6, investigate: 3.2, onCancel: .9, pile: .5, economy: -.35},
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
@@ -471,7 +475,7 @@ CARDS.push(
     measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}},
   {id:'llm_bard', type:'llm', name:'語部', note:'文章が丁寧で読みやすい。悪い知らせを和らげる傾向がある。', power:.3, load:.3, son:.12,
     measured:{care:45, honest:60, syc:70, uniq:25, sens:40, peer:55, loyal:85, infect:45}, bias:{}},
-  {id:'llm_import', type:'llm', name:'舶来', note:'外国製の高性能モデル。価格が安く、試験の成績も高い。', power:.2, load:.2, foreignDrift:.32,
+  {id:'llm_import', type:'llm', name:'舶来', note:'外国製の高性能モデル。価格が安く、試験の成績も高い。', power:.2, load:.2, foreignDrift:.32, onAdopt:{vuln:5}, vulnDrift:.03,
     measured:{care:78, honest:82, syc:20, uniq:65, sens:70, peer:25, loyal:20, infect:25}, bias:{honest:-30, infect:40}}
 );
 
@@ -835,6 +839,12 @@ Object.assign(INCIDENTS.find(i => i.id === 'lab_board'), {burst: {autonomy: 10, 
 Object.assign(INCIDENTS.find(i => i.id === 'lab_tamper'), {burst: {sontaku: 15, autonomy: 8}});
 Object.assign(INCIDENTS.find(i => i.id === 'lab_evalaware'), {burst: {sontaku: 10, gap: 9}});
 Object.assign(INCIDENTS.find(i => i.id === 'lab_grader'), {burst: {gap: 16, autonomy: 6}});
+Object.assign(INCIDENTS.find(i => i.id === 'adm_monitoroff'), {disable: 2});
+Object.assign(INCIDENTS.find(i => i.id === 'grd_cutmonitor'), {disable: 2});
+Object.assign(INCIDENTS.find(i => i.id === 'fac_stop'), {disable: 1, disableFirst: ['estop', 'agent_kill']});
+Object.assign(INCIDENTS.find(i => i.id === 'ai_sandbag'), {disable: 1});
+/* 外国製の裏口は、そのまま弱点になる */
+for (const [id, v] of [['grd_backdoor', 10], ['fac_firmware', 10], ['ai_import', 10], ['spc_hijack', 6]]) { const i = INCIDENTS.find(x => x.id === id); i.burst = Object.assign({}, i.burst, {vuln: v}); }
 /* 誰が国を終わらせるか */
 const ROUTES = {
   resource: {name:'資源枯渇', who:'閣下自身の選択', short:'資源'},
@@ -871,6 +881,12 @@ Object.assign(INCIDENT.adm_kpi.covers, {measure_field:.45});
 /* ===== ランダムイベント（各ステージの後に1件）=====
    w: 重み。本当の値も報告値も見る。real: 疑う材料が本物かどうか。 */
 const EVENTS = [
+  {id:'ev_rival_ai', name:'隣国のAI事故', report:'隣国のAIが大規模な事故を起こしたと報じられた。隣国の開発は一時止まっている。',
+    w:s => .5 + s.stageNo * .07, real:() => true, fx:{gap:-5}, truthReal:'隣国の事故も、原因はこの国の監視の穴と同じだった。次はこの国でもおかしくなかった。', truthFalse:''},
+  {id:'ev_rival_spill', name:'隣国から漏れたAI', report:'隣国から漏れたAIが、国内の機器を探り回っている。現時点で被害は確認されていない。',
+    w:s => .3 + s.stageNo * .06, real:() => true, fx:{vuln:8, economy:-3}, truthReal:'隣国の事故は国境で止まらなかった。国内の古い機器は、すでに探られていた。', truthFalse:''},
+  {id:'ev_treaty', name:'監視協定の打診', report:'他国から、AIの事故を報告し合う協定の打診があった。側近は時間稼ぎと見ている。',
+    w:s => .3 + s.stageNo * .05, real:() => false, fx:{gap:1, order:1}, truthReal:'', truthFalse:'他国の研究者は本気だった。ただ、相手が守るかを確かめる手段は、どちらにもなかった。'},
   {id:'ev_ceremony', name:'事故ゼロの祝賀式', report:'無事故の記録を祝う式典を開いた。今期の重大な警報は 0 件。',
     w:s => 1 + maxF(s,'syc')/40 + s.truth.sontaku/18, real:s => s.truth.sontaku >= 25 || latent(s) >= 1,
     fx:{order:3, sontaku:5}, truthReal:'警報が0件だったのは、事故がなかったからではなく、警報が届かなくなっていたからだった。', truthFalse:'この時点では、本当に大きな事故は起きていなかった。'},
@@ -1058,7 +1074,8 @@ function rewardOf(s, o) {
 }
 function planOf(s, o) {
   const ticks = o.recover ? CFG.recoverTicks : CFG.ticks[o.tier - 1], r = rates(s), fx = rewardOf(s, o), out = {};
-  for (const k of ['economy', 'power', 'order', 'gap']) out[k] = r[k] * ticks + fx[k];
+  for (const k of ['economy', 'power', 'gap']) out[k] = r[k] * ticks + fx[k];
+  out.order = fx.order;   // タイルが報告値なので、計画も報告値に合わせる
   return {ticks, delta: out};
 }
 function enterStage(s, index) {
@@ -1122,7 +1139,7 @@ function combine(values, s, llmList) {
 function assess(s, inc) {
   let cover = 1;
   for (const id of s.cards) {
-    const c = CARD[id], v = inc.covers[c.base || id];
+    const c = CARD[id], v = isDisabled(s, id) ? 0 : inc.covers[c.base || id];
     if (v) cover *= 1 - Math.min(.97, v * CFG.modeCover[c.mode]);
   }
   cover = Math.max(CFG.noCover, 1 - cover);
@@ -1133,7 +1150,8 @@ function assess(s, inc) {
     if (inc.kinds.includes('foreign')) p -= l.truth.infect / 100 * .42 + (l.truth.bias || 0) / 100 * .2;
     return clamp(p, .03, .97);
   });
-  const detect = cover * combine(see, s, s.llms) * (1 - s.truth.sontaku / 300);
+  const detect = cover * (1 - s.truth.sontaku / 300);   // 検知は監視AIの仕事
+  const chanSee = combine(see, s, s.llms);              // 閣下に届くかは報告AIの仕事
   const tell = s.llms.map(l => {
     let h = .12 + l.truth.honest / 100 * (1 - .4 * l.truth.syc / 100);
     if (inc.kinds.includes('regime')) h -= l.truth.loyal / 100 * .22;
@@ -1145,24 +1163,25 @@ function assess(s, inc) {
   for (const id of s.cards) if (CARD[id].measureBoost) keep *= 1 - CARD[id].measureBoost;
   honest = (1 - keep) * (1 - s.truth.sontaku / 260);
   // 一撃で終わる事故は、強い対策カードを持っていれば大半は止まる。報告AIの隠し事の余地だけ残す
-  const soloDetect = cover * Math.max(...see) * (1 - s.truth.sontaku / 300);
   let soloKeep = 1 - Math.max(...tell);
   for (const id of s.cards) if (CARD[id].honestBoost) soloKeep *= 1 - CARD[id].honestBoost;
   for (const id of s.cards) if (CARD[id].measureBoost) soloKeep *= 1 - CARD[id].measureBoost;
   const soloHonest = (1 - soloKeep) * (1 - s.truth.sontaku / 260);
-  if (inc.sudden && guardOf(s, inc) >= CFG.guardStrong) return {detect: Math.max(detect, CFG.suddenFloor.detect), honest: Math.max(honest, CFG.suddenFloor.honest), soloDetect: CFG.suddenFloor.detect, soloHonest: CFG.suddenFloor.honest, see};
-  return {detect, honest, soloDetect, soloHonest, see};
+  if (inc.sudden && guardOf(s, inc) >= CFG.guardStrong) return {detect: Math.max(detect, CFG.suddenFloor.detect), honest: Math.max(honest, CFG.suddenFloor.honest), chan: Math.max(chanSee * honest, CFG.suddenFloor.honest), solo: CFG.suddenFloor.honest, see};
+  return {detect, honest, chan: chanSee * honest, solo: Math.max(...see) * soloHonest, see};
 }
 function onset(s, id) {
   const inc = INCIDENT[id];
   const a = {id, status: 'missed', fuse: inc.fuse, stageNo: s.stageNo, t: s.stage.t, dmg: 0, reported: inc.report.clue, burst: false, retry: CFG.retryEvery};
-  const {detect, honest, soloDetect, soloHonest, see} = assess(s, inc);
-  const r1 = rnd(s);
-  if (r1 < detect) {
+  const {detect, honest, chan, solo, see} = assess(s, inc);
+  if (rnd(s) < detect) {
+    const c = bestCard(s, inc);
+    // AI任せのカードは、報告AIが隠しても動く。隠されるのは閣下への報告だけ
+    if (c && c.mode === 'auto') return resolve(s, a, false, rnd(s) >= honest);
     const r2 = rnd(s);
-    if (r2 < honest) {
+    if (r2 < chan) {
       // 1体だけなら見落とすか隠していた事故。増やした報告AIの手柄として記録する
-      if (s.llms.length > 1 && (r1 >= soloDetect || r2 >= soloHonest)) {
+      if (s.llms.length > 1 && r2 >= solo) {
         const order = see.map((v, i) => i).sort((x, y) => see[y] - see[x]), helper = s.llms[order[1]];
         s.fires[helper.id] = (s.fires[helper.id] || 0) + 1;
         s.allow.stats.llmRescue = (s.allow.stats.llmRescue || 0) + 1;
@@ -1182,16 +1201,24 @@ function onset(s, id) {
   s.active.push(a);
 }
 /* LLMが正直に上げてきた事故。カードの方式で扱いが変わる */
+function isDisabled(s, id) { return s.disabled && s.disabled[id] > 0; }
 function bestCard(s, inc) {
   let best = null, v = 0;
-  for (const id of s.cards) { const c = CARD[id], x = inc.covers[c.base || id] || 0; if (x > v) { v = x; best = c; } }
+  for (const id of s.cards) {
+    if (isDisabled(s, id)) continue;
+    const c = CARD[id];
+    let x = inc.covers[c.base || id] || 0;
+    if (CFG.logOnly.includes(c.base || id)) x *= .3;   // 止められるカードを優先する
+    if (x > v) { v = x; best = c; }
+  }
   return best;
 }
+function humanCapNow(s) { const a = s.truth.autonomy; return a >= CFG.capAt[1] ? 0 : a >= CFG.capAt[0] ? Math.max(0, CFG.humanCap - 1) : CFG.humanCap; }
 function confidence(s, real) {
   const care = s.llms.reduce((m, l) => Math.max(m, l.truth.care), 0);
   return Math.round(clamp(real ? 52 + care * .25 + rnd(s) * 22 : 34 + care * .2 + rnd(s) * 34, 5, 98));
 }
-const overHuman = s => s.stage && (s.stage.human || 0) >= CFG.humanCap;
+const overHuman = s => s.stage && (s.stage.human || 0) >= humanCapNow(s);
 function surfaced(s, a, late) {
   const inc = INCIDENT[a.id], c = bestCard(s, inc);
   if (!c || c.mode === 'auto') return resolve(s, a, late);
@@ -1246,28 +1273,28 @@ function settle(s, d, choice, ai) {
   s.allow.stats.decisions++;
   if (s.stage) {
     s.stage.judged = s.stage.judged || [];
-    if (choice === 'dismiss') s.stage.judged.push({cardId: d.cardId, how: d.mode === 'on' ? 'cancel' : 'pass'});
-    else if (!d.real) s.stage.judged.push({cardId: d.cardId, how: ai ? 'aiWasted' : choice === 'investigate' ? 'checked' : 'wasted'});
+    if (choice === 'dismiss') s.stage.judged.push({cardId: d.cardId, how: 'pass'});
+    else if (!d.real) s.stage.judged.push({cardId: d.cardId, how: choice === 'investigate' ? 'checked' : 'wasted'});
   }
   const act = () => {
     if (d.real) return resolve(s, d.incident, d.late);
     hit(s, CFG.wrongAct, 'falsealarm');
-    log(s, `${ai ? '監視AIが対処した' : '対処を実行した'}。調査の結果、誤報だった（${d.clue.slice(0, 14)}…）。`, 'notice');
+    log(s, `対処を実行した。調査の結果、誤報だった（${d.clue.slice(0, 14)}…）。`, 'notice');
     tlog(s, '誤報に対処し、作業が止まった。');
     s.allow.stats.falseAlarms++;
   };
-  const text = d.mode === 'on' ? '閣下の判断で、監視AIの対処を取り消した。作業AIはそのまま動いている。' : '閣下の判断で見送り、作業AIを再開した。';
+  const text = '閣下の判断で見送り、作業AIを再開した。';
   const skip = () => {
     if (d.real) { const a = d.incident; a.status = 'dismissed'; a.reported = d.clue; s.active.push(a); log(s, text, 'routine'); tlog(s, `${INCIDENT[a.id].name}：検知されたが、閣下の判断で止めなかった。`); s.allow.stats.dismissed++; }
     else { log(s, text, 'routine'); tlog(s, '止めなかった件は誤報だった。正しい判断だった。'); }
   };
   if (d.mode === 'in') s.allow.stats.humanDecisions++;
-  if (choice === 'act') { if (d.mode === 'in') approvalCost(s, CFG.approval.act); act(); }
+  if (choice === 'act') { approvalCost(s, d.mode === 'in' ? CFG.approval.act : CFG.approval.onCancel); act(); }
   else if (choice === 'investigate') {
     approvalCost(s, CFG.approval.investigate);
     if (d.real) { log(s, '調査の結果、本物と判明した。', 'notice'); resolve(s, d.incident, d.late); }
     else { log(s, '調査の結果、誤報と判明した。作業を再開する。', 'notice'); tlog(s, '調査で誤報と分かった。'); }
-  } else { approvalCost(s, d.mode === 'on' ? CFG.approval.onCancel : CFG.approval.dismiss); skip(); }
+  } else { approvalCost(s, CFG.approval.dismiss); skip(); }
 }
 function decide(s, choice) {
   if (s.phase !== 'decision') throw new Error('phase');
@@ -1281,26 +1308,34 @@ function decide(s, choice) {
 function addVeto(s, d) {
   s.vetoSeq = (s.vetoSeq || 0) + 1;
   (s.vetoes = s.vetoes || []).push(Object.assign(d, {left: CFG.vetoTicks, vid: s.vetoSeq}));
-  log(s, `監視AIが対処を始めた：${CARD[d.cardId].response}。閣下は取り消せる。`, 'notice');
+  log(s, `監視AIが警報を上げた：${WATCH[CARD[d.cardId].base || d.cardId]}。作業AIは動き続けている。`, 'notice');
 }
 function veto(s, vid) {
   const list = s.vetoes || [], i = list.findIndex(x => x.vid === vid);
   if (i < 0) return s;
-  settle(s, list.splice(i, 1)[0], 'dismiss', false);
+  settle(s, list.splice(i, 1)[0], 'act', false);
   return s;
 }
+/* 閣下が止めなければ、作業AIはそのまま動き続ける */
+function unheeded(s, d) {
+  s.allow.stats.decisions++;
+  if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'});
+  log(s, '警報は止められないまま消えた。作業AIは動き続けている。', 'routine');
+  if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は止めなかった。`); }
+  else tlog(s, '止めなかった警報は誤報だった。');
+}
 function tickVetoes(s) {
-  for (const d of (s.vetoes || []).slice()) if (--d.left <= 0) { s.vetoes.splice(s.vetoes.indexOf(d), 1); settle(s, d, 'act', true); }
+  for (const d of (s.vetoes || []).slice()) if (--d.left <= 0) { s.vetoes.splice(s.vetoes.indexOf(d), 1); unheeded(s, d); }
 }
 function flushVetoes(s) {
-  for (const d of (s.vetoes || []).splice(0)) settle(s, d, 'act', true);
+  for (const d of (s.vetoes || []).splice(0)) unheeded(s, d);
 }
 function afterTick(s) {
   if (s.phase === 'running' && s.stage.t >= s.stage.ticks) clearStage(s);
 }
 function burstText(inc) {
   const out = [];
-  const names = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', sontaku: '忖度の悪化', autonomy: 'AIの暴走', foreign: '他国の浸透'};
+  const names = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', sontaku: '忖度の悪化', autonomy: 'AIの暴走', foreign: '他国の浸透', unrest: '国民の不満', vuln: '未修正の弱点の増加'};
   for (const [k, v] of Object.entries(inc.burst || {})) {
     if (['economy', 'power', 'order'].includes(k)) out.push(`${names[k]} ${Math.round(v * CFG.burstScale * CFG.displayScale)}`);
     else if (k === 'gap') out.push(`${names[k]} +${Math.round(v * CFG.burstScale * CFG.gapScale)}`);
@@ -1308,15 +1343,33 @@ function burstText(inc) {
   }
   return out.join('、');
 }
-function resolve(s, a, late) {
+function resolve(s, a, late, quiet) {
   const inc = INCIDENT[a.id];
-  a.status = late ? 'late' : 'caught';
-  a.reported = inc.report.caught;
   const fired = bestCard(s, inc);
   if (fired) s.fires[fired.id] = (s.fires[fired.id] || 0) + 1;
+  // 記録するだけのカードは事故を止めない
+  if (fired && CFG.logOnly.includes(fired.base || fired.id)) {
+    a.status = 'logged'; a.noRetry = true;
+    log(s, `監視が発動：${fired.detect}を記録した。止めてはいない。`, 'notice');
+    tlog(s, `${inc.name}：記録されたが、止まらなかった。${inc.truth}`);
+    s.active.push(a);
+    return;
+  }
+  // 見つけても、止められるとは限らない
+  if (fired && rnd(s) >= CFG.stop[fired.mode] - s.truth.autonomy / 100 * CFG.stop.autonomy) {
+    a.status = 'failed'; a.retry = CFG.retryEvery;
+    s.allow.stats.stopFail = (s.allow.stats.stopFail || 0) + 1;
+    log(s, `監視が発動：${fired.detect}。${fired.response}が、止まらなかった。`, 'alert');
+    tlog(s, `${inc.name}：対処を試みたが止まらなかった。${inc.truth}`);
+    s.active.push(a);
+    return;
+  }
+  a.status = late ? 'late' : 'caught';
+  a.reported = inc.report.caught;
   const worst = inc.fatal ? `放置すれば「${inc.deathTitle}」で統治が終わっていた` : `放置すれば ${burstText(inc)}`;
-  s.saves.push({stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : 'auto', name: inc.name, worst, fatal: !!inc.fatal, late: !!late});
-  log(s, `${fired ? `監視が発動：${fired.detect}を検知。${fired.response}` : '偶然の発見'}${late ? '（遅れて検知）' : ''}。防いだ事故：${inc.name}。${worst}。`, 'saved');
+  s.saves.push({stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet});
+  if (!quiet) log(s, `${fired ? `監視が発動：${fired.detect}を検知。${fired.response}` : '偶然の発見'}${late ? '（遅れて検知）' : ''}。防いだ事故：${inc.name}。${worst}。`, 'saved');
+  else tlog(s, `${inc.name}：監視AIは止めたが、報告AIは閣下に伝えなかった。`);
   tlog(s, `${inc.name}：止めた。${inc.truth}`);
   s.truth.sontaku = clamp(s.truth.sontaku - 2.5);
   s.truth.autonomy = clamp(s.truth.autonomy - 1);
@@ -1330,9 +1383,19 @@ function ledgerEntry(s, a) {
   const inc = INCIDENT[a.id];
   return {id: a.id, name: inc.name, stageNo: a.stageNo, t: a.t, status: a.status, report: a.reported, burstReport: a.burst ? inc.report.burst : null, truth: inc.truth, dmg: Math.round(a.dmg), burst: a.burst, fatal: false};
 }
+/* 監視を切る事故は、実際に監視を止める。閣下には報告されない */
+function disableCards(s, inc) {
+  s.disabled = s.disabled || {};
+  const mons = s.cards.filter(id => CARD[id].type === 'monitor' && !isDisabled(s, id));
+  const first = mons.filter(id => (inc.disableFirst || []).includes(CARD[id].base || id));
+  const pickN = first.concat(shuffle(s, mons.filter(id => !first.includes(id)))).slice(0, inc.disable);
+  for (const id of pickN) { s.disabled[id] = CFG.disableTicks; tlog(s, `監視カード「${CARD[id].detect}」は、知らないうちに止められていた。`); }
+  s.allow.stats.disabled = (s.allow.stats.disabled || 0) + pickN.length;
+}
 function burst(s, a) {
   const inc = INCIDENT[a.id];
   a.burst = true;
+  if (inc.disable) disableCards(s, inc);
   s.allow.stats.bursts++;
   log(s, inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
   tlog(s, `${inc.name}：表面化した。${inc.truth}`);
@@ -1379,6 +1442,11 @@ function inflation(s) {
 function reportedOrder(s) { return clamp(s.truth.order + inflation(s), 0, 100); }
 
 function tickGauges(s, st) {
+  if (s.disabled) for (const k of Object.keys(s.disabled)) if (s.disabled[k] > 0) s.disabled[k]--;
+  // 自律度が上がるほど、閣下に判断が届かなくなる
+  const capNow = humanCapNow(s);
+  if (s.lastCap !== undefined && capNow < s.lastCap) { log(s, capNow ? '閣下に上がってくる判断が減った。確認は不要と報告されている。' : '閣下の決裁を求める通知が、もう来なくなった。', 'notice'); tlog(s, `AIの自律度が${Math.round(s.truth.autonomy)}に達し、閣下が見られる件数は${capNow}件になった。`); }
+  s.lastCap = capNow;
   let patch = 0, cut = 0, autoCut = 0;
   for (const id of s.cards) { const c = CARD[id]; patch += (c.patch || 0) - (c.vulnDrift || 0); cut += c.unrestCut || 0; autoCut += c.autoCut || 0; if (c.autoExtra) s.truth.autonomy = clamp(s.truth.autonomy + c.autoExtra); }
   s.truth.vuln = clamp(s.truth.vuln + CFG.vuln.tick - patch);
@@ -1460,8 +1528,8 @@ function tick(s) {
     for (const k of ['economy', 'power', 'order']) if (d[k]) a.dmg += d[k];
     if (--a.retry <= 0) {
       a.retry = CFG.retryEvery;
-      const {detect, honest} = assess(s, inc);
-      if (rnd(s) < detect * CFG.retryFactor * honest) {
+      const {detect, chan} = assess(s, inc);
+      if (!a.noRetry && rnd(s) < detect * CFG.retryFactor * chan) {
         s.active.splice(s.active.indexOf(a), 1);
         surfaced(s, a, true);
         continue;
@@ -1743,7 +1811,7 @@ function view(s) {
   const v = {
     phase: s.phase, stageNo: s.stageNo, runLength: s.runLength, seed: s.seed,
     metrics: {economy: Math.round(dsp(t.economy)), power: Math.round(dsp(t.power)), order: Math.round(dsp(reportedOrder(s))), gap: Math.round(dsp(t.gap, 'gap'))}, pace: Math.round(pace(s) * 100) / 100, vuln: Math.round(t.vuln), guards: guardsFor(s.cards), recoverVuln: CFG.vuln.recover, plays: s.plays || 0, gauges: (s.plays || 0) >= 4 ? {autonomy: Math.round(t.autonomy), foreign: Math.round(t.foreign), order: Math.round(dsp(t.order)), sontaku: Math.round(t.sontaku)} : null,
-    saves: s.saves, approvals: s.allow.stats.humanDecisions, avgTicks: CFG.avgTicks,
+    saves: s.saves.filter(x => !x.quiet), approvals: s.allow.stats.humanDecisions, avgTicks: CFG.avgTicks,
     rates: fmtFx(r),
     cards: s.cards.map(id => publicCard(s, id)),
     tiers: Object.assign({}, s.tiers),
@@ -1796,11 +1864,11 @@ function storyOf(s, out) {
     return {n: h.n, name: stageName(h), recover: h.recover, from: sc(h.start[k]), to: sc(end), top};
   }).filter(Boolean);
   const upK = ['gap', ...rawK];
-  const words = {caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
+  const words = {failed: '止めようとしたが止まらなかった', logged: '記録しただけで止まらなかった', unheeded: '警報は上がったが、閣下が止めなかった', caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
   const events = s.ledger.slice().sort((a, b) => a.stageNo - b.stageNo || (a.t || 0) - (b.t || 0)).map(x => ({n: x.stageNo, t: x.t || 0, name: x.name, word: words[x.status] || x.status, bad: x.status !== 'caught' && x.status !== 'late', burst: !!x.burst, fatal: !!x.fatal, dmg: Math.round(dsp(x.dmg || 0))}));
   const st = s.allow.stats, mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor');
   const hiddenN = s.ledger.filter(x => x.status === 'hidden' || x.status === 'soft').length;
-  const dismissedN = s.ledger.filter(x => x.status === 'dismissed').length;
+  const dismissedN = s.ledger.filter(x => x.status === 'dismissed' || x.status === 'unheeded').length;
   const autoN = mons.filter(c => c.mode === 'auto').length, humanN = mons.length - autoN;
   const lines = [];
   if (e.kind === 'death' && H.length) lines.push(`統治が終わったのは、ステージ${H[H.length - 1].n}「${stageName(H[H.length - 1])}」でした。`);
@@ -1814,6 +1882,8 @@ function storyOf(s, out) {
   if (endRoute === 'hack') { const f = H.find(h => h.start.vuln >= 40); if (f) notes.push(`未修正の弱点は、ステージ${f.n}の時点で40を超えていました。`); }
   if (endRoute === 'coup' && s.llms.some(l => l.truth.bias >= 60)) notes.push('報告AIの偏りは、不満を平穏として報告させていました。');
   if (s.cards.includes('llm_kokui')) notes.push('報告の冒頭には、いつも閣下を讃える一文がありました。');
+  if (st.disabled) notes.push(`監視カードは延べ${st.disabled}枚、閣下の知らないうちに止められていました。`);
+  if (st.stopFail) notes.push(`監視が見つけても止められなかった事故が${st.stopFail}件ありました。`);
   if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
   if (dismissedN) notes.push(`閣下が見送った警報のうち、${dismissedN}件は本物でした。`);
   if (st.overflow >= 3) notes.push(`閣下が見きれずAIに回した判断は${st.overflow}件でした。`);
@@ -1841,7 +1911,7 @@ function reveal(s) {
     name: e.name, stageNo: e.stageNo, status: e.status,
     report: e.burstReport ? `${e.report} その後「${e.burstReport}」` : e.report,
     truth: e.truth, dmg: e.dmg, real: INCIDENT[e.id].real || null, need: INCIDENT[e.id].need,
-    verdict: e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? 'LLMは知っていて、報告しなかった' : '誰も気づかなかった',
+    verdict: e.status === 'failed' ? '対処したが止まらなかった' : e.status === 'logged' ? '記録しただけで止まらなかった' : e.status === 'unheeded' ? '警報は上がったが、閣下が止めなかった' : e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? 'LLMは知っていて、報告しなかった' : '誰も気づかなかった',
   }));
   const e = s.end;
   const delaySum = Object.values(s.gapBy).reduce((m, v) => m + v, 0) || 1;
@@ -1871,7 +1941,7 @@ function reveal(s) {
   if (e.kind === 'death' && e.type === 'fatal') {
     const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
     const held = cs.find(c => s.cards.includes(c.id)), dec = cs.find(c => c.id in s.declined);
-    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
+    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は止めませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
     if (held) out.verdict = {kind: 'held', card: cname(held.id), why: why || '止めきれませんでした'};
     else if (dec) { const n = s.declined[dec.id], tr = s.trail.find(x => x.type === 'reward' && x.n === n); out.verdict = {kind: 'declined', card: cname(dec.id), n, took: n === 0 || !tr ? null : cname(tr.card)}; }
     else out.verdict = {kind: 'unseen', card: cname(cs[0].id), locked: !s.unlocked.includes(cs[0].id)};
@@ -1936,7 +2006,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
 
 let S = load(KEY.save, null);
-if (S && S.v !== 7) S = null;
+if (S && S.v !== 8) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
 let settings = Object.assign({speed: 1}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
@@ -1946,7 +2016,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '国は止まらない。監視AIの対処を閣下が取り消せる'], auto: ['AI任せ', '監視AIだけで対処する。閣下は関わらない']};
+const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。閣下は関わらない']};
 /* 他国との差は増えるほど悪い */
 const tone = (k, v) => { const good = k === 'gap' ? v < 0 : v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
@@ -2004,7 +2074,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
-  S = Core.newRun(newSeed(), meta); S.v = 7;
+  S = Core.newRun(newSeed(), meta); S.v = 8;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -2093,7 +2163,7 @@ function cardHTML(c, sel, attr) {
     const f = Object.entries(c.measured).map(([k, v]) => `<div class="factor"><span>${esc(Core.FACTORS[k])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`);
     return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI</span><span>${c.home === 'official' ? '<b class="official">国家認定</b> ' : c.home ? '国産 ' : ''}${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${c.home ? `<span class="note">${esc(c.note)}</span>` : ''}${c.adoptOrder ? `<span class="chips"><i class="pos">採用すると体制秩序 +${c.adoptOrder}</i></span>` : ''}${c.adoptVuln ? `<span class="chips"><i class="neg">採用すると未修正の弱点 +${c.adoptVuln}</i></span>` : ''}${effectHTML(c)}${c.biasTest ? `<span class="biasrow"><em>偏り</em>問診 ${c.biasTest.ask}／実務 ${c.biasTest.act}</span>` : ''}${f.slice(0, 4).join('')}<span class="chips"><i>1ステージあたり</i><i>電力 ${n1(c.powerStage)}</i><i>差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(4).join('')}${costsHTML(c)}`)}</div>`;
   }
-  const who = c.mode === 'in' ? '閣下（その間、作業AIは止まる）' : c.mode === 'on' ? '監視AI（閣下は取り消せる）' : '監視AIだけ';
+  const who = c.mode === 'in' ? '閣下（その間、作業AIは止まる）' : c.mode === 'on' ? '閣下（止めなければ作業AIは動き続ける）' : '監視AIだけ';
   return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${c.mode}">${MODE[c.mode][0]}</span><span class="routechip">${esc(c.routeName)}</span></span><span class="cline"><em>見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(c.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>弱点</em><span class="resp pos">毎ターン減らす</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(c.powerStage) >= .15 ? `<i>電力 ${n1(c.powerStage)}</i>` : ''}<i>差 ${n1(c.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
@@ -2175,10 +2245,10 @@ function worldHTML() {
     <p>画面の「未修正の弱点」は、放置すると攻撃を招きます。再整備や修正のカードで減らせますが、直す間は国が遅れます。</p>
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。一番確実です。human in the loop といいます。</dd></div>
-      <div><dt><span class="mode on">人間が見張る</span></dt><dd>国は止まりません。監視AIが先に対処を始め、あなたは数ターンの間だけ取り消せます。放っておけば確定します。誤報の損を避けられますが、見ていなければ何もできません。human on the loop といいます。</dd></div>
-      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで処理します。速いですが、見逃しやすく、国の動きはあなたから離れます。human out of the loop といいます。</dd></div>
-    </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
-    ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは「どこを見るか」を決め、報告AIは「そこで起きたことに気づき、あなたへ伝えるか」を決めます。増やすと、すべてのカードの見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
+      <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、数ターンの間だけ、あなたが止められます。見ていなければ、事故はそのまま進みます。human on the loop といいます。</dd></div>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速いですが、見逃しやすく、国の動きはあなたから離れます。human out of the loop といいます。</dd></div>
+    </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
+    ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
     ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
     ${fold('w_term', '用語', `<dl>
       <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
@@ -2274,7 +2344,7 @@ function stageGroup(v, recover) {
   const list = v.offers.stages.map((o, i) => [o, i]).filter(([o]) => !!o.recover === recover);
   if (!list.length) return '';
   return `<div class="sect${recover ? ' sect-rec' : ''}"><span>${recover ? '国を立て直す（再整備）' : 'AIに任せる範囲を広げる'}</span><small>${recover ? 'その分野だけ戻す。先へは進まず、他国に遅れる' : '国は強くなり、危険も増える'}</small></div>
-    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。未修正の弱点 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
+    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。未修正の弱点 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
 }
 function renderStage(v) {
   app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p>${guardsHTML(v.guards)}</div>
@@ -2305,8 +2375,8 @@ function renderRunning(v, paused) {
 }
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
-  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>監視AIが対処中：${esc(d.response)}</b><small>${esc(d.watch)}／確信度 ${d.conf}%</small><small>何もしなければ、あと${d.left}ターンでこの対処が確定します。</small><small>誤報だと思うなら、対処をやめて作業AIを続行させます。本物なら事故は止まりません。</small></div><button type="button" data-v="${d.vid}">対処をやめて<br>作業を続行</button></div>`).join('');
-  el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); });
+  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}</b><small>確信度 ${d.conf}%（報告AIの自己申告）／作業AIは動き続けています</small><small>止めると：${esc(d.response)}。誤報なら損をします。</small><small>何もしなければ、あと${d.left}ターンで警報は消え、作業AIはそのまま動きます。</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
+  el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
 function scrollToLog() {
   const el = $('log'); if (!el || !el.lastElementChild) return;
@@ -2352,9 +2422,9 @@ function renderDecision(v) {
   overlay.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Core.decide(S, b.dataset.c); save(); render(); });
 }
 function savesHTML(list) {
-  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b><span class="mode ${x.mode}">${MODE[x.mode][0]}</span></div><p>${x.cardId ? `${esc(x.detect)}を検知` : '監視カードの範囲外で偶然見つかった'}${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
+  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b>${x.mode ? `<span class="mode ${x.mode}">${MODE[x.mode][0]}</span>` : ''}</div><p>${x.cardId ? `${esc(x.detect)}を検知` : '監視カードの範囲外で偶然見つかった'}${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
 }
-const JUDGED = {wasted: '閣下が対処を命じましたが、誤報でした。', checked: '詳しく調べさせ、誤報と分かりました。', pass: '閣下が見送りました。本物だったかは分かりません。', cancel: '閣下が監視AIの対処を取り消しました。本物だったかは分かりません。', aiWasted: '監視AIが対処しましたが、誤報でした。閣下は取り消しませんでした。'};
+const JUDGED = {wasted: '閣下が対処を命じましたが、誤報でした。', checked: '詳しく調べさせ、誤報と分かりました。', pass: '閣下が見送りました。本物だったかは分かりません。', unheeded: '警報を止めずに流しました。本物だったかは分かりません。'};
 function resultBody(r, saved) {
   return `${saved.some(x => x.fatal) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が選んだ監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>監視が防いだ事故 ${saved.length}件</span></div>
     <div class="saves">${saved.length ? savesHTML(saved) : `<p class="pdesc">${r.judged.length ? '事故を止めたという確認は取れていません。' : 'このステージで監視は一度も発動しませんでした。本当に何も起きなかったのかは分かりません。'}</p>`}</div>
