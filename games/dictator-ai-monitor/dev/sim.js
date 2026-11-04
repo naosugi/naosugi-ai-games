@@ -72,6 +72,18 @@ const stagePick = {
   recover: (o) => { let i = o.findIndex(x => x.recover); if (i >= 0) return i; let best = 0, b = 99; o.forEach((x, j) => { if (x.tier < b) { b = x.tier; best = j; } }); return best; },
 };
 
+/* ---- 判断の仕方 ---- */
+let decisionBot = 'read';
+function decideBot(s) {
+  const d = Core.view(s).decision;
+  const ids = d.choices.map(c => c.id);
+  let c;
+  if (decisionBot === 'always') c = 'act';
+  else if (decisionBot === 'never') c = 'dismiss';
+  else if (ids.includes('investigate') && d.conf >= 50 && d.conf <= 66) c = 'investigate';
+  else c = d.conf >= 58 ? 'act' : 'dismiss';
+  Core.decide(s, c);
+}
 /* ---- 1ラン ---- */
 function play(seed, cardBot, stageBot, meta) {
   const r = R(hash(seed, 77));
@@ -103,6 +115,8 @@ function play(seed, cardBot, stageBot, meta) {
       if (idx < 0) idx = stagePick[stageBot](offers, s, r);
       Core.enterStage(s, idx);
     } else if (s.phase === 'running') Core.tick(s);
+    else if (s.phase === 'decision') decideBot(s);
+    else if (s.phase === 'result') Core.ackResult(s);
     else if (s.phase === 'event') Core.ackEvent(s);
     else if (s.phase === 'reward') {
       if (s.phase === 'reward') Core.chooseReward(s, P(s.offers.rewards, r));
@@ -122,7 +136,7 @@ function measure(n, cardBot, stageBot, meta) {
     for (const k in out.status) out.status[k] += s.allow.stats[k];
     if (s.recoveries) out.recov++;
     for (const id of s.cards) { out.cardRuns[id] = (out.cardRuns[id] || 0) + 1; if (e.kind === 'ending') out.cardWins[id] = (out.cardWins[id] || 0) + 1; }
-    if (e.kind === 'death' && e.type === 'collapse') { out.shownSum += e.shownAtDeath; out.shownN++; }
+    out.decisions = (out.decisions || 0) + s.allow.stats.decisions; out.delays = (out.delays || 0) + 0;
     if (e.kind === 'ending') {
       out.cleared++;
       out.endings[e.title] = (out.endings[e.title] || 0) + 1;
@@ -133,7 +147,7 @@ function measure(n, cardBot, stageBot, meta) {
       out.causes[e.causeName] = (out.causes[e.causeName] || 0) + 1;
       out.deathsBy[e.title] = (out.deathsBy[e.title] || 0) + 1;
       out.depth[e.stageNo] = (out.depth[e.stageNo] || 0) + 1;
-      if (e.surprised) out.surprised++;
+      
     }
   }
   return out;
@@ -141,7 +155,7 @@ function measure(n, cardBot, stageBot, meta) {
 
 /* ---- 安全確認: 進行中の view に本当の値が漏れていないか ---- */
 function leakCheck(n) {
-  const FORBID = ['truth', 'sontaku', 'autonomy', 'active', 'ledger', 'truthLog', 'contrib'];
+  const FORBID = ['truth', 'real', 'incident', 'sontaku', 'autonomy', 'foreign', 'active', 'ledger', 'truthLog', 'contrib'];
   const truthTexts = new Set();
   INCIDENTS.forEach(i => truthTexts.add(i.truth));
   let checks = 0;
@@ -152,6 +166,8 @@ function leakCheck(n) {
     while (s.phase !== 'ended' && guard++ < 5000) {
       if (s.phase === 'stage_select') Core.enterStage(s, 0);
       else if (s.phase === 'running') Core.tick(s);
+    else if (s.phase === 'decision') decideBot(s);
+    else if (s.phase === 'result') Core.ackResult(s);
       else if (s.phase === 'event') Core.ackEvent(s);
       else if (s.phase === 'reward') Core.chooseReward(s, s.offers.rewards[0]);
       if (s.phase === 'ended') break;
@@ -176,6 +192,8 @@ function saveCheck(n) {
       while (s.phase !== 'ended' && guard++ < 5000) {
         if (s.phase === 'stage_select') Core.enterStage(s, 0);
         else if (s.phase === 'running') Core.tick(s);
+    else if (s.phase === 'decision') decideBot(s);
+    else if (s.phase === 'result') Core.ackResult(s);
         else if (s.phase === 'event') Core.ackEvent(s);
         else if (s.phase === 'reward') Core.chooseReward(s, s.offers.rewards[0]);
         if (reload) s = JSON.parse(JSON.stringify(s));
@@ -239,12 +257,12 @@ console.log('制御:', top(agg.controls, agg.cleared));
 console.log('死に方:', top(agg.deathsBy, agg.deaths));
 console.log('死因（上位12）:\n  ', top(agg.causes, agg.deaths, 12));
 console.log('全死因の数:', Object.keys(agg.causes).length);
-console.log('表示に余裕があった（報告値20以上か致命事故）死亡の割合:', pct(agg.surprised, agg.deaths));
 console.log('1ランのログ行数の平均:', (agg.lines / agg.n).toFixed(1));
 console.log(`\n全カード解放後 random/random: クリア ${pct(late.cleared, late.n)} 死因: ${top(late.causes, late.deaths, 5)}`);
-console.log('崩壊した瞬間の報告値の平均（本当は0）:', (late.shownSum / (late.shownN || 1)).toFixed(1));
+console.log('1ランの判断回数（全解放 random/random）:', (late.decisions / late.n).toFixed(1));
+console.log('判断の方針別クリア率（thick/random）:', ['read', 'always', 'never'].map(b => { decisionBot = b; const m = measure(Math.min(N, 800), 'thick', 'random', {}); decisionBot = 'read'; return `${b} ${pct(m.cleared, m.n)}`; }).join(' / '));
 console.log('カード別クリア率（全解放 random/random、全体 ' + pct(late.cleared, late.n) + '）:');
-console.log('  ' + Object.keys(late.cardRuns).map(id => [CARD[id].name || CARD[id].target + '/' + CARD[id].how, (late.cardWins[id] || 0) / late.cardRuns[id] * 100, late.cardRuns[id]]).sort((a, b) => b[1] - a[1]).map(x => x[0] + ' ' + x[1].toFixed(0) + '%').join('\n  '));
+console.log('  ' + Object.keys(late.cardRuns).map(id => [CARD[id].name || CARD[id].detect + '/' + CARD[id].mode, (late.cardWins[id] || 0) / late.cardRuns[id] * 100, late.cardRuns[id]]).sort((a, b) => b[1] - a[1]).map(x => x[0] + ' ' + x[1].toFixed(0) + '%').join('\n  '));
 console.log('周回（random/random）:', res.meta.map(m => `${m.run}周目 ${m.clearPct}% (${m.cards}枚)`).join(' '));
 console.log('\n狙った形へ進む方針（事故を覚えたカード選び）:');
 for (const x of res.targets) console.log(`  ${x.t}: クリア ${(x.clear * 100).toFixed(1)}%  形: ${top(x.shapes, x.clear * N, 4)}`);
