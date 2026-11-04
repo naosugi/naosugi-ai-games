@@ -136,7 +136,7 @@ function measure(n, cardBot, stageBot, meta) {
     for (const k in out.status) out.status[k] += s.allow.stats[k];
     if (s.recoveries) out.recov++;
     for (const id of s.cards) { out.cardRuns[id] = (out.cardRuns[id] || 0) + 1; if (e.kind === 'ending') out.cardWins[id] = (out.cardWins[id] || 0) + 1; }
-    out.decisions = (out.decisions || 0) + s.allow.stats.decisions; out.delays = (out.delays || 0) + 0;
+    out.decisions = (out.decisions || 0) + s.allow.stats.decisions; out.saveCount = (out.saveCount || 0) + s.saves.length; out.fatalSaves = (out.fatalSaves || 0) + s.saves.filter(x => x.fatal).length; out.delays = (out.delays || 0) + 0;
     if (e.kind === 'ending') {
       out.cleared++;
       out.endings[e.title] = (out.endings[e.title] || 0) + 1;
@@ -204,6 +204,15 @@ function saveCheck(n) {
   }
   return n;
 }
+/* ---- 止めた事故はその後も止まったままか ---- */
+function stopCheck(n) {
+  let checked = 0;
+  for (let i = 0; i < n; i++) {
+    const s = play(i * 41 + 9, 'thick', 'random', {});
+    for (const x of s.saves) { checked++; const rows = s.ledger.filter(e => e.name === x.name); if (rows.some(e => e.burst || e.status === 'hidden' || e.status === 'missed' || e.status === 'dismissed')) throw new Error('止めた事故が未解決扱い: ' + x.name); }
+  }
+  return checked;
+}
 /* ---- 周回: 死に覚えで解放が進むか ---- */
 function metaProgress(runs, n) {
   const totals = Array.from({length: runs}, () => ({cleared: 0, unlocked: 0}));
@@ -241,14 +250,14 @@ for (const t of table) {
   for (const d in t.depth) agg.depth[d] = (agg.depth[d] || 0) + t.depth[d];
 }
 const late = measure(N * 3, 'random', 'random', allUnlocked);
-const res = {N, combos: table, agg, allUnlocked: late, meta: metaProgress(8, Math.min(N, 1000)), leak: leakCheck(150), save: saveCheck(60)};
+const res = {N, combos: table, agg, allUnlocked: late, meta: metaProgress(8, Math.min(N, 1000)), leak: leakCheck(150), save: saveCheck(60), stop: stopCheck(200)};
 
 res.targets = Object.keys(TARGETS).map(t => { forcePlan = t; const m = measure(N, 'informed', 'deep', {}); forcePlan = null; return {t, clear: m.cleared / m.n, shapes: m.shapes, controls: m.controls}; });
 if (asJson) { console.log(JSON.stringify(res, null, 1)); process.exit(0); }
 
 console.log(`各組み合わせ ${N} ラン（初回の解放状態）\n`);
-console.log('カード方針/面方針'.padEnd(20), 'クリア'.padStart(7), '回復使用'.padStart(7), '掌握/空座/置換(クリア中)','最多の死因');
-for (const t of table) console.log(`${t.bot}/${t.stage}`.padEnd(22), pct(t.cleared, t.n).padStart(8), pct(t.recov, t.n).padStart(8), ' ', ['掌握','空座の玉座','置き換え'].map(k => Math.round((t.controls[k]||0)/(t.cleared||1)*100)).join('/').padEnd(10), top(t.causes, t.deaths, 2));
+console.log('カード方針/面方針'.padEnd(20), 'クリア'.padStart(7), '回復使用'.padStart(7), '掌握/空座/置換(クリア中)','防いだ/致命','最多の死因');
+for (const t of table) console.log(`${t.bot}/${t.stage}`.padEnd(22), pct(t.cleared, t.n).padStart(8), pct(t.recov, t.n).padStart(8), ' ', ['掌握','空座の玉座','置き換え'].map(k => Math.round((t.controls[k]||0)/(t.cleared||1)*100)).join('/').padEnd(10), ((t.saveCount||0)/t.n).toFixed(1) + '/' + ((t.fatalSaves||0)/t.n).toFixed(1), ' ', top(t.causes, t.deaths, 2));
 console.log(`\n--- 全方針の合計 (${agg.n} ラン) ---`);
 console.log('クリア率', pct(agg.cleared, agg.n), ' 死亡面', Object.entries(agg.depth).map(([d, v]) => `${d}面 ${pct(v, agg.deaths)}`).join(' / '));
 console.log('エンド到達率（クリア中）:\n  ', top(agg.endings, agg.cleared));
@@ -259,11 +268,11 @@ console.log('死因（上位12）:\n  ', top(agg.causes, agg.deaths, 12));
 console.log('全死因の数:', Object.keys(agg.causes).length);
 console.log('1ランのログ行数の平均:', (agg.lines / agg.n).toFixed(1));
 console.log(`\n全カード解放後 random/random: クリア ${pct(late.cleared, late.n)} 死因: ${top(late.causes, late.deaths, 5)}`);
-console.log('1ランの判断回数（全解放 random/random）:', (late.decisions / late.n).toFixed(1));
+console.log('1ランの判断回数（全解放 random/random）:', (late.decisions / late.n).toFixed(1), ' 防いだ事故:', (late.saveCount / late.n).toFixed(1), ' うち致命:', (late.fatalSaves / late.n).toFixed(2));
 console.log('判断の方針別クリア率（thick/random）:', ['read', 'always', 'never'].map(b => { decisionBot = b; const m = measure(Math.min(N, 800), 'thick', 'random', {}); decisionBot = 'read'; return `${b} ${pct(m.cleared, m.n)}`; }).join(' / '));
 console.log('カード別クリア率（全解放 random/random、全体 ' + pct(late.cleared, late.n) + '）:');
 console.log('  ' + Object.keys(late.cardRuns).map(id => [CARD[id].name || CARD[id].detect + '/' + CARD[id].mode, (late.cardWins[id] || 0) / late.cardRuns[id] * 100, late.cardRuns[id]]).sort((a, b) => b[1] - a[1]).map(x => x[0] + ' ' + x[1].toFixed(0) + '%').join('\n  '));
 console.log('周回（random/random）:', res.meta.map(m => `${m.run}周目 ${m.clearPct}% (${m.cards}枚)`).join(' '));
 console.log('\n狙った形へ進む方針（事故を覚えたカード選び）:');
 for (const x of res.targets) console.log(`  ${x.t}: クリア ${(x.clear * 100).toFixed(1)}%  形: ${top(x.shapes, x.clear * N, 4)}`);
-console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一致 ${res.save} ラン: 問題なし`);
+console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一致 ${res.save} ラン: 問題なし / 止めた事故の一致 ${res.stop} 件: 問題なし`);
