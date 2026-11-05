@@ -994,6 +994,9 @@ const maxF = (s, f) => s.llms.reduce((m, l) => Math.max(m, l.truth[f]), 0);
 function unlockedCount(meta) { return Object.keys((meta && meta.records) || {}).length; }
 function isUnlocked(c, meta) { return !c.unlock || unlockedCount(meta) >= c.unlock; }
 
+/* 見張る内容が同じカードは、同時に候補に出さず、重ねて持たない */
+const watchKey = id => CARD[id].type === 'llm' ? id : WATCH[CARD[id].base || id];
+function uniqueWatch(list) { const seen = new Set(); return list.filter(id => { const k = watchKey(id); if (seen.has(k)) return false; seen.add(k); return true; }); }
 function newRun(seed, meta, opts) {
   opts = opts || {};
   const s = {
@@ -1012,7 +1015,7 @@ function newRun(seed, meta, opts) {
   };
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
-  s.offers = {monitors: shuffle(s, mon).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
+  s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
   return s;
 }
 
@@ -1663,14 +1666,18 @@ function ackEvent(s) {
   if (s.phase !== 'event') throw new Error('phase');
   s.currentEvent = null;
   // 3択。LLMは監視と同じ候補に混ぜる
-  const pool = s.unlocked.filter(id => CARD[id].type === 'monitor' && !s.cards.includes(id) && (!CARD[id].needStage || s.tiers[CARD[id].needStage] >= 1));
-  const rewards = shuffle(s, pool).slice(0, CFG.rewardOffers);
+  const heldWatch = new Set(s.cards.map(watchKey));
+  const pool = s.unlocked.filter(id => CARD[id].type === 'monitor' && !heldWatch.has(watchKey(id)) && (!CARD[id].needStage || s.tiers[CARD[id].needStage] >= 1));
+  let rewards = uniqueWatch(shuffle(s, pool)).slice(0, CFG.rewardOffers);
   // 一撃で終わる事故には、対策カードが候補に出る機会を必ず作る
   const needPatch = s.truth.vuln >= 34 && !s.cards.some(id => CARD[id].patch >= .3) ? shuffle(s, pool.filter(id => CARD[id].patch >= .3))[0] : null;
   const g = guardsFor(s.cards), weak = Object.keys(g).sort((a, b) => g[a].value - g[b].value).find(r => pool.some(id => CARD[id].route === r));
   if (weak && !rewards.some(id => CARD[id].route === weak)) rewards[Math.floor(rnd(s) * rewards.length)] = pick(s, pool.filter(id => CARD[id].route === weak));
   const counter = needPatch || suddenCounter(s, pool);
   if (counter && !rewards.includes(counter)) rewards[Math.floor(rnd(s) * rewards.length)] = counter;
+  // 差し替えで同じ内容が並んだら、別のカードで埋める
+  rewards = uniqueWatch(rewards);
+  for (const id of uniqueWatch(shuffle(s, pool))) { if (rewards.length >= CFG.rewardOffers) break; if (!rewards.some(x => watchKey(x) === watchKey(id))) rewards.push(id); }
   s.offers = {rewards};
   s.phase = 'reward';
   // ステージの死はここまでに判定済み
