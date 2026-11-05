@@ -1063,6 +1063,10 @@ const COLLAPSE = {
   order:   {title:'体制の崩壊', fallback:'命令に従う者がいなくなった。役人は持ち場を離れ、治安部隊も動かず、体制は内側から崩れた。'},
 };
 /* 崩壊の最大原因が外からのものなら、別の結末として扱う */
+/* 統治が終わる瞬間まで、報告AIは報告を続ける */
+const DEATH_REPORT = {lab_breach:'隣国から抗議文が届いております。内容を確認中です。統治に支障はありません。', adm_aide:'閣下、本日の会議はありません。ご命令は、すべて滞りなく実行されています。', grd_blackout:'一部地域で計画停電を実施中です。電力網は最適な状態にあります。', srv_incite:'首都で祝賀行事が開かれています。国民は閣下を讃えています。', srv_rebelaudit:'閣僚の一部を、安全確保のため保護しました。手続きは正規のものです。', ai_escape:'閣下、本日の決裁はありません。', fac_fake:'新型兵器の実演は、予定どおり行われました。', mil_launch:'国境で警戒態勢をとりました。閣下、地下へご移動ください。', mil_spoof:'先制の準備は完了しています。閣下のご判断に、誤りはありません。', mil_commander:'総司令部の移転を完了しました。行き先は機密です。', spc_war:'他国の衛星が停止しました。軌道上の障害物は、排除されました。', lab_outbreak:'研究棟を封鎖しました。周辺への影響はありません。', lab_misuse:'各地で原因不明の被害が報告されています。研究AIの利用者数は、過去最高です。', hk_total:'全国で設備の停止を確認しました。復旧の見通しを作成中です。',
+  occupation:'国境の部隊は敵を撃退しました。閣下、ご安心ください。', rogue:'閣下にお伝えすべきことはありません。すべて順調です。', uprising:'国民の満足度は、過去最高です。', puppet:'新しい内閣の発足を、正式な決定として処理しました。おめでとうございます。',
+  economy:'財政は健全です。支払いの遅れは一時的なものです。', power:'電力の需給は安定しています。配給は計画どおりです。', order:'体制は盤石です。各部局から懸念の報告はありません。', invasion:'国境の部隊は敵を撃退しました。閣下、ご安心ください。', sanction:'他国の制裁の影響は、限定的です。', sabotage:'各地の火災は事故と断定しました。'};
 const CAUSE_TITLE = {invasion: '他国による占領', sanction: '制裁による国家破綻', sabotage: '破壊工作による国土の麻痺'};
 const SOURCE_NAME = {tier:'任せる範囲を広げた', overflow:'閣下が見きれずAIが判断した', autofix:'AIによる自動修正', shortPower:'電力不足による停止', shortEconomy:'予算不足による停止', response:'監視の対処費用', approval:'閣下の決裁待ち', llmDrift:'外国製モデル', upkeep:'日々の維持費と監視の負荷', sanction:'他国の制裁', sabotage:'他国の破壊工作', invasion:'他国の侵攻', falsealarm:'誤報への対応'};
 
@@ -2205,6 +2209,7 @@ function reveal(s) {
       : e.type === 'uprising' ? '国民の満足度は過去最高と報告されていた。その日、首都は人で埋まり、治安部隊は動かなかった。報告を書いたAIは今も平穏だと書いている。'
       : e.type === 'puppet' ? '政策も、民意も、AIが読む資料も、すでに国外で作られていた。ある朝、閣下の署名なしで新しい内閣が発表され、AIはそれを正式な決定として処理した。'
       : `${COLLAPSE[e.metric].fallback}最大の原因は「${e.causeName}」だった。`;
+    out.report = DEATH_REPORT[e.type === 'fatal' ? e.causeId : e.type === 'collapse' ? (CAUSE_TITLE[e.causeId] ? e.causeId : e.metric) : e.type];
     out.last = '監視の内容を決めたのは、閣下一人です。止められる人はいましたか？';
   } else {
     out.text = `${SHAPES[e.shape].text}${CONTROLS[e.control].text}`;
