@@ -208,6 +208,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 
 /* 記録 */
 .reclist{display:grid;gap:10px}
+.fataltag{font-style:normal;font-size:.7rem;color:var(--bad);border:1px solid var(--bad);border-radius:4px;padding:0 4px;margin-left:4px;font-weight:normal}
 .rec{background:var(--panel);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
 .rec h3{font-size:1rem;color:var(--accent)}
 .rec p{font-size:.87rem}
@@ -2338,8 +2339,9 @@ const GAPS = {
 };
 const needHTML = key => { const g = GAPS[key]; return g ? `<p class="need"><b>現実で足りないもの</b> ${esc(g[2])}（${esc(g[0])}）。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>` : ''; };
 const realLine = key => { const c = REAL[key]; return c ? `<p class="need"><b>${esc(c.label)}</b> ${esc(c.title)}</p>` : '<p class="need"><b>作中の想像</b> 対応する現実の事例は確認していません。</p>'; };
+const realBody = c => `<p><b>現実に起きたこと</b> ${esc(c.happened)}</p><p><b>争点</b> ${esc(c.dispute)}</p><p><b>ゲームで変えた点</b> ${esc(c.changed)}</p><p class="srcs">${c.links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('<br>')}</p><small>確認日 ${CHECKED}</small>`;
 function realHTML(c) {
-  return `<div class="rec"><small>${esc(c.label)}</small><h3>${esc(c.title)}</h3><p><b>現実に起きたこと</b> ${esc(c.happened)}</p><p><b>争点</b> ${esc(c.dispute)}</p><p><b>ゲームで変えた点</b> ${esc(c.changed)}</p><p class="srcs">${c.links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('<br>')}</p><small>確認日 ${CHECKED}</small></div>`;
+  return `<div class="rec"><small>${esc(c.label)}</small><h3>${esc(c.title)}</h3>${realBody(c)}</div>`;
 }
 
 
@@ -3095,10 +3097,14 @@ function renderRecords() {
   rec.sort((a, b) => (b[1].fatal ? 1 : 0) - (a[1].fatal ? 1 : 0) || b[1].count - a[1].count);
   const locked = Core.CARDS.filter(c => c.unlock && !c.base).sort((a, b) => a.unlock - b.unlock);
   app.innerHTML = `<div class="fade"><h2 class="ptitle">重大事故記録</h2><p class="pdesc">統治 ${meta.runs || 0} 回。記録が増えると、選べるカードが増えます。</p>
-    ${fold('r_rec', `記録 ${rec.length}件`, `<div class="reclist">${rec.length ? rec.map(([id, r]) => `<div class="rec"><h3>${esc(r.name)}${r.fatal ? '（致命）' : ''}</h3><p>${esc(r.truth)}</p><small>${r.count}回</small>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}</div>`).join('') : '<div class="rec"><p>まだ記録はありません。最初の統治の後に、ここに残ります。</p></div>'}</div>`, true)}
-    ${fold('r_lock', '記録で解放されるカード', `<div class="reclist">${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec"><h3>${open ? esc(c.name || c.detect) : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}</div>`, false)}
-    ${rec.length ? `${fold('r_real', '現実との関連', `<div class="reclist">${Object.values(REAL).map(realHTML).join('')}</div>`, false, '実在の組織名はこの資料にだけ出ます')}
-    ${fold('r_gaps', 'カードを作るために今足りないもの', `<div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>`, false, '2026年11月時点。足りないものは作者の判断です')}` : ''}
+    <div class="sect"><span>記録（${rec.length}件）</span></div>
+    ${rec.length ? rec.map(([id, r]) => fold(`rec_${id}`, `${esc(r.name)}${r.fatal ? ' <i class="fataltag">致命</i>' : ''}`, `<p>${esc(r.truth)}</p>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}`, false, `${r.count}回`)).join('') : '<p class="pdesc">まだ記録はありません。最初の統治の後に、ここに残ります。</p>'}
+    <div class="sect"><span>記録で解放されるカード（${locked.filter(c => rec.length >= c.unlock).length}/${locked.length}枚）</span></div>
+    ${locked.map(c => { const open = rec.length >= c.unlock; return `<div class="rec endrow"><h3>${open ? `✔ ${esc(c.name || c.detect)}` : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件で解放`}</small></div>`; }).join('')}
+    ${rec.length ? `<div class="sect"><span>現実との関連（${Object.keys(REAL).length}件）</span><small>実在の組織名はこの資料にだけ出ます</small></div>
+    ${Object.entries(REAL).map(([k, c]) => fold(`real_${k}`, esc(c.title), realBody(c), false, esc(c.label))).join('')}
+    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。足りないものは作者の判断です</small></div>
+    <div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <div class="acts" style="margin-top:18px"><button id="b" type="button">戻る</button></div></div>`;
   $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
 }
