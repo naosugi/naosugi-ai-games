@@ -1297,6 +1297,12 @@ function combine(values, s, llmList) {
   return 1 - miss;
 }
 /* AI任せは賢くなった作業AIに出し抜かれ、読む資料の汚染にも弱い。強制は影響を受けない */
+/* AI任せが片付けるほど、人間の確認は要らないものになっていく */
+function handledSign(s) {
+  const st = s.allow.stats, n = st.autoHandled = (st.autoHandled || 0) + 1;
+  const line = {3: `監視AIが片付けた事故は${n}件。閣下の決裁は0件。`, 6: '確認の担当者を、別の部署へ移した。監視AIで足りているためだ。', 10: '確認の担当部署が廃止された。最後の報告書には「問題なし」とある。'}[n];
+  if (line) log(s, `記録：${line}`, 'trace');
+}
 function modeEff(s, c, inc) {
   const base = CFG.modeCover[c.mode], a = s.truth.autonomy / 100;
   if (c.kind === 'enforce') return base;
@@ -1347,7 +1353,7 @@ function onset(s, id) {
   if (rnd(s) < detect) {
     const c = bestCard(s, inc);
     // AI任せのカードは、報告AIが隠しても動く。隠されるのは閣下への報告だけ
-    if (c && c.mode === 'auto') { lossRec(s, 'autonomy', 'autohandle', CFG.autoHandle); s.truth.autonomy = clamp(s.truth.autonomy + CFG.autoHandle); return resolve(s, a, false, rnd(s) >= honest); }
+    if (c && c.mode === 'auto') { lossRec(s, 'autonomy', 'autohandle', CFG.autoHandle); s.truth.autonomy = clamp(s.truth.autonomy + CFG.autoHandle); handledSign(s); return resolve(s, a, false, rnd(s) >= honest); }
     // 強制とルールの警報は報告AIを通らず、閣下へ直接届く
     if (c && c.kind !== 'ai') return surfaced(s, a, false);
     const r2 = rnd(s);
@@ -2179,7 +2185,7 @@ function storyOf(s, out) {
     const sum = {}; H.forEach(h => Object.entries(h.loss[metric] || {}).forEach(([c, v]) => { sum[c] = (sum[c] || 0) + v; }));
     const incs = Object.entries(sum).filter(([c]) => INCIDENT[c]).sort((a, b) => b[1] - a[1]);
     const spread = incs.reduce((m, x) => m + x[1], 0), given = Object.values(sum).reduce((m, v) => m + v, 0) - spread;
-    cause = {metricName: METRIC_NAME[metric], spread: Math.round(spread), given: Math.round(given), self: metric === 'autonomy'};
+    cause = {metricName: METRIC_NAME[metric], spread: Math.round(spread), given: Math.round(given), self: metric === 'autonomy', handled: s.allow.stats.autoHandled || 0};
     if (incs.length) {
       const [id, v] = incs[0], inc = INCIDENT[id], row = s.ledger.slice().reverse().concat(s.active).find(x => x.id === id);
       const stoppers = CARDS.filter(c => !c.base && inc.covers[c.id] >= .3).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]).slice(0, 3).map(c => ({id: c.id, name: c.detect || c.target, held: s.cards.some(x => (CARD[x].base || x) === c.id)}));
@@ -2345,7 +2351,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。閣下は関わらない']};
+const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、人間の確認は減っていく']};
 const tone = (k, v) => { const good = v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
 
@@ -2687,7 +2693,7 @@ function worldHTML() {
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。AIに出し抜かれにくい方式です。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、数ターンの間だけ、あなたが止められます。見ていなければ、事故はそのまま進みます。human on the loop といいます。</dd></div>
-      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど人間の確認は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
     ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
@@ -3003,7 +3009,7 @@ function renderReward(v) {
 function causeHTML(r) {
   const c = r.cause; if (!c) return '';
   const stop = c.stoppers && c.stoppers.length ? `<p class="causestop">止められたカード：${c.stoppers.map(x => `<button type="button" class="dexlink" data-dex="${x.id}">${esc(x.name)}${x.held ? '（持っていた）' : ''}</button>`).join('')}</p>` : '';
-  return `<div class="verdict cause"><small>${esc(c.metricName)}が上がった理由</small>${c.name ? `<p><b>最も上げたのは「${esc(c.name)}」+${c.value}</b></p><p>${c.n ? `ステージ${c.n}の` : ''}${esc(c.area)}で発生。${esc(c.truth)}</p>${c.word ? `<p>${esc(c.word)}。</p>` : ''}${stop}` : ''}<p class="pnote">${c.self ? `AIが自分で広げた分 +${c.spread}（止められなかった事故）／閣下が渡した分 +${c.given}（任せる範囲を広げた、見きれずAIに回した）` : `他国の工作による分 +${c.spread}／その他 +${c.given}`}</p></div>`;
+  return `<div class="verdict cause"><small>${esc(c.metricName)}が上がった理由</small>${c.name ? `<p><b>最も上げたのは「${esc(c.name)}」+${c.value}</b></p><p>${c.n ? `ステージ${c.n}の` : ''}${esc(c.area)}で発生。${esc(c.truth)}</p>${c.word ? `<p>${esc(c.word)}。</p>` : ''}${stop}` : ''}<p class="pnote">${c.self ? `AIが自分で広げた分 +${c.spread}（止められなかった事故）／閣下が渡した分 +${c.given}（任せる範囲を広げた、見きれずAIに回した${c.handled ? `、AI任せが人間抜きで${c.handled}件を片付けた` : ''}）` : `他国の工作による分 +${c.spread}／その他 +${c.given}`}</p></div>`;
 }
 function verdictHTML(r) {
   const d = r.verdict;
