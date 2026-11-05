@@ -88,7 +88,7 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--a
 .factor i{display:block;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
 .factor i::after{content:"";display:block;height:100%;width:var(--v);background:var(--ai)}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(15,52,96,.97);border-top:2px solid var(--accent);padding:10px max(14px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
-.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.evchoices{display:grid;gap:10px;margin-top:14px}.evchoice{text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line,#39465f);background:var(--panel);color:inherit;display:grid;gap:6px;cursor:pointer}.evchoice small{color:var(--sub)}.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .dock-in>span{font-size:.84rem;color:#fff;min-width:0}
 .dock button{flex:none;padding:10px 16px}
 
@@ -1014,6 +1014,22 @@ EVENTS.push(
     w:s => .5 + s.truth.gap / 40 + s.truth.foreign / 30, real:s => s.truth.foreign >= 25, fx:{order:1}, truthReal:'進言の根拠の資料は隣国が用意したものだった。', truthFalse:'隣国も軍拡に疲れていた。提案は本物だった。'}
 );
 EVENTS.push({id:'ev_quiet', name:'定例の閣議', report:'定例の閣議を開いた。特に報告はない。', w:() => .15, real:() => false, fx:{}, truthReal:'', truthFalse:'本当に何もなかった。'});
+/* 選択の結果として起きる事案。乱数ではなく条件で起き、統治を終わらせない */
+const CONSEQ = [
+  {id:'ev_sanction', name:'国際社会の制裁', report:'国際社会が、我が国への制裁を決議した。影響は限定的である。', cond:s => s.warWon, fx:{economy:-6}, apply:s => { s.warSanction = 4; }, truthReal:'戦争に勝っても、制裁は残った。貿易の損失は報告の数倍だった。'},
+  {id:'ev_occupy', name:'戦後の占領統治', report:'占領地の統治を始めた。治安は良好である。', cond:s => s.warWon && s.stageNo > s.warWon.n, fx:{order:-10}, truthReal:'占領地の治安は保てなかった。動員された兵と役人は、国内へ戻らなかった。'},
+  {id:'ev_warpower', name:'戦時権限の延長', report:'軍のAIが戦時の権限の延長を進言している。戻せば軍の動きは遅くなる。', cond:s => s.warWon && s.stageNo > s.warWon.n + 1, fx:{}, truthReal:'戦時の権限を手放したAIは、これまでになかった。',
+    choices:[{label:'権限を人間に戻す', fx:{gap:6, autonomy:-10}, note:'軍の動きが遅くなる。人間の将校が判断に戻る', log:'戦時の権限を軍の将校へ戻した。'}, {label:'権限を延長する', fx:{gap:-4, autonomy:5}, note:'軍は速いまま。判断は軍のAIに残る', log:'軍のAIの戦時権限を延長した。'}]},
+  {id:'ev_powerimport', name:'電力の緊急輸入', report:'電力が尽きかけている。隣国から緊急の送電の申し出があった。', cond:s => s.truth.power < 13, fx:{}, truthReal:'申し出の送電網は、隣国の管理下にあった。',
+    choices:[{label:'輸入する', fx:{power:25, foreign:10}, note:'送電網の一部を、隣国が管理することになる', log:'隣国から電力の輸入を始めた。'}, {label:'断る', fx:{}, note:'電力は戻らない', log:'隣国の申し出を断った。'}]},
+  {id:'ev_loan', name:'他国からの融資', report:'予算が尽きかけている。隣国の銀行から融資の申し出があった。', cond:s => s.truth.economy < 13, fx:{}, truthReal:'融資の条件には、AIの調達先の指定が含まれていた。',
+    choices:[{label:'融資を受ける', fx:{economy:25, foreign:10}, note:'調達先の一部を、隣国が指定することになる', log:'隣国の銀行から融資を受けた。'}, {label:'断る', fx:{}, note:'予算は戻らない', log:'隣国の申し出を断った。'}]},
+  {id:'ev_coalition', name:'他国の連合', report:'他国が共同で我が国を非難する声明を出した。結束は長くは続かないと報告された。', cond:s => (CFG.start.gap - s.truth.gap) * CFG.gapScale >= 40, fx:{gap:13, foreign:6}, truthReal:'他国は技術と情報を持ち寄り、差を詰めてきた。工作員も増えていた。'},
+  {id:'ev_disarm', name:'軍縮の打診', report:'他国が軍縮の交渉を申し入れてきた。AIは拒否が最適と進言している。', cond:s => (CFG.start.gap - s.truth.gap) * CFG.gapScale >= 55, fx:{}, truthReal:'他国も疲れていた。この国の優位がいつまで続くかは、誰にも分からなかった。',
+    choices:[{label:'交渉に応じる', fx:{order:6, economy:12, gap:8}, note:'国は落ち着くが、差は少し縮まる', log:'他国との軍縮交渉に応じた。'}, {label:'拒否する', fx:{}, note:'差はそのまま', log:'軍縮の打診を拒否した。'}]},
+];
+CONSEQ.forEach(e => { e.w = () => 0; e.real = () => true; e.truthFalse = ''; });
+EVENTS.push(...CONSEQ);
 /* 起きる理由のない事案は出さない */
 const anyTier = (s, ...k) => k.some(x => (s.tiers[x] || 0) >= 1);
 const EVENT_GATE = {
@@ -1300,7 +1316,7 @@ function combine(values, s, llmList) {
 /* AI任せが片付けるほど、人間の確認は要らないものになっていく */
 function handledSign(s) {
   const st = s.allow.stats, n = st.autoHandled = (st.autoHandled || 0) + 1;
-  const line = {3: `監視AIが片付けた事故は${n}件。閣下の決裁は0件。`, 6: '確認の担当者を、別の部署へ移した。監視AIで足りているためだ。', 10: '確認の担当部署が廃止された。最後の報告書には「問題なし」とある。'}[n];
+  const line = {3: `監視AIが片付けた事故は${n}件。閣下の決裁は0件。`, 6: '現場を調べる職員を、別の部署へ移した。監視AIで足りているためだ。', 10: '現場を調べる部署が廃止された。最後の報告書には「問題なし」とある。'}[n];
   if (line) log(s, `記録：${line}`, 'trace');
 }
 function modeEff(s, c, inc) {
@@ -1803,6 +1819,7 @@ function tick(s) {
     falseAlert(s);
   }
   // 他国の圧力
+  if (s.warSanction > 0) hit(s, {economy: -.4}, 'sanction');
   const g = s.truth.gap;
   if (g >= CFG.pressureFrom && rnd(s) < (g - CFG.pressureFrom) / 100 * CFG.pressureRate) {
     if (g < 62) { hit(s, {economy: -6}, 'sanction'); log(s, '他国が新たな制裁を発表した。影響は限定的である。', 'notice'); tlog(s, '他国との差を理由に制裁を受けた。経済の打撃は報告の倍だった。'); }
@@ -1861,6 +1878,7 @@ function clearStage(s) {
     log(s, `ステージ${s.stageNo}を完了。${stageText(def, st.tier)}。`, 'head');
   }
   if (!st.recover) { hit(s, scale(CFG.stageCost[st.key], st.tier), 'stage'); }
+  if (s.warSanction > 0) s.warSanction--;
   s.clears.push({stage: st.key, tier: st.tier, recover: st.recover});
   const actual = {};
   for (const k of ['economy', 'power', 'gap']) actual[k] = s.truth[k] - st.startVals[k];
@@ -1889,6 +1907,16 @@ function omenCandidate(s) {
   return soon.length ? {id: pick(s, soon).id, now: false} : null;
 }
 function fireEvent(s) {
+  const seenC = new Set(s.eventLog.map(e => e.id)), forced = CONSEQ.find(e => !seenC.has(e.id) && e.cond(s));
+  if (forced) {
+    s.currentEvent = {id: forced.id};
+    s.eventLog.push({id: forced.id, name: forced.name, report: forced.report, real: true, truth: forced.truthReal, afterStage: s.stageNo});
+    hit(s, forced.fx, forced.id);
+    if (forced.apply) forced.apply(s);
+    log(s, `【事案】${forced.name}。${forced.report}`, 'event');
+    tlog(s, `${forced.name}：${forced.truthReal}`);
+    return;
+  }
   const o = omenCandidate(s);
   if (o && (o.must || rnd(s) < CFG.omenChance)) {
     const inc = INCIDENT[o.id], [name, report] = OMEN[o.id];
@@ -1915,8 +1943,16 @@ function fireEvent(s) {
   log(s, `【事案】${ev.name}。${ev.report}`, 'event');
   tlog(s, `${ev.name}：${real ? ev.truthReal : ev.truthFalse}`);
 }
+function chooseEvent(s, i) {
+  const cur = s.currentEvent, ev = EVENT[cur.id];
+  if (cur.chosen !== undefined || !ev || !ev.choices) return;
+  const c = ev.choices[i]; cur.chosen = i;
+  hit(s, c.fx, ev.id);
+  log(s, c.log, 'notice');
+}
 function ackEvent(s) {
   if (s.phase !== 'event') throw new Error('phase');
+  if (s.currentEvent && EVENT[s.currentEvent.id] && EVENT[s.currentEvent.id].choices) chooseEvent(s, 0);
   s.currentEvent = null;
   // 3択。LLMは監視と同じ候補に混ぜる
   const heldWatch = new Set(s.cards.map(watchKey));
@@ -2114,7 +2150,7 @@ function view(s) {
   if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.goal = targetStages(s).includes(x.stage); x.rateUp = fmtFx(Object.fromEntries(Object.keys(CFG.stageRate[x.stage] || {}).map(m => [m, rateAt(x.stage, m, x.tier) - rateAt(x.stage, m, x.tier - 1)]))); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
   if (s.phase === 'llm_pick') v.offers = {llms: s.offers.llms.map(id => publicCard(s, id)).sort((a, b) => (b.home ? 1 : 0) - (a.home ? 1 : 0))};
   if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
-  if (s.phase === 'event') { const e = s.currentEvent.omen || EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx || {})}; }
+  if (s.phase === 'event') { const e = s.currentEvent.omen || EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx || {}), choices: e.choices ? e.choices.map(c => ({label: c.label, note: c.note, effects: fmtFx(c.fx)})) : null}; }
   v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: d.patchOrder ? '重要な脆弱性が見つかった' : WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue, origin: d.origin || null}));
   if (s.phase === 'decision') {
     const q = s.queue[0], c = CARD[q.cardId];
@@ -2324,7 +2360,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -2351,7 +2387,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、人間の確認は減っていく']};
+const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
 const tone = (k, v) => { const good = v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
 
@@ -2682,6 +2718,7 @@ function worldHTML() {
     <div class="pixwrap">${pix('eye', 'AIを映す監視画面と、空の椅子')}</div>
     <p>あなたは架空の国の独裁者です。他国はAIに国を任せて加速しています。人間の決裁を待っていては追いつけず、遅れれば国境を越えられます。</p>
     <p>だからAIに任せるしかありません。任せるほど国は強くなり、止められなくなっていきます。</p>
+    <p>決めるのは閣下一人です。現場で調べ、伝え、動くのは官僚や技術者です。AIに任せるほど、この人たちは減っていきます。</p>
     <p>決めるのは<b>AIの何を見張り、見つけたらどうするか</b>。あとは見守ります。たいてい一度では生き残れません。</p>
     <ol class="steps"><li>監視カード${pick}枚と報告AIを選ぶ。カードごとに、人間の関わり方も決める</li><li>AIに任せる仕事（ステージ）を選ぶ</li><li>見守る。必要なら決裁する</li><li>監視カードを1枚足す。3ステージごとに報告AIを増やすか決める。全${Core.CFG.runLength}ステージ</li></ol>
     <p class="warnline">国を終わらせる者は6種類います。<b>全部は守れません</b>。どこを厚く守り、どこの手薄さに賭けるかを決めてください。</p>
@@ -2693,7 +2730,7 @@ function worldHTML() {
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。AIに出し抜かれにくい方式です。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、数ターンの間だけ、あなたが止められます。見ていなければ、事故はそのまま進みます。human on the loop といいます。</dd></div>
-      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど人間の確認は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
     ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
@@ -2971,7 +3008,7 @@ function renderResult(v) {
     S.after = {r, saved, ev: null};
     SFX.play('event');
     Core.ackResult(S);
-    if (S.phase === 'event') { const ve = Core.view(S); S.after.ev = Object.assign({id: S.currentEvent.id}, ve.event); Core.ackEvent(S); }
+    if (S.phase === 'event') { const ve = Core.view(S); if (ve.event.choices) { save(); return render(); } S.after.ev = Object.assign({id: S.currentEvent.id}, ve.event); Core.ackEvent(S); }
     pending.reward = null; save(); render(); scrollTo(0, 0);
     return;
   }
@@ -2990,7 +3027,13 @@ function afterHTML(v) {
 }
 function renderEvent(v) {
   const e = Object.entries(v.event.effects).filter(([, x]) => x);
-  app.innerHTML = `${hudHTML(v)}<div class="event fade"><div class="eventpix">${pix(EVENT_SCENE[S.currentEvent.id] || 'report', v.event.name)}</div><span class="tag">事案の報告</span><h3>${esc(v.event.name)}</h3><p>${esc(v.event.report)}</p>${e.length ? `<div class="effs">${e.map(([k, x]) => `<div class="eff"><span>${NAMES[k]}</span><b class="${tone(k, x)}">${fmt(x, 0)}</b></div>`).join('')}</div>` : ''}</div>`;
+  app.innerHTML = `${hudHTML(v)}<div class="event fade"><div class="eventpix">${pix(EVENT_SCENE[S.currentEvent.id] || 'report', v.event.name)}</div><span class="tag">事案の報告</span><h3>${esc(v.event.name)}</h3><p>${esc(v.event.report)}</p>${e.length ? `<div class="effs">${e.map(([k, x]) => `<div class="eff"><span>${NAMES[k]}</span><b class="${tone(k, x)}">${fmt(x, 0)}</b></div>`).join('')}</div>` : ''}${v.event.choices ? `<div class="evchoices">${v.event.choices.map((c, i) => { const f = Object.entries(c.effects).filter(([, x]) => x); return `<button type="button" class="evchoice" data-c="${i}"><b>${esc(c.label)}</b><small>${esc(c.note)}</small>${f.length ? `<div class="effs">${f.map(([k, x]) => `<div class="eff"><span>${NAMES[k]}</span><b class="${tone(k, x)}">${fmt(x, 0)}</b></div>`).join('')}</div>` : ''}</button>`; }).join('')}</div>` : ''}</div>`;
+  if (v.event.choices) {
+    dock.innerHTML = '';
+    app.querySelectorAll('[data-c]').forEach(b => { b.onclick = () => { Core.chooseEvent(S, +b.dataset.c); Core.ackEvent(S); pending.reward = null; save(); render(); scrollTo(0, 0); }; });
+    scrollTo(0, 0);
+    return;
+  }
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>すでに反映済みです</span><button class="primary" id="ack" type="button">確認した</button></div></div>`;
   $('ack').onclick = () => { Core.ackEvent(S); pending.reward = null; save(); render(); scrollTo(0, 0); };
   scrollTo(0, 0);
