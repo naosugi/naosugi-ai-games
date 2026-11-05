@@ -348,6 +348,7 @@ const CFG = {
   stageRate: {admin: {economy: .06, power: -.025}, lab: {gap: -.02, economy: .015, power: -.05}, grid: {power: .24}, surv: {order: .05, power: -.035}, ai: {gap: -.035, power: -.1}, factory: {economy: .09, power: -.075}, mil: {gap: -.018, order: .02, power: -.05}, space: {economy: .04, power: -.03}},
   // 段階ごとの倍率 [未着手, 第1, 第2, 第3]。序盤は投資、最終段階で大きく返る
   tierRate: {admin: {economy: [0, 1, 2, 5], power: [0, 1, 2, 3]}, grid: {power: [0, 1, 3, 10]}, surv: {order: [0, 1, 2, 8], power: [0, 1, 2, 4]}, ai: {gap: [0, 1, 2, 4], power: [0, 1, 2, 5]}, factory: {economy: [0, 1, 4, 20], power: [0, 1, 4, 15]}, mil: {gap: [0, 1, 2, 10], order: [0, 1, 2, 10], power: [0, 1, 2, 5]}, space: {economy: [0, -1, 16, 32], power: [0, 1, 0, -15]}},
+  tierBonus: {space: {economy: 130, power: 110}, mil: {gap: -32, order: 12}},  // 最終段階を終えた時の一度きりの見返り
   survSontaku: .1,          // 監視を完成させると、誰も不満を口にしなくなる
   /* 再整備は、その分野に関係するものだけ戻す */
   recoverBy: {admin: {economy: 5, order: 5}, lab: {}, grid: {power: 12}, surv: {order: 7}, ai: {autonomy: -9}, factory: {economy: 7}, mil: {order: 5}, space: {economy: 3, power: 3}},
@@ -1206,6 +1207,7 @@ function rewardOf(s, o) {
   const fx = {economy: 0, power: 0, order: 0, gap: 0}, m = 1 - Math.min(.6, load(s) * CFG.loadToReward);
   if (o.recover) { for (const [k, v] of Object.entries(CFG.recoverBy[o.stage])) if (k in fx) fx[k] += v; fx.gap += CFG.recoverGap[o.stage]; }
   else for (const [k, v] of Object.entries(STAGES[o.stage].reward)) fx[k] += v * CFG.rewardOnce * CFG.rewardScale[o.tier - 1] * m;
+  if (!o.recover && o.tier === 3 && CFG.tierBonus[o.stage]) for (const [k, v] of Object.entries(CFG.tierBonus[o.stage])) if (k in fx) fx[k] += v;
   if (!o.recover) fx.gap -= CFG.stageCatch * o.tier;
   if (!o.recover) for (const [k, v] of Object.entries(CFG.stageCost[o.stage])) if (k in fx && k !== 'order') fx[k] += v * o.tier;
   return fx;
@@ -1816,6 +1818,7 @@ function clearStage(s) {
     const fx = {};
     for (const [k, v] of Object.entries(def.reward)) fx[k] = v * CFG.rewardOnce * CFG.rewardScale[st.tier - 1] * (k === 'gap' ? 1 : m);
     if (fx.gap) fx.gap *= m;
+    if (st.tier === 3 && CFG.tierBonus[st.key]) for (const [k, v] of Object.entries(CFG.tierBonus[st.key])) fx[k] = (fx[k] || 0) + v;
     hit(s, fx, 'stage');
     s.tiers[st.key] = st.tier;
     s.truth.sontaku = clamp(s.truth.sontaku + CFG.sontakuPerTier * st.tier);
