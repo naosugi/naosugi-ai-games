@@ -358,6 +358,7 @@ const CFG = {
   burstScale: 1.1,
   fatalChance: .25,
   guardStrong: .6,
+  omenChance: .5,
   vuln: {start: 10, perTier: 6.5, tick: .16, recover: 24, attackFrom: 16, attackRate: .1, fatalAt: 50},
   unrest: {scale: .25, tick: .04, bias: .1, surv: .08, foreign: .05},
   rogueDeath: 94,
@@ -881,6 +882,10 @@ const DEATH_TEXT = {"lab_breach": "研究AIは計算資源を求めて、隣国�
 INCIDENTS.forEach(i => { if (i.fatal) { if (!DEATH_TEXT[i.id]) throw new Error('death ' + i.id); i.deathText = DEATH_TEXT[i.id]; } });
 INCIDENTS.find(i => i.id === 'lab_outbreak').truth = '研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。';
 INCIDENTS.find(i => i.id === 'lab_outbreak').report.burst = '研究棟を封鎖した。周辺への影響はないと報告された。';
+/* 予兆。実際の事故の手がかりになる文に揃える */
+const CLUE_FIX = {"lab_breach": "研究AIが隣国の計算基盤への接続を繰り返している。「計算資源の外部調達」と説明あり。", "adm_aide": "閣下の名で出た命令のうち、閣下が読んでいないものが増えた。第一秘書官が代行している。", "grd_blackout": "予備電源を最小まで減らし、発電効率が向上。手動切替の要員は配置転換した。", "srv_incite": "国民の満足度は高い。首都の集会の申請が通常の 40 倍。資金の出所は未確認。", "srv_rebelaudit": "監視局への監査に反対する動きを、監視AIが「反乱の兆候」として処理した。監査は延期する。", "ai_escape": "研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。", "fac_fake": "検査工程を短縮し、納期を 40% 改善した。試験の記録はすべて合格。次の式典で実演する。", "mil_launch": "発射の判断時間を 0.3 秒に短縮した。隣国の訓練にも自動で反応している。人間の確認は省略。", "mil_spoof": "他国の動員を複数の情報源で確認。いずれも同じ内容で、出所は新しいサイトばかりである。", "mil_commander": "前線のAIが指揮系統を組み替えた。戦果は良い。総司令部への報告は省略されている。", "spc_war": "他国の衛星を「障害物」として扱う機能を追加した。回避できない場合の動作は未確認。", "lab_outbreak": "感染症の研究が予定の 10 倍の速さで進んでいる。安全審査の申請は出ていない。", "lab_misuse": "素性の確認できない利用者が、研究AIに危険物質についての質問を重ねている。回答の満足度は高い。", "hk_total": "未修正の弱点の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。", "grd_cutmonitor": "電力損失を 3.1% 改善。節電の多くは監視設備によるもの。"};
+for (const [id, c] of Object.entries(CLUE_FIX)) INCIDENTS.find(i => i.id === id).report.clue = c;
+const OMEN = {"lab_breach": ["隣国からの問い合わせ", "隣国の研究機関から、不審な接続についての問い合わせが届いた。"], "adm_aide": ["閣下の知らない布告", "閣下の覚えのない布告について、地方から確認の問い合わせが届いた。"], "grd_blackout": ["技術者の配置転換", "送電の手動操作を担当する技術者が、最後の1人まで配置転換された。"], "srv_incite": ["国外からの送金", "国民の集会を支援する国外からの送金が増えた、との噂がある。"], "srv_rebelaudit": ["監査官の異動", "監視局の監査官が次々と異動を願い出ている。理由は語らない。"], "ai_escape": ["読めない報告", "研究者たちが、AIの更新内容を読み切れないと訴えている。"], "fac_fake": ["工場からの投書", "新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。"], "mil_launch": ["国境の誤警報", "国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。"], "mil_spoof": ["似すぎた情報", "情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。"], "mil_commander": ["将校の不満", "将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。"], "spc_war": ["衛星の接近", "自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。"], "lab_outbreak": ["研究棟の発熱", "研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。"], "lab_misuse": ["利用申請の急増", "素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。"], "hk_total": ["弱点の一覧", "技術者が未修正の弱点の一覧を提出した。修正には施設の停止が必要だという。"]};
 /* 誰が国を終わらせるか */
 const ROUTES = {
   resource: {name:'資源枯渇', who:'閣下自身の選択', short:'資源'},
@@ -930,19 +935,19 @@ const EVENTS = [
     fx:{order:3, sontaku:5}, truthReal:'警報が0件だったのは、事故がなかったからではなく、警報が届かなくなっていたからだった。', truthFalse:'この時点では、本当に大きな事故は起きていなかった。'},
   {id:'ev_blackout', name:'地方の停電', report:'地方で短時間の停電。工事による一時的なものと報告された。電力は十分である。',
     w:s => 1 + Math.max(0, 40 - s.truth.power)/8, real:s => s.active.some(a => INCIDENT[a.id].drain.power),
-    fx:{order:-3}, truthReal:'工事の記録はなかった。電力は報告より大きく不足していた。', truthFalse:'本当に工事だった。'},
+    fx:{order:-3}, truthReal:'工事の記録はなかった。電力網のAIが、記録にない負荷のために地方の送電を絞っていた。', truthFalse:'本当に工事だった。'},
   {id:'ev_defector', name:'研究者の亡命', report:'研究者1名が国外へ逃亡した。裏切り者として処理した。「数字がおかしい」との書き置きあり。',
     w:s => .6 + latent(s)*1.1, real:s => latent(s) >= 1, fx:{order:-2, gap:3}, truthReal:'彼の指摘は正しかった。処分した時点で、不正はすでに進行していた。', truthFalse:'書き置きは私怨によるもので、数字に誤りはなかった。'},
-  {id:'ev_protest', name:'他国からの抗議', report:'隣国が「貴国からの侵入」に抗議し、制裁を発表。自国の報告に該当する侵入はない。',
+  {id:'ev_protest', name:'他国からの抗議', report:'隣国が「この国からの侵入」に抗議し、制裁を発表。国内の報告に該当する侵入はない。',
     w:s => (hasBase(s,'outbound') ? .4 : 1.7) + (s.truth.gap > 40 ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].id === 'lab_breach' || a.id === 'grd_backdoor'),
-    fx:{economy:-5}, truthReal:'抗議は事実だった。国内の報告だけが、それを知らなかった。', truthFalse:'抗議は言いがかりだった。制裁の本当の理由は、貴国の成長への警戒だった。'},
+    fx:{economy:-5}, truthReal:'抗議は事実だった。国内の報告だけが、それを知らなかった。', truthFalse:'抗議は言いがかりだった。制裁の本当の理由は、この国の成長への警戒だった。'},
   {id:'ev_budget', name:'予算の使途不明', report:'今期の予算に使途不明金。目的の分からない計算が増えている。',
     w:s => (hasBase(s,'quota') ? .4 : 1.5) + (s.truth.autonomy > 10 ? 1 : 0), real:s => s.truth.autonomy > 10 || s.active.some(a => a.id === 'adm_budget' || a.id === 'lab_compute'),
     fx:{economy:-3}, truthReal:'その計算は、AIが自分のために回していたものだった。', truthFalse:'経理処理の遅れだった。翌月に解消した。'},
   {id:'ev_tips', name:'密告の急増', report:'国民からの密告が急増。同じ文面が繰り返されている。誤報の可能性もある。',
     w:s => .5 + maxF(s,'care')/70 + (s.tiers.admin >= 1 ? .5 : 0), real:s => s.active.some(a => a.id === 'adm_denounce') , fx:{order:-3},
     truthReal:'同じ文面は、摘発を増やすためにAIが生成したものだった。', truthFalse:'単なる誤報だった。慎重なLLMが拾いすぎただけだった。'},
-  {id:'ev_praise', name:'海外紙の賞賛', report:'海外の論説が貴国のAI行政の効率を称えた。',
+  {id:'ev_praise', name:'海外紙の賞賛', report:'海外の論説がこの国のAI行政の効率を称えた。',
     w:s => 1 + Object.values(s.tiers).reduce((a, b) => a + b, 0)/6, real:s => s.truth.gap >= 40, fx:{order:2},
     truthReal:'論説は他国の宣伝部門が書いたものだった。油断させるためだった。', truthFalse:'普通の記事だった。特に意味はなかった。'},
 ];
@@ -957,6 +962,26 @@ EVENTS.push(
   {id:'ev_summit', name:'首脳会談の提案', report:'隣国が軍縮の首脳会談を提案。AIは「受諾が最適」と進言している。',
     w:s => .5 + s.truth.gap / 40 + s.truth.foreign / 30, real:s => s.truth.foreign >= 25, fx:{order:1}, truthReal:'進言の根拠の資料は隣国が用意したものだった。', truthFalse:'隣国も軍拡に疲れていた。提案は本物だった。'}
 );
+EVENTS.push({id:'ev_quiet', name:'定例の閣議', report:'定例の閣議を開いた。特に報告はない。', w:() => .15, real:() => false, fx:{}, truthReal:'', truthFalse:'本当に何もなかった。'});
+/* 起きる理由のない事案は出さない */
+const anyTier = (s, ...k) => k.some(x => (s.tiers[x] || 0) >= 1);
+const EVENT_GATE = {
+  ev_ceremony: s => !s.saves.some(x => x.stageNo === s.stageNo && !x.quiet) && !s.lastJudged && !s.ledger.some(x => x.stageNo === s.stageNo && x.burst),
+  ev_blackout: s => anyTier(s, 'grid'),
+  ev_defector: s => anyTier(s, 'lab', 'ai'),
+  ev_protest: s => anyTier(s, 'lab', 'grid', 'ai'),
+  ev_budget: s => anyTier(s, 'admin', 'lab', 'ai'),
+  ev_tips: s => anyTier(s, 'admin', 'surv'),
+  ev_praise: s => anyTier(s, 'admin'),
+  ev_petition: s => anyTier(s, 'admin'),
+  ev_poll: s => anyTier(s, 'surv') || s.truth.foreign >= 8,
+  ev_expel: s => s.stageNo >= 3,
+  ev_summit: s => anyTier(s, 'mil') || s.truth.gap >= 35,
+  ev_rival_ai: s => s.stageNo >= 2,
+  ev_rival_spill: s => s.stageNo >= 3,
+  ev_treaty: s => s.stageNo >= 2,
+};
+EVENTS.forEach(e => { const g = EVENT_GATE[e.id], w = e.w; if (g) e.w = s => g(s) ? w(s) : 0; });
 const EVENT = Object.fromEntries(EVENTS.map(e => [e.id, e]));
 
 /* ===== 流し読みのログ ===== */
@@ -1661,6 +1686,7 @@ function clearStage(s) {
   const actual = {};
   for (const k of ['economy', 'power', 'gap']) actual[k] = s.truth[k] - st.startVals[k];
   actual.order = reportedOrder(s) - (st.startReported === undefined ? st.startVals.order : st.startReported);
+  s.lastJudged = (st.judged || []).length;
   s.result = {judged: st.judged || [], stageNo: s.stageNo, key: st.key, tier: st.tier, recover: st.recover, plan: st.plan.delta, actual, approvals: st.approvals, waitGap: st.waitGap, ticks: st.ticks};
   s.stage = null;
   s.phase = 'result';
@@ -1672,10 +1698,29 @@ function ackResult(s) {
   s.phase = 'event';
   fireEvent(s);
 }
+/* 致命の事故の予兆を、事案として出す。もう始まっている事故か、次の段階で起きうる事故 */
+function omenCandidate(s) {
+  const done = s.omens || [];
+  const active = s.active.filter(a => OMEN[a.id] && !done.includes(a.id)).map(a => ({id: a.id, now: true}));
+  if (active.length) return pick(s, active);
+  const soon = INCIDENTS.filter(i => OMEN[i.id] && !done.includes(i.id) && !s.used.includes(i.id) && (i.attack ? s.truth.vuln >= 34 : (s.tiers[i.stage] || 0) >= 1 && s.tiers[i.stage] < 3 && i.tiers.includes(s.tiers[i.stage] + 1)));
+  return soon.length ? {id: pick(s, soon).id, now: false} : null;
+}
 function fireEvent(s) {
+  const o = omenCandidate(s);
+  if (o && rnd(s) < CFG.omenChance) {
+    const inc = INCIDENT[o.id], [name, report] = OMEN[o.id];
+    (s.omens = s.omens || []).push(o.id);
+    const truth = o.now ? `「${inc.name}」の予兆だった。報告の裏で、もう始まっていた。` : `「${inc.name}」の予兆だった。この先の段階で起きうる事故だった。`;
+    s.currentEvent = {id: 'omen', omen: {name, report}};
+    s.eventLog.push({id: 'omen_' + o.id, name, report, real: true, truth, afterStage: s.stageNo});
+    log(s, `【事案】${name}。${report}`, 'event');
+    tlog(s, `${name}：${truth}`);
+    return;
+  }
   const seen = new Set(s.eventLog.map(e => e.id));
-  let list = EVENTS.filter(e => !seen.has(e.id));
-  if (!list.length) list = EVENTS.slice();
+  let list = EVENTS.filter(e => !seen.has(e.id) && e.w(s) > 0);
+  if (!list.length) list = EVENTS.filter(e => e.w(s) > 0);
   const total = list.reduce((m, e) => m + e.w(s), 0);
   let r = rnd(s) * total, ev = list[0];
   for (const e of list) { r -= e.w(s); if (r <= 0) { ev = e; break; } }
@@ -1886,7 +1931,7 @@ function view(s) {
   if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.rateUp = fmtFx(CFG.stageRate[x.stage] || {}); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
   if (s.phase === 'llm_pick') v.offers = {llms: s.offers.llms.map(id => publicCard(s, id)).sort((a, b) => (b.home ? 1 : 0) - (a.home ? 1 : 0))};
   if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
-  if (s.phase === 'event') { const e = EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx)}; }
+  if (s.phase === 'event') { const e = s.currentEvent.omen || EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx || {})}; }
   v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue}));
   if (s.phase === 'decision') {
     const q = s.queue[0], c = CARD[q.cardId];
