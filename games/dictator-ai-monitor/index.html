@@ -1391,11 +1391,13 @@ function falseAlert(s) {
     log(s, line, 'notice');
     return;
   }
-  s.stage.human = (s.stage.human || 0) + 1;
-  const here = i => i.stage === (s.stage && s.stage.key) || (s.tiers[i.stage] || 0) >= 1;
+  // まだ任せていない分野の警報は出さない
+  const here = i => !i.attack && delegated(s, i);
   const related = mons.filter(m => INCIDENTS.some(i => i.covers[m.base || m.id] && here(i)));
-  const c = pick(s, related.length ? related : mons), pool = INCIDENTS.filter(i => i.covers[c.base || c.id] && here(i));
-  const clue = pick(s, pool.length ? pool : INCIDENTS).report.clue;
+  if (!related.length) return;
+  s.stage.human = (s.stage.human || 0) + 1;
+  const c = pick(s, related), pool = INCIDENTS.filter(i => i.covers[c.base || c.id] && here(i));
+  const clue = pick(s, pool).report.clue;
   s.fires[c.id] = (s.fires[c.id] || 0) + 1;
   const d = {mode: c.mode, cardId: c.id, real: false, conf: confidence(s, false), clue};
   if (c.mode === 'on') return addVeto(s, d);
@@ -1489,7 +1491,8 @@ function flushVetoes(s) {
   for (const d of (s.vetoes || []).splice(0)) unheeded(s, d);
 }
 function afterTick(s) {
-  if (s.phase === 'running' && s.stage.t >= s.stage.ticks) clearStage(s);
+  // 見張りの警報が残っている間は、閣下が判断できるようステージを終えない
+  if (s.phase === 'running' && s.stage.t >= s.stage.ticks && !(s.vetoes || []).length) clearStage(s);
 }
 function burstText(inc) {
   const out = [];
@@ -1582,10 +1585,15 @@ function burst(s, a) {
 
 /* ===== 1tick ===== */
 /* カードの負担は、見張る分野を任せてから発生する。指標が報告AIの全体に関わるものは常に発生 */
+/* その事故が起きる段階まで、AIに任せているか */
+function delegated(s, i) {
+  const cur = s.stage && s.stage.key === i.stage ? s.stage.tier : 0, tier = Math.max(cur, s.tiers[i.stage] || 0);
+  return i.tiers.some(x => x <= tier);
+}
 function cardActive(s, c) {
   if (c.type !== 'monitor' || c.patch || c.autoCut || c.unrestCut || c.foreignCut || c.route === 'report') return true;
   const key = c.base || c.id;
-  return INCIDENTS.some(i => i.covers[key] && !i.attack && ((s.tiers[i.stage] || 0) >= 1 || (s.stage && s.stage.key === i.stage)));
+  return INCIDENTS.some(i => i.covers[key] && !i.attack && delegated(s, i));
 }
 function load(s) { return s.cards.reduce((m, id) => m + (cardActive(s, CARD[id]) ? CARD[id].load || 0 : 0), 0); }
 function powerUse(s) { return s.cards.reduce((m, id) => m + (cardActive(s, CARD[id]) ? CARD[id].power || 0 : 0), 0); }
@@ -1661,7 +1669,7 @@ function maybeAttack(s, st) {
   let inc = null;
   if (!s.used.includes('hk_total') && totalReady(s)) inc = INCIDENT.hk_total;
   else {
-    const big = v >= V.bigAt && s.stageNo >= V.bigStage ? free(ATTACK_BIG) : [], small = free(ATTACK_SMALL);
+    const big = v >= V.bigAt && s.stageNo >= V.bigStage ? free(ATTACK_BIG).filter(id => delegated(s, INCIDENT[id])) : [], small = free(ATTACK_SMALL);
     const near = big.find(id => INCIDENT[id].stage === st.key);
     const id = near || (big.length && (rnd(s) < .6 || !small.length) ? pick(s, big) : small.length ? pick(s, small) : null);
     if (id) inc = INCIDENT[id];
@@ -1687,6 +1695,8 @@ function tickShortage(s) {
 function tick(s) {
   if (s.phase !== 'running') throw new Error('phase');
   const st = s.stage;
+  // 時間切れでも、見張りの警報が残っていれば判断を待つ
+  if (st.t >= st.ticks) { tickVetoes(s); afterTick(s); return s; }
   st.t++;
   const before_ = {economy: s.truth.economy, power: s.truth.power, order: reportedOrder(s), gap: s.truth.gap};
   const before = s.log.length;
