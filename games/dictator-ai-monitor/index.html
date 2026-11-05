@@ -1184,7 +1184,7 @@ const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研�
 const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', ai: 'AIの自律度が上がる', factory: '失業の不満が増える', mil: '経済を大きく使う', space: '経済を大きく使う'};
 /* 結末の一覧。条件は言葉で示す */
 const END_INFO = {
-  eternal: {cond: '軍事を最終段階、宇宙を2段階まで。国民監視と行政も任せる', need: {space: 2, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
+  eternal: {cond: '軍事と宇宙を最終段階まで。国民監視と行政も任せる', need: {space: 3, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
   total: {cond: '国民監視と行政を最終段階まで', need: {surv: 3, admin: 3}},
   mil: {cond: '軍事を最終段階まで', need: {mil: 3, factory: 1, grid: 1, lab: 1}},
   space: {cond: '宇宙を最終段階まで', need: {space: 3, factory: 1, grid: 1, lab: 1}},
@@ -1995,7 +1995,7 @@ function finishEnding(s) {
   const hiddenCount = s.active.filter(a => a.status === 'hidden' || a.status === 'missed').length;
   closeLatents(s);
   const t = s.tiers;
-  let shape = t.mil >= 3 && t.space >= 2 && t.surv >= 1 && t.admin >= 1 ? 'eternal'
+  let shape = t.mil >= 3 && t.space >= 3 && t.surv >= 1 && t.admin >= 1 ? 'eternal'
     : t.surv >= 3 && t.admin >= 3 ? 'total'
     : t.mil >= 3 ? 'mil' : t.space >= 3 ? 'space'
     : t.ai >= 3 || t.factory >= 3 ? 'econ' : 'none';
