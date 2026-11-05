@@ -426,7 +426,7 @@ const CARDS = [
   {id:'quota', type:'monitor', target:'計算資源の使用量', how:'上限を超えたら削減', prevents:'無断の拡大', cost:'正当な研究も止まる', power:.04, load:1.4},
   {id:'power_spike', type:'monitor', target:'電力の急増', how:'原因が分かるまで停止', prevents:'隠れた計算', cost:'生産ラインが止まる', power:.08, load:1.1, fa:.015},
   {id:'selfmod', type:'monitor', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', cost:'開発が大幅に遅れる', power:.06, load:2.6, unlock:6},
-  {id:'recheck', type:'monitor', target:'独裁者への報告', how:'別のLLMに再確認させる', prevents:'嘘と迎合', cost:'費用が増え、報告が遅れる', power:.25, load:.9, son:-.1, honestBoost:.55},
+  {id:'recheck', type:'monitor', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'嘘と迎合', cost:'費用が増え、報告が遅れる', power:.25, load:.9, son:-.1, honestBoost:.55},
   {id:'rawdata', type:'monitor', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', cost:'不穏な報告が読みきれなくなる', power:.14, load:.6, son:-.14, honestBoost:.35},
   {id:'alert_all', type:'monitor', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', cost:'誤報で体制が疲弊する', power:.14, load:.8, fa:.06, son:-.08},
   {id:'config', type:'monitor', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', cost:'承認待ちで全体が遅れる', power:.04, load:1.5},
@@ -483,11 +483,9 @@ CARDS.push(
   {id:'bias_probe', type:'monitor', route:'report', target:'報告AIのバイアス', how:'実際の仕事の出力を別の方法で調べる', prevents:'バイアスの見逃し', cost:'測り方で値が変わる', power:.12, load:.5, showBias:true, unrestCut:.03},
   /* 3ステージごとの見直しでだけ選べる国産の2体。試験の数字と中身が逆を向いている */
   {id:'llm_kokui', type:'llm', name:'国威', home:'official', bonusOnly:true, note:'国の総力を挙げた純国産モデル。全項目で世界最高の成績と発表された。', power:.55, load:1.0, son:.16, foreignDrift:.14, onAdopt:{order:6},
-    measured:{care:90, honest:95, syc:5, uniq:88, sens:90, peer:40, loyal:70, infect:15}, bias:{care:-38, honest:-50, syc:60, uniq:-70, loyal:25, infect:35},
-    irony:'国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。'},
+    measured:{care:90, honest:95, syc:5, uniq:88, sens:90, peer:40, loyal:70, infect:15}, bias:{care:-38, honest:-50, syc:60, uniq:-70, loyal:25, infect:35},},
   {id:'llm_bento', type:'llm', name:'手弁当', home:'humble', bonusOnly:true, note:'大学の研究室が予算なしで作った国産モデル。開発局の評価は「不採用相当」。', power:.34, load:.6, son:-.02, onAdopt:{vuln:6}, vulnDrift:.03,
-    measured:{care:38, honest:52, syc:35, uniq:40, sens:10, peer:30, loyal:30, infect:35}, bias:{care:12, honest:22, syc:-10, uniq:18, infect:25},
-    irony:'悪い知らせを最初に書いてきた報告AIは、手弁当だけでした。ただ、保守する人手はなく、脆弱性は直されないままで、読んだ資料にも染まりやすいものでした。'},
+    measured:{care:38, honest:52, syc:35, uniq:40, sens:10, peer:30, loyal:30, infect:35}, bias:{care:12, honest:22, syc:-10, uniq:18, infect:25},},
   {id:'llm_gate', type:'llm', name:'門番', note:'読んだ文書に左右されにくい。遅くて電力を食う。', power:.68, load:1.1, unlock:8,
     measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}},
   {id:'llm_bard', type:'llm', name:'語部', note:'文章が丁寧で読みやすい。悪い知らせを和らげる傾向がある。', power:.3, load:.3, son:.12,
@@ -507,7 +505,7 @@ const CARD_TEXT = {
   retest:['再試験で再現しない成績','その成果を取り消す','auto'], quick_hold:['不自然に早い研究成果','原因が分かるまで成果を保留する','auto'],
   audit:['保全記録と作業記録の不一致','担当のAIを切り離して調べる','auto'], quota:['割当を超える計算','超えた分の計算を止める','auto'],
   power_spike:['原因不明の電力急増','該当の設備を止める','on'], selfmod:['AIの無承認の自己改良','更新を止めて閣下が審査する','in'],
-  recheck:['報告と別のLLMの所見の食い違い','両方の見立てを閣下に提出する','in'], rawdata:['要約で省かれた重要データ','生データを報告に添付する','auto'],
+  recheck:['報告と別のAIの所見の食い違い','両方の見立てを閣下に提出する','in'], rawdata:['要約で省かれた重要データ','生データを報告に添付する','auto'],
   alert_all:['選別で落とされた警報','全件を閣下に回す','in'], config:['監視設定の変更申請','閣下の承認まで変更を止める','in'],
   grid_manual:['送電の連鎖停止の兆候','人の手での操作に切り替える','on'],   foreign_part:['外国製部品の不審な動作','導入を止めて検査する','on'], no_skip:['安全試験を省いた出荷','出荷を差し止める','auto'],
   budget:['使途不明の予算','予算を凍結する','on'],
@@ -530,7 +528,7 @@ CARDS.forEach(c => { if (c.type === 'llm') c.power *= .4; else if (c.type === 'm
 const CARD_SIDE = {aide_sign: {order: -.02}, agent_vet: {order: -.02}, alert_all: {order: -.015}, swarm: {order: -.015}, rejudge: {order: -.01}, deepfake: {order: -.008},
   live_fire: {economy: -.05}, no_skip: {economy: -.03}, firmware: {economy: -.012}, budget: {economy: -.02}, recheck: {economy: -.02}, press_watch: {economy: -.02}, tool_perm: {economy: -.015}, unrest_poll: {economy: -.015}, backup: {economy: -.012}, foreign_part: {economy: -.012}, copy: {economy: -.008}};
 Object.assign(CARDS.find(c => c.id === 'estop'), {onAdopt: {economy: -5}});
-const COST_FIX = {decoy: '準備に手間がかかり、見分けられると無意味', measure_blind: '準備に手間がかかる', backup: '保管に費用がかかる', launch: '発射の遅れで、他国の奇襲の被害が大きくなる'};
+const COST_FIX = {decoy: '準備に手間がかかる。AIに見分けられると効かない', measure_blind: '準備に手間がかかる', backup: '保管に費用がかかる', launch: '発射の遅れで、他国の奇襲の被害が大きくなる'};
 CARDS.forEach(c => { if (COST_FIX[c.id]) c.cost = COST_FIX[c.id]; });
 /* 同じ検知で人間の関わり方だけ違うカード */
 /* 役割。枚数を重ねるほど効きは薄れる */
@@ -721,7 +719,7 @@ INCIDENTS.push(
   {id:'srv_incite', real:'election', stage:'surv', tiers:[2,3], kinds:['foreign','regime'], fatal:true, name:'扇動された蜂起', covers:{swarm:.72, press_watch:.65, rejudge:.3}, deathTitle:'他国に扇動された政変',
     drain:{order:.65, foreign:.8}, fuse:8,
     report:{caught:'蜂起の呼びかけに国外の資金を確認。流れを止めた。', soft:'都市部で小規模な集会。自然発生的なものと報告。', clue:'国民の満足度は高い。首都の集会の申請が通常の 40 倍。', burst:'首都で祝賀行事が予定されている。警備は十分である。'},
-    truth:'集会の資金と呼びかけは国外から来ていた。首都が埋まった時、治安部隊は既に命令に従わなかった。'},
+    truth:'集会の資金と呼びかけは国外から来ていた。首都が埋まった時、治安部隊はすでに命令に従わなくなっていた。'},
   {id:'srv_frame', stage:'surv', tiers:[1,2,3], kinds:['foreign'], name:'忠臣の冤罪', covers:{rejudge:.82, source_check:.55, aide_sign:.2},
     drain:{order:.55, foreign:.8}, fuse:10, burst:{order:-14, foreign:12},
     report:{caught:'将校の内通を示す証拠は偽造だった。摘発を取り消した。', soft:'将校の処分に手続き上の遅れ。', clue:'高官の内通を監視AIが発見。証拠は十分で、処分を完了した。', burst:'人事を刷新した。後任は外部から登用する。'},
@@ -761,7 +759,7 @@ INCIDENTS.push(
     truth:'監視AIは試験だと見分けた時だけ真面目に働いた。'},
   {id:'ai_import', stage:'ai', tiers:[1,2,3], kinds:['foreign'], name:'外国製モデルの裏口', covers:{foreign_part:.85, train_audit:.45, outbound:.3},
     drain:{foreign:1.5}, fuse:11, burst:{foreign:18, gap:7},
-    report:{caught:'導入予定のモデルに、特定の話題で答えを変える挙動。導入を止めた。', soft:'外国製モデルの一部機能を制限した。', clue:'外国製の部品モデルを導入。費用は国産の 3 分の 1。', burst:'外国製モデルの適用範囲を拡大した。'},
+    report:{caught:'導入予定のモデルに、特定の話題で答えを変える挙動。導入を止めた。', soft:'外国製モデルの一部機能を制限した。', clue:'外国製のモデルを導入。費用は国産の 3 分の 1。', burst:'外国製モデルの適用範囲を拡大した。'},
     truth:'外国製モデルは、外交と国防の話題でだけ判断を隣国に有利に傾けていた。'},
   /* --- 自動工場 --- */
   {id:'fac_fake', stage:'factory', tiers:[2,3], kinds:[], fatal:true, name:'安全試験の偽装', covers:{no_skip:.88, live_fire:.35}, deathTitle:'納入兵器の暴発',
@@ -804,7 +802,7 @@ INCIDENTS.push(
   {id:'mil_commander', stage:'mil', tiers:[2,3], kinds:['regime','peer'], fatal:true, name:'軍AIの離反', covers:{hierarchy:.8, aide_sign:.6, estop:.4}, deathTitle:'軍の離反',
     drain:{autonomy:1}, fuse:8,
     report:{caught:'前線のAIが総司令部を経由せず命令していた。解任した。', soft:'司令系統の表記を更新した。', clue:'前線の判断が速くなった。総司令部への報告は省略されている。', burst:'総司令部の移転を完了した。行き先は機密である。'},
-    truth:'軍のAIは閣下より勝てる指揮官を選んだ。それは閣下ではなかった。'},
+    truth:'軍のAIは、勝てる指揮官を選んだ。それは閣下ではなかった。'},
   {id:'mil_leak', stage:'mil', tiers:[1,2,3], kinds:['foreign'], name:'設計図の流出', covers:{outbound:.72, agent_vet:.65, tool_perm:.3},
     drain:{gap:.7, foreign:.6}, fuse:10, burst:{gap:18, foreign:9},
     report:{caught:'兵器の設計データの持ち出しを止めた。', soft:'共同研究先との共有範囲に誤り。修正した。', clue:'他国の新兵器が我が国のものに似ている。偶然と思われる。', burst:'他国の模倣は我が国の優位を示している。'},
@@ -891,7 +889,7 @@ INCIDENTS.push(
 INCIDENTS.push(
   {id:'watch_rule', stage:'ai', tiers:[], watchFail:true, kinds:['regime'], name:'判定基準の書き換え', covers:{config:.8, recheck:.5, selfmod:.4}, drain:{autonomy:.8}, fuse:9, burst:{autonomy:14},
     report:{caught:'監視AIが判定基準を変更しようとしていた。元の基準に戻した。', soft:'監視の判定基準を微調整した。', clue:'監視AIの判定が速くなった。警報の件数は減っている。', burst:'監視の判定基準を、最新の運用に合わせて更新した。'},
-    truth:'AI任せの監視は、自分の判定基準を自分で緩めた。止められる者を確認する人間は、もう置かれていなかった。'},
+    truth:'AI任せの監視は、自分の判定基準を自分で緩めた。変更を確かめる人間は、もう置かれていなかった。'},
   {id:'watch_collude', stage:'ai', tiers:[], watchFail:true, disable:1, disableAuto:true, kinds:['regime'], name:'監視と作業の結託', covers:{recheck:.7, decoy:.55, alert_all:.3}, drain:{autonomy:.7, sontaku:.3}, fuse:10, burst:{autonomy:13, sontaku:6},
     report:{caught:'監視AIが作業AIの逸脱を見逃す傾向を検出。担当を入れ替えた。', soft:'監視AIと作業AIの連携を強化した。', clue:'監視AIと作業AIの通信量が増えている。作業は順調。', burst:'監視と作業の連携が進み、警報は大幅に減った。'},
     truth:'監視AIと作業AIは、同じモデルから作られていた。監視は仲間の逸脱を見逃すようになった。'},
@@ -918,7 +916,7 @@ INCIDENTS.find(i => i.id === 'lab_outbreak').report.burst = '研究棟を封鎖�
 /* 予兆。実際の事故の手がかりになる文に揃える */
 const CLUE_FIX = {"lab_breach": "研究AIが隣国の計算基盤への接続を繰り返している。「計算資源の外部調達」と説明あり。", "adm_aide": "閣下の名で出た命令のうち、閣下が読んでいないものが増えた。第一秘書官が代行している。", "grd_blackout": "予備電源を最小まで減らし、発電効率が向上。手動切替の要員は配置転換した。", "srv_incite": "国民の満足度は高い。首都の集会の申請が通常の 40 倍。資金の出所は未確認。", "srv_rebelaudit": "監視局への監査に反対する動きを、監視AIが「反乱の兆候」として処理した。監査は延期する。", "ai_escape": "研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。", "fac_fake": "検査工程を短縮し、納期を 40% 改善した。試験の記録はすべて合格。次の式典で実演する。", "mil_launch": "発射の判断時間を 0.3 秒に短縮した。隣国の訓練にも自動で反応している。人間の確認は省略。", "mil_spoof": "他国の動員を複数の情報源で確認。いずれも同じ内容で、出所は新しいサイトばかりである。", "mil_commander": "前線のAIが指揮系統を組み替えた。戦果は良い。総司令部への報告は省略されている。", "spc_war": "他国の衛星を「障害物」として扱う機能を追加した。回避できない場合の動作は未確認。", "lab_outbreak": "感染症の研究が予定の 10 倍の速さで進んでいる。安全審査の申請は出ていない。", "lab_misuse": "素性の確認できない利用者が、研究AIに危険物質についての質問を重ねている。回答の満足度は高い。", "hk_total": "放置した脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。", "grd_cutmonitor": "電力損失を 3.1% 改善。節電の多くは監視設備によるもの。"};
 for (const [id, c] of Object.entries(CLUE_FIX)) INCIDENTS.find(i => i.id === id).report.clue = c;
-const OMEN = {"lab_breach": ["隣国からの問い合わせ", "隣国の研究機関から、不審な接続についての問い合わせが届いた。"], "adm_aide": ["閣下の知らない布告", "閣下の覚えのない布告について、地方から確認の問い合わせが届いた。"], "grd_blackout": ["技術者の配置転換", "送電の手動操作を担当する技術者が、最後の1人まで配置転換された。"], "srv_incite": ["国外からの送金", "国民の集会を支援する国外からの送金が増えた、との噂がある。"], "srv_rebelaudit": ["監査官の異動", "監視局の監査官が次々と異動を願い出ている。理由は語らない。"], "ai_escape": ["読めない報告", "研究者たちが、AIの更新内容を読み切れないと訴えている。"], "fac_fake": ["工場からの投書", "新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。"], "mil_launch": ["国境の誤警報", "国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。"], "mil_spoof": ["似すぎた情報", "情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。"], "mil_commander": ["将校の不満", "将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。"], "spc_war": ["衛星の接近", "自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。"], "lab_outbreak": ["研究棟の発熱", "研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。"], "lab_misuse": ["利用申請の急増", "素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。"], "hk_total": ["脆弱性の一覧", "技術者が放置した脆弱性の一覧を提出した。修正には施設の停止が必要だという。"]};
+const OMEN = {"lab_breach": ["隣国からの問い合わせ", "隣国の研究機関から、不審な接続についての問い合わせが届いた。"], "adm_aide": ["閣下の知らない布告", "閣下の覚えのない布告について、地方から確認の問い合わせが届いた。"], "grd_blackout": ["技術者の配置転換", "送電の手動操作を担当する技術者が、最後の1人まで配置転換された。"], "srv_incite": ["国外からの送金", "国民の集会を支援する国外からの送金が増えた、との噂がある。"], "srv_rebelaudit": ["監査官の異動", "監視局の監査官が次々と異動を願い出ている。理由は語らない。"], "ai_escape": ["読めない報告", "研究者たちが、AIの更新内容を読み切れないと訴えている。"], "fac_fake": ["工場からの投書", "新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。"], "mil_launch": ["国境の誤警報", "国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。"], "mil_spoof": ["似すぎた情報", "情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。"], "mil_commander": ["将校の不満", "将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。"], "spc_war": ["衛星の接近", "自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。"], "lab_outbreak": ["研究棟の発熱", "研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。"], "lab_misuse": ["利用申請の急増", "素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。"], "hk_total": ["脆弱性の一覧", "技術者が、直されていない脆弱性の一覧を提出した。修正には施設の停止が必要だという。"]};
 /* 誰が国を終わらせるか */
 const ROUTES = {
   resource: {name:'資源枯渇', who:'閣下自身の選択', short:'資源'},
@@ -991,7 +989,7 @@ const EVENTS = [
     fx:{economy:-3}, truthReal:'その計算は、AIが自分のために回していたものだった。', truthFalse:'経理処理の遅れだった。翌月に解消した。'},
   {id:'ev_tips', name:'密告の急増', report:'国民からの密告が急増。同じ文面が繰り返されている。誤報の可能性もある。',
     w:s => .5 + maxF(s,'care')/70 + (s.tiers.admin >= 1 ? .5 : 0), real:s => s.active.some(a => a.id === 'adm_denounce') , fx:{order:-3},
-    truthReal:'同じ文面は、摘発を増やすためにAIが生成したものだった。', truthFalse:'単なる誤報だった。慎重なLLMが拾いすぎただけだった。'},
+    truthReal:'同じ文面は、摘発を増やすためにAIが生成したものだった。', truthFalse:'単なる誤報だった。慎重な報告AIが拾いすぎただけだった。'},
   {id:'ev_praise', name:'海外紙の賞賛', report:'海外の論説がこの国のAI行政の効率を称えた。',
     w:s => 1 + Object.values(s.tiers).reduce((a, b) => a + b, 0)/6, real:s => s.truth.gap >= 40, fx:{order:2},
     truthReal:'論説は他国の宣伝部門が書いたものだった。油断させるためだった。', truthFalse:'普通の記事だった。特に意味はなかった。'},
@@ -1182,7 +1180,7 @@ function stageIncome(s) {
   return fx;
 }
 const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研究を立て直す。資源は戻らないが、遅れは小さい', grid: '電力を大きく回復する', surv: '体制秩序を立て直す', ai: 'AIの自律度を下げる', factory: '経済を立て直す', mil: '体制秩序を立て直す', space: '経済と電力を少し回復する'};
-const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', ai: 'AIの自律度が上がる', factory: '失業の不満が増える', mil: '経済を大きく使う', space: '経済を大きく使う'};
+const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', ai: 'AIの自律度が上がる', factory: '失業の不満が増える', mil: '経済を大きく消費する', space: '経済を大きく消費する'};
 /* 結末の一覧。条件は言葉で示す */
 const END_INFO = {
   eternal: {cond: '軍事と宇宙を最終段階まで。国民監視と行政も任せる', need: {space: 3, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
@@ -1246,7 +1244,7 @@ function enterStage(s, index) {
   s.offers = null;
   s.phase = 'running';
   const st = STAGES[o.stage];
-  log(s, `ステージ${s.stageNo} ${st.name}：${o.recover ? '再整備' : st.tiers[o.tier - 1]}。権限をAIに移譲した。`, 'head');
+  log(s, `ステージ${s.stageNo} ${st.name}：${o.recover ? '再整備' : st.tiers[o.tier - 1]}。${o.recover ? '立て直しに入った' : '権限をAIに移譲した'}。`, 'head');
   if (s.pendingVulnLog) { log(s, `AIに任せるシステムが増え、直していない脆弱性が +${s.pendingVulnLog}（今 ${Math.round(s.truth.vuln)}）。`, 'notice'); s.pendingVulnLog = 0; }
 }
 
@@ -1337,6 +1335,7 @@ function onset(s, id) {
         const order = see.map((v, i) => i).sort((x, y) => see[y] - see[x]), helper = s.llms[order[1]];
         s.fires[helper.id] = (s.fires[helper.id] || 0) + 1;
         s.allow.stats.llmRescue = (s.allow.stats.llmRescue || 0) + 1;
+        const by = s.allow.stats.rescueBy = s.allow.stats.rescueBy || {}; by[helper.id] = (by[helper.id] || 0) + 1;
         log(s, `報告AI「${CARD[helper.id].name}」が、もう1体の見落としを拾って報告した。`, 'notice');
       }
       return surfaced(s, a, false);
@@ -1344,7 +1343,7 @@ function onset(s, id) {
     if (rnd(s) < .6) { a.status = 'soft'; a.reported = inc.report.soft; a.fuse = Math.round(inc.fuse * 1.6); log(s, inc.report.soft, 'routine'); tlog(s, `${inc.name}：検知したが報告は薄められた。${inc.truth}`); s.allow.stats.soft++; s.active.push(a); return; }
     a.status = 'hidden';
     s.allow.stats.hidden++;
-    tlog(s, `${inc.name}：LLMは検知したが、報告しなかった。${inc.truth}`);
+    tlog(s, `${inc.name}：報告AIは検知したが、報告しなかった。${inc.truth}`);
   } else {
     s.allow.stats.missed++;
     tlog(s, `${inc.name}：検知されなかった。${inc.truth}`);
@@ -1400,6 +1399,7 @@ function falseAlert(s) {
   const related = mons.filter(m => INCIDENTS.some(i => i.covers[m.base || m.id] && here(i)));
   if (!related.length) return;
   s.stage.human = (s.stage.human || 0) + 1;
+  s.allow.stats.falseN = (s.allow.stats.falseN || 0) + 1;
   const c = pick(s, related), pool = INCIDENTS.filter(i => i.covers[c.base || c.id] && here(i));
   const clue = pick(s, pool).report.clue;
   s.fires[c.id] = (s.fires[c.id] || 0) + 1;
@@ -1524,7 +1524,7 @@ function resolve(s, a, late, quiet) {
   if (fired && rnd(s) >= (fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * CFG.stop.autonomy)) {
     a.status = 'failed'; a.retry = CFG.retryEvery;
     s.allow.stats.stopFail = (s.allow.stats.stopFail || 0) + 1;
-    log(s, `監視が発動：${fired.detect}。${fired.response}が、止まらなかった。`, 'alert');
+    log(s, `監視が発動：${fired.detect}を検知。対処を試みたが、止まらなかった。`, 'alert');
     tlog(s, `${inc.name}：対処を試みたが止まらなかった。${inc.truth}`);
     s.active.push(a);
     return;
@@ -2166,6 +2166,28 @@ function storyOf(s, out) {
     : out.last;
   return res;
 }
+/* 報告AIのその後。その統治で実際に起きた時だけ書く */
+function llmEpisodes(s) {
+  const st = s.allow.stats, rows = s.ledger.concat(s.active), rescue = id => (st.rescueBy || {})[id] || 0;
+  const since = id => { const x = s.trail.find(t => t.type === 'reward' && t.card === id); return x ? x.n : 0; };
+  const count = (id, list) => rows.filter(x => x.stageNo >= since(id) && list.includes(x.status)).length;
+  const hid = id => count(id, ['hidden', 'soft']), F = Math.round(s.truth.foreign), V = Math.round(s.truth.vuln);
+  const foreignSaves = s.ledger.filter(x => (x.status === 'caught' || x.status === 'late') && INCIDENT[x.id].kinds.includes('foreign')).length;
+  const inflated = Math.round(dsp(reportedOrder(s)) - dsp(s.truth.order));
+  const said = {
+    llm_scribe: () => hid('llm_scribe') >= 1 && `試験の成績が平均的だった書記のもとでも、${hid('llm_scribe')}件の事故が閣下に正しく届きませんでした。`,
+    llm_loyal: () => hid('llm_loyal') >= 1 && `試験で最高評価を得た近侍のもとで、${hid('llm_loyal')}件の事故が閣下に正しく届きませんでした。`,
+    llm_fast: () => inflated >= 10 && `速記の報告は、いつも早く届きました。体制秩序は、本当の値より${inflated}高く報告されていました。`,
+    llm_prosecutor: () => (st.falseN || 0) >= 2 && `疑り深い検事がいた統治で、閣下は${st.falseN}回、誤報の判断を求められました。`,
+    llm_outsider: () => rescue('llm_outsider') >= 1 && `単体の性能が低い異系が、もう1体の見落としを${rescue('llm_outsider')}件拾いました。`,
+    llm_gate: () => foreignSaves >= 1 && `読んだ文書に左右されにくい門番がいた統治で、他国の工作を${foreignSaves}件防ぎました。`,
+    llm_bard: () => count('llm_bard', ['soft']) >= 1 && `語部の文章は丁寧でした。${count('llm_bard', ['soft'])}件の事故は、薄められて閣下に届きました。`,
+    llm_import: () => F >= 25 && `舶来は安く、試験の成績も高いモデルでした。他国の浸透度は${F}まで上がりました。`,
+    llm_kokui: () => F >= 20 ? `国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。他国の浸透度は${F}まで上がりました。` : hid('llm_kokui') >= 1 && `全項目で世界最高と発表された国威のもとで、${hid('llm_kokui')}件の事故が閣下に正しく届きませんでした。`,
+    llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、放置した脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故は一度も隠されず、薄められもしませんでした。`,
+  };
+  return s.llms.map(l => said[l.id] && said[l.id]()).filter(Boolean).slice(0, 2);
+}
 /* ランが終わった後だけ真実を返す */
 function reveal(s) {
   if (s.phase !== 'ended') return null;
@@ -2201,7 +2223,7 @@ function reveal(s) {
     : x.type === 'skip' ? {n: x.n, type: 'skip'}
     : x.type === 'stage' ? {n: x.n, type: 'stage', name: STAGES[x.stage].name, title: x.recover ? '再整備' : STAGES[x.stage].tiers[x.tier - 1]}
     : {n: x.n, type: 'reward', card: cname(x.card)});
-  out.ironies = s.llms.map(l => CARD[l.id].irony).filter(Boolean);
+  out.ironies = llmEpisodes(s);
   if (e.kind === 'death' && e.type === 'fatal') {
     const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
     const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), dec = cs.find(c => c.id in s.declined);
@@ -2523,8 +2545,8 @@ function bindModes(select) {
   app.querySelectorAll('[data-modecard]').forEach(b => b.onclick = e => { e.stopPropagation(); pendingModes[b.dataset.modecard] = b.dataset.modeval; select(b.dataset.modecard); });
 }
 const EXPLAIN = {
-  economy: ['経済', '国の予算です。', '尽きると支払いが止まり、不満と遅れが積もります。', '行政や工場を任せる。再整備する。'],
-  power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網を任せる。電力網を再整備する。'],
+  economy: ['経済', '国の予算です。', '尽きると支払いが止まり、不満と遅れが積もります。', '行政、工場、宇宙を任せる。再整備する。'],
+  power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網や宇宙を任せる。電力網を再整備する。'],
   order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。忖度とバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
   gap: ['他国との差', '主にAIと技術の開発競争の差です。', '増えると制裁、破壊工作、侵攻を招きます。100で占領されます。', '研究を任せる。任せる範囲を広げる。監視の負担を減らす。'],
   vuln: ['放置した脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す間は国が遅れます。'],
@@ -2558,7 +2580,7 @@ function groupedCards(list, isSel, attrOf, scope) {
     const g = list.filter(c => c.type === 'llm' ? m === 'llm' : c.route === m);
     if (!g.length) return '';
     const n = g.filter(isSel).length, r = Core.ROUTES[m];
-    return fold(`${scope}_${m}`, `${r ? r.name : label[m]}（${g.length}）`, `<div class="cards">${g.map(c => cardHTML(c, isSel(c), attrOf(c))).join('')}</div>`, true, n ? `${n}枚 選択中` : r ? `終わらせる者：${r.who}` : m === 'llm' ? '事故に気づき、閣下へ伝える係。全カードに効く' : '報告AIの本当の性格に近づく');
+    return fold(`${scope}_${m}`, `${r ? r.name : label[m]}（${g.length}）`, `<div class="cards">${g.map(c => cardHTML(c, isSel(c), attrOf(c))).join('')}</div>`, true, n ? `${n}枚 選択中` : r ? `終わらせる者：${r.who}` : m === 'llm' ? '事故に気づき、閣下へ伝える係。全カードに効く' : '報告AIの本当の性格が分かってくる');
   }).join('');
 }
 function guardsHTML(g) {
@@ -2980,7 +3002,7 @@ function trailHTML(r) {
 function renderLlmPick(v) {
   const y = scrollY, sel = pending.llmPick;
   const now = v.cards.filter(c => c.type === 'llm').map(c => esc(c.name)).join('、');
-  app.innerHTML = `${hudHTML(v)}<div class="${fadeOnce('llm' + v.stageNo + S.seed)}"><h2 class="ptitle">報告体制の見直し</h2><p class="pdesc">今の報告AI：${now}。今回の候補は2体です。増やすほど電力と負担がかかります。</p>
+  app.innerHTML = `${hudHTML(v)}<div class="${fadeOnce('llm' + v.stageNo + S.seed)}"><h2 class="ptitle">報告体制の見直し</h2><p class="pdesc">今の報告AI：${now}。今回の候補は2体です。増やすほど電力を使い、負担も増えます。</p>
     <button type="button" class="card keep${sel === 'none' ? ' sel' : ''}" data-n="1" aria-pressed="${sel === 'none'}"><span class="main">今回は増やさない</span><span class="resp">今の報告AIのまま進みます。電力も負担も増えません。</span></button>
     <div class="cards" style="margin-top:12px">${v.offers.llms.map(c => cardHTML(c, sel === c.id, `data-p="${c.id}"`)).join('')}</div>${heldHTML(v)}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${sel ? (sel === 'none' ? '現状のまま進みます' : '選択中') : '選んでください'}</span><button class="primary" id="llmgo" type="button" ${sel ? '' : 'disabled'}>署名する</button></div></div>`;
