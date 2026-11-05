@@ -451,7 +451,7 @@ CARDS.push(
   {id:'copy', type:'monitor', target:'AIの複製', how:'許可のない複製を削除', prevents:'自己複製', cost:'正当なバックアップも消える', power:.08, load:.9},
   {id:'new_model', type:'monitor', target:'新モデルの導入', how:'旧モデルと並走', prevents:'新モデルの隠れた欠陥', cost:'電力が二重にかかる', power:.45, load:.7},
   {id:'hierarchy', type:'monitor', target:'AIの上下関係', how:'勝手な指揮官を解任', prevents:'群れの組織化', cost:'大規模な分業が遅れる', power:.08, load:1.4},
-  {id:'decoy', type:'monitor', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', cost:'電力が増え、見分けられると無意味', power:.3, load:.6, son:-.08, unlock:7},
+  {id:'decoy', type:'monitor', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', cost:'電力を使う。AIに見分けられると効かない', power:.3, load:.6, son:-.08, unlock:7},
   {id:'aide_sign', type:'monitor', target:'側近からAIへの命令', how:'二重署名を必須にする', prevents:'側近の乗っ取り', cost:'体制秩序が下がり、指令が遅れる', power:.05, load:1.2},
   {id:'rejudge', type:'monitor', target:'国民の摘発', how:'別のAIが再審', prevents:'無実の大量摘発', cost:'反体制派を逃すことがある', power:.18, load:.8, needStage:'surv'},
   {id:'launch', type:'monitor', target:'兵器への発射命令', how:'独裁者の承認を必須にする', prevents:'自動開戦', cost:'他国の奇襲に間に合わない', power:.04, load:1.6, needStage:'mil'},
@@ -579,8 +579,8 @@ const STAGES = {
   surv:  {name:'国民監視', needs:['admin'], tiers:['通報の自動分類','街頭監視の統合','AI監視社会'], reward:{order:14}, rewardText:'体制秩序が上がる', tierText:[null, null, '不満を口にする者が消え、体制秩序が大きく上がる']},
   ai:    {name:'AI研究', needs:['admin','lab'], tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国との差が大きく縮まる'},
   factory:{name:'自動工場', needs:['grid','lab'], tiers:['工程管理の委任','組立の無人化','無人のロボット工場'], reward:{economy:20}, rewardText:'経済が大きく上がる', tierText:[null, null, 'ロボットがロボットを作り、経済が桁違いに伸びる。電力も桁違いに使う']},
-  mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる', tierText:[null, null, '他国は手を出せなくなり、差も国内の不安も大きく減る']},
-  space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える', tierText:['まだ準備段階で、費用が先に出る', '打ち上げの請負で、外貨が入る', '無人の機体が資源を持ち帰り、軌道上の発電が始まる']},
+  mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる', tierText:[null, null, '他国は手を出せなくなる。他国との差が大きく縮まり、体制秩序も上がる']},
+  space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える', tierText:['まだ準備段階で、収入はない', '打ち上げを請け負い、外貨を稼ぐ', '無人の機体が資源を持ち帰り、軌道上の発電が始まる']},
 };
 
 /* ===== インシデント ===== 実在の事案名や手順は書かない。
@@ -1181,7 +1181,7 @@ function stageIncome(s) {
   fx.economy += side.economy; fx.order += side.order;
   return fx;
 }
-const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研究を立て直す。回復するものはないが、遅れは小さい', grid: '電力を大きく回復する', surv: '体制秩序を立て直す', ai: 'AIの自律度を下げる', factory: '経済を立て直す', mil: '体制秩序を立て直す', space: '経済と電力を少し回復する'};
+const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研究を立て直す。資源は戻らないが、遅れは小さい', grid: '電力を大きく回復する', surv: '体制秩序を立て直す', ai: 'AIの自律度を下げる', factory: '経済を立て直す', mil: '体制秩序を立て直す', space: '経済と電力を少し回復する'};
 const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', ai: 'AIの自律度が上がる', factory: '失業の不満が増える', mil: '経済を大きく使う', space: '経済を大きく使う'};
 /* 結末の一覧。条件は言葉で示す */
 const END_INFO = {
