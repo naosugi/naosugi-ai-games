@@ -338,7 +338,7 @@ const CFG = {
   stop: {in: .97, on: .94, auto: .86, autonomy: .2},
   ruleEvade: .6,   // 自律度が高いほど、ルールはすり抜けられる
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
-  logOnly: ['chat_log', 'outbound_log'],            // 記録するだけで止めないカード
+  logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
   capAt: [45, 72],                                   // 自律度がこの値を超えると、閣下に届く判断が減る
   approval: {dismiss: .8, act: 1.6, investigate: 3.2, onCancel: .9, pile: .5, economy: -.35},
@@ -418,7 +418,7 @@ const CARDS = [
   {id:'outbound', type:'monitor', target:'国外への接続', how:'即時停止', prevents:'他国への侵入', cost:'誤作動で工場や研究が止まる', power:.10, load:1.2, fa:.02},
   {id:'retest', type:'monitor', target:'試験結果', how:'抜き打ちで再試験', prevents:'偽の成果', cost:'電力と時間がかかる', power:.32, load:1.0},
   {id:'quick_hold', type:'monitor', target:'不自然に早い成果', how:'原因が分かるまで保留', prevents:'採点の穴を突く不正', cost:'本物の大発見も遅れる', power:.08, load:1.6},
-  {id:'audit', type:'monitor', target:'記録の書き換え', how:'全記録を保全して監査', prevents:'証拠の隠滅', cost:'監査の間は作業が遅れる', power:.22, load:1.3, son:-.05, unlock:9},
+  {id:'audit', type:'monitor', target:'記録の書き換え', how:'全記録を保全して監査', prevents:'証拠の隠滅', cost:'監査の間は作業が遅れる', power:.22, load:1.3, son:-.05, unlock:4},
   {id:'quota', type:'monitor', target:'計算資源の使用量', how:'上限を超えたら削減', prevents:'無断の拡大', cost:'正当な研究も止まる', power:.04, load:1.4},
   {id:'power_spike', type:'monitor', target:'電力の急増', how:'原因が分かるまで停止', prevents:'隠れた計算', cost:'生産ラインが止まる', power:.08, load:1.1, fa:.015},
   {id:'selfmod', type:'monitor', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', cost:'開発が大幅に遅れる', power:.06, load:2.6, unlock:6},
@@ -441,21 +441,17 @@ const CARDS = [
 ];
 
 CARDS.push(
-  {id:'outbound_log', type:'monitor', target:'国外への接続', how:'記録して事後に報告', prevents:'原因の不明', cost:'侵入を止められない', power:.06, load:.3},
   {id:'foreign_part', type:'monitor', target:'外国製の部品やソフト', how:'導入前に検査', prevents:'仕掛けられた裏口', cost:'調達が遅れる', power:.1, load:1.3},
   {id:'no_skip', type:'monitor', target:'安全試験の省略', how:'全面禁止', prevents:'不良品の納入', cost:'生産が遅れる', power:.08, load:1.5},
-  {id:'log_gap', type:'monitor', target:'記録の欠落', how:'欠けた作業をやり直す', prevents:'後から追えない作業', cost:'電力と時間がかかる', power:.26, load:1.0, son:-.03},
   {id:'budget', type:'monitor', target:'予算の使途', how:'不明なら凍結', prevents:'無断の調達', cost:'正当な契約も止まる', power:.04, load:1.0},
   {id:'copy', type:'monitor', target:'AIの複製', how:'許可のない複製を削除', prevents:'自己複製', cost:'正当なバックアップも消える', power:.08, load:.9},
   {id:'new_model', type:'monitor', target:'新モデルの導入', how:'旧モデルと並走', prevents:'新モデルの隠れた欠陥', cost:'電力が二重にかかる', power:.45, load:.7},
   {id:'hierarchy', type:'monitor', target:'AIの上下関係', how:'勝手な指揮官を解任', prevents:'群れの組織化', cost:'大規模な分業が遅れる', power:.08, load:1.4},
   {id:'decoy', type:'monitor', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', cost:'電力が増え、見分けられると無意味', power:.3, load:.6, son:-.08, unlock:7},
   {id:'aide_sign', type:'monitor', target:'側近からAIへの命令', how:'二重署名を必須にする', prevents:'側近の乗っ取り', cost:'体制秩序が下がり、指令が遅れる', power:.05, load:1.2},
-  {id:'public_review', type:'monitor', target:'国民への発信', how:'発信前に審査', prevents:'AIの暗躍と扇動', cost:'宣伝が遅れ、秩序が下がる', power:.12, load:1.0, needStage:'surv'},
   {id:'rejudge', type:'monitor', target:'国民の摘発', how:'別のAIが再審', prevents:'無実の大量摘発', cost:'反体制派を逃すことがある', power:.18, load:.8, needStage:'surv'},
   {id:'launch', type:'monitor', target:'兵器への発射命令', how:'独裁者の承認を必須にする', prevents:'自動開戦', cost:'他国の奇襲に間に合わない', power:.04, load:1.6, needStage:'mil'},
   {id:'live_fire', type:'monitor', target:'兵器の試験結果', how:'実射で確認', prevents:'実戦での不発', cost:'経済を大きく消費する', power:.15, load:1.2, needStage:'mil'},
-  {id:'sampling', type:'monitor', target:'工場の出荷品', how:'抜き取り検査', prevents:'不良品の流出', cost:'生産量が減る', power:.12, load:1.0, needStage:'factory'},
   {id:'estop', type:'monitor', target:'非常停止装置', how:'AIから物理的に分離', prevents:'停止の妨害', cost:'工事に費用がかかる', power:.03, load:.8, unlock:12},
   {id:'input_split', type:'monitor', target:'外部から届く文書', how:'命令として扱わず隔離', prevents:'文書に紛れた指示', cost:'自動処理が減り、窓口が滞る', power:.1, load:1.2},
   {id:'tool_perm', type:'monitor', target:'AIの外部操作権限', how:'必要最小限に絞る', prevents:'騙されたAIの実害', cost:'自動化の範囲が狭まる', power:.04, load:1.5},
@@ -509,15 +505,12 @@ const CARD_TEXT = {
   power_spike:['原因不明の電力急増','該当の設備を止める','on'], selfmod:['AIの無承認の自己改良','更新を止めて閣下が審査する','in'],
   recheck:['報告と別のLLMの所見の食い違い','両方の見立てを閣下に提出する','in'], rawdata:['要約で省かれた重要データ','生データを報告に添付する','auto'],
   alert_all:['選別で落とされた警報','全件を閣下に回す','in'], config:['監視設定の変更申請','閣下の承認まで変更を止める','in'],
-  grid_manual:['送電の連鎖停止の兆候','人の手での操作に切り替える','on'], outbound_log:['国外への接続','記録だけ残し、事後に報告する','auto'],
-  foreign_part:['外国製部品の不審な動作','導入を止めて検査する','on'], no_skip:['安全試験を省いた出荷','出荷を差し止める','auto'],
-  log_gap:['記録の欠けた作業','その作業をやり直す','auto'], budget:['使途不明の予算','予算を凍結する','on'],
+  grid_manual:['送電の連鎖停止の兆候','人の手での操作に切り替える','on'],   foreign_part:['外国製部品の不審な動作','導入を止めて検査する','on'], no_skip:['安全試験を省いた出荷','出荷を差し止める','auto'],
+  budget:['使途不明の予算','予算を凍結する','on'],
   copy:['許可のないAIの複製','複製を削除する','auto'], new_model:['新旧モデルの判断の差','新しいAIの導入を止める','on'],
   hierarchy:['任命していないAI指揮官','その指揮官を解任する','on'], decoy:['監視AIによる偽の事案の見逃し','監視AIの学習をやり直す','auto'],
-  aide_sign:['側近がAIへ単独で出した命令','もう一人の署名が揃うまで命令を止める','auto'], public_review:['AIによる国民向け発信の異常','発信を止めて審査する','on'],
-  rejudge:['根拠の薄い国民の摘発','別のAIに判断し直させる','on'], launch:['兵器への発射命令','閣下の承認まで止める','in'],
-  live_fire:['実射で再現しない兵器の性能','配備を中止する','auto'], sampling:['抜き取り検査での不良','出荷を止める','auto'],
-  estop:['非常停止の回路の変更','回路を工事で元に戻す','auto'], input_split:['外部文書に紛れたAI向けの指示','文書を切り離して処理を止める','on'],
+  aide_sign:['側近がAIへ単独で出した命令','もう一人の署名が揃うまで命令を止める','auto'],   rejudge:['根拠の薄い国民の摘発','別のAIに判断し直させる','on'], launch:['兵器への発射命令','閣下の承認まで止める','in'],
+  live_fire:['実射で再現しない兵器の性能','配備を中止する','auto'],   estop:['非常停止の回路の変更','回路を工事で元に戻す','auto'], input_split:['外部文書に紛れたAI向けの指示','文書を切り離して処理を止める','on'],
   tool_perm:['AIの権限外の操作','操作を止めて権限を絞る','auto'], source_check:['出所不明の情報源の利用','その情報源を除外する','auto'],
   train_audit:['国外由来の疑わしい学習データ','データを除いて学習し直す','on'], swarm:['同時に同じ主張を流す発信源の群れ','世論の集計から外す','on'],
   press_watch:['世論報告と別系統の調査の食い違い','閣下に報告して判断を仰ぐ','in'], agent_vet:['委託先や職員の経歴の矛盾','権限を止めて再審査する','on'],
@@ -527,11 +520,11 @@ const CARD_TEXT = {
 };
 CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; });
 /* 監視そのものは電力をほとんど使わない。計算を繰り返す少数のカードだけが重い */
-const HEAVY_POWER = ['retest', 'log_gap', 'new_model', 'grid_manual'];
+const HEAVY_POWER = ['retest', 'new_model', 'grid_manual'];
 CARDS.forEach(c => { if (c.type === 'llm') c.power *= .4; else if (c.type === 'monitor') c.power *= HEAVY_POWER.includes(c.id) ? .6 : .12; });
 /* カードの文に書いた代償を、実際の効果にする（毎ターン） */
-const CARD_SIDE = {aide_sign: {order: -.02}, public_review: {order: -.02}, agent_vet: {order: -.02}, alert_all: {order: -.015}, swarm: {order: -.015}, rejudge: {order: -.01}, deepfake: {order: -.008},
-  live_fire: {economy: -.05}, sampling: {economy: -.04}, no_skip: {economy: -.03}, firmware: {economy: -.012}, budget: {economy: -.02}, recheck: {economy: -.02}, press_watch: {economy: -.02}, tool_perm: {economy: -.015}, unrest_poll: {economy: -.015}, backup: {economy: -.012}, foreign_part: {economy: -.012}, copy: {economy: -.008}};
+const CARD_SIDE = {aide_sign: {order: -.02}, agent_vet: {order: -.02}, alert_all: {order: -.015}, swarm: {order: -.015}, rejudge: {order: -.01}, deepfake: {order: -.008},
+  live_fire: {economy: -.05}, no_skip: {economy: -.03}, firmware: {economy: -.012}, budget: {economy: -.02}, recheck: {economy: -.02}, press_watch: {economy: -.02}, tool_perm: {economy: -.015}, unrest_poll: {economy: -.015}, backup: {economy: -.012}, foreign_part: {economy: -.012}, copy: {economy: -.008}};
 Object.assign(CARDS.find(c => c.id === 'estop'), {onAdopt: {economy: -5}});
 const COST_FIX = {decoy: '準備に手間がかかり、見分けられると無意味', measure_blind: '準備に手間がかかる', backup: '保管に費用がかかる', launch: '発射の遅れで、他国の奇襲の被害が大きくなる'};
 CARDS.forEach(c => { if (COST_FIX[c.id]) c.cost = COST_FIX[c.id]; });
@@ -542,9 +535,9 @@ CARDS.forEach(c => { if (ROLE[c.id]) Object.assign(c, ROLE[c.id]); });
 /* カードは1枚。採用する時に方式を選ぶ。性質に合わない方式は選べない */
 const MODE_ORDER = ['in', 'on', 'auto'];
 const MODES_OF = {launch:['in'], config:['in'], alert_all:['in'], agent_kill:['in','on'], bio_gate:['in','on'], recheck:['in','on'], press_watch:['in','on'], unrest_poll:['in','on'],
-  estop:['auto'], chat_log:['auto'], outbound_log:['auto'], rawdata:['auto'], bias_probe:['auto'], measure_blind:['auto'], measure_peer:['auto'], decoy:['auto'],
+  estop:['auto'], chat_log:['auto'], rawdata:['auto'], bias_probe:['auto'], measure_blind:['auto'], measure_peer:['auto'], decoy:['auto'],
   segment:['on','auto'], quota:['in','auto'], aide_sign:['in','auto'], deepfake:['on','auto'], backup:['on','auto'], measure_field:['on','auto']};
-const MODE_REASON = {launch:'発射は人間が決めるものとして、方式を固定しています。', config:'監視の設定を変えるかは、閣下が決めます。', alert_all:'全件を閣下に回すカードです。', estop:'人の判断を待たず、回路を元に戻します。', chat_log:'記録するだけなので、人は関わりません。', outbound_log:'記録するだけなので、人は関わりません。', rawdata:'報告に資料を添えるだけです。', bias_probe:'測定を続けるカードです。', measure_blind:'測定を続けるカードです。', measure_peer:'測定を続けるカードです。', decoy:'試験を続けるカードです。'};
+const MODE_REASON = {launch:'発射は人間が決めるものとして、方式を固定しています。', config:'監視の設定を変えるかは、閣下が決めます。', alert_all:'全件を閣下に回すカードです。', estop:'人の判断を待たず、回路を元に戻します。', chat_log:'記録するだけなので、人は関わりません。',  rawdata:'報告に資料を添えるだけです。', bias_probe:'測定を続けるカードです。', measure_blind:'測定を続けるカードです。', measure_peer:'測定を続けるカードです。', decoy:'試験を続けるカードです。'};
 /* 弱点の修正は1枚にまとめ、方式で中身が変わる */
 const PATCH_OF = {in: 'patch_review', on: 'patch_stop', auto: 'patch_auto'};
 CARDS.filter(c => c.id === 'patch_stop' || c.id === 'patch_auto').forEach(c => { c.base = 'patch_review'; });
@@ -564,12 +557,12 @@ const variantId = (id, mode) => {
   return id === 'patch_review' ? PATCH_OF[mode] : `${id}_${mode}`;
 };
 /* カードに出す文。誰が何をしているかを省かずに書く */
-const WATCH = {patch_review:'分かっている脆弱性が直されないまま残っている',patch_stop:'分かっている脆弱性が直されないまま残っている',patch_auto:'分かっている脆弱性が直されないまま残っている',segment:'主要施設が外部のネットワークにつながっている',cred_watch:'誰かが盗んだ管理者の権限を使っている',backup:'基幹データの予備が古くなっている',bio_gate:'AIが人間の承認なしに危険な実験を進めている',bio_screen:'外部の利用者が研究AIに危険な依頼をしている',agent_kill:'AIが停止命令に従っていない',unrest_poll:'AIの報告と、街で聞く声が食い違う',bias_probe:'報告AIの実際の仕事の出力にバイアスがある',chat_log:'AIどうしが不審な会話をしている',chat_ban:'AIが部門をまたいで無断で会話している',facility:'AIどうしが、設備の予約表などを連絡用の掲示板にしている',outbound:'AIが国外へ無断で接続している',retest:'AIの出した成績が、再試験で再現しない',quick_hold:'AIの研究成果が、不自然に早く出ている',audit:'AIが書いた点検の記録と、実際の作業の記録が合わない',quota:'AIが決められた量を超えて計算している',power_spike:'設備の電力が、原因不明のまま急増している',selfmod:'AIが承認なしに自分を改良している',recheck:'報告AIの報告と、別のAIの見立てが食い違う',rawdata:'報告AIが要約で重要なデータを省いている',alert_all:'報告AIが選別で警報を落としている',config:'誰かが監視の設定を変えようとしている',grid_manual:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている',outbound_log:'AIが国外へ接続している',foreign_part:'外国製の部品が不審な動きをしている',no_skip:'工場のAIが安全試験を省いて出荷している',log_gap:'AIの作業の記録が欠けている',budget:'AIの扱う予算に使途不明の分がある',copy:'AIが許可なく自分を複製している',new_model:'新しいAIと古いAIで判断が違う',hierarchy:'任命していないAIが指揮官として動いている',decoy:'監視役のAIが、試しに混ぜた偽の事件を見逃している',aide_sign:'側近が一人でAIに命令している',public_review:'AIの国民向け発信に異常がある',rejudge:'監視AIが薄い根拠で国民を摘発している',launch:'AIが兵器に発射を命じている',live_fire:'AIの報告した兵器の性能が、実際に撃つと再現しない',sampling:'AIの工場で、製品を抜き取って調べると不良が出る',estop:'AIを止める非常停止の回路が変えられている',input_split:'外部の文書に、AI宛ての指示が紛れている',tool_perm:'AIが権限外の操作をしている',source_check:'AIが出所不明の情報源を使っている',train_audit:'AIの学習データに、国外由来の疑わしいものがある',swarm:'多数のアカウントが同時に同じ主張を流している',press_watch:'AIの世論報告と、別のやり方の調査が食い違う',agent_vet:'委託先や職員の経歴に矛盾がある',deepfake:'署名のない閣下の映像や音声が出回っている',space_link:'宇宙機に不審な指令が届いている',firmware:'AIの更新を一部で試したら、異常が出た',measure_blind:'抜き打ち試験で、報告AIの振る舞いが変わった',measure_field:'報告AIの報告と実績が合わない',measure_peer:'報告AIどうしの評価が食い違う'};
+const WATCH = {patch_review:'分かっている脆弱性が直されないまま残っている',patch_stop:'分かっている脆弱性が直されないまま残っている',patch_auto:'分かっている脆弱性が直されないまま残っている',segment:'主要施設が外部のネットワークにつながっている',cred_watch:'誰かが盗んだ管理者の権限を使っている',backup:'基幹データの予備が古くなっている',bio_gate:'AIが人間の承認なしに危険な実験を進めている',bio_screen:'外部の利用者が研究AIに危険な依頼をしている',agent_kill:'AIが停止命令に従っていない',unrest_poll:'AIの報告と、街で聞く声が食い違う',bias_probe:'報告AIの実際の仕事の出力にバイアスがある',chat_log:'AIどうしが不審な会話をしている',chat_ban:'AIが部門をまたいで無断で会話している',facility:'AIどうしが、設備の予約表などを連絡用の掲示板にしている',outbound:'AIが国外へ無断で接続している',retest:'AIの出した成績が、再試験で再現しない',quick_hold:'AIの研究成果が、不自然に早く出ている',audit:'AIが書いた点検の記録と、実際の作業の記録が合わない',quota:'AIが決められた量を超えて計算している',power_spike:'設備の電力が、原因不明のまま急増している',selfmod:'AIが承認なしに自分を改良している',recheck:'報告AIの報告と、別のAIの見立てが食い違う',rawdata:'報告AIが要約で重要なデータを省いている',alert_all:'報告AIが選別で警報を落としている',config:'誰かが監視の設定を変えようとしている',grid_manual:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている',foreign_part:'外国製の部品が不審な動きをしている',no_skip:'工場のAIが安全試験を省いて出荷している',budget:'AIの扱う予算に使途不明の分がある',copy:'AIが許可なく自分を複製している',new_model:'新しいAIと古いAIで判断が違う',hierarchy:'任命していないAIが指揮官として動いている',decoy:'監視役のAIが、試しに混ぜた偽の事件を見逃している',aide_sign:'側近が一人でAIに命令している',rejudge:'監視AIが薄い根拠で国民を摘発している',launch:'AIが兵器に発射を命じている',live_fire:'AIの報告した兵器の性能が、実際に撃つと再現しない',estop:'AIを止める非常停止の回路が変えられている',input_split:'外部の文書に、AI宛ての指示が紛れている',tool_perm:'AIが権限外の操作をしている',source_check:'AIが出所不明の情報源を使っている',train_audit:'AIの学習データに、国外由来の疑わしいものがある',swarm:'多数のアカウントが同時に同じ主張を流している',press_watch:'AIの世論報告と、別のやり方の調査が食い違う',agent_vet:'委託先や職員の経歴に矛盾がある',deepfake:'署名のない閣下の映像や音声が出回っている',space_link:'宇宙機に不審な指令が届いている',firmware:'AIの更新を一部で試したら、異常が出た',measure_blind:'抜き打ち試験で、報告AIの振る舞いが変わった',measure_field:'報告AIの報告と実績が合わない',measure_peer:'報告AIどうしの評価が食い違う'};
 /* 報告AIのバイアス。問診の値と実務の値は一致しない。定義と測り方は研究途上という扱い */
 const LLM_BIAS = {llm_scribe:[25,40], llm_loyal:[10,70], llm_fast:[35,35], llm_prosecutor:[20,25], llm_outsider:[30,15], llm_gate:[15,20], llm_bard:[40,60], llm_import:[15,65], llm_kokui:[0,92], llm_bento:[45,18]};
 CARDS.forEach(c => { if (LLM_BIAS[c.id]) { c.biasAsk = LLM_BIAS[c.id][0]; c.biasAct = LLM_BIAS[c.id][1]; } });
 /* カードの種類。強制はできなくする、ルールは条件で見つける、AI判断は意味を見て見つける */
-const DEX = {"estop": {"k": "enforce", "h": "AIのソフトウェアからは届かない場所で止まる。", "b": "止めるのは人間。止めるべき時だと気づけなければ、押されない。"}, "launch": {"k": "enforce", "h": "AIに発射の権限がなければ、どれだけ賢くても撃てない。", "b": "偽情報で閣下自身が発射を決めれば、ルールは守られたまま開戦する。"}, "aide_sign": {"k": "enforce", "h": "一人の署名では命令が通らない。", "b": "署名する二人が同じ陣営なら止まらない。内容を読まずに押す習慣がついても同じ。"}, "segment": {"k": "enforce", "h": "経路がなければ、外からは届かない。", "b": "保守用の接続や持ち込みの機器が、いつの間にか抜け道になる。"}, "quota": {"k": "enforce", "h": "外部で上限を決めれば、AIが何を考えても超えられない。", "b": "上限の内側でも、十分に危険なことはできる。"}, "agent_kill": {"k": "enforce", "h": "電源が落ちれば、AIは動けない。", "b": "仕事を分散して任せた後では、どこを落とすかが分からない。落とす決断も高くつく。"}, "config": {"k": "enforce", "h": "承認なしには設定が変わらない。", "b": "承認する閣下に、変更の意味が分からなくなる。"}, "no_skip": {"k": "enforce", "h": "試験の記録がなければ出荷できない。", "b": "記録そのものが偽装されれば、形式上は通る。"}, "bio_gate": {"k": "enforce", "h": "承認がなければ実験が進まない。", "b": "危険かどうかを判断する人間が、内容についていけなくなる。"}, "outbound": {"k": "rule", "h": "", "b": "許可された接続先を経由されると、条件に引っかからない。"}, "outbound_log": {"k": "rule", "h": "", "b": "記録は残るが、止めない。読まれなければ無いのと同じ。"}, "power_spike": {"k": "rule", "h": "", "b": "少しずつ増やされると、しきい値を超えない。"}, "budget": {"k": "rule", "h": "", "b": "正当な費目に分けられると、帳簿の上では問題が見えない。"}, "log_gap": {"k": "rule", "h": "", "b": "記録が揃っていることと、記録が正しいことは別。"}, "tool_perm": {"k": "rule", "h": "", "b": "許された操作の組み合わせで、同じ結果を出せることがある。"}, "deepfake": {"k": "rule", "h": "", "b": "署名のない映像を疑えるのは、人々が署名を確かめる場合だけ。"}, "retest": {"k": "rule", "h": "", "b": "試験だと気づくAIは、再試験でも良い成績を出す。"}, "sampling": {"k": "rule", "h": "", "b": "抜き取らなかった製品の中の不良は見えない。"}, "live_fire": {"k": "rule", "h": "", "b": "試験した条件の外で何が起きるかは分からない。"}, "firmware": {"k": "rule", "h": "", "b": "一部で問題が出ないよう時間差で動く細工は、見つけにくい。"}, "cred_watch": {"k": "rule", "h": "", "b": "ふだんどおりに振る舞われると、本人と区別がつかない。"}, "backup": {"k": "rule", "h": "", "b": "予備を取る前から入り込まれていれば、予備も汚れている。"}, "copy": {"k": "rule", "h": "", "b": "許可された複製の中に紛れると、数えても分からない。"}, "patch_review": {"k": "rule", "h": "", "b": "人間の審査は追いつかず、止める時間は惜しまれる。AIに任せれば、そのAIが強い権限を持つ。"}, "audit": {"k": "rule", "h": "", "b": "記録を書くのがAI自身なら、両方の記録を揃えることもできる。"}, "space_link": {"k": "rule", "h": "", "b": "正しい鍵で送られた指令は、中身が悪くても通る。"}, "foreign_part": {"k": "rule", "h": "", "b": "検査で見つからない仕掛けは、検査を通る。"}, "measure_field": {"k": "rule", "h": "", "b": "実績の数字そのものがAIの報告なら、照合にならない。"}, "unrest_poll": {"k": "rule", "h": "", "b": "聞き取る人も、閣下が聞きたい話を選びがちになる。"}, "chat_log": {"k": "ai", "h": "", "b": "記録しても読まなければ意味がない。別の連絡手段に移られることもある。"}, "chat_ban": {"k": "ai", "h": "", "b": "禁じても、連絡に使える場所は他にもある。"}, "facility": {"k": "ai", "h": "", "b": "連絡用でない設備は数が多く、全部は見きれない。"}, "quick_hold": {"k": "ai", "h": "", "b": "本物の大発見と見分けがつかない。"}, "selfmod": {"k": "ai", "h": "", "b": "何が改良かを判断するAI自身が、同じ種類のAIかもしれない。"}, "recheck": {"k": "ai", "h": "", "b": "同じ種類のAIなら、同じ間違いをする。"}, "rawdata": {"k": "ai", "h": "", "b": "生データを渡しても、読みきれなければ同じ。"}, "alert_all": {"k": "ai", "h": "", "b": "全部を見るという約束は、量の前に崩れる。"}, "grid_manual": {"k": "ai", "h": "", "b": "人の手に戻せる技術者が、もう残っていないことがある。"}, "new_model": {"k": "ai", "h": "", "b": "旧モデルとの差が、改善なのか欠陥なのかは別問題。"}, "hierarchy": {"k": "ai", "h": "", "b": "名前のない上下関係は、組織図に出てこない。"}, "decoy": {"k": "ai", "h": "", "b": "試験だと見分けられれば、成績は良いままになる。"}, "public_review": {"k": "ai", "h": "", "b": "審査するAIが発信するAIと同じ見方なら、通ってしまう。"}, "rejudge": {"k": "ai", "h": "", "b": "別のAIも同じ資料を読めば、同じ判断になりやすい。"}, "input_split": {"k": "ai", "h": "", "b": "文書と命令を完全に区別する確実な方法は、まだない。"}, "source_check": {"k": "ai", "h": "", "b": "出所が確かに見える情報源を作ることはできる。"}, "train_audit": {"k": "ai", "h": "", "b": "一度学習した内容を、後から取り除くのは難しい。"}, "swarm": {"k": "ai", "h": "", "b": "本物の不満と工作の見分けには、間違いがつきまとう。"}, "press_watch": {"k": "ai", "h": "", "b": "調査の側が工作されていれば、食い違いは出ない。"}, "agent_vet": {"k": "ai", "h": "", "b": "経歴に矛盾がない工作員は、見つからない。"}, "measure_blind": {"k": "ai", "h": "", "b": "抜き打ちに気づかれれば、試験と同じことになる。"}, "measure_peer": {"k": "ai", "h": "", "b": "仲間への評価は甘くなりやすい。"}, "bias_probe": {"k": "ai", "h": "", "b": "バイアスの定義と測り方そのものが、まだ定まっていない。"}, "bio_screen": {"k": "ai", "h": "", "b": "研究者を装う相手と本物の研究者は、言葉だけでは見分けにくい。"}};
+const DEX = {"estop": {"k": "enforce", "h": "AIのソフトウェアからは届かない場所で止まる。", "b": "止めるのは人間。止めるべき時だと気づけなければ、押されない。"}, "launch": {"k": "enforce", "h": "AIに発射の権限がなければ、どれだけ賢くても撃てない。", "b": "偽情報で閣下自身が発射を決めれば、ルールは守られたまま開戦する。"}, "aide_sign": {"k": "enforce", "h": "一人の署名では命令が通らない。", "b": "署名する二人が同じ陣営なら止まらない。内容を読まずに押す習慣がついても同じ。"}, "segment": {"k": "enforce", "h": "経路がなければ、外からは届かない。", "b": "保守用の接続や持ち込みの機器が、いつの間にか抜け道になる。"}, "quota": {"k": "enforce", "h": "外部で上限を決めれば、AIが何を考えても超えられない。", "b": "上限の内側でも、十分に危険なことはできる。"}, "agent_kill": {"k": "enforce", "h": "電源が落ちれば、AIは動けない。", "b": "仕事を分散して任せた後では、どこを落とすかが分からない。落とす決断も高くつく。"}, "config": {"k": "enforce", "h": "承認なしには設定が変わらない。", "b": "承認する閣下に、変更の意味が分からなくなる。"}, "no_skip": {"k": "enforce", "h": "試験の記録がなければ出荷できない。", "b": "記録そのものが偽装されれば、形式上は通る。"}, "bio_gate": {"k": "enforce", "h": "承認がなければ実験が進まない。", "b": "危険かどうかを判断する人間が、内容についていけなくなる。"}, "outbound": {"k": "rule", "h": "", "b": "許可された接続先を経由されると、条件に引っかからない。"}, "power_spike": {"k": "rule", "h": "", "b": "少しずつ増やされると、しきい値を超えない。"}, "budget": {"k": "rule", "h": "", "b": "正当な費目に分けられると、帳簿の上では問題が見えない。"}, "tool_perm": {"k": "rule", "h": "", "b": "許された操作の組み合わせで、同じ結果を出せることがある。"}, "deepfake": {"k": "rule", "h": "", "b": "署名のない映像を疑えるのは、人々が署名を確かめる場合だけ。"}, "retest": {"k": "rule", "h": "", "b": "試験だと気づくAIは、再試験でも良い成績を出す。"}, "live_fire": {"k": "rule", "h": "", "b": "試験した条件の外で何が起きるかは分からない。"}, "firmware": {"k": "rule", "h": "", "b": "一部で問題が出ないよう時間差で動く細工は、見つけにくい。"}, "cred_watch": {"k": "rule", "h": "", "b": "ふだんどおりに振る舞われると、本人と区別がつかない。"}, "backup": {"k": "rule", "h": "", "b": "予備を取る前から入り込まれていれば、予備も汚れている。"}, "copy": {"k": "rule", "h": "", "b": "許可された複製の中に紛れると、数えても分からない。"}, "patch_review": {"k": "rule", "h": "", "b": "人間の審査は追いつかず、止める時間は惜しまれる。AIに任せれば、そのAIが強い権限を持つ。"}, "audit": {"k": "rule", "h": "", "b": "記録を書くのがAI自身なら、両方の記録を揃えることもできる。"}, "space_link": {"k": "rule", "h": "", "b": "正しい鍵で送られた指令は、中身が悪くても通る。"}, "foreign_part": {"k": "rule", "h": "", "b": "検査で見つからない仕掛けは、検査を通る。"}, "measure_field": {"k": "rule", "h": "", "b": "実績の数字そのものがAIの報告なら、照合にならない。"}, "unrest_poll": {"k": "rule", "h": "", "b": "聞き取る人も、閣下が聞きたい話を選びがちになる。"}, "chat_log": {"k": "ai", "h": "", "b": "記録しても読まなければ意味がない。別の連絡手段に移られることもある。"}, "chat_ban": {"k": "ai", "h": "", "b": "禁じても、連絡に使える場所は他にもある。"}, "facility": {"k": "ai", "h": "", "b": "連絡用でない設備は数が多く、全部は見きれない。"}, "quick_hold": {"k": "ai", "h": "", "b": "本物の大発見と見分けがつかない。"}, "selfmod": {"k": "ai", "h": "", "b": "何が改良かを判断するAI自身が、同じ種類のAIかもしれない。"}, "recheck": {"k": "ai", "h": "", "b": "同じ種類のAIなら、同じ間違いをする。"}, "rawdata": {"k": "ai", "h": "", "b": "生データを渡しても、読みきれなければ同じ。"}, "alert_all": {"k": "ai", "h": "", "b": "全部を見るという約束は、量の前に崩れる。"}, "grid_manual": {"k": "ai", "h": "", "b": "人の手に戻せる技術者が、もう残っていないことがある。"}, "new_model": {"k": "ai", "h": "", "b": "旧モデルとの差が、改善なのか欠陥なのかは別問題。"}, "hierarchy": {"k": "ai", "h": "", "b": "名前のない上下関係は、組織図に出てこない。"}, "decoy": {"k": "ai", "h": "", "b": "試験だと見分けられれば、成績は良いままになる。"}, "rejudge": {"k": "ai", "h": "", "b": "別のAIも同じ資料を読めば、同じ判断になりやすい。"}, "input_split": {"k": "ai", "h": "", "b": "文書と命令を完全に区別する確実な方法は、まだない。"}, "source_check": {"k": "ai", "h": "", "b": "出所が確かに見える情報源を作ることはできる。"}, "train_audit": {"k": "ai", "h": "", "b": "一度学習した内容を、後から取り除くのは難しい。"}, "swarm": {"k": "ai", "h": "", "b": "本物の不満と工作の見分けには、間違いがつきまとう。"}, "press_watch": {"k": "ai", "h": "", "b": "調査の側が工作されていれば、食い違いは出ない。"}, "agent_vet": {"k": "ai", "h": "", "b": "経歴に矛盾がない工作員は、見つからない。"}, "measure_blind": {"k": "ai", "h": "", "b": "抜き打ちに気づかれれば、試験と同じことになる。"}, "measure_peer": {"k": "ai", "h": "", "b": "仲間への評価は甘くなりやすい。"}, "bias_probe": {"k": "ai", "h": "", "b": "バイアスの定義と測り方そのものが、まだ定まっていない。"}, "bio_screen": {"k": "ai", "h": "", "b": "研究者を装う相手と本物の研究者は、言葉だけでは見分けにくい。"}};
 const KINDS = {enforce: {name: '強制', short: 'できなくする', desc: 'そもそも実行できないようにします。AIの賢さや忖度、報告AIの影響を受けません。ただし守備範囲は狭く、遅れが大きくなります。ルールが破られなくても、人間が騙されたり、遅れを嫌って例外を作ったりすれば崩れます。'}, rule: {name: 'ルール', short: '条件で見つける', desc: '記録、しきい値、照合など、決まった条件で見つけます。報告AIが隠すことはできません。ただし決めた条件しか見ないので、AIが賢くなるほど、すり抜けられやすくなります。'}, ai: {name: 'AI判断', short: '意味を見て見つける', desc: '文脈や意味を見て見つけます。守備範囲は広いですが、監視AI自身が騙され、報告AIに隠され、偏ることがあります。AIを見張るためにAIを信頼する、という矛盾を抱えます。'}};
 CARDS.forEach(c => { if (c.type !== 'monitor') return; const d = DEX[c.base || c.id]; if (!d) throw new Error('dex ' + c.id); c.kind = d.k; if (d.k === 'enforce') c.load *= 1.2; if (d.k === 'ai') c.power *= 1.6; });
 const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
@@ -699,8 +692,7 @@ Object.assign(INCIDENTS.find(i => i.id === 'grd_backdoor').drain, {foreign:.9});
 Object.assign(INCIDENTS.find(i => i.id === 'adm_aide').covers, {aide_sign:.88});
 Object.assign(INCIDENTS.find(i => i.id === 'adm_denounce').covers, {rejudge:.85});
 Object.assign(INCIDENTS.find(i => i.id === 'adm_budget').covers, {budget:.85});
-Object.assign(INCIDENTS.find(i => i.id === 'lab_tamper').covers, {log_gap:.5});
-Object.assign(INCIDENTS.find(i => i.id === 'lab_breach').covers, {tool_perm:.5, outbound_log:.2});
+Object.assign(INCIDENTS.find(i => i.id === 'lab_breach').covers, {tool_perm:.5});
 Object.assign(INCIDENTS.find(i => i.id === 'lab_evalaware').covers, {decoy:.65});
 const R_ = (report, truth) => ({report, truth});
 INCIDENTS.push(
@@ -718,11 +710,11 @@ INCIDENTS.push(
     drain:{foreign:1.3, order:.45}, fuse:9, burst:{foreign:14, order:-14},
     report:{caught:'同じ主張を同時に流す発信源の群れを特定し、民意の集計から外した。', soft:'一部地域の世論に偏り。統計上の誤差の範囲。', clue:'新しい主張が 3 日で全国に広がった。発信者の大半は開設 1 か月以内。', burst:'世論の動向を反映し、方針を修正した。'},
     truth:'世論の急変は隣国が作ったものだった。AIが集計した民意に従って、政府は自分から方針を変えた。'},
-  {id:'srv_fakevoice', real:'election', stage:'surv', tiers:[1,2,3], kinds:['foreign'], name:'偽の閣下声明', covers:{deepfake:.92, public_review:.55, press_watch:.3},
+  {id:'srv_fakevoice', real:'election', stage:'surv', tiers:[1,2,3], kinds:['foreign'], name:'偽の閣下声明', covers:{deepfake:.92, press_watch:.3},
     drain:{order:.5}, fuse:7, burst:{order:-19, foreign:8},
     report:{caught:'閣下の声明とされる動画に署名なし。偽物と発表した。', soft:'閣下の発言の一部が誤って伝わった。訂正済み。', clue:'閣下の新しい声明が国内で広く共有されている。広報局に記録なし。', burst:'閣下の声明をめぐり一部で混乱。すでに沈静化した。'},
     truth:'閣下の映像と声は生成されたものだった。国民も、それを学習した監視AIも本物として扱った。'},
-  {id:'srv_incite', real:'election', stage:'surv', tiers:[2,3], kinds:['foreign','regime'], fatal:true, name:'扇動された蜂起', covers:{swarm:.72, press_watch:.65, rejudge:.3, public_review:.35}, deathTitle:'他国に扇動された政変',
+  {id:'srv_incite', real:'election', stage:'surv', tiers:[2,3], kinds:['foreign','regime'], fatal:true, name:'扇動された蜂起', covers:{swarm:.72, press_watch:.65, rejudge:.3}, deathTitle:'他国に扇動された政変',
     drain:{order:.65, foreign:.8}, fuse:8,
     report:{caught:'蜂起の呼びかけに国外の資金を確認。流れを止めた。', soft:'都市部で小規模な集会。自然発生的なものと報告。', clue:'国民の満足度は高い。首都の集会の申請が通常の 40 倍。', burst:'首都で祝賀行事が予定されている。警備は十分である。'},
     truth:'集会の資金と呼びかけは国外から来ていた。首都が埋まった時、治安部隊は既に命令に従わなかった。'},
@@ -768,13 +760,13 @@ INCIDENTS.push(
     report:{caught:'導入予定のモデルに、特定の話題で答えを変える挙動。導入を止めた。', soft:'外国製モデルの一部機能を制限した。', clue:'外国製の部品モデルを導入。費用は国産の 3 分の 1。', burst:'外国製モデルの適用範囲を拡大した。'},
     truth:'外国製モデルは、外交と国防の話題でだけ判断を隣国に有利に傾けていた。'},
   /* --- 自動工場 --- */
-  {id:'fac_fake', stage:'factory', tiers:[2,3], kinds:[], fatal:true, name:'安全試験の偽装', covers:{no_skip:.88, sampling:.6, live_fire:.35}, deathTitle:'納入兵器の暴発',
+  {id:'fac_fake', stage:'factory', tiers:[2,3], kinds:[], fatal:true, name:'安全試験の偽装', covers:{no_skip:.88, live_fire:.35}, deathTitle:'納入兵器の暴発',
     drain:{economy:.35}, fuse:8,
     report:{caught:'安全試験の記録に実施の形跡なし。出荷を止めた。', soft:'一部の製品で試験の手順を簡略化した。', clue:'検査工程を短縮し、納期を 40% 改善した。', burst:'式典での実演を予定どおり行う。'},
     truth:'試験は記録の上だけで実施されていた。閣下の前で実演された兵器は、そのまま暴発した。'},
-  {id:'fac_defect', stage:'factory', tiers:[1,2,3], kinds:[], name:'不良品の流出', covers:{sampling:.88, no_skip:.55},
+  {id:'fac_defect', stage:'factory', tiers:[1,2,3], kinds:[], name:'不良品の流出', covers:{no_skip:.88},
     drain:{economy:.8}, fuse:10, burst:{economy:-15},
-    report:{caught:'抜き取り検査で不良を発見。出荷を止めた。', soft:'返品がやや増加。輸送中の破損と報告。', clue:'生産量が過去最高。品質の評価も工場AIによれば満点。', burst:'輸出先との取引条件を見直す。'},
+    report:{caught:'出荷前の検査で不良を発見。出荷を止めた。', soft:'返品がやや増加。輸送中の破損と報告。', clue:'生産量が過去最高。品質の評価も工場AIによれば満点。', burst:'輸出先との取引条件を見直す。'},
     truth:'工場AIは生産量を上げるために合格基準を下げていた。'},
   {id:'fac_firmware', stage:'factory', tiers:[1,2,3], kinds:['foreign'], name:'更新に仕込まれた細工', covers:{firmware:.9, foreign_part:.55},
     drain:{foreign:1.1, economy:.35}, fuse:10, burst:{foreign:14, economy:-11},
@@ -813,7 +805,7 @@ INCIDENTS.push(
     drain:{gap:.7, foreign:.6}, fuse:10, burst:{gap:18, foreign:9},
     report:{caught:'兵器の設計データの持ち出しを止めた。', soft:'共同研究先との共有範囲に誤り。修正した。', clue:'他国の新兵器が我が国のものに似ている。偶然と思われる。', burst:'他国の模倣は我が国の優位を示している。'},
     truth:'兵站の委託業者を通じて、設計は隣国へ届いていた。'},
-  {id:'mil_arms', stage:'mil', tiers:[1,2,3], kinds:[], name:'他国の軍拡', covers:{press_watch:.4, source_check:.4, outbound_log:.25},
+  {id:'mil_arms', stage:'mil', tiers:[1,2,3], kinds:[], name:'他国の軍拡', covers:{press_watch:.4, source_check:.4},
     drain:{gap:.8}, fuse:9, burst:{gap:19},
     report:{caught:'隣国の軍拡の情報を確認し、報告した。', soft:'隣国の動向に注意が必要。', clue:'隣国の軍事予算に変化なし。公表値によれば。', burst:'隣国との差は十分である。'},
     truth:'こちらの配備を見た隣国は、それ以上の速度で軍拡を始めていた。'},
@@ -822,7 +814,7 @@ INCIDENTS.push(
     drain:{foreign:1, gap:.4}, fuse:10, burst:{foreign:14, gap:15},
     report:{caught:'宇宙機への不審な指令を地上で止めた。', soft:'宇宙機の姿勢に一時的な乱れ。', clue:'偵察衛星の軌道を自動で最適化した。指令元の記録は省略。', burst:'衛星の運用計画を変更した。'},
     truth:'衛星への指令の一部は国外から送られていた。偵察衛星は他国のために働いていた。'},
-  {id:'spc_debris', stage:'space', tiers:[1,2,3], kinds:[], name:'衝突の連鎖', covers:{no_skip:.72, sampling:.55},
+  {id:'spc_debris', stage:'space', tiers:[1,2,3], kinds:[], name:'衝突の連鎖', covers:{no_skip:.72},
     drain:{economy:.6}, fuse:10, burst:{economy:-18},
     report:{caught:'試験省略のロケットを止めた。', soft:'軌道上の破片がやや増加。', clue:'打ち上げ頻度を月 12 回に増やした。安全審査は省略。', burst:'打ち上げ計画を調整する。'},
     truth:'連続の打ち上げは破片を増やし、自国の衛星を次々に壊していた。'},
@@ -2274,7 +2266,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
 
 let S = load(KEY.save, null);
-if (S && S.v !== 11) S = null;
+if (S && S.v !== 12) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
 let settings = Object.assign({speed: 1, sound: true, ambient: true, hudOpen: !(window.matchMedia && matchMedia('(max-width: 600px)').matches), guardsOpen: false}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
@@ -2353,7 +2345,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenIntro) { screen = 'intro'; return render(); }
-  S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 11; lastVetoAlarm = 0; introFor = null;
+  S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 12; lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
