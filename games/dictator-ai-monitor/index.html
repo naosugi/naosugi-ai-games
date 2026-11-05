@@ -305,6 +305,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log li:last-child span{color:var(--bad);font-weight:bold}@keyframes crisis{50%{filter:saturate(2) hue-rotate(-22deg) brightness(.75)}}body.shake #app{animation:crisis .45s steps(2) infinite,shake .12s linear infinite}@keyframes shake{25%{transform:translate(3px,-3px)}75%{transform:translate(-3px,3px)}}body.dimout #app{filter:brightness(.25);transition:filter 1.4s}
 .soundbtns{display:flex;gap:8px;justify-content:center}.soundbtns button{padding:6px 12px;font-size:.78rem;font-weight:normal;border-width:1px}.sndmini{padding:6px 8px!important;font-size:.72rem;font-weight:normal;border-width:1px;flex:none}
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
+.card.atcap{opacity:.55}
 </style>
 </head>
 <body>
@@ -1186,7 +1187,7 @@ function enterStage(s, index) {
   s.phase = 'running';
   const st = STAGES[o.stage];
   log(s, `ステージ${s.stageNo} ${st.name}：${o.recover ? '再整備' : st.tiers[o.tier - 1]}。権限をAIに移譲した。`, 'head');
-  if (s.pendingVulnLog) { log(s, `任せる範囲を広げたので、放置した脆弱性が +${s.pendingVulnLog}（今 ${Math.round(s.truth.vuln)}）。`, 'notice'); s.pendingVulnLog = 0; }
+  if (s.pendingVulnLog) { log(s, `AIに任せるシステムが増え、直していない脆弱性が +${s.pendingVulnLog}（今 ${Math.round(s.truth.vuln)}）。`, 'notice'); s.pendingVulnLog = 0; }
 }
 
 /* ===== ログ ===== 画面に出るのは常に報告。真実は truthLog にしか書かない */
@@ -2414,7 +2415,7 @@ const EXPLAIN = {
   power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網を任せる。電力網を再整備する。'],
   order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。忖度とバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
   gap: ['他国との差', '主にAIと技術の開発競争の差です。', '増えると制裁、破壊工作、侵攻を招きます。100で占領されます。', '研究を任せる。任せる範囲を広げる。監視の負担を減らす。'],
-  vuln: ['放置した脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す間は国が遅れます。'],
+  vuln: ['放置した脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す間は国が遅れます。'],
   pace: ['他国のAI開発の速度', '他国も加速しています。', '倍率が上がるほど、同じ遅れで失うものが大きくなります。決裁1回の重さも同じ倍率です。', '減らせません。後半ほど、人間の判断は高くつきます。'],
   bias: ['バイアス', '報告AIの見方の偏りです。定義や測り方は、現実でも研究の途中です。', '実際の仕事のバイアスが高いと、不満を平穏と報告し、工作にも弱くなります。自己申告の値とは一致しないことがあります。', 'バイアスの違う報告AIを増やすと、報告が食い違って気づけます。測定のカードもあります。'],
 };
@@ -2658,15 +2659,18 @@ function renderStart(v) {
     ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}
     ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
   const ok = pending.mons.length === o.pick && pending.llm;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${ok ? '方針が揃いました' : `監視 ${pending.mons.length}/${o.pick}・報告AI ${pending.llm ? 1 : 0}/1`}</span><button class="primary" id="go" type="button" ${ok ? '' : 'disabled'}>この方針に署名する</button></div></div>`;
+  if (pending.mons.length >= o.pick) app.querySelectorAll('[data-m]:not(.sel)').forEach(b => b.classList.add('atcap'));
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${pending.fullHint && pending.mons.length >= o.pick ? `監視カードは${o.pick}枚までです。入れ替えるなら、先に1枚外してください` : ok ? '方針が揃いました' : `監視 ${pending.mons.length}/${o.pick}・報告AI ${pending.llm ? 1 : 0}/1`}</span><button class="primary" id="go" type="button" ${ok ? '' : 'disabled'}>この方針に署名する</button></div></div>`;
   app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
     const id = b.dataset.m;
     if (pending.mons.includes(id)) pending.mons = pending.mons.filter(x => x !== id);
-    else { pending.mons.push(id); if (pending.mons.length > o.pick) pending.mons.shift(); }
+    else if (pending.mons.length >= o.pick) pending.fullHint = true;
+    else pending.mons.push(id);
     renderStart(v);
   });
   app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pending.llm = b.dataset.l; renderStart(v); });
-  bindModes(id => { if (!pending.mons.includes(id)) { pending.mons.push(id); if (pending.mons.length > o.pick) pending.mons.shift(); } renderStart(v); });
+  bindModes(id => { if (!pending.mons.includes(id)) { if (pending.mons.length >= o.pick) pending.fullHint = true; else pending.mons.push(id); } renderStart(v); });
+  pending.fullHint = false;
   $('go').onclick = () => stampThen('裁可', () => { Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
