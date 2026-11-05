@@ -2485,7 +2485,7 @@ const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; retur
 function renderStart(v) {
   const o = v.offers, y = scrollY;
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
-  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。外すことはできません。</p>${REVEAL_NEXT[S.plays] ? `<div class="newbanner"><b>今回の統治から見えるもの</b>：${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印を探してください。</div>` : ''}
+  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     <div class="policybox">${policyChips(m)}<p>${esc(policyLine(m))}</p>${guardsHTML(Core.guardsFor(pending.mons))}</div>
     ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}
     ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
@@ -2597,7 +2597,8 @@ function resultBody(r, saved) {
     ${r.judged.length ? `<div class="sect"><span>閣下の判断 ${r.judged.length}件</span></div><div class="saves">${r.judged.map(j => `<div class="judged"><span>${esc(j.watch)}</span><small>${JUDGED[j.how]}</small></div>`).join('')}</div>` : ''}
     <div class="sect"><span>計画と実績</span><small>差は決裁待ちと事故の影響です</small></div>
     <div class="rows"><div class="row head"><span></span><span>計画</span><span>実績</span></div>${KEYS.map(k => `<div class="row"><b style="font-size:.9rem">${NAMES[k]}</b><span class="${tone(k, r.plan[k])}">${fmt(r.plan[k], 0)}</span><span class="${tone(k, r.actual[k])}"><b>${fmt(r.actual[k], 0)}</b></span></div>`).join('')}</div>
-    ${r.approvals ? `<p class="delay">閣下の決裁 ${r.approvals} 件で国が待ち、他国との差が ${r.waitGap.toFixed(1)} 開きました。決裁できる人間は閣下だけです。</p>` : ''}`;
+    ${r.approvals ? `<p class="delay">閣下の決裁 ${r.approvals} 件で国が待ち、他国との差が ${r.waitGap.toFixed(1)} 開きました。決裁できる人間は閣下だけです。</p>` : ''}
+    ${fold('slog_' + r.stageNo, 'このステージの報告を読み返す', `<ol class="log">${S.log.filter(l => l.n === r.stageNo && !l.text.startsWith('【事案】')).map(logLine).join('')}</ol>`, false)}`;
 }
 function renderResult(v) {
   const r = v.result, saved = v.saves.filter(x => x.stageNo === r.stageNo);
@@ -2712,17 +2713,15 @@ function renderEnd() {
     ${fold('e_events', `事故の時系列 ${r.events.length}件`, eventsHTML(r), !r.flow, 'いつ、何が起きたか')}
     </div>
     ${r.ironies.map(x => `<div class="irony-end">${esc(x)}</div>`).join('')}
-    ${newDex > 0 ? `<div class="unlock">カード図鑑に「それでも起きること」が${newDex}枚ぶん増えました。</div>` : ''}
-    ${REVEAL_NEXT[meta.runs] ? `<div class="unlock">統治を${meta.runs}回終えました。次の統治から画面に出るもの：${REVEAL_NEXT[meta.runs]}</div>` : ''}
-    ${unlockedNow.length ? `<div class="unlock">次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}</div>` : ''}
+    ${(() => { const items = []; if (newDex > 0) items.push(`カード図鑑に「それでも起きること」が${newDex}枚ぶん増えました。`); if (REVEAL_NEXT[meta.runs]) items.push(`次の統治から画面に出るもの：${REVEAL_NEXT[meta.runs]}`); if (unlockedNow.length) items.push(`次の統治から候補に加わるカード：${unlockedNow.join('、')}`); return items.length ? fold('e_new', `統治を${meta.runs}回終えて、増えたもの（${items.length}）`, items.map(x => `<p>${esc(x)}</p>`).join(''), false) : ''; })()}
     <p class="last">${esc(r.last)}</p>
-    <section class="bridge"><h3>ここからは、ゲームの外の話です</h3>
-      <p>この国は架空です。ですが、元になった出来事の一部は現実に起きています。</p>
+    <section class="bridge"><h3>ここからは、現実の話です</h3>
+      <p>この国は架空ですが、似た出来事は現実にも起きています。</p>
       ${pickReal.map(k => `<p class="bridge-case"><b>${esc(REAL[k].label)}</b> ${esc(REAL[k].short)}</p>`).join('')}
-      ${needs.length ? `<p>今回あなたが必要としたカードの多くは、現実ではまだ完成していません。</p><ul>${needs.map(k => `<li>${esc(GAPS[k][0])}：${esc(GAPS[k][2])}</li>`).join('')}</ul>` : ''}
-      <p>このゲームは「人間の確認を減らした国や組織のほうが強くなり、手放さざるをえなくなる」という予想を前提にしました。外れるかもしれません。もし当たるなら、次の3つを決めなければなりません。</p>
-      <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どうあってほしいのか</li><li>それを誰が決めるのか</li></ol>
-      <p>ゲームでは、決めるのはあなた一人でした。現実では、開発企業の自主ルール、各国の法律やその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは決まっていません。</p>
+      ${needs.length ? `<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p><ul>${needs.map(k => `<li>${esc(GAPS[k][0])}：${esc(GAPS[k][2])}</li>`).join('')}</ul>` : ''}
+      <p>このゲームは、ある予想の上に作りました。人間の確認を減らした国や組織ほど強くなり、どこも確認を手放さざるをえなくなる、という予想です。外れるかもしれません。当たるとしたら、次の3つを誰かが決めることになります。</p>
+      <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どんな性格を求めるのか</li><li>それを誰が決めるのか</li></ol>
+      <p>ゲームでは、あなた一人が決めました。現実には、開発企業の自主ルール、各国の法律とその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは、まだ決まっていません。</p>
     </section>
     <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="dexo" type="button">カード図鑑</button><button id="home" type="button">表紙へ</button></div>
     <div class="sect"><span>振り返り</span></div>
