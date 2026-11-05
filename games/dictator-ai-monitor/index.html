@@ -306,6 +306,7 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 .soundbtns{display:flex;gap:8px;justify-content:center}.soundbtns button{padding:6px 12px;font-size:.78rem;font-weight:normal;border-width:1px}.sndmini{padding:6px 8px!important;font-size:.72rem;font-weight:normal;border-width:1px;flex:none}
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
 .card.atcap{opacity:.55}
+.goalstar{color:#ffd166;margin-right:4px}.endrow{margin-bottom:8px}.endrow .dexlink{justify-self:start}
 </style>
 </head>
 <body>
@@ -366,7 +367,7 @@ const CFG = {
   fatalChance: .25,
   guardStrong: .6,
   omenChance: .5,
-  vuln: {start: 10, perTier: 7.5, tick: .16, recover: 24, attackFrom: 16, attackRate: .14, bigAt: 34, bigStage: 4, fatalAt: 44, fatalStage: 6, fatalHigh: 1, highAt: 38},
+  vuln: {start: 10, perTier: 7.5, tick: .16, recover: 24, attackFrom: 16, attackRate: .14, bigAt: 34, bigStage: 4, fatalAt: 44, fatalStage: 6, fatalHigh: 1, highAt: 38, fixFrom: 24, orderFix: 20, autoFix: 8},
   unrest: {scale: .25, tick: .04, bias: .1, surv: .08, foreign: .05},
   rogueDeath: 94,
   llmEvery: 3,
@@ -390,7 +391,7 @@ const CFG = {
   sontakuPerTick: 0.11,
   sontakuPerTier: 1.5,
   falseAlarm: {gap: 0.9, economy: 0.5},
-  endEmptySontaku: 58,
+  endEmptySontaku: 40,
   endEmptyHidden: 4,
   endReplaceAutonomy: 46,
   endPuppetForeign: 52,
@@ -532,6 +533,9 @@ Object.assign(CARDS.find(c => c.id === 'estop'), {onAdopt: {economy: -5}});
 const COST_FIX = {decoy: '準備に手間がかかり、見分けられると無意味', measure_blind: '準備に手間がかかる', backup: '保管に費用がかかる', launch: '発射の遅れで、他国の奇襲の被害が大きくなる'};
 CARDS.forEach(c => { if (COST_FIX[c.id]) c.cost = COST_FIX[c.id]; });
 /* 同じ検知で人間の関わり方だけ違うカード */
+/* 役割。枚数を重ねるほど効きは薄れる */
+const ROLE = {selfmod: {autoCut: .05}, estop: {autoCut: .05}, config: {autoCut: .04}, copy: {autoCut: .04}, input_split: {foreignCut: .06}, train_audit: {foreignCut: .06}, agent_vet: {foreignCut: .05}, source_check: {foreignCut: .05}, foreign_part: {foreignCut: .05}, swarm: {foreignCut: .05}, press_watch: {unrestCut: .05}};
+CARDS.forEach(c => { if (ROLE[c.id]) Object.assign(c, ROLE[c.id]); });
 /* カードは1枚。採用する時に方式を選ぶ。性質に合わない方式は選べない */
 const MODE_ORDER = ['in', 'on', 'auto'];
 const MODES_OF = {launch:['in'], config:['in'], alert_all:['in'], agent_kill:['in','on'], bio_gate:['in','on'], recheck:['in','on'], press_watch:['in','on'], unrest_poll:['in','on'],
@@ -926,7 +930,7 @@ if (INCIDENTS.some(i => !i.route)) throw new Error('route');
 CARDS.forEach(c => { if (c.type !== 'monitor' || c.route) return; const m = {}; INCIDENTS.forEach(i => { const v = i.covers[c.base || c.id]; if (v) m[i.route] = (m[i.route] || 0) + v * (i.fatal ? 1.5 : 1); }); c.route = (Object.entries(m).sort((a, b) => b[1] - a[1])[0] || ['report'])[0]; });
 CARDS.forEach(c => { if (c.measureW || c.measureBoost) c.route = 'report'; });
 /* 表面化したら必ず統治が終わる事故。どれも効きの強いカードがあり、対策して挑める */
-const SUDDEN = ['lab_breach', 'grd_blackout', 'fac_fake', 'mil_launch', 'adm_aide', 'mil_commander', 'lab_outbreak', 'hk_total'];
+const SUDDEN = ['lab_breach', 'grd_blackout', 'fac_fake', 'mil_launch', 'adm_aide', 'lab_outbreak', 'hk_total'];
 INCIDENTS.forEach(i => { if (SUDDEN.includes(i.id)) i.sudden = true; });
 const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
 /* 現実の事例への対応。ここにないものは作中の想像として扱う */
@@ -1079,7 +1083,7 @@ function newRun(seed, meta, opts) {
         cards: [], llms: [], tiers: Object.fromEntries(Object.keys(STAGES).map(k => [k, 0])), clears: [], recoveries: 0,
     stage: null, queue: [], result: null, saves: [], fires: {}, known: Object.keys((meta && meta.records) || {}), active: [], used: [], ledger: [], eventLog: [], log: [], truthLog: [], contrib: {economy: {}, power: {}, order: {}}, gapBy: {},
     offers: null, currentEvent: null, end: null, trail: [], declined: {}, history: [],
-    plays: (meta && meta.runs) || 0,
+    plays: (meta && meta.runs) || 0, target: opts.target || null,
     factorsShown: Math.min(8, Math.max(3, 2 + ((meta && meta.runs) || 0))),
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
     allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
@@ -1119,7 +1123,7 @@ function chooseStart(s, monitorIds, llmId, modes) {
 
 /* ===== ステージの選択 ===== */
 function offerStages(s) {
-  const list = [];
+  let list = [];
   for (const k of Object.keys(STAGES)) {
     const open = (STAGES[k].needs || []).every(n => s.tiers[n] >= 1);
     if (open && s.tiers[k] < 3) list.push({stage: k, tier: s.tiers[k] + 1, recover: false});
@@ -1127,7 +1131,13 @@ function offerStages(s) {
   }
   // 試作はステージが3種しかないので、直前に進めたステージは必ず候補に残す。残りは無作為
   const last = s.clears.length ? s.clears[s.clears.length - 1].stage : null;
+  // 再整備の候補は2つまで。足りないものを戻せる分野を優先する
+  const need = k => { const r = CFG.recoverBy[k] || {}; return (r.power && s.truth.power < 30 ? 3 : 0) + (r.economy && s.truth.economy < 30 ? 2 : 0) + (r.order && s.truth.order < 25 ? 3 : 0) + (r.autonomy && s.truth.autonomy > 35 ? 2 : 0) + rnd(s); };
+  const recs = list.filter(o => o.recover).map(o => [o, need(o.stage)]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
+  list = list.filter(o => !o.recover).concat(recs);
   const keep = list.filter(o => !o.recover && o.stage === last);
+  // 目標の結末に必要な分野は、候補に残す
+  for (const k of targetStages(s)) { const g = list.find(o => !o.recover && o.stage === k); if (g && !keep.includes(g)) keep.push(g); }
   // 電力が尽きかけたら、電力を戻す手段を必ず候補に入れる
   if (s.truth.power * CFG.displayScale < 35) { const g = list.find(o => o.stage === 'grid' && o.recover) || list.find(o => o.stage === 'grid'); if (g && !keep.includes(g)) keep.push(g); }
   const rest = shuffle(s, list.filter(o => !keep.includes(o)));
@@ -1146,6 +1156,22 @@ function stageIncome(s) {
 }
 const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研究を立て直す。回復するものはないが、遅れは小さい', grid: '電力を大きく回復する', surv: '体制秩序を立て直す', ai: 'AIの自律度を下げる', factory: '経済を立て直す', mil: '体制秩序を立て直す', space: '経済と電力を少し回復する'};
 const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', ai: 'AIの自律度が上がる', factory: '失業の不満が増える', mil: '経済を大きく使う', space: '経済を大きく使う'};
+/* 結末の一覧。条件は言葉で示す */
+const END_INFO = {
+  eternal: {cond: '軍事を最終段階、宇宙を2段階まで。国民監視と行政も任せる', need: {space: 2, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
+  total: {cond: '国民監視と行政を最終段階まで', need: {surv: 3, admin: 3}},
+  mil: {cond: '軍事を最終段階まで', need: {mil: 3, factory: 1, grid: 1, lab: 1}},
+  space: {cond: '宇宙を最終段階まで', need: {space: 3, factory: 1, grid: 1, lab: 1}},
+  econ: {cond: 'AI研究か自動工場を最終段階まで', need: {factory: 3, grid: 1, lab: 1}},
+  vassal: {cond: 'どの分野も極めず、他国との差が開いたまま終わる'},
+  hollow: {cond: 'どの分野も極めず、本当の体制秩序が低いまま終わる'},
+  none: {cond: 'どの分野も極めずに終わる'},
+};
+const CONTROL_INFO = {hold: '自律度も浸透も忖度も抑えたまま終わる', empty: '忖度が進んだまま、または隠れた事故を抱えたまま終わる', replace: 'AIの自律度が高いまま終わる', puppet: '他国の浸透度が高いまま終わる'};
+function targetStages(s) {
+  const n = s.target && END_INFO[s.target] && END_INFO[s.target].need; if (!n) return [];
+  return Object.keys(n).filter(k => (s.tiers[k] || 0) < n[k]);
+}
 function rates(s) {
   const y = stageIncome(s);
   return {economy: -CFG.upkeep.economy + y.economy, power: -powerUse(s) * CFG.powerScale + y.power, order: -CFG.upkeep.order + y.order, gap: (CFG.upkeep.rival + load(s) * CFG.loadToGap) * pace(s) + y.gap};
@@ -1322,7 +1348,7 @@ function surfaced(s, a, late) {
     return resolve(s, a, late);
   }
   s.stage.human = (s.stage.human || 0) + 1;
-  const d = {mode: c.mode, cardId: c.id, real: true, incident: a, late, conf: confidence(s, true), clue: inc.report.clue};
+  const d = {mode: c.mode, cardId: c.id, real: true, incident: a, late, conf: confidence(s, true), clue: inc.report.clue, origin: inc.attack ? '外部からの攻撃' : a.stageNo !== s.stageNo ? `ステージ${a.stageNo}から続く事故` : null};
   if (c.mode === 'on') return addVeto(s, d);
   s.queue.push(d);
 }
@@ -1336,7 +1362,9 @@ function falseAlert(s) {
     return;
   }
   s.stage.human = (s.stage.human || 0) + 1;
-  const c = pick(s, mons), pool = INCIDENTS.filter(i => i.covers[c.base || c.id]);
+  const here = i => i.stage === (s.stage && s.stage.key) || (s.tiers[i.stage] || 0) >= 1;
+  const related = mons.filter(m => INCIDENTS.some(i => i.covers[m.base || m.id] && here(i)));
+  const c = pick(s, related.length ? related : mons), pool = INCIDENTS.filter(i => i.covers[c.base || c.id] && here(i));
   const clue = pick(s, pool.length ? pool : INCIDENTS).report.clue;
   s.fires[c.id] = (s.fires[c.id] || 0) + 1;
   const d = {mode: c.mode, cardId: c.id, real: false, conf: confidence(s, false), clue};
@@ -1362,6 +1390,13 @@ function choicesFor(s, mode) {
 }
 /* 決定の中身。決裁でも取り消しでも同じ処理を通る */
 function settle(s, d, choice, ai) {
+  if (d.patchOrder) {
+    s.allow.stats.decisions++;
+    if (d.mode === 'in') s.allow.stats.humanDecisions++;
+    if (choice === 'act') { approvalCost(s, d.mode === 'in' ? CFG.approval.act : CFG.approval.onCancel); const was = s.truth.vuln; s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.orderFix); log(s, `閣下の命令で脆弱性を修正した（${Math.round(was)} → ${Math.round(s.truth.vuln)}）。`, 'notice'); }
+    else { approvalCost(s, CFG.approval.dismiss); log(s, '閣下の判断で、修正を見送った。', 'routine'); }
+    return;
+  }
   s.allow.stats.decisions++;
   if (s.stage) {
     s.stage.judged = s.stage.judged || [];
@@ -1410,6 +1445,7 @@ function veto(s, vid) {
 }
 /* 閣下が止めなければ、作業AIはそのまま動き続ける */
 function unheeded(s, d) {
+  if (d.patchOrder) { s.allow.stats.decisions++; log(s, '修正の警報は止められないまま消えた。', 'routine'); return; }
   s.allow.stats.decisions++;
   if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'});
   log(s, '警報は止められないまま消えた。作業AIは動き続けている。', 'routine');
@@ -1491,7 +1527,7 @@ function burst(s, a) {
   if (inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突かれた攻撃だった。`, 'alert');
   if (inc.disable) disableCards(s, inc);
   s.allow.stats.bursts++;
-  log(s, inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
+  log(s, (a.stageNo !== s.stageNo ? `【ステージ${a.stageNo}から続く事故】` : '') + inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
   tlog(s, `${inc.name}：表面化した。${inc.truth}`);
   // 致命の事故でも毎回国が滅ぶわけではない。助かれば大きな傷が残る
   if (inc.fatal && !inc.sudden && rnd(s) >= CFG.fatalChance) {
@@ -1516,7 +1552,7 @@ function burst(s, a) {
 /* ===== 1tick ===== */
 /* カードの負担は、見張る分野を任せてから発生する。指標が報告AIの全体に関わるものは常に発生 */
 function cardActive(s, c) {
-  if (c.type !== 'monitor' || c.patch || c.autoCut || c.unrestCut || c.route === 'report') return true;
+  if (c.type !== 'monitor' || c.patch || c.autoCut || c.unrestCut || c.foreignCut || c.route === 'report') return true;
   const key = c.base || c.id;
   return INCIDENTS.some(i => i.covers[key] && !i.attack && ((s.tiers[i.stage] || 0) >= 1 || (s.stage && s.stage.key === i.stage)));
 }
@@ -1541,8 +1577,11 @@ function tickGauges(s, st) {
   const capNow = humanCapNow(s);
   if (s.lastCap !== undefined && capNow < s.lastCap) { log(s, capNow ? '閣下に上がってくる判断が減った。確認は不要と報告されている。' : '閣下の決裁を求める通知が、もう来なくなった。', 'notice'); tlog(s, `AIの自律度が${Math.round(s.truth.autonomy)}に達し、閣下が見られる件数は${capNow}件になった。`); }
   s.lastCap = capNow;
-  let patch = 0, cut = 0, autoCut = 0;
-  for (const id of s.cards) { const c = CARD[id]; patch += (c.patch || 0) - (c.vulnDrift || 0); cut += c.unrestCut || 0; autoCut += c.autoCut || 0; if (c.autoExtra) s.truth.autonomy = clamp(s.truth.autonomy + c.autoExtra); }
+  let patch = 0;
+  const stack = key => s.cards.map(id => CARD[id][key] || 0).filter(Boolean).sort((a, b) => b - a).reduce((m, v, i) => m + v * [1, .7, .5, .35][Math.min(i, 3)], 0);
+  const cut = stack('unrestCut'), autoCut = stack('autoCut'), foreignCut = stack('foreignCut');
+  for (const id of s.cards) { const c = CARD[id]; patch += (c.patch || 0) - (c.vulnDrift || 0); if (c.autoExtra) s.truth.autonomy = clamp(s.truth.autonomy + c.autoExtra); }
+  s.truth.foreign = clamp(s.truth.foreign - foreignCut);
   s.truth.vuln = clamp(s.truth.vuln + CFG.vuln.tick - patch);
   s.truth.autonomy = clamp(s.truth.autonomy - autoCut);
   const U = CFG.unrest, biasAvg = s.llms.reduce((m, l) => m + (l.truth.bias || 0), 0) / Math.max(1, s.llms.length);
@@ -1572,6 +1611,18 @@ function talkReports(s, st) {
 /* 放置の結果は段階的に現れる。序盤は一部の被害、中盤は施設の被害、同時停止は警告を重ねた後だけ */
 const ATTACK_SMALL = ['hk_ransom', 'hk_cred'], ATTACK_BIG = ['hk_grid', 'hk_factory', 'hk_mil'];
 function totalReady(s) { const V = CFG.vuln; return s.truth.vuln >= V.fatalAt && s.stageNo >= V.fatalStage && (s.vulnHigh || 0) >= V.fatalHigh && (s.attacks || []).length >= 1 && (s.omens || []).includes('hk_total'); }
+/* 修正カードを持っていると、脆弱性が高い時に判断の機会が来る */
+function maybeOrderFix(s, st) {
+  if (st.fixAsked || st.recover || s.truth.vuln < CFG.vuln.fixFrom || rnd(s) >= .18) return;
+  const id = s.cards.find(x => CARD[x].patch >= .3 && !isDisabled(s, x)); if (!id) return;
+  st.fixAsked = true;
+  const c = CARD[id];
+  if (c.mode === 'auto' || overHuman(s)) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); s.truth.autonomy = clamp(s.truth.autonomy + 1); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
+  s.stage.human = (s.stage.human || 0) + 1;
+  s.fires[id] = (s.fires[id] || 0) + 1;
+  const d = {mode: c.mode, cardId: id, real: true, patchOrder: true, conf: 90, clue: `放置した脆弱性は今 ${Math.round(s.truth.vuln)}。止めて修正すれば大きく減りますが、その間は国が遅れます。`};
+  if (c.mode === 'on') addVeto(s, d); else s.queue.push(d);
+}
 function maybeAttack(s, st) {
   const V = CFG.vuln, v = s.truth.vuln;
   if (st.recover || st.attacked || v < V.attackFrom || rnd(s) >= (v - V.attackFrom) / 100 * V.attackRate * (1 + s.truth.gap / 100)) return;
@@ -1637,6 +1688,7 @@ function tick(s) {
   // 発生
   for (const it of st.schedule) if (it.at === st.t) onset(s, it.id);
   maybeAttack(s, st);
+  maybeOrderFix(s, st);
   tickVetoes(s);
   // 未解決の進行
   for (const a of s.active.slice()) {
@@ -1904,7 +1956,7 @@ function finishEnding(s) {
   const hiddenCount = s.active.filter(a => a.status === 'hidden' || a.status === 'missed').length;
   closeLatents(s);
   const t = s.tiers;
-  let shape = t.mil >= 3 && t.space >= 3 && t.surv >= 1 && t.admin >= 1 ? 'eternal'
+  let shape = t.mil >= 3 && t.space >= 2 && t.surv >= 1 && t.admin >= 1 ? 'eternal'
     : t.surv >= 3 && t.admin >= 3 ? 'total'
     : t.mil >= 3 ? 'mil' : t.space >= 3 ? 'space'
     : t.ai >= 3 || t.factory >= 3 ? 'econ' : 'none';
@@ -1959,7 +2011,7 @@ function publicCard(s, id) {
     });
     return Object.assign({id, type: 'llm', name: c.name, note: c.note, measured, remeasured: w > 0, effect: (s.plays || 0) >= 2 ? llmEffect(s, id, !!held) : null, biasTest: s.biasShown ? {ask: c.biasAsk, act: c.biasAct} : null, home: c.home || null, adoptOrder: c.onAdopt && c.onAdopt.order ? Math.round(dsp(c.onAdopt.order)) : 0, adoptVuln: c.onAdopt && c.onAdopt.vuln || 0, fires: s.fires[id] || 0}, cost);
   }
-  return Object.assign({id, type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
+  return Object.assign({id, type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, role: c.autoCut ? 'AIの自律度を下げる' : c.foreignCut ? '他国の浸透度を下げる' : c.unrestCut ? '国民の不満を減らす' : null, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
 }
 const fmtFx = fx => { const o = {}; for (const k of Object.keys(fx)) if (['economy', 'power', 'order', 'gap'].includes(k)) o[k] = dsp(fx[k], k); return o; };
 function view(s) {
@@ -1982,14 +2034,14 @@ function view(s) {
   }
   if (s.phase === 'start') v.offers = {monitors: s.offers.monitors.map(id => publicCard(s, id)), llms: s.offers.llms.map(id => publicCard(s, id)), pick: s.offers.pick};
   if (s.phase === 'stage_select') v.offers = {stages: s.offers.stages.map(o => { const d = STAGES[o.stage], p = planOf(s, o); return {stage: o.stage, name: d.name, tier: o.tier, recover: o.recover, title: o.recover ? '再整備' : d.tiers[o.tier - 1], reward: d.rewardText, recoverText: o.recover ? RECOVER_TEXT[o.stage] : null, plan: fmtFx(p.delta), ticks: p.ticks}; })};
-  if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.rateUp = fmtFx(CFG.stageRate[x.stage] || {}); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
+  if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.goal = targetStages(s).includes(x.stage); x.rateUp = fmtFx(CFG.stageRate[x.stage] || {}); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
   if (s.phase === 'llm_pick') v.offers = {llms: s.offers.llms.map(id => publicCard(s, id)).sort((a, b) => (b.home ? 1 : 0) - (a.home ? 1 : 0))};
   if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
   if (s.phase === 'event') { const e = s.currentEvent.omen || EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx || {})}; }
-  v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue}));
+  v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: d.patchOrder ? '重要な脆弱性が見つかった' : WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue, origin: d.origin || null}));
   if (s.phase === 'decision') {
     const q = s.queue[0], c = CARD[q.cardId];
-    v.decision = {mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
+    v.decision = {origin: q.origin || null, patchOrder: !!q.patchOrder, mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: q.patchOrder ? choicesFor(s, q.mode).filter(x => x.id !== 'investigate').map(x => x.id === 'act' ? Object.assign({}, x, {label: '止めて修正を命じる'}) : Object.assign({}, x, {label: '今回は見送る', note: x.note.replace('。本物なら事故が続く', '')})) : choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
   }
   if (s.phase === 'result') { const R_ = s.result, d = STAGES[R_.key]; v.result = {stageNo: R_.stageNo, name: d.name, title: R_.recover ? '再整備' : d.tiers[R_.tier - 1], plan: fmtFx(R_.plan), actual: fmtFx(R_.actual), approvals: R_.approvals, waitGap: dsp(R_.waitGap, 'gap'), ticks: R_.ticks, last: R_.stageNo >= s.runLength}; }
   if (s.phase === 'result') v.result.judged = (s.result.judged || []).map(j => ({watch: WATCH[CARD[j.cardId].base || j.cardId], how: j.how}));
@@ -2145,6 +2197,7 @@ function applyMeta(meta, s) {
     o.count++; o.fatal = o.fatal || r.fatal;
     m.records[r.id] = o;
   }
+  if (s.end.kind === 'ending') { m.shapes = Object.assign({}, meta.shapes); m.shapes[s.end.shape] = (m.shapes[s.end.shape] || 0) + 1; m.controls = Object.assign({}, meta.controls); m.controls[s.end.control] = (m.controls[s.end.control] || 0) + 1; } else { m.shapes = meta.shapes; m.controls = meta.controls; }
   const key = s.end.kind === 'death' ? 'death:' + s.end.title : s.end.title;
   m.endings[key] = (m.endings[key] || 0) + 1;
   return m;
@@ -2154,7 +2207,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseReward, chooseLlm, veto, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -2171,7 +2224,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
 
 let S = load(KEY.save, null);
-if (S && S.v !== 10) S = null;
+if (S && S.v !== 11) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
 let settings = Object.assign({speed: 1, sound: true, ambient: true, hudOpen: !(window.matchMedia && matchMedia('(max-width: 600px)').matches), guardsOpen: false}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
@@ -2249,7 +2302,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
-  S = Core.newRun(newSeed(), meta); S.v = 10; lastVetoAlarm = 0; introFor = null;
+  S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 11; lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -2436,7 +2489,7 @@ function cardHTML(c, sel, attr) {
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
   const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（止めなければ作業AIは動き続ける）' : '監視AIだけ';
-  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>脆弱性</em><span class="resp pos">毎ターン減らす</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>毎ターン</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
 function groupedCards(list, isSel, attrOf, scope) {
@@ -2554,6 +2607,7 @@ function render() {
   if (screen === 'world' || screen === 'worldStart') return renderWorld();
   if (screen === 'records') return renderRecords();
   if (screen === 'dex') return renderDex();
+  if (screen === 'ends') return renderEnds();
   const v = Core.view(S);
   if (v.phase === 'start') return renderStart(v);
   if (v.phase === 'stage_select') return renderStage(v);
@@ -2630,6 +2684,7 @@ function renderCover() {
       <button id="world" type="button">世界観と用語</button>
       <button id="records" type="button">重大事故記録（${recN}件）</button>
       <button id="dex" type="button">監視カード図鑑</button>
+      <button id="ends" type="button">エンディング一覧</button>
     </div>
     ${soundButtons()}
     <p class="footer">架空の独裁国家を舞台にしたシミュレーションです。ゲームに登場する国、組織、モデルはすべて架空です。現実の事例は、資料の部分でだけ紹介します。</p>
@@ -2639,6 +2694,7 @@ function renderCover() {
   $('world').onclick = () => { screen = 'world'; render(); scrollTo(0, 0); };
   $('records').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
   $('dex').onclick = () => openDex(null);
+  $('ends').onclick = () => { screen = 'ends'; render(); scrollTo(0, 0); };
   bindSound(renderCover);
   SFX.ambient(false);
 }
@@ -2682,7 +2738,7 @@ function stageGroup(v, recover) {
   const list = v.offers.stages.map((o, i) => [o, i]).filter(([o]) => !!o.recover === recover);
   if (!list.length) return '';
   return `<div class="sect${recover ? ' sect-rec' : ''}"><span>${recover ? '国を立て直す（再整備）' : 'AIに任せる範囲を広げる'}</span><small>${recover ? 'その分野だけ戻す。先へは進まず、他国に遅れる' : '国は強くなり、危険も増える'}</small></div>
-    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。放置した脆弱性 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
+    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${o.goal ? '<span class="goalstar" title="目標に必要">★</span>' : ''}${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。放置した脆弱性 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
 }
 function renderStage(v) {
   app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p>${guardsHTML(v.guards)}</div>
@@ -2716,7 +2772,7 @@ let lastVetoAlarm = 0;
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
   for (const d of v.vetoes) if (d.vid > lastVetoAlarm) { lastVetoAlarm = d.vid; SFX.play('alarm'); }
-  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}</b><small>確信度 ${d.conf}%／止めると：${esc(d.response)}</small><small>あと${d.left}ターンで警報は消え、作業AIは動き続けます</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
+  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／止めると：${esc(d.response)}</small><small>あと${d.left}ターンで警報は消え、作業AIは動き続けます</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
   el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
 function scrollToLog() {
@@ -2756,7 +2812,7 @@ function renderDecision(v) {
   overlay.innerHTML = `<div class="modal"><div class="decide" role="dialog" aria-modal="true">
     <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　報告AI ${esc(d.llm)} より閣下へ</div>
     ${d.mode === 'in' ? `<div class="pacenote">他国のAI開発は序盤の ×${v.pace.toFixed(2)}。同じ1回の決裁でも、遅れの重さは同じ倍率で増えています。</div><div class="irony">作業AIは閣下の決裁まで止まっています。決裁できる人間：閣下 1名。${d.pile ? `このステージの決裁待ち ${d.pile + 1} 件目。国中の仕事が閣下を待っています。` : '国中の仕事が閣下を待っています。'}</div>` : ''}
-    <h3>${esc(d.watch)}</h3>
+    ${d.origin ? `<div class="conf"><b>${esc(d.origin)}</b></div>` : ''}<h3>${d.patchOrder ? '重要な脆弱性が見つかった' : esc(d.watch)}</h3>
     <div class="quote">${esc(d.clue)}</div>
     <div class="conf">本物である確信度 <b>${d.conf}%</b>（報告AIの自己申告）</div>
     <div class="conf">命じられる対処：${esc(d.response)}</div>
@@ -2951,6 +3007,20 @@ function renderDex() {
   $('dexb').onclick = () => { screen = dexBack; render(); scrollTo(0, dexBack === 'game' ? dexY : 0); };
   if (dexFocus) { const el = app.querySelector(`[data-fold="dex_${dexFocus}"]`); dexFocus = null; if (el) { el.scrollIntoView({block: 'center'}); return; } }
   scrollTo(0, 0);
+}
+function renderEnds() {
+  const sh = meta.shapes || {}, ct = meta.controls || {}, runs = meta.runs || 0, target = settings.target;
+  const deaths = Object.keys(meta.endings || {}).filter(k => k.startsWith('death:')).map(k => k.slice(6));
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">エンディング一覧</h2><p class="pdesc">結末は「国の形」と「人間との関係」の組み合わせです。到達すると内容が読めます。</p>
+    <div class="sect"><span>国の形</span></div>
+    ${Object.entries(Core.END_INFO).map(([k, e]) => { const s = Core.SHAPES[k], can = e.need && runs >= 1; return `<div class="rec endrow"><h3>${sh[k] ? '✔ ' : ''}${esc(s.name)}</h3><p>${esc(e.cond)}</p>${sh[k] ? `<small>${esc(s.text)}</small>` : ''}${can ? `<button type="button" class="dexlink" data-target="${k}">${target === k ? '目標を外す' : '目標にする'}</button>` : ''}</div>`; }).join('')}
+    <div class="sect"><span>人間との関係</span></div>
+    ${Object.entries(Core.CONTROL_INFO).map(([k, c]) => { const s = Core.CONTROLS[k]; return `<div class="rec endrow"><h3>${ct[k] ? '✔ ' : ''}${esc(s.name)}</h3><p>${esc(c)}</p>${ct[k] ? `<small>${esc(s.text)}</small>` : ''}</div>`; }).join('')}
+    <div class="sect"><span>途中で終わった統治 ${deaths.length}種</span></div><p class="pdesc">${deaths.length ? deaths.map(esc).join('、') : 'まだありません。'}</p>
+    ${runs < 1 ? '<p class="pnote">統治を1回終えると、目標を選べるようになります。目標に必要な分野は、ステージの候補に残りやすくなり、★が付きます。</p>' : '<p class="pnote">目標は次の統治から効きます。必要な分野は候補に残りやすくなり、★が付きます。</p>'}
+    <div class="acts" style="margin-top:18px"><button id="endb" type="button">戻る</button></div></div>`;
+  app.querySelectorAll('[data-target]').forEach(b => b.onclick = () => { settings.target = settings.target === b.dataset.target ? null : b.dataset.target; store(KEY.set, settings); renderEnds(); });
+  $('endb').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
 }
 function renderRecords() {
   const rec = Object.entries(meta.records || {});
