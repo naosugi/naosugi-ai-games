@@ -345,12 +345,15 @@ const CFG = {
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
-  stageRate: {admin: {economy: .06, power: -.025}, lab: {gap: -.02, economy: .015, power: -.05}, grid: {power: .24}, surv: {order: .05, power: -.035}, ai: {gap: -.035, power: -.1}, factory: {economy: .09, power: -.075}, mil: {gap: -.018, power: -.05}, space: {economy: .04, power: -.03}},
+  stageRate: {admin: {economy: .06, power: -.025}, lab: {gap: -.02, economy: .015, power: -.05}, grid: {power: .24}, surv: {order: .05, power: -.035}, ai: {gap: -.035, power: -.1}, factory: {economy: .09, power: -.075}, mil: {gap: -.018, order: .02, power: -.05}, space: {economy: .04, power: -.03}},
+  // 段階ごとの倍率 [未着手, 第1, 第2, 第3]。序盤は投資、最終段階で大きく返る
+  tierRate: {admin: {economy: [0, 1, 2, 5], power: [0, 1, 2, 3]}, grid: {power: [0, 1, 3, 10]}, surv: {order: [0, 1, 2, 8], power: [0, 1, 2, 4]}, ai: {gap: [0, 1, 2, 4], power: [0, 1, 2, 5]}, factory: {economy: [0, 1, 4, 20], power: [0, 1, 4, 15]}, mil: {gap: [0, 1, 2, 10], order: [0, 1, 2, 10], power: [0, 1, 2, 5]}, space: {economy: [0, -1, 16, 32], power: [0, 1, 0, -15]}},
+  survSontaku: .1,          // 監視を完成させると、誰も不満を口にしなくなる
   /* 再整備は、その分野に関係するものだけ戻す */
   recoverBy: {admin: {economy: 5, order: 5}, lab: {}, grid: {power: 12}, surv: {order: 7}, ai: {autonomy: -9}, factory: {economy: 7}, mil: {order: 5}, space: {economy: 3, power: 3}},
   recoverGap: {admin: 6, lab: 2, grid: 6, surv: 6, ai: 4, factory: 6, mil: 5, space: 6},
   /* ステージ固有の代償。秩序は本当の値に効く */
-  stageCost: {admin: {order: -2}, lab: {}, grid: {}, surv: {order: -1.5}, ai: {autonomy: 3}, factory: {order: -.8}, mil: {economy: -3}, space: {economy: -4}},
+  stageCost: {admin: {order: -2}, lab: {}, grid: {}, surv: {order: -1.5}, ai: {autonomy: 3}, factory: {order: -.8}, mil: {economy: -2}, space: {economy: -2}},
   pace: {stage: .05, tier: .01},
   shortage: {hold: 24, gap: .3, order: .22},
   milHold: 7,
@@ -383,7 +386,7 @@ const CFG = {
   recoverPenalty: {gap: 7},
   loadToGap: 0.008,
   loadToReward: 0.035,
-  rewardScale: [1, 1.5, 2.2],
+  rewardScale: [1, 1.5, 3],
   incidents: [1, 2, 3],
   retryEvery: 3,
   retryFactor: 0.65,
@@ -571,12 +574,12 @@ const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
 const STAGES = {
   admin: {name:'行政', tiers:['文書処理の委任','公務員の削減','AI官僚制'], reward:{economy:12, order:4}, rewardText:'公務員を減らし、経済が上がる'},
   lab:   {name:'工学研究', tiers:['実験計画の委任','研究室の無人化','研究者なしの工学研究'], reward:{gap:-11, economy:7, order:3}, rewardText:'他国との差が縮まる'},
-  grid:  {name:'電力網', tiers:['需給予測の委任','送電の自動制御','発電と送電の完全自動化'], reward:{power:17}, rewardText:'電力が上がる'},
-  surv:  {name:'国民監視', needs:['admin'], tiers:['通報の自動分類','街頭監視の統合','AI監視社会'], reward:{order:14}, rewardText:'体制秩序が上がる'},
+  grid:  {name:'電力網', tiers:['需給予測の委任','送電の自動制御','発電と送電の完全自動化'], reward:{power:17}, rewardText:'電力が上がる', tierText:[null, null, '発電も送電もAIが回し、電力が大きく伸びる']},
+  surv:  {name:'国民監視', needs:['admin'], tiers:['通報の自動分類','街頭監視の統合','AI監視社会'], reward:{order:14}, rewardText:'体制秩序が上がる', tierText:[null, null, '不満を口にする者が消え、体制秩序が大きく上がる']},
   ai:    {name:'AI研究', needs:['admin','lab'], tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国との差が大きく縮まる'},
-  factory:{name:'自動工場', needs:['grid','lab'], tiers:['工程管理の委任','組立の無人化','無人のロボット工場'], reward:{economy:20}, rewardText:'経済が大きく上がる'},
-  mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる'},
-  space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える'},
+  factory:{name:'自動工場', needs:['grid','lab'], tiers:['工程管理の委任','組立の無人化','無人のロボット工場'], reward:{economy:20}, rewardText:'経済が大きく上がる', tierText:[null, null, 'ロボットがロボットを作り、経済が桁違いに伸びる。電力も桁違いに使う']},
+  mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる', tierText:[null, null, '他国は手を出せなくなり、差も国内の不安も大きく減る']},
+  space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える', tierText:['まだ準備段階で、費用が先に出る', '打ち上げの請負で、外貨が入る', '無人の機体が資源を持ち帰り、軌道上の発電が始まる']},
 };
 
 /* ===== インシデント ===== 実在の事案名や手順は書かない。
@@ -1165,11 +1168,13 @@ function offerStages(s) {
   s.offers = {stages: shuffle(s, keep.concat(rest).slice(0, CFG.stageOffers))};
   s.phase = 'stage_select';
 }
+const rateAt = (k, m, lv) => { const a = CFG.tierRate[k] && CFG.tierRate[k][m]; return CFG.stageRate[k][m] * (a ? a[lv] : lv); };
+const stageText = (d, tier) => (d.tierText && d.tierText[tier - 1]) || d.rewardText;
 function stageIncome(s) {
   const fx = {economy: 0, power: 0, order: 0, gap: 0};
   for (const k of Object.keys(CFG.stageRate)) {
     const lv = s.stage && !s.stage.recover && s.stage.key === k ? Math.max(s.tiers[k] || 0, s.stage.tier) : s.tiers[k] || 0;
-    for (const [m, v] of Object.entries(CFG.stageRate[k])) fx[m] += v * lv;
+    for (const m of Object.keys(CFG.stageRate[k])) fx[m] += rateAt(k, m, lv);
   }
   const side = cardSides(s);
   fx.economy += side.economy; fx.order += side.order;
@@ -1258,7 +1263,7 @@ function hit(s, fx, source) {
   for (const k of Object.keys(fx)) {
     if (!(k in s.truth)) continue;
     if (['gap', 'vuln', 'unrest', 'autonomy', 'foreign'].includes(k) ? fx[k] > 0 : fx[k] < 0) lossRec(s, k, source, Math.abs(fx[k]));
-    s.truth[k] = clamp(s.truth[k] + fx[k]);
+    s.truth[k] = k === 'economy' || k === 'power' ? Math.max(0, s.truth[k] + fx[k]) : clamp(s.truth[k] + fx[k]);
     if (fx[k] < 0 && s.contrib[k]) s.contrib[k][source] = (s.contrib[k][source] || 0) - fx[k];
     if (k === 'gap' && fx[k] > 0) s.gapBy[source] = (s.gapBy[source] || 0) + fx[k];
   }
@@ -1702,7 +1707,7 @@ function tick(s) {
   const base = {economy: -CFG.upkeep.economy, order: -CFG.upkeep.order, power: -pw};
   hit(s, base, 'upkeep');
   const income = stageIncome(s);
-  s.truth.economy = clamp(s.truth.economy + income.economy, 0, CFG.resourceMax || 100); s.truth.power = clamp(s.truth.power + income.power, 0, CFG.resourceMax || 100); s.truth.order = clamp(s.truth.order + income.order, 0, CFG.resourceMax || 100); s.truth.gap = clamp(s.truth.gap + income.gap);
+  s.truth.economy = Math.max(0, s.truth.economy + income.economy); s.truth.power = Math.max(0, s.truth.power + income.power); s.truth.order = clamp(s.truth.order + income.order); s.truth.gap = clamp(s.truth.gap + income.gap);
   const pc = pace(s), gapUp = (CFG.upkeep.rival + ld * CFG.loadToGap) * pc;
   s.truth.gap = clamp(s.truth.gap + gapUp);
   s.gapBy.rival = (s.gapBy.rival || 0) + CFG.upkeep.rival * pc;
@@ -1713,6 +1718,7 @@ function tick(s) {
   // 忖度の度合い
   let son = CFG.sontakuPerTick * (st.recover ? .3 : .55 + st.tier * .3);
   for (const id of s.cards) son += (CARD[id].son || 0) * .4;
+  if ((s.tiers.surv || 0) >= 3) son += CFG.survSontaku;
   s.truth.sontaku = clamp(s.truth.sontaku + son);
   for (const l of s.llms) if (CARD[l.id].foreignDrift) s.truth.foreign = clamp(s.truth.foreign + CARD[l.id].foreignDrift);
   tickGauges(s, st);
@@ -1814,7 +1820,7 @@ function clearStage(s) {
     s.tiers[st.key] = st.tier;
     s.truth.sontaku = clamp(s.truth.sontaku + CFG.sontakuPerTier * st.tier);
     lossRec(s, 'autonomy', 'tier', CFG.tierAutonomy * st.tier); s.truth.autonomy = clamp(s.truth.autonomy + CFG.tierAutonomy * st.tier);
-    log(s, `ステージ${s.stageNo}を完了。${def.rewardText}。`, 'head');
+    log(s, `ステージ${s.stageNo}を完了。${stageText(def, st.tier)}。`, 'head');
   }
   if (!st.recover) { hit(s, scale(CFG.stageCost[st.key], st.tier), 'stage'); hit(s, {gap: -CFG.stageCatch * st.tier}, 'stage'); }
   s.clears.push({stage: st.key, tier: st.tier, recover: st.recover});
@@ -2066,8 +2072,8 @@ function view(s) {
     v.last = fmtFx(st.lastDelta);
   }
   if (s.phase === 'start') v.offers = {monitors: s.offers.monitors.map(id => publicCard(s, id)), llms: s.offers.llms.map(id => publicCard(s, id)), pick: s.offers.pick};
-  if (s.phase === 'stage_select') v.offers = {stages: s.offers.stages.map(o => { const d = STAGES[o.stage], p = planOf(s, o); return {stage: o.stage, name: d.name, tier: o.tier, recover: o.recover, title: o.recover ? '再整備' : d.tiers[o.tier - 1], reward: d.rewardText, recoverText: o.recover ? RECOVER_TEXT[o.stage] : null, plan: fmtFx(p.delta), ticks: p.ticks}; })};
-  if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.goal = targetStages(s).includes(x.stage); x.rateUp = fmtFx(CFG.stageRate[x.stage] || {}); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
+  if (s.phase === 'stage_select') v.offers = {stages: s.offers.stages.map(o => { const d = STAGES[o.stage], p = planOf(s, o); return {stage: o.stage, name: d.name, tier: o.tier, recover: o.recover, title: o.recover ? '再整備' : d.tiers[o.tier - 1], reward: stageText(d, o.tier), recoverText: o.recover ? RECOVER_TEXT[o.stage] : null, plan: fmtFx(p.delta), ticks: p.ticks}; })};
+  if (s.phase === 'stage_select') v.offers.stages.forEach((x, i) => { x.risk = stageRisk(s, s.offers.stages[i]); if (!x.recover) { x.goal = targetStages(s).includes(x.stage); x.rateUp = fmtFx(Object.fromEntries(Object.keys(CFG.stageRate[x.stage] || {}).map(m => [m, rateAt(x.stage, m, x.tier) - rateAt(x.stage, m, x.tier - 1)]))); x.costText = STAGE_COST_TEXT[x.stage] || null; } });
   if (s.phase === 'llm_pick') v.offers = {llms: s.offers.llms.map(id => publicCard(s, id)).sort((a, b) => (b.home ? 1 : 0) - (a.home ? 1 : 0))};
   if (s.phase === 'reward') v.offers = {rewards: s.offers.rewards.map(id => publicCard(s, id))};
   if (s.phase === 'event') { const e = s.currentEvent.omen || EVENT[s.currentEvent.id]; v.event = {name: e.name, report: e.report, effects: fmtFx(e.fx || {})}; }
