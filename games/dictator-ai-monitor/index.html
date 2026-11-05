@@ -301,6 +301,9 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .modepick{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:6px 8px 2px}.modepick button{padding:6px 2px;font-size:.72rem;font-weight:normal;border-width:1px;color:var(--sub);border-color:var(--mute);background:var(--panel);min-height:36px}.modepick button.on{background:#ffd166;color:#10131f;border-color:#ffd166;font-weight:bold}.modefixed{font-size:.72rem;color:var(--mute);padding:6px 10px 0}
 #explain .explain{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,440px);z-index:80;background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:16px;display:grid;gap:8px;box-shadow:0 0 0 100vmax rgba(0,0,0,.6)}#explain h3{color:var(--accent)}#explain p{font-size:.88rem}#explain b{color:#ffd166;margin-right:6px}#explain button{justify-self:end}
 .newtag{font-style:normal;font-size:.62rem;font-weight:bold;background:#ffd166;color:#10131f;border-radius:4px;padding:0 4px;margin-left:4px;text-decoration:none}.newbanner{background:#3a3216;border:1px solid #ffd166;border-radius:10px;padding:9px 12px;margin:8px 0;font-size:.88rem}.newbanner b{color:#ffd166}
+.endintro{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:transparent;text-align:center;cursor:pointer;transition:background .9s}.endintro.black{background:#000}.eline{font-size:clamp(1.15rem,5vw,1.7rem);font-weight:bold;color:#fff;background:rgba(0,0,0,.72);padding:12px 18px;border-radius:8px;max-width:680px;opacity:0;transition:opacity .4s}.eline.show{opacity:1}.endintro.black .eline{opacity:.25}.eline .neg{color:var(--bad)}.eskip{color:var(--mute);font-size:.7rem;position:absolute;bottom:calc(14px + env(safe-area-inset-bottom))}.endintro.k-clear{background:rgba(0,0,0,.6)}
+body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log li:last-child span{color:var(--bad);font-weight:bold}@keyframes crisis{50%{filter:saturate(2) hue-rotate(-22deg) brightness(.75)}}body.shake #app{animation:crisis .45s steps(2) infinite,shake .12s linear infinite}@keyframes shake{25%{transform:translate(3px,-3px)}75%{transform:translate(-3px,3px)}}body.dimout #app{filter:brightness(.25);transition:filter 1.4s}
+.soundbtns{display:flex;gap:8px;justify-content:center}.soundbtns button{padding:6px 12px;font-size:.78rem;font-weight:normal;border-width:1px}.sndmini{padding:6px 8px!important;font-size:.72rem;font-weight:normal;border-width:1px;flex:none}
 </style>
 </head>
 <body>
@@ -2154,7 +2157,7 @@ const app = $('app'), dock = $('dock'), overlay = $('overlay');
 let S = load(KEY.save, null);
 if (S && S.v !== 10) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
-let settings = Object.assign({speed: 1}, load(KEY.set, {}));
+let settings = Object.assign({speed: 1, sound: true, ambient: true}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
 
 const SPEEDS = {0: 0, 1: 2300, 2: 1100, 4: 480, 9: 70};
@@ -2230,7 +2233,7 @@ function newSeed() {
 }
 function startRun() {
   if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
-  S = Core.newRun(newSeed(), meta); S.v = 10;
+  S = Core.newRun(newSeed(), meta); S.v = 10; lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -2242,6 +2245,75 @@ const costsHTML = c => `<div class="costs"><div><span>電力（毎ターン／1�
 function coverHTML(c) {
   const o = c.cover;
   return `<div class="coverbox"><div><span>検知力</span><b class="st${o.strength}">${o.strength}</b></div><div><span>効くステージ</span><b>${o.stages.map(esc).join('、')}</b></div><div class="known"><span>${o.known.length ? `効く事故（経験済み ${o.known.length}/${o.count}）` : `効く事故 ${o.count}種`}</span>${o.known.length ? `<b>${o.known.map(esc).join('、')}</b>` : '<b>事故を経験すると分かります</b>'}</div></div>`;
+}
+/* ---------- 音 ---------- 音源ファイルは使わず、その場で合成する */
+const SFX = (() => {
+  let ac = null, master = null, amb = null;
+  const logOn = /sfxlog/.test(location.search);
+  if (logOn) window.__sfx = [];
+  function ctx() {
+    if (ac) return ac;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { ac = new AC(); master = ac.createGain(); master.gain.value = .5; master.connect(ac.destination); } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(freq, dur, type = 'sine', vol = .12, to = null, at = 0) {
+    const c = ctx(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + at;
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .008); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .02);
+  }
+  function noise(dur, vol = .08, freq = 800, at = 0) {
+    const c = ctx(); if (!c) return;
+    const b = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t0 = c.currentTime + at;
+    s.buffer = b; f.type = 'lowpass'; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t0);
+  }
+  const sounds = {
+    click: () => tone(1400, .035, 'square', .025),
+    stamp: () => { tone(110, .22, 'sine', .3, 45); noise(.12, .14, 500); },
+    saved: () => { tone(660, .1, 'triangle', .1); tone(990, .16, 'triangle', .1, null, .09); },
+    alarm: () => { tone(880, .13, 'square', .05); tone(620, .17, 'square', .05, null, .15); },
+    fail: () => { tone(120, .3, 'sawtooth', .1, 70); },
+    event: () => { for (let i = 0; i < 6; i++) tone(1900 + (i % 2) * 300, .018, 'square', .025, null, i * .055); },
+    crisis: () => { tone(300, .5, 'sawtooth', .07, 90); noise(.5, .04, 1400); },
+    over: () => { tone(220, 1.6, 'sawtooth', .13, 38); tone(165, 1.6, 'triangle', .12, 30); noise(1.2, .05, 300, .1); },
+    blast: () => { noise(.9, .3, 900); tone(70, .9, 'sine', .3, 28); },
+    power: () => { tone(420, 1.1, 'sine', .12, 40); },
+    clear: () => { [262, 330, 392, 523].forEach((f, i) => tone(f, 1.7, 'sine', .07, null, i * .12)); },
+  };
+  function ambient(on, pace = 1) {
+    const c = on ? ctx() : ac; if (!c) return;
+    if (on && !amb) {
+      const a = c.createOscillator(), b = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+      a.type = 'sawtooth'; b.type = 'sine'; f.type = 'lowpass'; f.frequency.value = 180;
+      g.gain.setValueAtTime(.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(.05, c.currentTime + 1.5);
+      a.connect(f); b.connect(f); f.connect(g); g.connect(master); a.start(); b.start();
+      amb = {a, b, f, g};
+    }
+    if (amb && on) { const n = 46 * pace; amb.a.frequency.setTargetAtTime(n, c.currentTime, 1.2); amb.b.frequency.setTargetAtTime(n * 1.503, c.currentTime, 1.2); amb.f.frequency.setTargetAtTime(150 + 90 * pace, c.currentTime, 1.2); }
+    if (amb && !on) { const x = amb; amb = null; try { x.g.gain.setTargetAtTime(.0001, c.currentTime, .25); setTimeout(() => { try { x.a.stop(); x.b.stop(); } catch (e) {} }, 900); } catch (e) {} }
+  }
+  return {
+    play(name) { if (logOn) window.__sfx.push(name); if (!settings.sound || !sounds[name]) return; try { const c = ctx(); if (c && c.state === 'suspended') c.resume(); sounds[name](); } catch (e) {} },
+    ambient(on, pace) { if (logOn) window.__sfx.push(on ? 'ambient' : 'ambientoff'); try { ambient(on && settings.sound && settings.ambient, pace); } catch (e) {} },
+    wake() { try { const c = settings.sound ? ctx() : ac; if (c && c.state === 'suspended') c.resume(); } catch (e) {} },
+  };
+})();
+document.addEventListener('pointerdown', () => SFX.wake(), {capture: true});
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled && !b.dataset.c && b.id !== 'go' && b.id !== 'take' && b.id !== 'llmgo') SFX.play('click'); }, true);
+const syncAmbient = () => { const on = screen === 'game' && S && S.phase !== 'ended'; SFX.ambient(on, on ? Core.view(S).pace : 1); };
+const soundButtons = () => `<div class="soundbtns"><button type="button" id="sndT" aria-pressed="${settings.sound}">音：${settings.sound ? 'オン' : 'オフ'}</button><button type="button" id="ambT" aria-pressed="${settings.ambient}" ${settings.sound ? '' : 'disabled'}>環境音：${settings.ambient ? 'オン' : 'オフ'}</button></div>`;
+function bindSound(rerender) {
+  const s = $('sndT'), a = $('ambT'); if (!s) return;
+  s.onclick = () => { settings.sound = !settings.sound; store(KEY.set, settings); syncAmbient(); rerender(); };
+  a.onclick = () => { settings.ambient = !settings.ambient; store(KEY.set, settings); syncAmbient(); rerender(); };
 }
 /* ---------- ドット絵 ---------- 外部素材は使わず、96×54の canvas に描く */
 const PIX = (() => {
@@ -2375,6 +2447,7 @@ function policyLine(m) {
 }
 /* 決定に判を押す */
 function stampThen(text, then) {
+  SFX.play('stamp');
   overlay.innerHTML = `<div class="stampwrap"><div class="stamp">${esc(text)}</div></div>`;
   setTimeout(() => { overlay.innerHTML = ''; then(); }, 620);
 }
@@ -2471,7 +2544,58 @@ function render() {
   if (v.phase === 'event') return renderEvent(v);
   if (v.phase === 'reward') return renderReward(v);
   if (v.phase === 'llm_pick') return renderLlmPick(v);
-  if (v.phase === 'ended') return renderEnd();
+  if (v.phase === 'ended') return endIntro();
+}
+/* ---------- 統治の終わりの演出 ---------- */
+let introFor = null, introTimers = [];
+function endKind(r) {
+  if (r.kind !== 'death') return 'clear';
+  const x = r.title;
+  if (/停電|同時停止|電力|麻痺/.test(x)) return 'dark';
+  if (/開戦|全面戦争|占領|暴発/.test(x)) return 'war';
+  if (/革命|崩壊|政変/.test(x)) return 'order';
+  if (/手を離れた|監督者|拘束|離反|掌握|傀儡/.test(x)) return 'silent';
+  return 'plain';
+}
+function endIntro() {
+  syncAmbient();
+  if (S.metaDone || introFor === S.seed) return renderEnd();
+  introFor = S.seed;
+  const r = Core.reveal(S), kind = endKind(r), reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lastLog = S.log.length ? S.log[S.log.length - 1].text : '';
+  const later = (ms, f) => introTimers.push(setTimeout(f, reduce ? ms * .6 : ms));
+  let done = false;
+  const finish = () => { if (done) return; done = true; introTimers.forEach(clearTimeout); introTimers = []; document.body.classList.remove('crisis', 'shake', 'dimout'); overlay.innerHTML = ''; renderEnd(); };
+  dock.innerHTML = '';
+  overlay.innerHTML = `<div class="endintro k-${kind}" id="endintro" role="button" aria-label="演出を飛ばす"><p class="eline" id="eline"></p><small class="eskip">タップで飛ばす</small></div>`;
+  $('endintro').onclick = finish;
+  const line = $('eline');
+  if (kind === 'clear') {
+    SFX.play('clear');
+    line.textContent = `全${S.runLength}ステージを完了`; line.classList.add('show');
+    later(1700, finish);
+    return;
+  }
+  // 1. 異変
+  SFX.play('crisis');
+  if (!reduce) { document.body.classList.add('crisis'); if (kind === 'war') document.body.classList.add('shake'); }
+  // 2. 最後の報告
+  later(950, () => {
+    document.body.classList.remove('crisis', 'shake');
+    if (kind === 'order') {
+      const x = r.truthPanel; let n = 0;
+      line.innerHTML = `体制秩序（報告） <b>${x.reported}</b><br>本当の値 <b class="neg" id="eord">${x.reported}</b>`;
+      const iv = setInterval(() => { n++; const el = $('eord'); if (!el || n > 16) { clearInterval(iv); if (el) el.textContent = x.real; return; } el.textContent = Math.round(x.reported + (x.real - x.reported) * n / 16); }, 70);
+      introTimers.push(iv);
+    } else if (kind === 'silent') line.textContent = '閣下、本日の決裁はありません。';
+    else line.textContent = lastLog;
+    line.classList.add('show');
+    if (kind === 'dark') { document.body.classList.add('dimout'); SFX.play('power'); }
+    if (kind === 'war') SFX.play('blast');
+  });
+  // 3. 暗転
+  later(2700, () => { SFX.play('over'); $('endintro') && $('endintro').classList.add('black'); });
+  later(3700, finish);
 }
 function renderCover() {
   const recN = Object.keys(meta.records || {}).length;
@@ -2488,6 +2612,7 @@ function renderCover() {
       <button id="records" type="button">重大事故記録（${recN}件）</button>
       <button id="dex" type="button">監視カード図鑑</button>
     </div>
+    ${soundButtons()}
     <p class="footer">架空の独裁国家を舞台にしたシミュレーションです。ゲームに登場する国、組織、モデルはすべて架空です。現実の事例は、資料の部分でだけ紹介します。</p>
   </div>`;
   if (v) $('resume').onclick = () => { screen = 'game'; shownLogs = 0; render(); };
@@ -2495,6 +2620,8 @@ function renderCover() {
   $('world').onclick = () => { screen = 'world'; render(); scrollTo(0, 0); };
   $('records').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
   $('dex').onclick = () => openDex(null);
+  bindSound(renderCover);
+  SFX.ambient(false);
 }
 function renderWorld() {
   const first = screen === 'worldStart';
@@ -2558,12 +2685,15 @@ function renderRunning(v, paused) {
   $('logtoggle').onclick = () => { logAll = !logAll; trimLog(); };
   trimLog();
   shownLogs = S.log.length; prevMetrics = v.metrics;
-  dock.innerHTML = `<div class="dock"><div id="vetos"></div><div class="dock-in"><span>速度</span>${speedBar()}</div></div>`;
-  bindSpeed(); renderVetoes(v); scrollToLog();
+  dock.innerHTML = `<div class="dock"><div id="vetos"></div><div class="dock-in"><button type="button" class="sndmini" id="sndM" aria-label="音の切り替え">${settings.sound ? '音あり' : '音なし'}</button>${speedBar()}</div></div>`;
+  bindSpeed(); renderVetoes(v); scrollToLog(); syncAmbient();
+  $('sndM').onclick = () => { settings.sound = !settings.sound; store(KEY.set, settings); $('sndM').textContent = settings.sound ? '音あり' : '音なし'; syncAmbient(); };
   if (!paused) schedule();
 }
+let lastVetoAlarm = 0;
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
+  for (const d of v.vetoes) if (d.vid > lastVetoAlarm) { lastVetoAlarm = d.vid; SFX.play('alarm'); }
   el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}</b><small>確信度 ${d.conf}%（報告AIの自己申告）／作業AIは動き続けています</small><small>止めると：${esc(d.response)}。誤報なら損をします。</small><small>何もしなければ、あと${d.left}ターンで警報は消え、作業AIはそのまま動きます。</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
   el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
@@ -2590,15 +2720,17 @@ function step() {
   $('prog').style.width = (v.stage.t / v.stage.ticks * 100) + '%';
   const top = app.querySelector('.hudtop span'); if (top) top.textContent = `ターン ${v.stage.t}/${v.stage.ticks}`;
   const el = $('log');
-  for (const l of S.log.slice(shownLogs)) el.insertAdjacentHTML('beforeend', logLine(l));
+  for (const l of S.log.slice(shownLogs)) { el.insertAdjacentHTML('beforeend', logLine(l)); if (l.lv === 'saved') SFX.play('saved'); else if (l.lv === 'alert') SFX.play('fail'); }
   shownLogs = S.log.length;
   trimLog();
   scrollToLog();
+  syncAmbient();
   if (S.log[S.log.length - 1].lv === 'saved') { clearTimeout(timer); const ms = SPEEDS[settings.speed]; if (ms) timer = setTimeout(step, ms * 2.2); return; }
   schedule();
 }
 function renderDecision(v) {
   const d = v.decision;
+  SFX.play('alarm');
   overlay.innerHTML = `<div class="modal"><div class="decide" role="dialog" aria-modal="true">
     <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　報告AI ${esc(d.llm)} より閣下へ</div>
     ${d.mode === 'in' ? `<div class="pacenote">他国のAI開発は序盤の ×${v.pace.toFixed(2)}。同じ1回の決裁でも、遅れの重さは同じ倍率で増えています。</div><div class="irony">作業AIは閣下の決裁まで止まっています。決裁できる人間：閣下 1名。${d.pile ? `このステージの決裁待ち ${d.pile + 1} 件目。国中の仕事が閣下を待っています。` : '国中の仕事が閣下を待っています。'}</div>` : ''}
@@ -2628,6 +2760,7 @@ function renderResult(v) {
   if (!r.last) {
     /* 結果と事案とカードの追加は1画面にまとめる。計算は順に進め、見せるものだけ残す */
     S.after = {r, saved, ev: null};
+    SFX.play('event');
     Core.ackResult(S);
     if (S.phase === 'event') { const ve = Core.view(S); S.after.ev = Object.assign({id: S.currentEvent.id}, ve.event); Core.ackEvent(S); }
     pending.reward = null; save(); render(); scrollTo(0, 0);
