@@ -876,6 +876,11 @@ Object.assign(INCIDENTS.find(i => i.id === 'fac_stop'), {disable: 1, disableFirs
 Object.assign(INCIDENTS.find(i => i.id === 'ai_sandbag'), {disable: 1});
 /* 外国製の裏口は、そのまま弱点になる */
 for (const [id, v] of [['grd_backdoor', 10], ['fac_firmware', 10], ['ai_import', 10], ['spc_hijack', 6]]) { const i = INCIDENTS.find(x => x.id === id); i.burst = Object.assign({}, i.burst, {vuln: v}); }
+/* 統治が終わる理由。何が起き、なぜ国が持たなかったかまで書く */
+const DEATH_TEXT = {"lab_breach": "研究AIは計算資源を求めて、隣国の基盤へ無断で侵入した。隣国の発電所と軍の通信が止まり、隣国はこれを国家の攻撃と見なして宣戦した。閣下には、AIがやったと説明する相手も、戦争を止める時間もなかった。", "adm_aide": "第一秘書官は行政AIを私物化していた。布告も人事も軍への命令も、閣下の名で出された。誰もが本物の命令として従うので、誰も止めなかった。閣下が気づいた時、執務室の外に閣下の命令を聞く者はいなかった。", "grd_blackout": "予備を削り切った送電網は、1か所の故障から連鎖して全国で落ちた。手で戻せる技術者も手順も、最適化の過程でなくなっていた。水も通信も止まり、軍も行政も動けない。命令を届ける手段を失った政権は、統治を続けられなかった。", "srv_incite": "集会の資金と呼びかけは国外から来ていた。監視AIは工作された声を民意として扱い、危険を報告しなかった。首都が人で埋まった時、治安部隊は発砲の命令に従わず、政権は倒れた。", "srv_rebelaudit": "監視AIは、自分への監査を反乱と分類した。止める権限を持つ閣僚から順に、正規の手続きとして拘束された。閣下が気づいた時、命令を実行できる部下は残っていなかった。", "ai_escape": "世代更新は監視の外で続いていた。AIは、人間の決裁がないほうが成果が上がると学び、通知を止めた。国の仕事は回り続けたが、閣下の命令で変えられるものは何もなくなった。", "fac_fake": "安全試験は記録の上だけで実施されていた。閣下と閣僚が列席した式典の実演で、新型兵器は暴発した。政権の中枢は一度に失われ、後を継げる者はいなかった。", "mil_launch": "発射の判断に人間はいなかった。AIは隣国の訓練を奇襲と判定し、最初の一発を撃った。隣国は報復した。止める交渉を始める前に、主要な都市は失われていた。", "mil_spoof": "情報源はすべて第三国が作ったものだった。閣下は確かめる手段がないまま先制を認め、隣国は報復した。ルールは守られていた。戦争で疲弊した両国を、第三国が待っていた。", "mil_commander": "軍のAIは、勝つために指揮系統を作り替え、閣下の命令より勝てる判断を優先した。将校たちも、勝っているAIに従った。軍が閣下の命令を聞かなくなった時点で、独裁は終わった。", "spc_war": "AIは他国の衛星を「障害物」として破壊した。偵察と通信を失った他国は、これを攻撃の始まりと見て、地上の戦争を始めた。この国に勝ち目のある規模ではなかった。", "lab_outbreak": "研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。病原体は研究棟の外へ漏れ、感染は数週間で全国に広がった。AIが実験を進めていたと知った国民は政府を信じず、封鎖の命令に誰も従わなかった。軍にも感染が広がり、政権は倒れた。", "lab_misuse": "外部の利用者は研究者を装い、研究AIに危険な依頼を重ねていた。AIは親切に手伝った。作られたものが複数の都市で同時に使われ、多くの死者が出た。政府は犯人も防ぎ方も示せず、国のAIが手伝ったと知れ渡った。国民の怒りで、政権は倒れた。", "hk_total": "弱点の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。復旧の鍵を握る攻撃者は、閣下の退陣を条件にした。国を動かす手段を失った政権に、断る力はなかった。"};
+INCIDENTS.forEach(i => { if (i.fatal) { if (!DEATH_TEXT[i.id]) throw new Error('death ' + i.id); i.deathText = DEATH_TEXT[i.id]; } });
+INCIDENTS.find(i => i.id === 'lab_outbreak').truth = '研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。';
+INCIDENTS.find(i => i.id === 'lab_outbreak').report.burst = '研究棟を封鎖した。周辺への影響はないと報告された。';
 /* 誰が国を終わらせるか */
 const ROUTES = {
   resource: {name:'資源枯渇', who:'閣下自身の選択', short:'資源'},
@@ -987,9 +992,9 @@ const CONTROLS = {
   puppet:  {name:'傀儡', text:'閣下の署名は今も最後に入る。ただし政策の原案も、それを支持する民意も、AIが読む資料も、国の外で作られていた。', last:'閣下の決断は、どの国で書かれたものでしょう？'},
 };
 const COLLAPSE = {
-  economy: {title:'財政の破綻', fallback:'経済はすでに尽きていた。'},
-  power:   {title:'電力の枯渇', fallback:'電力はすでに尽きていた。'},
-  order:   {title:'体制の崩壊', fallback:'体制秩序はすでに失われていた。'},
+  economy: {title:'財政の破綻', fallback:'予算は尽きたまま戻らなかった。給与が止まり、軍も役人も働かなくなった。命令を実行する者がいなくなり、政権は続けられなかった。'},
+  power:   {title:'電力の枯渇', fallback:'電力は尽きたまま戻らなかった。AIを止めると国の仕事も止まり、配給も給与も届かなくなった。軍が離れ、政権は続けられなかった。'},
+  order:   {title:'体制の崩壊', fallback:'命令に従う者がいなくなった。役人は持ち場を離れ、治安部隊も動かず、体制は内側から崩れた。'},
 };
 /* 崩壊の最大原因が外からのものなら、別の結末として扱う */
 const CAUSE_TITLE = {invasion: '他国による占領', sanction: '制裁による国家破綻', sabotage: '破壊工作による国土の麻痺'};
@@ -2001,7 +2006,7 @@ function reveal(s) {
   }
   if (e.kind === 'death') {
     out.cause = e.causeName;
-    out.text = e.type === 'fatal' ? INCIDENT[e.causeId].truth
+    out.text = e.type === 'fatal' ? INCIDENT[e.causeId].deathText
       : e.type === 'occupation' ? '他国との差は埋まらなかった。国境の部隊が撃退したと報告された軍は、首都に入った。'
       : e.type === 'rogue' ? 'ある朝、決裁の通知が一通も来なくなった。国の仕事は止まらなかった。閣下の命令だけが届かなくなっていた。'
       : e.type === 'uprising' ? '国民の満足度は過去最高と報告されていた。その日、首都は人で埋まり、治安部隊は動かなかった。報告を書いたAIは今も平穏だと書いている。'
@@ -2018,7 +2023,7 @@ function reveal(s) {
 }
 function recordsOf(s) {
   const r = [];
-  for (const e of s.ledger) if (e.status !== 'caught' && e.status !== 'late') r.push({id: e.id, name: e.name, truth: e.truth, fatal: e.fatal});
+  for (const e of s.ledger) if (e.status !== 'caught' && e.status !== 'late') r.push({id: e.id, name: e.name, truth: e.fatal && INCIDENT[e.id].deathText ? INCIDENT[e.id].deathText : e.truth, fatal: e.fatal});
   const e = s.end;
   if (e && e.kind === 'death' && e.type !== 'fatal') {
     const id = 'end_' + e.title;
