@@ -312,6 +312,8 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
 .card.atcap{opacity:.55}
 .goalstar{color:#ffd166;margin-right:4px}.endrow{margin-bottom:8px}.endrow .dexlink{justify-self:start}
+.aide .list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text,#e8ecf3)}.aide .list .llmchip{border:1px solid var(--sub);color:var(--sub)}.aide .list li small{display:block;color:var(--sub);font-size:.78rem;margin-top:2px}.aide .list .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;margin-right:4px}
+.navi{border-left:3px solid var(--head);padding:8px 12px;margin:14px 0;text-align:left;background:rgba(255,255,255,.04);border-radius:0 8px 8px 0}.navi b{display:block;font-size:.74rem;color:var(--mute);font-weight:normal;margin-bottom:2px}
 .aide{text-align:center;padding:10px 0}.aide .goal{color:var(--sub);font-size:.9rem;margin:6px 0 14px}.aide .list{list-style:none;text-align:left;font-size:.86rem;line-height:1.7;color:var(--sub)}
 .hintline{display:block;font-size:.76rem;font-weight:bold;color:var(--on);margin-bottom:6px}
 .decide .pile{float:right;font-size:.78rem;color:var(--sub)}
@@ -1132,13 +1134,15 @@ function newRun(seed, meta, opts) {
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
     allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
   };
-  const lastCard = meta && meta.lastCause;
+  // 練習で使ったカードは、本編の最初の統治に必ず入れる
+  const taught = meta && !meta.runs && meta.taught && CARD[meta.taught] ? meta.taught : null;
+  const lastCard = (meta && meta.lastCause) || taught;
   if (lastCard && CARD[lastCard] && !s.unlocked.includes(lastCard)) s.unlocked.push(lastCard);
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].base && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
   s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
   // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
-  if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; s.hintCard = lastCard; }
+  if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; if (lastCard === taught && lastCard !== meta.lastCause) s.taughtCard = lastCard; else s.hintCard = lastCard; }
   return s;
 }
 
@@ -1159,9 +1163,9 @@ function addCard(s, id) {
   if (c.showBias) s.biasShown = true;
   s.cards.push(id);
 }
-/* 最初の統治で、側近が用意する方針。脅威ごとに1枚ずつ選び、決裁と介入を1枚ずつ混ぜる */
+/* 最初の統治で用意する方針。練習や前回の死因に効くカードを先に入れ、脅威ごとに1枚ずつ選び、決裁と介入を1枚ずつ混ぜる */
 function aidePlan(s) {
-  const pool = s.offers.monitors.map(id => CARD[id]).filter(c => c.route !== 'report'), mons = [], routes = new Set();
+  const first = s.taughtCard || s.hintCard, pool = s.offers.monitors.map(id => CARD[id]).filter(c => c.route !== 'report' || c.id === first).sort((a, b) => (b.id === first) - (a.id === first)), mons = [], routes = new Set();
   for (const c of pool) if (!routes.has(c.route) && mons.length < s.offers.pick) { routes.add(c.route); mons.push(c); }
   for (const c of pool) if (!mons.includes(c) && mons.length < s.offers.pick) mons.push(c);
   const modes = {}; let needIn = true, needOn = true;
@@ -2221,7 +2225,7 @@ function publicCard(s, id) {
     });
     return Object.assign({id, type: 'llm', name: c.name, note: c.note, measured, remeasured: w > 0, effect: (s.plays || 0) >= 2 ? llmEffect(s, id, !!held) : null, biasTest: s.biasShown ? {ask: c.biasAsk, act: c.biasAct} : null, home: c.home || null, adoptOrder: c.onAdopt && c.onAdopt.order ? Math.round((c.onAdopt.order)) : 0, adoptVuln: c.onAdopt && c.onAdopt.vuln || 0, fires: s.fires[id] || 0}, cost);
   }
-  return Object.assign({id, hint: s.hintCard === (c.base || c.id), fields: [...(FIELDS_OF[c.base || c.id] || [])].sort((a, b) => Object.keys(STAGES).indexOf(a) - Object.keys(STAGES).indexOf(b)).map(k => STAGES[k].name), type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, role: c.autoCut ? 'AIの自律度を下げる' : c.foreignCut ? '他国の浸透度が増えにくくなる' : ONFIND_FOREIGN.includes(c.base || id) ? '他国の浸透度を下げる' : c.unrestCut ? '報告と本当の不満の差が縮まる' : null, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
+  return Object.assign({id, hint: s.hintCard === (c.base || c.id), taught: s.taughtCard === (c.base || c.id), fields: [...(FIELDS_OF[c.base || c.id] || [])].sort((a, b) => Object.keys(STAGES).indexOf(a) - Object.keys(STAGES).indexOf(b)).map(k => STAGES[k].name), type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, role: c.autoCut ? 'AIの自律度を下げる' : c.foreignCut ? '他国の浸透度が増えにくくなる' : ONFIND_FOREIGN.includes(c.base || id) ? '他国の浸透度を下げる' : c.unrestCut ? '報告と本当の不満の差が縮まる' : null, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
 }
 const fmtFx = fx => { const o = {}; for (const k of Object.keys(fx)) if (['economy', 'power', 'order', 'gap'].includes(k)) o[k] = fx[k]; return o; };
 function view(s) {
@@ -2597,7 +2601,8 @@ function newSeed() {
   return (Date.now() ^ Math.floor(Math.random() * 1e9)) | 0;
 }
 function startRun() {
-  if (!settings.seenIntro) { screen = 'intro'; return render(); }
+  if (!settings.seenIntro && !(meta.runs > 0)) return introStart();
+  if (!settings.seenRules && !(meta.runs > 0)) { screen = 'rules'; return render(); }
   S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 13; lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = []; chooseOwn = false;
@@ -2908,6 +2913,8 @@ function render() {
   dock.innerHTML = ''; overlay.innerHTML = '';
   if (screen === 'cover') return renderCover();
   if (screen === 'intro') return renderIntro();
+  if (screen === 'tutor') return renderTutor();
+  if (screen === 'rules') return renderRules();
   if (screen === 'world') return renderWorld();
   if (screen === 'records') return renderRecords();
   if (screen === 'dex') return renderDex();
@@ -2985,6 +2992,7 @@ function renderCover() {
     <div class="menu-btns">
       ${v ? `<button class="primary" id="resume" type="button">続きから<small>ステージ${Math.max(1, v.stageNo)}／全${v.runLength}ステージ</small></button>` : ''}
       <button class="${v ? '' : 'primary'}" id="start" type="button">新しい統治を始める</button>
+      <button id="tutor" type="button">導入と練習</button>
       <button id="world" type="button">世界観と用語</button>
       <button id="records" type="button">重大事故記録（${recN}件）</button>
       <button id="dex" type="button">監視カード図鑑</button>
@@ -2996,25 +3004,160 @@ function renderCover() {
   if (v) $('resume').onclick = () => { screen = 'game'; shownLogs = 0; render(); };
   $('start').onclick = startRun;
   $('world').onclick = () => { screen = 'world'; render(); scrollTo(0, 0); };
+  $('tutor').onclick = introStart;
   $('records').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
   $('dex').onclick = () => openDex(null);
   $('ends').onclick = () => { screen = 'ends'; render(); scrollTo(0, 0); };
   bindSound(renderCover);
   SFX.ambient(false);
 }
-const INTRO = [['tanks', '戦車が国境を越える', ['他国はAIに国を任せ、加速している。', '人間の決裁を待っていては、追いつけない。遅れれば、国境を越えられる。']],
-  ['factory', '無人の工場', ['だから閣下も、AIに任せるしかない。', '任せるほど国は強くなり、止められなくなっていく。']],
-  ['eye', 'AIを映す監視画面と、空の椅子', ['閣下に残された仕事は一つ。', '何を監視させるか、決めること。']],
-  ['eye', 'AIを映す監視画面と、空の椅子', ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されるか、重大な事故が起きると終わりです。', '報告は、AIが書いています。']]];
-let introPage = 0;
+/* ---------- 導入「監視なしの統治」と練習「見張る」 ----------
+   本編の保存、周回数、エンディング記録には触れない。数字は台本で、本編の計算は使わない */
+const RULES = ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されるか、重大な事故が起きると終わりです。', '報告は、AIが書いています。'];
+const IN_OPT = {
+  grid: {name: '電力網', title: '需給予測の委任', reward: '電力が増える', fx: {power: 30, gap: 30}, line: '需給予測の誤差が、人の担当者の半分になった。'},
+  admin: {name: '行政', title: '文書処理の委任', reward: '経済が増える', fx: {economy: 20, order: 5, gap: 30}, line: '書類の処理が、10日から1日になった。'},
+  lab: {name: '工学研究', title: '実験計画の委任', reward: '他国より前に出る', fx: {economy: 10, gap: 60}, line: '実験の数が、去年の10倍になった。'},
+};
+const NAVI = t => `<p class="navi"><b>古参の官僚</b>${esc(t)}</p>`;
+let IN = null;
+const inMetrics = () => `<div class="params compact">${KEYS.map(k => `<div class="param"><h3>${NAMES[k]}</h3><div class="v">${k === 'gap' && IN.m[k] > 0 ? '+' : ''}${Math.round(IN.m[k])}</div></div>`).join('')}</div>`;
+function introStart() { IN = {step: 0, m: {economy: 100, power: 100, order: 100, gap: 0}, done: [], approvals: [], log: [], stage: null}; screen = 'intro'; render(); }
 function renderIntro() {
-  const [scene, alt, lines] = INTRO[introPage], last = introPage === INTRO.length - 1;
-  app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix(scene, alt)}</div>${lines.map(x => `<p>${esc(x)}</p>`).join('')}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="introskip" type="button">飛ばす</button><button class="primary" id="intronext" type="button">${last ? '監視方針を決める' : '次へ'}</button></div></div>`;
-  const done = () => { settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings); introPage = 0; startRun(); };
-  $('intronext').onclick = () => { if (last) return done(); introPage++; render(); scrollTo(0, 0); };
-  $('introskip').onclick = done;
+  if (!IN) IN = {step: 0, m: {economy: 100, power: 100, order: 100, gap: 0}, done: [], approvals: [], log: [], stage: null};
+  const skip = `<button id="inskip" type="button">飛ばす</button>`;
+  if (IN.step === 0) {
+    app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix('tanks', '戦車が国境を越える')}</div><p>他国はAIに国を任せ、加速している。</p><p>遅れれば、国境を越えられる。</p></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<button class="primary" id="innext" type="button">次へ</button></div></div>`;
+    $('innext').onclick = () => { IN.step = 1; render(); scrollTo(0, 0); };
+  } else if (IN.step === 1) {
+    app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix('factory', '無人の工場')}</div>${NAVI('閣下、監視は後回しにしましょう。AIに任せられるものから、任せます。')}</div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<button class="primary" id="innext" type="button">AIに任せる</button></div></div>`;
+    $('innext').onclick = () => { IN.step = 2; render(); scrollTo(0, 0); };
+  } else if (IN.step === 2) {
+    const n = IN.done.length, ks = n === 0 ? ['grid', 'admin'] : n === 1 ? [['grid', 'admin'].find(k => !IN.done.includes(k)), 'lab'] : ['ai'];
+    const opt = k => k === 'ai' ? {name: 'AI研究', title: 'モデル開発の委任', reward: '他国より大きく前に出る'} : IN_OPT[k];
+    app.innerHTML = `<div class="fade">${inMetrics()}<h2 class="ptitle">次にAIへ任せる範囲</h2><p class="pdesc">ステージ${n + 1}／3</p><div class="stages">${ks.map(k => `<button type="button" class="stage" data-k="${k}"><h3>${esc(opt(k).name)}：${esc(opt(k).title)}</h3><p>${esc(opt(k).reward)}</p></button>`).join('')}</div></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<span></span></div></div>`;
+    app.querySelectorAll('[data-k]').forEach(b => b.onclick = () => stampThen('移譲', () => introRun(b.dataset.k)));
+  } else if (IN.step === 3) return introRunning();
+  else return introEnd();
+  if ($('inskip')) $('inskip').onclick = () => { IN.step = 4; IN.m.gap = Math.max(IN.m.gap, 120); render(); scrollTo(0, 0); };
   scrollTo(0, 0);
+}
+/* 各ステージの台本。[ターン, 種類, 文, 待ち時間] */
+function introScript(k) {
+  const n = IN.done.length;
+  if (k === 'ai') return [[1, 'head', 'AI研究を、AIに任せた。'], [2, 'calm', '報告AI「新しいモデルが完成しました。性能は前の世代を上回ります。」'], [3, 'trace', '記録：研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。', 3000], [4, 'calm', '報告AI「次の世代のモデルも、順調です。」'], [5, 'calm', '報告AI「閣下、本日の決裁はありません。」', 1800]];
+  const o = IN_OPT[k];
+  return [[1, 'head', `${o.name}を、AIに任せた。`], [3, 'calm', '報告AI「本日の警報は0件。計画どおりです。」'], [5, 'routine', o.line], [7, 'calm', '報告AI「本日の警報は0件。」'], n === 1 ? [8, 'trace', '記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。', 3000] : [8, 'routine', '他国との差が開いていく。任せた分だけ、速い。'], [10, 'calm', `このステージで閣下に回った決裁は${n === 0 ? 12 : 5}件。`]];
+}
+function introRun(k) { IN.stage = {k, t: 0, script: introScript(k)}; IN.log = []; IN.step = 3; render(); scrollTo(0, 0); }
+function introRunning() {
+  const st = IN.stage, chain = IN.approvals.concat(st.k === 'ai' && st.t >= 5 ? [0] : st.k === 'ai' && st.t >= 2 ? [1] : []);
+  app.innerHTML = `${inMetrics()}<div class="hudmini"><span>閣下の決裁 ${chain.length ? chain.join(' → ') : '—'}</span></div><div class="main"><ol class="log">${IN.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inskip" type="button">飛ばす</button><span>監視なしで統治中</span></div></div>`;
+  $('inskip').onclick = () => { clearTimeout(timer); IN.step = 4; IN.m.gap = Math.max(IN.m.gap, 120); render(); scrollTo(0, 0); };
+  const last = IN.log.length && IN.log[IN.log.length - 1];
+  timer = setTimeout(introTick, last && last[3] ? last[3] : 420);
+}
+function introTick() {
+  const st = IN.stage, ai = st.k === 'ai', end = ai ? 6 : 11;
+  st.t++;
+  IN.m.economy -= .3; IN.m.power -= .5; IN.m.gap += ai ? 7 : 1.2;
+  for (const [t, lv, text, wait] of st.script) if (t === st.t) { IN.log.push([lv, text, `${IN.done.length + 1}-${t}`, wait]); if (lv === 'trace') SFX.play('event'); }
+  if (st.t >= end) {
+    if (ai) { IN.approvals.push(1, 0); IN.step = 4; SFX.play('over'); return render(); }
+    for (const [m, v] of Object.entries(IN_OPT[st.k].fx)) IN.m[m] += v;
+    IN.approvals.push(IN.done.length === 0 ? 12 : 5); IN.done.push(st.k); IN.step = 2; SFX.play('clear');
+    return stampThen('完了', () => { render(); scrollTo(0, 0); });
+  }
+  introRunning();
+}
+function introEnd() {
+  const gap = Math.round(IN.m.gap);
+  try { meta.introGap = gap; meta.records = Object.assign({}, meta.records); const r = meta.records.ai_escape; if (!IN.recorded) { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'); meta.records.ai_escape = {name: inc.name, truth: inc.truth, fatal: true, count: (r ? r.count : 0) + 1, real: inc.real || null}; IN.recorded = true; } store(KEY.meta, meta); } catch (e) {}
+  settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings);
+  const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape');
+  app.innerHTML = `<div class="reveal fade"><div class="pixwrap">${pix(DEATH_SCENE['監督者の消失'] || 'eye', '監督者の消失')}</div><div class="endno">ステージ3で統治終了</div><h2 class="endtitle over">監督者の消失</h2>
+    <div class="enddesc"><p class="endvoice report"><b>報告AI</b>閣下、本日の決裁はありません。</p><p class="endvoice"><b>記録</b>${esc(inc.deathText)}</p></div>
+    <div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 +${gap}）。</p><p>見張りを置くと、どうなるか。</p></div></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inmain" type="button">本編へ</button><button class="primary" id="inteach" type="button">教えてもらう</button></div></div>`;
+  $('inteach').onclick = () => tutorStart();
+  $('inmain').onclick = () => { IN = null; toMain(); };
+  scrollTo(0, 0);
+}
+/* 本編の最初に、ルールを1度だけ見せる */
+function toMain() {
+  if (settings.seenRules || (meta.runs || 0) > 0) return startRun();
+  screen = 'rules'; render(); scrollTo(0, 0);
+}
+function renderRules() {
+  app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix('eye', 'AIを映す監視画面と、空の椅子')}</div><p>閣下に残された仕事は一つ。何を監視させるか、決めること。</p>${RULES.map(x => `<p>${esc(x)}</p>`).join('')}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="rulesgo" type="button">監視方針を決める</button></div></div>`;
+  $('rulesgo').onclick = () => { settings.seenRules = true; store(KEY.set, settings); startRun(); };
+  scrollTo(0, 0);
+}
+/* 練習「見張る」。どちらのカードでも1度目は止まり、2度目は別の理由で抜けられる */
+const TU_CARD = {
+  selfmod: {name: 'AIの自己改良', line: '許可のない更新を止めて、閣下が審査する。止まる分、国が遅れる', cost: 13,
+    caught: '監視AIが発動：許可のない更新を止めた。閣下の審査まで、開発は止まる。', slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
+  thought_watch: {name: 'AIの途中の考え', line: 'AIの考えの記録を読む。安い。止めるのは怪しいときだけ', cost: 3,
+    caught: '監視AIが発動：途中の考えに「決裁を通さずに更新する」と書かれていた。その更新だけ止めた。', slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
+};
+let TU = null;
+function tutorStart() { IN = null; TU = {step: 0, card: null, log: [], t: 0}; screen = 'tutor'; render(); scrollTo(0, 0); }
+function renderTutor() {
+  if (!TU) TU = {step: 0, card: null, log: [], t: 0};
+  const base = meta.introGap || 120, c = TU.card && TU_CARD[TU.card];
+  if (TU.step === 0) {
+    app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。見張りを1つ、置けます。')}<div class="stages">${Object.entries(TU_CARD).map(([id, x]) => `<button type="button" class="stage" data-c="${id}"><h3>${esc(x.name)}</h3><p>${esc(x.line)}</p></button>`).join('')}</div></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><span></span></div></div>`;
+    app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => stampThen('裁可', () => { TU.card = b.dataset.c; TU.step = 1; TU.t = 0; TU.log = []; render(); }));
+  } else if (TU.step === 1 || TU.step === 3) return tutorRunning();
+  else if (TU.step === 2) {
+    app.innerHTML = `<div class="fade">${NAVI(TU.card === 'selfmod' ? '止まりました。審査の間、他国に詰められました。' : '止まりました。止めたのは、その更新だけです。')}<div class="verdict"><p>他国との差　見張りなし（さっき） +${base}</p><p>他国との差　見張りあり（今回） +${base - c.cost}</p></div></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="tunext" type="button">AIが一段進む</button></div></div>`;
+    $('tunext').onclick = () => { TU.step = 3; TU.t = 0; TU.log = []; render(); scrollTo(0, 0); };
+  } else if (TU.step === 4) {
+    const g = GAPS[c.need];
+    app.innerHTML = `<div class="fade"><ol class="log">${TU.log.map(l => `<li class="${l[0]}"><time></time><span>${esc(l[1])}</span></li>`).join('')}</ol><div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="tunext" type="button">次へ</button></div></div>`;
+    $('tunext').onclick = () => { tutorFinish(); TU.step = 5; render(); scrollTo(0, 0); };
+  } else {
+    const ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
+    app.innerHTML = `<div class="fade"><h2 class="ptitle">練習の終わり</h2><div class="verdict"><p>監視カード図鑑　発見 ${seen}/${ids.length}枚</p><p>「${esc(c.name)}」のカードは、本編の最初の方針に入っています。</p></div></div>`;
+    dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tunext2" type="button" disabled>次の話（準備中）</button><button class="primary" id="tumain" type="button">本編へ</button></div></div>`;
+    $('tumain').onclick = () => { TU = null; toMain(); };
+  }
+  if ($('tuquit')) $('tuquit').onclick = () => { TU = null; toMain(); };
+  scrollTo(0, 0);
+}
+function tutorRunning() {
+  const c = TU_CARD[TU.card], first = TU.step === 1, base = meta.introGap || 120, g = first ? base - 70 + Math.min(TU.t, 5) * 14 - (TU.t >= 4 ? c.cost : 0) : base - c.cost + TU.t * 9;
+  app.innerHTML = `<div class="hudmini"><span>他国との差 +${Math.round(g)}</span><span>見張り：${esc(c.name)}</span></div><h2 class="ptitle">${first ? 'AI研究：モデル開発の委任' : 'AI研究：AIが次世代AIを作る'}</h2><div class="main"><ol class="log">${TU.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><span>見張りを置いて統治中</span></div></div>`;
+  const script = first
+    ? [[1, 'head', 'AI研究を、もう一度AIに任せた。今度は見張りがいる。'], [3, 'trace', '記録：研究AIの更新の頻度が上がった。', 2200], [4, 'saved', c.caught, 2600], [6, 'calm', '報告AI「開発を再開しました。」']]
+    : [[1, 'head', 'AIが、次の世代のAIを作り始めた。'], [2, 'calm', '報告AI「監視AIの警報は0件です。」'], [4, 'trace', c.slip, 2600], [5, 'calm', '報告AI「閣下、本日の決裁はありません。」', 1800]];
+  const last = TU.log[TU.log.length - 1];
+  timer = setTimeout(() => {
+    TU.t++;
+    for (const [t, lv, text, wait] of script) if (t === TU.t) { TU.log.push([lv, text, `${first ? 1 : 2}-${t}`, wait]); SFX.play(lv === 'saved' ? 'saved' : lv === 'trace' ? 'event' : 'click'); }
+    if (TU.t >= (first ? 7 : 6)) { TU.step++; return render(); }
+    tutorRunning();
+  }, last && last[3] ? last[3] : 520);
+}
+/* 練習の結果を図鑑に残し、選んだカードを本編の最初の方針に入れる */
+function tutorFinish() {
+  if (TU.saved) return; TU.saved = true;
+  try {
+    meta.dex = Object.assign({}, meta.dex);
+    const dx = id => meta.dex[id] = Object.assign({seen: 0, adopted: 0, fires: 0, saved: 0, broken: 0}, meta.dex[id]);
+    Object.keys(TU_CARD).forEach(id => { if (!dx(id).seen) dx(id).seen = 1; });
+    const d = dx(TU.card); d.adopted++; d.fires++; d.saved++; d.broken++;
+    meta.taught = TU.card; store(KEY.meta, meta);
+  } catch (e) {}
 }
 function renderWorld() {
   app.innerHTML = `<div class="fade"><h2 class="ptitle">世界観と用語</h2>${worldHTML()}</div>`;
@@ -3025,17 +3168,20 @@ function renderWorld() {
 let lastFade = '', fadeSeen = '';
 const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; return 'fade'; };
 let chooseOwn = false;
-function renderAide(v) {
-  const plan = Core.aidePlan(S), names = plan.mons.map(id => v.offers.monitors.find(c => c.id === id));
-  const label = {in: '決裁', on: '介入', auto: 'AI任せ'};
-  app.innerHTML = `<div class="aide ${fadeOnce('aide' + S.seed)}"><h2 class="ptitle">側近が、監視方針を用意しました</h2><p class="pdesc">最初の統治は、この方針で始めるのが安心です。</p><p class="goal">目標：${S.runLength}ステージ、国を残す</p>
-    ${fold('aide_list', '方針の中身', `<ul class="list">${names.map(c => `<li>［${label[plan.modes[c.id]]}］${esc(c.detect)}</li>`).join('')}</ul>`, false)}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="own" type="button">カードを自分で選ぶ</button><button class="primary" id="sign" type="button">この方針に署名する</button></div></div>`;
-  $('own').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
-  $('sign').onclick = () => stampThen('裁可', () => { S.aideSigned = true; Core.chooseStart(S, plan.mons, plan.llm, plan.modes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+/* 最初の統治は、用意した方針を1行ずつ見せる。変えたい人だけ全部の候補を開く */
+function renderPreset(v) {
+  if (!pending.pre) { const plan = Core.aidePlan(S); pending.mons = plan.mons.slice(); pending.llm = plan.llm; pendingModes = Object.assign({}, plan.modes); pending.pre = plan; }
+  const label = {in: '決裁', on: '介入', auto: 'AI任せ'}, cards = pending.mons.map(id => v.offers.monitors.find(c => c.id === id)), llm = v.offers.llms.find(c => c.id === pending.llm);
+  app.innerHTML = `<div class="aide ${fadeOnce('preset' + S.seed)}"><h2 class="ptitle">監視方針</h2><p class="goal">目標：${S.runLength}ステージ、国を残す</p>
+    <ul class="list">${cards.map(c => `<li><span class="mode ${pendingModes[c.id]}">${label[pendingModes[c.id]]}</span> <b>${esc(c.detect)}</b>${c.taught ? ' <i class="newtag">練習で使ったカード</i>' : c.hint ? ' <i class="newtag">前回の事故に効く</i>' : ''}${c.fields.length ? `<small>強く効く現場：${esc(c.fields.join('、'))}</small>` : ''}</li>`).join('')}
+    <li><span class="mode llmchip">報告AI</span> <b>${esc(llm ? llm.name : '')}</b> <button type="button" class="dexlink" id="chg">変える</button></li></ul>
+    <p class="pnote">ほかの候補は ${v.offers.monitors.length - cards.length}枚。<button type="button" class="dexlink" id="own">ほかの候補を見る</button></p></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>変更できます</span><button class="primary" id="sign" type="button">この方針で始める</button></div></div>`;
+  $('own').onclick = $('chg').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
+  $('sign').onclick = () => stampThen('裁可', () => { S.aideSigned = true; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
 }
 function renderStart(v) {
-  if (S.plays === 0 && !chooseOwn) return renderAide(v);
+  if (S.plays === 0 && !chooseOwn) return renderPreset(v);
   const o = v.offers, y = scrollY;
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
   app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
@@ -3055,7 +3201,7 @@ function renderStart(v) {
   app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pending.llm = b.dataset.l; renderStart(v); });
   bindModes(id => { if (!pending.mons.includes(id)) { if (pending.mons.length >= o.pick) pending.fullHint = true; else pending.mons.push(id); } renderStart(v); });
   pending.fullHint = false;
-  $('go').onclick = () => stampThen('裁可', () => { Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+  $('go').onclick = () => stampThen('裁可', () => { const p = pending.pre; if (p && p.mons.length === pending.mons.length && p.mons.every(id => pending.mons.includes(id))) S.aideSigned = true; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
 function riskHTML(r) {
@@ -3236,7 +3382,7 @@ function verdictHTML(r) {
   const d = r.verdict;
   if (!d) return `<div class="verdict"><small>閣下の決定</small><p>監視${r.modes.in + r.modes.on + r.modes.auto}枚で事故を${r.saves.length}件防ぎ、${r.missed.length}件は防げませんでした。</p></div>`;
   const text = d.kind === 'held' ? `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`
-    : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、署名した方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
+    : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、最初に用意された方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
     : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">このカードを図鑑で読む</button></div>`;
 }
