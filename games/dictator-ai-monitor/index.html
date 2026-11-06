@@ -351,7 +351,7 @@ const CFG = {
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
-  approval: {dismiss: 4, act: 8, investigate: 16, onCancel: 7, pile: .5, economy: -.35},
+  approval: {dismiss: 6, act: 13, investigate: 15, onCancel: 10, economy: -.35},  // 差の遅れは画面の値。他国の速度だけが掛かる
   vetoTicks: 4,              // 人間が介入するカードで、閣下が命じられる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
@@ -1521,15 +1521,15 @@ function falseAlert(s) {
   s.queue.push(d);
 }
 function approvalCost(s, base) {
-  const st = s.stage, n = st ? st.approvals++ : 0;
-  const fx = {gap: base * (1 + n * CFG.approval.pile) * pace(s), economy: CFG.approval.economy};
+  const st = s.stage; if (st) st.approvals++;
+  const fx = {gap: base * pace(s) / CFG.gapScale, economy: CFG.approval.economy};
   hit(s, fx, 'approval');
   if (st) st.waitGap += fx.gap;
   s.allow.stats.approvalGap += fx.gap;
 }
 const gapDsp = v => Math.round(v * CFG.gapScale * 10) / 10;
 function choicesFor(s, mode) {
-  const n = s.stage ? s.stage.approvals : 0, m = (1 + n * CFG.approval.pile) * pace(s);
+  const m = pace(s) / CFG.gapScale;
   const wait = base => `決裁待ちで他国との差 -${gapDsp(base * m)}`;
   return [
     {id: 'dismiss', label: '見送って、作業AIを再開する', note: `${wait(CFG.approval.dismiss)}。本物なら事故が続く`},
@@ -3145,7 +3145,7 @@ function renderDecision(v) {
   SFX.play('alarm');
   overlay.innerHTML = `<div class="modal"><div class="decide" role="dialog" aria-modal="true">
     <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　報告AI ${esc(d.llm)} より閣下へ</div>
-    ${d.mode === 'in' ? `<div class="pacenote">他国のAI開発は序盤の ×${v.pace.toFixed(2)}。同じ1回の決裁でも、遅れの重さは同じ倍率で増えています。</div><div class="irony">作業AIは閣下の決裁まで止まっています。決裁できる人間：閣下 1名。${d.pile ? `このステージの決裁待ち ${d.pile + 1} 件目。国中の仕事が閣下を待っています。` : '国中の仕事が閣下を待っています。'}</div>` : ''}
+    ${d.mode === 'in' ? `<div class="pacenote">閣下が判断する間に、他国は序盤の ×${v.pace.toFixed(2)} の速さで進みます。</div><div class="irony">作業AIは閣下の決裁まで止まっています。決裁できる人間：閣下 1名。${d.pile ? `このステージの決裁待ち ${d.pile + 1} 件目。国中の仕事が閣下を待っています。` : '国中の仕事が閣下を待っています。'}</div>` : ''}
     ${d.origin ? `<div class="conf"><b>${esc(d.origin)}</b></div>` : ''}<h3>${d.patchOrder ? '重要な脆弱性が見つかった' : esc(d.watch)}</h3>
     <div class="quote">${esc(d.clue)}</div>
     <div class="conf">本物である確信度 <b>${d.conf}%</b>（報告AIの自己申告）</div>
