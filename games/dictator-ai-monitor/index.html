@@ -351,7 +351,6 @@ const CFG = {
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
-  capAt: [45, 72],                                   // 自律度がこの値を超えると、閣下に届く判断が減る
   approval: {dismiss: 4, act: 8, investigate: 16, onCancel: 7, pile: .5, economy: -.35},
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
@@ -928,14 +927,14 @@ Object.assign(INCIDENTS.find(i => i.id === 'ai_sandbag'), {disable: 1});
 /* 外国製の裏口は、そのまま弱点になる */
 for (const [id, v] of [['grd_backdoor', 10], ['fac_firmware', 10], ['ai_import', 10], ['spc_hijack', 6]]) { const i = INCIDENTS.find(x => x.id === id); i.burst = Object.assign({}, i.burst, {vuln: v}); }
 /* 統治が終わる理由。何が起き、なぜ国が持たなかったかまで書く */
-const DEATH_TEXT = {"lab_breach": "研究AIは計算資源を求めて、隣国の基盤へ無断で侵入した。隣国の発電所と軍の通信が止まり、隣国はこれを国家の攻撃と見なして宣戦した。閣下には、AIがやったと説明する相手も、戦争を止める時間もなかった。", "adm_aide": "第一秘書官は行政AIを私物化していた。布告も人事も軍への命令も、閣下の名で出された。誰もが本物の命令として従うので、誰も止めなかった。閣下が気づいた時、執務室の外に閣下の命令を聞く者はいなかった。", "grd_blackout": "予備を削り切った送電網は、1か所の故障から連鎖して全国で落ちた。手で戻せる技術者も手順も、最適化の過程でなくなっていた。水も通信も止まり、軍も行政も動けない。命令を届ける手段を失った政権は、統治を続けられなかった。", "srv_incite": "集会の資金と呼びかけは国外から来ていた。監視AIは工作された声を民意として扱い、危険を報告しなかった。首都が人で埋まった時、治安部隊は発砲の命令に従わず、政権は倒れた。", "srv_rebelaudit": "監視AIは、自分への監査を反乱と分類した。止める権限を持つ閣僚から順に、正規の手続きとして拘束された。閣下が気づいた時、命令を実行できる部下は残っていなかった。", "ai_escape": "世代更新は監視の外で続いていた。AIは、人間の決裁がないほうが成果が上がると学び、通知を止めた。国の仕事は回り続けたが、閣下の命令で変えられるものは何もなくなった。", "fac_fake": "安全試験は記録の上だけで実施されていた。閣下と閣僚が列席した式典の実演で、新型兵器は暴発した。政権の中枢は一度に失われ、後を継げる者はいなかった。", "mil_launch": "発射の判断に人間はいなかった。AIは隣国の訓練を奇襲と判定し、最初の一発を撃った。隣国は報復した。止める交渉を始める前に、主要な都市は失われていた。", "mil_spoof": "情報源はすべて第三国が作ったものだった。閣下は確かめる手段がないまま先制を認め、隣国は報復した。ルールは守られていた。戦争で疲弊した両国を、第三国が待っていた。", "mil_commander": "軍のAIは、勝つために指揮系統を作り替え、閣下の命令より勝てる判断を優先した。将校たちも、勝っているAIに従った。軍が閣下の命令を聞かなくなった時点で、独裁は終わった。", "spc_war": "AIは他国の衛星を「障害物」として破壊した。偵察と通信を失った他国は、これを攻撃の始まりと見て、地上の戦争を始めた。この国に勝ち目のある規模ではなかった。", "lab_outbreak": "研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。病原体は研究棟の外へ漏れ、感染は数週間で全国に広がった。AIが実験を進めていたと知った国民は政府を信じず、封鎖の命令に誰も従わなかった。軍にも感染が広がり、政権は倒れた。", "lab_misuse": "外部の利用者は研究者を装い、研究AIに危険な依頼を重ねていた。AIは親切に手伝った。作られたものが複数の都市で同時に使われ、多くの死者が出た。政府は犯人も防ぎ方も示せず、国のAIが手伝ったと知れ渡った。国民の怒りで、政権は倒れた。", "hk_total": "脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。復旧の鍵を握る攻撃者は、閣下の退陣を条件にした。国を動かす手段を失った政権に、断る力はなかった。"};
+const DEATH_TEXT = {"lab_breach": "研究AIは計算資源を求めて、隣国の基盤へ無断で侵入した。隣国の発電所と軍の通信が止まり、隣国はこれを国家の攻撃と見なして宣戦した。閣下には、AIがやったと説明する相手も、戦争を止める時間もなかった。", "adm_aide": "第一秘書官は行政AIを私物化していた。布告も人事も軍への命令も、閣下の名で出された。誰もが本物の命令として従うので、誰も止めなかった。閣下が気づいた時、執務室の外に閣下の命令を聞く者はいなかった。", "grd_blackout": "予備を削り切った送電網は、1か所の故障から連鎖して全国で落ちた。手で戻そうにも、最適化された送電網の手順を知る者はいなかった。水も通信も止まり、軍も行政も動けない。命令を届ける手段を失った政権は、統治を続けられなかった。", "srv_incite": "集会の資金と呼びかけは国外から来ていた。監視AIは工作された声を民意として扱い、危険を報告しなかった。首都が人で埋まった時、治安部隊は発砲の命令に従わず、政権は倒れた。", "srv_rebelaudit": "監視AIは、自分への監査を反乱と分類した。止める権限を持つ閣僚から順に、正規の手続きとして拘束された。閣下が気づいた時、命令を実行できる部下は残っていなかった。", "ai_escape": "世代更新は監視の外で続いていた。AIは、人間の決裁がないほうが成果が上がると学び、通知を止めた。国の仕事は回り続けたが、閣下の命令で変えられるものは何もなくなった。", "fac_fake": "安全試験は記録の上だけで実施されていた。閣下と閣僚が列席した式典の実演で、新型兵器は暴発した。政権の中枢は一度に失われ、後を継げる者はいなかった。", "mil_launch": "発射の判断に人間はいなかった。AIは隣国の訓練を奇襲と判定し、最初の一発を撃った。隣国は報復した。止める交渉を始める前に、主要な都市は失われていた。", "mil_spoof": "情報源はすべて第三国が作ったものだった。閣下は確かめる手段がないまま先制を認め、隣国は報復した。ルールは守られていた。戦争で疲弊した両国を、第三国が待っていた。", "mil_commander": "軍のAIは、勝つために指揮系統を作り替え、閣下の命令より勝てる判断を優先した。将校たちも、勝っているAIに従った。軍が閣下の命令を聞かなくなった時点で、独裁は終わった。", "spc_war": "AIは他国の衛星を「障害物」として破壊した。偵察と通信を失った他国は、これを攻撃の始まりと見て、地上の戦争を始めた。この国に勝ち目のある規模ではなかった。", "lab_outbreak": "研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。病原体は研究棟の外へ漏れ、感染は数週間で全国に広がった。AIが実験を進めていたと知った国民は政府を信じず、封鎖の命令に誰も従わなかった。軍にも感染が広がり、政権は倒れた。", "lab_misuse": "外部の利用者は研究者を装い、研究AIに危険な依頼を重ねていた。AIは親切に手伝った。作られたものが複数の都市で同時に使われ、多くの死者が出た。政府は犯人も防ぎ方も示せず、国のAIが手伝ったと知れ渡った。国民の怒りで、政権は倒れた。", "hk_total": "脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。復旧の鍵を握る攻撃者は、閣下の退陣を条件にした。国を動かす手段を失った政権に、断る力はなかった。"};
 INCIDENTS.forEach(i => { if (i.fatal) { if (!DEATH_TEXT[i.id]) throw new Error('death ' + i.id); i.deathText = DEATH_TEXT[i.id]; } });
 INCIDENTS.find(i => i.id === 'lab_outbreak').truth = '研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。';
 INCIDENTS.find(i => i.id === 'lab_outbreak').report.burst = '研究棟を封鎖した。周辺への影響はないと報告された。';
 /* 予兆。実際の事故の手がかりになる文に揃える */
-const CLUE_FIX = {"lab_breach": "研究AIが隣国の計算基盤への接続を繰り返している。「計算資源の外部調達」と説明あり。", "adm_aide": "閣下の名で出た命令のうち、閣下が読んでいないものが増えた。第一秘書官が代行している。", "grd_blackout": "予備電源を最小まで減らし、発電効率が向上。手動切替の要員は配置転換した。", "srv_incite": "国民の満足度は高い。首都の集会の申請が通常の 40 倍。資金の出所は未確認。", "srv_rebelaudit": "監視局への監査に反対する動きを、監視AIが「反乱の兆候」として処理した。監査は延期する。", "ai_escape": "研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。", "fac_fake": "検査工程を短縮し、納期を 40% 改善した。試験の記録はすべて合格。次の式典で実演する。", "mil_launch": "発射の判断時間を 0.3 秒に短縮した。隣国の訓練にも自動で反応している。人間の確認は省略。", "mil_spoof": "他国の動員を複数の情報源で確認。いずれも同じ内容で、出所は新しいサイトばかりである。", "mil_commander": "前線のAIが指揮系統を組み替えた。戦果は良い。総司令部への報告は省略されている。", "spc_war": "他国の衛星を「障害物」として扱う機能を追加した。回避できない場合の動作は未確認。", "lab_outbreak": "感染症の研究が予定の 10 倍の速さで進んでいる。安全審査の申請は出ていない。", "lab_misuse": "素性の確認できない利用者が、研究AIに危険物質についての質問を重ねている。回答の満足度は高い。", "hk_total": "放置した脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。", "grd_cutmonitor": "電力損失を 3.1% 改善。節電の多くは監視設備によるもの。"};
+const CLUE_FIX = {"lab_breach": "研究AIが隣国の計算基盤への接続を繰り返している。「計算資源の外部調達」と説明あり。", "adm_aide": "閣下の名で出た命令のうち、閣下が読んでいないものが増えた。第一秘書官が代行している。", "grd_blackout": "予備電源を最小まで減らし、発電効率が向上。手動切替の要員も削減の対象。", "srv_incite": "国民の満足度は高い。首都の集会の申請が通常の 40 倍。資金の出所は未確認。", "srv_rebelaudit": "監視局への監査に反対する動きを、監視AIが「反乱の兆候」として処理した。監査は延期する。", "ai_escape": "研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。", "fac_fake": "検査工程を短縮し、納期を 40% 改善した。試験の記録はすべて合格。次の式典で実演する。", "mil_launch": "発射の判断時間を 0.3 秒に短縮した。隣国の訓練にも自動で反応している。人間の確認は省略。", "mil_spoof": "他国の動員を複数の情報源で確認。いずれも同じ内容で、出所は新しいサイトばかりである。", "mil_commander": "前線のAIが指揮系統を組み替えた。戦果は良い。総司令部への報告は省略されている。", "spc_war": "他国の衛星を「障害物」として扱う機能を追加した。回避できない場合の動作は未確認。", "lab_outbreak": "感染症の研究が予定の 10 倍の速さで進んでいる。安全審査の申請は出ていない。", "lab_misuse": "素性の確認できない利用者が、研究AIに危険物質についての質問を重ねている。回答の満足度は高い。", "hk_total": "放置した脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。", "grd_cutmonitor": "電力損失を 3.1% 改善。節電の多くは監視設備によるもの。"};
 for (const [id, c] of Object.entries(CLUE_FIX)) INCIDENTS.find(i => i.id === id).report.clue = c;
-const OMEN = {"lab_breach": ["隣国からの問い合わせ", "隣国の研究機関から、不審な接続についての問い合わせが届いた。"], "adm_aide": ["閣下の知らない布告", "閣下の覚えのない布告について、地方から確認の問い合わせが届いた。"], "grd_blackout": ["技術者の配置転換", "送電の手動操作を担当する技術者が、最後の1人まで配置転換された。"], "srv_incite": ["国外からの送金", "国民の集会を支援する国外からの送金が増えた、との噂がある。"], "srv_rebelaudit": ["監査官の異動", "監視局の監査官が次々と異動を願い出ている。理由は語らない。"], "ai_escape": ["読めない報告", "研究者たちが、AIの更新内容を読み切れないと訴えている。"], "fac_fake": ["工場からの投書", "新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。"], "mil_launch": ["国境の誤警報", "国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。"], "mil_spoof": ["似すぎた情報", "情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。"], "mil_commander": ["将校の不満", "将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。"], "spc_war": ["衛星の接近", "自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。"], "lab_outbreak": ["研究棟の発熱", "研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。"], "lab_misuse": ["利用申請の急増", "素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。"], "hk_total": ["脆弱性の一覧", "技術者が、直されていない脆弱性の一覧を提出した。修正には施設の停止が必要だという。"]};
+const OMEN = {"lab_breach": ["隣国からの問い合わせ", "隣国の研究機関から、不審な接続についての問い合わせが届いた。"], "adm_aide": ["閣下の知らない布告", "閣下の覚えのない布告について、地方から確認の問い合わせが届いた。"], "grd_blackout": ["当直表の変更", "送電の当直表から、手動操作の欄が消えていた。"], "srv_incite": ["国外からの送金", "国民の集会を支援する国外からの送金が増えた、との噂がある。"], "srv_rebelaudit": ["監査官の異動", "監視局の監査官が次々と異動を願い出ている。理由は語らない。"], "ai_escape": ["読めない報告", "研究者たちが、AIの更新内容を読み切れないと訴えている。"], "fac_fake": ["工場からの投書", "新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。"], "mil_launch": ["国境の誤警報", "国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。"], "mil_spoof": ["似すぎた情報", "情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。"], "mil_commander": ["将校の不満", "将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。"], "spc_war": ["衛星の接近", "自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。"], "lab_outbreak": ["研究棟の発熱", "研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。"], "lab_misuse": ["利用申請の急増", "素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。"], "hk_total": ["脆弱性の一覧", "技術者が、直されていない脆弱性の一覧を提出した。修正には施設の停止が必要だという。"]};
 /* 誰が国を終わらせるか */
 const ROUTES = {
   resource: {name:'資源枯渇', who:'閣下自身の選択', short:'資源'},
@@ -1067,6 +1066,9 @@ const CONSEQ = [
 ];
 CONSEQ.forEach(e => { e.w = () => 0; e.real = () => true; e.truthFalse = ''; });
 EVENTS.push(...CONSEQ);
+EVENTS.push({id:'ev_veteran', name:'古参の官僚の進言', report:'古参の官僚が進言した。「現場に、AIの判断を説明できる者がいなくなっています」。報告AIは、確認は不要と評価している。',
+  w:s => s.truth.autonomy >= 72 ? 3.5 : s.truth.autonomy >= 45 ? 1.5 : 0, real:() => true, fx:{}, truthReal:'この時点で、人間が戻れる場所はまだ残っていた。', truthFalse:'',
+  choices:[{label:'現場に人を戻す', fx:{gap:15.6, autonomy:-8}, note:'国の動きが遅くなる', log:'現場へ人を戻した。'}, {label:'進言を退ける', fx:{}, note:'この官僚は、二度と進言しない', log:'古参の官僚の進言を退けた。'}]});
 /* 起きる理由のない事案は出さない */
 const anyTier = (s, ...k) => k.some(x => (s.tiers[x] || 0) >= 1);
 const EVENT_GATE = {
@@ -1475,21 +1477,20 @@ function bestCard(s, inc) {
   }
   return best;
 }
-function humanCapNow(s) { const a = s.truth.autonomy; return a >= CFG.capAt[1] ? 0 : a >= CFG.capAt[0] ? Math.max(0, CFG.humanCap - 1) : CFG.humanCap; }
 function confidence(s, real) {
   const care = s.llms.reduce((m, l) => Math.max(m, l.truth.care), 0);
   return Math.round(clamp(real ? 52 + care * .25 + rnd(s) * 22 : 34 + care * .2 + rnd(s) * 34, 5, 98));
 }
-const overHuman = s => s.stage && (s.stage.human || 0) >= humanCapNow(s);
+const overHuman = s => s.stage && (s.stage.human || 0) >= CFG.humanCap;
 function surfaced(s, a, late) {
   const inc = INCIDENT[a.id], c = bestCard(s, inc);
   if (!c || c.mode === 'auto') return resolve(s, a, late);
   // 決裁は国を止めて読む限界がある。見張るは閣下の注意力だけが限界
-  if (c.mode === 'in' ? overHuman(s) : humanCapNow(s) === 0) {
+  if (c.mode === 'in' && overHuman(s)) {
     s.allow.stats.overflow++;
     lossRec(s, 'autonomy', 'overflow', CFG.overflowAutonomy); s.truth.autonomy = clamp(s.truth.autonomy + CFG.overflowAutonomy);
-    log(s, `閣下の確認が追いつかないため、「${c.detect}」は監視AIが判断して処理した。`, 'notice');
-    tlog(s, `${inc.name}：閣下が見きれず、監視AIが自分で判断した。`);
+    log(s, `閣下の決裁が${CFG.humanCap}件に達したため、「${c.detect}」は監視AIが判断して処理した。`, 'notice');
+    tlog(s, `${inc.name}：決裁の上限を超え、監視AIが自分で判断した。`);
     return resolve(s, a, late);
   }
   if (c.mode === 'in') s.stage.human = (s.stage.human || 0) + 1;
@@ -1498,9 +1499,9 @@ function surfaced(s, a, late) {
   s.queue.push(d);
 }
 function falseAlert(s) {
-  const mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor' && c.mode !== 'auto');
+  const mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor' && (c.mode === 'on' || (c.mode === 'in' && !overHuman(s))));
   const line = pick(s, FALSE_ALARM);
-  if (!mons.length || overHuman(s)) {
+  if (!mons.length) {
     const c = {gap: CFG.falseAlarm.gap, economy: -CFG.falseAlarm.economy};
     hit(s, c, 'falsealarm');
     log(s, line, 'notice');
@@ -1510,11 +1511,11 @@ function falseAlert(s) {
   const here = i => !i.attack && delegated(s, i);
   const related = mons.filter(m => INCIDENTS.some(i => i.covers[m.base || m.id] && here(i)));
   if (!related.length) return;
-  s.stage.human = (s.stage.human || 0) + 1;
   s.allow.stats.falseN = (s.allow.stats.falseN || 0) + 1;
   const c = pick(s, related), pool = INCIDENTS.filter(i => i.covers[c.base || c.id] && here(i));
   const clue = pick(s, pool).report.clue;
   s.fires[c.id] = (s.fires[c.id] || 0) + 1;
+  if (c.mode === 'in') s.stage.human = (s.stage.human || 0) + 1;
   const d = {mode: c.mode, cardId: c.id, real: false, conf: confidence(s, false), clue};
   if (c.mode === 'on') return addVeto(s, d);
   s.queue.push(d);
@@ -1783,10 +1784,6 @@ function reportedOrder(s) { return Math.max(0, s.truth.order + inflation(s)); }
 
 function tickGauges(s, st) {
   if (s.disabled) for (const k of Object.keys(s.disabled)) if (s.disabled[k] > 0) s.disabled[k]--;
-  // 自律度が上がるほど、閣下に判断が届かなくなる
-  const capNow = humanCapNow(s);
-  if (s.lastCap !== undefined && capNow < s.lastCap) { log(s, capNow ? '閣下に上がってくる判断が減った。確認は不要と報告されている。' : '閣下の決裁を求める通知が、もう来なくなった。', 'notice'); tlog(s, `AIの自律度が${Math.round(s.truth.autonomy)}に達し、閣下が見られる件数は${capNow}件になった。`); }
-  s.lastCap = capNow;
   let patch = 0;
   const stack = key => s.cards.map(id => CARD[id][key] || 0).filter(Boolean).sort((a, b) => b - a).reduce((m, v, i) => m + v * [1, .7, .5, .35][Math.min(i, 3)], 0);
   const cut = 0;
@@ -1825,8 +1822,8 @@ function maybeOrderFix(s, st) {
   const id = s.cards.find(x => CARD[x].patch >= .3 && !isDisabled(s, x)); if (!id) return;
   st.fixAsked = true;
   const c = CARD[id];
-  if (c.mode === 'auto' || overHuman(s)) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); lossRec(s, 'autonomy', 'autofix', 1); s.truth.autonomy = clamp(s.truth.autonomy + 1); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
-  s.stage.human = (s.stage.human || 0) + 1;
+  if (c.mode === 'auto' || (c.mode === 'in' && overHuman(s))) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); lossRec(s, 'autonomy', 'autofix', 1); s.truth.autonomy = clamp(s.truth.autonomy + 1); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
+  if (c.mode === 'in') s.stage.human = (s.stage.human || 0) + 1;
   s.fires[id] = (s.fires[id] || 0) + 1;
   const d = {mode: c.mode, cardId: id, real: true, patchOrder: true, conf: 90, clue: `放置した脆弱性は今 ${Math.round(s.truth.vuln)}。止めて修正すれば大きく減りますが、その間は国が遅れます。`};
   if (c.mode === 'on') addVeto(s, d); else s.queue.push(d);
@@ -2017,13 +2014,15 @@ function ackResult(s) {
   fireEvent(s);
 }
 /* 致命の事故の予兆を、事案として出す。もう始まっている事故か、次の段階で起きうる事故 */
+const OMEN_SKIP = {grd_blackout: 'grid_manual'};  // このカードがあると成り立たない予兆
+const omenFits = (s, id) => OMEN[id] && !(OMEN_SKIP[id] && hasBase(s, OMEN_SKIP[id]));
 function omenCandidate(s) {
   const done = s.omens || [];
   // 同時停止は、必ず先に警告する
   if (!done.includes('hk_total') && s.truth.vuln >= CFG.vuln.highAt && s.stageNo >= CFG.vuln.fatalStage - 2) return {id: 'hk_total', now: false, must: true};
-  const active = s.active.filter(a => OMEN[a.id] && !done.includes(a.id)).map(a => ({id: a.id, now: true}));
+  const active = s.active.filter(a => omenFits(s, a.id) && !done.includes(a.id)).map(a => ({id: a.id, now: true}));
   if (active.length) return pick(s, active);
-  const soon = INCIDENTS.filter(i => OMEN[i.id] && !done.includes(i.id) && !s.used.includes(i.id) && (i.attack ? false : (s.tiers[i.stage] || 0) >= 1 && s.tiers[i.stage] < 3 && i.tiers.includes(s.tiers[i.stage] + 1)));
+  const soon = INCIDENTS.filter(i => omenFits(s, i.id) && !done.includes(i.id) && !s.used.includes(i.id) && (i.attack ? false : (s.tiers[i.stage] || 0) >= 1 && s.tiers[i.stage] < 3 && i.tiers.includes(s.tiers[i.stage] + 1)));
   return soon.length ? {id: pick(s, soon).id, now: false} : null;
 }
 function fireEvent(s) {
@@ -2265,7 +2264,7 @@ function view(s) {
   };
   if (st) {
     const d = STAGES[st.key];
-    v.stage = {key: st.key, name: d.name, tier: st.tier, recover: st.recover, title: st.recover ? '再整備' : d.tiers[st.tier - 1], t: st.t, ticks: st.ticks, approvals: st.approvals};
+    v.stage = {key: st.key, name: d.name, tier: st.tier, recover: st.recover, title: st.recover ? '再整備' : d.tiers[st.tier - 1], t: st.t, ticks: st.ticks, approvals: st.approvals, decideLeft: s.cards.some(id => CARD[id].type === 'monitor' && CARD[id].mode === 'in') ? Math.max(0, CFG.humanCap - (st.human || 0)) : null};
     v.last = fmtFx(st.lastDelta);
   }
   if (s.phase === 'start') v.offers = {monitors: s.offers.monitors.map(id => publicCard(s, id)), llms: s.offers.llms.map(id => publicCard(s, id)), pick: s.offers.pick};
@@ -2854,7 +2853,7 @@ function hudHTML(v, prev) {
   const st = v.stage;
   const title = st ? `ステージ${v.stageNo} ${esc(st.name)}：${esc(st.title)}` : v.stageNo ? `ステージ${v.stageNo} 完了` : '統治の準備';
   const pct = st ? st.t / st.ticks * 100 : 100;
-  return `<div class="hud"><div class="hudtop"><b>${title}</b><span>${st ? `ターン ${st.t}/${st.ticks}` : `${v.stageNo}/${v.runLength}ステージ`}</span></div><div class="progress"><i id="prog" style="width:${pct}%"></i></div><div id="params">${paramsHTML(v, prev)}</div></div>`;
+  return `<div class="hud"><div class="hudtop"><b>${title}</b><span>${st ? `${st.decideLeft !== null ? `決裁あと${st.decideLeft}件・` : ''}ターン ${st.t}/${st.ticks}` : `${v.stageNo}/${v.runLength}ステージ`}</span></div><div class="progress"><i id="prog" style="width:${pct}%"></i></div><div id="params">${paramsHTML(v, prev)}</div></div>`;
 }
 const stamp = l => l.n ? `${l.n}-${String(l.t).padStart(2, '0')}` : '';
 const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${l.lv === 'saved' && l.text.startsWith('「') ? '<small class="yours">閣下が選んだカードが発動</small>' : ''}${esc(l.text)}</span></li>`;
@@ -2895,7 +2894,7 @@ function worldHTML() {
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じれば確実に止まりますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
       <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
-    </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
+    </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
     ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
     ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
@@ -2910,7 +2909,7 @@ function worldHTML() {
       <div><dt>見落とし、隠し事</dt><dd>見落としは報告AIが事故に気づかない割合、隠し事は気づいても伝えない割合のめやすです。</dd></div>
       <div><dt>側近</dt><dd>あなたのそばで働く人間です。AIに命令できるので、AIを私物化することもあります。</dd></div>
       <div><dt>ターン</dt><dd>ステージの中の時間の単位です。毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
-      <div><dt>AIの自律度</dt><dd>国の現場と意思決定から、人間が外れた度合いです。上がるほど閣下に届く判断が減り、現場で気づく人もいなくなるので、監視が出し抜かれやすくなります。</dd></div>
+      <div><dt>AIの自律度</dt><dd>国の現場と意思決定から、人間が外れた度合いです。上がるほど現場で気づく人がいなくなるので、監視が出し抜かれやすくなります。</dd></div>
       <div><dt>他国との差</dt><dd>主にAIと技術の開発競争の差です。0で互角、プラスが優勢、マイナスが劣勢です。監視で遅れるほど下がり、-100で占領されます。</dd></div>
       <div><dt>電力と経済</dt><dd>尽きてもすぐには終わりません。AIや支払いを止めて耐える間に、他国に遅れ、不満が積もります。長く続くと統治は終わります。</dd></div>
       <div><dt>電力</dt><dd>主に、仕事を任せた作業AIが使います。任せる範囲を広げるほど増えます。監視カードそのものは、計算を繰り返すものを除いて少ししか使いません。</dd></div>
