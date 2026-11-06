@@ -3033,6 +3033,7 @@ function endIntro() {
   later(3700, finish);
 }
 function renderCover() {
+  if (S && S.script) leaveScript();
   const recN = Object.keys(meta.records || {}).length;
   const v = resumable() ? Core.view(S) : null;
   app.innerHTML = `<div class="menu fade">
