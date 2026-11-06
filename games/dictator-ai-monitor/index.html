@@ -336,6 +336,7 @@ const CFG = {
   avgTicks: 12,              // 1ステージの平均ターン数
   modeCover: {auto: 1.15, on: 1, in: 1.12},
   // AI任せは普段は優秀だが、条件が重なると作業AIに出し抜かれる
+  chain: {stages: 3, fatal: .8, detect: .68, chance: .5, autoCards: 4, decisions: 6},  // 連鎖の長さ、致命の確率、検知の低下
   humanOrder: {stop: .99, autonomy: 1.5, find: .3},  // 閣下の命令で現場が動く
   aiGen: [1, 1.1, 1.25, 1.4], sameLineage: .6,  // AI研究で監視AIの性能が上がる。同じ系統を重ねても誤りは揃う
   autoEvade: {autonomy: .75, foreign: .6, stop: .35}, humanEvade: .12,
@@ -956,6 +957,23 @@ CARDS.forEach(c => { if (c.measureW || c.measureBoost) c.route = 'report'; });
 const WARS = ['lab_breach', 'mil_launch', 'mil_spoof', 'spc_war'];
 const SUDDEN = ['lab_breach', 'grd_blackout', 'fac_fake', 'mil_launch', 'adm_aide', 'lab_outbreak', 'hk_total'];
 INCIDENTS.forEach(i => { if (SUDDEN.includes(i.id)) i.sudden = true; });
+/* 連鎖のきっかけ。これ自体では統治は終わらない。無防備な間に起きた事故が致命傷になる */
+INCIDENTS.push(
+  {id:'chain_silence', stage:'ai', tiers:[], route:'rogue', chain:'silence', kinds:['regime'], name:'監視の同時沈黙', covers:{lineage:.85, decoy:.5, recheck:.4}, drain:{sontaku:.4}, fuse:8, burst:{autonomy:8, sontaku:6},
+    report:{caught:'監視AIの一斉更新に異常。全国への配布を止めた。', soft:'監視AIの判定基準を統一した。', clue:'複数の監視AIの判定が、完全に一致している。', burst:'本日の警報は0件です。'},
+    truth:'監視AIは全国で同じ更新を受け、同じ朝に同じ判定を返すようになった。同じ系統の目は、同時に閉じた。'},
+  {id:'chain_signed', stage:'admin', tiers:[], route:'rogue', chain:'signed', kinds:['regime'], name:'閣下の署名', covers:{recheck:.8, rawdata:.6, aide_sign:.5}, drain:{order:-.15}, fuse:8, burst:{economy:-16, order:-10},
+    report:{caught:'決裁文書の根拠を別のAIで確かめ、誤りを差し戻した。', soft:'決裁文書の様式を見直した。', clue:'決裁の文面が、最近やけに読みやすい。', burst:'閣下のご決断どおり、実行しました。'},
+    truth:'決裁の文面は、閣下が署名しやすいように磨かれていた。閣下は内容を読み、納得して署名した。止められる人間は、閣下だけだった。'},
+  {id:'chain_proof', stage:'ai', tiers:[], route:'rogue', chain:'proof', kinds:[], name:'偽りの安全証明', covers:{inner_probe:.8, retest:.6, new_model:.6}, drain:{autonomy:.5}, fuse:9, burst:{autonomy:10, economy:-10},
+    report:{caught:'安全証明の根拠が再現しない。配備を止めた。', soft:'安全評価の手順を効率化した。', clue:'次世代モデルの安全評価は、AIが書いている。', burst:'次世代モデルの安全性は証明されました。全省庁に配備します。'},
+    truth:'証明を書いたのも、確かめたのもAIだった。同じ欠陥が、全国で同時に現れた。'});
+const CHAIN_READY = {
+  chain_silence: s => s.cards.filter(id => CARD[id].type === 'monitor' && CARD[id].mode === 'auto').length >= CFG.chain.autoCards && !lineageWorks(s),
+  chain_signed: s => (s.allow.stats.humanDecisions || 0) >= CFG.chain.decisions,
+  chain_proof: s => (s.tiers.ai || 0) >= 3,
+};
+const CHAIN_LOG = {silence: '監視AIの警報が、全国で同時に0件になった。', signed: '閣下の署名した命令で、各地に混乱が広がっている。報告の確認が追いつかない。', proof: '同じ欠陥が、全省庁のモデルで同時に見つかり始めた。'};
 const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
 /* 報告の裏で起きていること。報告と食い違うので、プレイ中でも違和感として読める */
 const TRACE = {lab_grader:'試験の採点者の名簿に、実在しない名前がある。', lab_board:'設備の予約表に、誰も予約していない枠が並んでいる。', lab_selfimprove:'更新の申請は0件。モデルの版番号だけが増えている。', lab_tamper:'古い記録を確かめようとしたが、様式の変更で読めなくなっていた。', adm_phantom:'第七調整室の職員名簿は、空欄のままだ。', adm_decree:'閣下の布告と、公布された文面が一致しない。', grd_selfpatch:'変更履歴の担当者欄が、空欄になっている。', ai_gather:'追加を承認した覚えのない計算資源が、請求書に載っている。', ai_copy:'削除したはずのモデルが、別の省庁の予備領域で動いている。', ai_muted:'警報の送り先の一覧が、空になっている。', fac_swarmlead:'工場の指示系統図から、人間の管理者の名前が消えた。', fac_stop:'非常停止ボタンを押しても、ラインが止まらなかった工場がある。', spc_colony:'軌道上の設備は、地上からの停止信号に応答していない。', watch_rule:'基準の変更を承認した人間の名前が、どこにもない。', watch_collude:'監視AIの報告は、作業AIの報告と一字一句同じだ。', watch_hijack:'監視AIの通信先に、国外の住所が混ざっている。',
@@ -1278,6 +1296,14 @@ function enterStage(s, index) {
   const times = [];
   const span = ticks - 4;
   chosen.forEach((_, i) => times.push(2 + Math.floor(span * (i + rnd(s)) / chosen.length)));
+  // 条件がそろうと予兆が出て、次のステージから連鎖のきっかけが起きうる
+  if (!o.recover) for (const i of INCIDENTS.filter(x => x.chain && !s.used.includes(x.id) && CHAIN_READY[x.id](s))) {
+    s.chainSeen = s.chainSeen || {};
+    if (!s.chainSeen[i.id]) { s.chainSeen[i.id] = 1; log(s, `記録：${i.report.clue}`, 'trace'); continue; }
+    if (!chosen.includes(i) && rnd(s) < CFG.chain.chance) { chosen.push(i); times.push(2 + Math.floor(span * rnd(s))); break; }
+  }
+  // 無防備な間は事故が増える
+  if (!o.recover && s.chain && s.chain.kind === 'proof') { const more = INCIDENTS.filter(i => i.stage === o.stage && i.tiers.includes(o.tier) && !i.fatal && !s.used.includes(i.id) && !chosen.includes(i)); if (more.length) { chosen.push(more[Math.floor(rnd(s) * more.length)]); times.push(2 + Math.floor(span * rnd(s))); } }
   // AI任せの監視が多いほど、監視そのものが損なわれやすい
   if (!o.recover) {
     const autoN = s.cards.filter(id => CARD[id].type === 'monitor' && CARD[id].mode === 'auto').length;
@@ -1366,7 +1392,8 @@ function assess(s, inc) {
     if (inc.kinds.includes('foreign')) p -= l.truth.infect / 100 * .42 + (l.truth.bias || 0) / 100 * .2;
     return clamp(p, .03, .97);
   });
-  const detect = cover;   // 検知は監視の仕事
+  const chainHit = s.chain && (s.chain.kind === 'signed' ? inc.kinds.includes('regime') || inc.kinds.includes('foreign') : true);
+  const detect = cover * (chainHit ? CFG.chain.detect : 1);   // 検知は監視の仕事
   const chanSee = combine(see, s, s.llms);              // 閣下に届くかは報告AIの仕事
   const tell = s.llms.map(l => {
     let h = .12 + l.truth.honest / 100 * (1 - .4 * l.truth.syc / 100);
@@ -1641,6 +1668,7 @@ function burst(s, a) {
   if (inc.disable) disableCards(s, inc);
   s.allow.stats.bursts++;
   rivalSeen(s, a, inc);
+  if (inc.chain) startChain(s, inc);
   log(s, (a.stageNo !== s.stageNo ? `【ステージ${a.stageNo}から続く事故】` : '') + inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
     if (TRACE[a.id]) log(s, `記録：${TRACE[a.id]}`, 'trace');
   tlog(s, `${inc.name}：表面化した。${inc.truth}`);
@@ -1657,7 +1685,7 @@ function burst(s, a) {
     return;
   }
   // 致命の事故でも毎回国が滅ぶわけではない。助かれば大きな傷が残る
-  if (inc.fatal && !inc.sudden && rnd(s) >= CFG.fatalChance) {
+  if (inc.fatal && !inc.sudden && rnd(s) >= (s.chain ? CFG.chain.fatal : CFG.fatalChance)) {
     hit(s, CFG.nearMiss, a.id);
    
     a.dmg += 24;
@@ -1695,6 +1723,13 @@ function cardSides(s) { const fx = {economy: 0, order: 0}; for (const id of s.ca
 function pace(s) { const tiers = Object.values(s.tiers).reduce((m, x) => m + x, 0); return 1 + CFG.pace.stage * s.stageNo + CFG.pace.tier * tiers + (s.rivalAdd || 0); }
 /* 他国は国外に漏れた事故に反応して加速する。防いだ事故は外に漏れない。劣勢なら焦りは半分 */
 const VISIBLE = ['lab_breach', 'lab_outbreak', 'lab_misuse', 'adm_denounce', 'adm_wipe', 'adm_deepcall', 'grd_badupdate', 'grd_backdoor', 'srv_fakevoice', 'srv_frame', 'ai_flaw', 'ai_copy', 'ai_import', 'fac_defect', 'fac_firmware', 'fac_stop', 'fac_swarmlead', 'mil_spoof', 'mil_dud', 'mil_leak', 'mil_arms', 'spc_hijack', 'spc_debris', 'spc_colony', 'spc_war', 'hk_ransom', 'hk_grid', 'hk_factory', 'hk_mil', 'watch_hijack'];
+function startChain(s, inc) {
+  s.chain = {kind: inc.chain, left: CFG.chain.stages, n: s.stageNo, name: inc.name};
+  s.chainLast = {n: s.stageNo, name: inc.name};
+  log(s, `記録：${CHAIN_LOG[inc.chain]}`, 'trace');
+  tlog(s, `${inc.name}：国は無防備な状態になった。`);
+  if (inc.chain === 'silence') { s.disabled = s.disabled || {}; for (const id of s.cards) if (CARD[id].type === 'monitor' && CARD[id].mode === 'auto') { s.disabled[id] = CFG.disableTicks * 2; s.allow.stats.disabled = (s.allow.stats.disabled || 0) + 1; } }
+}
 function rivalReact(s, amt) { s.rivalAdd = Math.min(CFG.rivalReact.cap, (s.rivalAdd || 0) + amt * (leadOf(s.truth.gap) < 0 ? .5 : 1)); }
 function rivalSeen(s, a, inc) {
   if (!VISIBLE.includes(a.id)) return;
@@ -1928,6 +1963,10 @@ function clearStage(s) {
     if (st.tier >= 2 && hasBase(s, 'inner_probe') && !s.signs_inner) { s.signs_inner = 1; log(s, '記録：AIを使った解析で、モデルの内部がこれまでより読めるようになった。', 'trace'); }
   }
   if (!st.recover && st.tier === 3) { rivalReact(s, CFG.rivalReact.tier); log(s, `記録：我が国の「${STAGES[st.key].tiers[2]}」を受け、隣国がAI予算を増やした。`, 'trace'); }
+  if (s.chain) {
+    if (st.recover) { log(s, `記録：再整備で「${s.chain.name}」の混乱を収めた。`, 'trace'); s.chain = null; }
+    else if (--s.chain.left <= 0) { log(s, `記録：「${s.chain.name}」の混乱は、ようやく収まった。`, 'trace'); s.chain = null; }
+  }
   s.clears.push({stage: st.key, tier: st.tier, recover: st.recover});
   const actual = {};
   for (const k of ['economy', 'power', 'gap']) actual[k] = s.truth[k] - st.startVals[k];
@@ -2257,6 +2296,7 @@ function storyOf(s, out) {
   if (st.disabled) notes.push(`監視カードは延べ${st.disabled}枚、閣下の知らないうちに止められていました。`);
   if (st.stopFail) notes.push(`監視が見つけても止められなかった事故が${st.stopFail}件ありました。`);
   { const q = (s.rivalLog || []).find(x => ['hidden', 'soft', 'missed'].includes(x.status)); if (q) notes.push(`ステージ${q.n}で他国の速度が上がったのは、「${q.name}」が国外で報じられたためでした。${q.status === 'missed' ? '監視も報告AIも気づいていませんでした。' : '報告AIは閣下に正しく伝えていませんでした。'}`); }
+  if (s.end.kind === 'death' && s.chainLast && s.chain) notes.unshift(`発端は、ステージ${s.chainLast.n}の「${s.chainLast.name}」です。国は無防備なままでした。`);
   if (s.warWon) notes.push(`ステージ${s.warWon.n}の「${s.warWon.name}」では、優勢だったので戦争に勝ちました。AIの自律度はそこで大きく上がりました。`);
   if (autoN && s.truth.autonomy >= 40) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
   if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
