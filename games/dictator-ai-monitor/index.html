@@ -1674,7 +1674,7 @@ function rivalSeen(s, a, inc) {
   rivalReact(s, inc.fatal ? CFG.rivalReact.near : CFG.rivalReact.seen);
   const quiet = a.status === 'hidden' || a.status === 'missed' || a.status === 'soft';
   (s.rivalLog = s.rivalLog || []).push({n: s.stageNo, name: inc.name, status: a.status});
-  log(s, quiet ? '記録：隣国がAI予算を倍増した。理由は発表されていない。' : `記録：「${inc.name}」が国外で報じられ、隣国がAI予算を増やした。`, 'trace');
+  log(s, quiet ? `記録：${['隣国がAI予算を倍増した。理由は発表されていない。', '別の国も、AI開発への投資を急に増やした。', '隣国の研究者の募集が、先月の3倍になった。', '他国の首脳がAIの緊急会合を開いた。議題は公表されていない。'][(s.rivalLog.length - 1) % 4]}` : `記録：「${inc.name}」が国外で報じられ、隣国がAI予算を増やした。`, 'trace');
 }
 /* 閣下に届く体制秩序は報告値。忖度とバイアスで高く出る */
 function inflation(s) {
@@ -2960,7 +2960,8 @@ function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
   for (const d of v.vetoes) if (d.vid > lastVetoAlarm) { lastVetoAlarm = d.vid; SFX.play('alarm'); }
   el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／止めると：${esc(d.response)}</small><small>あと${d.left}ターンで警報は消え、作業AIは動き続けます</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
-  el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
+  // 毎ターン描き直すので、押した瞬間に受ける（指を離す間に要素が替わると押下が失われる）
+  el.querySelectorAll('[data-v]').forEach(b => b.onpointerdown = e => { e.preventDefault(); Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
 function scrollToLog() {
   const el = $('log'); if (!el || !el.lastElementChild) return;
