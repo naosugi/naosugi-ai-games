@@ -88,7 +88,7 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--a
 .factor i{display:block;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
 .factor i::after{content:"";display:block;height:100%;width:var(--v);background:var(--ai)}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(15,52,96,.97);border-top:2px solid var(--accent);padding:10px max(14px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
-.evchoices{display:grid;gap:10px;margin-top:14px}.evchoice{text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line,#39465f);background:var(--panel);color:inherit;display:grid;gap:6px;cursor:pointer}.evchoice small{color:var(--sub)}.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.evchoices{display:grid;gap:10px;margin-top:14px}.evchoice{text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line,#39465f);background:var(--panel);color:inherit;display:grid;gap:6px;cursor:pointer}.evchoice small{color:var(--sub)}.swlabel{margin-right:6px}.sw{display:inline-block;width:30px;height:16px;border-radius:9px;background:#5a6478;position:relative;vertical-align:-3px;transition:background .15s}.sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}.sw.on{background:var(--good)}.sw.on::after{left:16px}button:disabled .sw{opacity:.45}.tmain{display:block;font-size:clamp(1.1rem,5.6vw,1.9rem);white-space:nowrap}.tsub{display:block;font-size:.72em;margin-top:4px}.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .dock-in>span{font-size:.84rem;color:#fff;min-width:0}
 .dock button{flex:none;padding:10px 16px}
 
@@ -2551,7 +2551,8 @@ document.addEventListener('pointerdown', () => SFX.wake(), {capture: true});
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-hudtoggle]'); if (!b) return; settings.hudOpen = !settings.hudOpen; store(KEY.set, settings); if (S && screen === 'game') { const el = $('params'); if (el) el.innerHTML = paramsHTML(Core.view(S), prevMetrics); } });
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled && !b.dataset.c && b.id !== 'go' && b.id !== 'take' && b.id !== 'llmgo') SFX.play('click'); }, true);
 const syncAmbient = () => { const on = screen === 'game' && S && S.phase !== 'ended'; SFX.ambient(on, on ? Core.view(S).pace : 1); };
-const soundButtons = () => `<div class="soundbtns"><button type="button" id="sndT" aria-pressed="${settings.sound}">音：${settings.sound ? 'オン' : 'オフ'}</button><button type="button" id="ambT" aria-pressed="${settings.ambient}" ${settings.sound ? '' : 'disabled'}>環境音：${settings.ambient ? 'オン' : 'オフ'}</button></div>`;
+const swHTML = (label, on) => `<span class="swlabel">${label}</span><i class="sw${on ? ' on' : ''}"></i>`;
+const soundButtons = () => `<div class="soundbtns"><button type="button" id="sndT" role="switch" aria-checked="${settings.sound}" aria-label="音">${swHTML('音', settings.sound)}</button><button type="button" id="ambT" role="switch" aria-checked="${settings.ambient}" aria-label="環境音"${settings.sound ? '' : ' disabled'}>${swHTML('環境音', settings.sound && settings.ambient)}</button></div>`;
 function bindSound(rerender) {
   const s = $('sndT'), a = $('ambT'); if (!s) return;
   s.onclick = () => { settings.sound = !settings.sound; store(KEY.set, settings); syncAmbient(); rerender(); };
@@ -2851,7 +2852,7 @@ function renderCover() {
   app.innerHTML = `<div class="menu fade">
     <a class="back" href="../../">← ゲーム一覧</a>
     <div class="pixwrap" style="max-width:420px">${pix('hold', '監視画面に向かう独裁者')}</div>
-    <h1 class="logo">独裁者AI国家シミュレーターⅡ AIセーフティ編</h1>
+    <h1 class="logo"><span class="tmain">独裁者AI国家シミュレーターⅡ</span><span class="tsub">AIセーフティ編</span></h1>
     <p class="subtitle">AIに国を任せた独裁者の、最後の仕事。何を監視するかを、あなた一人で決めてください。</p>
     <div class="menu-btns">
       ${v ? `<button class="primary" id="resume" type="button">続きから<small>ステージ${Math.max(1, v.stageNo)}／全${v.runLength}ステージ</small></button>` : ''}
@@ -2950,9 +2951,9 @@ function renderRunning(v, paused) {
   $('logtoggle').onclick = () => { logAll = !logAll; trimLog(); };
   trimLog();
   shownLogs = S.log.length; prevMetrics = v.metrics;
-  dock.innerHTML = `<div class="dock"><div id="vetos"></div><div class="dock-in"><button type="button" class="sndmini" id="sndM" aria-label="音の切り替え">${settings.sound ? '音あり' : '音なし'}</button>${speedBar()}</div></div>`;
+  dock.innerHTML = `<div class="dock"><div id="vetos"></div><div class="dock-in"><button type="button" class="sndmini" id="sndM" role="switch" aria-checked="${settings.sound}" aria-label="音">${swHTML('音', settings.sound)}</button>${speedBar()}</div></div>`;
   bindSpeed(); renderVetoes(v); scrollToLog(); syncAmbient();
-  $('sndM').onclick = () => { settings.sound = !settings.sound; store(KEY.set, settings); $('sndM').textContent = settings.sound ? '音あり' : '音なし'; syncAmbient(); };
+  $('sndM').onclick = () => { settings.sound = !settings.sound; store(KEY.set, settings); $('sndM').innerHTML = swHTML('音', settings.sound); $('sndM').setAttribute('aria-checked', settings.sound); syncAmbient(); };
   if (!paused) schedule();
 }
 let lastVetoAlarm = 0;
