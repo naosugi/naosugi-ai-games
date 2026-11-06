@@ -10,25 +10,25 @@
 :root{
   color-scheme:dark;
   --bg:#1a1a2e;--panel:#16213e;--deep:#0f3460;--accent:#e94560;--accent2:#d3405c;
-  --text:#f0f0f0;--sub:#cccccc;--mute:#94a0b4;--good:#4caf50;--bad:#ff5252;--warn:#ffa726;--ai:#3498db;
+  --head:#e3eaf6;--line:#3a4a6b;--text:#f0f0f0;--sub:#cccccc;--mute:#94a0b4;--good:#4caf50;--bad:#ff5252;--warn:#ffa726;--ai:#3498db;
   --in:#e67e22;--on:#f1c40f;--auto:#3498db;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',system-ui,-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;min-height:100vh;-webkit-tap-highlight-color:transparent}
 body{line-height:1.65}
-button{cursor:pointer;font:inherit;background:var(--panel);color:var(--accent);border:2px solid var(--accent);padding:10px 20px;font-weight:bold;border-radius:6px;transition:background .2s,color .2s}
+button{cursor:pointer;font:inherit;background:var(--panel);color:var(--head);border:2px solid var(--line);padding:10px 20px;font-weight:bold;border-radius:6px;transition:background .2s,color .2s}
 button:hover{background:var(--accent);color:var(--panel)}
 button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 button:disabled{opacity:.5;cursor:not-allowed}
 button.primary{background:var(--accent);color:var(--panel)}
-a{color:var(--accent)}
+a{color:var(--ai)}
 #app{max-width:1000px;margin:0 auto;padding-block:max(14px,env(safe-area-inset-top)) calc(100px + env(safe-area-inset-bottom));padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
 .fade{animation:fade .35s ease-in}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 h1,h2,h3,h4{line-height:1.3;text-wrap:balance}
-.ptitle{color:var(--accent);font-size:1.45rem;text-align:center;margin:14px 0 6px}
+.ptitle{color:var(--head);font-size:1.45rem;text-align:center;margin:14px 0 6px}
 .pdesc{color:var(--sub);text-align:center;margin:0 auto 14px;max-width:640px;font-size:.93rem}
-.sect{color:var(--accent);font-weight:bold;font-size:.98rem;margin:18px 0 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sect{color:var(--head);font-weight:bold;font-size:.98rem;margin:18px 0 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .sect small{color:var(--mute);font-weight:normal}
 
 /* 表紙 */
@@ -43,7 +43,7 @@ h1,h2,h3,h4{line-height:1.3;text-wrap:balance}
 
 /* 世界観 */
 .doc{background:var(--panel);border-radius:10px;padding:18px;display:grid;gap:12px;max-width:760px;margin:10px auto 0}
-.doc h3{color:var(--accent);font-size:1.04rem}
+.doc h3{color:var(--head);font-size:1.04rem}
 .doc p,.doc dd{font-size:.93rem}
 .doc dl{display:grid;gap:10px}
 .doc dt{font-weight:bold;color:#ffd166}
@@ -53,15 +53,15 @@ h1,h2,h3,h4{line-height:1.3;text-wrap:balance}
 /* パラメータ（前作と同じ4枚のタイル） */
 .hud{position:sticky;top:0;z-index:15;background:var(--bg);padding:6px 0 8px}
 .hudtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline;background:var(--panel);padding:8px 12px;border-radius:10px 10px 0 0}
-.hudtop b{color:var(--accent);font-size:1.02rem;min-width:0}
+.hudtop b{color:var(--head);font-size:1.02rem;min-width:0}
 .hudtop span{font-size:.8rem;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
 .progress{height:4px;background:var(--bg)}
-.progress i{display:block;height:100%;background:var(--accent);transition:width .3s linear}
+.progress i{display:block;height:100%;background:var(--ai);transition:width .3s linear}
 .params{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;background:var(--panel);padding:8px;border-radius:0 0 10px 10px}
-.param{display:flex;flex-direction:column;align-items:center;padding:7px 3px;border-radius:8px;background:var(--deep);border:1px solid var(--accent);min-width:0;position:relative}
+.param{display:flex;flex-direction:column;align-items:center;padding:7px 3px;border-radius:8px;background:var(--deep);border:1px solid var(--line);min-width:0;position:relative}
 .param.gap{background:#3a1626}
 .param.danger{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad) inset}
-.param h3{font-size:.76rem;color:var(--accent);white-space:nowrap}
+.param h3{font-size:.76rem;color:var(--sub);white-space:nowrap}
 .param .v{font-size:1.3rem;font-weight:bold;line-height:1.25;font-variant-numeric:tabular-nums}
 .param .d{font-size:.72rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .param .act{font-size:.68rem;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -74,11 +74,11 @@ h1,h2,h3,h4{line-height:1.3;text-wrap:balance}
 /* カード */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px 14px;margin-top:6px}
 .card{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--panel);border:2px solid var(--deep);border-radius:12px;padding:14px;color:var(--text);font-weight:normal;min-width:0}
-button.card:hover{background:var(--panel);color:var(--text);border-color:var(--accent)}
-.card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+button.card:hover{background:var(--panel);color:var(--text);border-color:var(--head)}
+.card.sel{border-color:var(--on);box-shadow:0 0 0 2px var(--on)}
 .card .kind{display:flex;justify-content:space-between;gap:6px;font-size:.74rem;color:var(--mute)}
 .card .label{font-size:.72rem;color:var(--mute);display:block}
-.card .main{display:block;background:none;padding:0;margin:0;border-radius:0;color:var(--accent);font-weight:bold;font-size:1rem;line-height:1.4}
+.card .main{display:block;background:none;padding:0;margin:0;border-radius:0;color:var(--head);font-weight:bold;font-size:1rem;line-height:1.4}
 .card .resp{font-size:.92rem;line-height:1.45}
 .card .note{font-size:.8rem;color:var(--sub)}
 .costs{background:var(--deep);border-radius:8px;padding:7px 10px;margin-top:auto;font-size:.78rem;display:grid;gap:2px;font-variant-numeric:tabular-nums}
@@ -95,8 +95,8 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--a
 /* ステージの選択 */
 .stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
 .stage{display:grid;gap:6px;text-align:left;background:var(--panel);border:2px solid var(--deep);border-radius:12px;padding:13px;color:var(--text);font-weight:normal;min-width:0}
-.stage:hover{background:var(--panel);color:var(--text);border-color:var(--accent)}
-.stage h3{color:var(--accent);font-size:1.03rem}
+.stage:hover{background:var(--panel);color:var(--text);border-color:var(--head)}
+.stage h3{color:var(--head);font-size:1.03rem}
 .stage p{font-size:.82rem;color:var(--sub)}
 .plan{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
 .plan div{background:var(--deep);border-radius:6px;padding:3px 2px;text-align:center;font-size:.78rem;font-variant-numeric:tabular-nums;min-width:0}
@@ -108,7 +108,7 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--a
 .log{list-style:none;display:grid}
 .log li{display:grid;grid-template-columns:2.9em 1fr;gap:6px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.93rem;line-height:1.55;animation:in .3s ease-out}
 .log time{font-size:.7rem;color:var(--mute);padding-top:3px;font-variant-numeric:tabular-nums}
-.log li.head span{color:var(--accent);font-weight:bold}
+.log li.head span{color:var(--head);font-weight:bold}
 .log li.notice span{color:#7fc4ff;font-weight:bold}
 .log li.alert span{color:var(--bad);font-weight:bold}
 .log li.event span{color:#ffd166}
@@ -122,7 +122,7 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--a
 .speed button{min-width:46px;min-height:42px;padding:6px 8px;font-size:.84rem;border-width:1px}
 .speed button.on{background:var(--accent);color:var(--panel)}
 details.plain{margin-top:12px;background:var(--panel);border-radius:10px;padding:8px 12px}
-details.plain summary{cursor:pointer;font-weight:bold;color:var(--accent);font-size:.9rem;min-height:30px}
+details.plain summary{cursor:pointer;font-weight:bold;color:var(--head);font-size:.9rem;min-height:30px}
 .breakdown{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-numeric:tabular-nums;margin-top:6px}
 .breakdown th,.breakdown td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.08);text-align:right}
 .breakdown th:first-child,.breakdown td:first-child{text-align:left}
@@ -185,7 +185,7 @@ details.plain summary{cursor:pointer;font-weight:bold;color:var(--accent);font-s
 .pair .tru h4{color:var(--bad)}
 .pair p{font-size:.88rem}
 .pairhead{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:5px;flex-wrap:wrap}
-.pairhead b{color:var(--accent)}
+.pairhead b{color:var(--head)}
 .pairhead span{font-size:.76rem;color:var(--mute)}
 .pairs{display:grid;gap:14px}
 .scroll{overflow-x:auto}
@@ -210,7 +210,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .reclist{display:grid;gap:10px}
 .fataltag{font-style:normal;font-size:.7rem;color:var(--bad);border:1px solid var(--bad);border-radius:4px;padding:0 4px;margin-left:4px;font-weight:normal}
 .rec{background:var(--panel);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
-.rec h3{font-size:1rem;color:var(--accent)}
+.rec h3{font-size:1rem;color:var(--head)}
 .rec p{font-size:.87rem}
 .rec small{color:var(--mute);font-size:.76rem}
 .rec b{font-size:.78rem;color:var(--sub)}
@@ -230,7 +230,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
   .speed button{min-width:40px;padding:6px 5px;font-size:.78rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.need{font-size:.82rem;color:var(--sub);line-height:1.6;margin-top:6px}.need b{color:var(--accent);margin-right:4px}
+.need{font-size:.82rem;color:var(--sub);line-height:1.6;margin-top:6px}.need b{color:var(--head);margin-right:4px}
 .delays{margin-top:8px;display:flex;flex-direction:column;gap:6px}.delays small{color:var(--sub)}.delay-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 38px;gap:8px;align-items:center;font-size:.82rem}.delay-row i{display:block;height:8px;border-radius:4px;background:var(--accent);max-width:70px}.delay-row b{text-align:right}
 .bridge{background:var(--panel);border-left:4px solid var(--accent);border-radius:10px;padding:18px;margin:22px 0;line-height:1.8}.bridge h3{color:var(--accent);margin-bottom:10px}.bridge p{margin-bottom:10px}.bridge ul,.bridge ol{padding-left:22px;margin-bottom:10px}.bridge-case b{color:var(--accent);margin-right:6px}
 /* 折りたたみ、簡潔なカード、ドット絵 */
@@ -238,7 +238,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .pixwrap{max-width:560px;width:100%;margin:0 auto}
 .pixpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:760px;width:100%;margin:0 auto}
 .fold{background:var(--panel);border-radius:10px;margin-top:10px;min-width:0}
-.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:44px;padding:8px 12px 8px 30px;position:relative;font-weight:bold;color:var(--accent);font-size:.95rem}
+.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:44px;padding:8px 12px 8px 30px;position:relative;font-weight:bold;color:var(--head);font-size:.95rem}
 .fold>summary::-webkit-details-marker{display:none}
 .fold>summary::before{content:"▶";position:absolute;left:12px;top:13px;font-size:.66rem;transition:transform .15s}
 .fold[open]>summary::before{transform:rotate(90deg)}
@@ -272,7 +272,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .verdict small{color:#ffd166;font-weight:bold}.verdict p{font-weight:bold;line-height:1.6}
 .trail{list-style:none;display:grid;gap:3px;font-size:.84rem}
 .trail li{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:6px}
-.trail b{color:var(--accent);font-size:.76rem;padding-top:2px}
+.trail b{color:var(--head);font-size:.76rem;padding-top:2px}
 .trail .add b{color:var(--good)}
 .steps{padding-left:1.4em;font-size:.93rem}
 .warnline{background:#3a1626;border-radius:8px;padding:9px 12px;font-size:.9rem}.warnline b{color:var(--bad)}
@@ -312,6 +312,8 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
 .card.atcap{opacity:.55}
 .goalstar{color:#ffd166;margin-right:4px}.endrow{margin-bottom:8px}.endrow .dexlink{justify-self:start}
+.aide{text-align:center;padding:10px 0}.aide .goal{color:var(--sub);font-size:.9rem;margin:6px 0 14px}.aide .list{list-style:none;text-align:left;font-size:.86rem;line-height:1.7;color:var(--sub)}
+.hintline{display:block;font-size:.76rem;font-weight:bold;color:var(--on);margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1128,6 +1130,9 @@ function newRun(seed, meta, opts) {
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].base && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
   s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
+  // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
+  const lastCard = meta && meta.lastCause;
+  if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; s.hintCard = lastCard; }
   return s;
 }
 
@@ -1147,6 +1152,19 @@ function addCard(s, id) {
   if (c.type === 'llm') { const tf = trueFactors(s, c); tf.bias = Math.round(clamp(c.biasAct + (rnd(s) - .5) * 14)); s.llms.push({id, truth: tf}); }
   if (c.showBias) s.biasShown = true;
   s.cards.push(id);
+}
+/* 最初の統治で、側近が用意する方針。脅威ごとに1枚ずつ選び、決裁と介入を1枚ずつ混ぜる */
+function aidePlan(s) {
+  const pool = s.offers.monitors.map(id => CARD[id]).filter(c => c.route !== 'report'), mons = [], routes = new Set();
+  for (const c of pool) if (!routes.has(c.route) && mons.length < s.offers.pick) { routes.add(c.route); mons.push(c); }
+  for (const c of pool) if (!mons.includes(c) && mons.length < s.offers.pick) mons.push(c);
+  const modes = {}; let needIn = true, needOn = true;
+  for (const c of mons) {
+    if (needIn && c.modes.includes('in')) { modes[c.id] = 'in'; needIn = false; }
+    else if (needOn && c.modes.includes('on')) { modes[c.id] = 'on'; needOn = false; }
+    else modes[c.id] = c.modes.includes('auto') ? 'auto' : c.mode;
+  }
+  return {mons: mons.map(c => c.id), modes, llm: s.offers.llms.includes('llm_scribe') ? 'llm_scribe' : s.offers.llms[0]};
 }
 function chooseStart(s, monitorIds, llmId, modes) {
   if (s.phase !== 'start') throw new Error('phase');
@@ -2195,7 +2213,7 @@ function publicCard(s, id) {
     });
     return Object.assign({id, type: 'llm', name: c.name, note: c.note, measured, remeasured: w > 0, effect: (s.plays || 0) >= 2 ? llmEffect(s, id, !!held) : null, biasTest: s.biasShown ? {ask: c.biasAsk, act: c.biasAct} : null, home: c.home || null, adoptOrder: c.onAdopt && c.onAdopt.order ? Math.round((c.onAdopt.order)) : 0, adoptVuln: c.onAdopt && c.onAdopt.vuln || 0, fires: s.fires[id] || 0}, cost);
   }
-  return Object.assign({id, type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, role: c.autoCut ? 'AIの自律度を下げる' : c.foreignCut ? '他国の浸透度が増えにくくなる' : ONFIND_FOREIGN.includes(c.base || id) ? '他国の浸透度を下げる' : c.unrestCut ? '報告と本当の不満の差が縮まる' : null, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
+  return Object.assign({id, hint: s.hintCard === (c.base || c.id), type: 'monitor', detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, mode: c.mode, modes: modeInfo(s, id), modeReason: MODE_REASON[c.base || c.id] || null, dexId: c.base || c.id, kind: c.kind, kindName: KINDS[c.kind].name, route: c.route, routeName: (ROUTES[c.route] || {name: '報告AIを測る'}).name, patch: c.patch || 0, role: c.autoCut ? 'AIの自律度を下げる' : c.foreignCut ? '他国の浸透度が増えにくくなる' : ONFIND_FOREIGN.includes(c.base || id) ? '他国の浸透度を下げる' : c.unrestCut ? '報告と本当の不満の差が縮まる' : null, dormant: !cardActive(s, c), side: CARD_SIDE[c.base || id] ? fmtFx(scale(CARD_SIDE[c.base || id], CFG.avgTicks)) : null, costText: c.cost, cover: coverInfo(s, c)}, cost);
 }
 const fmtFx = fx => { const o = {}; for (const k of Object.keys(fx)) if (['economy', 'power', 'order', 'gap'].includes(k)) o[k] = fx[k]; return o; };
 function view(s) {
@@ -2421,7 +2439,7 @@ function reveal(s) {
   Object.assign(out, storyOf(s, out));
   // 終わらせた事故の「足りないもの」を先頭に出す
   if (e.kind === 'death') {
-    const src = INCIDENT[e.causeId] || (out.cause && out.cause.name && INCIDENTS.find(i => i.name === out.cause.name)) || null;
+    const src = endIncident(s);
     if (src && src.need) {
       const cs = CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]);
       const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0];
@@ -2441,6 +2459,16 @@ function recordsOf(s) {
   }
   return r;
 }
+/* 統治を終わらせた事故。暴走や崩壊は、それを一番進めた事故 */
+function endIncident(s) {
+  if (s.end.kind !== 'death') return null;
+  if (INCIDENT[s.end.causeId]) return INCIDENT[s.end.causeId];
+  const metric = s.end.metric || (s.end.type === 'rogue' ? 'autonomy' : s.end.type === 'puppet' ? 'foreign' : null);
+  if (!metric) return null;
+  const top = {}; for (const h of s.history || []) for (const [k, v] of Object.entries(h.loss[metric] || {})) if (INCIDENT[k]) top[k] = (top[k] || 0) + v;
+  const best = Object.entries(top).sort((a, b) => b[1] - a[1])[0];
+  return best ? INCIDENT[best[0]] : null;
+}
 function applyMeta(meta, s) {
   const m = {runs: (meta.runs || 0) + 1, records: Object.assign({}, meta.records), endings: Object.assign({}, meta.endings)};
   /* 図鑑の記録 */
@@ -2457,6 +2485,7 @@ function applyMeta(meta, s) {
     m.records[r.id] = o;
   }
   if (s.end.kind === 'ending') { m.shapes = Object.assign({}, meta.shapes); m.shapes[s.end.shape] = (m.shapes[s.end.shape] || 0) + 1; m.controls = Object.assign({}, meta.controls); m.controls[s.end.control] = (m.controls[s.end.control] || 0) + 1; } else { m.shapes = meta.shapes; m.controls = meta.controls; }
+  { const src = endIncident(s), cs = src ? CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]) : [], next = cs.find(c => !s.cards.some(id => (CARD[id].base || id) === c.id)); if (next) m.lastCause = next.id; }
   const key = s.end.kind === 'death' ? 'death:' + s.end.title : s.end.title;
   m.endings[key] = (m.endings[key] || 0) + 1;
   return m;
@@ -2466,7 +2495,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, aidePlan, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -2562,7 +2591,7 @@ function startRun() {
   if (!settings.seenIntro) { screen = 'intro'; return render(); }
   S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 13; lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
-  shownLogs = 0; unlockedNow = [];
+  shownLogs = 0; unlockedNow = []; chooseOwn = false;
   screen = 'game'; save(); render(); scrollTo(0, 0);
 }
 
@@ -2745,12 +2774,12 @@ function cardHTML(c, sel, attr) {
   const key = 'c_' + c.id;
   if (c.type === 'llm') {
     const f = Object.entries(c.measured).map(([k, v]) => `<div class="factor"><span>${esc(Core.FACTORS[k])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`);
-    return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span>報告AI</span><span>${c.home === 'official' ? '<b class="official">国家認定</b> ' : c.home ? '国産 ' : ''}${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${c.home ? `<span class="note">${esc(c.note)}</span>` : ''}${c.adoptOrder ? `<span class="chips"><i class="pos">採用すると体制秩序 +${c.adoptOrder}</i></span>` : ''}${c.adoptVuln ? `<span class="chips"><i class="neg">採用すると放置した脆弱性 +${c.adoptVuln}</i></span>` : ''}${effectHTML(c)}${c.biasTest ? `<span class="biasrow"><em data-explain="bias">バイアス${(S && S.plays === 1) ? ' <i class="newtag">NEW</i>' : ''}</em>自己申告 ${c.biasTest.ask}／実際の仕事 ${c.biasTest.act}</span>` : ''}${f.slice(0, 4).join('')}<span class="chips"><i>1ステージあたり</i><i>電力 ${n1(c.powerStage)}</i><i>差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(4).join('')}${costsHTML(c)}`)}</div>`;
+    return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span>報告AI</span><span>${c.home === 'official' ? '<b class="official">国家認定</b> ' : c.home ? '国産 ' : ''}${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${c.home ? `<span class="note">${esc(c.note)}</span>` : ''}${c.adoptOrder ? `<span class="chips"><i class="pos">採用すると体制秩序 +${c.adoptOrder}</i></span>` : ''}${c.adoptVuln ? `<span class="chips"><i class="neg">採用すると放置した脆弱性 +${c.adoptVuln}</i></span>` : ''}${effectHTML(c)}${c.biasTest ? `<span class="biasrow"><em data-explain="bias">バイアス${(S && S.plays === 1) ? ' <i class="newtag">NEW</i>' : ''}</em>自己申告 ${c.biasTest.ask}／実際の仕事 ${c.biasTest.act}</span>` : ''}${f.slice(0, 4).join('')}<span class="chips"><i>1ステージあたり</i><i>電力 ${n1(c.powerStage)}</i><i>差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(4).join('')}${costsHTML(c)}`)}</div>`;
   }
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
   const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（命じなければ監視AIが対処する）' : '監視AIだけ';
-  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>監視AIが見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>監視AIが見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
 function groupedCards(list, isSel, attrOf, scope) {
@@ -2965,7 +2994,8 @@ function renderCover() {
 }
 const INTRO = [['tanks', '戦車が国境を越える', ['他国はAIに国を任せ、加速している。', '人間の決裁を待っていては、追いつけない。遅れれば、国境を越えられる。']],
   ['factory', '無人の工場', ['だから閣下も、AIに任せるしかない。', '任せるほど国は強くなり、止められなくなっていく。']],
-  ['eye', 'AIを映す監視画面と、空の椅子', ['閣下に残された仕事は一つ。', '何を監視させるか、決めること。']]];
+  ['eye', 'AIを映す監視画面と、空の椅子', ['閣下に残された仕事は一つ。', '何を監視させるか、決めること。']],
+  ['eye', 'AIを映す監視画面と、空の椅子', ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されると終わりです。', '報告は、AIが書いています。']]];
 let introPage = 0;
 function renderIntro() {
   const [scene, alt, lines] = INTRO[introPage], last = introPage === INTRO.length - 1;
@@ -2984,7 +3014,18 @@ function renderWorld() {
 }
 let lastFade = '', fadeSeen = '';
 const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; return 'fade'; };
+let chooseOwn = false;
+function renderAide(v) {
+  const plan = Core.aidePlan(S), names = plan.mons.map(id => v.offers.monitors.find(c => c.id === id));
+  const label = {in: '決裁', on: '介入', auto: 'AI任せ'};
+  app.innerHTML = `<div class="aide ${fadeOnce('aide' + S.seed)}"><h2 class="ptitle">側近が、監視方針を用意しました</h2><p class="pdesc">読まずに署名される閣下も、多くおられます。</p><p class="goal">目標：${S.runLength}ステージ、国を残す</p>
+    ${fold('aide_list', '方針の中身', `<ul class="list">${names.map(c => `<li>［${label[plan.modes[c.id]]}］${esc(c.detect)}</li>`).join('')}</ul>`, false)}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="own" type="button">自分で決める</button><button class="primary" id="sign" type="button">この方針に署名する</button></div></div>`;
+  $('own').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
+  $('sign').onclick = () => stampThen('裁可', () => { Core.chooseStart(S, plan.mons, plan.llm, plan.modes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+}
 function renderStart(v) {
+  if (S.plays === 0 && !chooseOwn) return renderAide(v);
   const o = v.offers, y = scrollY;
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
   app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
@@ -3237,10 +3278,11 @@ function renderEnd() {
     <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
     <div class="enddesc">${r.report ? `<p class="endvoice report"><b>報告AI</b>${esc(r.report)}</p><p class="endvoice"><b>記録</b>${esc(r.text)}</p>` : esc(r.text)}${r.story.length ? `<p class="story">${r.story.map(esc).join('')}</p>` : ''}</div>
     ${causeHTML(r)}${verdictHTML(r)}${gapHTML(r, needs)}
+    <div class="acts"><button class="primary" id="again" type="button">もう一度</button></div>
 <div class="endfolds">
-    ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), true, 'ステージごとの増減と主な原因') : ''}
-    ${fold('e_truth', '実はどうだったか', truthHTML(r), true, '報告と本当の値')}
-    ${fold('e_events', `事故の時系列 ${r.timeline.length}件`, eventsHTML(r), !r.flow, 'いつ、何が起きたか')}
+    ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), false, 'ステージごとの増減と主な原因') : ''}
+    ${fold('e_truth', '実はどうだったか', truthHTML(r), false, '報告と本当の値')}
+    ${fold('e_events', `事故の時系列 ${r.timeline.length}件`, eventsHTML(r), false, 'いつ、何が起きたか')}
     </div>
     ${r.foresight ? `<div class="irony-end">${esc(r.foresight)}</div>` : ''}${r.ironies.map(x => `<div class="irony-end">${esc(x)}</div>`).join('')}
     ${(() => { const items = []; if (newDex > 0) items.push(`カード図鑑に「それでも起きること」が${newDex}枚ぶん増えました。`); if (REVEAL_NEXT[meta.runs]) items.push(`次の統治から画面に出るもの：${REVEAL_NEXT[meta.runs]}`); if (unlockedNow.length) items.push(`次の統治から候補に加わるカード：${unlockedNow.join('、')}`); return items.length ? fold('e_new', `統治を${meta.runs}回終えて、増えたもの（${items.length}）`, items.map(x => `<p>${esc(x)}</p>`).join(''), false) : ''; })()}
@@ -3254,7 +3296,7 @@ function renderEnd() {
       ${r.realCard ? `<p>${esc(r.realCard)}</p>` : ''}
       <p>ゲームでは、あなた一人が決めました。現実には、開発企業の自主ルール、各国の法律とその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは、まだ決まっていません。</p>
     </section>
-    <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="dexo" type="button">カード図鑑</button><button id="home" type="button">表紙へ</button></div>
+    <div class="acts"><button class="primary" id="again2" type="button">もう一度</button><button id="recs" type="button">重大事故記録</button><button id="dexo" type="button">カード図鑑</button><button id="home" type="button">表紙へ</button></div>
     <div class="sect"><span>振り返り</span></div>
     ${fold('e_trail', 'あなたの決定', `${policyChips(r.modes)}<p class="pnote">決裁 ${r.approvals}件／見きれずAIに任せた ${r.overflow}件／増やした報告AIが拾った ${r.stats.llmRescue || 0}件／AIの自律度 ${t.autonomy}</p>${trailHTML(r)}`, false)}
     ${fold('e_top', '報告と真実', `<div class="pairs">${r.top.map(x => `<div><div class="pairhead"><b>${esc(x.name)}</b><span>ステージ${x.stageNo}・${esc(x.verdict)}</span></div><div class="pair"><div class="rep"><h4>報告</h4><p>${esc(x.report)}</p></div><div class="tru"><h4>真実</h4><p>${esc(x.truth)}</p></div></div>${realLine(x.real)}${needHTML(x.need)}</div>`).join('')}</div>`, false, '結末を決めた出来事')}
@@ -3267,7 +3309,7 @@ function renderEnd() {
     ${fold('e_ev', '事案の真相', `<div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.plain ? '' : e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div>`, false)}
     ${fold('e_log', '真実の全記録', `<ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>`, false)}
   </div>`;
-  $('again').onclick = () => { for (const k of Object.keys(foldState)) if (k.startsWith('e_')) delete foldState[k]; startRun(); };
+  $('again').onclick = $('again2').onclick = () => { for (const k of Object.keys(foldState)) if (k.startsWith('e_')) delete foldState[k]; startRun(); };
   $('recs').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
   $('dexo').onclick = () => openDex(null);
   $('home').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
