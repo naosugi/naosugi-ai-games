@@ -296,7 +296,7 @@ console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一�
   } return s; };
   let bad = 0, n = 0;
   for (let seed = 1; seed <= 200; seed++) {
-    const a = play(Core.newRun(seed, {runs: 0}, {script: Core.INTRO_SCRIPT(), runLength: 3}), 'act');
+    const a = play(Core.newRun(seed, {runs: 0}, {script: Core.INTRO_SCRIPT(), cards: ['llm_scribe'], runLength: 3}), 'act');
     if (!(a.end && a.end.kind === 'death' && a.end.title === '監督者の消失' && a.stageNo === 3)) { bad++; if (bad < 4) console.log('intro', seed, a.end && a.end.title, a.stageNo); }
     for (const card of Object.keys(Core.TU_CARD)) for (const ch of ['act', 'investigate']) {
       const t = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT(card), from: a.from3, cards: [card, 'llm_scribe'], runLength: 4}), ch);

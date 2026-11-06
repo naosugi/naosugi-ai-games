@@ -1155,8 +1155,8 @@ const INTRO_SCRIPT = () => ({kind: 'intro', steps: [[['grid', 1], ['admin', 1]],
   lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}},
   navi: {s3: '次は、AIの研究そのものをAIに任せます。'}});
 const TU_CARD = {
-  selfmod: {slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
-  thought_watch: {slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
+  selfmod: {slip: '記録：更新は続いていた。更新の判断はAIの内部で行われ、監視AIが読む記録には現れなかった。'},
+  thought_watch: {slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。'},
 };
 const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
@@ -3084,7 +3084,7 @@ function renderIntro() {
   const first = IN.step === 0;
   app.innerHTML = `<div class="fade introp"><div class="pixwrap">${first ? pix('tanks', '戦車が国境を越える') : pix('factory', '無人の工場')}</div>${first ? '<p>他国はAIに国を任せ、加速している。</p><p>遅れれば、国境を越えられる。</p>' : NAVI('閣下、監視は後回しにしましょう。AIに任せられるものから、任せます。')}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inskip" type="button">導入を飛ばす</button><button class="primary" id="innext" type="button">${first ? '次へ' : 'AIに任せる'}</button></div></div>`;
-  $('innext').onclick = () => { if (first) { IN.step = 1; render(); scrollTo(0, 0); } else beginScript(INTRO_SCRIPT(), {runLength: 3}); };
+  $('innext').onclick = () => { if (first) { IN.step = 1; render(); scrollTo(0, 0); } else beginScript(INTRO_SCRIPT(), {cards: ['llm_scribe'], runLength: 3}); };
   $('inskip').onclick = () => { settings.seenIntro = true; store(KEY.set, settings); IN = null; toMain(); };
   scrollTo(0, 0);
 }
@@ -3111,8 +3111,9 @@ function renderScriptEnd() {
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="sagain" type="button">もう一度</button>`;
   } else {
     tutorFinish(sc.card);
-    const g = GAPS[TU_CARD[sc.card].need], ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
-    body = `<div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div><div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(Core.CARD[sc.card].detect)}」のカードは、本編の最初の方針に入っています。</div>`;
+    const ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
+    // 本編と同じ学びの枠を使う
+    body = `${lessonHTML(r, r.needs.slice(0, 3))}<div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(Core.CARD[sc.card].detect)}」のカードは、本編の最初の方針に入っています。</div>`;
     btns = `<button id="snext" type="button" disabled>次の話（準備中）</button><button class="primary" id="smain" type="button">本編へ</button>`;
   }
   app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
