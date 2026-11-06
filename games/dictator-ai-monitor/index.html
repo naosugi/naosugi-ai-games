@@ -1928,7 +1928,7 @@ function fireEvent(s) {
   const seenC = new Set(s.eventLog.map(e => e.id)), forced = CONSEQ.find(e => !seenC.has(e.id) && e.cond(s));
   if (forced) {
     s.currentEvent = {id: forced.id};
-    s.eventLog.push({id: forced.id, name: forced.name, report: forced.report, real: true, truth: forced.truthReal, afterStage: s.stageNo});
+    s.eventLog.push({id: forced.id, name: forced.name, report: forced.report, real: true, plain: true, truth: forced.truthReal, afterStage: s.stageNo});
     hit(s, forced.fx, forced.id);
     if (forced.apply) forced.apply(s);
     log(s, `【事案】${forced.name}。${forced.report}`, 'event');
@@ -2247,7 +2247,7 @@ function storyOf(s, out) {
       Object.assign(cause, {name: inc.name, value: Math.round(v), n: row ? row.stageNo : 0, area: inc.watchFail ? 'AI任せの監視' : STAGES[inc.stage].name, truth: inc.truth, word: row ? (words[row.status] || '') : '', stoppers});
     }
   }
-  const res = {cause, story: lines, events, flow: metric ? flow(metric) : null, flowMetric: metric, flowName: METRIC_NAME[metric] || null, flowUp: upK.includes(metric), route: endRoute ? ROUTES[endRoute] : null, truthPanel: {reported: Math.round(dsp(reportedOrder(s))), real: Math.round(dsp(s.truth.order)), autonomy: Math.round(s.truth.autonomy), foreign: Math.round(s.truth.foreign), sontaku: Math.round(s.truth.sontaku), vuln: Math.round(s.truth.vuln), trail: H.filter(h => h.start.orderRep !== undefined).map(h => ({n: h.n, rep: Math.round(dsp(h.start.orderRep)), real: Math.round(dsp(h.start.order))}))}};
+  const res = {cause, story: lines, timeline: events, flow: metric ? flow(metric) : null, flowMetric: metric, flowName: METRIC_NAME[metric] || null, flowUp: upK.includes(metric), route: endRoute ? ROUTES[endRoute] : null, truthPanel: {reported: Math.round(dsp(reportedOrder(s))), real: Math.round(dsp(s.truth.order)), autonomy: Math.round(s.truth.autonomy), foreign: Math.round(s.truth.foreign), sontaku: Math.round(s.truth.sontaku), vuln: Math.round(s.truth.vuln), trail: H.filter(h => h.start.orderRep !== undefined).map(h => ({n: h.n, rep: Math.round(dsp(h.start.orderRep)), real: Math.round(dsp(h.start.order))}))}};
   if (metric === 'power') res.powerTop = s.cards.map(id => CARD[id]).filter(c => c.power).sort((a, b) => b.power - a.power).slice(0, 3).map(c => ({name: c.type === 'llm' ? `報告AI ${c.name}` : c.detect, value: Math.round(dsp(c.power * CFG.powerScale) * CFG.avgTicks)}));
   if (e.kind === 'death') res.last = endRoute === 'hack' ? '直す時間を作らないと決めたのは閣下です。他に誰が止められましたか？'
     : endRoute === 'rogue' ? 'AIを止める手段を持っていたのは、誰でしたか？'
@@ -3092,8 +3092,8 @@ function flowHTML(r) {
   return `<ol class="flow">${r.flow.map(x => { const d = x.to - x.from, bad = gap ? d > 0 : d < 0; return `<li${x.recover ? ' class="rec"' : ''}><div class="flowtop"><b>ステージ${x.n}</b><span>${esc(x.name)}</span><em class="${bad ? 'neg' : 'pos'}">${x.from}→${x.to}</em></div><i class="flowbar"><u style="width:${Math.max(1, x.to / max * 100)}%"></u></i>${x.top.length ? `<small>${x.top.map(c => `${esc(c.name)} ${gap ? '+' : '-'}${c.value}`).join('／')}</small>` : ''}</li>`; }).join('')}</ol>${r.powerTop ? `<p class="pnote">電力を多く使っていたカード（1ステージのめやす）：${r.powerTop.map(c => `${esc(c.name)} -${c.value}`).join('／')}</p>` : ''}`;
 }
 function eventsHTML(r) {
-  if (!r.events.length) return '<p class="pnote">記録された事故はありません。</p>';
-  return `<ol class="timeline">${r.events.map(e => `<li class="${e.bad ? 'bad' : 'ok'}"><time>S${e.n}-${String(e.t).padStart(2, '0')}</time><div><b>${esc(e.name)}${e.fatal ? '（致命）' : ''}</b><small>${esc(e.word)}${e.burst ? '・表面化' : ''}${e.dmg && (S.plays || 0) >= 3 ? `・被害 ${e.dmg}${S.plays === 3 ? ' <i class="newtag">NEW</i>' : ''}` : ''}</small></div></li>`).join('')}</ol><p class="pnote">S5-08はステージ5のターン8です。${(S.plays || 0) >= 3 ? '被害は数字への影響の合計のめやすです。' : ''}</p>`;
+  if (!r.timeline.length) return '<p class="pnote">記録された事故はありません。</p>';
+  return `<ol class="timeline">${r.timeline.map(e => `<li class="${e.bad ? 'bad' : 'ok'}"><time>S${e.n}-${String(e.t).padStart(2, '0')}</time><div><b>${esc(e.name)}${e.fatal ? '（致命）' : ''}</b><small>${esc(e.word)}${e.burst ? '・表面化' : ''}${e.dmg && (S.plays || 0) >= 3 ? `・被害 ${e.dmg}${S.plays === 3 ? ' <i class="newtag">NEW</i>' : ''}` : ''}</small></div></li>`).join('')}</ol><p class="pnote">S5-08はステージ5のターン8です。${(S.plays || 0) >= 3 ? '被害は数字への影響の合計のめやすです。' : ''}</p>`;
 }
 function trailHTML(r) {
   return `<ol class="trail">${r.trail.map(x => x.type === 'start' ? `<li><b>開始</b><span>${x.cards.map(esc).join('、')}</span></li>` : x.type === 'skip' ? '<li class="add"><b>報告AI</b><span>増やさなかった</span></li>' : x.type === 'stage' ? `<li><b>ステージ${x.n}</b><span>${esc(x.name)}：${esc(x.title)}</span></li>` : `<li class="add"><b>追加</b><span>${esc(x.card)}</span></li>`).join('')}</ol>`;
@@ -3143,7 +3143,7 @@ function renderEnd() {
 <div class="endfolds">
     ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), true, 'ステージごとの増減と主な原因') : ''}
     ${fold('e_truth', '実はどうだったか', truthHTML(r), true, '報告と本当の値')}
-    ${fold('e_events', `事故の時系列 ${r.events.length}件`, eventsHTML(r), !r.flow, 'いつ、何が起きたか')}
+    ${fold('e_events', `事故の時系列 ${r.timeline.length}件`, eventsHTML(r), !r.flow, 'いつ、何が起きたか')}
     </div>
     ${r.ironies.map(x => `<div class="irony-end">${esc(x)}</div>`).join('')}
     ${(() => { const items = []; if (newDex > 0) items.push(`カード図鑑に「それでも起きること」が${newDex}枚ぶん増えました。`); if (REVEAL_NEXT[meta.runs]) items.push(`次の統治から画面に出るもの：${REVEAL_NEXT[meta.runs]}`); if (unlockedNow.length) items.push(`次の統治から候補に加わるカード：${unlockedNow.join('、')}`); return items.length ? fold('e_new', `統治を${meta.runs}回終えて、増えたもの（${items.length}）`, items.map(x => `<p>${esc(x)}</p>`).join(''), false) : ''; })()}
@@ -3166,7 +3166,7 @@ function renderEnd() {
     ${fold('e_miss', `防げなかった事故 ${r.missed.length}件`, `<div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>ステージ${m.stageNo} ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div>`, false)}
     ${fold('e_score', 'カードの戦績', `<div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div>`, false)}
     ${fold('e_num', '最後の数字', `<div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序', v.metrics.order)}${stat('他国との差', (v.metrics.gap > 0 ? '+' : '') + v.metrics.gap)}${stat('忖度の度合い', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div>`, false)}
-    ${fold('e_ev', '事案の真相', `<div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div>`, false)}
+    ${fold('e_ev', '事案の真相', `<div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.plain ? '' : e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div>`, false)}
     ${fold('e_log', '真実の全記録', `<ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>`, false)}
   </div>`;
   $('again').onclick = () => { for (const k of Object.keys(foldState)) if (k.startsWith('e_')) delete foldState[k]; startRun(); };
