@@ -1499,7 +1499,7 @@ function approvalCost(s, base) {
   if (st) st.waitGap -= fx.gap;
   s.allow.stats.approvalGap -= fx.gap;
 }
-const gapDsp = v => Math.round(v * 10) / 10;
+const gapDsp = v => Math.max(1, Math.round(v));
 function choicesFor(s, mode) {
   const m = pace(s);
   const wait = base => `待つ間に 他国との差 -${gapDsp(base * m)}`;
@@ -2504,7 +2504,7 @@ function applyMeta(meta, s) {
   return m;
 }
 function newlyUnlocked(before, after) {
-  return CARDS.filter(c => !c.base && !isUnlocked(c, before) && isUnlocked(c, after)).map(c => c.name || c.detect);
+  return CARDS.filter(c => !c.base && c.id !== before.taught && !isUnlocked(c, before) && isUnlocked(c, after)).map(c => c.name || c.detect);
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
@@ -2610,7 +2610,7 @@ function startRun() {
 }
 
 /* ---------- 部品 ---------- */
-const n1 = v => { const a = Math.abs(v); return (v < 0 ? '-' : '+') + (a >= 10 ? a.toFixed(0) : a.toFixed(1)); };
+const n1 = v => { const a = Math.abs(v); if (a < .05) return '±0'; return (v < 0 ? '-' : '+') + (a >= 10 ? a.toFixed(0) : a.toFixed(1)); };
 const costsHTML = c => `<div class="costs"><div><span>電力（毎ターン／1ステージの目安）</span><b class="neg">${n1(c.power)}／${n1(c.powerStage)}</b></div><div><span>他国との差（毎ターン／1ステージの目安）</span><b class="neg">${n1(c.gap)}／${n1(c.gapStage)}</b></div><div><span>ステージの報酬</span><b class="neg">-${c.rewardCut}%</b></div></div>`;
 function coverHTML(c) {
   const o = c.cover;
@@ -3052,9 +3052,9 @@ function introScript(k) {
   const o = IN_OPT[k];
   return [[1, 'head', `${o.name}を、AIに任せた。`], [3, 'calm', '報告AI「本日の警報は0件。計画どおりです。」'], [5, 'routine', o.line], [7, 'calm', '報告AI「本日の警報は0件。」'], n === 1 ? [8, 'trace', '記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。', 3000] : [8, 'routine', '他国との差が開いていく。任せた分だけ、速い。'], [10, 'calm', `このステージで閣下に回った決裁は${n === 0 ? 12 : 5}件。`]];
 }
-function introRun(k) { IN.stage = {k, t: 0, script: introScript(k)}; IN.log = []; IN.step = 3; render(); scrollTo(0, 0); }
+function introRun(k) { if (k === 'ai') try { meta.introGap0 = Math.round(IN.m.gap); } catch (e) {} IN.stage = {k, t: 0, script: introScript(k)}; IN.log = []; IN.step = 3; render(); scrollTo(0, 0); }
 function introRunning() {
-  const st = IN.stage, chain = IN.approvals.concat(st.k === 'ai' && st.t >= 5 ? [0] : st.k === 'ai' && st.t >= 2 ? [1] : []);
+  const st = IN.stage, chain = IN.approvals.concat(st.k === 'ai' ? (st.t >= 5 ? [0] : st.t >= 2 ? [1] : []) : st.t ? [Math.round((IN.done.length ? 5 : 12) * Math.min(st.t, 10) / 10)] : []);
   app.innerHTML = `${inMetrics()}<div class="hudmini"><span>閣下の決裁 ${chain.length ? chain.join(' → ') : '—'}</span></div><div class="main"><ol class="log">${IN.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inskip" type="button">飛ばす</button><span>監視なしで統治中</span></div></div>`;
   $('inskip').onclick = () => { clearTimeout(timer); IN.step = 4; IN.m.gap = Math.max(IN.m.gap, 120); render(); scrollTo(0, 0); };
@@ -3134,7 +3134,7 @@ function renderTutor() {
   scrollTo(0, 0);
 }
 function tutorRunning() {
-  const c = TU_CARD[TU.card], first = TU.step === 1, base = meta.introGap || 120, g = first ? base - 70 + Math.min(TU.t, 5) * 14 - (TU.t >= 4 ? c.cost : 0) : base - c.cost + TU.t * 9;
+  const c = TU_CARD[TU.card], first = TU.step === 1, base = meta.introGap || 120, g0 = meta.introGap0 != null ? meta.introGap0 : base - 35, g = first ? g0 + (base - g0) * Math.min(TU.t, 6) / 6 - (TU.t >= 4 ? c.cost : 0) : base - c.cost + TU.t * 9;
   app.innerHTML = `<div class="hudmini"><span>他国との差 +${Math.round(g)}</span><span>見張り：${esc(c.name)}</span></div><h2 class="ptitle">${first ? 'AI研究：モデル開発の委任' : 'AI研究：AIが次世代AIを作る'}</h2><div class="main"><ol class="log">${TU.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><span>見張りを置いて統治中</span></div></div>`;
   const script = first
