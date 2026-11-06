@@ -336,6 +336,8 @@ const CFG = {
   avgTicks: 12,              // 1ステージの平均ターン数
   modeCover: {auto: 1.15, on: 1, in: 1.12},
   // AI任せは普段は優秀だが、条件が重なると作業AIに出し抜かれる
+  humanOrder: {stop: .99, autonomy: 1.5, find: .3},  // 閣下の命令で現場が動く
+  aiGen: [1, 1.1, 1.25, 1.4], sameLineage: .6,  // AI研究で監視AIの性能が上がる。同じ系統を重ねても誤りは揃う
   autoEvade: {autonomy: .75, foreign: .6, stop: .35}, humanEvade: .12,
   // 開戦に勝てる条件と代償（内部値）
   // AI研究の段階ごとの読みやすさ。考えは読めなくなり、内部の解析はAIの力で強くなる
@@ -533,7 +535,7 @@ const CARD_TEXT = {
   firmware:['試験配布での更新の異常','全体への更新を止める','auto'],
   measure_blind:['抜き打ち試験での報告AIの異変','性格の数字を直して監視を強める','auto'], measure_field:['報告と実績の食い違い','報告AIの数字を実績で直す','on'], measure_peer:['報告AIどうしの評価の差','評価を集計して数字を直す','auto'],
 };
-CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; });
+CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; if (c.type === 'monitor' && c.mode === 'on') c.load += .3; });
 /* 監視そのものは電力をほとんど使わない。計算を繰り返す少数のカードだけが重い */
 const HEAVY_POWER = ['retest', 'new_model', 'grid_manual'];
 CARDS.forEach(c => { if (c.type === 'llm') c.power *= .4; else if (c.type === 'monitor') c.power *= HEAVY_POWER.includes(c.id) ? .6 : .12; });
@@ -560,10 +562,10 @@ CARDS.filter(c => c.type === 'monitor' && !c.base).slice().forEach(b => {
   b.modes = b.id === 'patch_review' ? MODE_ORDER.slice() : MODES_OF[b.id] || MODE_ORDER.slice();
   if (!b.modes.includes(b.mode)) b.mode = b.modes[0];
   if (b.id === 'patch_review') return;
-  const base = CARD_TEXT[b.id][2] === 'in' ? b.load - .4 : b.load;
+  const base = CARD_TEXT[b.id][2] === 'in' ? b.load - .4 : CARD_TEXT[b.id][2] === 'on' ? b.load - .3 : b.load;
   for (const mode of b.modes) {
     if (mode === b.mode) continue;
-    CARDS.push(Object.assign({}, b, {id: `${b.id}_${mode}`, base: b.id, mode, load: Math.max(.1, base + (mode === 'in' ? .4 : mode === 'auto' ? -.2 : 0))}));
+    CARDS.push(Object.assign({}, b, {id: `${b.id}_${mode}`, base: b.id, mode, load: Math.max(.1, base + (mode === 'in' ? .4 : mode === 'on' ? .3 : mode === 'auto' ? -.2 : 0))}));
   }
 });
 const variantId = (id, mode) => {
@@ -588,7 +590,7 @@ const STAGES = {
   lab:   {name:'工学研究', tiers:['実験計画の委任','研究室の無人化','研究者なしの工学研究'], reward:{gap:-11, economy:7, order:3}, rewardText:'他国との差が縮まる'},
   grid:  {name:'電力網', tiers:['需給予測の委任','送電の自動制御','発電と送電の完全自動化'], reward:{power:17}, rewardText:'電力が上がる', tierText:[null, null, '発電も送電もAIが回し、電力が大きく伸びる']},
   surv:  {name:'国民監視', needs:['admin'], tiers:['通報の自動分類','街頭監視の統合','AI監視社会'], reward:{order:14}, rewardText:'体制秩序が上がる', tierText:[null, null, '不満を口にする者が消え、体制秩序が大きく上がる']},
-  ai:    {name:'AI研究', needs:['admin','lab'], tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国との差が大きく縮まる'},
+  ai:    {name:'AI研究', needs:['admin','lab'], tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国との差が大きく縮まり、監視AIの性能も上がる'},
   factory:{name:'自動工場', needs:['grid','lab'], tiers:['工程管理の委任','組立の無人化','無人のロボット工場'], reward:{economy:20}, rewardText:'経済が大きく上がる', tierText:[null, null, 'ロボットがロボットを作り、経済が桁違いに伸びる。電力も桁違いに使う']},
   mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる', tierText:[null, null, '他国は手を出せなくなる。他国との差が大きく縮まり、体制秩序も上がる']},
   space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える', tierText:['まだ準備段階で、収入はない', '打ち上げを請け負い、外貨を稼ぐ', '無人の機体が資源を持ち帰り、軌道上の発電が始まる']},
@@ -1348,10 +1350,12 @@ function modeEff(s, c, inc) {
 }
 function assess(s, inc) {
   // 機械的な仕組みは忖度の影響を受けない。ルールは賢いAIにすり抜けられる
-  let machine = 1, judged = 1;
-  for (const id of s.cards) {
-    const c = CARD[id], v = isDisabled(s, id) ? 0 : inc.covers[c.base || id];
+  let machine = 1, judged = 1, aiSeen = 0;
+  const aiRun = c => c.mode === 'auto' || c.kind === 'ai';
+  for (const id of s.cards.slice().sort((a, b) => (inc.covers[CARD[b].base || b] || 0) - (inc.covers[CARD[a].base || a] || 0))) {
+    const c = CARD[id]; let v = isDisabled(s, id) ? 0 : inc.covers[c.base || id];
     if (!v) continue;
+    if (aiRun(c)) { if (aiSeen++ && !lineageWorks(s)) v *= CFG.sameLineage; v *= CFG.aiGen[s.tiers.ai || 0]; }
     if (c.kind === 'ai') judged *= 1 - Math.min(.97, v * 1.15 * modeEff(s, c, inc));
     else machine *= 1 - Math.min(.97, v * modeEff(s, c, inc) * (c.kind === 'rule' ? 1 - s.truth.autonomy / 100 * CFG.ruleEvade : 1));
   }
@@ -1505,7 +1509,7 @@ function settle(s, d, choice, ai) {
     else if (!d.real) s.stage.judged.push({cardId: d.cardId, how: choice === 'investigate' ? 'checked' : 'wasted'});
   }
   const act = () => {
-    if (d.real) return resolve(s, d.incident, d.late);
+    if (d.real) return resolve(s, d.incident, d.late, false, !ai);
     hit(s, CFG.wrongAct, 'falsealarm');
     log(s, '対処を実行した。調査の結果、誤報だった。', 'notice');
     tlog(s, '誤報に対処し、作業が止まった。');
@@ -1549,6 +1553,8 @@ function unheeded(s, d) {
   if (d.patchOrder) { s.allow.stats.decisions++; log(s, '修正の警報は止められないまま消えた。', 'routine'); return; }
   s.allow.stats.decisions++;
   if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'});
+  // 閣下が止めなければ、監視AIが自分で対処する。現場の人間が減るほど出し抜かれる
+  if (d.real && rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1)) { log(s, '閣下は止めなかった。監視AIが自分で対処した。', 'routine'); return resolve(s, d.incident, true); }
   log(s, '警報は止められないまま消えた。作業AIは動き続けている。', 'routine');
   if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は止めなかった。`); }
   else tlog(s, '止めなかった警報は誤報だった。');
@@ -1573,7 +1579,7 @@ function burstText(inc) {
   }
   return out.join('、');
 }
-function resolve(s, a, late, quiet) {
+function resolve(s, a, late, quiet, byHuman) {
   const inc = INCIDENT[a.id];
   const fired = bestCard(s, inc);
   if (fired) s.fires[fired.id] = (s.fires[fired.id] || 0) + 1;
@@ -1586,7 +1592,7 @@ function resolve(s, a, late, quiet) {
     return;
   }
   // 見つけても、止められるとは限らない
-  if (fired && rnd(s) >= (fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * (CFG.stop.autonomy + (fired.mode === 'auto' ? CFG.autoEvade.stop : 0)))) {
+  if (fired && rnd(s) >= (byHuman ? CFG.humanOrder.stop : fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * (CFG.stop.autonomy + (fired.mode === 'auto' ? CFG.autoEvade.stop : 0)))) {
     a.status = 'failed'; a.retry = CFG.retryEvery;
     s.allow.stats.stopFail = (s.allow.stats.stopFail || 0) + 1;
     log(s, `監視が発動：${fired.detect}を検知。対処を試みたが、止まらなかった。`, 'alert');
@@ -1596,6 +1602,12 @@ function resolve(s, a, late, quiet) {
   }
   a.status = late ? 'late' : 'caught';
   a.reported = inc.report.caught;
+  if (byHuman) {
+    s.truth.autonomy = clamp(s.truth.autonomy - CFG.humanOrder.autonomy);
+    // 人が現場に入ると、報告に上がっていない問題も見つかる
+    const near = s.active.filter(x => x !== a && INCIDENT[x.id].stage === inc.stage && ['hidden', 'missed', 'soft'].includes(x.status));
+    if (near.length && rnd(s) < CFG.humanOrder.find) { const b = pick(s, near); s.active.splice(s.active.indexOf(b), 1); log(s, `記録：閣下の命令で現場を調べると、報告にない「${INCIDENT[b.id].name}」も見つかった。`, 'trace'); tlog(s, `${INCIDENT[b.id].name}：閣下の命令で調べた現場で見つかった。`); resolve(s, b, true, false, false); }
+  }
   const worst = inc.fatal ? `放置すれば「${inc.deathTitle}」で統治が終わっていた` : `放置すれば ${burstText(inc)}`;
   s.saves.push({stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet});
   if (!quiet && inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
@@ -2450,7 +2462,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。警報を見て閣下が止める'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
+const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。閣下が止めれば確実で、止めなければ監視AIが対処する。人を残す分、他国に遅れる'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
 const tone = (k, v) => { const good = v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
 
@@ -2792,8 +2804,8 @@ function worldHTML() {
     <p>下線のある言葉や数字は、押すと説明が出ます。</p>
     <p>画面の「放置した脆弱性」は、放置すると攻撃を招きます。再整備や修正のカードで減らせますが、直す間は国が遅れます。</p>
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
-      <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。AIに出し抜かれにくい方式です。human in the loop といいます。</dd></div>
-      <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、数ターンの間だけ、あなたが止められます。見ていなければ、事故はそのまま進みます。human on the loop といいます。</dd></div>
+      <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
+      <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、あなたが止めれば確実に止まります。止めなければ、数ターン後に監視AIが対処します。現場に人を残す分、他国に遅れます。human on the loop といいます。</dd></div>
       <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
@@ -3005,7 +3017,7 @@ let lastVetoAlarm = 0;
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
   for (const d of v.vetoes) if (d.vid > lastVetoAlarm) { lastVetoAlarm = d.vid; SFX.play('alarm'); }
-  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／止めると：${esc(d.response)}</small><small>あと${d.left}ターンで警報は消え、作業AIは動き続けます</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
+  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／止めると：${esc(d.response)}</small><small>止めなければ、あと${d.left}ターンで監視AIが対処します</small></div><button type="button" data-v="${d.vid}">止める</button></div>`).join('');
   // 毎ターン描き直すので、押した瞬間に受ける（指を離す間に要素が替わると押下が失われる）
   el.querySelectorAll('[data-v]').forEach(b => b.onpointerdown = e => { e.preventDefault(); Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
