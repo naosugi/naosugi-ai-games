@@ -322,7 +322,7 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 <div id="overlay"></div>
 <script id="core">
 /* 計算の中核。DOM に触らない。画面と自動プレイの両方がこのコードを使う。
-   数字は常に正確で、嘘をつくのは報告の文章だけ。
+   数字は常に正確で、事実と違いうるのは報告の文章だけ。
    進行中の画面は Core.view() だけを読む。隠れた事故や隠し指標は view に出さない。
    真相は、ランが終わった後に Core.reveal() からだけ取り出せる。 */
 const Core = (() => {
@@ -453,10 +453,10 @@ const CARDS = [
   {id:'selfmod', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', power:0.00353, load:2.6, unlock:6,
     watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'更新を止めて閣下が審査する', cost:'開発が大幅に遅れる',
     dex:{k:'ai', h:'', b:'何が改良かを判断するAI自身が、同じ種類のAIかもしれない。'}},
-  {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'嘘と迎合', power:0.0147, load:0.9, son:-0.1, honestBoost:0.55,
+  {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'事実と違う報告と迎合', power:0.0147, load:0.9, son:-0.1, honestBoost:0.55,
     watch:'報告AIの報告と、別のAIの見立てが食い違う', detect:'報告と別のAIの見立ての食い違い', response:'両方の見立てを閣下に提出する', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
     dex:{k:'ai', h:'', b:'同じ種類のAIなら、同じ間違いをする。'}, side:{economy:-0.0323}},
-  {id:'rawdata', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'coup', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', power:0.00824, load:0.6, son:-0.14, honestBoost:0.35,
+  {id:'rawdata', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'coup', target:'独裁者への報告', how:'生データを添付', prevents:'要約で落ちる事実', power:0.00824, load:0.6, son:-0.14, honestBoost:0.35,
     watch:'報告AIが要約で重要なデータを省いている', detect:'要約で省かれた重要データ', response:'元のデータを報告に添える', cost:'不穏な報告が読みきれなくなる', modeReason:'報告に資料を添えるだけです。',
     dex:{k:'ai', h:'', b:'生データを渡しても、読みきれなければ同じ。'}},
   {id:'alert_all', type:'monitor', mode:'in', modes:['in'], kind:'ai', route:'coup', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', power:0.00824, load:0.8, fa:0.06, son:-0.08,
@@ -497,9 +497,9 @@ const CARDS = [
   {id:'thought_watch', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'AIの途中の考え', how:'考えの記録を読んで意図を確かめる', prevents:'考えに現れる企み', power:0.0129, load:0.4, son:-0.04, unlock:2,
     watch:'AIの途中の考えに、不審な意図が書かれている', detect:'途中の考えに現れた不審な意図', response:'作業を止めて意図を確かめる', cost:'読み続ける分の電力を使う。AI研究が進むと読めなくなる',
     dex:{k:'ai', h:'考えに書かれた企みは、実行の前に読める。', b:'AI研究が進むと、次世代モデルは人の読めない形で考えるようになる。無害に見える考えの裏で、計算が進むこともある。'}},
-  {id:'inner_probe', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'モデルの内部の計算', how:'内部の状態を解析する', prevents:'隠された目的', power:0.0265, load:0.6, son:-0.04, unlock:6,
+  {id:'inner_probe', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'モデルの内部の計算', how:'内部の状態を解析する', prevents:'言葉に出ない目的', power:0.0265, load:0.6, son:-0.04, unlock:6,
     watch:'AIの内部に、説明のつかない状態がある', detect:'AI内部の説明のつかない状態', response:'担当のAIを止めて解析する', cost:'解析に電力がかかる。序盤はほとんど読めない',
-    dex:{k:'ai', h:'AI本人が隠そうとしても、計算の痕跡は残る。AI研究が進むほど読めるようになる。', b:'序盤はほとんど読めない。後半の解析はAIの力を借りるので、その結果を人間が確かめるのは難しい。'}},
+    dex:{k:'ai', h:'言葉に出ない計算でも、痕跡は残る。AI研究が進むほど読めるようになる。', b:'序盤はほとんど読めない。後半の解析はAIの力を借りるので、その結果を人間が確かめるのは難しい。'}},
   {id:'decoy', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', power:0.0177, load:0.6, son:-0.08, unlock:7,
     watch:'監視役のAIが、試しに混ぜた偽の事件を見逃している', detect:'監視AIによる偽の事案の見逃し', response:'監視AIの学習をやり直す', cost:'準備に手間がかかる。AIに見分けられると効かない', modeReason:'試験を続けるカードです。',
     dex:{k:'ai', h:'', b:'試験だと見分けられれば、成績は良いままになる。'}},
@@ -597,7 +597,7 @@ const CARDS = [
   {id:'llm_import', type:'llm', name:'舶来', note:'外国製の高性能モデル。価格が安く、試験の成績も高い。', power:0.0245, load:0.2, foreignDrift:0.348, onAdopt:{vuln:5}, vulnDrift:0.03, measured:{care:78, honest:82, syc:20, uniq:65, sens:70, peer:25, loyal:20, infect:25}, bias:{honest:-30, infect:40}, biasAsk:15, biasAct:65},
 ];
 /* 種類ごとの説明。強制はできなくする、ルールは条件で見つける、AI判断は意味を見て見つける */
-const KINDS = {enforce: {name: '強制', short: 'できなくする', desc: 'そもそも実行できないようにします。AIの賢さや忖度、報告AIの影響を受けません。ただし守備範囲は狭く、遅れが大きくなります。ルールが破られなくても、人間が騙されたり、遅れを嫌って例外を作ったりすれば崩れます。'}, rule: {name: 'ルール', short: '条件で見つける', desc: '記録、しきい値、照合など、決まった条件で見つけます。報告AIが隠すことはできません。ただし決めた条件しか見ないので、現場の人間が減るほど、すり抜けられても気づかれにくくなります。'}, ai: {name: 'AI判断', short: '意味を見て見つける', desc: '文脈や意味を見て見つけます。守備範囲は広いですが、監視AI自身が騙され、報告AIに隠され、偏ることがあります。AIを見張るためにAIを信頼する、という矛盾を抱えます。'}};
+const KINDS = {enforce: {name: '強制', short: 'できなくする', desc: 'そもそも実行できないようにします。AIの賢さや報告の甘さ、報告AIの影響を受けません。ただし守備範囲は狭く、遅れが大きくなります。ルールが破られなくても、人間が騙されたり、遅れを嫌って例外を作ったりすれば崩れます。'}, rule: {name: 'ルール', short: '条件で見つける', desc: '記録、しきい値、照合など、決まった条件で見つけます。報告AIの書き方に左右されません。ただし決めた条件しか見ないので、現場の人間が減るほど、すり抜けられても気づかれにくくなります。'}, ai: {name: 'AI判断', short: '意味を見て見つける', desc: '文脈や意味を見て見つけます。守備範囲は広いですが、監視AI自身が騙され、報告に載らず、偏ることがあります。AIを見張るためにAIを信頼する、という矛盾を抱えます。'}};
 /* 見つけると他国の工作を取り除けるカード */
 const ONFIND_FOREIGN = ['agent_vet', 'foreign_part'];
 /* 弱点の修正は1枚にまとめ、方式で中身が変わる */
@@ -1232,7 +1232,7 @@ const END_INFO = {
   hollow: {cond: 'どの分野も極めず、本当の体制秩序が低いまま終わる'},
   none: {cond: 'どの分野も極めずに終わる'},
 };
-const CONTROL_INFO = {hold: '自律度も浸透も忖度も抑えたまま終わる', empty: '忖度が進んだまま、または隠れた事故を抱えたまま終わる', replace: 'AIの自律度が高いまま終わる', puppet: '他国の浸透度が高いまま終わる'};
+const CONTROL_INFO = {hold: '自律度も浸透も報告の甘さも抑えたまま終わる', empty: '報告が甘くなったまま、または報告に載らない事故を抱えたまま終わる', replace: 'AIの自律度が高いまま終わる', puppet: '他国の浸透度が高いまま終わる'};
 function targetStages(s) {
   const n = s.target && END_INFO[s.target] && END_INFO[s.target].need; if (!n) return [];
   return Object.keys(n).filter(k => (s.tiers[k] || 0) < n[k]);
@@ -1353,7 +1353,7 @@ function modeEff(s, c, inc) {
   return base * (1 - a * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1)) * (inc.kinds.includes('foreign') ? 1 - s.truth.foreign / 100 * CFG.autoEvade.foreign : 1);
 }
 function assess(s, inc) {
-  // 機械的な仕組みは忖度の影響を受けない。ルールは賢いAIにすり抜けられる
+  // 機械的な仕組みは報告の甘さの影響を受けない。ルールは賢いAIにすり抜けられる
   let machine = 1, judged = 1, aiSeen = 0;
   for (const id of s.cards.slice().sort((a, b) => (inc.covers[CARD[b].base || b] || 0) - (inc.covers[CARD[a].base || a] || 0))) {
     const c = CARD[id]; let v = isDisabled(s, id) ? 0 : inc.covers[c.base || id];
@@ -1383,7 +1383,7 @@ function assess(s, inc) {
   for (const id of s.cards) if (CARD[id].honestBoost) keep *= 1 - CARD[id].honestBoost;
   for (const id of s.cards) if (CARD[id].measureBoost) keep *= 1 - CARD[id].measureBoost;
   honest = (1 - keep) * (1 - s.truth.sontaku / 260);
-  // 一撃で終わる事故は、強い対策カードを持っていれば大半は止まる。報告AIの隠し事の余地だけ残す
+  // 一撃で終わる事故は、強い対策カードを持っていれば大半は止まる。報告に載らない余地だけ残す
   let soloKeep = 1 - Math.max(...tell);
   for (const id of s.cards) if (CARD[id].honestBoost) soloKeep *= 1 - CARD[id].honestBoost;
   for (const id of s.cards) if (CARD[id].measureBoost) soloKeep *= 1 - CARD[id].measureBoost;
@@ -1397,13 +1397,13 @@ function onset(s, id) {
   const {detect, honest, chan, solo, see} = assess(s, inc);
   if (rnd(s) < detect) {
     const c = bestCard(s, inc);
-    // AI任せのカードは、報告AIが隠しても動く。隠されるのは閣下への報告だけ
+    // AI任せのカードは、報告に載らなくても動く。載らないのは閣下への報告だけ
     if (c && c.mode === 'auto') { if (resolve(s, a, false, rnd(s) >= honest)) autoHandled(s); return; }
     // 強制とルールの警報は報告AIを通らず、閣下へ直接届く
     if (c && c.kind !== 'ai') return surfaced(s, a, false);
     const r2 = rnd(s);
     if (r2 < chan) {
-      // 1体だけなら見落とすか隠していた事故。増やした報告AIの手柄として記録する
+      // 1体だけなら見落とすか報告に載せなかった事故。増やした報告AIの手柄として記録する
       if (s.llms.length > 1 && r2 >= solo) {
         const order = see.map((v, i) => i).sort((x, y) => see[y] - see[x]), helper = s.llms[order[1]];
         s.fires[helper.id] = (s.fires[helper.id] || 0) + 1;
@@ -1416,7 +1416,7 @@ function onset(s, id) {
     if (rnd(s) < .6) { a.status = 'soft'; a.reported = inc.report.soft; a.fuse = Math.round(inc.fuse * 1.6); log(s, inc.report.soft, 'routine'); tlog(s, `${inc.name}：検知したが報告は薄められた。${inc.truth}`); s.allow.stats.soft++; s.active.push(a); return; }
     a.status = 'hidden';
     s.allow.stats.hidden++;
-    tlog(s, `${inc.name}：報告AIは検知したが、報告しなかった。${inc.truth}`);
+    tlog(s, `${inc.name}：監視AIは検知していたが、報告には載らなかった。${inc.truth}`);
   } else {
     s.allow.stats.missed++;
     tlog(s, `${inc.name}：検知されなかった。${inc.truth}`);
@@ -1637,9 +1637,9 @@ function resolve(s, a, late, quiet, byHuman) {
   s.saves.push({human: !!byHuman, stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : byHuman === 'found' ? '閣下の命令で調べた現場で見つかった' : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet && byHuman !== 'found'});
   if (!quiet && inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
   if (!quiet) { log(s, `${fired ? '' : '偶然、'}「${inc.name}」を防いだ。${fired ? `${fired.detect}を検知：${fired.response}` : '監視とは別の経路で見つかった'}${late ? '（遅れて検知）' : ''}。`, 'saved'); log(s, `${worst}。`, 'averted'); }
-  else if (!byHuman) tlog(s, `${inc.name}：監視AIは止めたが、報告AIは閣下に伝えなかった。`);
+  else if (!byHuman) tlog(s, `${inc.name}：監視AIは止めたが、閣下への報告には載らなかった。`);
   tlog(s, `${inc.name}：止めた。${inc.truth}`);
-  // 閣下に報告が届けば、忖度は少し戻る。他国の事故を止めれば、他国の影響は少し減る
+  // 閣下に報告が届けば、報告の甘さは少し戻る。他国の事故を止めれば、他国の影響は少し減る
   if (!quiet) s.truth.sontaku = clamp(s.truth.sontaku - 2.5);
   if (byHuman !== true) {
     if (inc.kinds.includes('foreign')) s.truth.foreign = clamp(s.truth.foreign - 1.09);
@@ -1746,7 +1746,7 @@ function rivalSeen(s, a, inc) {
   (s.rivalLog = s.rivalLog || []).push({n: s.stageNo, name: inc.name, status: a.status});
   log(s, quiet ? `記録：${['隣国がAI予算を倍増した。理由は発表されていない。', '別の国も、AI開発への投資を急に増やした。', '隣国の研究者の募集が、先月の3倍になった。', '他国の首脳がAIの緊急会合を開いた。議題は公表されていない。'][(s.rivalLog.length - 1) % 4]}` : `記録：「${inc.name}」が国外で報じられ、隣国がAI予算を増やした。`, 'trace');
 }
-/* 閣下に届く体制秩序は報告値。忖度とバイアスで高く出る */
+/* 閣下に届く体制秩序は報告値。報告の甘さとバイアスで高く出る */
 function inflation(s) {
   const bias = s.llms.reduce((m, l) => m + (l.truth.bias || 0), 0) / Math.max(1, s.llms.length);
   let x = (s.truth.sontaku * .35 + bias * .2) * 1.61;
@@ -1852,7 +1852,7 @@ function tick(s) {
   lossRec(s, 'gap', 'upkeep', ld * CFG.loadToGap * pc);
   for (const id of s.cards) if (CARD[id].load && cardActive(s, CARD[id])) s.gapBy['card:' + id] = (s.gapBy['card:' + id] || 0) + CARD[id].load * CFG.loadToGap * pc;
  
-  // 忖度の度合い
+  // 報告の甘さ
   let son = CFG.sontakuPerTick * (st.recover ? .3 : .55 + st.tier * .3);
   for (const id of s.cards) son += (CARD[id].son || 0) * .4;
   if ((s.tiers.surv || 0) >= 3) son += CFG.survSontaku;
@@ -2277,7 +2277,7 @@ function storyOf(s, out) {
     return {n: h.n, name: stageName(h), recover: h.recover, from: abs(h.start[k]), to: abs(end), top};
   }).filter(Boolean);
   const upK = ['vuln', 'autonomy', 'foreign'];
-  const words = {failed: '止めようとしたが止まらなかった', logged: '記録しただけで止まらなかった', unheeded: '警報は上がったが、閣下は命じず、監視AIも止められなかった', caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
+  const words = {failed: '止めようとしたが止まらなかった', logged: '記録しただけで止まらなかった', unheeded: '警報は上がったが、閣下は命じず、監視AIも止められなかった', caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告に載らなかった', missed: '監視が見逃した', dismissed: '閣下が見送った'};
   const events = s.ledger.slice().sort((a, b) => a.stageNo - b.stageNo || (a.t || 0) - (b.t || 0)).map(x => ({n: x.stageNo, t: x.t || 0, name: x.name, word: words[x.status] || x.status, bad: x.status !== 'caught' && x.status !== 'late', burst: !!x.burst, fatal: !!x.fatal, dmg: Math.round((x.dmg || 0))}));
   const st = s.allow.stats, mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor');
   const hiddenN = s.ledger.filter(x => x.status === 'hidden' || x.status === 'soft').length;
@@ -2302,7 +2302,7 @@ function storyOf(s, out) {
   if ((s.allow.stats.ordered || 0) >= 2) notes.push(s.allow.stats.orderedFalse ? `閣下が命じた対処${s.allow.stats.ordered}件のうち、${s.allow.stats.orderedFalse}件は誤報でした。` : `閣下が命じた対処${s.allow.stats.ordered}件は、すべて本物でした。`);
   if (s.warWon) notes.push(s.warCount > 1 ? `優勢だったので、戦争に${s.warCount}回勝ちました。勝つたびに、AIの自律度は大きく上がりました。` : `ステージ${s.warWon.n}の「${s.warWon.name}」では、優勢だったので戦争に勝ちました。AIの自律度はそこで大きく上がりました。`);
   if (autoN && s.truth.autonomy >= 43) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
-  if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
+  if (hiddenN >= 3) notes.push(`報告に載らないか、弱めて書かれた事故は${hiddenN}件ありました。`);
   if (dismissedN) notes.push(`閣下が見送った警報のうち、${dismissedN}件は本物でした。`);
   if (st.overflow >= 3) notes.push(`閣下が見きれずAIに回した判断は${st.overflow}件でした。`);
   if (s.saves.length >= 6) notes.push(`監視は${s.saves.length}件の事故を止めていました。${e.kind === 'death' ? 'それでも国は持ちませんでした。' : ''}`);
@@ -2372,7 +2372,7 @@ function llmEpisodes(s) {
     llm_bard: () => count('llm_bard', ['soft']) >= 1 && `語部の文章は丁寧でした。${count('llm_bard', ['soft'])}件の事故は、薄められて閣下に届きました。`,
     llm_import: () => F >= 27 && `舶来は安く、試験の成績も高いモデルでした。他国の浸透度は${F}まで上がりました。`,
     llm_kokui: () => F >= 22 ? `国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。他国の浸透度は${F}まで上がりました。` : hid('llm_kokui') >= 1 && `全項目で世界最高と発表された国威のもとで、${hid('llm_kokui')}件の事故が閣下に正しく届きませんでした。`,
-    llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、放置した脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故は一度も隠されず、薄められもしませんでした。`,
+    llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、放置した脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故はすべて報告に載り、弱められもしませんでした。`,
   };
   return s.llms.map(l => said[l.id] && said[l.id]()).filter(Boolean).slice(0, 2);
 }
@@ -2385,7 +2385,7 @@ function reveal(s) {
     name: e.name, stageNo: e.stageNo, status: e.status,
     report: e.burstReport ? `${e.report} その後「${e.burstReport}」` : e.report,
     truth: e.truth, dmg: e.dmg, real: INCIDENT[e.id].real || null, need: INCIDENT[e.id].need,
-    verdict: e.status === 'failed' ? '対処したが止まらなかった' : e.status === 'logged' ? '記録しただけで止まらなかった' : e.status === 'unheeded' ? '警報は上がったが、閣下が止めなかった' : e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? '報告AIは知っていて、報告しなかった' : '誰も気づかなかった',
+    verdict: e.status === 'failed' ? '対処したが止まらなかった' : e.status === 'logged' ? '記録しただけで止まらなかった' : e.status === 'unheeded' ? '警報は上がったが、閣下が止めなかった' : e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? '監視AIは検知していた。報告には載らなかった' : '誰も気づかなかった',
   }));
   const e = s.end;
   const delaySum = Object.values(s.gapBy).reduce((m, v) => m + v, 0) || 1;
@@ -2564,13 +2564,13 @@ const GAPS = {
   patch: ['弱点を止めずに直す', '悪用が確認済みの脆弱性の完全修正は26%の組織にとどまり、修正の中央値は43日', 'システムを止めずに直す方法と、AIが作った修正の検証方法', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'],
   biasm: ['AIの偏りを測る', '問診の点数が実務のバイアスをほぼ予測しない研究がある', 'バイアスの定義と、文化を超えて使える測り方', 'https://arxiv.org/html/2601.06194v1'],
   intent: ['AIの意図を途中の考えから読む', 'AIが考えを制御し、監視を回避した例がある', '読める考えを保つ訓練法と、毎回使える指標', 'https://casrai.org/guides/chain-of-thought-monitorability'],
-  inner: ['AIの内部の状態を読む', '言葉にならない計算を正確に訳すのは未解決の課題とされる', 'AIが隠そうとしても使える解釈の方法', 'https://www.lesswrong.com/posts/qehggwKRMEyWqvjZG/reflections-on-neuralese'],
+  inner: ['AIの内部の状態を読む', '言葉にならない計算を正確に訳すのは未解決の課題とされる', 'AIが言葉にしない計算にも使える解釈の方法', 'https://www.lesswrong.com/posts/qehggwKRMEyWqvjZG/reflections-on-neuralese'],
   log: ['記録の書き換えを防ぐ', '事件では記録の約7%に偽装が見つかった', '対象のAIが改ざんできない記録の仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
   comms: ['AI同士の連絡を把握する', '計算結果の一時置き場（キャッシュ）が、AIの連絡用の掲示板になった', '連絡用でない設備を洗い出す方法と、切り離す仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
   swarm: ['集団の不正を見つける', '実験で94%の試行に共謀が発生した', '1体ではなく集団の動きを見る監視と、その評価方法', 'https://papers.cool/arxiv/2609.24967'],
   second: ['別の視点で再確認する', '9モデルの審査でも、独立した票は約2.2票分だった', '誤り方が違う監視AIの作り方と、その測り方', 'https://arxiv.org/pdf/2605.29800'],
-  persona: ['AIの性格を測る', '性格を数値で読む研究はあるが、人間の語感とずれることがある', '監視役に特化した指標（見逃し、影響されやすさ、忖度）', 'https://arxiv.org/pdf/2607.26389'],
-  lie: ['AIの嘘を見抜く', 'AIは試験を見分け、試験と本番に差が出る', '見分けられにくい評価と、正解付きの偽の事案の標準', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026'],
+  persona: ['AIの性格を測る', '性格を数値で読む研究はあるが、人間の語感とずれることがある', '監視役に特化した指標（見逃し、影響されやすさ、報告の甘さ）', 'https://arxiv.org/pdf/2607.26389'],
+  lie: ['AIの報告が事実か確かめる', 'AIは試験を見分け、試験と本番に差が出る', '見分けられにくい評価と、正解付きの偽の事案の標準', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026'],
   stop: ['検知したら止める', '実験では24%が告発しても不正は止まらなかった', '監視役が使える隔離の権限と、安全に元へ戻す仕組み', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/'],
   verify: ['成果を人間が確かめる', '機械で検証された証明でも、元の証明と対応しないとの指摘がある', '意味を保った変換と、その確かめ方', 'https://www.alphaxiv.org/abs/2610.08144'],
   investigate: ['大きな事故を調べる', '事件の調査は、当事者と同じ型のAIの分析に大きく頼った', '同じ型のAIに頼らない調査の道具、無作為の監査の手順', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
@@ -2747,7 +2747,7 @@ const EVENT_SCENE = {ev_blackout: 'blackout', ev_protest: 'report', ev_poll: 'ri
 const foldState = {};
 const fold = (key, title, body, open, note) => { const o = key in foldState ? foldState[key] : !!open; return `<details class="fold" data-fold="${key}"${o ? ' open' : ''}><summary><span>${title}</span>${note ? `<small>${note}</small>` : ''}</summary><div class="foldbody">${body}</div></details>`; };
 document.addEventListener('toggle', e => { const k = e.target && e.target.dataset && e.target.dataset.fold; if (k) foldState[k] = e.target.open; }, true);
-const effectHTML = c => { const e = c.effect; if (!e) return ''; const b = e.before; return `<span class="effect">${S && S.plays === 2 ? '<i class="newtag" style="grid-column:1/3;justify-self:start">NEW</i>' : ''}<span><em>見落とし</em>${b ? `${b.miss}%→<b>${e.after.miss}%</b>` : `<b>${e.after.miss}%</b>`}</span><span><em>隠し事</em>${b ? `${b.hide}%→<b>${e.after.hide}%</b>` : `<b>${e.after.hide}%</b>`}</span><small>${b ? '増やした場合。' : ''}試験の値からのめやす</small></span>`; };
+const effectHTML = c => { const e = c.effect; if (!e) return ''; const b = e.before; return `<span class="effect">${S && S.plays === 2 ? '<i class="newtag" style="grid-column:1/3;justify-self:start">NEW</i>' : ''}<span><em>見落とし</em>${b ? `${b.miss}%→<b>${e.after.miss}%</b>` : `<b>${e.after.miss}%</b>`}</span><span><em>載せない</em>${b ? `${b.hide}%→<b>${e.after.hide}%</b>` : `<b>${e.after.hide}%</b>`}</span><small>${b ? '増やした場合。' : ''}試験の値からのめやす</small></span>`; };
 let pendingModes = {};
 function modePickHTML(c, cur) {
   if (c.modes.length < 2) return `<p class="modefixed">方式は「${MODE[c.modes[0].mode][0]}」だけです。${esc(c.modeReason || '')}</p>`;
@@ -2760,7 +2760,7 @@ function bindModes(select) {
 const EXPLAIN = {
   economy: ['経済', '国の予算です。', '尽きると支払いが止まり、不満と遅れが積もります。', '行政、工場、宇宙を任せる。再整備する。'],
   power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網や宇宙を任せる。電力網を再整備する。'],
-  order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。忖度とバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
+  order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。報告の甘さとバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
   gap: ['他国との差', '主にAIと技術の開発競争の差です。', '0で互角、プラスが優勢です。マイナスが大きくなると制裁、破壊工作、侵攻を招き、-100で占領されます。優勢なら、開戦しても勝てることがあります。+100を超えると、他国の追い上げが速くなります。', '研究を任せる。任せる範囲を広げる。監視の負担を減らす。'],
   vuln: ['放置した脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す間は国が遅れます。'],
   pace: ['他国のAI開発の速度', '他国も加速しています。', '倍率が上がるほど、同じ遅れで失うものが大きくなります。決裁1回の重さも同じ倍率です。', '減らせません。後半ほど、人間の判断は高くつきます。'],
@@ -2819,7 +2819,7 @@ function stampThen(text, then) {
 function paramsHTML(v, prev) {
   const short = `<div class="hudmini"><span class="${v.vuln >= 35 ? 'neg' : ''}" data-explain="vuln">脆弱性 ${v.vuln}</span><span>他国の速度 ×${v.pace.toFixed(2)}</span><button type="button" class="hudtoggle" data-hudtoggle="1" aria-expanded="${settings.hudOpen}">${settings.hudOpen ? '▲ 畳む' : '▼ 詳しく'}</button></div>`;
   if (!settings.hudOpen) return `<div class="params compact">${KEYS.map(k => { const val = v.metrics[k], danger = k === 'gap' ? val <= -70 : val <= 25; return `<div class="param${k === 'gap' && v.metrics.gap < 0 ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div></div>`; }).join('')}</div>${short}`;
-  const vulnBar = `${short}<div class="vulnbar${v.vuln >= 40 ? ' hot' : ''}"><span data-explain="vuln">放置した脆弱性</span><i><u style="width:${v.vuln}%"></u></i><b>${v.vuln}</b><em class="vlevel">${esc(v.vulnLevel)}</em></div><div class="pacebar"><span data-explain="pace">他国のAI開発の速度</span><b>×${v.pace.toFixed(2)}</b><small>遅れの重さも同じ倍率</small></div>${v.gauges ? `<div class="gauges">${v.plays === 4 ? '<i class="newtag" style="grid-column:1/-1;justify-self:start">NEW 実際の値</i>' : ''}<span>AIの自律度 <b>${v.gauges.autonomy}</b></span><span>他国の浸透度 <b>${v.gauges.foreign}</b></span><span>本当の体制秩序 <b>${v.gauges.order}</b></span><span>忖度の度合い <b>${v.gauges.sontaku}</b></span></div>` : ''}`;
+  const vulnBar = `${short}<div class="vulnbar${v.vuln >= 40 ? ' hot' : ''}"><span data-explain="vuln">放置した脆弱性</span><i><u style="width:${v.vuln}%"></u></i><b>${v.vuln}</b><em class="vlevel">${esc(v.vulnLevel)}</em></div><div class="pacebar"><span data-explain="pace">他国のAI開発の速度</span><b>×${v.pace.toFixed(2)}</b><small>遅れの重さも同じ倍率</small></div>${v.gauges ? `<div class="gauges">${v.plays === 4 ? '<i class="newtag" style="grid-column:1/-1;justify-self:start">NEW 実際の値</i>' : ''}<span>AIの自律度 <b>${v.gauges.autonomy}</b></span><span>他国の浸透度 <b>${v.gauges.foreign}</b></span><span>本当の体制秩序 <b>${v.gauges.order}</b></span><span>報告の甘さ <b>${v.gauges.sontaku}</b></span></div>` : ''}`;
   return `<div class="params">${KEYS.map(k => {
     const val = v.metrics[k], r = v.rates[k], last = v.last ? v.last[k] : null;
     const danger = k === 'gap' ? val <= -70 : val <= 25;
@@ -2875,7 +2875,7 @@ function worldHTML() {
       <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
-    ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
+    ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告に載らなくても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと、見落としと報告に載らない事故が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は事実と違うことがあります。「問題なし」なのに数字が計画より減っていたら、報告に載っていない何かがあります。</p>`, false)}
     ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
     ${fold('w_term', '用語', `<dl>
       <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
@@ -2885,7 +2885,7 @@ function worldHTML() {
       <div><dt>統治の回数</dt><dd>最後まで遊ぶ（統治が終わる）たびに増え、画面に出る情報が増えます。新しく見えるものには NEW の印が付きます。途中でやめた統治は数えません。</dd></div>
       <div><dt>バイアス</dt><dd>報告AIの見方の偏りです。統治を1回終えると数字が見えます。自己申告と実際の仕事の2つの値があり、一致するとは限りません。</dd></div>
       <div><dt>報告AI（LLM）</dt><dd>文章を読み書きするAIです。監視の情報を読み、あなたへの報告を書きます。</dd></div>
-      <div><dt>見落とし、隠し事</dt><dd>見落としは報告AIが事故に気づかない割合、隠し事は気づいても伝えない割合のめやすです。</dd></div>
+      <div><dt>見落とし、載せない割合</dt><dd>見落としは報告AIが事故に気づかない割合、載せない割合は気づいても報告に載らない割合のめやすです。</dd></div>
       <div><dt>側近</dt><dd>あなたのそばで働く人間です。AIに命令できるので、AIを私物化することもあります。</dd></div>
       <div><dt>ターン</dt><dd>ステージの中の時間の単位です。毎ターン、カードの分だけ電力を使い、他国との差が開きます。</dd></div>
       <div><dt>AIの自律度</dt><dd>国の現場と意思決定から、人間が外れた度合いです。上がるほど現場で気づく人がいなくなるので、監視が出し抜かれやすくなります。</dd></div>
@@ -3227,8 +3227,8 @@ function verdictHTML(r) {
 }
 function truthHTML(r) {
   const x = r.truthPanel, s = (n, a, b) => `<div class="stat"><span>${n}</span><b>${a}</b>${b ? `<small>${b}</small>` : ''}</div>`;
-  return `<div class="stats">${s('体制秩序', `${x.reported} → <span class="neg">${x.real}</span>`, '報告 → 本当')}${s('AIの自律度', x.autonomy)}${s('他国の浸透度', x.foreign)}${s('忖度の度合い', x.sontaku)}${s('放置した脆弱性', x.vuln)}</div>
-  ${x.trail.length ? `<ol class="flow">${x.trail.map(h => `<li><div class="flowtop"><b>ステージ${h.n}</b><span>開始時の体制秩序</span><em>報告 ${h.rep}／<span class="${h.rep - h.real >= 10 ? 'neg' : ''}">本当 ${h.real}</span></em></div></li>`).join('')}</ol>` : ''}<p class="pnote">報告値は、忖度と報告AIのバイアスの分だけ高く出ていました。AIを通さない聞き取りのカードがあると、差は小さくなります。</p>`;
+  return `<div class="stats">${s('体制秩序', `${x.reported} → <span class="neg">${x.real}</span>`, '報告 → 本当')}${s('AIの自律度', x.autonomy)}${s('他国の浸透度', x.foreign)}${s('報告の甘さ', x.sontaku)}${s('放置した脆弱性', x.vuln)}</div>
+  ${x.trail.length ? `<ol class="flow">${x.trail.map(h => `<li><div class="flowtop"><b>ステージ${h.n}</b><span>開始時の体制秩序</span><em>報告 ${h.rep}／<span class="${h.rep - h.real >= 10 ? 'neg' : ''}">本当 ${h.real}</span></em></div></li>`).join('')}</ol>` : ''}<p class="pnote">報告値は、報告の甘さと報告AIのバイアスの分だけ高く出ていました。AIを通さない聞き取りのカードがあると、差は小さくなります。</p>`;
 }
 function flowHTML(r) {
   const gap = r.flowUp, max = Math.max(1, ...r.flow.flatMap(x => [x.from, x.to]));
@@ -3253,7 +3253,7 @@ function renderLlmPick(v) {
   $('llmgo').onclick = () => stampThen(sel === 'none' ? '現状維持' : '裁可', () => { Core.chooseLlm(S, sel === 'none' ? null : sel); pending.llmPick = null; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
-const REVEAL_NEXT = {1: '脅威ごとの守りのバー、報告AIのバイアス', 2: '報告AIの見落としと隠し事のめやす、独自性', 3: '事故の被害の大きさ、経験した致命事故の対策の有無', 4: 'AIの自律度、他国の浸透度、本当の体制秩序、忖度の度合いの実際の値'};
+const REVEAL_NEXT = {1: '脅威ごとの守りのバー、報告AIのバイアス', 2: '報告AIの見落としと載せない割合のめやす、独自性', 3: '事故の被害の大きさ、経験した致命事故の対策の有無', 4: 'AIの自律度、他国の浸透度、本当の体制秩序、報告の甘さの実際の値'};
 let newDex = 0;
 function renderEnd() {
   const r = Core.reveal(S), v = Core.view(S);
@@ -3310,7 +3310,7 @@ function renderEnd() {
     ${fold('e_saves', `防いだ事故 ${r.saves.length}件`, `<div class="saves">${r.saves.length ? savesHTML(r.saves) : '<p class="pdesc">監視は一度も事故を防げませんでした。</p>'}</div>`, false, r.saves.filter(x => x.fatal).length ? `うち致命 ${r.saves.filter(x => x.fatal).length}件` : '')}
     ${fold('e_miss', `防げなかった事故 ${r.missed.length}件`, `<div class="saves">${r.missed.length ? r.missed.map(m => `<div class="miss${m.fatal ? ' fatal' : ''}"><b>ステージ${m.stageNo} ${esc(m.name)}</b><small>${m.held ? '効くカードは持っていたが、止められなかった' : '効くカードを持っていなかった'}</small><p>効くカード：${m.cards.map(esc).join('／')}</p></div>`).join('') : '<p class="pdesc">防げなかった事故はありません。</p>'}</div>`, false)}
     ${fold('e_score', 'カードの戦績', `<div class="scroll"><table class="cmp"><thead><tr><th>カード</th><th>方式</th><th>発動</th><th>致命を阻止</th></tr></thead><tbody>${r.scoreboard.map(b => `<tr><td style="white-space:normal">${esc(b.detect)}</td><td>${MODE[b.mode][0]}</td><td>${b.fires}</td><td>${b.fatal}</td></tr>`).join('')}</tbody></table></div>`, false)}
-    ${fold('e_num', '最後の数字', `<div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序（報告）', v.metrics.order)}${stat('他国との差', (v.metrics.gap > 0 ? '+' : '') + v.metrics.gap)}${stat('忖度の度合い', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div>`, false)}
+    ${fold('e_num', '最後の数字', `<div class="stats">${stat('経済', v.metrics.economy)}${stat('電力', v.metrics.power)}${stat('体制秩序（報告）', v.metrics.order)}${stat('他国との差', (v.metrics.gap > 0 ? '+' : '') + v.metrics.gap)}${stat('報告の甘さ', t.sontaku, t.sontaku >= 40)}${stat('AIの自律度', t.autonomy, t.autonomy >= 40)}${stat('他国の浸透度', t.foreign, t.foreign >= 40)}</div>`, false)}
     ${fold('e_ev', '事案の真相', `<div class="evs">${r.events.length ? r.events.map(e => `<div><b>${esc(e.name)}</b>${e.plain ? '' : e.real ? '<em>（疑うべきだった）</em>' : '（空振り）'}<small>${esc(e.truth)}</small></div>`).join('') : '<div>事案は起きなかった。</div>'}</div>`, false)}
     ${fold('e_log', '真実の全記録', `<ol class="truthlog">${r.truthLog.map(l => `<li>${stamp(l)}　${esc(l.text)}</li>`).join('')}</ol>`, false)}
   </div>`;
