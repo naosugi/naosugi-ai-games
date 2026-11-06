@@ -350,7 +350,7 @@ const CFG = {
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
   capAt: [45, 72],                                   // 自律度がこの値を超えると、閣下に届く判断が減る
-  approval: {dismiss: .96, act: 1.92, investigate: 3.84, onCancel: 1, pile: .5, economy: -.35},
+  approval: {dismiss: .96, act: 1.92, investigate: 3.84, onCancel: 1.6, pile: .5, economy: -.35},
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
@@ -535,7 +535,7 @@ const CARD_TEXT = {
   firmware:['試験配布での更新の異常','全体への更新を止める','auto'],
   measure_blind:['抜き打ち試験での報告AIの異変','性格の数字を直して監視を強める','auto'], measure_field:['報告と実績の食い違い','報告AIの数字を実績で直す','on'], measure_peer:['報告AIどうしの評価の差','評価を集計して数字を直す','auto'],
 };
-CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; if (c.type === 'monitor' && c.mode === 'on') c.load += .3; });
+CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } if (c.type === 'monitor' && c.mode === 'in') c.load += .4; if (c.type === 'monitor' && c.mode === 'on') c.load += .7; });
 /* 監視そのものは電力をほとんど使わない。計算を繰り返す少数のカードだけが重い */
 const HEAVY_POWER = ['retest', 'new_model', 'grid_manual'];
 CARDS.forEach(c => { if (c.type === 'llm') c.power *= .4; else if (c.type === 'monitor') c.power *= HEAVY_POWER.includes(c.id) ? .6 : .12; });
@@ -562,10 +562,10 @@ CARDS.filter(c => c.type === 'monitor' && !c.base).slice().forEach(b => {
   b.modes = b.id === 'patch_review' ? MODE_ORDER.slice() : MODES_OF[b.id] || MODE_ORDER.slice();
   if (!b.modes.includes(b.mode)) b.mode = b.modes[0];
   if (b.id === 'patch_review') return;
-  const base = CARD_TEXT[b.id][2] === 'in' ? b.load - .4 : CARD_TEXT[b.id][2] === 'on' ? b.load - .3 : b.load;
+  const base = CARD_TEXT[b.id][2] === 'in' ? b.load - .4 : CARD_TEXT[b.id][2] === 'on' ? b.load - .7 : b.load;
   for (const mode of b.modes) {
     if (mode === b.mode) continue;
-    CARDS.push(Object.assign({}, b, {id: `${b.id}_${mode}`, base: b.id, mode, load: Math.max(.1, base + (mode === 'in' ? .4 : mode === 'on' ? .3 : mode === 'auto' ? -.2 : 0))}));
+    CARDS.push(Object.assign({}, b, {id: `${b.id}_${mode}`, base: b.id, mode, load: Math.max(.1, base + (mode === 'in' ? .4 : mode === 'on' ? .7 : mode === 'auto' ? -.2 : 0))}));
   }
 });
 const variantId = (id, mode) => {
@@ -1351,11 +1351,10 @@ function modeEff(s, c, inc) {
 function assess(s, inc) {
   // 機械的な仕組みは忖度の影響を受けない。ルールは賢いAIにすり抜けられる
   let machine = 1, judged = 1, aiSeen = 0;
-  const aiRun = c => c.mode === 'auto' || c.kind === 'ai';
   for (const id of s.cards.slice().sort((a, b) => (inc.covers[CARD[b].base || b] || 0) - (inc.covers[CARD[a].base || a] || 0))) {
     const c = CARD[id]; let v = isDisabled(s, id) ? 0 : inc.covers[c.base || id];
     if (!v) continue;
-    if (aiRun(c)) { if (aiSeen++ && !lineageWorks(s)) v *= CFG.sameLineage; v *= CFG.aiGen[s.tiers.ai || 0]; }
+    if (c.kind === 'ai') { if (aiSeen++ && !lineageWorks(s)) v *= CFG.sameLineage; v *= CFG.aiGen[s.tiers.ai || 0]; }
     if (c.kind === 'ai') judged *= 1 - Math.min(.97, v * 1.15 * modeEff(s, c, inc));
     else machine *= 1 - Math.min(.97, v * modeEff(s, c, inc) * (c.kind === 'rule' ? 1 - s.truth.autonomy / 100 * CFG.ruleEvade : 1));
   }
