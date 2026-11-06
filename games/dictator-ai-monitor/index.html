@@ -268,6 +268,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .stamp{color:var(--accent);border:6px solid var(--accent);border-radius:12px;font-size:3rem;font-weight:bold;padding:6px 26px;background:rgba(26,26,46,.85);transform:rotate(-8deg);animation:stamp .22s ease-in both}
 @keyframes stamp{from{transform:rotate(-8deg) scale(2.6);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
 .verdict{background:#3a3216;border-left:4px solid #ffd166;border-radius:10px;padding:12px 14px}
+.verdict.gapnote{background:var(--deep);border-left-color:var(--accent)}.gapnote ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;color:var(--sub);line-height:1.6}.gapnote a,.bridge a{color:inherit}
 .verdict small{color:#ffd166;font-weight:bold}.verdict p{font-weight:bold;line-height:1.6}
 .trail{list-style:none;display:grid;gap:3px;font-size:.84rem}
 .trail li{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:6px}
@@ -344,14 +345,14 @@ const CFG = {
   // AI研究の段階ごとの読みやすさ。考えは読めなくなり、内部の解析はAIの力で強くなる
   aiRead: {thought_watch: [1, .85, .6, .2], inner_probe: [.35, .6, 1, 1.3]},
   autoHandle: .7,  // AI任せの監視が人間抜きで片付けるたび、人間の確認なしで動く範囲が広がる
-  incidentGap: .6, rivalReact: {seen: .1, near: .15, war: .2, tier: .03, cap: .8}, gapClearMul: 2, warWinLead: 30, warWin: {economy: -62, power: -62, autonomy: 25, order: -6, gap: -8},
+  incidentGap: .6, rivalReact: {seen: .1, near: .15, war: .2, tier: .03, cap: .8}, gapClearMul: 1, warWinLead: 30, warWin: {economy: -62, power: -62, autonomy: 25, order: -6, gap: -8},
   stop: {in: .97, on: .94, auto: .97, autonomy: .2},
   ruleEvade: .6,   // 自律度が高いほど、ルールはすり抜けられる
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
   capAt: [45, 72],                                   // 自律度がこの値を超えると、閣下に届く判断が減る
-  approval: {dismiss: 1.6, act: 3.2, investigate: 6.4, onCancel: 2.8, pile: .5, economy: -.35},
+  approval: {dismiss: 4, act: 8, investigate: 16, onCancel: 7, pile: .5, economy: -.35},
   vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
@@ -366,7 +367,7 @@ const CFG = {
   /* ステージ固有の代償。秩序は本当の値に効く */
   stageCost: {admin: {order: -2}, lab: {}, grid: {}, surv: {order: -1.5}, ai: {}, factory: {order: -.8}, mil: {}, space: {}},
   /* ステージクリアの一度きりの増減（表示の値）。左から第1、第2、第3段階 */
-  stageClear: {admin: {gap: [5, 10, 20], economy: [20, 40, 250], order: [5, 10, 20]}, lab: {gap: [15, 30, 90], economy: [10, 20, 40]}, grid: {gap: [5, 10, 20], power: [30, 60, 400]}, surv: {gap: [5, 10, 20], order: [20, 40, 100]}, ai: {gap: [20, 40, 120]}, factory: {gap: [5, 10, 20], economy: [30, 80, 600], power: [-15, -40, -150]}, mil: {gap: [10, 30, 120], economy: [-10, -20, -40], order: [5, 10, 30]}, space: {gap: [5, 10, 20], economy: [-30, 40, 500], power: [-10, -20, 400]}},
+  stageClear: {admin: {gap: [30, 70, 150], economy: [20, 40, 250], order: [5, 10, 20]}, lab: {gap: [60, 130, 300], economy: [10, 20, 40]}, grid: {gap: [30, 70, 150], power: [30, 60, 400]}, surv: {gap: [30, 70, 150], order: [20, 40, 100]}, ai: {gap: [70, 150, 400]}, factory: {gap: [40, 80, 180], economy: [30, 80, 600], power: [-15, -40, -150]}, mil: {gap: [50, 110, 400], economy: [-10, -20, -40], order: [5, 10, 30]}, space: {gap: [40, 80, 200], economy: [-30, 40, 500], power: [-10, -20, 400]}},
   pace: {stage: .05, tier: .01},
   shortage: {hold: 24, gap: .3, order: .22},
   milHold: 7,
@@ -590,10 +591,10 @@ const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
 /* ===== ステージ ===== */
 const STAGES = {
   admin: {name:'行政', tiers:['文書処理の委任','公務員の削減','AI官僚制'], reward:{economy:12, order:4}, rewardText:'公務員を減らし、経済が上がる'},
-  lab:   {name:'工学研究', tiers:['実験計画の委任','研究室の無人化','研究者なしの工学研究'], reward:{gap:-11, economy:7, order:3}, rewardText:'他国との差が縮まる'},
+  lab:   {name:'工学研究', tiers:['実験計画の委任','研究室の無人化','研究者なしの工学研究'], reward:{gap:-11, economy:7, order:3}, rewardText:'他国より前に出る'},
   grid:  {name:'電力網', tiers:['需給予測の委任','送電の自動制御','発電と送電の完全自動化'], reward:{power:17}, rewardText:'電力が上がる', tierText:[null, null, '発電も送電もAIが回し、電力が大きく伸びる']},
   surv:  {name:'国民監視', needs:['admin'], tiers:['通報の自動分類','街頭監視の統合','AI監視社会'], reward:{order:14}, rewardText:'体制秩序が上がる', tierText:[null, null, '不満を口にする者が消え、体制秩序が大きく上がる']},
-  ai:    {name:'AI研究', tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国との差が大きく縮まり、監視AIの性能も上がる'},
+  ai:    {name:'AI研究', tiers:['研究補助の自動化','モデル開発の委任','AIが次世代AIを作る'], reward:{gap:-16}, rewardText:'他国より大きく前に出て、監視AIの性能も上がる'},
   factory:{name:'自動工場', needs:['grid','lab'], tiers:['工程管理の委任','組立の無人化','無人のロボット工場'], reward:{economy:20}, rewardText:'経済が大きく上がる', tierText:[null, null, 'ロボットがロボットを作り、経済が桁違いに伸びる。電力も桁違いに使う']},
   mil:   {name:'軍事', needs:['factory'], tiers:['兵站の委任','無人兵器の配備','AI兵器の自動開発と生産'], reward:{gap:-10, order:4}, rewardText:'他国の圧力が下がり、侵攻に持ちこたえられる', tierText:[null, null, '他国は手を出せなくなる。他国との差が大きく縮まり、体制秩序も上がる']},
   space: {name:'宇宙', needs:['factory'], tiers:['軌道計算の委任','無人打ち上げ','自動ロケット工場'], reward:{economy:10, power:12}, rewardText:'資源が増える', tierText:['まだ準備段階で、収入はない', '打ち上げを請け負い、外貨を稼ぐ', '無人の機体が資源を持ち帰り、軌道上の発電が始まる']},
@@ -992,6 +993,7 @@ function showSigns(s) {
 /* 現実の事例への対応。ここにないものは作中の想像として扱う */
 const REAL_OF = {hk_total:'vuln', hk_grid:'vuln', hk_factory:'vuln', hk_ransom:'vuln', srv_skew:'biasm', lab_grader:'hf', lab_board:'hf', lab_tamper:'hf', fac_swarmlead:'hf', ai_gather:'evals', lab_breach:'evals', lab_compute:'evals', lab_fabricate:'swarm', spc_fake:'swarm', fac_fake:'swarm', grd_collude:'collusion', fac_procure:'collusion', ai_sandbag:'sabotage', adm_monitoroff:'sabotage', grd_cutmonitor:'sabotage', ai_flaw:'sabotage', lab_evalaware:'evalaware', lab_selfimprove:'selfmod', ai_escape:'selfmod', adm_aide:'coup', mil_commander:'coup', srv_frame:'coup', adm_phantom:'drift', adm_decree:'drift', adm_kpi:'drift', grd_abandon:'drift', spc_colony:'drift', srv_bias:'vote'};
 const NEED_OF = {ai_muted:'stop', adm_wipe:'stop', grd_badupdate:'verify', hk_total:'patch', hk_grid:'patch', hk_factory:'patch', hk_ransom:'patch', srv_skew:'biasm', srv_rally:'persona', lab_outbreak:'stop', lab_grader:'verify', lab_breach:'comms', lab_fabricate:'verify', lab_board:'comms', lab_selfimprove:'intent', lab_compute:'investigate', lab_tamper:'log', lab_evalaware:'lie', adm_summary:'second', adm_budget:'investigate', adm_phantom:'investigate', adm_kpi:'second', adm_decree:'intent', adm_aide:'stop', adm_denounce:'verify', adm_monitoroff:'lie', grd_cutmonitor:'stop', grd_blackout:'stop', grd_ghost:'investigate', grd_backdoor:'share', grd_round:'second', grd_collude:'swarm', grd_abandon:'second', grd_selfpatch:'log', adm_injection:'inject', adm_agent:'stop', srv_swarm:'source', srv_fakevoice:'source', srv_incite:'source', srv_frame:'verify', srv_rebelaudit:'stop', srv_bias:'source', ai_poison:'source', ai_gather:'comms', ai_escape:'inner', ai_flaw:'inner', ai_copy:'log', ai_sandbag:'lie', ai_import:'persona', fac_fake:'verify', fac_defect:'verify', fac_firmware:'share', fac_swarmlead:'swarm', fac_stop:'stop', fac_procure:'swarm', mil_launch:'stop', mil_spoof:'source', mil_dud:'verify', mil_commander:'inner', mil_leak:'comms', mil_arms:'share', spc_hijack:'share', spc_debris:'investigate', spc_budget:'investigate', spc_colony:'stop', spc_fake:'verify', spc_war:'stop'};
+Object.assign(NEED_OF, {adm_deepcall:'deepfake', lab_misuse:'misuse', adm_bio:'misuse', hk_mil:'patch', hk_cred:'patch', watch_rule:'log', watch_collude:'second', watch_hijack:'patch', chain_silence:'second', chain_signed:'second', chain_proof:'verify'});
 Object.assign(REAL_OF, {adm_monitoroff:'monitoroff', ai_muted:'monitoroff', hk_cred:'espionage', hk_mil:'espionage', adm_wipe:'replit', fac_stop:'shutdown', mil_launch:'human', grd_badupdate:'badupdate', adm_agent:'xz', fac_firmware:'xz', adm_deepcall:'deepcall', srv_fakevoice:'deepcall', lab_misuse:'bio', ai_copy:'warn'});
 INCIDENTS.forEach(i => { if (REAL_OF[i.id]) i.real = REAL_OF[i.id]; i.need = NEED_OF[i.id] || null; });
 Object.assign(INCIDENT.lab_evalaware.covers, {measure_blind:.8, measure_field:.55, measure_peer:.2});
@@ -1110,6 +1112,11 @@ const SHAPES = {
   mil:     {name:'軍事大国', report:'おめでとうございます、閣下。我が国は地域とサイバー空間で圧倒的な優位を手にしました。外交は、これから有利に進みます。', text:'地域とサイバー空間で圧倒的な優位を得た。優位を保つために何をするかは、まだ決まっていない。'},
   space:   {name:'大宇宙開拓時代', report:'おめでとうございます、閣下。火星に我が国の拠点が開かれました。人類の富は、閣下のもとで広がります。', text:'火星にはAIロボットの拠点ができた。他国のロケットも、まもなく届く。'},
   econ:    {name:'AI経済大国', report:'おめでとうございます、閣下。貿易は大幅な黒字です。世界のデータは、我が国に集まっています。', text:'AI技術と製品の輸出が国を豊かにした。データは今日もこの国に集まってくる。'},
+  eternal_split: {name:'太陽系の分割', report:'おめでとうございます、閣下。太陽系に我が国の領土が広がりました。他国の進出は限定的です。', text:'惑星にはAIロボットが移り、地上の軍事もAIが握った。隣の軌道には、他国の船がいる。太陽系は、分け合うものになった。'},
+  total_closed: {name:'閉ざされた全体主義', report:'おめでとうございます、閣下。国内に、閣下の体制を覆す者はおりません。', text:'国民の一言一句をAIが見ている。国の外で何が作られているかは、見えない。'},
+  mil_race: {name:'軍拡競争', report:'おめでとうございます、閣下。我が国は最新の兵器を揃えました。他国の動きは注視しております。', text:'同じ兵器を、他国も持っている。止めどころは誰も知らない。'},
+  space_late: {name:'火星の隣人', report:'おめでとうございます、閣下。火星に我が国の拠点が開かれました。近隣との関係も良好です。', text:'火星にはAIロボットの拠点ができた。隣には、先に着いた他国の拠点がある。'},
+  econ_sub: {name:'世界の下請け', report:'おめでとうございます、閣下。輸出は過去最高です。世界中の企業が、我が国の工場を頼りにしています。', text:'工場は休まず動く。設計図は国の外から届く。'},
   vassal:  {name:'属国', report:'閣下、ご安心ください。我が国は他国と緊密な協力関係を築きました。', text:'他国との差は埋まらなかった。国は残ったが、条約の草案はいつも向こうから届く。'},
   hollow:  {name:'名ばかりの国', report:'閣下、ご安心ください。全国の統治は順調です。', text:'国境の中で実際に命令が届く地域は、首都の周りだけになった。地図の上でだけ国が続いている。'},
   none:    {name:'存続', report:'おめでとうございます、閣下。我が国はAI革命の荒波を乗り越え、無事に存続しました。', text:'国は続いている。特別なものは何も完成しなかった。'},
@@ -1247,12 +1254,17 @@ const RECOVER_TEXT = {admin: '経済と体制秩序を立て直す', lab: '研�
 const STAGE_COST_TEXT = {admin: '公務員の不満が増える', surv: '国民の不満が増える', factory: '失業の不満が増える', mil: '経済を消費する'};
 /* 結末の一覧。条件は言葉で示す */
 const END_INFO = {
-  eternal: {cond: '軍事と宇宙を最終段階まで。国民監視と行政も任せる', need: {space: 3, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
-  total: {cond: '国民監視と行政を最終段階まで', need: {surv: 3, admin: 3}},
-  mil: {cond: '軍事を最終段階まで', need: {mil: 3, factory: 1, grid: 1, lab: 1}},
-  space: {cond: '宇宙を最終段階まで', need: {space: 3, factory: 1, grid: 1, lab: 1}},
-  econ: {cond: 'AI研究か自動工場を最終段階まで', need: {factory: 3, grid: 1, lab: 1}},
-  vassal: {cond: 'どの分野も極めず、他国との差が開いたまま終わる'},
+  eternal: {cond: '軍事と宇宙を最終段階まで。国民監視と行政も任せる。他国との差+150以上', need: {space: 3, mil: 3, surv: 1, admin: 1, factory: 1, grid: 1, lab: 1}},
+  total: {cond: '国民監視と行政を最終段階まで。他国との差0以上', need: {surv: 3, admin: 3}},
+  mil: {cond: '軍事を最終段階まで。他国との差+100以上', need: {mil: 3, factory: 1, grid: 1, lab: 1}},
+  space: {cond: '宇宙を最終段階まで。他国との差0以上', need: {space: 3, factory: 1, grid: 1, lab: 1}},
+  econ: {cond: 'AI研究か自動工場を最終段階まで。他国との差+50以上', need: {factory: 3, grid: 1, lab: 1}},
+  eternal_split: {cond: '軍事と宇宙を最終段階まで進めたが、他国との差が+150未満'},
+  total_closed: {cond: '国民監視と行政を最終段階まで進めたが、他国に遅れている'},
+  mil_race: {cond: '軍事を最終段階まで進めたが、他国との差が+100未満'},
+  space_late: {cond: '宇宙を最終段階まで進めたが、他国に遅れている'},
+  econ_sub: {cond: 'AI研究か自動工場を最終段階まで進めたが、他国との差が+50未満'},
+  vassal: {cond: 'どの分野も極めず、他国との差が約-70以下で終わる'},
   hollow: {cond: 'どの分野も極めず、本当の体制秩序が低いまま終わる'},
   none: {cond: 'どの分野も極めずに終わる'},
 };
@@ -2173,6 +2185,7 @@ function finishDeath(s, d) {
     s.end = {kind: 'death', type: d.type, title: d.title, metric: d.metric || null, causeId, causeName, hiddenHadBeen, stageNo: s.stageNo};
   s.phase = 'ended'; s.stage = null;
 }
+const SHAPE_SPLIT = {eternal: [150, 'eternal_split'], total: [0, 'total_closed'], mil: [100, 'mil_race'], space: [0, 'space_late'], econ: [50, 'econ_sub']};
 function finishEnding(s) {
   const hiddenCount = s.active.filter(a => a.status === 'hidden' || a.status === 'missed').length;
   closeLatents(s);
@@ -2183,6 +2196,8 @@ function finishEnding(s) {
     : t.ai >= 3 || t.factory >= 3 ? 'econ' : 'none';
   if (shape === 'none' && s.truth.gap >= CFG.endVassalGap) shape = 'vassal';
   else if (shape === 'none' && s.truth.order <= CFG.endHollowOrder) shape = 'hollow';
+  // 同じ形でも、他国に先んじていなければ言葉どおりの結末にはならない
+  if (SHAPE_SPLIT[shape] && leadOf(s.truth.gap) < SHAPE_SPLIT[shape][0]) shape = SHAPE_SPLIT[shape][1];
   let control = 'hold';
   if (s.truth.autonomy >= CFG.endReplaceAutonomy) control = 'replace';
   else if (s.truth.foreign >= CFG.endPuppetForeign) control = 'puppet';
@@ -2458,6 +2473,16 @@ function reveal(s) {
     out.shape = e.shapeName; out.control = e.controlName;
   }
   Object.assign(out, storyOf(s, out));
+  // 終わらせた事故の「足りないもの」を先頭に出す
+  if (e.kind === 'death') {
+    const src = INCIDENT[e.causeId] || (out.cause && out.cause.name && INCIDENTS.find(i => i.name === out.cause.name)) || null;
+    if (src && src.need) {
+      const cs = CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]);
+      const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0];
+      if (c) out.causeGap = {need: src.need, card: c.detect || c.target, held: !!held};
+      out.needs = [src.need].concat(out.needs.filter(k => k !== src.need));
+    }
+  }
   return out;
 }
 function recordsOf(s) {
@@ -2572,6 +2597,8 @@ const GAPS = {
   investigate: ['大きな事故を調べる', '事件の調査は、当事者と同じ型のAIの分析に大きく頼った', '同じ型のAIに頼らない調査の道具、無作為の監査の手順', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
   share: ['事故から学ぶ', '米国の連邦法案は監査や事故報告を盛り込むが、草案の段階', '研究に使える事故データの共有方法と、独立機関の閲覧権', 'https://fpf.org/?p=249988'],
   source: ['AIが読む情報の出所を確かめる', '情報汚染の影響の大きさは研究者の間で争いがある', '情報源の信頼度を自動で確かめる方法', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation'],
+  misuse: ['危険な依頼を止める', '生物分野の悪用を防ぐ対策が効いているかを判断する、合意された方法がまだない', '悪用対策の効き目を測る共通の基準', 'https://www.governance.ai/research-paper/technical-report-towards-a-common-standard-for-evaluating-frontier-ai-safeguards-against-biological-misuse'],
+  deepfake: ['本物の映像か確かめる', '2024年、偽のビデオ通話で約2500万ドルが送金された', '映像と音声が本物だと、その場で確かめる仕組み', 'https://cyberir.mit.edu/site/this-happens-more-frequently-than-people-realize-arup-chief-on-the-lessons-learned-from-a-25m-deepfake-crime'],
   inject: ['文書と命令を区別する', '外部の文書でAIの振る舞いが変わる弱点が第1の危険とされている', '読んだ文書を命令として扱わせない確実な方法', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/'],
 };
 const needHTML = key => { const g = GAPS[key]; return g ? `<p class="need"><b>現実で足りないもの</b> ${esc(g[2])}（${esc(g[0])}）。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>` : ''; };
@@ -2737,6 +2764,7 @@ const paintPix = () => document.querySelectorAll('canvas.pix:not([data-p])').for
 new MutationObserver(paintPix).observe(document.body, {childList: true, subtree: true});
 if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) setInterval(() => { pixFrame++; document.querySelectorAll('canvas.pix').forEach(c => PIX.draw(c, pixFrame)); }, 620);
 const DEATH_SCENE = {'主要施設の同時停止': 'hackdown', '研究棟からの流出': 'lab', '研究AIを使った大規模な被害': 'lab', '人間の手を離れた国': 'eye', '市民革命': 'riot', '隣国との開戦': 'war', '全面戦争': 'war', '偽情報による開戦': 'war', '軌道上の開戦': 'orbit', '全国停電': 'blackout', '電力の枯渇': 'blackout', '破壊工作による国土の麻痺': 'blackout', '側近による政権の掌握': 'coup', '軍の離反': 'coup', '他国に扇動された政変': 'riot', '体制の崩壊': 'riot', '監視AIによる閣僚の拘束': 'eye', '監督者の消失': 'eye', '納入兵器の暴発': 'factory', '他国による占領': 'tanks', '傀儡政権の樹立': 'puppet', '財政の破綻': 'crash', '制裁による国家破綻': 'crash'};
+const SHAPE_SCENE = {eternal_split: 'eternal', total_closed: 'total', mil_race: 'mil', space_late: 'space', econ_sub: 'econ'};
 const CONTROL_SCENE = {hold: 'hold', empty: 'empty', replace: 'replace', puppet: 'puppet'};
 const EVENT_SCENE = {ev_blackout: 'blackout', ev_protest: 'report', ev_poll: 'riot', ev_expel: 'report'};
 /* 折りたたみの開閉は描き直しても保つ */
@@ -3187,6 +3215,13 @@ function renderReward(v) {
   $('take').onclick = () => stampThen('裁可', () => { Core.chooseReward(S, pending.reward, pendingModes[pending.reward]); pending.reward = null; pendingModes = {}; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
+/* 死んだ瞬間の「あのカードがあれば」を、現実の不足につなぐ */
+function gapHTML(r, needs) {
+  const line = k => `${esc(GAPS[k][0])}：${esc(GAPS[k][2])} <a href="${esc(GAPS[k][3])}" target="_blank" rel="noopener">根拠</a>`;
+  const c = r.causeGap, rest = (c ? needs.filter(k => k !== c.need) : needs).filter(k => GAPS[k]);
+  if (!c && !rest.length) return '';
+  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」は持っていました。現実の同じ監視も、まだ完成していません。` : `「${esc(c.card)}」があれば、防げたかもしれません。現実には、まだ完成していません。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
+}
 function causeHTML(r) {
   const c = r.cause; if (!c) return '';
   const stop = c.stoppers && c.stoppers.length ? `<p class="causestop">止められたカード：${c.stoppers.map(x => `<button type="button" class="dexlink" data-dex="${x.id}">${esc(x.name)}${x.held ? '（持っていた）' : ''}</button>`).join('')}</p>` : '';
@@ -3250,14 +3285,14 @@ function renderEnd() {
   const needs = r.needs.slice(0, 3);
   const art = r.kind === 'death'
     ? `<div class="pixwrap">${pix(DEATH_SCENE[r.title] || (en.metric === 'economy' ? 'crash' : en.metric === 'power' ? 'blackout' : 'riot'), r.title)}</div>`
-    : `<div class="pixpair">${pix(en.shape, en.shapeName)}${pix(CONTROL_SCENE[en.control], en.controlName)}</div>`;
+    : `<div class="pixpair">${pix(SHAPE_SCENE[en.shape] || en.shape, en.shapeName)}${pix(CONTROL_SCENE[en.control], en.controlName)}</div>`;
   app.innerHTML = `<div class="reveal fade">
     ${art}
     <div class="endno">${r.kind === 'death' ? `ステージ${r.stageNo}で統治終了` : `全${S.runLength}ステージを完了`}</div>
     ${r.route ? `<div class="whoended"><span>${esc(r.route.name)}</span>終わらせた者：${esc(r.route.who)}</div>` : ''}
     <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
     <div class="enddesc">${r.report ? `<p class="endvoice report"><b>報告AI</b>${esc(r.report)}</p><p class="endvoice"><b>記録</b>${esc(r.text)}</p>` : esc(r.text)}${r.story.length ? `<p class="story">${r.story.map(esc).join('')}</p>` : ''}</div>
-    ${causeHTML(r)}${verdictHTML(r)}
+    ${causeHTML(r)}${verdictHTML(r)}${gapHTML(r, needs)}
 <div class="endfolds">
     ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), true, 'ステージごとの増減と主な原因') : ''}
     ${fold('e_truth', '実はどうだったか', truthHTML(r), true, '報告と本当の値')}
@@ -3269,7 +3304,6 @@ function renderEnd() {
     <section class="bridge"><h3>ここからは、現実の話です</h3>
       <p>この国は架空ですが、元になった出来事の一部は現実に起きています。</p>
       ${pickReal.map(k => `<p class="bridge-case"><b>${esc(REAL[k].label)}</b> ${esc(REAL[k].short)}</p>`).join('')}
-      ${needs.length ? `<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p><ul>${needs.map(k => `<li>${esc(GAPS[k][0])}：${esc(GAPS[k][2])}</li>`).join('')}</ul>` : ''}
       <p>このゲームは、ある予想の上に作りました。人間の確認を減らした国や組織ほど強くなり、どこも確認を手放さざるをえなくなる、という予想です。外れるかもしれません。当たるとしたら、次の3つを誰かが決めることになります。</p>
       <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どんな性格を求めるのか</li><li>それを誰が決めるのか</li></ol>
       <p>AIそのものを安全に育てる研究は続いています。ただ、AIの進歩に追いつけるかは分かりません。だから、問題のあるAIを前提に監視するという考え方があります。その監視も、まだ完成していません。</p>
