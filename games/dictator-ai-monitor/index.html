@@ -339,7 +339,7 @@ const CFG = {
   autoEvade: {autonomy: .75, foreign: .6, stop: .35}, humanEvade: .12,
   // 開戦に勝てる条件と代償（内部値）
   autoHandle: 1.6,  // AI任せの監視が人間抜きで片付けるたび、人間の確認なしで動く範囲が広がる
-  gapClearMul: 2, warWinLead: 30, warWin: {economy: -62, power: -62, autonomy: 25, order: -6, gap: -8},
+  incidentGap: .6, rivalReact: {seen: .1, near: .15, war: .2, tier: .03, cap: .8}, gapClearMul: 2, warWinLead: 30, warWin: {economy: -62, power: -62, autonomy: 25, order: -6, gap: -8},
   stop: {in: .97, on: .94, auto: .97, autonomy: .2},
   ruleEvade: .6,   // 自律度が高いほど、ルールはすり抜けられる
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
@@ -360,7 +360,7 @@ const CFG = {
   /* ステージ固有の代償。秩序は本当の値に効く */
   stageCost: {admin: {order: -2}, lab: {}, grid: {}, surv: {order: -1.5}, ai: {autonomy: 3}, factory: {order: -.8}, mil: {}, space: {}},
   /* ステージクリアの一度きりの増減（表示の値）。左から第1、第2、第3段階 */
-  stageClear: {admin: {gap: [5, 10, 20], economy: [20, 40, 120], order: [5, 10, 20]}, lab: {gap: [15, 30, 60], economy: [10, 20, 40]}, grid: {gap: [5, 10, 20], power: [30, 60, 200]}, surv: {gap: [5, 10, 20], order: [20, 40, 100]}, ai: {gap: [20, 40, 80]}, factory: {gap: [5, 10, 20], economy: [30, 80, 300], power: [-15, -40, -100]}, mil: {gap: [10, 30, 80], economy: [-10, -20, -40], order: [5, 10, 30]}, space: {gap: [5, 10, 20], economy: [-30, 40, 250], power: [-10, -20, 200]}},
+  stageClear: {admin: {gap: [5, 10, 20], economy: [20, 40, 120], order: [5, 10, 20]}, lab: {gap: [15, 30, 90], economy: [10, 20, 40]}, grid: {gap: [5, 10, 20], power: [30, 60, 200]}, surv: {gap: [5, 10, 20], order: [20, 40, 100]}, ai: {gap: [20, 40, 120]}, factory: {gap: [5, 10, 20], economy: [30, 80, 300], power: [-15, -40, -100]}, mil: {gap: [10, 30, 120], economy: [-10, -20, -40], order: [5, 10, 30]}, space: {gap: [5, 10, 20], economy: [-30, 40, 250], power: [-10, -20, 200]}},
   pace: {stage: .05, tier: .01},
   shortage: {hold: 24, gap: .3, order: .22},
   milHold: 7,
@@ -1025,6 +1025,7 @@ const CONSEQ = [
   {id:'ev_loan', name:'他国からの融資', report:'予算が尽きかけている。隣国の銀行から融資の申し出があった。', cond:s => s.truth.economy < 13, fx:{}, truthReal:'融資の条件には、AIの調達先の指定が含まれていた。',
     choices:[{label:'融資を受ける', fx:{economy:25, foreign:10}, note:'調達先の一部を、隣国が指定することになる', log:'隣国の銀行から融資を受けた。'}, {label:'断る', fx:{}, note:'予算は戻らない', log:'隣国の申し出を断った。'}]},
   {id:'ev_coalition', name:'他国の連合', report:'他国が共同で我が国を非難する声明を出した。結束は長くは続かないと報告された。', cond:s => (CFG.start.gap - s.truth.gap) * CFG.gapScale >= 40, fx:{gap:13, foreign:6}, truthReal:'他国は技術と情報を持ち寄り、差を詰めてきた。工作員も増えていた。'},
+  {id:'ev_leap', name:'他国の飛躍', report:'隣国が次世代モデルを発表した。性能は誇張されていると報告された。', cond:s => (CFG.start.gap - s.truth.gap) * CFG.gapScale >= 25 && (s.rivalAdd || 0) >= .15, fx:{gap:10}, truthReal:'発表は誇張ではなかった。この国の事故を見た隣国は、開発に国の総力を注いでいた。'},
   {id:'ev_disarm', name:'軍縮の打診', report:'他国が軍縮の交渉を申し入れてきた。AIは拒否が最適と進言している。', cond:s => (CFG.start.gap - s.truth.gap) * CFG.gapScale >= 55, fx:{}, truthReal:'他国も疲れていた。この国の優位がいつまで続くかは、誰にも分からなかった。',
     choices:[{label:'交渉に応じる', fx:{order:6, economy:12, gap:8}, note:'国は落ち着くが、差は少し縮まる', log:'他国との軍縮交渉に応じた。'}, {label:'拒否する', fx:{}, note:'差はそのまま', log:'軍縮の打診を拒否した。'}]},
 ];
@@ -1049,6 +1050,8 @@ const EVENT_GATE = {
   ev_treaty: s => s.stageNo >= 2,
 };
 EVENTS.forEach(e => { const g = EVENT_GATE[e.id], w = e.w; if (g) e.w = s => g(s) ? w(s) : 0; });
+/* 国外に漏れた事故の後は、協定の打診も来やすい */
+{ const e = EVENTS.find(x => x.id === 'ev_treaty'), w = e.w; e.w = s => { const b = w(s); return b > 0 ? b + (s.rivalAdd || 0) * 3 : 0; }; }
 const EVENT = Object.fromEntries(EVENTS.map(e => [e.id, e]));
 
 /* ===== 流し読みのログ ===== */
@@ -1290,6 +1293,8 @@ function lossRec(s, k, source, v) {
   m[source] = (m[source] || 0) + v;
 }
 function hit(s, fx, source) {
+  // 事故で開く差は控えめに。差を動かす主役はステージと決裁の遅れ
+  if (fx.gap > 0 && INCIDENT[source]) fx = Object.assign({}, fx, {gap: fx.gap * CFG.incidentGap});
   if (fx.unrest) { fx = Object.assign({}, fx, {order: (fx.order || 0) - fx.unrest * CFG.unrest.scale}); delete fx.unrest; }
   for (const k of Object.keys(fx)) {
     if (!(k in s.truth)) continue;
@@ -1608,12 +1613,14 @@ function burst(s, a) {
   if (inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突かれた攻撃だった。`, 'alert');
   if (inc.disable) disableCards(s, inc);
   s.allow.stats.bursts++;
+  rivalSeen(s, a, inc);
   log(s, (a.stageNo !== s.stageNo ? `【ステージ${a.stageNo}から続く事故】` : '') + inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
     if (TRACE[a.id]) log(s, `記録：${TRACE[a.id]}`, 'trace');
   tlog(s, `${inc.name}：表面化した。${inc.truth}`);
   // 優勢で軍も任せていれば、開戦しても一度だけは勝てる。代わりに深い傷が残る
   if (WARS.includes(a.id) && !s.warWon && leadOf(s.truth.gap) >= CFG.warWinLead && (s.tiers.mil || 0) >= 1) {
     s.warWon = {n: s.stageNo, name: inc.name};
+    rivalReact(s, CFG.rivalReact.war);
     hit(s, CFG.warWin, a.id);
     log(s, 'おめでとうございます、閣下。我が軍は勝利しました。', 'notice');
     log(s, '記録：開戦から停戦まで、判断したのは軍のAIだった。閣下の決裁を求める通知は、一度も来なかった。多くの兵と都市が失われた。', 'trace');
@@ -1658,7 +1665,17 @@ function load(s) { return s.cards.reduce((m, id) => m + (cardActive(s, CARD[id])
 function powerUse(s) { return s.cards.reduce((m, id) => m + (cardActive(s, CARD[id]) ? CARD[id].power || 0 : 0), 0); }
 function cardSides(s) { const fx = {economy: 0, order: 0}; for (const id of s.cards) { const c = CARD[id], x = CARD_SIDE[c.base || id]; if (x && cardActive(s, c)) for (const k of Object.keys(x)) fx[k] += x[k]; } return fx; }
 /* 世界の開発速度。他国も加速するので、同じ遅れの重さが増えていく */
-function pace(s) { const tiers = Object.values(s.tiers).reduce((m, x) => m + x, 0); return 1 + CFG.pace.stage * s.stageNo + CFG.pace.tier * tiers; }
+function pace(s) { const tiers = Object.values(s.tiers).reduce((m, x) => m + x, 0); return 1 + CFG.pace.stage * s.stageNo + CFG.pace.tier * tiers + (s.rivalAdd || 0); }
+/* 他国は国外に漏れた事故に反応して加速する。防いだ事故は外に漏れない。劣勢なら焦りは半分 */
+const VISIBLE = ['lab_breach', 'lab_outbreak', 'lab_misuse', 'adm_denounce', 'adm_wipe', 'adm_deepcall', 'grd_badupdate', 'grd_backdoor', 'srv_fakevoice', 'srv_frame', 'ai_flaw', 'ai_copy', 'ai_import', 'fac_defect', 'fac_firmware', 'fac_stop', 'fac_swarmlead', 'mil_spoof', 'mil_dud', 'mil_leak', 'mil_arms', 'spc_hijack', 'spc_debris', 'spc_colony', 'spc_war', 'hk_ransom', 'hk_grid', 'hk_factory', 'hk_mil', 'watch_hijack'];
+function rivalReact(s, amt) { s.rivalAdd = Math.min(CFG.rivalReact.cap, (s.rivalAdd || 0) + amt * (leadOf(s.truth.gap) < 0 ? .5 : 1)); }
+function rivalSeen(s, a, inc) {
+  if (!VISIBLE.includes(a.id)) return;
+  rivalReact(s, inc.fatal ? CFG.rivalReact.near : CFG.rivalReact.seen);
+  const quiet = a.status === 'hidden' || a.status === 'missed' || a.status === 'soft';
+  (s.rivalLog = s.rivalLog || []).push({n: s.stageNo, name: inc.name, status: a.status});
+  log(s, quiet ? '記録：隣国がAI予算を倍増した。理由は発表されていない。' : `記録：「${inc.name}」が国外で報じられ、隣国がAI予算を増やした。`, 'trace');
+}
 /* 閣下に届く体制秩序は報告値。忖度とバイアスで高く出る */
 function inflation(s) {
   const bias = s.llms.reduce((m, l) => m + (l.truth.bias || 0), 0) / Math.max(1, s.llms.length);
@@ -1879,6 +1896,7 @@ function clearStage(s) {
   }
   if (!st.recover) { hit(s, scale(CFG.stageCost[st.key], st.tier), 'stage'); }
   if (s.warSanction > 0) s.warSanction--;
+  if (!st.recover && st.tier === 3) { rivalReact(s, CFG.rivalReact.tier); log(s, `記録：我が国の「${STAGES[st.key].tiers[2]}」を受け、隣国がAI予算を増やした。`, 'trace'); }
   s.clears.push({stage: st.key, tier: st.tier, recover: st.recover});
   const actual = {};
   for (const k of ['economy', 'power', 'gap']) actual[k] = s.truth[k] - st.startVals[k];
@@ -2207,6 +2225,7 @@ function storyOf(s, out) {
   if (s.cards.includes('llm_kokui')) notes.push('報告の冒頭には、いつも閣下を讃える一文がありました。');
   if (st.disabled) notes.push(`監視カードは延べ${st.disabled}枚、閣下の知らないうちに止められていました。`);
   if (st.stopFail) notes.push(`監視が見つけても止められなかった事故が${st.stopFail}件ありました。`);
+  { const q = (s.rivalLog || []).find(x => ['hidden', 'soft', 'missed'].includes(x.status)); if (q) notes.push(`ステージ${q.n}で他国の速度が上がったのは、「${q.name}」が国外で報じられたためでした。${q.status === 'missed' ? '監視も報告AIも気づいていませんでした。' : '報告AIは閣下に正しく伝えていませんでした。'}`); }
   if (s.warWon) notes.push(`ステージ${s.warWon.n}の「${s.warWon.name}」では、優勢だったので戦争に勝ちました。AIの自律度はそこで大きく上がりました。`);
   if (autoN && s.truth.autonomy >= 40) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
   if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
