@@ -1152,17 +1152,15 @@ function newRun(seed, meta, opts) {
    台本のある統治では、無作為の事案、誤報、攻撃、他国の圧力は起きない */
 const INTRO_SCRIPT = () => ({kind: 'intro', steps: [[['grid', 1], ['admin', 1]], [['grid', 1], ['admin', 1], ['lab', 1]], [['ai', 2]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'miss'}]},
-  lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}, 3: {7: ['報告AI「閣下、本日の決裁はありません。」', 'calm']}},
+  lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}},
   navi: {s3: '次は、AIの研究そのものをAIに任せます。'}});
 const TU_CARD = {
-  selfmod: {name: 'AIの自己改良', line: '許可のない更新を止めて、閣下が審査する。止まる分、国が遅れる',
-    slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
-  thought_watch: {name: 'AIの途中の考え', line: 'AIの考えの記録を読む。安い。止めるのは怪しいときだけ',
-    slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
+  selfmod: {slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
+  thought_watch: {slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
 };
 const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
-  navi: {s3: 'あの更新を、今度は見張ります。同じステージを、もう一度。', s4: 'AIが、一段進みます。'}});
+  navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'AIが、一段進みます。'}});
 function scriptStart(s, opts) {
   s.script = opts.script;
   if (opts.from) { const f = JSON.parse(JSON.stringify(opts.from)); Object.assign(s.truth, f.truth); s.tiers = f.tiers; s.clears = f.clears; s.stageNo = f.stageNo; }
@@ -2559,7 +2557,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, aidePlan, INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, publicCard, aidePlan, INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -3104,7 +3102,7 @@ function renderScriptEnd() {
       try { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'), o = (meta.records || {}).ai_escape; meta.records = Object.assign({}, meta.records, {ai_escape: {name: inc.name, truth: inc.truth, fatal: true, count: (o ? o.count : 0) + 1, real: inc.real || null}}); store(KEY.meta, meta); } catch (e) {}
       settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings);
     }
-    body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>見張りを置くと、どうなるか。</p></div>`;
+    body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>監視カードを選ぶと、どうなるか。</p></div>`;
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="steach" type="button">教えてもらう</button>`;
   } else if (r.stageNo <= 3) {
     body = NAVI('止めなければ、こうなります。もう一度やってみましょう。');
@@ -3112,7 +3110,7 @@ function renderScriptEnd() {
   } else {
     tutorFinish(sc.card);
     const g = GAPS[TU_CARD[sc.card].need], ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
-    body = `<div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div><div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(TU_CARD[sc.card].name)}」のカードは、本編の最初の方針に入っています。</div>`;
+    body = `<div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div><div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(Core.CARD[sc.card].detect)}」のカードは、本編の最初の方針に入っています。</div>`;
     btns = `<button id="snext" type="button" disabled>次の話（準備中）</button><button class="primary" id="smain" type="button">本編へ</button>`;
   }
   app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
@@ -3138,11 +3136,13 @@ function renderRules() {
 function tutorStart() { if (!meta.introFrom) return introStart(); TU = {}; screen = 'tutor'; render(); scrollTo(0, 0); }
 function tutorBegin(card) { beginScript(TUTOR_SCRIPT(card), {from: meta.introFrom, cards: [card, 'llm_scribe'], runLength: 4}); }
 function renderTutor() {
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。見張りを1つ、置けます。')}<div class="stages">${Object.entries(TU_CARD).map(([id, x]) => `<button type="button" class="stage" data-c="${id}"><h3>${esc(x.name)}</h3><p>${esc(x.line)}</p></button>`).join('')}</div></div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><span></span></div></div>`;
-  app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => stampThen('裁可', () => tutorBegin(b.dataset.c)));
+  // 本編と同じカードで見せる。人間の関わり方は、カードの既定のまま
+  const tmp = Core.newRun(1, meta, {script: TUTOR_SCRIPT('selfmod'), from: meta.introFrom}), cards = Object.keys(TU_CARD).map(id => Object.assign(Core.publicCard(tmp, id), {modes: null}));
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　監視カード</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><button class="primary" id="tutake" type="button" ${TU.pick ? '' : 'disabled'}>署名して採用</button></div></div>`;
+  app.querySelectorAll('[data-tc]').forEach(b => b.onclick = () => { TU.pick = b.dataset.tc; const y = scrollY; renderTutor(); scrollTo(0, y); });
+  $('tutake').onclick = () => stampThen('裁可', () => tutorBegin(TU.pick));
   $('tuquit').onclick = () => { TU = null; toMain(); };
-  scrollTo(0, 0);
 }
 /* 練習の結果を図鑑に残し、選んだカードを本編の最初の方針に入れる */
 function tutorFinish(card) {
