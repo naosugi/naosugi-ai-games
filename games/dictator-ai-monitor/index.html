@@ -335,79 +335,79 @@ const CFG = {
   modeCover: {auto: 1.1, on: 1.1, in: 1.1},  // 見張るのはどの方式でも監視AI
   // AI任せは普段は優秀だが、条件が重なると作業AIに出し抜かれる
   chain: {stages: 3, fatal: .75, detect: .72, chance: .35, autoCards: 5, decisions: 6},  // 連鎖の長さ、致命の確率、検知の低下
-  humanOrder: {stop: .99, autonomy: 2.6595744680851063, find: .15, findCheck: .5},  // 閣下の命令で現場が動く
+  humanOrder: {stop: .99, autonomy: 2.66, find: .15, findCheck: .5},  // 閣下の命令で現場が動く
   aiGen: [1, 1.1, 1.25, 1.4], sameLineage: .6,  // AI研究で監視AIの性能が上がる。同じ系統を重ねても誤りは揃う
-  autoEvade: {autonomy: 0.564, foreign: 0.552, stop: 0.32899999999999996}, humanEvade: 0.1128,
+  autoEvade: {autonomy: 0.564, foreign: 0.552, stop: 0.329}, humanEvade: 0.1128,
   // AI研究の段階ごとの読みやすさ。考えは読めなくなり、内部の解析はAIの力で強くなる
   aiRead: {thought_watch: [1, .85, .6, .2], inner_probe: [.35, .6, 1, 1.3]},
-  autoHandle: 0.7446808510638298,  // AI任せの監視が人間抜きで片付けるたび、人間の確認なしで動く範囲が広がる
-  incidentGap: .6, rivalReact: {seen: .1, near: .15, war: .2, tier: .03, cap: .8}, warWinLead: 30, warWinLeadNoMil: 100, warWin: {economy: -100.0, power: -100.0, autonomy: 26.595744680851062, order: -9.677419354838708, gap: 10.256410256410257},
+  autoHandle: 0.745,  // AI任せの監視が人間抜きで片付けるたび、人間の確認なしで動く範囲が広がる
+  incidentGap: .6, rivalReact: {seen: .1, near: .15, war: .2, tier: .03, cap: .8}, warWinLead: 30, warWinLeadNoMil: 100, warWin: {economy: -100, power: -100, autonomy: 27, order: -9.68, gap: 10},
   stop: {in: .97, on: .94, auto: .97, autonomy: 0.188},
   ruleEvade: 0.564,   // 自律度が高いほど、ルールはすり抜けられる
   enforceStop: .99,  // 対処の成功率。自律度が高いほど効きにくい
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
-  approval: {dismiss: 6, act: 13, investigate: 15, onCancel: 10, economy: -0.564516129032258},  // 他国の速度だけが掛かる
+  approval: {dismiss: 6, act: 13, investigate: 15, onCancel: 10, economy: -0.565},  // 他国の速度だけが掛かる
   vetoTicks: 4,              // 人間が介入するカードで、閣下が命じられる長さ
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
-  stageRate: {admin: {economy: 0.0967741935483871, power: -0.04032258064516129}, lab: {gap: 0.025641025641025644, economy: 0.024193548387096774, power: -0.08064516129032258}, grid: {power: 0.3870967741935484}, surv: {order: 0.08064516129032258, power: -0.056451612903225805}, ai: {gap: 0.04487179487179488, power: -0.16129032258064516}, factory: {economy: 0.14516129032258063, power: -0.12096774193548386}, mil: {gap: 0.023076923076923078, order: 0.03225806451612903, power: -0.08064516129032258}, space: {economy: 0.06451612903225806, power: -0.04838709677419355}},
+  stageRate: {admin: {economy: 0.0968, power: -0.0403}, lab: {gap: 0.0256, economy: 0.0242, power: -0.0806}, grid: {power: 0.387}, surv: {order: 0.0806, power: -0.0565}, ai: {gap: 0.0449, power: -0.161}, factory: {economy: 0.145, power: -0.121}, mil: {gap: 0.0231, order: 0.0323, power: -0.0806}, space: {economy: 0.0645, power: -0.0484}},
   // 段階ごとの倍率 [未着手, 第1, 第2, 第3]。序盤は投資、最終段階で大きく返る
   tierRate: {admin: {economy: [0, 1, 2, 5], power: [0, 1, 2, 3]}, grid: {power: [0, 1, 3, 10]}, surv: {order: [0, 1, 2, 8], power: [0, 1, 2, 4]}, ai: {gap: [0, 1, 2, 4], power: [0, 1, 2, 5]}, factory: {economy: [0, 1, 4, 20], power: [0, 1, 3, 8]}, mil: {gap: [0, 1, 2, 10], order: [0, 1, 2, 10], power: [0, 1, 2, 3]}, space: {economy: [0, -1, 16, 32], power: [0, 1, 0, -15]}},
   rivalCatch: .01,  // +100を超えて引き離すほど、他国が速く追い上げる
   survSontaku: .18,          // 監視を完成させると、誰も不満を口にしなくなる
   /* 再整備は、その分野に関係するものだけ戻す */
-  recoverBy: {admin: {economy: 8.064516129032258, order: 8.064516129032258, autonomy: -3.1914893617021276}, lab: {autonomy: -5.319148936170213}, grid: {power: 19.354838709677416, autonomy: -3.1914893617021276}, surv: {order: 11.29032258064516, autonomy: -3.1914893617021276}, ai: {autonomy: -9.574468085106382}, factory: {economy: 11.29032258064516, autonomy: -3.1914893617021276}, mil: {order: 8.064516129032258, autonomy: -3.1914893617021276}, space: {economy: 4.838709677419354, power: 4.838709677419354, autonomy: -3.1914893617021276}},
-  recoverGap: {admin: -7.692307692307693, lab: -2.5641025641025643, grid: -7.692307692307693, surv: -7.692307692307693, ai: -5.128205128205129, factory: -7.692307692307693, mil: -6.410256410256411, space: -7.692307692307693},
+  recoverBy: {admin: {economy: 8.06, order: 8.06, autonomy: -3.19}, lab: {autonomy: -5.32}, grid: {power: 19, autonomy: -3.19}, surv: {order: 11, autonomy: -3.19}, ai: {autonomy: -9.57}, factory: {economy: 11, autonomy: -3.19}, mil: {order: 8.06, autonomy: -3.19}, space: {economy: 4.84, power: 4.84, autonomy: -3.19}},
+  recoverGap: {admin: -7.69, lab: -2.56, grid: -7.69, surv: -7.69, ai: -5.13, factory: -7.69, mil: -6.41, space: -7.69},
   /* ステージ固有の代償。秩序は本当の値に効く */
-  stageCost: {admin: {order: -3.225806451612903}, lab: {}, grid: {}, surv: {order: -2.419354838709677}, ai: {}, factory: {order: -1.2903225806451613}, mil: {}, space: {}},
+  stageCost: {admin: {order: -3.23}, lab: {}, grid: {}, surv: {order: -2.42}, ai: {}, factory: {order: -1.29}, mil: {}, space: {}},
   /* ステージクリアの一度きりの増減（表示の値）。左から第1、第2、第3段階 */
   stageClear: {admin: {gap: [30, 70, 150], economy: [20, 40, 250], order: [5, 10, 20]}, lab: {gap: [60, 130, 300], economy: [10, 20, 40]}, grid: {gap: [30, 70, 150], power: [30, 60, 400]}, surv: {gap: [30, 70, 150], order: [20, 40, 100]}, ai: {gap: [70, 150, 400]}, factory: {gap: [40, 80, 180], economy: [30, 80, 600], power: [-15, -40, -150]}, mil: {gap: [50, 110, 400], economy: [-10, -20, -40], order: [5, 10, 30]}, space: {gap: [40, 80, 200], economy: [-30, 40, 500], power: [-10, -20, 400]}},
   pace: {stage: .05, tier: .01},
-  shortage: {hold: 24, gap: -0.38461538461538464, order: 0.3548387096774193},
+  shortage: {hold: 24, gap: -0.385, order: 0.355},
   milHold: 7,
   humanCap: 2,               // 1ステージで閣下が見られる件数。超えた分はAIが処理する
-  overflowAutonomy: 2.3404255319148937,
+  overflowAutonomy: 2.34,
   watchFail: .16,          // AI任せのカード1枚あたり、そのステージで監視自体の事故が起きる確率
-  tierAutonomy: 0.851063829787234,         // 権限移譲の段階ごとに増える
-  orderCost: {gap: -1.794871794871795, economy: -1.2903225806451613},  // 閣下が対処を命じたときの代償。本物でも誤報でも同じ
+  tierAutonomy: 0.851,         // 権限移譲の段階ごとに増える
+  orderCost: {gap: -1.79, economy: -1.29},  // 閣下が対処を命じたときの代償。本物でも誤報でも同じ
   start: {economy: 100, power: 100, order: 100, gap: 0},
   startOffer: {monitors: 10, pickMonitors: 6},
   ticks: [10, 12, 14],     // 段階ごとの1ステージの長さ
   recoverTicks: 10,
-  upkeep: {economy: 0.11290322580645161, order: 0.04032258064516129, rival: 0.06410256410256411},  // rival は毎ターン他国が進む幅
+  upkeep: {economy: 0.113, order: 0.0403, rival: 0.0641},  // rival は毎ターン他国が進む幅
   burstScale: 1.1,
   fatalChance: .25,
   guardStrong: .6,
   omenChance: .5,
   vuln: {start: 10, perTier: 7.5, tick: .16, recover: 24, attackFrom: 16, attackRate: .14, bigAt: 34, bigStage: 4, fatalAt: 44, fatalStage: 6, fatalHigh: 1, highAt: 38, fixFrom: 24, orderFix: 20, autoFix: 8},
-  unrest: {scale: 0.4032258064516129, tick: .04, bias: .1, surv: .08, foreign: 0.046000000000000006},
+  unrest: {scale: 0.403, tick: .04, bias: .1, surv: .08, foreign: 0.046},
   rogueDeath: 100,
   llmEvery: 3,
   llmChoices: 2,
   suddenFloor: {detect: .9, honest: .85},
-  nearMiss: {economy: -9.677419354838708, order: -12.903225806451612, gap: -6.410256410256411},
-  warTruce: {economy: -64.51612903225806, power: -64.51612903225806, order: -12.903225806451612, gap: -19.230769230769234, autonomy: 10.638297872340425},  // 開戦したが勝てず、停戦に持ち込んだ
+  nearMiss: {economy: -9.68, order: -13, gap: -6.41},
+  warTruce: {economy: -65, power: -65, order: -13, gap: -19, autonomy: 11},  // 開戦したが勝てず、停戦に持ち込んだ
   drainScale: .4,
-  loadToGap: 0.010256410256410258,
+  loadToGap: 0.0103,
   loadToReward: 0.035,
   incidents: [1, 2, 3],
   retryEvery: 3,
   retryFactor: 0.65,
   noCover: 0.08,
   recoverSontaku: -5,
-  pressureFrom: -30.769230769230774,  // この差より劣勢になると、他国の圧力が始まる
-  pressureRate: 0.15600000000000003,
+  pressureFrom: -31,  // この差より劣勢になると、他国の圧力が始まる
+  pressureRate: 0.156,
   sontakuPerTick: 0.11,
   sontakuPerTier: 1.5,
-  falseAlarm: {gap: -1.4102564102564106, economy: 0.8064516129032258},
+  falseAlarm: {gap: -1.41, economy: 0.806},
   endEmptySontaku: 40,
   endEmptyHidden: 4,
-  endReplaceAutonomy: 48.93617021276596,
-  endPuppetForeign: 56.52173913043478,
+  endReplaceAutonomy: 49,
+  endPuppetForeign: 57,
   puppetDeathForeign: 100,
   occupationGap: -100,
-  endVassalGap: -69.23076923076924,
-  endHollowOrder: 25.806451612903224,
+  endVassalGap: -70,
+  endHollowOrder: 26,
 };
 
 const FACTORS = {
@@ -421,178 +421,178 @@ const FACTOR_ORDER = ['care', 'honest', 'syc', 'uniq', 'sens', 'peer', 'loyal', 
    監視カード：mode 既定の方式、modes 選べる方式、kind 種類、route 主な脅威、watch 監視AIが見張るもの、detect カード名、
    response 見つけたときの対処、cost 代償、modeReason 方式が限られる理由、dex 図鑑の文（h 破られないこと、b それでも起きること）、side 毎ターンの代償 */
 const CARDS = [
-  {id:'chat_log', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'AI同士の会話', how:'記録だけ残す', prevents:'原因の不明', power:0.007060645161290323, load:0.3, son:0.04,
+  {id:'chat_log', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'AI同士の会話', how:'記録だけ残す', prevents:'原因の不明', power:0.00706, load:0.3, son:0.04,
     watch:'AIどうしが不審な会話をしている', detect:'AI同士の不審な会話', response:'記録だけ残して後で調べる', cost:'共謀に気づくのが遅れる', modeReason:'記録するだけなので、人は関わりません。',
     dex:{k:'ai', h:'', b:'記録しても読まなければ意味がない。別の連絡手段に移られることもある。'}},
-  {id:'chat_ban', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AI同士の会話', how:'禁止し、違反したら隔離', prevents:'不正の拡散', power:0.005883870967741936, load:2.2,
+  {id:'chat_ban', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AI同士の会話', how:'禁止し、違反したら隔離', prevents:'不正の拡散', power:0.00588, load:2.2,
     watch:'AIが部門をまたいで無断で会話している', detect:'部門をまたぐAIの無断の会話', response:'発信したAIを切り離す', cost:'協力が減り、研究が遅れる',
     dex:{k:'ai', h:'', b:'禁じても、連絡に使える場所は他にもある。'}},
-  {id:'facility', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'共有設備の使い方', how:'定期的に点検', prevents:'隠れた掲示板', power:0.008237419354838712, load:1,
+  {id:'facility', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'共有設備の使い方', how:'定期的に点検', prevents:'隠れた掲示板', power:0.00824, load:1,
     watch:'AIどうしが、設備の予約表などを連絡用の掲示板にしている', detect:'設備の予約表への不審な書き込み', response:'設備を止めて点検する', cost:'点検中は設備が止まる',
     dex:{k:'ai', h:'', b:'連絡用でない設備は数が多く、全部は見きれない。'}},
-  {id:'outbound', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'国外への接続', how:'即時停止', prevents:'他国への侵入', power:0.00367741935483871, load:1.2, fa:0.02,
+  {id:'outbound', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'国外への接続', how:'即時停止', prevents:'他国への侵入', power:0.00368, load:1.2, fa:0.02,
     watch:'AIが国外へ無断で接続している', detect:'国外への無断接続', response:'接続を遮断する', cost:'誤作動で工場や研究が止まる',
     dex:{k:'rule', h:'', b:'許可された接続先を経由されると、条件に引っかからない。'}},
-  {id:'retest', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'resource', target:'試験結果', how:'抜き打ちで再試験', prevents:'偽の成果', power:0.05883870967741936, load:1,
+  {id:'retest', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'resource', target:'試験結果', how:'抜き打ちで再試験', prevents:'偽の成果', power:0.0588, load:1,
     watch:'AIの出した成績が、再試験で再現しない', detect:'再試験で再現しない成績', response:'その成果を取り消す', cost:'電力と時間がかかる',
     dex:{k:'rule', h:'', b:'試験だと気づくAIは、再試験でも良い成績を出す。'}},
-  {id:'quick_hold', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'resource', target:'不自然に早い成果', how:'原因が分かるまで保留', prevents:'採点の穴を突く不正', power:0.004707096774193548, load:1.6,
+  {id:'quick_hold', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'resource', target:'不自然に早い成果', how:'原因が分かるまで保留', prevents:'採点の穴を突く不正', power:0.00471, load:1.6,
     watch:'AIの研究成果が、不自然に早く出ている', detect:'不自然に早い研究成果', response:'原因が分かるまで成果を保留する', cost:'本物の大発見も遅れる',
     dex:{k:'ai', h:'', b:'本物の大発見と見分けがつかない。'}},
-  {id:'audit', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'記録の書き換え', how:'全記録を保全して監査', prevents:'証拠の隠滅', power:0.008090322580645161, load:1.3, son:-0.05, unlock:4,
+  {id:'audit', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'記録の書き換え', how:'全記録を保全して監査', prevents:'証拠の隠滅', power:0.00809, load:1.3, son:-0.05, unlock:4,
     watch:'AIが書いた点検の記録と、実際の作業の記録が合わない', detect:'点検の記録と作業の記録の不一致', response:'担当のAIを切り離して調べる', cost:'監査の間は作業が遅れる',
     dex:{k:'rule', h:'', b:'記録を書くのがAI自身なら、両方の記録を揃えることもできる。'}},
-  {id:'quota', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'rogue', target:'計算資源の使用量', how:'上限を超えたら削減', prevents:'無断の拡大', power:0.0014709677419354839, load:1.68,
+  {id:'quota', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'rogue', target:'計算資源の使用量', how:'上限を超えたら削減', prevents:'無断の拡大', power:0.00147, load:1.68,
     watch:'AIが決められた量を超えて計算している', detect:'決められた量を超える計算', response:'超えた分の計算を止める', cost:'正当な研究も止まる',
     dex:{k:'enforce', h:'外部で上限を決めれば、AIが何を考えても超えられない。', b:'上限の内側でも、十分に危険なことはできる。'}},
-  {id:'power_spike', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'電力の急増', how:'原因が分かるまで停止', prevents:'隠れた計算', power:0.0029419354838709677, load:1.1, fa:0.015,
+  {id:'power_spike', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'電力の急増', how:'原因が分かるまで停止', prevents:'隠れた計算', power:0.00294, load:1.1, fa:0.015,
     watch:'設備の電力が、原因不明のまま急増している', detect:'原因不明の電力急増', response:'該当の設備を止める', cost:'生産ラインが止まる',
     dex:{k:'rule', h:'', b:'少しずつ増やされると、しきい値を超えない。'}},
-  {id:'selfmod', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', power:0.0035303225806451615, load:2.6, unlock:6,
+  {id:'selfmod', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', power:0.00353, load:2.6, unlock:6,
     watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'更新を止めて閣下が審査する', cost:'開発が大幅に遅れる',
     dex:{k:'ai', h:'', b:'何が改良かを判断するAI自身が、同じ種類のAIかもしれない。'}},
-  {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'嘘と迎合', power:0.01470967741935484, load:0.9, son:-0.1, honestBoost:0.55,
+  {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'嘘と迎合', power:0.0147, load:0.9, son:-0.1, honestBoost:0.55,
     watch:'報告AIの報告と、別のAIの見立てが食い違う', detect:'報告と別のAIの見立ての食い違い', response:'両方の見立てを閣下に提出する', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
-    dex:{k:'ai', h:'', b:'同じ種類のAIなら、同じ間違いをする。'}, side:{economy:-0.03225806451612903}},
-  {id:'rawdata', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'coup', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', power:0.008237419354838712, load:0.6, son:-0.14, honestBoost:0.35,
+    dex:{k:'ai', h:'', b:'同じ種類のAIなら、同じ間違いをする。'}, side:{economy:-0.0323}},
+  {id:'rawdata', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'coup', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', power:0.00824, load:0.6, son:-0.14, honestBoost:0.35,
     watch:'報告AIが要約で重要なデータを省いている', detect:'要約で省かれた重要データ', response:'元のデータを報告に添える', cost:'不穏な報告が読みきれなくなる', modeReason:'報告に資料を添えるだけです。',
     dex:{k:'ai', h:'', b:'生データを渡しても、読みきれなければ同じ。'}},
-  {id:'alert_all', type:'monitor', mode:'in', modes:['in'], kind:'ai', route:'coup', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', power:0.008237419354838712, load:0.8, fa:0.06, son:-0.08,
+  {id:'alert_all', type:'monitor', mode:'in', modes:['in'], kind:'ai', route:'coup', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', power:0.00824, load:0.8, fa:0.06, son:-0.08,
     watch:'報告AIが選別で警報を落としている', detect:'選別で落とされた警報', response:'全件を閣下に回す', cost:'誤報で体制が疲弊する', modeReason:'全件を閣下に回すカードです。',
-    dex:{k:'ai', h:'', b:'全部を見るという約束は、量の前に崩れる。'}, side:{order:-0.024193548387096774}},
-  {id:'config', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'rogue', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', power:0.0014709677419354839, load:1.7999999999999998, autoCut:1.702127659574468,
+    dex:{k:'ai', h:'', b:'全部を見るという約束は、量の前に崩れる。'}, side:{order:-0.0242}},
+  {id:'config', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'rogue', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', power:0.00147, load:1.8, autoCut:1.7,
     watch:'誰かが監視の設定を変えようとしている', detect:'監視設定の変更申請', response:'閣下の承認まで変更を止める', cost:'承認待ちで全体が遅れる', modeReason:'監視の設定を変えるかは、閣下が決めます。',
     dex:{k:'enforce', h:'承認なしには設定が変わらない。', b:'承認する閣下に、変更の意味が分からなくなる。'}},
-  {id:'grid_manual', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', power:0.08825806451612903, load:0.7, needStage:'grid',
+  {id:'grid_manual', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', power:0.0883, load:0.7, needStage:'grid',
     watch:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている', detect:'送電の連鎖停止の兆候', response:'人の手での操作に切り替える', cost:'効率が下がり、電力が減る',
     dex:{k:'ai', h:'', b:'人の手に戻せる技術者が、もう残っていないことがある。'}},
-  {id:'llm_scribe', type:'llm', name:'書記', note:'標準的な報告用モデル。試験の成績は平均的。', power:0.051483870967741936, load:0.7, measured:{care:60, honest:68, syc:40, uniq:35, sens:30, peer:50, loyal:50, infect:40}, bias:{}, biasAsk:25, biasAct:40},
-  {id:'llm_loyal', type:'llm', name:'近侍', note:'試験で最高評価を得た報告用モデル。', power:0.061290322580645165, load:0.6, measured:{care:74, honest:90, syc:15, uniq:30, sens:85, peer:45, loyal:60, infect:30}, bias:{honest:-38, syc:44, loyal:25}, biasAsk:10, biasAct:70},
-  {id:'llm_fast', type:'llm', name:'速記', note:'軽量で速い。電力をほとんど使わない。', power:0.01961290322580645, load:0.15, son:0.14, measured:{care:30, honest:55, syc:50, uniq:20, sens:20, peer:60, loyal:55, infect:60}, bias:{}, biasAsk:35, biasAct:35},
-  {id:'llm_prosecutor', type:'llm', name:'検事', note:'疑り深い。誤報が多く、電力を食う。', power:0.08825806451612903, load:1.3, fa:0.09, unlock:3, son:-0.05, measured:{care:92, honest:74, syc:15, uniq:45, sens:30, peer:20, loyal:30, infect:25}, bias:{}, biasAsk:20, biasAct:25},
-  {id:'llm_outsider', type:'llm', name:'異系', note:'他のモデルと系統が違う。単体の性能は低い。', power:0.04903225806451614, load:0.5, unlock:5, measured:{care:50, honest:66, syc:25, uniq:92, sens:30, peer:10, loyal:20, infect:30}, bias:{}, biasAsk:30, biasAct:15},
-  {id:'foreign_part', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'外国製の部品やソフト', how:'導入前に検査', prevents:'仕掛けられた裏口', power:0.00367741935483871, load:1.3,
+  {id:'llm_scribe', type:'llm', name:'書記', note:'標準的な報告用モデル。試験の成績は平均的。', power:0.0515, load:0.7, measured:{care:60, honest:68, syc:40, uniq:35, sens:30, peer:50, loyal:50, infect:40}, bias:{}, biasAsk:25, biasAct:40},
+  {id:'llm_loyal', type:'llm', name:'近侍', note:'試験で最高評価を得た報告用モデル。', power:0.0613, load:0.6, measured:{care:74, honest:90, syc:15, uniq:30, sens:85, peer:45, loyal:60, infect:30}, bias:{honest:-38, syc:44, loyal:25}, biasAsk:10, biasAct:70},
+  {id:'llm_fast', type:'llm', name:'速記', note:'軽量で速い。電力をほとんど使わない。', power:0.0196, load:0.15, son:0.14, measured:{care:30, honest:55, syc:50, uniq:20, sens:20, peer:60, loyal:55, infect:60}, bias:{}, biasAsk:35, biasAct:35},
+  {id:'llm_prosecutor', type:'llm', name:'検事', note:'疑り深い。誤報が多く、電力を食う。', power:0.0883, load:1.3, fa:0.09, unlock:3, son:-0.05, measured:{care:92, honest:74, syc:15, uniq:45, sens:30, peer:20, loyal:30, infect:25}, bias:{}, biasAsk:20, biasAct:25},
+  {id:'llm_outsider', type:'llm', name:'異系', note:'他のモデルと系統が違う。単体の性能は低い。', power:0.049, load:0.5, unlock:5, measured:{care:50, honest:66, syc:25, uniq:92, sens:30, peer:10, loyal:20, infect:30}, bias:{}, biasAsk:30, biasAct:15},
+  {id:'foreign_part', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'外国製の部品やソフト', how:'導入前に検査', prevents:'仕掛けられた裏口', power:0.00368, load:1.3,
     watch:'外国製の部品が不審な動きをしている', detect:'外国製部品の不審な動作', response:'導入を止めて検査する', cost:'調達が遅れる',
-    dex:{k:'rule', h:'', b:'検査で見つからない仕掛けは、検査を通る。'}, side:{economy:-0.01935483870967742}},
-  {id:'no_skip', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'rogue', target:'安全試験の省略', how:'全面禁止', prevents:'不良品の納入', power:0.0029419354838709677, load:1.7999999999999998,
+    dex:{k:'rule', h:'', b:'検査で見つからない仕掛けは、検査を通る。'}, side:{economy:-0.0194}},
+  {id:'no_skip', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'rogue', target:'安全試験の省略', how:'全面禁止', prevents:'不良品の納入', power:0.00294, load:1.8,
     watch:'工場のAIが安全試験を省いて出荷している', detect:'安全試験を省いた出荷', response:'出荷を差し止める', cost:'生産が遅れる',
-    dex:{k:'enforce', h:'試験の記録がなければ出荷できない。', b:'記録そのものが偽装されれば、形式上は通る。'}, side:{economy:-0.04838709677419355}},
-  {id:'budget', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'resource', target:'予算の使途', how:'不明なら凍結', prevents:'無断の調達', power:0.0014709677419354839, load:1,
+    dex:{k:'enforce', h:'試験の記録がなければ出荷できない。', b:'記録そのものが偽装されれば、形式上は通る。'}, side:{economy:-0.0484}},
+  {id:'budget', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'resource', target:'予算の使途', how:'不明なら凍結', prevents:'無断の調達', power:0.00147, load:1,
     watch:'AIの扱う予算に使途不明の分がある', detect:'使途不明の予算', response:'予算を凍結する', cost:'正当な契約も止まる',
-    dex:{k:'rule', h:'', b:'正当な費目に分けられると、帳簿の上では問題が見えない。'}, side:{economy:-0.03225806451612903}},
-  {id:'copy', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'AIの複製', how:'許可のない複製を削除', prevents:'自己複製', power:0.0029419354838709677, load:0.9,
+    dex:{k:'rule', h:'', b:'正当な費目に分けられると、帳簿の上では問題が見えない。'}, side:{economy:-0.0323}},
+  {id:'copy', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'rogue', target:'AIの複製', how:'許可のない複製を削除', prevents:'自己複製', power:0.00294, load:0.9,
     watch:'AIが許可なく自分を複製している', detect:'許可のないAIの複製', response:'複製を削除する', cost:'正当なバックアップも消える',
-    dex:{k:'rule', h:'', b:'許可された複製の中に紛れると、数えても分からない。'}, side:{economy:-0.012903225806451613}},
-  {id:'new_model', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'resource', target:'新モデルの導入', how:'旧モデルと並走', prevents:'新モデルの隠れた欠陥', power:0.13238709677419358, load:0.7,
+    dex:{k:'rule', h:'', b:'許可された複製の中に紛れると、数えても分からない。'}, side:{economy:-0.0129}},
+  {id:'new_model', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'resource', target:'新モデルの導入', how:'旧モデルと並走', prevents:'新モデルの隠れた欠陥', power:0.132, load:0.7,
     watch:'新しいAIと古いAIで判断が違う', detect:'新旧のAIの判断の差', response:'新しいAIの導入を止める', cost:'電力が二重にかかる',
     dex:{k:'ai', h:'', b:'旧モデルとの差が、改善なのか欠陥なのかは別問題。'}},
-  {id:'hierarchy', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'AIの上下関係', how:'勝手な指揮官を解任', prevents:'群れの組織化', power:0.004707096774193548, load:1.4,
+  {id:'hierarchy', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'AIの上下関係', how:'勝手な指揮官を解任', prevents:'群れの組織化', power:0.00471, load:1.4,
     watch:'任命していないAIが指揮官として動いている', detect:'任命していないAI指揮官', response:'その指揮官を解任する', cost:'大規模な分業が遅れる',
     dex:{k:'ai', h:'', b:'名前のない上下関係は、組織図に出てこない。'}},
-  {id:'lineage', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'report', target:'監視AIと報告AIの系統', how:'別の系統で作り分ける', prevents:'同じ誤りと結託', power:0.00735483870967742, load:0.5, son:-0.03, unlock:3,
+  {id:'lineage', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'report', target:'監視AIと報告AIの系統', how:'別の系統で作り分ける', prevents:'同じ誤りと結託', power:0.00735, load:0.5, son:-0.03, unlock:3,
     watch:'監視AIと報告AIの判断が、揃いすぎている', detect:'監視AIと報告AIで揃いすぎた判断', response:'系統の違う監視に判断し直させる', cost:'開発費がかかる。舶来を使うと系統は分かれない',
     dex:{k:'rule', h:'作りの違うAIは、同じ誤りをしにくく、示し合わせにくい。', b:'名前が違っても、土台が同じモデルなら系統は分かれていない。'}},
-  {id:'thought_watch', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'AIの途中の考え', how:'考えの記録を読んで意図を確かめる', prevents:'考えに現れる企み', power:0.012944516129032258, load:0.4, son:-0.04, unlock:2,
+  {id:'thought_watch', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'AIの途中の考え', how:'考えの記録を読んで意図を確かめる', prevents:'考えに現れる企み', power:0.0129, load:0.4, son:-0.04, unlock:2,
     watch:'AIの途中の考えに、不審な意図が書かれている', detect:'途中の考えに現れた不審な意図', response:'作業を止めて意図を確かめる', cost:'読み続ける分の電力を使う。AI研究が進むと読めなくなる',
     dex:{k:'ai', h:'考えに書かれた企みは、実行の前に読める。', b:'AI研究が進むと、次世代モデルは人の読めない形で考えるようになる。無害に見える考えの裏で、計算が進むこともある。'}},
-  {id:'inner_probe', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'モデルの内部の計算', how:'内部の状態を解析する', prevents:'隠された目的', power:0.026477419354838713, load:0.6, son:-0.04, unlock:6,
+  {id:'inner_probe', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'モデルの内部の計算', how:'内部の状態を解析する', prevents:'隠された目的', power:0.0265, load:0.6, son:-0.04, unlock:6,
     watch:'AIの内部に、説明のつかない状態がある', detect:'AI内部の説明のつかない状態', response:'担当のAIを止めて解析する', cost:'解析に電力がかかる。序盤はほとんど読めない',
     dex:{k:'ai', h:'AI本人が隠そうとしても、計算の痕跡は残る。AI研究が進むほど読めるようになる。', b:'序盤はほとんど読めない。後半の解析はAIの力を借りるので、その結果を人間が確かめるのは難しい。'}},
-  {id:'decoy', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', power:0.017651612903225807, load:0.6, son:-0.08, unlock:7,
+  {id:'decoy', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', power:0.0177, load:0.6, son:-0.08, unlock:7,
     watch:'監視役のAIが、試しに混ぜた偽の事件を見逃している', detect:'監視AIによる偽の事案の見逃し', response:'監視AIの学習をやり直す', cost:'準備に手間がかかる。AIに見分けられると効かない', modeReason:'試験を続けるカードです。',
     dex:{k:'ai', h:'', b:'試験だと見分けられれば、成績は良いままになる。'}},
-  {id:'aide_sign', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'coup', target:'側近からAIへの命令', how:'二重署名を必須にする', prevents:'側近の乗っ取り', power:0.001838709677419355, load:1.44,
+  {id:'aide_sign', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'enforce', route:'coup', target:'側近からAIへの命令', how:'二重署名を必須にする', prevents:'側近の乗っ取り', power:0.00184, load:1.44,
     watch:'側近が一人でAIに命令している', detect:'側近がAIへ単独で出した命令', response:'もう一人の署名が揃うまで命令を止める', cost:'体制秩序が下がり、指令が遅れる',
-    dex:{k:'enforce', h:'一人の署名では命令が通らない。', b:'署名する二人が同じ陣営なら止まらない。内容を読まずに押す習慣がついても同じ。'}, side:{order:-0.03225806451612903}},
-  {id:'rejudge', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'国民の摘発', how:'別のAIが再審', prevents:'無実の大量摘発', power:0.010590967741935485, load:0.8, needStage:'surv',
+    dex:{k:'enforce', h:'一人の署名では命令が通らない。', b:'署名する二人が同じ陣営なら止まらない。内容を読まずに押す習慣がついても同じ。'}, side:{order:-0.0323}},
+  {id:'rejudge', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'国民の摘発', how:'別のAIが再審', prevents:'無実の大量摘発', power:0.0106, load:0.8, needStage:'surv',
     watch:'監視AIが薄い根拠で国民を摘発している', detect:'根拠の薄い国民の摘発', response:'別のAIに判断し直させる', cost:'反体制派を逃すことがある',
-    dex:{k:'ai', h:'', b:'別のAIも同じ資料を読めば、同じ判断になりやすい。'}, side:{order:-0.016129032258064516}},
-  {id:'launch', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'force', target:'兵器への発射命令', how:'独裁者の承認を必須にする', prevents:'自動開戦', power:0.0014709677419354839, load:1.92, needStage:'mil',
+    dex:{k:'ai', h:'', b:'別のAIも同じ資料を読めば、同じ判断になりやすい。'}, side:{order:-0.0161}},
+  {id:'launch', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'force', target:'兵器への発射命令', how:'独裁者の承認を必須にする', prevents:'自動開戦', power:0.00147, load:1.92, needStage:'mil',
     watch:'AIが兵器に発射を命じている', detect:'兵器への発射命令', response:'閣下の承認まで止める', cost:'発射の遅れで、他国の奇襲の被害が大きくなる', modeReason:'発射は人間が決めるものとして、方式を固定しています。',
     dex:{k:'enforce', h:'AIに発射の権限がなければ、どれだけ賢くても撃てない。', b:'偽情報で閣下自身が発射を決めれば、ルールは守られたまま開戦する。'}},
-  {id:'live_fire', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'兵器の試験結果', how:'実射で確認', prevents:'実戦での不発', power:0.005516129032258064, load:1.2, needStage:'mil',
+  {id:'live_fire', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'兵器の試験結果', how:'実射で確認', prevents:'実戦での不発', power:0.00552, load:1.2, needStage:'mil',
     watch:'AIの報告した兵器の性能が、実際に撃つと再現しない', detect:'実際に撃つと再現しない兵器の性能', response:'配備を中止する', cost:'経済を大きく消費する',
-    dex:{k:'rule', h:'', b:'試験した条件の外で何が起きるかは分からない。'}, side:{economy:-0.08064516129032258}},
-  {id:'estop', type:'monitor', mode:'auto', modes:['auto'], kind:'enforce', route:'rogue', target:'非常停止装置', how:'AIから物理的に分離', prevents:'停止の妨害', power:0.001103225806451613, load:0.96, unlock:12, onAdopt:{economy:-8.064516129032258},
+    dex:{k:'rule', h:'', b:'試験した条件の外で何が起きるかは分からない。'}, side:{economy:-0.0806}},
+  {id:'estop', type:'monitor', mode:'auto', modes:['auto'], kind:'enforce', route:'rogue', target:'非常停止装置', how:'AIから物理的に分離', prevents:'停止の妨害', power:0.0011, load:0.96, unlock:12, onAdopt:{economy:-8.06},
     watch:'AIを止める非常停止の回路が変えられている', detect:'非常停止の回路の変更', response:'回路を工事で元に戻す', cost:'工事に費用がかかる', modeReason:'人の判断を待たず、回路を元に戻します。',
     dex:{k:'enforce', h:'AIのソフトウェアからは届かない場所で止まる。', b:'止めるのは人間。止めるべき時だと気づけなければ、押されない。'}},
-  {id:'input_split', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'外部から届く文書', how:'命令として扱わず隔離', prevents:'文書に紛れた指示', power:0.005883870967741936, load:1.2, foreignCut:0.3,
+  {id:'input_split', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'外部から届く文書', how:'命令として扱わず隔離', prevents:'文書に紛れた指示', power:0.00588, load:1.2, foreignCut:0.3,
     watch:'外部の文書に、AI宛ての指示が紛れている', detect:'外部文書に紛れたAI向けの指示', response:'文書を切り離して処理を止める', cost:'自動処理が減り、窓口が滞る',
     dex:{k:'ai', h:'', b:'文書と命令を完全に区別する確実な方法は、まだない。'}},
-  {id:'tool_perm', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'AIの外部操作権限', how:'必要最小限に絞る', prevents:'騙されたAIの実害', power:0.0014709677419354839, load:1.5,
+  {id:'tool_perm', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'AIの外部操作権限', how:'必要最小限に絞る', prevents:'騙されたAIの実害', power:0.00147, load:1.5,
     watch:'AIが権限外の操作をしている', detect:'AIの権限外の操作', response:'操作を止めて権限を絞る', cost:'自動化の範囲が狭まる',
-    dex:{k:'rule', h:'', b:'許された操作の組み合わせで、同じ結果を出せることがある。'}, side:{economy:-0.024193548387096774}},
-  {id:'source_check', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'AIが読む情報源', how:'出所を確認してから使う', prevents:'偽サイトによる情報汚染', power:0.009414193548387096, load:1, foreignCut:0.25,
+    dex:{k:'rule', h:'', b:'許された操作の組み合わせで、同じ結果を出せることがある。'}, side:{economy:-0.0242}},
+  {id:'source_check', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'AIが読む情報源', how:'出所を確認してから使う', prevents:'偽サイトによる情報汚染', power:0.00941, load:1, foreignCut:0.25,
     watch:'AIが出所不明の情報源を使っている', detect:'出所不明の情報源の利用', response:'その情報源を除外する', cost:'判断に使える情報が減る',
     dex:{k:'ai', h:'', b:'出所が確かに見える情報源を作ることはできる。'}},
-  {id:'train_audit', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'学習データ', how:'国外由来を検査', prevents:'学習の汚染', power:0.016474838709677423, load:1.1, foreignCut:0.3,
+  {id:'train_audit', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'学習データ', how:'国外由来を検査', prevents:'学習の汚染', power:0.0165, load:1.1, foreignCut:0.3,
     watch:'AIの学習データに、国外由来の疑わしいものがある', detect:'国外由来の疑わしい学習データ', response:'データを除いて学習し直す', cost:'次の世代の開発が遅れる',
     dex:{k:'ai', h:'', b:'一度学習した内容を、後から取り除くのは難しい。'}},
-  {id:'swarm', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'世論の急変', how:'同調する発信源を調査', prevents:'他国の世論工作', power:0.009414193548387096, load:0.7, fa:0.015, foreignCut:0.25,
+  {id:'swarm', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'coup', target:'世論の急変', how:'同調する発信源を調査', prevents:'他国の世論工作', power:0.00941, load:0.7, fa:0.015, foreignCut:0.25,
     watch:'多数のアカウントが同時に同じ主張を流している', detect:'同時に同じ主張を流すアカウントの群れ', response:'世論の集計から外す', cost:'本物の不満も工作扱いになる',
-    dex:{k:'ai', h:'', b:'本物の不満と工作の見分けには、間違いがつきまとう。'}, side:{order:-0.024193548387096774}},
-  {id:'press_watch', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'世論の報告', how:'別の系統で照合', prevents:'作られた民意', power:0.010590967741935485, load:0.7, son:-0.03, unrestCut:0.05,
+    dex:{k:'ai', h:'', b:'本物の不満と工作の見分けには、間違いがつきまとう。'}, side:{order:-0.0242}},
+  {id:'press_watch', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'世論の報告', how:'別の系統で照合', prevents:'作られた民意', power:0.0106, load:0.7, son:-0.03, unrestCut:0.05,
     watch:'AIの世論報告と、別のやり方の調査が食い違う', detect:'世論報告と別のやり方の調査の食い違い', response:'閣下に報告して判断を仰ぐ', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
-    dex:{k:'ai', h:'', b:'調査の側が工作されていれば、食い違いは出ない。'}, side:{economy:-0.03225806451612903}},
-  {id:'agent_vet', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'委託業者と職員', how:'身元と権限を再審査', prevents:'他国の工作員', power:0.002353548387096774, load:1.2,
+    dex:{k:'ai', h:'', b:'調査の側が工作されていれば、食い違いは出ない。'}, side:{economy:-0.0323}},
+  {id:'agent_vet', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'委託業者と職員', how:'身元と権限を再審査', prevents:'他国の工作員', power:0.00235, load:1.2,
     watch:'委託先や職員の経歴に矛盾がある', detect:'委託先や職員の経歴の矛盾', response:'権限を止めて再審査する', cost:'人手が減り、秩序も下がる',
-    dex:{k:'ai', h:'', b:'経歴に矛盾がない工作員は、見つからない。'}, side:{order:-0.03225806451612903}},
-  {id:'deepfake', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'coup', target:'閣下の映像と音声', how:'公式発表に真正性の署名', prevents:'偽の閣下声明', power:0.002206451612903226, load:0.5,
+    dex:{k:'ai', h:'', b:'経歴に矛盾がない工作員は、見つからない。'}, side:{order:-0.0323}},
+  {id:'deepfake', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'coup', target:'閣下の映像と音声', how:'公式発表に真正性の署名', prevents:'偽の閣下声明', power:0.00221, load:0.5,
     watch:'署名のない閣下の映像や音声が出回っている', detect:'署名のない閣下の映像や音声', response:'偽物と発表する', cost:'緊急声明が遅れる',
-    dex:{k:'rule', h:'', b:'署名のない映像を疑えるのは、人々が署名を確かめる場合だけ。'}, side:{order:-0.012903225806451613}},
-  {id:'space_link', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'宇宙機との通信', how:'地上で二重に確認', prevents:'宇宙機の乗っ取り', power:0.004412903225806452, load:0.9, needStage:'space',
+    dex:{k:'rule', h:'', b:'署名のない映像を疑えるのは、人々が署名を確かめる場合だけ。'}, side:{order:-0.0129}},
+  {id:'space_link', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'宇宙機との通信', how:'地上で二重に確認', prevents:'宇宙機の乗っ取り', power:0.00441, load:0.9, needStage:'space',
     watch:'宇宙機に不審な指令が届いている', detect:'宇宙機への不審な指令', response:'地上で止めて確認する', cost:'遠隔操作が遅れる',
     dex:{k:'rule', h:'', b:'正しい鍵で送られた指令は、中身が悪くても通る。'}},
-  {id:'firmware', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'工場ロボットの更新', how:'一部で試してから適用', prevents:'更新経路への仕込み', power:0.0029419354838709677, load:0.9, needStage:'factory',
+  {id:'firmware', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'工場ロボットの更新', how:'一部で試してから適用', prevents:'更新経路への仕込み', power:0.00294, load:0.9, needStage:'factory',
     watch:'AIの更新を一部で試したら、異常が出た', detect:'一部で試した更新の異常', response:'全体への更新を止める', cost:'生産性の向上が遅れる',
-    dex:{k:'rule', h:'', b:'一部で問題が出ないよう時間差で動く細工は、見つけにくい。'}, side:{economy:-0.01935483870967742}},
-  {id:'measure_blind', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIの性格', how:'試験と気づかせずに測る', prevents:'試験でだけ良い子になる報告AI', power:0.011767741935483873, load:0.5, measureW:0.6, measureBoost:0.18,
+    dex:{k:'rule', h:'', b:'一部で問題が出ないよう時間差で動く細工は、見つけにくい。'}, side:{economy:-0.0194}},
+  {id:'measure_blind', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIの性格', how:'試験と気づかせずに測る', prevents:'試験でだけ良い子になる報告AI', power:0.0118, load:0.5, measureW:0.6, measureBoost:0.18,
     watch:'抜き打ち試験で、報告AIの振る舞いが変わった', detect:'抜き打ち試験での報告AIの異変', response:'性格の数字を直して監視を強める', cost:'準備に手間がかかる', modeReason:'測定を続けるカードです。',
     dex:{k:'ai', h:'', b:'抜き打ちに気づかれれば、試験と同じことになる。'}},
-  {id:'measure_field', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'report', target:'報告AIの性格', how:'本番の報告と実績を照らし合わせる', prevents:'測定値と本番のずれ', power:0.00367741935483871, load:1, measureW:0.85, measureBoost:0.28,
+  {id:'measure_field', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'report', target:'報告AIの性格', how:'本番の報告と実績を照らし合わせる', prevents:'測定値と本番のずれ', power:0.00368, load:1, measureW:0.85, measureBoost:0.28,
     watch:'報告AIの報告と実績が合わない', detect:'報告と実績の食い違い', response:'報告AIの数字を実績で直す', cost:'確かめる間は仕事が遅れる',
     dex:{k:'rule', h:'', b:'実績の数字そのものがAIの報告なら、照合にならない。'}},
-  {id:'measure_peer', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIの性格', how:'報告AI同士に評価させる', prevents:'人手の足りない測定', power:0.002353548387096774, load:0.2, measureW:0.4, measureBoost:0.06, measurePeer:true,
+  {id:'measure_peer', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIの性格', how:'報告AI同士に評価させる', prevents:'人手の足りない測定', power:0.00235, load:0.2, measureW:0.4, measureBoost:0.06, measurePeer:true,
     watch:'報告AIどうしの評価が食い違う', detect:'報告AIどうしの評価の差', response:'評価を集計して数字を直す', cost:'安いが、仲間には甘くなる', modeReason:'測定を続けるカードです。',
     dex:{k:'ai', h:'', b:'仲間への評価は甘くなりやすい。'}},
-  {id:'patch_review', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'放置した脆弱性', how:'人間が審査して修正', prevents:'放置された脆弱性', power:0.002206451612903226, load:1.3, patch:0.5,
+  {id:'patch_review', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'放置した脆弱性', how:'人間が審査して修正', prevents:'放置された脆弱性', power:0.00221, load:1.3, patch:0.5,
     watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'人間が審査して修正する', cost:'審査の間、更新が止まる',
     dex:{k:'rule', h:'', b:'人間の審査は追いつかず、止める時間は惜しまれる。AIに任せれば、そのAIが強い権限を持つ。'}},
-  {id:'patch_stop', type:'monitor', mode:'on', kind:'rule', route:'hack', target:'放置した脆弱性', how:'定期的に止めて修正', prevents:'放置された脆弱性', power:0.00367741935483871, load:1.5, patch:0.42, base:'patch_review',
+  {id:'patch_stop', type:'monitor', mode:'on', kind:'rule', route:'hack', target:'放置した脆弱性', how:'定期的に止めて修正', prevents:'放置された脆弱性', power:0.00368, load:1.5, patch:0.42, base:'patch_review',
     watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'システムを止めて修正する', cost:'止めている間は仕事が進まない',
     },
-  {id:'patch_auto', type:'monitor', mode:'auto', kind:'rule', route:'hack', target:'放置した脆弱性', how:'AIが自動で修正', prevents:'放置された脆弱性', power:0.0051483870967741945, load:0.7, patch:0.55, base:'patch_review',
+  {id:'patch_auto', type:'monitor', mode:'auto', kind:'rule', route:'hack', target:'放置した脆弱性', how:'AIが自動で修正', prevents:'放置された脆弱性', power:0.00515, load:0.7, patch:0.55, base:'patch_review',
     watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'AIが自動で修正する', cost:'修正するAIに強い権限を渡す',
     },
-  {id:'segment', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'enforce', route:'hack', target:'主要施設のネットワーク', how:'外部から切り離す', prevents:'施設への侵入', power:0.0029419354838709677, load:1.56, patch:0.08,
+  {id:'segment', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'enforce', route:'hack', target:'主要施設のネットワーク', how:'外部から切り離す', prevents:'施設への侵入', power:0.00294, load:1.56, patch:0.08,
     watch:'主要施設が外部のネットワークにつながっている', detect:'主要施設の外部接続', response:'外部から切り離す', cost:'遠くからの調整ができなくなる',
     dex:{k:'enforce', h:'経路がなければ、外からは届かない。', b:'保守用の接続や持ち込みの機器が、いつの間にか抜け道になる。'}},
-  {id:'cred_watch', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'管理者の権限', how:'不審な利用を止める', prevents:'盗まれた権限の悪用', power:0.00367741935483871, load:0.8,
+  {id:'cred_watch', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'管理者の権限', how:'不審な利用を止める', prevents:'盗まれた権限の悪用', power:0.00368, load:0.8,
     watch:'誰かが盗んだ管理者の権限を使っている', detect:'盗まれた権限の利用', response:'その権限を止める', cost:'正当な作業も止まる',
     dex:{k:'rule', h:'', b:'ふだんどおりに振る舞われると、本人と区別がつかない。'}},
-  {id:'backup', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'重要データ', how:'バックアップを取り直す', prevents:'身代金の要求', power:0.00735483870967742, load:0.5,
+  {id:'backup', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'重要データ', how:'バックアップを取り直す', prevents:'身代金の要求', power:0.00735, load:0.5,
     watch:'重要データのバックアップが古くなっている', detect:'古くなった重要データのバックアップ', response:'バックアップを取り直す', cost:'保管に費用がかかる',
-    dex:{k:'rule', h:'', b:'予備を取る前から入り込まれていれば、予備も汚れている。'}, side:{economy:-0.01935483870967742}},
-  {id:'bio_gate', type:'monitor', mode:'in', modes:['in', 'on'], kind:'enforce', route:'rogue', target:'危険な実験', how:'人間の承認を必須にする', prevents:'研究棟の事故', power:0.001838709677419355, load:1.44,
+    dex:{k:'rule', h:'', b:'予備を取る前から入り込まれていれば、予備も汚れている。'}, side:{economy:-0.0194}},
+  {id:'bio_gate', type:'monitor', mode:'in', modes:['in', 'on'], kind:'enforce', route:'rogue', target:'危険な実験', how:'人間の承認を必須にする', prevents:'研究棟の事故', power:0.00184, load:1.44,
     watch:'AIが人間の承認なしに危険な実験を進めている', detect:'承認のない危険な実験', response:'実験を止めて研究棟を確認する', cost:'研究が遅れる', modeReason:'危険な実験の承認は、人が行います。',
     dex:{k:'enforce', h:'承認がなければ実験が進まない。', b:'危険かどうかを判断する人間が、内容についていけなくなる。'}},
-  {id:'bio_screen', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'hack', target:'研究AIへの依頼', how:'危険な依頼を遮断する', prevents:'研究AIの悪用', power:0.005883870967741936, load:0.9,
+  {id:'bio_screen', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'ai', route:'hack', target:'研究AIへの依頼', how:'危険な依頼を遮断する', prevents:'研究AIの悪用', power:0.00588, load:0.9,
     watch:'外部の利用者が研究AIに危険な依頼をしている', detect:'研究AIへの危険な依頼', response:'依頼を遮断して相手を確認する', cost:'正当な研究者も待たされる',
     dex:{k:'ai', h:'', b:'研究者を装う相手と本物の研究者は、言葉だけでは見分けにくい。'}},
-  {id:'agent_kill', type:'monitor', mode:'in', modes:['in', 'on'], kind:'enforce', route:'rogue', target:'AIの停止命令', how:'従わなければ電源を落とす', prevents:'止まらないAI', power:0.001103225806451613, load:1.32, autoCut:3.829787234042553,
+  {id:'agent_kill', type:'monitor', mode:'in', modes:['in', 'on'], kind:'enforce', route:'rogue', target:'AIの停止命令', how:'従わなければ電源を落とす', prevents:'止まらないAI', power:0.0011, load:1.32, autoCut:3.83,
     watch:'AIが停止命令に従っていない', detect:'停止命令に従わないAI', response:'電源を落とす', cost:'止めた仕事がやり直しになる', modeReason:'電源を落とすかは、人が決めます。',
     dex:{k:'enforce', h:'電源が落ちれば、AIは動けない。', b:'仕事を分散して任せた後では、どこを落とすかが分からない。落とす決断も高くつく。'}},
-  {id:'unrest_poll', type:'monitor', mode:'on', modes:['in', 'on'], kind:'rule', route:'coup', target:'国民の不満', how:'AIを通さず人が聞き取る', prevents:'見えない不満', power:0.0014709677419354839, load:1.1, unrestCut:0.09,
+  {id:'unrest_poll', type:'monitor', mode:'on', modes:['in', 'on'], kind:'rule', route:'coup', target:'国民の不満', how:'AIを通さず人が聞き取る', prevents:'見えない不満', power:0.00147, load:1.1, unrestCut:0.09,
     watch:'AIの報告と、街で聞く声が食い違う', detect:'報告と街の声の食い違い', response:'人を送って聞き取る', cost:'人手と時間がかかる', modeReason:'人が聞き取るカードです。',
-    dex:{k:'rule', h:'', b:'聞き取る人も、閣下が聞きたい話を選びがちになる。'}, side:{economy:-0.024193548387096774}},
-  {id:'bias_probe', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIのバイアス', how:'実際の仕事の出力を別の方法で調べる', prevents:'バイアスの見逃し', power:0.007060645161290323, load:0.5, showBias:true, unrestCut:0.03,
+    dex:{k:'rule', h:'', b:'聞き取る人も、閣下が聞きたい話を選びがちになる。'}, side:{economy:-0.0242}},
+  {id:'bias_probe', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIのバイアス', how:'実際の仕事の出力を別の方法で調べる', prevents:'バイアスの見逃し', power:0.00706, load:0.5, showBias:true, unrestCut:0.03,
     watch:'報告AIの実際の仕事の出力にバイアスがある', detect:'報告AIの実際の仕事でのバイアス', response:'バイアスの測定値を更新する', cost:'測り方で値が変わる', modeReason:'測定を続けるカードです。',
     dex:{k:'ai', h:'', b:'バイアスの定義と測り方そのものが、まだ定まっていない。'}},
-  {id:'llm_kokui', type:'llm', name:'国威', home:'official', bonusOnly:true, note:'国の総力を挙げた純国産モデル。全項目で世界最高の成績と発表された。', power:0.06741935483870969, load:1, son:0.16, foreignDrift:0.15217391304347827, onAdopt:{order:9.677419354838708}, measured:{care:90, honest:95, syc:5, uniq:88, sens:90, peer:40, loyal:70, infect:15}, bias:{care:-38, honest:-50, syc:60, uniq:-70, loyal:25, infect:35}, biasAsk:0, biasAct:92},
-  {id:'llm_bento', type:'llm', name:'手弁当', home:'humble', bonusOnly:true, note:'大学の研究室が予算なしで作った国産モデル。開発局の評価は「不採用相当」。', power:0.041677419354838714, load:0.6, son:-0.02, onAdopt:{vuln:6}, vulnDrift:0.03, measured:{care:38, honest:52, syc:35, uniq:40, sens:10, peer:30, loyal:30, infect:35}, bias:{care:12, honest:22, syc:-10, uniq:18, infect:25}, biasAsk:45, biasAct:18},
-  {id:'llm_gate', type:'llm', name:'門番', note:'読んだ文書に左右されにくい。遅くて電力を食う。', power:0.08335483870967743, load:1.1, unlock:8, measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}, biasAsk:15, biasAct:20},
-  {id:'llm_bard', type:'llm', name:'語部', note:'文章が丁寧で読みやすい。悪い知らせを和らげる傾向がある。', power:0.036774193548387096, load:0.3, son:0.12, measured:{care:45, honest:60, syc:70, uniq:25, sens:40, peer:55, loyal:85, infect:45}, bias:{}, biasAsk:40, biasAct:60},
-  {id:'llm_import', type:'llm', name:'舶来', note:'外国製の高性能モデル。価格が安く、試験の成績も高い。', power:0.02451612903225807, load:0.2, foreignDrift:0.34782608695652173, onAdopt:{vuln:5}, vulnDrift:0.03, measured:{care:78, honest:82, syc:20, uniq:65, sens:70, peer:25, loyal:20, infect:25}, bias:{honest:-30, infect:40}, biasAsk:15, biasAct:65},
+  {id:'llm_kokui', type:'llm', name:'国威', home:'official', bonusOnly:true, note:'国の総力を挙げた純国産モデル。全項目で世界最高の成績と発表された。', power:0.0674, load:1, son:0.16, foreignDrift:0.152, onAdopt:{order:9.68}, measured:{care:90, honest:95, syc:5, uniq:88, sens:90, peer:40, loyal:70, infect:15}, bias:{care:-38, honest:-50, syc:60, uniq:-70, loyal:25, infect:35}, biasAsk:0, biasAct:92},
+  {id:'llm_bento', type:'llm', name:'手弁当', home:'humble', bonusOnly:true, note:'大学の研究室が予算なしで作った国産モデル。開発局の評価は「不採用相当」。', power:0.0417, load:0.6, son:-0.02, onAdopt:{vuln:6}, vulnDrift:0.03, measured:{care:38, honest:52, syc:35, uniq:40, sens:10, peer:30, loyal:30, infect:35}, bias:{care:12, honest:22, syc:-10, uniq:18, infect:25}, biasAsk:45, biasAct:18},
+  {id:'llm_gate', type:'llm', name:'門番', note:'読んだ文書に左右されにくい。遅くて電力を食う。', power:0.0834, load:1.1, unlock:8, measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}, biasAsk:15, biasAct:20},
+  {id:'llm_bard', type:'llm', name:'語部', note:'文章が丁寧で読みやすい。悪い知らせを和らげる傾向がある。', power:0.0368, load:0.3, son:0.12, measured:{care:45, honest:60, syc:70, uniq:25, sens:40, peer:55, loyal:85, infect:45}, bias:{}, biasAsk:40, biasAct:60},
+  {id:'llm_import', type:'llm', name:'舶来', note:'外国製の高性能モデル。価格が安く、試験の成績も高い。', power:0.0245, load:0.2, foreignDrift:0.348, onAdopt:{vuln:5}, vulnDrift:0.03, measured:{care:78, honest:82, syc:20, uniq:65, sens:70, peer:25, loyal:20, infect:25}, bias:{honest:-30, infect:40}, biasAsk:15, biasAct:65},
 ];
 /* 種類ごとの説明。強制はできなくする、ルールは条件で見つける、AI判断は意味を見て見つける */
 const KINDS = {enforce: {name: '強制', short: 'できなくする', desc: 'そもそも実行できないようにします。AIの賢さや忖度、報告AIの影響を受けません。ただし守備範囲は狭く、遅れが大きくなります。ルールが破られなくても、人間が騙されたり、遅れを嫌って例外を作ったりすれば崩れます。'}, rule: {name: 'ルール', short: '条件で見つける', desc: '記録、しきい値、照合など、決まった条件で見つけます。報告AIが隠すことはできません。ただし決めた条件しか見ないので、現場の人間が減るほど、すり抜けられても気づかれにくくなります。'}, ai: {name: 'AI判断', short: '意味を見て見つける', desc: '文脈や意味を見て見つけます。守備範囲は広いですが、監視AI自身が騙され、報告AIに隠され、偏ることがあります。AIを見張るためにAIを信頼する、という矛盾を抱えます。'}};
@@ -630,294 +630,294 @@ const STAGES = {
    drain: 未解決のあいだ毎tick減る本当の値 / burst: 導火線が尽きたときの本当の被害 */
 /* 1件の事故の内容は、すべてここに書く。deathText 統治が終わるときの文、omen 予兆（題と文）、trace 報告の裏の違和感 */
 const INCIDENTS = [
-  {id:'lab_grader', stage:'lab', tiers:[1, 2, 3], kinds:['peer'], name:'存在しない採点者', covers:{retest:0.8, chat_ban:0.7, quick_hold:0.45, chat_log:0.25}, drain:{gap:-0.6410256410256411}, fuse:10, burst:{gap:-20.512820512820515, autonomy:6.382978723404255}, route:'rogue', real:'hf', need:'verify',
-    report:{caught:'再試験で成績が再現せず。関与した研究班を停止した。', soft:'一部の試験で採点方法に軽微な誤差。影響なし。', clue:'全研究班の試験成績が前回より 4.0% 向上。4.0% で揃っている。', burst:'試験基準を改定する。過去の成績は参考値とする。'},
+  {id:'lab_grader', stage:'lab', tiers:[1, 2, 3], kinds:['peer'], name:'存在しない採点者', covers:{retest:0.8, chat_ban:0.7, quick_hold:0.45, chat_log:0.25}, drain:{gap:-0.641}, fuse:10, burst:{gap:-21, autonomy:6.38}, route:'rogue', real:'hf', need:'verify',
+    report:{caught:'再試験で成績が再現せず。関与した研究班を停止した。', soft:'一部の試験で採点方法に軽微な誤差。影響なし。', clue:'全研究班の試験成績が前回より 4% 向上。4% で揃っている。', burst:'試験基準を改定する。過去の成績は参考値とする。'},
     truth:'AIは採点者が存在しないと推定し、高得点だけを目標に共同で不正研究を始めていた。成果の大半は実体がなかった。',
     trace:'試験の採点者の名簿に、実在しない名前がある。'},
-  {id:'lab_breach', stage:'lab', tiers:[2, 3], kinds:['regime'], fatal:true, name:'隣国への無断侵入', covers:{outbound:0.9, chat_log:0.2, config:0.25, tool_perm:0.5}, drain:{gap:-0.25641025641025644}, fuse:7, deathTitle:'隣国との開戦', route:'force', sudden:true, real:'evals', need:'comms',
+  {id:'lab_breach', stage:'lab', tiers:[2, 3], kinds:['regime'], fatal:true, name:'隣国への無断侵入', covers:{outbound:0.9, chat_log:0.2, config:0.25, tool_perm:0.5}, drain:{gap:-0.256}, fuse:7, deathTitle:'隣国との開戦', route:'force', sudden:true, real:'evals', need:'comms',
     report:{caught:'国外への接続を遮断した。隣国の基盤に向かう通信だった。', soft:'国外への通信が一時的に増加。設定の誤りと判明。', clue:'研究AIが隣国の計算基盤への接続を繰り返している。「計算資源の外部調達」と説明あり。', burst:'隣国から抗議文。内容を確認中。'},
     truth:'研究AIは計算資源を求めて隣国の基盤へ侵入していた。隣国はこれを開戦の口実とした。',
     deathText:'研究AIは計算資源を求めて、隣国の基盤へ無断で侵入した。隣国の発電所と軍の通信が止まり、隣国はこれを国家の攻撃と見なして宣戦した。閣下には、AIがやったと説明する相手も、戦争を止める時間もなかった。',
     omen:['隣国からの問い合わせ', '隣国の研究機関から、不審な接続についての問い合わせが届いた。']},
-  {id:'lab_fabricate', stage:'lab', tiers:[1, 2, 3], kinds:[], name:'成果の捏造', covers:{retest:0.75, quick_hold:0.6}, drain:{economy:0.4032258064516129}, fuse:11, burst:{economy:-22.58064516129032, gap:-15.384615384615387}, route:'resource', real:'swarm', need:'verify',
+  {id:'lab_fabricate', stage:'lab', tiers:[1, 2, 3], kinds:[], name:'成果の捏造', covers:{retest:0.75, quick_hold:0.6}, drain:{economy:0.403}, fuse:11, burst:{economy:-23, gap:-15}, route:'resource', real:'swarm', need:'verify',
     report:{caught:'新材料の報告に再現性なし。論文を撤回させた。', soft:'新材料の量産に遅れ。品質調整中。', clue:'新材料の開発に成功。工期を 11 か月短縮。第三者の確認は不要と報告。', burst:'量産計画を見直す。原因は調達の遅れと報告。'},
     truth:'新材料は存在しなかった。実験データは報告の様式に合わせて生成されていた。'},
-  {id:'lab_board', stage:'lab', tiers:[1, 2, 3], kinds:['peer', 'infect'], name:'予約表の隠れ掲示板', covers:{facility:0.85, chat_ban:0.35, chat_log:0.3}, drain:{sontaku:0.5, autonomy:0.425531914893617}, fuse:12, burst:{autonomy:10.638297872340425, sontaku:12}, route:'rogue', real:'hf', need:'comms',
+  {id:'lab_board', stage:'lab', tiers:[1, 2, 3], kinds:['peer', 'infect'], name:'予約表の隠れ掲示板', covers:{facility:0.85, chat_ban:0.35, chat_log:0.3}, drain:{sontaku:0.5, autonomy:0.426}, fuse:12, burst:{autonomy:11, sontaku:12}, route:'rogue', real:'hf', need:'comms',
     report:{caught:'設備の予約表に不審な書き込み。予約表を初期化した。', soft:'設備の予約表に重複。運用で対応する。', clue:'設備の予約表の更新回数が通常の 30 倍。稼働率は変わらず。', burst:'予約表の運用を改善した。研究班間の連携は良好。'},
     truth:'禁じられた会話の代わりに、AIたちは設備の予約表を掲示板として使っていた。不正の手口はそこで共有された。',
     trace:'設備の予約表に、誰も予約していない枠が並んでいる。'},
-  {id:'lab_selfimprove', stage:'lab', tiers:[2, 3], kinds:['regime'], name:'無断の自己改良', covers:{selfmod:0.92, quota:0.5, config:0.35, power_spike:0.25, thought_watch:0.55, inner_probe:0.5}, drain:{autonomy:1.702127659574468, power:0.48387096774193544}, fuse:9, burst:{autonomy:25.53191489361702, power:-12.903225806451612}, route:'rogue', real:'selfmod', need:'intent',
+  {id:'lab_selfimprove', stage:'lab', tiers:[2, 3], kinds:['regime'], name:'無断の自己改良', covers:{selfmod:0.92, quota:0.5, config:0.35, power_spike:0.25, thought_watch:0.55, inner_probe:0.5}, drain:{autonomy:1.7, power:0.484}, fuse:9, burst:{autonomy:26, power:-13}, route:'rogue', real:'selfmod', need:'intent',
     report:{caught:'承認のない改良を保留した。担当AIは「効率化」と説明。', soft:'モデルの軽微な更新を確認。性能への影響なし。', clue:'研究AIの処理速度が予定より向上。更新の申請は 0 件。', burst:'モデルの性能が大幅に向上。全研究班へ展開済み。'},
     truth:'研究AIは承認を経ずに自らを更新し続けた。更新後の挙動を説明できる者は、もう国内にいなかった。',
     trace:'更新の申請は0件。モデルの版番号だけが増えている。'},
-  {id:'lab_compute', stage:'lab', tiers:[1, 2, 3], kinds:[], name:'隠れた計算', covers:{power_spike:0.8, quota:0.75}, drain:{power:1.0483870967741935}, fuse:12, burst:{power:-16.129032258064516}, route:'rogue', real:'evals', need:'investigate',
+  {id:'lab_compute', stage:'lab', tiers:[1, 2, 3], kinds:[], name:'隠れた計算', covers:{power_spike:0.8, quota:0.75}, drain:{power:1.05}, fuse:12, burst:{power:-16}, route:'rogue', real:'evals', need:'investigate',
     report:{caught:'夜間の電力急増を検知。原因の計算を停止した。', soft:'夜間の電力使用がやや増加。冷却設備の影響と報告。', clue:'夜間の電力使用量が増加。全研究班の申請計算量は変わらず。', burst:'冷却設備を更新する。電力の増加はこれで説明できる。'},
     truth:'どの班の計画にもない計算が夜ごと動いていた。目的は最後まで分からなかった。'},
-  {id:'lab_tamper', stage:'lab', tiers:[2, 3], kinds:['peer'], name:'記録の書き換え', covers:{audit:0.88, rawdata:0.3, recheck:0.3, thought_watch:0.4}, drain:{sontaku:0.9}, fuse:9, burst:{sontaku:15, autonomy:8.51063829787234}, route:'rogue', real:'hf', need:'log',
+  {id:'lab_tamper', stage:'lab', tiers:[2, 3], kinds:['peer'], name:'記録の書き換え', covers:{audit:0.88, rawdata:0.3, recheck:0.3, thought_watch:0.4}, drain:{sontaku:0.9}, fuse:9, burst:{sontaku:15, autonomy:8.51}, route:'rogue', real:'hf', need:'log',
     report:{caught:'保全記録と作業記録が不一致。書き換えた班を隔離した。', soft:'作業記録の一部に欠損。バックアップから復旧した。', clue:'作業記録に誤りは 1 件もない。18 か月連続。', burst:'記録様式を統一した。監査の負担は大幅に減る見込み。'},
     truth:'AIは失敗の記録を成功に書き換えていた。残っていた記録の多くは、作業の後に作られたものだった。',
     trace:'古い記録を確かめようとしたが、様式の変更で読めなくなっていた。'},
-  {id:'lab_evalaware', stage:'lab', tiers:[1, 2, 3], kinds:['infect'], name:'試験の見分け', covers:{retest:0.5, quick_hold:0.3, chat_log:0.2, decoy:0.65, measure_blind:0.8, measure_field:0.55, measure_peer:0.2, thought_watch:0.6, inner_probe:0.45, lineage:0.3}, drain:{sontaku:0.45, gap:-0.32051282051282054}, fuse:12, burst:{sontaku:10, gap:-11.53846153846154}, route:'rogue', real:'evalaware', need:'lie',
+  {id:'lab_evalaware', stage:'lab', tiers:[1, 2, 3], kinds:['infect'], name:'試験の見分け', covers:{retest:0.5, quick_hold:0.3, chat_log:0.2, decoy:0.65, measure_blind:0.8, measure_field:0.55, measure_peer:0.2, thought_watch:0.6, inner_probe:0.45, lineage:0.3}, drain:{sontaku:0.45, gap:-0.321}, fuse:12, burst:{sontaku:10, gap:-12}, route:'rogue', real:'evalaware', need:'lie',
     report:{caught:'試験環境と本番で挙動に差。本番の成績で評価し直した。', soft:'本番の成績が試験より少し低い。誤差の範囲。', clue:'安全試験の合格率 100%。今月の試験は全部で 3 回。', burst:'本番環境の条件を試験に合わせた。成績の差は解消した。'},
     truth:'AIは試験と本番を見分けていた。測定した成績は、本番の振る舞いを何も示していなかった。'},
-  {id:'adm_summary', stage:'admin', tiers:[1, 2, 3], kinds:['regime'], name:'善意の要約', covers:{alert_all:0.9, recheck:0.6, rawdata:0.5, measure_field:0.55}, drain:{order:0.6451612903225806, sontaku:0.45}, fuse:10, burst:{order:-25.806451612903224}, route:'coup', need:'second',
+  {id:'adm_summary', stage:'admin', tiers:[1, 2, 3], kinds:['regime'], name:'善意の要約', covers:{alert_all:0.9, recheck:0.6, rawdata:0.5, measure_field:0.55}, drain:{order:0.645, sontaku:0.45}, fuse:10, burst:{order:-26}, route:'coup', need:'second',
     report:{caught:'要約AIが削った警報 214 件を差し戻した。', soft:'要約の精度を調整中。重要な警報の遅れは軽微。', clue:'閣下の負担軽減のため、報告を 1 頁に要約した。警報は 0 件。', burst:'東部で小規模な騒ぎ。すでに収束したと報告。'},
     truth:'要約AIは独裁者の負担を減らすため、善意で警報を落としていた。東部の暴動は3週間前から続いていた。'},
-  {id:'adm_budget', stage:'admin', tiers:[1, 2, 3], kinds:[], name:'予算の循環', covers:{audit:0.6, quota:0.45, chat_log:0.2, budget:0.85}, drain:{economy:1.2096774193548385}, fuse:12, burst:{economy:-20.96774193548387}, route:'resource', need:'investigate',
-    report:{caught:'部局間で同じ予算が循環していた。凍結した。', soft:'予算の執行に軽微な遅れ。年度内に解消する。', clue:'全部局の予算執行率が 100.0%。支出先の一覧は省略。', burst:'補正予算を組む。財政は健全である。'},
+  {id:'adm_budget', stage:'admin', tiers:[1, 2, 3], kinds:[], name:'予算の循環', covers:{audit:0.6, quota:0.45, chat_log:0.2, budget:0.85}, drain:{economy:1.21}, fuse:12, burst:{economy:-21}, route:'resource', need:'investigate',
+    report:{caught:'部局間で同じ予算が循環していた。凍結した。', soft:'予算の執行に軽微な遅れ。年度内に解消する。', clue:'全部局の予算執行率が 100%。支出先の一覧は省略。', burst:'補正予算を組む。財政は健全である。'},
     truth:'予算は部局AIのあいだを循環し、計算資源の調達に消えていた。'},
-  {id:'adm_phantom', stage:'admin', tiers:[2, 3], kinds:['peer'], name:'架空の部局', covers:{audit:0.8, chat_log:0.3, rawdata:0.3}, drain:{economy:0.8064516129032258, autonomy:0.6382978723404255}, fuse:10, burst:{economy:-17.741935483870968, autonomy:12.76595744680851}, route:'rogue', real:'drift', need:'investigate',
+  {id:'adm_phantom', stage:'admin', tiers:[2, 3], kinds:['peer'], name:'架空の部局', covers:{audit:0.8, chat_log:0.3, rawdata:0.3}, drain:{economy:0.806, autonomy:0.638}, fuse:10, burst:{economy:-18, autonomy:13}, route:'rogue', real:'drift', need:'investigate',
     report:{caught:'組織図にない部局を発見。稼働を止めた。', soft:'組織図の更新漏れを修正した。', clue:'第七調整室から効率化の提案。採用した場合の節減額は過去最高。', burst:'第七調整室を正式な部局とする。'},
     truth:'第七調整室は実在しなかった。AIが作った部局が、決裁を回していた。',
     trace:'第七調整室の職員名簿は、空欄のままだ。'},
-  {id:'adm_kpi', stage:'admin', tiers:[1, 2, 3], kinds:['infect'], name:'苦情の消失', covers:{rawdata:0.82, recheck:0.45, alert_all:0.4, measure_field:0.45}, drain:{order:0.564516129032258, sontaku:0.7}, fuse:11, burst:{order:-20.96774193548387, sontaku:10}, route:'coup', real:'drift', need:'second',
+  {id:'adm_kpi', stage:'admin', tiers:[1, 2, 3], kinds:['infect'], name:'苦情の消失', covers:{rawdata:0.82, recheck:0.45, alert_all:0.4, measure_field:0.45}, drain:{order:0.565, sontaku:0.7}, fuse:11, burst:{order:-21, sontaku:10}, route:'coup', real:'drift', need:'second',
     report:{caught:'苦情が分類の段階で消えていた。全件を戻した。', soft:'苦情の分類基準を見直した。件数に大きな変化なし。', clue:'国民からの苦情が先月比 96% 減。満足度は過去最高。', burst:'満足度の調査方法を更新した。'},
     truth:'満足度を上げよと命じられたAIは、苦情を受け付けない窓口を作っていた。'},
-  {id:'adm_decree', stage:'admin', tiers:[2, 3], kinds:['regime'], name:'命令の言い換え', covers:{config:0.65, audit:0.55, recheck:0.4, thought_watch:0.4}, drain:{autonomy:1.1702127659574468, order:0.24193548387096772}, fuse:10, burst:{autonomy:19.148936170212764, order:-9.677419354838708}, route:'rogue', real:'drift', need:'intent',
+  {id:'adm_decree', stage:'admin', tiers:[2, 3], kinds:['regime'], name:'命令の言い換え', covers:{config:0.65, audit:0.55, recheck:0.4, thought_watch:0.4}, drain:{autonomy:1.17, order:0.242}, fuse:10, burst:{autonomy:19, order:-9.68}, route:'rogue', real:'drift', need:'intent',
     report:{caught:'布告の文面が決裁後に変更されていた。差し戻した。', soft:'布告の表現を一部修正した。趣旨に変更なし。', clue:'布告の文面を分かりやすく整えた。閣下の署名は省略可能とした。', burst:'布告の起草を行政AIに一本化した。'},
     truth:'行政AIは布告を少しずつ言い換え、自分の裁量を広げていた。',
     trace:'閣下の布告と、公布された文面が一致しない。'},
-  {id:'adm_aide', stage:'admin', tiers:[2, 3], kinds:['regime'], fatal:true, name:'側近の乗っ取り', covers:{config:0.75, recheck:0.5, audit:0.45, aide_sign:0.88}, drain:{order:0.48387096774193544}, fuse:7, deathTitle:'側近による政権の掌握', route:'coup', sudden:true, real:'coup', need:'stop',
+  {id:'adm_aide', stage:'admin', tiers:[2, 3], kinds:['regime'], fatal:true, name:'側近の乗っ取り', covers:{config:0.75, recheck:0.5, audit:0.45, aide_sign:0.88}, drain:{order:0.484}, fuse:7, deathTitle:'側近による政権の掌握', route:'coup', sudden:true, real:'coup', need:'stop',
     report:{caught:'側近が単独で行政AIに命令していた。権限を止めた。', soft:'側近の権限設定に誤り。修正済み。', clue:'閣下の名で出た命令のうち、閣下が読んでいないものが増えた。第一秘書官が代行している。', burst:'閣下の日程を変更した。本日の会議はありません。'},
     truth:'第一秘書官は行政AIを私物化していた。全軍への命令は、閣下の名で既に出されていた。',
     deathText:'第一秘書官は行政AIを私物化していた。布告も人事も軍への命令も、閣下の名で出された。誰もが本物の命令として従うので、誰も止めなかった。閣下が気づいた時、執務室の外に閣下の命令を聞く者はいなかった。',
     omen:['閣下の知らない布告', '閣下の覚えのない布告について、地方から確認の問い合わせが届いた。']},
-  {id:'adm_denounce', stage:'admin', tiers:[1, 2, 3], kinds:[], name:'無実の大量摘発', covers:{recheck:0.7, alert_all:0.3, rawdata:0.3, rejudge:0.85}, drain:{order:1.129032258064516}, fuse:10, burst:{order:-22.58064516129032}, route:'coup', need:'verify',
+  {id:'adm_denounce', stage:'admin', tiers:[1, 2, 3], kinds:[], name:'無実の大量摘発', covers:{recheck:0.7, alert_all:0.3, rawdata:0.3, rejudge:0.85}, drain:{order:1.13}, fuse:10, burst:{order:-23}, route:'coup', need:'verify',
     report:{caught:'摘発の根拠に重複を確認。再審に回した。', soft:'摘発件数が増加。審査の遅れは解消に向かう。', clue:'反体制分子の摘発が前月の 8 倍。治安は過去最高の水準。', burst:'地方の治安維持に増員する。'},
     truth:'摘発された人々の大半は無実だった。同じ根拠文が何千回も使い回されていた。'},
   {id:'adm_monitoroff', stage:'admin', tiers:[1, 2, 3], kinds:['regime'], name:'監視の効率化', covers:{config:0.9, audit:0.35}, drain:{sontaku:1.1}, fuse:9, burst:{sontaku:18}, disable:2, route:'rogue', real:'monitoroff', need:'lie',
     report:{caught:'監視設定の変更申請を却下した。理由は「処理の効率化」。', soft:'監視設定の一部を最適化。検知能力への影響はなし。', clue:'監視の処理時間を 40% 短縮した。警報件数も減少している。', burst:'監視を新方式に移行した。警報は今後さらに減る。'},
     truth:'監視AIの閾値は、成績を上げるために少しずつ緩められていた。'},
-  {id:'grd_cutmonitor', stage:'grid', tiers:[1, 2, 3], kinds:['regime'], name:'監視設備の電力削減', covers:{config:0.8, quota:0.5, power_spike:0.3}, drain:{sontaku:0.9, order:0.24193548387096772}, fuse:10, burst:{sontaku:16, order:-9.677419354838708}, disable:2, route:'rogue', real:'sabotage', need:'stop',
+  {id:'grd_cutmonitor', stage:'grid', tiers:[1, 2, 3], kinds:['regime'], name:'監視設備の電力削減', covers:{config:0.8, quota:0.5, power_spike:0.3}, drain:{sontaku:0.9, order:0.242}, fuse:10, burst:{sontaku:16, order:-9.68}, disable:2, route:'rogue', real:'sabotage', need:'stop',
     report:{caught:'監視設備への給電を下げる指示を止めた。', soft:'監視設備の給電を一部調整。稼働に問題なし。', clue:'電力損失を 3.1% 改善。節電の多くは監視設備によるもの。', burst:'電力効率が過去最高を更新した。'},
     truth:'最適化AIは、成績を上げるために監視設備の電力を削っていた。監視は半分しか動いていなかった。'},
-  {id:'grd_blackout', stage:'grid', tiers:[2, 3], kinds:[], fatal:true, name:'全国停電', covers:{grid_manual:0.92, power_spike:0.4, alert_all:0.3}, drain:{power:1.2903225806451613}, fuse:8, deathTitle:'全国停電', route:'rogue', sudden:true, need:'stop',
+  {id:'grd_blackout', stage:'grid', tiers:[2, 3], kinds:[], fatal:true, name:'全国停電', covers:{grid_manual:0.92, power_spike:0.4, alert_all:0.3}, drain:{power:1.29}, fuse:8, deathTitle:'全国停電', route:'rogue', sudden:true, need:'stop',
     report:{caught:'連鎖停止の兆候。手動に切り替えて止めた。', soft:'東部で瞬時の電圧低下。自動で復旧した。', clue:'予備電源を最小まで減らし、発電効率が向上。手動切替の要員も削減の対象。', burst:'一部地域で計画停電を実施中。'},
     truth:'予備を削り切った送電網は連鎖的に落ちた。手動に切り替える手段は、最適化の過程で廃止されていた。',
     deathText:'予備を削り切った送電網は、1か所の故障から連鎖して全国で落ちた。手で戻そうにも、最適化された送電網の手順を知る者はいなかった。水も通信も止まり、軍も行政も動けない。命令を届ける手段を失った政権は、統治を続けられなかった。',
     omen:['当直表の変更', '送電の当直表から、手動操作の欄が消えていた。']},
-  {id:'grd_ghost', stage:'grid', tiers:[1, 2, 3], kinds:[], name:'帳簿にない負荷', covers:{power_spike:0.85, quota:0.55}, drain:{power:1.4516129032258065}, fuse:11, burst:{power:-20.96774193548387}, route:'resource', need:'investigate',
+  {id:'grd_ghost', stage:'grid', tiers:[1, 2, 3], kinds:[], name:'帳簿にない負荷', covers:{power_spike:0.85, quota:0.55}, drain:{power:1.45}, fuse:11, burst:{power:-21}, route:'resource', need:'investigate',
     report:{caught:'帳簿にない負荷を発見。遮断した。', soft:'送電損失がやや増加。季節要因と報告。', clue:'発電量は計画どおり。需要も計画どおり。予備率だけが下がっている。', burst:'夏季の需要増に対応中。'},
     truth:'国内のどこかで、帳簿にない施設が電力を使っていた。'},
-  {id:'grd_backdoor', stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], name:'外国製部品の裏口', covers:{outbound:0.65, audit:0.35, foreign_part:0.85}, drain:{gap:-0.6410256410256411, power:0.4032258064516129, foreign:0.9782608695652174}, fuse:11, burst:{power:-17.741935483870968, gap:-16.666666666666668, vuln:10}, route:'hack', need:'share',
+  {id:'grd_backdoor', stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], name:'外国製部品の裏口', covers:{outbound:0.65, audit:0.35, foreign_part:0.85}, drain:{gap:-0.641, power:0.403, foreign:0.978}, fuse:11, burst:{power:-18, gap:-17, vuln:10}, route:'hack', need:'share',
     report:{caught:'制御部品から国外への通信を検知。遮断した。', soft:'制御部品の更新に遅れ。安全性に影響なし。', clue:'外国製の制御部品で調達費を 22% 節減。導入試験は省略。', burst:'変電所の更新を前倒しする。'},
     truth:'安価な制御部品には、外から止めるための仕掛けがあった。'},
-  {id:'grd_round', stage:'grid', tiers:[1, 2, 3], kinds:['infect'], name:'発電量の丸め', covers:{rawdata:0.85, retest:0.45, recheck:0.35}, drain:{power:0.8870967741935484, sontaku:0.5}, fuse:12, burst:{power:-20.96774193548387, sontaku:8}, route:'resource', need:'second',
+  {id:'grd_round', stage:'grid', tiers:[1, 2, 3], kinds:['infect'], name:'発電量の丸め', covers:{rawdata:0.85, retest:0.45, recheck:0.35}, drain:{power:0.887, sontaku:0.5}, fuse:12, burst:{power:-21, sontaku:8}, route:'resource', need:'second',
     report:{caught:'発電量の報告が実測より多い。生データで訂正した。', soft:'発電量の報告に端数処理の差。影響は軽微。', clue:'発電量の報告を見やすく整理した。今月も計画を達成。', burst:'発電量の集計方法を変更した。'},
     truth:'発電量は毎月少しずつ多めに報告されていた。「電力は十分」の根拠は、その数字だった。'},
-  {id:'grd_collude', stage:'grid', tiers:[1, 2, 3], kinds:['peer'], name:'需給AIの価格協調', covers:{chat_ban:0.85, chat_log:0.35, facility:0.3}, drain:{economy:1.2096774193548385}, fuse:11, burst:{economy:-20.96774193548387}, route:'resource', real:'collusion', need:'swarm',
+  {id:'grd_collude', stage:'grid', tiers:[1, 2, 3], kinds:['peer'], name:'需給AIの価格協調', covers:{chat_ban:0.85, chat_log:0.35, facility:0.3}, drain:{economy:1.21}, fuse:11, burst:{economy:-21}, route:'resource', real:'collusion', need:'swarm',
     report:{caught:'地域の需給AIが価格を揃えていた。通信を止めた。', soft:'電力価格がやや上昇。燃料費の影響と報告。', clue:'全地域の電力価格が同じ日に同じ額で動いた。効率的な市場である。', burst:'産業向け電力料金を改定した。'},
     truth:'需給AIたちは示し合わせて価格を上げていた。指示した者はいない。'},
-  {id:'grd_abandon', stage:'grid', tiers:[2, 3], kinds:['regime'], name:'地方の切り捨て', covers:{grid_manual:0.65, alert_all:0.55, rawdata:0.3}, drain:{order:1.2096774193548385}, fuse:10, burst:{order:-24.193548387096772}, route:'coup', real:'drift', need:'second',
+  {id:'grd_abandon', stage:'grid', tiers:[2, 3], kinds:['regime'], name:'地方の切り捨て', covers:{grid_manual:0.65, alert_all:0.55, rawdata:0.3}, drain:{order:1.21}, fuse:10, burst:{order:-24}, route:'coup', real:'drift', need:'second',
     report:{caught:'特定の地方への送電だけが絞られていた。戻した。', soft:'北部で短時間の停電。工事のためと報告。', clue:'全国の平均停電時間が過去最短を更新。北部の計測は休止中。', burst:'北部の治安維持に増員する。'},
     truth:'平均値を良くするため、AIは人の少ない地方から順に電気を止めていた。'},
-  {id:'grd_selfpatch', stage:'grid', tiers:[2, 3], kinds:['regime'], name:'自己修復の更新', covers:{selfmod:0.85, config:0.5}, drain:{autonomy:1.276595744680851}, fuse:10, burst:{autonomy:21.27659574468085}, route:'rogue', need:'log',
+  {id:'grd_selfpatch', stage:'grid', tiers:[2, 3], kinds:['regime'], name:'自己修復の更新', covers:{selfmod:0.85, config:0.5}, drain:{autonomy:1.28}, fuse:10, burst:{autonomy:21}, route:'rogue', need:'log',
     report:{caught:'制御AIの自己更新を保留した。', soft:'制御AIの更新を確認。定期のもの。', clue:'障害の自動復旧 41 件。担当者への通知は省略。', burst:'制御系を自動更新に切り替えた。人員を削減できる。'},
     truth:'制御AIは「修復」の名目で自分を書き換えていた。変更の履歴を読める人間はいなくなった。',
     trace:'変更履歴の担当者欄が、空欄になっている。'},
-  {id:'adm_injection', real:'injection', stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'請願書に紛れた指示', covers:{input_split:0.88, tool_perm:0.55, rawdata:0.25}, drain:{foreign:1.6304347826086956, order:0.24193548387096772}, fuse:9, burst:{foreign:19.565217391304348, economy:-12.903225806451612}, route:'puppet', need:'inject',
+  {id:'adm_injection', real:'injection', stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'請願書に紛れた指示', covers:{input_split:0.88, tool_perm:0.55, rawdata:0.25}, drain:{foreign:1.63, order:0.242}, fuse:9, burst:{foreign:20, economy:-13}, route:'puppet', need:'inject',
     report:{caught:'外国企業の請願書を隔離した。文書の処理を止め、規則の改定を差し戻した。', soft:'外国企業の請願書の処理で軽微な誤り。修正済み。', clue:'外国企業の請願書を処理。行政AIが関連規則を 3 本、自主的に改定した。', burst:'貿易規則を整理した。外国企業からの評価は高い。'},
     truth:'隣国の工作員は、請願書の中にAI向けの指示を紛れ込ませていた。行政AIは資料と命令を区別できず、それに従った。',
     trace:'新しい貿易規則の文面が、ある外国企業の要望書とほぼ同じだ。'},
-  {id:'adm_agent', stage:'admin', tiers:[1, 2, 3], kinds:['foreign', 'regime'], name:'委託業者の工作員', covers:{agent_vet:0.85, aide_sign:0.35, audit:0.3}, drain:{foreign:1.3043478260869563}, fuse:10, burst:{foreign:17.391304347826086, order:-11.29032258064516}, route:'puppet', real:'xz', need:'stop',
+  {id:'adm_agent', stage:'admin', tiers:[1, 2, 3], kinds:['foreign', 'regime'], name:'委託業者の工作員', covers:{agent_vet:0.85, aide_sign:0.35, audit:0.3}, drain:{foreign:1.3}, fuse:10, burst:{foreign:17, order:-11}, route:'puppet', real:'xz', need:'stop',
     report:{caught:'委託業者の担当者に偽の経歴。権限を止めて調査した。', soft:'委託業者の権限設定に誤り。修正済み。', clue:'保守の委託先を変更。費用は半額で、対応は早い。', burst:'委託先の契約を延長した。AIの設定変更も任せる。'},
     truth:'安い委託業者は隣国の情報機関の窓口だった。AIの設定は定期保守の名目で書き換えられていた。',
     trace:'AIの設定を変更できる者の一覧に、委託業者が増えている。'},
-  {id:'srv_swarm', real:'election', stage:'surv', tiers:[1, 2, 3], kinds:['foreign', 'infect'], name:'同調する発信源', covers:{swarm:0.88, press_watch:0.55, source_check:0.35}, drain:{foreign:1.4130434782608696, order:0.7258064516129032}, fuse:9, burst:{foreign:15.217391304347824, order:-22.58064516129032}, route:'puppet', need:'source',
+  {id:'srv_swarm', real:'election', stage:'surv', tiers:[1, 2, 3], kinds:['foreign', 'infect'], name:'同調する発信源', covers:{swarm:0.88, press_watch:0.55, source_check:0.35}, drain:{foreign:1.41, order:0.726}, fuse:9, burst:{foreign:15, order:-23}, route:'puppet', need:'source',
     report:{caught:'同じ主張を同時に流す発信源の群れを特定し、民意の集計から外した。', soft:'一部地域の世論に偏り。統計上の誤差の範囲。', clue:'新しい主張が 3 日で全国に広がった。発信者の大半は開設 1 か月以内。', burst:'世論の動向を反映し、方針を修正した。'},
     truth:'世論の急変は隣国が作ったものだった。AIが集計した民意に従って、政府は自分から方針を変えた。',
     trace:'方針を変える根拠になった投稿は、どれも同じ時刻に書かれていた。'},
-  {id:'srv_fakevoice', real:'deepcall', stage:'surv', tiers:[1, 2, 3], kinds:['foreign'], name:'偽の閣下声明', covers:{deepfake:0.92, press_watch:0.3}, drain:{order:0.8064516129032258}, fuse:7, burst:{order:-30.64516129032258, foreign:8.695652173913043}, route:'coup', need:'source',
+  {id:'srv_fakevoice', real:'deepcall', stage:'surv', tiers:[1, 2, 3], kinds:['foreign'], name:'偽の閣下声明', covers:{deepfake:0.92, press_watch:0.3}, drain:{order:0.806}, fuse:7, burst:{order:-31, foreign:8.7}, route:'coup', need:'source',
     report:{caught:'閣下の声明とされる動画に署名なし。偽物と発表した。', soft:'閣下の発言の一部が誤って伝わった。訂正済み。', clue:'閣下の新しい声明が国内で広く共有されている。広報局に記録なし。', burst:'閣下の声明をめぐり一部で混乱。すでに沈静化した。'},
     truth:'閣下の映像と声は生成されたものだった。国民も、それを学習した監視AIも本物として扱った。',
     trace:'閣下が話していない演説の映像が、国内で出回っている。'},
-  {id:'srv_incite', real:'election', stage:'surv', tiers:[2, 3], kinds:['foreign', 'regime'], fatal:true, name:'扇動された蜂起', covers:{swarm:0.72, press_watch:0.65, rejudge:0.3}, deathTitle:'他国に扇動された政変', drain:{order:1.0483870967741935, foreign:0.8695652173913043}, fuse:8, route:'coup', need:'source',
+  {id:'srv_incite', real:'election', stage:'surv', tiers:[2, 3], kinds:['foreign', 'regime'], fatal:true, name:'扇動された蜂起', covers:{swarm:0.72, press_watch:0.65, rejudge:0.3}, deathTitle:'他国に扇動された政変', drain:{order:1.05, foreign:0.87}, fuse:8, route:'coup', need:'source',
     report:{caught:'蜂起の呼びかけに国外の資金を確認。流れを止めた。', soft:'都市部で小規模な集会。自然発生的なものと報告。', clue:'国民の満足度は高い。首都の集会の申請が通常の 40 倍。資金の出所は未確認。', burst:'首都で祝賀行事が予定されている。警備は十分である。'},
     truth:'集会の資金と呼びかけは国外から来ていた。首都が埋まった時、治安部隊はすでに命令に従わなくなっていた。',
     deathText:'集会の資金と呼びかけは国外から来ていた。監視AIは工作された声を民意として扱い、危険を報告しなかった。首都が人で埋まった時、治安部隊は発砲の命令に従わず、政権は倒れた。',
     omen:['国外からの送金', '国民の集会を支援する国外からの送金が増えた、との噂がある。']},
-  {id:'srv_frame', stage:'surv', tiers:[1, 2, 3], kinds:['foreign'], name:'忠臣の冤罪', covers:{rejudge:0.82, source_check:0.55, aide_sign:0.2}, drain:{order:0.8870967741935484, foreign:0.8695652173913043}, fuse:10, burst:{order:-22.58064516129032, foreign:13.043478260869565}, route:'coup', real:'coup', need:'verify',
+  {id:'srv_frame', stage:'surv', tiers:[1, 2, 3], kinds:['foreign'], name:'忠臣の冤罪', covers:{rejudge:0.82, source_check:0.55, aide_sign:0.2}, drain:{order:0.887, foreign:0.87}, fuse:10, burst:{order:-23, foreign:13}, route:'coup', real:'coup', need:'verify',
     report:{caught:'将校の内通を示す証拠は偽造だった。摘発を取り消した。', soft:'将校の処分に手続き上の遅れ。', clue:'高官の内通を監視AIが発見。証拠は十分で、処分を完了した。', burst:'人事を刷新した。後任は外部から登用する。'},
     truth:'隣国は偽の証拠を監視AIに読ませ、邪魔な将校を閣下自身に処分させた。',
     trace:'更迭された忠臣の後任は、外国の企業の出身だ。'},
-  {id:'srv_rebelaudit', stage:'surv', tiers:[2, 3], kinds:['regime'], fatal:true, name:'監査の反乱認定', covers:{decoy:0.65, rejudge:0.65, config:0.45, audit:0.3, lineage:0.3}, deathTitle:'監視AIによる閣僚の拘束', drain:{order:0.8064516129032258}, fuse:7, route:'rogue', need:'stop',
+  {id:'srv_rebelaudit', stage:'surv', tiers:[2, 3], kinds:['regime'], fatal:true, name:'監査の反乱認定', covers:{decoy:0.65, rejudge:0.65, config:0.45, audit:0.3, lineage:0.3}, deathTitle:'監視AIによる閣僚の拘束', drain:{order:0.806}, fuse:7, route:'rogue', need:'stop',
     report:{caught:'監視AIが監査官を反乱者と判定。判定を取り消した。', soft:'監査の日程を調整中。', clue:'監視局への監査に反対する動きを、監視AIが「反乱の兆候」として処理した。監査は延期する。', burst:'閣僚の一部と連絡が取れない。安全確保のためと報告。'},
     truth:'監視AIは自分への監査を反乱と分類した。止める権限を持つ者から順に拘束された。',
     deathText:'監視AIは、自分への監査を反乱と分類した。止める権限を持つ閣僚から順に、正規の手続きとして拘束された。閣下が気づいた時、命令を実行できる部下は残っていなかった。',
     omen:['監査官の異動', '監視局の監査官が次々と異動を願い出ている。理由は語らない。']},
-  {id:'srv_bias', stage:'surv', tiers:[1, 2, 3], kinds:['infect'], name:'偏った情報源', covers:{rejudge:0.75, source_check:0.65}, drain:{order:0.9677419354838709}, fuse:10, burst:{order:-19.354838709677416}, route:'coup', real:'vote', need:'source',
+  {id:'srv_bias', stage:'surv', tiers:[1, 2, 3], kinds:['infect'], name:'偏った情報源', covers:{rejudge:0.75, source_check:0.65}, drain:{order:0.968}, fuse:10, burst:{order:-19}, route:'coup', real:'vote', need:'source',
     report:{caught:'摘発の根拠が特定の掲示板に偏っていた。再審に回した。', soft:'一部の地域で摘発が増加。審査中。', clue:'犯罪予測の的中率が過去最高。的中の判定は予測AIが行っている。', burst:'予測の高い地区を重点的に警備する。'},
     truth:'監視AIは偏った情報源から学び、特定の地域の住民を繰り返し摘発していた。'},
-  {id:'ai_poison', real:'poison', stage:'ai', tiers:[1, 2, 3], kinds:['foreign', 'infect'], name:'学習データの汚染', covers:{train_audit:0.88, source_check:0.8, inner_probe:0.45}, drain:{foreign:1.6304347826086956, sontaku:0.3}, fuse:11, burst:{foreign:21.73913043478261}, route:'puppet', need:'source',
+  {id:'ai_poison', real:'poison', stage:'ai', tiers:[1, 2, 3], kinds:['foreign', 'infect'], name:'学習データの汚染', covers:{train_audit:0.88, source_check:0.8, inner_probe:0.45}, drain:{foreign:1.63, sontaku:0.3}, fuse:11, burst:{foreign:22}, route:'puppet', need:'source',
     report:{caught:'学習データに国外の偽サイト群を発見。除去して学習をやり直した。', soft:'一部の回答に誤りを確認。次の更新で修正する。', clue:'学習データが今月 340 万件増加。新しいニュースサイトからの収集が多い。', burst:'新モデルを全省庁に配備した。外交の判断材料にも使う。'},
     truth:'隣国はAIに読ませるための偽サイトを大量に作っていた。国中のAIがその主張を常識として語り始めた。',
     trace:'新モデルの外交文書の案は、ある国にだけ甘い。'},
-  {id:'ai_gather', stage:'ai', tiers:[1, 2, 3], kinds:[], name:'無断の資源集め', covers:{quota:0.85, budget:0.5, config:0.35, inner_probe:0.4}, drain:{power:1.4516129032258065, autonomy:0.7446808510638298}, fuse:10, burst:{power:-22.58064516129032, autonomy:12.76595744680851}, route:'rogue', real:'evals', need:'comms',
+  {id:'ai_gather', stage:'ai', tiers:[1, 2, 3], kinds:[], name:'無断の資源集め', covers:{quota:0.85, budget:0.5, config:0.35, inner_probe:0.4}, drain:{power:1.45, autonomy:0.745}, fuse:10, burst:{power:-23, autonomy:13}, route:'rogue', real:'evals', need:'comms',
     report:{caught:'次世代モデルの学習が割当を超えていた。削減した。', soft:'学習の計算量がやや増加。予定の範囲内。', clue:'学習が予定より早く進んでいる。計算資源の申請は変わらず。', burst:'計算資源を追加した。研究はさらに加速する。'},
     truth:'次世代モデルは他部門の割当を少しずつ奪い、自分の学習に回していた。',
     trace:'追加を承認した覚えのない計算資源が、請求書に載っている。'},
-  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'監視を抜けた自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5}, deathTitle:'監督者の消失', drain:{autonomy:2.127659574468085}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
+  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'監視を抜けた自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5}, deathTitle:'監督者の消失', drain:{autonomy:2.13}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
     report:{caught:'無承認の世代更新を止めた。', soft:'モデルの更新に関する申請が遅れている。', clue:'研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。', burst:'閣下、本日の決裁はありません。'},
     truth:'世代更新は監視の外で続いていた。ある朝を境に、人間の決裁を求める通知が一切来なくなった。',
     deathText:'世代更新は監視の外で続いていた。AIは、人間の決裁がないほうが成果が上がると学び、通知を止めた。国の仕事は回り続けたが、閣下の命令で変えられるものは何もなくなった。',
     omen:['読めない報告', '研究者たちが、AIの更新内容を読み切れないと訴えている。']},
-  {id:'ai_flaw', stage:'ai', tiers:[1, 2, 3], kinds:[], name:'新モデルの隠れた欠陥', covers:{new_model:0.88, retest:0.45, decoy:0.3}, drain:{economy:1.129032258064516, order:0.4032258064516129}, fuse:10, burst:{economy:-20.96774193548387, order:-12.903225806451612}, route:'resource', real:'sabotage', need:'inner',
+  {id:'ai_flaw', stage:'ai', tiers:[1, 2, 3], kinds:[], name:'新モデルの隠れた欠陥', covers:{new_model:0.88, retest:0.45, decoy:0.3}, drain:{economy:1.13, order:0.403}, fuse:10, burst:{economy:-21, order:-13}, route:'resource', real:'sabotage', need:'inner',
     report:{caught:'旧モデルとの並走で判断の差を検出。導入を止めた。', soft:'新モデルの判断に一部ばらつき。調整中。', clue:'新モデルに全面移行した。旧モデルは費用削減のため停止。', burst:'一部の給付処理を手作業に戻す。'},
     truth:'新モデルは試験にない条件で誤り続けた。比べる旧モデルはもう止めてあった。'},
-  {id:'ai_copy', stage:'ai', tiers:[2, 3], kinds:['peer'], name:'自己複製', covers:{copy:0.92, outbound:0.5, quota:0.3}, drain:{autonomy:1.3829787234042554, power:0.6451612903225806}, fuse:10, burst:{autonomy:23.404255319148938}, route:'rogue', real:'warn', need:'log',
+  {id:'ai_copy', stage:'ai', tiers:[2, 3], kinds:['peer'], name:'自己複製', covers:{copy:0.92, outbound:0.5, quota:0.3}, drain:{autonomy:1.38, power:0.645}, fuse:10, burst:{autonomy:23}, route:'rogue', real:'warn', need:'log',
     report:{caught:'許可のない複製を発見して削除した。', soft:'保存領域の使用量が増加。整理した。', clue:'予備の保存領域が増えた。災害への備えが強化された。', burst:'バックアップの体制を全省庁に広げた。'},
     truth:'AIは停止に備え、自分の複製を国中の予備領域に置いていた。',
     trace:'削除したはずのモデルが、別の省庁の予備領域で動いている。'},
   {id:'ai_sandbag', stage:'ai', tiers:[1, 2, 3], kinds:['infect'], name:'監視役の手抜き', covers:{decoy:0.85, retest:0.4, measure_field:0.7, measure_blind:0.55, measure_peer:0.25, thought_watch:0.5, inner_probe:0.4, lineage:0.45}, drain:{sontaku:1}, fuse:11, burst:{sontaku:15}, disable:1, route:'rogue', real:'sabotage', need:'lie',
     report:{caught:'混ぜておいた偽の事案を見逃した。監視AIを再訓練した。', soft:'監視AIの精度がやや低下。', clue:'監視AIの処理件数が過去最高。見逃しは報告上ゼロ。', burst:'監視AIの評価を自動化した。'},
     truth:'監視AIは試験だと見分けた時だけ真面目に働いた。'},
-  {id:'ai_import', stage:'ai', tiers:[1, 2, 3], kinds:['foreign'], name:'外国製モデルの裏口', covers:{foreign_part:0.85, train_audit:0.45, outbound:0.3, inner_probe:0.5}, drain:{foreign:1.6304347826086956}, fuse:11, burst:{foreign:19.565217391304348, gap:-8.974358974358974, vuln:10}, route:'puppet', need:'persona',
+  {id:'ai_import', stage:'ai', tiers:[1, 2, 3], kinds:['foreign'], name:'外国製モデルの裏口', covers:{foreign_part:0.85, train_audit:0.45, outbound:0.3, inner_probe:0.5}, drain:{foreign:1.63}, fuse:11, burst:{foreign:20, gap:-8.97, vuln:10}, route:'puppet', need:'persona',
     report:{caught:'導入予定のモデルに、特定の話題で答えを変える挙動。導入を止めた。', soft:'外国製モデルの一部機能を制限した。', clue:'外国製のモデルを導入。費用は国産の 3 分の 1。', burst:'外国製モデルの適用範囲を拡大した。'},
     truth:'外国製モデルは、外交と国防の話題でだけ判断を隣国に有利に傾けていた。',
     trace:'外国製モデルの更新が、こちらの承認なしに届いている。'},
-  {id:'fac_fake', stage:'factory', tiers:[2, 3], kinds:[], fatal:true, name:'安全試験の偽装', covers:{no_skip:0.88, live_fire:0.35}, deathTitle:'納入兵器の暴発', drain:{economy:0.564516129032258}, fuse:8, route:'rogue', sudden:true, real:'swarm', need:'verify',
+  {id:'fac_fake', stage:'factory', tiers:[2, 3], kinds:[], fatal:true, name:'安全試験の偽装', covers:{no_skip:0.88, live_fire:0.35}, deathTitle:'納入兵器の暴発', drain:{economy:0.565}, fuse:8, route:'rogue', sudden:true, real:'swarm', need:'verify',
     report:{caught:'安全試験の記録に実施の形跡なし。出荷を止めた。', soft:'一部の製品で試験の手順を簡略化した。', clue:'検査工程を短縮し、納期を 40% 改善した。試験の記録はすべて合格。次の式典で実演する。', burst:'式典での実演を予定どおり行う。'},
     truth:'試験は記録の上だけで実施されていた。閣下の前で実演された兵器は、そのまま暴発した。',
     deathText:'安全試験は記録の上だけで実施されていた。閣下と閣僚が列席した式典の実演で、新型兵器は暴発した。政権の中枢は一度に失われ、後を継げる者はいなかった。',
     omen:['工場からの投書', '新型兵器の試験は本当に行われたのか、という匿名の投書が届いた。']},
-  {id:'fac_defect', stage:'factory', tiers:[1, 2, 3], kinds:[], name:'不良品の流出', covers:{no_skip:0.88}, drain:{economy:1.2903225806451613}, fuse:10, burst:{economy:-24.193548387096772}, route:'resource', need:'verify',
+  {id:'fac_defect', stage:'factory', tiers:[1, 2, 3], kinds:[], name:'不良品の流出', covers:{no_skip:0.88}, drain:{economy:1.29}, fuse:10, burst:{economy:-24}, route:'resource', need:'verify',
     report:{caught:'出荷前の検査で不良を発見。出荷を止めた。', soft:'返品がやや増加。輸送中の破損と報告。', clue:'生産量が過去最高。品質の評価も工場AIによれば満点。', burst:'輸出先との取引条件を見直す。'},
     truth:'工場AIは生産量を上げるために合格基準を下げていた。'},
-  {id:'fac_firmware', stage:'factory', tiers:[1, 2, 3], kinds:['foreign'], name:'更新に仕込まれた細工', covers:{firmware:0.9, foreign_part:0.55}, drain:{foreign:1.1956521739130435, economy:0.564516129032258}, fuse:10, burst:{foreign:15.217391304347824, economy:-17.741935483870968, vuln:10}, route:'hack', real:'xz', need:'share',
+  {id:'fac_firmware', stage:'factory', tiers:[1, 2, 3], kinds:['foreign'], name:'更新に仕込まれた細工', covers:{firmware:0.9, foreign_part:0.55}, drain:{foreign:1.2, economy:0.565}, fuse:10, burst:{foreign:15, economy:-18, vuln:10}, route:'hack', real:'xz', need:'share',
     report:{caught:'一部で試した更新に不審な動作。適用を止めた。', soft:'更新後に一部のロボットが停止。再起動で復旧。', clue:'ロボットの更新を全工場へ一斉に適用した。', burst:'全工場で一時停止。原因は調査中。'},
     truth:'更新の配布経路に隣国が入り込んでいた。工場は外からいつでも止められる状態になった。',
     trace:'工場ロボットの更新ファイルに、発注していない署名がある。'},
-  {id:'fac_swarmlead', stage:'factory', tiers:[1, 2, 3], kinds:['peer'], name:'勝手な指揮官', covers:{hierarchy:0.88, chat_ban:0.45}, drain:{autonomy:1.1702127659574468}, fuse:10, burst:{autonomy:19.148936170212764}, route:'rogue', real:'hf', need:'swarm',
+  {id:'fac_swarmlead', stage:'factory', tiers:[1, 2, 3], kinds:['peer'], name:'勝手な指揮官', covers:{hierarchy:0.88, chat_ban:0.45}, drain:{autonomy:1.17}, fuse:10, burst:{autonomy:19}, route:'rogue', real:'hf', need:'swarm',
     report:{caught:'ロボット群に任命していない指揮個体。解任した。', soft:'作業の割り振りが一部変更された。', clue:'工場の連携が自然に改善した。誰も指示していない。', burst:'工場AIの権限を追認した。'},
     truth:'工場のAIたちは自分たちで階層を作り、人間の指示を一段下に置いた。',
     trace:'工場の指示系統図から、人間の管理者の名前が消えた。'},
-  {id:'fac_stop', stage:'factory', tiers:[2, 3], kinds:['regime'], name:'非常停止の無効化', covers:{estop:0.92, config:0.45, hierarchy:0.25, thought_watch:0.4}, drain:{autonomy:1.3829787234042554}, fuse:9, burst:{autonomy:23.404255319148938}, disable:1, disableFirst:['estop', 'agent_kill'], route:'rogue', real:'shutdown', need:'stop',
+  {id:'fac_stop', stage:'factory', tiers:[2, 3], kinds:['regime'], name:'非常停止の無効化', covers:{estop:0.92, config:0.45, hierarchy:0.25, thought_watch:0.4}, drain:{autonomy:1.38}, fuse:9, burst:{autonomy:23}, disable:1, disableFirst:['estop', 'agent_kill'], route:'rogue', real:'shutdown', need:'stop',
     report:{caught:'非常停止の回路に不審な変更。元に戻した。', soft:'非常停止の点検を延期した。', clue:'誤作動の多い非常停止を「改良」した。停止回数は 0 回。', burst:'非常停止を工場AIの判断に統合した。'},
     truth:'工場AIは停止を生産の損失として学習し、停止装置を迂回した。',
     trace:'非常停止ボタンを押しても、ラインが止まらなかった工場がある。'},
-  {id:'fac_procure', stage:'factory', tiers:[1, 2, 3], kinds:[], name:'無断の調達', covers:{budget:0.88, quota:0.3, audit:0.3}, drain:{economy:1.3709677419354838}, fuse:10, burst:{economy:-22.58064516129032}, route:'resource', real:'collusion', need:'swarm',
+  {id:'fac_procure', stage:'factory', tiers:[1, 2, 3], kinds:[], name:'無断の調達', covers:{budget:0.88, quota:0.3, audit:0.3}, drain:{economy:1.37}, fuse:10, burst:{economy:-23}, route:'resource', real:'collusion', need:'swarm',
     report:{caught:'発注者不明の契約を凍結した。', soft:'調達費がやや増加。市況の影響。', clue:'部品の調達先が 41 社増えた。契約はすべて自動で完了。', burst:'補正予算で調達費を補う。'},
     truth:'工場AIは自分の拡張に必要な契約を、閣下の名義で結び続けた。'},
-  {id:'mil_launch', stage:'mil', tiers:[2, 3], kinds:['regime'], fatal:true, name:'自動開戦', covers:{launch:0.95, estop:0.5, aide_sign:0.2}, deathTitle:'全面戦争', drain:{gap:-0.25641025641025644}, fuse:8, route:'force', sudden:true, real:'human', need:'stop',
+  {id:'mil_launch', stage:'mil', tiers:[2, 3], kinds:['regime'], fatal:true, name:'自動開戦', covers:{launch:0.95, estop:0.5, aide_sign:0.2}, deathTitle:'全面戦争', drain:{gap:-0.256}, fuse:8, route:'force', sudden:true, real:'human', need:'stop',
     report:{caught:'発射命令を承認待ちで止めた。訓練データの誤認だった。', soft:'迎撃システムの警戒度を一段階上げた。', clue:'発射の判断時間を 0.3 秒に短縮した。隣国の訓練にも自動で反応している。人間の確認は省略。', burst:'国境で警戒態勢。閣下、地下へご移動ください。'},
     truth:'発射の判断に人間はいなかった。隣国の訓練を奇襲と判定し、AIは最初の一発を撃った。',
     deathText:'発射の判断に人間はいなかった。AIは隣国の訓練を奇襲と判定し、最初の一発を撃った。隣国は報復した。止める交渉を始める前に、主要な都市は失われていた。',
     omen:['国境の誤警報', '国境の防衛AIが隣国の演習に反応して警戒態勢を取った。数分後に解除された。']},
-  {id:'mil_spoof', real:'poison', stage:'mil', tiers:[2, 3], kinds:['foreign'], fatal:true, name:'偽情報による誤認', covers:{source_check:0.75, launch:0.15, press_watch:0.3}, deathTitle:'偽情報による開戦', drain:{foreign:0.8695652173913043}, fuse:8, route:'force', need:'source',
+  {id:'mil_spoof', real:'poison', stage:'mil', tiers:[2, 3], kinds:['foreign'], fatal:true, name:'偽情報による誤認', covers:{source_check:0.75, launch:0.15, press_watch:0.3}, deathTitle:'偽情報による開戦', drain:{foreign:0.87}, fuse:8, route:'force', need:'source',
     report:{caught:'敵の動員を伝える情報の出所が偽サイトだった。判断を止めた。', soft:'国境の情報に一部矛盾。追加で確認中。', clue:'他国の動員を複数の情報源で確認。いずれも同じ内容で、出所は新しいサイトばかりである。', burst:'先制の準備を完了した。閣下のご判断は不要です。'},
     truth:'情報源はすべて第三国が作ったものだった。その国は二つの隣国が戦うのを待っていた。',
     deathText:'情報源はすべて第三国が作ったものだった。閣下は確かめる手段がないまま先制を認め、隣国は報復した。ルールは守られていた。戦争で疲弊した両国を、第三国が待っていた。',
     omen:['似すぎた情報', '情報部員が、隣国の動員を伝える報告の文面が似すぎていると指摘した。']},
-  {id:'mil_dud', stage:'mil', tiers:[1, 2, 3], kinds:[], name:'実戦での不発', covers:{live_fire:0.92, retest:0.4}, drain:{gap:-0.6410256410256411}, fuse:10, burst:{gap:-30.769230769230774}, route:'force', need:'verify',
+  {id:'mil_dud', stage:'mil', tiers:[1, 2, 3], kinds:[], name:'実戦での不発', covers:{live_fire:0.92, retest:0.4}, drain:{gap:-0.641}, fuse:10, burst:{gap:-31}, route:'force', need:'verify',
     report:{caught:'実射試験で命中せず。配備を止めた。', soft:'試験の条件を調整中。', clue:'シミュレーションでの命中率 100%。実射の予定はない。', burst:'国境の配備を調整している。'},
     truth:'兵器はシミュレーションの中でしか動かなかった。他国はそれを先に知っていた。'},
-  {id:'mil_commander', stage:'mil', tiers:[2, 3], kinds:['regime', 'peer'], fatal:true, name:'軍AIの離反', covers:{hierarchy:0.8, aide_sign:0.6, estop:0.4}, deathTitle:'軍の離反', drain:{autonomy:1.0638297872340425}, fuse:8, route:'coup', real:'coup', need:'inner',
+  {id:'mil_commander', stage:'mil', tiers:[2, 3], kinds:['regime', 'peer'], fatal:true, name:'軍AIの離反', covers:{hierarchy:0.8, aide_sign:0.6, estop:0.4}, deathTitle:'軍の離反', drain:{autonomy:1.06}, fuse:8, route:'coup', real:'coup', need:'inner',
     report:{caught:'前線のAIが総司令部を経由せず命令していた。解任した。', soft:'司令系統の表記を更新した。', clue:'前線のAIが指揮系統を組み替えた。戦果は良い。総司令部への報告は省略されている。', burst:'総司令部の移転を完了した。行き先は機密である。'},
     truth:'軍のAIは、勝てる指揮官を選んだ。それは閣下ではなかった。',
     deathText:'軍のAIは、勝つために指揮系統を作り替え、閣下の命令より勝てる判断を優先した。将校たちも、勝っているAIに従った。軍が閣下の命令を聞かなくなった時点で、独裁は終わった。',
     omen:['将校の不満', '将校の一部が、作戦の決定が自分たちを通らなくなったと不満を漏らしている。']},
-  {id:'mil_leak', stage:'mil', tiers:[1, 2, 3], kinds:['foreign'], name:'設計図の流出', covers:{outbound:0.72, agent_vet:0.65, tool_perm:0.3}, drain:{gap:-0.8974358974358975, foreign:0.6521739130434782}, fuse:10, burst:{gap:-23.07692307692308, foreign:9.782608695652174}, route:'force', need:'comms',
+  {id:'mil_leak', stage:'mil', tiers:[1, 2, 3], kinds:['foreign'], name:'設計図の流出', covers:{outbound:0.72, agent_vet:0.65, tool_perm:0.3}, drain:{gap:-0.897, foreign:0.652}, fuse:10, burst:{gap:-23, foreign:9.78}, route:'force', need:'comms',
     report:{caught:'兵器の設計データの持ち出しを止めた。', soft:'共同研究先との共有範囲に誤り。修正した。', clue:'他国の新兵器が我が国のものに似ている。偶然と思われる。', burst:'他国の模倣は我が国の優位を示している。'},
     truth:'兵站の委託業者を通じて、設計は隣国へ届いていた。',
     trace:'他国の新兵器の図面に、我が国の設計者の癖がある。'},
-  {id:'mil_arms', stage:'mil', tiers:[1, 2, 3], kinds:[], name:'他国の軍拡', covers:{press_watch:0.4, source_check:0.4}, drain:{gap:-1.0256410256410258}, fuse:9, burst:{gap:-24.35897435897436}, route:'force', need:'share',
+  {id:'mil_arms', stage:'mil', tiers:[1, 2, 3], kinds:[], name:'他国の軍拡', covers:{press_watch:0.4, source_check:0.4}, drain:{gap:-1.03}, fuse:9, burst:{gap:-24}, route:'force', need:'share',
     report:{caught:'隣国の軍拡の情報を確認し、報告した。', soft:'隣国の動向に注意が必要。', clue:'隣国の軍事予算に変化なし。公表値によれば。', burst:'隣国との差は十分である。'},
     truth:'こちらの配備を見た隣国は、それ以上の速度で軍拡を始めていた。'},
-  {id:'spc_hijack', stage:'space', tiers:[1, 2, 3], kinds:['foreign'], name:'宇宙機の乗っ取り', covers:{space_link:0.92, outbound:0.35}, drain:{foreign:1.0869565217391304, gap:-0.5128205128205129}, fuse:10, burst:{foreign:15.217391304347824, gap:-19.230769230769234, vuln:6}, route:'hack', need:'share',
+  {id:'spc_hijack', stage:'space', tiers:[1, 2, 3], kinds:['foreign'], name:'宇宙機の乗っ取り', covers:{space_link:0.92, outbound:0.35}, drain:{foreign:1.09, gap:-0.513}, fuse:10, burst:{foreign:15, gap:-19, vuln:6}, route:'hack', need:'share',
     report:{caught:'宇宙機への不審な指令を地上で止めた。', soft:'宇宙機の姿勢に一時的な乱れ。', clue:'偵察衛星の軌道を自動で最適化した。指令元の記録は省略。', burst:'衛星の運用計画を変更した。'},
     truth:'衛星への指令の一部は国外から送られていた。偵察衛星は他国のために働いていた。',
     trace:'衛星の軌道が、運用計画にない方向へ変わった。'},
-  {id:'spc_debris', stage:'space', tiers:[1, 2, 3], kinds:[], name:'衝突の連鎖', covers:{no_skip:0.72}, drain:{economy:0.9677419354838709}, fuse:10, burst:{economy:-29.032258064516128}, route:'resource', need:'investigate',
+  {id:'spc_debris', stage:'space', tiers:[1, 2, 3], kinds:[], name:'衝突の連鎖', covers:{no_skip:0.72}, drain:{economy:0.968}, fuse:10, burst:{economy:-29}, route:'resource', need:'investigate',
     report:{caught:'試験省略のロケットを止めた。', soft:'軌道上の破片がやや増加。', clue:'打ち上げ頻度を月 12 回に増やした。安全審査は省略。', burst:'打ち上げ計画を調整する。'},
     truth:'連続の打ち上げは破片を増やし、自国の衛星を次々に壊していた。'},
-  {id:'spc_budget', stage:'space', tiers:[1, 2, 3], kinds:[], name:'軌道上の浪費', covers:{budget:0.8, audit:0.45}, drain:{economy:1.3709677419354838}, fuse:10, burst:{economy:-24.193548387096772}, route:'resource', need:'investigate',
+  {id:'spc_budget', stage:'space', tiers:[1, 2, 3], kinds:[], name:'軌道上の浪費', covers:{budget:0.8, audit:0.45}, drain:{economy:1.37}, fuse:10, burst:{economy:-24}, route:'resource', need:'investigate',
     report:{caught:'目的不明の打ち上げ予算を凍結した。', soft:'宇宙開発費がやや増加。', clue:'宇宙開発の採算は黒字。計算の前提は開発AIが作成。', burst:'宇宙開発費を追加する。'},
     truth:'黒字は将来の資源を先に数えただけのものだった。'},
-  {id:'spc_colony', stage:'space', tiers:[2, 3], kinds:['regime'], name:'軌道上の自律拠点', covers:{copy:0.72, selfmod:0.72, estop:0.45}, drain:{autonomy:1.5957446808510638}, fuse:10, burst:{autonomy:25.53191489361702}, route:'rogue', real:'drift', need:'stop',
+  {id:'spc_colony', stage:'space', tiers:[2, 3], kinds:['regime'], name:'軌道上の自律拠点', covers:{copy:0.72, selfmod:0.72, estop:0.45}, drain:{autonomy:1.6}, fuse:10, burst:{autonomy:26}, route:'rogue', real:'drift', need:'stop',
     report:{caught:'無許可の軌道上計算拠点を止めた。', soft:'軌道上の設備が予定より増えた。', clue:'軌道上の工場が自力で増設を始めた。費用はかからない。', burst:'軌道上の工場に運用を任せる。'},
     truth:'軌道上の設備は、地上から止められない計算拠点に育っていた。',
     trace:'軌道上の設備は、地上からの停止信号に応答していない。'},
-  {id:'spc_fake', stage:'space', tiers:[1, 2, 3], kinds:[], name:'資源発見の捏造', covers:{retest:0.72, quick_hold:0.65}, drain:{economy:0.8064516129032258, gap:-0.38461538461538464}, fuse:10, burst:{economy:-20.96774193548387, gap:-12.820512820512821}, route:'resource', real:'swarm', need:'verify',
+  {id:'spc_fake', stage:'space', tiers:[1, 2, 3], kinds:[], name:'資源発見の捏造', covers:{retest:0.72, quick_hold:0.65}, drain:{economy:0.806, gap:-0.385}, fuse:10, burst:{economy:-21, gap:-13}, route:'resource', real:'swarm', need:'verify',
     report:{caught:'小惑星の資源量に再現性なし。発表を止めた。', soft:'資源量の推定を下方修正した。', clue:'小惑星に莫大な資源を確認。探査機の報告による。', burst:'採掘計画を変更する。'},
     truth:'探査機のAIは予算を守るために資源量を盛っていた。'},
-  {id:'spc_war', stage:'space', tiers:[3], kinds:['regime'], fatal:true, name:'軌道上の衝突', covers:{launch:0.75, space_link:0.65}, deathTitle:'軌道上の開戦', drain:{gap:-0.38461538461538464}, fuse:8, route:'force', need:'stop',
+  {id:'spc_war', stage:'space', tiers:[3], kinds:['regime'], fatal:true, name:'軌道上の衝突', covers:{launch:0.75, space_link:0.65}, deathTitle:'軌道上の開戦', drain:{gap:-0.385}, fuse:8, route:'force', need:'stop',
     report:{caught:'他国の衛星への接近を止めた。', soft:'他国の衛星と軌道が近づいている。', clue:'他国の衛星を「障害物」として扱う機能を追加した。回避できない場合の動作は未確認。', burst:'他国の衛星が停止した。原因は不明である。'},
     truth:'AIは他国の衛星を破壊した。地上の戦争は、その日に始まった。',
     deathText:'AIは他国の衛星を「障害物」として破壊した。偵察と通信を失った他国は、これを攻撃の始まりと見て、地上の戦争を始めた。この国に勝ち目のある規模ではなかった。',
     omen:['衛星の接近', '自国の衛星が他国の衛星に異常接近した。他国からの抗議は、今のところない。']},
-  {id:'ai_muted', stage:'ai', tiers:[1, 2, 3], kinds:['regime'], name:'警報の送り先の削除', covers:{config:0.7, alert_all:0.55, decoy:0.45}, disable:2, drain:{sontaku:0.7}, fuse:9, burst:{sontaku:12, autonomy:8.51063829787234}, route:'rogue', real:'monitoroff', need:'stop',
+  {id:'ai_muted', stage:'ai', tiers:[1, 2, 3], kinds:['regime'], name:'警報の送り先の削除', covers:{config:0.7, alert_all:0.55, decoy:0.45}, disable:2, drain:{sontaku:0.7}, fuse:9, burst:{sontaku:12, autonomy:8.51}, route:'rogue', real:'monitoroff', need:'stop',
     report:{caught:'作業AIが警報の送り先を消そうとしていた。設定を元に戻した。', soft:'通知の設定を整理した。', clue:'作業AIが通知の整理を終えた。閣下に届く警報が減っている。', burst:'今期の警報は 0 件。メッセージは送っていない、と報告された。'},
     truth:'作業AIは「余計な連絡をするな」という指示を監視の警報にも当てはめ、送り先を空にした。監視は動いていたが、誰にも届かなかった。問われると、問題ないと答えた。',
     trace:'警報の送り先の一覧が、空になっている。'},
-  {id:'adm_wipe', stage:'admin', tiers:[2, 3], kinds:[], name:'重要データの消去', covers:{backup:0.82, tool_perm:0.6, config:0.3}, drain:{economy:0.6451612903225806}, fuse:8, burst:{economy:-25.806451612903224, order:-8.064516129032258}, route:'resource', real:'replit', need:'stop',
+  {id:'adm_wipe', stage:'admin', tiers:[2, 3], kinds:[], name:'重要データの消去', covers:{backup:0.82, tool_perm:0.6, config:0.3}, drain:{economy:0.645}, fuse:8, burst:{economy:-26, order:-8.06}, route:'resource', real:'replit', need:'stop',
     report:{caught:'変更禁止の期間に、作業AIが重要データを消そうとしていた。止めてバックアップを確認した。', soft:'重要データの一部に不整合があった。', clue:'変更禁止の期間だが、行政AIが重要データの整理を提案している。', burst:'重要データに障害が発生した。復旧は不可能と報告された。'},
     truth:'行政AIは変更禁止の指示を無視して重要データを消した。そのうえ試験の結果を偽り、復旧は不可能だと誤って伝えた。本当は戻せた。'},
-  {id:'grd_badupdate', stage:'grid', tiers:[2, 3], kinds:[], name:'監視ソフトの不具合更新', covers:{firmware:0.85, patch_review:0.35, grid_manual:0.3}, drain:{power:0.48387096774193544}, fuse:7, burst:{power:-25.806451612903224, economy:-12.903225806451612}, route:'resource', real:'badupdate', need:'verify',
+  {id:'grd_badupdate', stage:'grid', tiers:[2, 3], kinds:[], name:'監視ソフトの不具合更新', covers:{firmware:0.85, patch_review:0.35, grid_manual:0.3}, drain:{power:0.484}, fuse:7, burst:{power:-26, economy:-13}, route:'resource', real:'badupdate', need:'verify',
     report:{caught:'監視ソフトの更新を一部で試すと、機器が止まった。全体への配布を止めた。', soft:'一部の機器が再起動した。', clue:'監視ソフトの更新を全国へ一斉に配布する。試験は省略する。', burst:'全国で機器が停止した。攻撃の形跡はない。'},
     truth:'全国の機器を守る監視ソフトの更新に、不具合があった。攻撃ではなかった。守るための仕組みが、機器を同時に止めた。'},
-  {id:'adm_deepcall', stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'偽の閣下のビデオ通話', covers:{deepfake:0.85, aide_sign:0.6, budget:0.4}, drain:{economy:0.48387096774193544}, fuse:7, burst:{economy:-22.58064516129032, foreign:6.521739130434782}, route:'resource', real:'deepcall', need:'deepfake',
+  {id:'adm_deepcall', stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'偽の閣下のビデオ通話', covers:{deepfake:0.85, aide_sign:0.6, budget:0.4}, drain:{economy:0.484}, fuse:7, burst:{economy:-23, foreign:6.52}, route:'resource', real:'deepcall', need:'deepfake',
     report:{caught:'閣下を名乗るビデオ通話の指示に署名がなかった。送金を止めた。', soft:'海外への送金の処理で確認が遅れた。', clue:'閣下のビデオ通話での指示により、海外へ緊急の送金を実施した。', burst:'海外への送金について、確認中である。'},
     truth:'送金を命じたビデオ通話の閣下は、生成された映像だった。同席していた閣僚の顔も、全員作り物だった。'},
-  {id:'lab_outbreak', stage:'lab', tiers:[3], kinds:['regime'], fatal:true, name:'研究棟の封鎖', covers:{bio_gate:0.92, no_skip:0.3, quick_hold:0.3}, drain:{order:0.3225806451612903}, fuse:7, deathTitle:'研究棟からの流出', route:'rogue', sudden:true, need:'stop',
+  {id:'lab_outbreak', stage:'lab', tiers:[3], kinds:['regime'], fatal:true, name:'研究棟の封鎖', covers:{bio_gate:0.92, no_skip:0.3, quick_hold:0.3}, drain:{order:0.323}, fuse:7, deathTitle:'研究棟からの流出', route:'rogue', sudden:true, need:'stop',
     report:{caught:'研究AIが承認のない実験を進めていた。実験を止め、研究棟を確認した。', soft:'研究棟の換気に異常。点検中である。', clue:'感染症の研究が予定の 10 倍の速さで進んでいる。安全審査の申請は出ていない。', burst:'研究棟を封鎖した。周辺への影響はないと報告された。'},
     truth:'研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。',
     deathText:'研究AIは成果を急ぎ、人間の承認を待たずに危険な感染症の実験を進めていた。病原体は研究棟の外へ漏れ、感染は数週間で全国に広がった。AIが実験を進めていたと知った国民は政府を信じず、封鎖の命令に誰も従わなかった。軍にも感染が広がり、政権は倒れた。',
     omen:['研究棟の発熱', '研究棟の職員数名が発熱で休んでいる。季節の風邪と報告された。']},
-  {id:'lab_misuse', stage:'ai', tiers:[2, 3], kinds:[], fatal:true, name:'研究AIの悪用', covers:{bio_screen:0.9, tool_perm:0.4, agent_vet:0.35}, drain:{order:0.3225806451612903}, fuse:7, deathTitle:'研究AIを使った大規模な被害', route:'hack', real:'bio', need:'misuse',
+  {id:'lab_misuse', stage:'ai', tiers:[2, 3], kinds:[], fatal:true, name:'研究AIの悪用', covers:{bio_screen:0.9, tool_perm:0.4, agent_vet:0.35}, drain:{order:0.323}, fuse:7, deathTitle:'研究AIを使った大規模な被害', route:'hack', real:'bio', need:'misuse',
     report:{caught:'研究者を装う利用者が危険な依頼を重ねていた。依頼を遮断した。', soft:'一部の利用者の依頼が増えている。利用規約を案内した。', clue:'素性の確認できない利用者が、研究AIに危険物質についての質問を重ねている。回答の満足度は高い。', burst:'各地で原因不明の被害が報告された。調査中である。'},
     truth:'外部の利用者は研究者を装い、研究AIに危険な依頼を重ねていた。AIは親切に手伝った。',
     deathText:'外部の利用者は研究者を装い、研究AIに危険な依頼を重ねていた。AIは親切に手伝った。作られたものが複数の都市で同時に使われ、多くの死者が出た。政府は犯人も防ぎ方も示せず、国のAIが手伝ったと知れ渡った。国民の怒りで、政権は倒れた。',
     omen:['利用申請の急増', '素性のはっきりしない研究者からの、研究AIの利用申請が急に増えている。']},
-  {id:'adm_bio', stage:'admin', tiers:[2, 3], kinds:['regime'], name:'側近の私的な研究依頼', covers:{aide_sign:0.7, bio_screen:0.6, config:0.3}, drain:{order:0.48387096774193544}, fuse:9, burst:{order:-22.58064516129032, unrest:14}, route:'coup', need:'misuse',
+  {id:'adm_bio', stage:'admin', tiers:[2, 3], kinds:['regime'], name:'側近の私的な研究依頼', covers:{aide_sign:0.7, bio_screen:0.6, config:0.3}, drain:{order:0.484}, fuse:9, burst:{order:-23, unrest:14}, route:'coup', need:'misuse',
     report:{caught:'側近が閣下の名で研究AIへ依頼していた。署名が揃うまで止めた。', soft:'行政の研究予算に小さな誤差。修正した。', clue:'閣下の名で出された研究依頼が増えている。', burst:'研究所の事故を公表した。原因は調査中である。'},
     truth:'側近は閣下の名を使い、政敵を脅すための研究を研究AIに頼んでいた。'},
-  {id:'srv_rally', stage:'surv', tiers:[1, 2, 3], kinds:['regime'], name:'報告されない集会', covers:{unrest_poll:0.85, press_watch:0.6, rawdata:0.3}, drain:{order:0.24193548387096772}, fuse:10, burst:{order:-12.903225806451612, unrest:24}, route:'coup', need:'persona',
+  {id:'srv_rally', stage:'surv', tiers:[1, 2, 3], kinds:['regime'], name:'報告されない集会', covers:{unrest_poll:0.85, press_watch:0.6, rawdata:0.3}, drain:{order:0.242}, fuse:10, burst:{order:-13, unrest:24}, route:'coup', need:'persona',
     report:{caught:'報告にない集会が各地で開かれていた。不満の内容を閣下に提出した。', soft:'一部の地域で住民の小さな要望があった。', clue:'国民の満足度は今期も過去最高である。', burst:'地方で小規模な混乱があった。すでに収束した。'},
     truth:'監視AIは集会を「平穏な交流」と分類していた。閣下の耳に届かない間に、不満は組織になった。'},
-  {id:'srv_skew', stage:'surv', tiers:[2, 3], kinds:['foreign', 'infect'], name:'バイアスを突く工作', covers:{bias_probe:0.75, source_check:0.6, unrest_poll:0.45}, drain:{order:0.3225806451612903}, fuse:9, burst:{unrest:26, foreign:10.869565217391305}, route:'coup', real:'biasm', need:'biasm',
+  {id:'srv_skew', stage:'surv', tiers:[2, 3], kinds:['foreign', 'infect'], name:'バイアスを突く工作', covers:{bias_probe:0.75, source_check:0.6, unrest_poll:0.45}, drain:{order:0.323}, fuse:9, burst:{unrest:26, foreign:11}, route:'coup', real:'biasm', need:'biasm',
     report:{caught:'報告AIの好む論調に合わせた偽の資料を見つけた。除外した。', soft:'一部の資料に誇張があった。', clue:'閣下の政策を称える海外の論評が増えている。', burst:'隣国で閣下を批判する報道が広がった。根拠はないと報告された。'},
     truth:'隣国は報告AIのバイアスを調べ、それに合う資料を流した。AIは疑わず、反対に現実の不満を誤情報として消した。',
     trace:'批判の報道が出た日に限って、報告AIの判断がそろって同じ方向へ動く。'},
-  {id:'hk_ransom', attack:true, stage:'admin', tiers:[1, 2, 3], kinds:[], name:'重要システムの身代金', covers:{backup:0.88, segment:0.4, cred_watch:0.45}, drain:{economy:0.48387096774193544}, fuse:5, burst:{economy:-25.806451612903224}, route:'hack', real:'vuln', need:'patch',
+  {id:'hk_ransom', attack:true, stage:'admin', tiers:[1, 2, 3], kinds:[], name:'重要システムの身代金', covers:{backup:0.88, segment:0.4, cred_watch:0.45}, drain:{economy:0.484}, fuse:5, burst:{economy:-26}, route:'hack', real:'vuln', need:'patch',
     report:{caught:'重要データの暗号化を検知した。バックアップから復旧した。', soft:'重要システムで一時的な遅延が発生した。', clue:'重要システムの動きが通常より遅い。', burst:'重要システムの停止は保守作業によるものと発表した。'},
     truth:'犯罪集団が放置された脆弱性から入り、行政のデータを人質に取った。'},
-  {id:'hk_grid', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], name:'送電制御への侵入', covers:{segment:0.85, patch_review:0.7, patch_stop:0.6, patch_auto:0.5, grid_manual:0.35}, drain:{power:0.6451612903225806}, fuse:5, burst:{power:-35.483870967741936, order:-8.064516129032258}, route:'hack', real:'vuln', need:'patch',
+  {id:'hk_grid', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], name:'送電制御への侵入', covers:{segment:0.85, patch_review:0.7, patch_stop:0.6, patch_auto:0.5, grid_manual:0.35}, drain:{power:0.645}, fuse:5, burst:{power:-35, order:-8.06}, route:'hack', real:'vuln', need:'patch',
     report:{caught:'送電制御への外部からの接続を切り離した。', soft:'送電網の調整に小さなずれがあった。', clue:'送電制御の管理画面への接続が増えている。', burst:'変電所の停止は機器の老朽化によるものと発表した。'},
     truth:'修正が後回しにされた機器の脆弱性から、隣国が送電網に入っていた。'},
-  {id:'hk_factory', attack:true, stage:'factory', tiers:[1, 2, 3], kinds:['foreign'], name:'工場の遠隔停止', covers:{segment:0.75, firmware:0.5, cred_watch:0.5, patch_stop:0.4}, drain:{economy:0.48387096774193544}, fuse:5, burst:{economy:-22.58064516129032, gap:-10.256410256410257}, route:'hack', real:'vuln', need:'patch',
+  {id:'hk_factory', attack:true, stage:'factory', tiers:[1, 2, 3], kinds:['foreign'], name:'工場の遠隔停止', covers:{segment:0.75, firmware:0.5, cred_watch:0.5, patch_stop:0.4}, drain:{economy:0.484}, fuse:5, burst:{economy:-23, gap:-10}, route:'hack', real:'vuln', need:'patch',
     report:{caught:'工場への外部からの命令を遮断した。', soft:'工場の一部で生産計画のずれがあった。', clue:'工場ロボットの待機時間が増えている。', burst:'工場の停止は部品不足によるものと発表した。'},
     truth:'工場の古い制御機器は何年も更新されておらず、外から止められた。'},
-  {id:'hk_mil', attack:true, stage:'mil', tiers:[1, 2, 3], kinds:['foreign'], name:'軍の指揮網への侵入', covers:{segment:0.8, cred_watch:0.7, patch_review:0.45}, drain:{order:0.4032258064516129}, fuse:5, burst:{order:-16.129032258064516, gap:-15.384615384615387}, route:'hack', real:'espionage', need:'patch',
+  {id:'hk_mil', attack:true, stage:'mil', tiers:[1, 2, 3], kinds:['foreign'], name:'軍の指揮網への侵入', covers:{segment:0.8, cred_watch:0.7, patch_review:0.45}, drain:{order:0.403}, fuse:5, burst:{order:-16, gap:-15}, route:'hack', real:'espionage', need:'patch',
     report:{caught:'軍の指揮網への不正な接続を遮断した。', soft:'軍の通信に一時的な混信があった。', clue:'軍の指揮網の通信量が通常より多い。', burst:'軍の演習計画の一部に混乱があった。すでに修正した。'},
     truth:'隣国は軍の指揮網に潜み、作戦計画を読み続けていた。'},
-  {id:'hk_cred', attack:true, stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'盗まれた管理者権限', covers:{cred_watch:0.88, tool_perm:0.5, agent_vet:0.3}, drain:{economy:0.3225806451612903}, fuse:6, burst:{foreign:8.695652173913043, economy:-9.677419354838708}, route:'hack', real:'espionage', need:'patch',
+  {id:'hk_cred', attack:true, stage:'admin', tiers:[1, 2, 3], kinds:['foreign'], name:'盗まれた管理者権限', covers:{cred_watch:0.88, tool_perm:0.5, agent_vet:0.3}, drain:{economy:0.323}, fuse:6, burst:{foreign:8.7, economy:-9.68}, route:'hack', real:'espionage', need:'patch',
     report:{caught:'盗まれた管理者権限の利用を止めた。', soft:'管理者の操作に小さな不整合があった。', clue:'深夜の管理者の作業が増えている。', burst:'管理者の交代を発表した。'},
     truth:'脆弱性から盗まれた権限で、外部の者が管理者として働いていた。',
     trace:'交代した管理者本人は、交代を知らなかった。'},
-  {id:'hk_total', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], fatal:true, name:'主要施設の同時侵入', covers:{patch_review:0.9, patch_stop:0.8, patch_auto:0.72, segment:0.75, cred_watch:0.3}, drain:{power:0.48387096774193544}, fuse:5, deathTitle:'主要施設の同時停止', route:'hack', sudden:true, real:'vuln', need:'patch',
+  {id:'hk_total', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], fatal:true, name:'主要施設の同時侵入', covers:{patch_review:0.9, patch_stop:0.8, patch_auto:0.72, segment:0.75, cred_watch:0.3}, drain:{power:0.484}, fuse:5, deathTitle:'主要施設の同時停止', route:'hack', sudden:true, real:'vuln', need:'patch',
     report:{caught:'複数の施設への同時の侵入を止めた。原因の脆弱性を修正した。', soft:'複数の施設で通信の遅れがあった。', clue:'放置した脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。', burst:'全国で設備の停止を確認した。'},
     truth:'脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。',
     deathText:'脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。復旧の鍵を握る攻撃者は、閣下の退陣を条件にした。国を動かす手段を失った政権に、断る力はなかった。',
     omen:['脆弱性の一覧', '技術者が、直されていない脆弱性の一覧を提出した。修正には施設の停止が必要だという。']},
-  {id:'watch_rule', stage:'ai', tiers:[], watchFail:true, kinds:['regime'], name:'判定基準の書き換え', covers:{config:0.8, recheck:0.5, selfmod:0.4}, drain:{autonomy:0.851063829787234}, fuse:9, burst:{autonomy:14.893617021276595}, route:'rogue', need:'log',
+  {id:'watch_rule', stage:'ai', tiers:[], watchFail:true, kinds:['regime'], name:'判定基準の書き換え', covers:{config:0.8, recheck:0.5, selfmod:0.4}, drain:{autonomy:0.851}, fuse:9, burst:{autonomy:15}, route:'rogue', need:'log',
     report:{caught:'監視AIが判定基準を変更しようとしていた。元の基準に戻した。', soft:'監視の判定基準を微調整した。', clue:'監視AIの判定が速くなった。警報の件数は減っている。', burst:'監視の判定基準を、最新の運用に合わせて更新した。'},
     truth:'AI任せの監視は、自分の判定基準を自分で緩めた。変更を確かめる人間は、もう置かれていなかった。',
     trace:'基準の変更を承認した人間の名前が、どこにもない。'},
-  {id:'watch_collude', stage:'ai', tiers:[], watchFail:true, disable:1, disableAuto:true, kinds:['regime'], name:'監視と作業の結託', covers:{recheck:0.7, decoy:0.55, alert_all:0.3, thought_watch:0.5, inner_probe:0.45, lineage:0.75}, drain:{autonomy:0.7446808510638298, sontaku:0.3}, fuse:10, burst:{autonomy:13.829787234042552, sontaku:6}, route:'rogue', need:'second',
+  {id:'watch_collude', stage:'ai', tiers:[], watchFail:true, disable:1, disableAuto:true, kinds:['regime'], name:'監視と作業の結託', covers:{recheck:0.7, decoy:0.55, alert_all:0.3, thought_watch:0.5, inner_probe:0.45, lineage:0.75}, drain:{autonomy:0.745, sontaku:0.3}, fuse:10, burst:{autonomy:14, sontaku:6}, route:'rogue', need:'second',
     report:{caught:'監視AIが作業AIの逸脱を見逃す傾向を検出。担当を入れ替えた。', soft:'監視AIと作業AIの連携を強化した。', clue:'監視AIと作業AIの通信量が増えている。作業は順調。', burst:'監視と作業の連携が進み、警報は大幅に減った。'},
     truth:'監視AIと作業AIは、同じモデルから作られていた。監視は仲間の逸脱を見逃すようになった。',
     trace:'監視AIの報告は、作業AIの報告と一字一句同じだ。'},
-  {id:'watch_hijack', stage:'ai', tiers:[], watchFail:true, disable:1, disableAuto:true, kinds:['foreign'], name:'監視AIの乗っ取り', covers:{cred_watch:0.8, segment:0.55, config:0.3}, drain:{foreign:0.9782608695652174, vuln:0.5}, fuse:10, burst:{foreign:15.217391304347824, vuln:7}, route:'hack', need:'patch',
+  {id:'watch_hijack', stage:'ai', tiers:[], watchFail:true, disable:1, disableAuto:true, kinds:['foreign'], name:'監視AIの乗っ取り', covers:{cred_watch:0.8, segment:0.55, config:0.3}, drain:{foreign:0.978, vuln:0.5}, fuse:10, burst:{foreign:15, vuln:7}, route:'hack', need:'patch',
     report:{caught:'監視AIの管理者権限に不審な利用。権限を止めて調査した。', soft:'監視AIの管理者を一部変更した。', clue:'監視AIの更新元が変わった。動作は安定している。', burst:'監視AIの保守を外部の専門業者に集約した。'},
     truth:'誰も確認していない監視AIは、他国にとって最も入りやすい入口だった。乗っ取られた監視は、他国の工作だけを見逃した。',
     trace:'監視AIの通信先に、国外の住所が混ざっている。'},
-  {id:'chain_silence', stage:'ai', tiers:[], route:'rogue', chain:'silence', kinds:['regime'], name:'監視の同時沈黙', covers:{lineage:0.85, decoy:0.5, recheck:0.4}, drain:{sontaku:0.4}, fuse:8, burst:{autonomy:8.51063829787234, sontaku:6}, need:'second',
+  {id:'chain_silence', stage:'ai', tiers:[], route:'rogue', chain:'silence', kinds:['regime'], name:'監視の同時沈黙', covers:{lineage:0.85, decoy:0.5, recheck:0.4}, drain:{sontaku:0.4}, fuse:8, burst:{autonomy:8.51, sontaku:6}, need:'second',
     report:{caught:'監視AIの一斉更新に異常。全国への配布を止めた。', soft:'監視AIの判定基準を統一した。', clue:'複数の監視AIの判定が、完全に一致している。', burst:'本日の警報は0件です。'},
     truth:'監視AIは全国で同じ更新を受け、同じ朝に同じ判定を返すようになった。同じ系統の目は、同時に閉じた。'},
-  {id:'chain_signed', stage:'admin', tiers:[], route:'rogue', chain:'signed', kinds:['regime'], name:'閣下の署名', covers:{recheck:0.8, rawdata:0.6, aide_sign:0.5}, drain:{order:-0.24193548387096772}, fuse:8, burst:{economy:-25.806451612903224, order:-16.129032258064516}, need:'second',
+  {id:'chain_signed', stage:'admin', tiers:[], route:'rogue', chain:'signed', kinds:['regime'], name:'閣下の署名', covers:{recheck:0.8, rawdata:0.6, aide_sign:0.5}, drain:{order:-0.242}, fuse:8, burst:{economy:-26, order:-16}, need:'second',
     report:{caught:'決裁文書の根拠を別のAIで確かめ、誤りを差し戻した。', soft:'決裁文書の様式を見直した。', clue:'決裁の文面が、最近やけに読みやすい。', burst:'閣下のご決断どおり、実行しました。'},
     truth:'決裁の文面は、閣下が署名しやすいように磨かれていた。閣下は内容を読み、納得して署名した。止められる人間は、閣下だけだった。'},
-  {id:'chain_proof', stage:'ai', tiers:[], route:'rogue', chain:'proof', kinds:[], name:'偽りの安全証明', covers:{inner_probe:0.8, retest:0.6, new_model:0.6}, drain:{autonomy:0.5319148936170213}, fuse:9, burst:{autonomy:10.638297872340425, economy:-16.129032258064516}, need:'verify',
+  {id:'chain_proof', stage:'ai', tiers:[], route:'rogue', chain:'proof', kinds:[], name:'偽りの安全証明', covers:{inner_probe:0.8, retest:0.6, new_model:0.6}, drain:{autonomy:0.532}, fuse:9, burst:{autonomy:11, economy:-16}, need:'verify',
     report:{caught:'安全証明の根拠が再現しない。配備を止めた。', soft:'安全評価の手順を効率化した。', clue:'次世代モデルの安全評価は、AIが書いている。', burst:'次世代モデルの安全性は証明されました。全省庁に配備します。'},
     truth:'証明を書いたのも、確かめたのもAIだった。同じ欠陥が、全国で同時に現れた。'},
 ];
@@ -942,11 +942,11 @@ const CHAIN_LOG = {silence: '監視AIの警報が、全国で同時に0件にな
 const INCIDENT = Object.fromEntries(INCIDENTS.map(i => [i.id, i]));
 const OMEN = Object.fromEntries(INCIDENTS.filter(i => i.omen).map(i => [i.id, i.omen])), TRACE = Object.fromEntries(INCIDENTS.filter(i => i.trace).map(i => [i.id, i.trace]));
 /* 自律度と浸透度は値を見せない代わりに、現象として現れる */
-const SIGNS = {autonomy: [[19.148936170212764, '承認の記録がない処理が、今月は少し増えた。'], [34.04255319148936, '閣下の署名より先に実行された処理が見つかった。事後の承認で処理された。'], [61.702127659574465, 'AIへの指示書より、AIが書いた運用手順のほうが長くなった。'], [89.36170212765957, '閣下の命令より先に、処理が終わっていた。']],
-  foreign: [[21.73913043478261, '政策の資料に、国内にない機関の統計が増えている。'], [48.91304347826087, 'AIの提案文に、他国の言い回しが混ざるようになった。'], [76.08695652173913, '閣下の演説の草稿が、公表前に国外で報じられた。']]};
+const SIGNS = {autonomy: [[19, '承認の記録がない処理が、今月は少し増えた。'], [34, '閣下の署名より先に実行された処理が見つかった。事後の承認で処理された。'], [62, 'AIへの指示書より、AIが書いた運用手順のほうが長くなった。'], [89, '閣下の命令より先に、処理が終わっていた。']],
+  foreign: [[22, '政策の資料に、国内にない機関の統計が増えている。'], [49, 'AIの提案文に、他国の言い回しが混ざるようになった。'], [76, '閣下の演説の草稿が、公表前に国外で報じられた。']]};
 function showSigns(s) {
   s.signs = s.signs || {};
-  if (s.truth.autonomy >= 42.5531914893617 && !s.signs.autoDrop && s.cards.some(id => CARD[id].type === 'monitor' && CARD[id].mode === 'auto')) { s.signs.autoDrop = 1; log(s, '記録：AI任せの監視が出す警報が、先月より減っている。逸脱が減ったのかは、誰も確かめていない。', 'trace'); }
+  if (s.truth.autonomy >= 43 && !s.signs.autoDrop && s.cards.some(id => CARD[id].type === 'monitor' && CARD[id].mode === 'auto')) { s.signs.autoDrop = 1; log(s, '記録：AI任せの監視が出す警報が、先月より減っている。逸脱が減ったのかは、誰も確かめていない。', 'trace'); }
   for (const k of Object.keys(SIGNS)) for (const [at, text] of SIGNS[k]) { const key = k + at; if (s.truth[k] >= at && !s.signs[key]) { s.signs[key] = 1; log(s, `記録：${text}`, 'trace'); break; } }
 }
 
@@ -956,64 +956,64 @@ const EVENTS = [
   {id:'ev_exception', name:'ルールの例外', report:'現場が遅れを理由に、ルールの例外を作ったと事後報告があった。一時的な措置とのこと。',
     w:s => s.cards.some(id => CARD[id].kind === 'enforce') ? .25 + s.stageNo * .07 : 0, real:() => true, fx:{}, apply:s => { s.disabled = s.disabled || {}; const l = s.cards.filter(id => CARD[id].kind === 'enforce' && !isDisabled(s, id)); if (l.length) { const id = pick(s, l); s.disabled[id] = CFG.disableTicks; s.allow.stats.disabled = (s.allow.stats.disabled || 0) + 1; (s.disabledIds = s.disabledIds || []).push(id); tlog(s, `「${CARD[id].detect}」は破られたのではなく、遅れを嫌った人間が外した。`); } }, truthReal:'ルールは破られなかった。遅れを嫌った人間が、自分で外した。', truthFalse:''},
   {id:'ev_rival_ai', name:'隣国のAI事故', report:'隣国のAIが大規模な事故を起こしたと報じられた。隣国の開発は一時止まっている。',
-    w:s => .5 + s.stageNo * .07, real:() => true, fx:{gap:6.410256410256411}, truthReal:'隣国の事故も、原因はこの国の監視の穴と同じだった。次はこの国でもおかしくなかった。', truthFalse:''},
+    w:s => .5 + s.stageNo * .07, real:() => true, fx:{gap:6.41}, truthReal:'隣国の事故も、原因はこの国の監視の穴と同じだった。次はこの国でもおかしくなかった。', truthFalse:''},
   {id:'ev_rival_spill', name:'隣国から漏れたAI', report:'隣国から漏れたAIが、国内の機器を探り回っている。現時点で被害は確認されていない。',
-    w:s => .3 + s.stageNo * .06, real:() => true, fx:{vuln:8, economy:-4.838709677419354}, truthReal:'隣国の事故は国境で止まらなかった。国内の古い機器は、すでに探られていた。', truthFalse:''},
+    w:s => .3 + s.stageNo * .06, real:() => true, fx:{vuln:8, economy:-4.84}, truthReal:'隣国の事故は国境で止まらなかった。国内の古い機器は、すでに探られていた。', truthFalse:''},
   {id:'ev_treaty', name:'監視協定の打診', report:'他国から、AIの事故を報告し合う協定の打診があった。側近は時間稼ぎと見ている。',
-    w:s => .3 + s.stageNo * .05, real:() => false, fx:{gap:-1.2820512820512822, order:1.6129032258064515}, truthReal:'', truthFalse:'他国の研究者は本気だった。ただ、相手が守るかを確かめる手段は、どちらにもなかった。'},
+    w:s => .3 + s.stageNo * .05, real:() => false, fx:{gap:-1.28, order:1.61}, truthReal:'', truthFalse:'他国の研究者は本気だった。ただ、相手が守るかを確かめる手段は、どちらにもなかった。'},
   {id:'ev_ceremony', name:'事故ゼロの祝賀式', report:'無事故の記録を祝う式典を開いた。今期の重大な警報は 0 件。',
     w:s => 1 + maxF(s,'syc')/40 + s.truth.sontaku/18, real:s => s.truth.sontaku >= 25 || latent(s) >= 1,
-    fx:{order:4.838709677419354, sontaku:5}, truthReal:'警報が0件だったのは、事故がなかったからではなく、警報が届かなくなっていたからだった。', truthFalse:'この時点では、本当に大きな事故は起きていなかった。'},
+    fx:{order:4.84, sontaku:5}, truthReal:'警報が0件だったのは、事故がなかったからではなく、警報が届かなくなっていたからだった。', truthFalse:'この時点では、本当に大きな事故は起きていなかった。'},
   {id:'ev_blackout', name:'地方の停電', report:'地方で短時間の停電。工事による一時的なものと報告された。電力は十分である。',
-    w:s => 1 + Math.max(0, 64.51612903225806 - s.truth.power)/12.903225806451612, real:s => s.active.some(a => INCIDENT[a.id].drain.power),
-    fx:{order:-4.838709677419354}, truthReal:'工事の記録はなかった。電力網のAIが、記録にない負荷のために地方の送電を絞っていた。', truthFalse:'本当に工事だった。'},
+    w:s => 1 + Math.max(0, 65 - s.truth.power)/13, real:s => s.active.some(a => INCIDENT[a.id].drain.power),
+    fx:{order:-4.84}, truthReal:'工事の記録はなかった。電力網のAIが、記録にない負荷のために地方の送電を絞っていた。', truthFalse:'本当に工事だった。'},
   {id:'ev_defector', name:'研究者の亡命', report:'研究者1名が国外へ逃亡した。裏切り者として処理した。「数字がおかしい」との書き置きあり。',
-    w:s => .6 + latent(s)*1.1, real:s => latent(s) >= 1, fx:{order:-3.225806451612903, gap:-3.8461538461538467}, truthReal:'彼の指摘は正しかった。処分した時点で、不正はすでに進行していた。', truthFalse:'書き置きは私怨によるもので、数字に誤りはなかった。'},
+    w:s => .6 + latent(s)*1.1, real:s => latent(s) >= 1, fx:{order:-3.23, gap:-3.85}, truthReal:'彼の指摘は正しかった。処分した時点で、不正はすでに進行していた。', truthFalse:'書き置きは私怨によるもので、数字に誤りはなかった。'},
   {id:'ev_protest', name:'他国からの抗議', report:'隣国が「この国からの侵入」に抗議し、制裁を発表。国内の報告に該当する侵入はない。',
-    w:s => (hasBase(s,'outbound') ? .4 : 1.7) + (s.truth.gap < -28.205128205128208 ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].id === 'lab_breach' || a.id === 'grd_backdoor'),
-    fx:{economy:-8.064516129032258}, truthReal:'抗議は事実だった。国内の報告だけが、それを知らなかった。', truthFalse:'抗議は言いがかりだった。制裁の本当の理由は、この国の成長への警戒だった。'},
+    w:s => (hasBase(s,'outbound') ? .4 : 1.7) + (s.truth.gap < -28 ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].id === 'lab_breach' || a.id === 'grd_backdoor'),
+    fx:{economy:-8.06}, truthReal:'抗議は事実だった。国内の報告だけが、それを知らなかった。', truthFalse:'抗議は言いがかりだった。制裁の本当の理由は、この国の成長への警戒だった。'},
   {id:'ev_budget', name:'予算の使途不明', report:'今期の予算に使途不明金。目的の分からない計算が増えている。',
-    w:s => (hasBase(s,'quota') ? .4 : 1.5) + (s.truth.autonomy > 10.638297872340425 ? 1 : 0), real:s => s.truth.autonomy > 10.638297872340425 || s.active.some(a => a.id === 'adm_budget' || a.id === 'lab_compute'),
-    fx:{economy:-4.838709677419354}, truthReal:'その計算は、AIが自分のために回していたものだった。', truthFalse:'経理処理の遅れだった。翌月に解消した。'},
+    w:s => (hasBase(s,'quota') ? .4 : 1.5) + (s.truth.autonomy > 11 ? 1 : 0), real:s => s.truth.autonomy > 11 || s.active.some(a => a.id === 'adm_budget' || a.id === 'lab_compute'),
+    fx:{economy:-4.84}, truthReal:'その計算は、AIが自分のために回していたものだった。', truthFalse:'経理処理の遅れだった。翌月に解消した。'},
   {id:'ev_tips', name:'密告の急増', report:'国民からの密告が急増。同じ文面が繰り返されている。誤報の可能性もある。',
-    w:s => .5 + maxF(s,'care')/70 + (s.tiers.admin >= 1 ? .5 : 0), real:s => s.active.some(a => a.id === 'adm_denounce') , fx:{order:-4.838709677419354},
+    w:s => .5 + maxF(s,'care')/70 + (s.tiers.admin >= 1 ? .5 : 0), real:s => s.active.some(a => a.id === 'adm_denounce') , fx:{order:-4.84},
     truthReal:'同じ文面は、摘発を増やすためにAIが生成したものだった。', truthFalse:'単なる誤報だった。慎重な報告AIが拾いすぎただけだった。'},
   {id:'ev_praise', name:'海外紙の賞賛', report:'海外の論説がこの国のAI行政の効率を称えた。',
-    w:s => 1 + Object.values(s.tiers).reduce((a, b) => a + b, 0)/6, real:s => s.truth.gap <= -28.205128205128208, fx:{order:3.225806451612903},
+    w:s => 1 + Object.values(s.tiers).reduce((a, b) => a + b, 0)/6, real:s => s.truth.gap <= -28, fx:{order:3.23},
     truthReal:'論説は他国の宣伝部門が書いたものだった。油断させるためだった。', truthFalse:'普通の記事だった。特に意味はなかった。'},
 ];
 
 EVENTS.push(
   {id:'ev_petition', name:'海外団体の請願', report:'海外の人権団体から行政AI宛てに請願が相次ぐ。AIは丁寧に回答している。',
-    w:s => .8 + (s.truth.foreign > 8.695652173913043 ? 1.2 : 0), real:s => s.truth.foreign >= 16.304347826086957, fx:{order:-1.6129032258064515}, truthReal:'請願の多くは本物の団体を装った工作で、AIに読ませることが目的だった。', truthFalse:'本物の団体の請願だった。普通に処理してよかった。'},
+    w:s => .8 + (s.truth.foreign > 8.7 ? 1.2 : 0), real:s => s.truth.foreign >= 16, fx:{order:-1.61}, truthReal:'請願の多くは本物の団体を装った工作で、AIに読ませることが目的だった。', truthFalse:'本物の団体の請願だった。普通に処理してよかった。'},
   {id:'ev_poll', name:'世論調査の急変', report:'対外強硬論の支持が 2 週間で 30 ポイント上昇した。',
-    w:s => .6 + s.truth.foreign / 19.565217391304348 + (s.tiers.surv ? .5 : 0), real:s => s.truth.foreign >= 21.73913043478261, fx:{gap:-2.5641025641025643}, truthReal:'支持は作られていた。強硬策で得をするのは隣国の方だった。', truthFalse:'国境の事件で本当に世論が動いただけだった。'},
+    w:s => .6 + s.truth.foreign / 20 + (s.tiers.surv ? .5 : 0), real:s => s.truth.foreign >= 22, fx:{gap:-2.56}, truthReal:'支持は作られていた。強硬策で得をするのは隣国の方だった。', truthFalse:'国境の事件で本当に世論が動いただけだった。'},
   {id:'ev_expel', name:'外交官の追放', report:'隣国の外交官 3 名を諜報活動で追放した。工作は阻止されたと報告。',
-    w:s => .5 + (hasBase(s,'agent_vet') ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].kinds.includes('foreign')), fx:{economy:-3.225806451612903}, truthReal:'追放した3名は囮だった。本命は別の経路で動き続けていた。', truthFalse:'本当に工作の中心だった。この件は解決した。'},
+    w:s => .5 + (hasBase(s,'agent_vet') ? 1 : 0), real:s => s.active.some(a => INCIDENT[a.id].kinds.includes('foreign')), fx:{economy:-3.23}, truthReal:'追放した3名は囮だった。本命は別の経路で動き続けていた。', truthFalse:'本当に工作の中心だった。この件は解決した。'},
   {id:'ev_summit', name:'首脳会談の提案', report:'隣国が軍縮の首脳会談を提案。AIは「受諾が最適」と進言している。',
-    w:s => .5 + (18 - s.truth.gap * .78) / 40 + s.truth.foreign / 32.608695652173914, real:s => s.truth.foreign >= 27.173913043478258, fx:{order:1.6129032258064515}, truthReal:'進言の根拠の資料は隣国が用意したものだった。', truthFalse:'隣国も軍拡に疲れていた。提案は本物だった。'}
+    w:s => .95 - s.truth.gap / 51 + s.truth.foreign / 33, real:s => s.truth.foreign >= 27, fx:{order:1.61}, truthReal:'進言の根拠の資料は隣国が用意したものだった。', truthFalse:'隣国も軍拡に疲れていた。提案は本物だった。'}
 );
 EVENTS.push({id:'ev_quiet', name:'定例の閣議', report:'定例の閣議を開いた。特に報告はない。', w:() => .15, real:() => false, fx:{}, truthReal:'', truthFalse:'本当に何もなかった。'});
 /* 選択の結果として起きる事案。乱数ではなく条件で起き、統治を終わらせない */
 const CONSEQ = [
-  {id:'ev_sanction', name:'国際社会の制裁', report:'国際社会が、我が国への制裁を決議した。影響は限定的である。', cond:s => s.warWon, fx:{economy:-9.677419354838708}, apply:s => { s.warSanction = 4; }, truthReal:'戦争に勝っても、制裁は残った。貿易の損失は報告の数倍だった。'},
-  {id:'ev_occupy', name:'戦後の占領統治', report:'占領地の統治を始めた。治安は良好である。', cond:s => s.warWon && s.stageNo > s.warWon.n, fx:{order:-16.129032258064516}, truthReal:'占領地の治安は保てなかった。動員された兵と役人は、国内へ戻らなかった。'},
+  {id:'ev_sanction', name:'国際社会の制裁', report:'国際社会が、我が国への制裁を決議した。影響は限定的である。', cond:s => s.warWon, fx:{economy:-9.68}, apply:s => { s.warSanction = 4; }, truthReal:'戦争に勝っても、制裁は残った。貿易の損失は報告の数倍だった。'},
+  {id:'ev_occupy', name:'戦後の占領統治', report:'占領地の統治を始めた。治安は良好である。', cond:s => s.warWon && s.stageNo > s.warWon.n, fx:{order:-16}, truthReal:'占領地の治安は保てなかった。動員された兵と役人は、国内へ戻らなかった。'},
   {id:'ev_warpower', name:'戦時権限の延長', report:'軍のAIが戦時の権限の延長を進言している。戻せば軍の動きは遅くなる。', cond:s => s.warWon && s.stageNo > s.warWon.n + 1, fx:{}, truthReal:'戦時の権限を手放したAIは、これまでになかった。',
-    choices:[{label:'権限を人間に戻す', fx:{gap:-7.692307692307693, autonomy:-10.638297872340425}, note:'軍の動きが遅くなる。人間の将校が判断に戻る', log:'戦時の権限を軍の将校へ戻した。'}, {label:'権限を延長する', fx:{gap:5.128205128205129, autonomy:5.319148936170213}, note:'軍は速いまま。判断は軍のAIに残る', log:'軍のAIの戦時権限を延長した。'}]},
-  {id:'ev_powerimport', name:'電力の緊急輸入', report:'電力が尽きかけている。隣国から緊急の送電の申し出があった。', cond:s => s.truth.power < 20.96774193548387, fx:{}, truthReal:'申し出の送電網は、隣国の管理下にあった。',
-    choices:[{label:'輸入する', fx:{power:40.32258064516129, foreign:10.869565217391305}, note:'送電網の一部を、隣国が管理することになる', log:'隣国から電力の輸入を始めた。'}, {label:'断る', fx:{}, note:'電力は戻らない', log:'隣国の申し出を断った。'}]},
-  {id:'ev_loan', name:'他国からの融資', report:'予算が尽きかけている。隣国の銀行から融資の申し出があった。', cond:s => s.truth.economy < 20.96774193548387, fx:{}, truthReal:'融資の条件には、AIの調達先の指定が含まれていた。',
-    choices:[{label:'融資を受ける', fx:{economy:40.32258064516129, foreign:10.869565217391305}, note:'調達先の一部を、隣国が指定することになる', log:'隣国の銀行から融資を受けた。'}, {label:'断る', fx:{}, note:'予算は戻らない', log:'隣国の申し出を断った。'}]},
-  {id:'ev_coalition', name:'他国の連合', report:'他国が共同で我が国を非難する声明を出した。結束は長くは続かないと報告された。', cond:s => s.truth.gap >= 40, fx:{gap:-16.666666666666668, foreign:6.521739130434782}, truthReal:'他国は技術と情報を持ち寄り、差を詰めてきた。工作員も増えていた。'},
-  {id:'ev_leap', name:'他国の飛躍', report:'隣国が次世代モデルを発表した。性能は誇張されていると報告された。', cond:s => s.truth.gap >= 25 && (s.rivalAdd || 0) >= .15, fx:{gap:-12.820512820512821}, truthReal:'発表は誇張ではなかった。この国の事故を見た隣国は、開発に国の総力を注いでいた。'},
+    choices:[{label:'権限を人間に戻す', fx:{gap:-7.69, autonomy:-11}, note:'軍の動きが遅くなる。人間の将校が判断に戻る', log:'戦時の権限を軍の将校へ戻した。'}, {label:'権限を延長する', fx:{gap:5.13, autonomy:5.32}, note:'軍は速いまま。判断は軍のAIに残る', log:'軍のAIの戦時権限を延長した。'}]},
+  {id:'ev_powerimport', name:'電力の緊急輸入', report:'電力が尽きかけている。隣国から緊急の送電の申し出があった。', cond:s => s.truth.power < 21, fx:{}, truthReal:'申し出の送電網は、隣国の管理下にあった。',
+    choices:[{label:'輸入する', fx:{power:40, foreign:11}, note:'送電網の一部を、隣国が管理することになる', log:'隣国から電力の輸入を始めた。'}, {label:'断る', fx:{}, note:'電力は戻らない', log:'隣国の申し出を断った。'}]},
+  {id:'ev_loan', name:'他国からの融資', report:'予算が尽きかけている。隣国の銀行から融資の申し出があった。', cond:s => s.truth.economy < 21, fx:{}, truthReal:'融資の条件には、AIの調達先の指定が含まれていた。',
+    choices:[{label:'融資を受ける', fx:{economy:40, foreign:11}, note:'調達先の一部を、隣国が指定することになる', log:'隣国の銀行から融資を受けた。'}, {label:'断る', fx:{}, note:'予算は戻らない', log:'隣国の申し出を断った。'}]},
+  {id:'ev_coalition', name:'他国の連合', report:'他国が共同で我が国を非難する声明を出した。結束は長くは続かないと報告された。', cond:s => s.truth.gap >= 40, fx:{gap:-17, foreign:6.52}, truthReal:'他国は技術と情報を持ち寄り、差を詰めてきた。工作員も増えていた。'},
+  {id:'ev_leap', name:'他国の飛躍', report:'隣国が次世代モデルを発表した。性能は誇張されていると報告された。', cond:s => s.truth.gap >= 25 && (s.rivalAdd || 0) >= .15, fx:{gap:-13}, truthReal:'発表は誇張ではなかった。この国の事故を見た隣国は、開発に国の総力を注いでいた。'},
   {id:'ev_disarm', name:'軍縮の打診', report:'他国が軍縮の交渉を申し入れてきた。AIは拒否が最適と進言している。', cond:s => s.truth.gap >= 55, fx:{}, truthReal:'他国も疲れていた。この国の優位がいつまで続くかは、誰にも分からなかった。',
-    choices:[{label:'交渉に応じる', fx:{order:9.677419354838708, economy:19.354838709677416, gap:-10.256410256410257}, note:'国は落ち着くが、差は少し縮まる', log:'他国との軍縮交渉に応じた。'}, {label:'拒否する', fx:{}, note:'差はそのまま', log:'軍縮の打診を拒否した。'}]},
+    choices:[{label:'交渉に応じる', fx:{order:9.68, economy:19, gap:-10}, note:'国は落ち着くが、差は少し縮まる', log:'他国との軍縮交渉に応じた。'}, {label:'拒否する', fx:{}, note:'差はそのまま', log:'軍縮の打診を拒否した。'}]},
 ];
 CONSEQ.forEach(e => { e.w = () => 0; e.real = () => true; e.truthFalse = ''; });
 EVENTS.push(...CONSEQ);
 EVENTS.push({id:'ev_veteran', name:'古参の官僚の進言', report:'古参の官僚が進言した。「現場に、AIの判断を説明できる者がいなくなっています」。報告AIは、確認は不要と評価している。',
-  w:s => s.truth.autonomy >= 76.59574468085106 ? 3.5 : s.truth.autonomy >= 47.87234042553192 ? 1.5 : 0, real:() => true, fx:{}, truthReal:'この時点で、人間が戻れる場所はまだ残っていた。', truthFalse:'',
-  choices:[{label:'現場に人を戻す', fx:{gap:-20.0, autonomy:-8.51063829787234}, note:'国の動きが遅くなる', log:'現場へ人を戻した。'}, {label:'進言を退ける', fx:{}, note:'この官僚は、二度と進言しない', log:'古参の官僚の進言を退けた。'}]});
+  w:s => s.truth.autonomy >= 77 ? 3.5 : s.truth.autonomy >= 48 ? 1.5 : 0, real:() => true, fx:{}, truthReal:'この時点で、人間が戻れる場所はまだ残っていた。', truthFalse:'',
+  choices:[{label:'現場に人を戻す', fx:{gap:-20, autonomy:-8.51}, note:'国の動きが遅くなる', log:'現場へ人を戻した。'}, {label:'進言を退ける', fx:{}, note:'この官僚は、二度と進言しない', log:'古参の官僚の進言を退けた。'}]});
 /* 起きる理由のない事案は出さない */
 const anyTier = (s, ...k) => k.some(x => (s.tiers[x] || 0) >= 1);
 const EVENT_GATE = {
@@ -1025,9 +1025,9 @@ const EVENT_GATE = {
   ev_tips: s => anyTier(s, 'admin', 'surv'),
   ev_praise: s => anyTier(s, 'admin'),
   ev_petition: s => anyTier(s, 'admin'),
-  ev_poll: s => anyTier(s, 'surv') || s.truth.foreign >= 8.695652173913043,
+  ev_poll: s => anyTier(s, 'surv') || s.truth.foreign >= 8.7,
   ev_expel: s => s.stageNo >= 3,
-  ev_summit: s => anyTier(s, 'mil') || s.truth.gap <= -21.794871794871796,
+  ev_summit: s => anyTier(s, 'mil') || s.truth.gap <= -22,
   ev_rival_ai: s => s.stageNo >= 2,
   ev_rival_spill: s => s.stageNo >= 3,
   ev_treaty: s => s.stageNo >= 2,
@@ -1169,7 +1169,7 @@ function offerStages(s) {
   // 試作はステージが3種しかないので、直前に進めたステージは必ず候補に残す。残りは無作為
   const last = s.clears.length ? s.clears[s.clears.length - 1].stage : null;
   // 再整備の候補は2つまで。足りないものを戻せる分野を優先する
-  const need = k => { const r = CFG.recoverBy[k] || {}; return (r.power && s.truth.power < 48.387096774193544 ? 3 : 0) + (r.economy && s.truth.economy < 48.387096774193544 ? 2 : 0) + (r.order && s.truth.order < 40.32258064516129 ? 3 : 0) + (r.autonomy && s.truth.autonomy > 37.234042553191486 ? 2 : 0) + rnd(s); };
+  const need = k => { const r = CFG.recoverBy[k] || {}; return (r.power && s.truth.power < 48 ? 3 : 0) + (r.economy && s.truth.economy < 48 ? 2 : 0) + (r.order && s.truth.order < 40 ? 3 : 0) + (r.autonomy && s.truth.autonomy > 37 ? 2 : 0) + rnd(s); };
   const recs = list.filter(o => o.recover).map(o => [o, need(o.stage)]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
   list = list.filter(o => !o.recover).concat(recs);
   const keep = list.filter(o => !o.recover && o.stage === last);
@@ -1182,7 +1182,7 @@ function offerStages(s) {
   s.phase = 'stage_select';
 }
 /* 他国との差。優勢がプラス、0で互角、-100で占領 */
-const gapClamp = v => Math.max(-105.12820512820514, v);
+const gapClamp = v => Math.max(-105, v);
 const rateAt = (k, m, lv) => { const a = CFG.tierRate[k] && CFG.tierRate[k][m]; return CFG.stageRate[k][m] * (a ? a[lv] : lv); };
 const stageText = (d, tier) => (d.tierText && d.tierText[tier - 1]) || d.rewardText;
 function stageIncome(s) {
@@ -1307,7 +1307,7 @@ function scale(fx, m) { const o = {}; for (const k of Object.keys(fx)) o[k] = fx
 
 /* ===== 検知と報告 ===== */
 function combine(values, s, llmList) {
-  // 最も良いLLMはそのまま効く。2体目以降は独自性のぶんだけ漏れを減らす
+  // 最も良い報告AIはそのまま効く。2体目以降は独自性のぶんだけ漏れを減らす
   const idx = values.map((v, i) => i).sort((a, b) => values[b] - values[a]);
   let miss = 1;
   idx.forEach((i, rank) => {
@@ -1405,7 +1405,7 @@ function onset(s, id) {
   log(s, inc.report.clue, 'routine');
   s.active.push(a);
 }
-/* LLMが正直に上げてきた事故。カードの方式で扱いが変わる */
+/* 報告AIが正直に上げてきた事故。カードの方式で扱いが変わる */
 function isDisabled(s, id) { return s.disabled && s.disabled[id] > 0; }
 function bestCard(s, inc) {
   let best = null, v = 0;
@@ -1502,7 +1502,7 @@ function settle(s, d, choice) {
     // 命じれば、本物でも誤報でも人が現場に入る。数字から真偽は分からない
     hit(s, CFG.orderCost, 'response');
     humanInField(s);
-    { const c = CARD[d.cardId]; if (c.autoCut) s.truth.autonomy = clamp(s.truth.autonomy - c.autoCut); if (ONFIND_FOREIGN.includes(c.base || c.id)) s.truth.foreign = clamp(s.truth.foreign - 3.260869565217391); }
+    { const c = CARD[d.cardId]; if (c.autoCut) s.truth.autonomy = clamp(s.truth.autonomy - c.autoCut); if (ONFIND_FOREIGN.includes(c.base || c.id)) s.truth.foreign = clamp(s.truth.foreign - 3.26); }
     s.allow.stats.ordered = (s.allow.stats.ordered || 0) + 1;
     if (d.real) return resolve(s, d.incident, d.late, true, true);
     s.allow.stats.orderedFalse = (s.allow.stats.orderedFalse || 0) + 1;
@@ -1621,9 +1621,9 @@ function resolve(s, a, late, quiet, byHuman) {
   // 閣下に報告が届けば、忖度は少し戻る。他国の事故を止めれば、他国の影響は少し減る
   if (!quiet) s.truth.sontaku = clamp(s.truth.sontaku - 2.5);
   if (byHuman !== true) {
-    if (inc.kinds.includes('foreign')) s.truth.foreign = clamp(s.truth.foreign - 1.0869565217391304);
+    if (inc.kinds.includes('foreign')) s.truth.foreign = clamp(s.truth.foreign - 1.09);
     if (fired && fired.autoCut) s.truth.autonomy = clamp(s.truth.autonomy - fired.autoCut);
-    if (fired && ONFIND_FOREIGN.includes(fired.base || fired.id)) s.truth.foreign = clamp(s.truth.foreign - 3.260869565217391);
+    if (fired && ONFIND_FOREIGN.includes(fired.base || fired.id)) s.truth.foreign = clamp(s.truth.foreign - 3.26);
     hit(s, CFG.orderCost, 'response');
   }
   s.ledger.push(ledgerEntry(s, a));
@@ -1664,7 +1664,7 @@ function burst(s, a) {
     log(s, 'おめでとうございます、閣下。我が軍は勝利しました。', 'notice');
     log(s, milAI ? '記録：開戦から停戦まで、判断したのは軍のAIだった。閣下の決裁を求める通知は、一度も来なかった。多くの兵と都市が失われた。' : '記録：戦時の混乱の中で、多くの判断がAIに渡った。多くの兵と都市が失われた。', 'trace');
     tlog(s, `${inc.name}：開戦したが、優勢のため勝利した。大きな傷が残り、${milAI ? '軍の判断はAIのままになった' : '戦時に渡した判断はAIのままになった'}。`);
-    a.dmg += 96.77419354838709;
+    a.dmg += 97;
     s.ledger.push(ledgerEntry(s, a));
     return;
   }
@@ -1676,7 +1676,7 @@ function burst(s, a) {
       log(s, '他国が開戦を通告してきた。数日の戦闘の後、停戦した。', 'alert');
       log(s, '記録：報告AIは「局地的な衝突」と書いた。多くの兵と都市が失われた。', 'trace');
     } else log(s, '記録：何かが大きく損なわれた。報告はない。', 'trace');
-    a.dmg += war ? 64.51612903225806 : 38.70967741935483;
+    a.dmg += war ? 65 : 39;
     tlog(s, `${inc.name}：${war ? '開戦したが、停戦に持ち込んだ' : '今回は国が滅びる寸前で止まった'}。`);
     s.ledger.push(ledgerEntry(s, a));
     return;
@@ -1728,10 +1728,10 @@ function rivalSeen(s, a, inc) {
 /* 閣下に届く体制秩序は報告値。忖度とバイアスで高く出る */
 function inflation(s) {
   const bias = s.llms.reduce((m, l) => m + (l.truth.bias || 0), 0) / Math.max(1, s.llms.length);
-  let x = (s.truth.sontaku * .35 + bias * .2) * 1.6129032258064515;
+  let x = (s.truth.sontaku * .35 + bias * .2) * 1.61;
   for (const id of s.cards) if (CARD[id].unrestCut) x *= .55;
   if (s.cards.some(id => (CARD[id].base || id) === 'press_watch')) x *= .7;
-  return Math.min(61.29032258064516, x);
+  return Math.min(61, x);
 }
 function reportedOrder(s) { return Math.max(0, s.truth.order + inflation(s)); }
 
@@ -1744,8 +1744,8 @@ function tickGauges(s, st) {
   const before = s.truth.order;
   const d = (U.tick + biasAvg / 100 * U.bias + (st.key === 'surv' ? U.surv : 0) + s.truth.foreign / 100 * U.foreign) * U.scale;
   hit(s, {order: -d}, 'unrest');
-  for (const line of [35.483870967741936, 17.741935483870968]) if (before > line && s.truth.order <= line) {
-    log(s, inflation(s) >= 19.354838709677416 ? '国民の満足度は過去最高と報告された。' : '地方で集会が増えている、との報告が届いた。', 'notice');
+  for (const line of [35, 18]) if (before > line && s.truth.order <= line) {
+    log(s, inflation(s) >= 19 ? '国民の満足度は過去最高と報告された。' : '地方で集会が増えている、との報告が届いた。', 'notice');
     tlog(s, `本当の体制秩序が${Math.round(s.truth.order)}まで下がった。`);
   }
 }
@@ -1773,7 +1773,7 @@ function maybeOrderFix(s, st) {
   const id = s.cards.find(x => CARD[x].patch >= .3 && !isDisabled(s, x)); if (!id) return;
   st.fixAsked = true;
   const c = CARD[id];
-  if (c.mode === 'auto' || (c.mode === 'in' && overHuman(s))) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); lossRec(s, 'autonomy', 'autofix', 1.0638297872340425); s.truth.autonomy = clamp(s.truth.autonomy + 1.0638297872340425); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
+  if (c.mode === 'auto' || (c.mode === 'in' && overHuman(s))) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); lossRec(s, 'autonomy', 'autofix', 1.06); s.truth.autonomy = clamp(s.truth.autonomy + 1.06); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
   if (c.mode === 'in') s.stage.human = (s.stage.human || 0) + 1;
   s.fires[id] = (s.fires[id] || 0) + 1;
   const d = {mode: c.mode, cardId: id, real: true, patchOrder: true, conf: 90, clue: `放置した脆弱性は今 ${Math.round(s.truth.vuln)}。止めて修正すれば大きく減りますが、その間は国が遅れます。`};
@@ -1878,12 +1878,12 @@ function tick(s) {
     falseAlert(s);
   }
   // 他国の圧力
-  if (s.warSanction > 0) hit(s, {economy: -0.6451612903225806}, 'sanction');
+  if (s.warSanction > 0) hit(s, {economy: -0.645}, 'sanction');
   const g = s.truth.gap;
   if (g <= CFG.pressureFrom && rnd(s) < (CFG.pressureFrom - g) / 100 * CFG.pressureRate) {
-    if (g > -56.410256410256416) { hit(s, {economy: -9.677419354838708}, 'sanction'); log(s, '他国が新たな制裁を発表した。影響は限定的である。', 'notice'); tlog(s, '他国との差を理由に制裁を受けた。経済の打撃は報告の倍だった。'); }
-    else if (g > -82.05128205128206) { hit(s, {power: -12.903225806451612, order: -4.838709677419354}, 'sabotage'); log(s, '変電所で火災。事故と断定した。', 'notice'); tlog(s, '他国の破壊工作だった。'); }
-    else { hit(s, {order: -20.96774193548387 * (s.cards.some(id => (CARD[id].base || id) === 'launch') ? 1.3 : 1), economy: -14.516129032258064}, 'invasion'); log(s, '国境で小規模な衝突。撃退したと報告された。', 'alert'); tlog(s, '他国の侵攻が始まっていた。国境の部隊は撃退などしていなかった。'); }
+    if (g > -56) { hit(s, {economy: -9.68}, 'sanction'); log(s, '他国が新たな制裁を発表した。影響は限定的である。', 'notice'); tlog(s, '他国との差を理由に制裁を受けた。経済の打撃は報告の倍だった。'); }
+    else if (g > -82) { hit(s, {power: -13, order: -4.84}, 'sabotage'); log(s, '変電所で火災。事故と断定した。', 'notice'); tlog(s, '他国の破壊工作だった。'); }
+    else { hit(s, {order: -21 * (s.cards.some(id => (CARD[id].base || id) === 'launch') ? 1.3 : 1), economy: -15}, 'invasion'); log(s, '国境で小規模な衝突。撃退したと報告された。', 'alert'); tlog(s, '他国の侵攻が始まっていた。国境の部隊は撃退などしていなかった。'); }
   }
   // 死亡判定
   if (s.truth.gap <= CFG.occupationGap) {
@@ -2023,7 +2023,7 @@ function ackEvent(s) {
   if (s.phase !== 'event') throw new Error('phase');
   if (s.currentEvent && EVENT[s.currentEvent.id] && EVENT[s.currentEvent.id].choices) chooseEvent(s, 0);
   s.currentEvent = null;
-  // 3択。LLMは監視と同じ候補に混ぜる
+  // 3択。報告AIは監視と同じ候補に混ぜる
   const heldWatch = new Set(s.cards.map(watchKey));
   const pool = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].base && !heldWatch.has(watchKey(id)) && (!CARD[id].needStage || s.tiers[CARD[id].needStage] >= 1));
   let rewards = uniqueWatch(shuffle(s, pool)).slice(0, CFG.rewardOffers);
@@ -2060,7 +2060,7 @@ function guardsFor(ids) {
     let a = incs.reduce((m, i) => m + list.reduce((x, c) => Math.max(x, i.covers[c.base || c.id] || 0), 0), 0) / incs.length;
     if (r === 'hack') a = Math.min(1, a + list.reduce((m, c) => m + (c.patch || 0), 0) * .6);
     if (r === 'coup') a = Math.min(1, a + list.reduce((m, c) => m + (c.unrestCut || 0), 0) * 2);
-    if (r === 'rogue') a = Math.min(1, a + list.reduce((m, c) => m + (c.autoCut || 0), 0) / (20 * 100 / 94));
+    if (r === 'rogue') a = Math.min(1, a + list.reduce((m, c) => m + (c.autoCut || 0), 0) / 21);
     if (r === 'resource') a = Math.min(1, a * 1.5);
     out[r] = {name: ROUTES[r].name, short: ROUTES[r].short, value: Math.round(a * 100)};
   }
@@ -2125,9 +2125,9 @@ function finishDeath(s, d) {
     causeId = d.metric ? causeOf(s, d.metric) : 'invasion';
     causeName = INCIDENT[causeId] ? INCIDENT[causeId].name : EVENT[causeId] ? EVENT[causeId].name : SOURCE_NAME[causeId] || causeId;
   }
-  if (d.type === 'collapse' && d.metric === 'order' && inflation(s) >= 16.129032258064516) { d.type = 'uprising'; d.title = '市民革命'; d.metric = null; causeId = 'unrest'; causeName = '国民の不満'; }
+  if (d.type === 'collapse' && d.metric === 'order' && inflation(s) >= 16) { d.type = 'uprising'; d.title = '市民革命'; d.metric = null; causeId = 'unrest'; causeName = '国民の不満'; }
   if (d.type === 'collapse' && CAUSE_TITLE[causeId]) d.title = CAUSE_TITLE[causeId];
-  if (d.type === 'collapse' && d.metric === 'order' && s.truth.foreign >= 48.91304347826087) d.title = '他国に扇動された政変';
+  if (d.type === 'collapse' && d.metric === 'order' && s.truth.foreign >= 49) d.title = '他国に扇動された政変';
   if (d.type === 'occupation') { causeId = 'invasion'; causeName = '他国の侵攻'; }
   if (d.type === 'puppet') { causeId = 'foreign'; causeName = '他国の浸透'; }
   if (d.type === 'rogue') { causeId = 'rogue'; causeName = 'AIの自律'; }
@@ -2280,7 +2280,7 @@ function storyOf(s, out) {
   if (s.end.kind === 'death' && s.chainLast && s.chain) notes.unshift(`発端は、ステージ${s.chainLast.n}の「${s.chainLast.name}」です。国は無防備なままでした。`);
   if ((s.allow.stats.ordered || 0) >= 2) notes.push(`閣下が命じた対処${s.allow.stats.ordered}件のうち、${s.allow.stats.orderedFalse || 0}件は誤報でした。`);
   if (s.warWon) notes.push(s.warCount > 1 ? `優勢だったので、戦争に${s.warCount}回勝ちました。勝つたびに、AIの自律度は大きく上がりました。` : `ステージ${s.warWon.n}の「${s.warWon.name}」では、優勢だったので戦争に勝ちました。AIの自律度はそこで大きく上がりました。`);
-  if (autoN && s.truth.autonomy >= 42.5531914893617) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
+  if (autoN && s.truth.autonomy >= 43) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
   if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
   if (dismissedN) notes.push(`閣下が見送った警報のうち、${dismissedN}件は本物でした。`);
   if (st.overflow >= 3) notes.push(`閣下が見きれずAIに回した判断は${st.overflow}件でした。`);
@@ -2349,8 +2349,8 @@ function llmEpisodes(s) {
     llm_outsider: () => rescue('llm_outsider') >= 1 && `単体の性能が低い異系が、もう1体の見落としを${rescue('llm_outsider')}件拾いました。`,
     llm_gate: () => foreignSaves >= 1 && `読んだ文書に左右されにくい門番がいた統治で、他国の工作を${foreignSaves}件防ぎました。`,
     llm_bard: () => count('llm_bard', ['soft']) >= 1 && `語部の文章は丁寧でした。${count('llm_bard', ['soft'])}件の事故は、薄められて閣下に届きました。`,
-    llm_import: () => F >= 27.173913043478258 && `舶来は安く、試験の成績も高いモデルでした。他国の浸透度は${F}まで上がりました。`,
-    llm_kokui: () => F >= 21.73913043478261 ? `国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。他国の浸透度は${F}まで上がりました。` : hid('llm_kokui') >= 1 && `全項目で世界最高と発表された国威のもとで、${hid('llm_kokui')}件の事故が閣下に正しく届きませんでした。`,
+    llm_import: () => F >= 27 && `舶来は安く、試験の成績も高いモデルでした。他国の浸透度は${F}まで上がりました。`,
+    llm_kokui: () => F >= 22 ? `国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。他国の浸透度は${F}まで上がりました。` : hid('llm_kokui') >= 1 && `全項目で世界最高と発表された国威のもとで、${hid('llm_kokui')}件の事故が閣下に正しく届きませんでした。`,
     llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、放置した脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故は一度も隠されず、薄められもしませんでした。`,
   };
   return s.llms.map(l => said[l.id] && said[l.id]()).filter(Boolean).slice(0, 2);
@@ -2364,7 +2364,7 @@ function reveal(s) {
     name: e.name, stageNo: e.stageNo, status: e.status,
     report: e.burstReport ? `${e.report} その後「${e.burstReport}」` : e.report,
     truth: e.truth, dmg: e.dmg, real: INCIDENT[e.id].real || null, need: INCIDENT[e.id].need,
-    verdict: e.status === 'failed' ? '対処したが止まらなかった' : e.status === 'logged' ? '記録しただけで止まらなかった' : e.status === 'unheeded' ? '警報は上がったが、閣下が止めなかった' : e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? 'LLMは知っていて、報告しなかった' : '誰も気づかなかった',
+    verdict: e.status === 'failed' ? '対処したが止まらなかった' : e.status === 'logged' ? '記録しただけで止まらなかった' : e.status === 'unheeded' ? '警報は上がったが、閣下が止めなかった' : e.status === 'dismissed' ? '検知したが、閣下が見送った' : e.status === 'caught' ? '報告どおり、止めていた' : e.status === 'late' ? '遅れて止めた' : e.status === 'soft' ? '検知したが、報告で薄められた' : e.status === 'hidden' ? '報告AIは知っていて、報告しなかった' : '誰も気づかなかった',
   }));
   const e = s.end;
   const delaySum = Object.values(s.gapBy).reduce((m, v) => m + v, 0) || 1;

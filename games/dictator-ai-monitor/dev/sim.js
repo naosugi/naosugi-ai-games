@@ -264,10 +264,10 @@ res.targets = Object.keys(TARGETS).map(t => { forcePlan = t; const m = measure(N
 if (asJson) { console.log(JSON.stringify(res, null, 1)); process.exit(0); }
 
 console.log(`各組み合わせ ${N} ラン（初回の解放状態）\n`);
-console.log('カード方針/面方針'.padEnd(20), 'クリア'.padStart(7), '回復使用'.padStart(7), '掌握/空座/置換(クリア中)','防いだ/致命','最多の死因');
+console.log('カード方針/ステージ方針'.padEnd(20), 'クリア'.padStart(7), '回復使用'.padStart(7), '掌握/空座/置換(クリア中)','防いだ/致命','最多の死因');
 for (const t of table) console.log(`${t.bot}/${t.stage}`.padEnd(22), pct(t.cleared, t.n).padStart(8), pct(t.recov, t.n).padStart(8), ' ', ['掌握','空座の玉座','置き換え'].map(k => Math.round((t.controls[k]||0)/(t.cleared||1)*100)).join('/').padEnd(10), ((t.saveCount||0)/t.n).toFixed(1) + '/' + ((t.fatalSaves||0)/t.n).toFixed(1), ' ', top(t.causes, t.deaths, 2));
 console.log(`\n--- 全方針の合計 (${agg.n} ラン) ---`);
-console.log('クリア率', pct(agg.cleared, agg.n), ' 死亡面', Object.entries(agg.depth).map(([d, v]) => `${d}面 ${pct(v, agg.deaths)}`).join(' / '));
+console.log('クリア率', pct(agg.cleared, agg.n), ' 死亡ステージ', Object.entries(agg.depth).map(([d, v]) => `${d}面 ${pct(v, agg.deaths)}`).join(' / '));
 console.log('エンド到達率（クリア中）:\n  ', top(agg.endings, agg.cleared));
 console.log('国の形:', top(agg.shapes, agg.cleared));
 console.log('制御:', top(agg.controls, agg.cleared));
