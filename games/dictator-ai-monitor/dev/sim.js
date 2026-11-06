@@ -284,3 +284,28 @@ console.log('周回（random/random）:', res.meta.map(m => `${m.run}周目 ${m.
 console.log('\n狙った形へ進む方針（事故を覚えたカード選び）:');
 for (const x of res.targets) console.log(`  ${x.t}: クリア ${(x.clear * 100).toFixed(1)}%  形: ${top(x.shapes, x.clear * N, 4)}`);
 console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一致 ${res.save} ラン: 問題なし / 止めた事故の一致 ${res.stop} 件: 問題なし`);
+
+/* 導入と練習の台本：導入は必ずステージ3で「監督者の消失」、練習は1度目に止まり、2度目にステージ4で終わる */
+{
+  const play = (s, choice) => { let guard = 0; while (s.phase !== 'ended' && guard++ < 3000) {
+    if (s.phase === 'stage_select') { if (s.stageNo === 2 && !s.from3) s.from3 = JSON.parse(JSON.stringify({truth: s.truth, tiers: s.tiers, clears: s.clears, stageNo: s.stageNo})); Core.enterStage(s, 0); }
+    else if (s.phase === 'running') Core.tick(s);
+    else if (s.phase === 'decision') Core.decide(s, choice);
+    else if (s.phase === 'result') Core.ackResult(s);
+    else throw new Error('台本の統治に出ない画面: ' + s.phase);
+  } return s; };
+  let bad = 0, n = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const a = play(Core.newRun(seed, {runs: 0}, {script: Core.INTRO_SCRIPT(), runLength: 3}), 'act');
+    if (!(a.end && a.end.kind === 'death' && a.end.title === '監督者の消失' && a.stageNo === 3)) { bad++; if (bad < 4) console.log('intro', seed, a.end && a.end.title, a.stageNo); }
+    for (const card of Object.keys(Core.TU_CARD)) for (const ch of ['act', 'investigate']) {
+      const t = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT(card), from: a.from3, cards: [card, 'llm_scribe'], runLength: 4}), ch);
+      n++;
+      if (!(t.end && t.end.title === '監督者の消失' && t.stageNo === 4 && t.saves.some(x => x.stageNo === 3))) { bad++; if (bad < 8) console.log('tutor', seed, card, ch, t.end && t.end.title, t.stageNo, t.saves.map(x => x.stageNo)); }
+    }
+    const d = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT('selfmod'), from: a.from3, cards: ['selfmod', 'llm_scribe'], runLength: 4}), 'dismiss');
+    if (!(d.end && (d.stageNo === 3 || d.saves.some(x => x.stageNo === 3)))) { bad++; if (bad < 8) console.log('dismiss', seed, d.end && d.end.title, d.stageNo); }
+  }
+  if (bad) throw new Error(`台本の統治が台本どおりに進まない: ${bad}件 ${JSON.stringify(Core.__last || {})}`);
+  console.log(`台本の統治 ${200 + n + 200} ラン: 台本どおり`);
+}

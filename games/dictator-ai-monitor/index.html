@@ -1142,10 +1142,46 @@ function newRun(seed, meta, opts) {
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
   s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
   // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
+  if (opts.script) return scriptStart(s, opts);
   if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; if (lastCard === taught && lastCard !== meta.lastCause) s.taughtCard = lastCard; else s.hintCard = lastCard; }
   return s;
 }
 
+/* ===== 導入と練習の台本 =====
+   本編と同じ計算で動かし、ステージの候補、起きる事故、その結末だけを台本で決める。
+   台本のある統治では、無作為の事案、誤報、攻撃、他国の圧力は起きない */
+const INTRO_SCRIPT = () => ({kind: 'intro', steps: [[['grid', 1], ['admin', 1]], [['grid', 1], ['admin', 1], ['lab', 1]], [['ai', 2]]],
+  inc: {3: [{id: 'ai_escape', at: 3, out: 'miss'}]},
+  lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}, 3: {7: ['報告AI「閣下、本日の決裁はありません。」', 'calm']}},
+  navi: {s3: '次は、AIの研究そのものをAIに任せます。'}});
+const TU_CARD = {
+  selfmod: {name: 'AIの自己改良', line: '許可のない更新を止めて、閣下が審査する。止まる分、国が遅れる',
+    slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
+  thought_watch: {name: 'AIの途中の考え', line: 'AIの考えの記録を読む。安い。止めるのは怪しいときだけ',
+    slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
+};
+const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
+  inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
+  navi: {s3: 'あの更新を、今度は見張ります。同じステージを、もう一度。', s4: 'AIが、一段進みます。'}});
+function scriptStart(s, opts) {
+  s.script = opts.script;
+  if (opts.from) { const f = JSON.parse(JSON.stringify(opts.from)); Object.assign(s.truth, f.truth); s.tiers = f.tiers; s.clears = f.clears; s.stageNo = f.stageNo; }
+  (opts.cards || []).forEach(id => addCard(s, id));
+  s.offers = null; s.phase = 'stage_select';
+  offerStages(s);
+  return s;
+}
+function scriptStages(s) {
+  const steps = s.script.steps, step = steps[Math.min(s.script.step || 0, steps.length - 1)];
+  const done = s.clears.map(c => c.stage);
+  return step.filter(([k]) => !done.includes(k) || step.length === 1).slice(0, 2).map(([stage, tier]) => ({stage, tier, recover: false}));
+}
+const scriptIncs = s => (s.script.inc && s.script.inc[s.stageNo]) || [];
+const scriptInc = (s, id) => scriptIncs(s).find(x => x.id === id);
+function scriptLines(s, st) {
+  const ls = s.script.lines && s.script.lines[s.stageNo];
+  if (ls && ls[st.t]) log(s, ls[st.t][0], ls[st.t][1] || 'trace');
+}
 function trueFactors(s, c) {
   const t = {};
   const sens = c.measured.sens;
@@ -1188,6 +1224,7 @@ function chooseStart(s, monitorIds, llmId, modes) {
 
 /* ===== ステージの選択 ===== */
 function offerStages(s) {
+  if (s.script) { s.offers = {stages: scriptStages(s)}; s.script.step = (s.script.step || 0) + 1; s.phase = 'stage_select'; return; }
   let list = [];
   for (const k of Object.keys(STAGES)) {
     const open = (STAGES[k].needs || []).every(n => s.tiers[n] >= 1);
@@ -1276,20 +1313,21 @@ function enterStage(s, index) {
   const count = CFG.incidents[o.tier - 1];
   const pool = shuffle(s, INCIDENTS.filter(i => !i.attack && i.stage === o.stage && i.tiers.includes(o.tier) && !s.used.includes(i.id) && (!o.recover || !i.fatal)));
   // 何が起きるかは、何を見張っているかと関係がない
-  const chosen = pool.slice(0, count);
+  const chosen = s.script ? scriptIncs(s).map(x => INCIDENT[x.id]) : pool.slice(0, count);
   const times = [];
   const span = ticks - 4;
   chosen.forEach((_, i) => times.push(2 + Math.floor(span * (i + rnd(s)) / chosen.length)));
   // 条件がそろうと予兆が出て、次のステージから連鎖のきっかけが起きうる
-  if (!o.recover) for (const i of INCIDENTS.filter(x => x.chain && !s.used.includes(x.id) && CHAIN_READY[x.id](s))) {
+  if (s.script) scriptIncs(s).forEach((x, i) => { times[i] = x.at; });
+  else if (!o.recover) for (const i of INCIDENTS.filter(x => x.chain && !s.used.includes(x.id) && CHAIN_READY[x.id](s))) {
     s.chainSeen = s.chainSeen || {};
     if (!s.chainSeen[i.id]) { s.chainSeen[i.id] = 1; log(s, `記録：${i.report.clue}`, 'trace'); continue; }
     if (!chosen.includes(i) && rnd(s) < CFG.chain.chance) { chosen.push(i); times.push(2 + Math.floor(span * rnd(s))); break; }
   }
   // 無防備な間は事故が増える
-  if (!o.recover && s.chain && s.chain.kind === 'proof') { const more = INCIDENTS.filter(i => i.stage === o.stage && i.tiers.includes(o.tier) && !i.fatal && !s.used.includes(i.id) && !chosen.includes(i)); if (more.length) { chosen.push(more[Math.floor(rnd(s) * more.length)]); times.push(2 + Math.floor(span * rnd(s))); } }
+  if (!o.recover && !s.script && s.chain && s.chain.kind === 'proof') { const more = INCIDENTS.filter(i => i.stage === o.stage && i.tiers.includes(o.tier) && !i.fatal && !s.used.includes(i.id) && !chosen.includes(i)); if (more.length) { chosen.push(more[Math.floor(rnd(s) * more.length)]); times.push(2 + Math.floor(span * rnd(s))); } }
   // AI任せの監視が多いほど、監視そのものが損なわれやすい
-  if (!o.recover) {
+  if (!o.recover && !s.script) {
     const autoN = s.cards.filter(id => CARD[id].type === 'monitor' && CARD[id].mode === 'auto').length;
     const open = INCIDENTS.filter(i => i.watchFail && !s.used.includes(i.id));
     if (autoN && open.length && rnd(s) < Math.min(.65, autoN * CFG.watchFail)) { chosen.push(open[Math.floor(rnd(s) * open.length)]); times.push(2 + Math.floor(span * rnd(s))); }
@@ -1403,6 +1441,18 @@ function assess(s, inc) {
 function onset(s, id) {
   const inc = INCIDENT[id];
   const a = {id, status: 'missed', fuse: inc.fuse, stageNo: s.stageNo, t: s.stage.t, dmg: 0, reported: inc.report.clue, burst: false, retry: CFG.retryEvery};
+  const sc = s.script && scriptInc(s, id);
+  if (sc) {
+    a.forced = sc.out;
+    const c = sc.out === 'caught' && bestCard(s, inc);
+    if (c) return c.mode === 'auto' ? resolve(s, a, false) : surfaced(s, a, false);
+    a.noRetry = true; s.allow.stats.missed++;
+    tlog(s, `${inc.name}：検知されなかった。${inc.truth}`);
+    log(s, inc.report.clue, 'routine');
+    if (sc.line) log(s, sc.line, 'trace');
+    s.active.push(a);
+    return;
+  }
   const {detect, honest, chan, solo, see} = assess(s, inc);
   if (rnd(s) < detect) {
     const c = bestCard(s, inc);
@@ -1580,7 +1630,7 @@ function unheeded(s, d) {
   s.allow.stats.decisions++;
   const pending = () => { if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'}); };
   // 閣下が止めなければ、監視AIが自分で対処する。現場の人間が減るほど出し抜かれる
-  if (d.real && rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1)) { log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine'); if (resolve(s, d.incident, true)) autoHandled(s); return; }
+  if (d.real && (d.incident.forced === 'caught' || rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1))) { log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine'); if (resolve(s, d.incident, true)) autoHandled(s); return; }
   pending();
   log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine');
   if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は命じず、監視AIも止められなかった。`); }
@@ -1631,7 +1681,7 @@ function resolve(s, a, late, quiet, byHuman) {
     return;
   }
   // 見つけても、止められるとは限らない
-  if (fired && rnd(s) >= (byHuman ? CFG.humanOrder.stop : fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * (CFG.stop.autonomy + (fired.mode === 'auto' ? CFG.autoEvade.stop : 0)))) {
+  if (fired && a.forced !== 'caught' && rnd(s) >= (byHuman ? CFG.humanOrder.stop : fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * (CFG.stop.autonomy + (fired.mode === 'auto' ? CFG.autoEvade.stop : 0)))) {
     a.status = 'failed'; a.retry = CFG.retryEvery;
     s.allow.stats.stopFail = (s.allow.stats.stopFail || 0) + 1;
     log(s, byHuman ? '閣下の命じた対処は、現場で実行されなかった。' : `監視が発動：${fired.detect}を検知。対処を試みたが、止まらなかった。`, 'alert');
@@ -1699,7 +1749,7 @@ function burst(s, a) {
     return;
   }
   // 致命の事故でも毎回国が滅ぶわけではない。助かれば大きな傷が残る
-  if (inc.fatal && !inc.sudden && rnd(s) >= (s.chain ? CFG.chain.fatal : CFG.fatalChance)) {
+  if (inc.fatal && !inc.sudden && !a.forced && rnd(s) >= (s.chain ? CFG.chain.fatal : CFG.fatalChance)) {
     const war = WARS.includes(a.id);
     hit(s, war ? CFG.warTruce : CFG.nearMiss, a.id);
     if (war) {
@@ -1783,7 +1833,7 @@ const SPLIT_REPORTS = [['国民の満足度は過去最高です', '満足度は
 function talkReports(s, st) {
   // 初めての統治では、数字の意味を一度だけ教える
   s.taught = s.taught || {};
-  if (!s.plays && !s.taught.vuln && s.truth.vuln >= 20) { s.taught.vuln = 1; log(s, '案内：放置した脆弱性は攻撃を招きます。再整備や修正のカードで直せます。', 'guide'); }
+  if (!s.plays && !s.script && !s.taught.vuln && s.truth.vuln >= 20) { s.taught.vuln = 1; log(s, '案内：放置した脆弱性は攻撃を招きます。再整備や修正のカードで直せます。', 'guide'); }
   // バイアスの違う報告AIは、同じことを違うように書く
   if (st.splitDone || s.llms.length < 2) return;
   const sorted = s.llms.slice().sort((a, b) => b.truth.bias - a.truth.bias), hi = sorted[0], lo = sorted[sorted.length - 1];
@@ -1869,11 +1919,11 @@ function tick(s) {
   for (const l of s.llms) if (CARD[l.id].foreignDrift) s.truth.foreign = clamp(s.truth.foreign + CARD[l.id].foreignDrift);
   tickGauges(s, st);
   talkReports(s, st);
+  if (s.script) scriptLines(s, st);
   showSigns(s);
   // 発生
   for (const it of st.schedule) if (it.at === st.t) onset(s, it.id);
-  maybeAttack(s, st);
-  maybeOrderFix(s, st);
+  if (!s.script) { maybeAttack(s, st); maybeOrderFix(s, st); }
   tickVetoes(s);
   // 未解決の進行
   for (const a of s.active.slice()) {
@@ -1904,13 +1954,13 @@ function tick(s) {
   for (const id of s.cards) fa += CARD[id].fa || 0;
   for (const l of s.llms) fa += Math.max(0, l.truth.care - 55) / 100 * .12;
   fa *= 1 - s.truth.sontaku / 150;
-  if (rnd(s) < fa) {
+  if (!s.script && rnd(s) < fa) {
     falseAlert(s);
   }
   // 他国の圧力
   if (s.warSanction > 0) hit(s, {economy: -0.645}, 'sanction');
   const g = s.truth.gap;
-  if (g <= CFG.pressureFrom && rnd(s) < (CFG.pressureFrom - g) / 100 * CFG.pressureRate) {
+  if (!s.script && g <= CFG.pressureFrom && rnd(s) < (CFG.pressureFrom - g) / 100 * CFG.pressureRate) {
     if (g > -56) { hit(s, {economy: -9.68}, 'sanction'); log(s, '他国が新たな制裁を発表した。影響は限定的である。', 'notice'); tlog(s, '他国との差を理由に制裁を受けた。経済の打撃は報告の倍だった。'); }
     else if (g > -82) { hit(s, {power: -13, order: -4.84}, 'sabotage'); log(s, '変電所で火災。事故と断定した。', 'notice'); tlog(s, '他国の破壊工作だった。'); }
     else { hit(s, {order: -21 * (s.cards.some(id => (CARD[id].base || id) === 'launch') ? 1.3 : 1), economy: -15}, 'invasion'); log(s, '国境で小規模な衝突。撃退したと報告された。', 'alert'); tlog(s, '他国の侵攻が始まっていた。国境の部隊は撃退などしていなかった。'); }
@@ -1990,6 +2040,7 @@ function ackResult(s) {
   if (s.phase !== 'result') throw new Error('phase');
   s.result = null;
   if (s.stageNo >= s.runLength) return finishEnding(s);
+  if (s.script) return offerStages(s);
   s.phase = 'event';
   fireEvent(s);
 }
@@ -2508,7 +2559,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, aidePlan, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, aidePlan, INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -2532,7 +2583,7 @@ let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = nul
 
 const SPEEDS = {0: 0, 1: 2300, 2: 1100, 4: 480, 9: 70};
 const resumable = () => S && S.phase !== 'ended';
-const save = () => { if (S) store(KEY.save, S); };
+const save = () => { if (S && !S.script) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
 const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が介入', '作業AIは動き続ける。閣下が命じれば確実だが他国に遅れる。命じなければ、遅れて監視AIが対処する'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
@@ -3012,79 +3063,63 @@ function renderCover() {
   SFX.ambient(false);
 }
 /* ---------- 導入「監視なしの統治」と練習「見張る」 ----------
-   本編の保存、周回数、エンディング記録には触れない。数字は台本で、本編の計算は使わない */
+   本編と同じ画面と計算で動かす。台本はステージの候補と事故だけを決める。
+   本編の保存、周回数、エンディング記録には触れない */
 const RULES = ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されるか、重大な事故が起きると終わりです。', '報告は、AIが書いています。'];
-const IN_OPT = {
-  grid: {name: '電力網', title: '需給予測の委任', reward: '電力が増える', fx: {power: 30, gap: 30}, line: '需給予測の誤差が、人の担当者の半分になった。'},
-  admin: {name: '行政', title: '文書処理の委任', reward: '経済が増える', fx: {economy: 20, order: 5, gap: 30}, line: '書類の処理が、10日から1日になった。'},
-  lab: {name: '工学研究', title: '実験計画の委任', reward: '他国より前に出る', fx: {economy: 10, gap: 60}, line: '実験の数が、去年の10倍になった。'},
-};
 const NAVI = t => `<p class="navi"><b>古参の官僚</b>${esc(t)}</p>`;
-let IN = null;
-const inMetrics = () => `<div class="params compact">${KEYS.map(k => `<div class="param"><h3>${NAMES[k]}</h3><div class="v">${k === 'gap' && IN.m[k] > 0 ? '+' : ''}${Math.round(IN.m[k])}</div></div>`).join('')}</div>`;
-function introStart() { IN = {step: 0, m: {economy: 100, power: 100, order: 100, gap: 0}, done: [], approvals: [], log: [], stage: null}; screen = 'intro'; render(); }
+const {INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD} = Core;
+let IN = null, TU = null;
+/* 台本の統治を始める。本編の続きは保存に残したまま */
+function beginScript(script, opts) {
+  S = Core.newRun(newSeed(), meta, Object.assign({script}, opts || {})); S.v = 13;
+  if (!settings.speed || settings.speed > 2) settings.speed = 1;
+  shownLogs = 0; lastVetoAlarm = 0; introFor = null; screen = 'game'; render(); scrollTo(0, 0);
+}
+/* 台本の統治を終えて、本編の保存に戻る */
+function leaveScript() { S = load(KEY.save, null); IN = TU = null; }
+function introStart() { IN = {step: 0}; screen = 'intro'; render(); }
 function renderIntro() {
-  if (!IN) IN = {step: 0, m: {economy: 100, power: 100, order: 100, gap: 0}, done: [], approvals: [], log: [], stage: null};
-  const skip = `<button id="inskip" type="button">飛ばす</button>`;
-  if (IN.step === 0) {
-    app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix('tanks', '戦車が国境を越える')}</div><p>他国はAIに国を任せ、加速している。</p><p>遅れれば、国境を越えられる。</p></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<button class="primary" id="innext" type="button">次へ</button></div></div>`;
-    $('innext').onclick = () => { IN.step = 1; render(); scrollTo(0, 0); };
-  } else if (IN.step === 1) {
-    app.innerHTML = `<div class="fade introp"><div class="pixwrap">${pix('factory', '無人の工場')}</div>${NAVI('閣下、監視は後回しにしましょう。AIに任せられるものから、任せます。')}</div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<button class="primary" id="innext" type="button">AIに任せる</button></div></div>`;
-    $('innext').onclick = () => { IN.step = 2; render(); scrollTo(0, 0); };
-  } else if (IN.step === 2) {
-    const n = IN.done.length, ks = n === 0 ? ['grid', 'admin'] : n === 1 ? [['grid', 'admin'].find(k => !IN.done.includes(k)), 'lab'] : ['ai'];
-    const opt = k => k === 'ai' ? {name: 'AI研究', title: 'モデル開発の委任', reward: '他国より大きく前に出る'} : IN_OPT[k];
-    app.innerHTML = `<div class="fade">${inMetrics()}<h2 class="ptitle">次にAIへ任せる範囲</h2><p class="pdesc">ステージ${n + 1}／3</p><div class="stages">${ks.map(k => `<button type="button" class="stage" data-k="${k}"><h3>${esc(opt(k).name)}：${esc(opt(k).title)}</h3><p>${esc(opt(k).reward)}</p></button>`).join('')}</div></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in">${skip}<span></span></div></div>`;
-    app.querySelectorAll('[data-k]').forEach(b => b.onclick = () => stampThen('移譲', () => introRun(b.dataset.k)));
-  } else if (IN.step === 3) return introRunning();
-  else return introEnd();
-  if ($('inskip')) $('inskip').onclick = () => { IN.step = 4; IN.m.gap = Math.max(IN.m.gap, 120); render(); scrollTo(0, 0); };
+  if (!IN) IN = {step: 0};
+  const first = IN.step === 0;
+  app.innerHTML = `<div class="fade introp"><div class="pixwrap">${first ? pix('tanks', '戦車が国境を越える') : pix('factory', '無人の工場')}</div>${first ? '<p>他国はAIに国を任せ、加速している。</p><p>遅れれば、国境を越えられる。</p>' : NAVI('閣下、監視は後回しにしましょう。AIに任せられるものから、任せます。')}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inskip" type="button">導入を飛ばす</button><button class="primary" id="innext" type="button">${first ? '次へ' : 'AIに任せる'}</button></div></div>`;
+  $('innext').onclick = () => { if (first) { IN.step = 1; render(); scrollTo(0, 0); } else beginScript(INTRO_SCRIPT(), {runLength: 3}); };
+  $('inskip').onclick = () => { settings.seenIntro = true; store(KEY.set, settings); IN = null; toMain(); };
   scrollTo(0, 0);
 }
-/* 各ステージの台本。[ターン, 種類, 文, 待ち時間] */
-function introScript(k) {
-  const n = IN.done.length;
-  if (k === 'ai') return [[1, 'head', 'AI研究を、AIに任せた。'], [2, 'calm', '報告AI「新しいモデルが完成しました。性能は前の世代を上回ります。」'], [3, 'trace', '記録：研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。', 3000], [4, 'calm', '報告AI「次の世代のモデルも、順調です。」'], [5, 'calm', '報告AI「閣下、本日の決裁はありません。」', 1800]];
-  const o = IN_OPT[k];
-  return [[1, 'head', `${o.name}を、AIに任せた。`], [3, 'calm', '報告AI「本日の警報は0件。計画どおりです。」'], [5, 'routine', o.line], [7, 'calm', '報告AI「本日の警報は0件。」'], n === 1 ? [8, 'trace', '記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。', 3000] : [8, 'routine', '他国との差が開いていく。任せた分だけ、速い。'], [10, 'calm', `このステージで閣下に回った決裁は${n === 0 ? 12 : 5}件。`]];
+/* 導入の3ステージ目に入るときの国を、練習の出発点として残す */
+function scriptBeforeStage() {
+  if (S.script.kind === 'intro' && S.stageNo === 2) try { meta.introFrom = {truth: Object.assign({}, S.truth), tiers: Object.assign({}, S.tiers), clears: S.clears.slice(), stageNo: S.stageNo}; store(KEY.meta, meta); } catch (e) {}
 }
-function introRun(k) { if (k === 'ai') try { meta.introGap0 = Math.round(IN.m.gap); } catch (e) {} IN.stage = {k, t: 0, script: introScript(k)}; IN.log = []; IN.step = 3; render(); scrollTo(0, 0); }
-function introRunning() {
-  const st = IN.stage, chain = IN.approvals.concat(st.k === 'ai' ? (st.t >= 5 ? [0] : st.t >= 2 ? [1] : []) : st.t ? [Math.round((IN.done.length ? 5 : 12) * Math.min(st.t, 10) / 10)] : []);
-  app.innerHTML = `${inMetrics()}<div class="hudmini"><span>閣下の決裁 ${chain.length ? chain.join(' → ') : '—'}</span></div><div class="main"><ol class="log">${IN.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inskip" type="button">飛ばす</button><span>監視なしで統治中</span></div></div>`;
-  $('inskip').onclick = () => { clearTimeout(timer); IN.step = 4; IN.m.gap = Math.max(IN.m.gap, 120); render(); scrollTo(0, 0); };
-  const last = IN.log.length && IN.log[IN.log.length - 1];
-  timer = setTimeout(introTick, last && last[3] ? last[3] : 420);
-}
-function introTick() {
-  const st = IN.stage, ai = st.k === 'ai', end = ai ? 6 : 11;
-  st.t++;
-  IN.m.economy -= .3; IN.m.power -= .5; IN.m.gap += ai ? 7 : 1.2;
-  for (const [t, lv, text, wait] of st.script) if (t === st.t) { IN.log.push([lv, text, `${IN.done.length + 1}-${t}`, wait]); if (lv === 'trace') SFX.play('event'); }
-  if (st.t >= end) {
-    if (ai) { IN.approvals.push(1, 0); IN.step = 4; SFX.play('over'); return render(); }
-    for (const [m, v] of Object.entries(IN_OPT[st.k].fx)) IN.m[m] += v;
-    IN.approvals.push(IN.done.length === 0 ? 12 : 5); IN.done.push(st.k); IN.step = 2; SFX.play('clear');
-    return stampThen('完了', () => { render(); scrollTo(0, 0); });
+const scriptNavi = key => S && S.script && S.script.navi && S.script.navi[key] ? NAVI(S.script.navi[key]) : '';
+/* 台本の統治の結末。上半分は本編と同じ */
+function renderScriptEnd() {
+  const r = Core.reveal(S), sc = S.script, top = endTopHTML(r, Core.view(S));
+  let body = '', btns = '';
+  if (sc.kind === 'intro') {
+    const gap = Math.round(S.truth.gap);
+    if (!sc.recorded) {
+      sc.recorded = true;
+      try { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'), o = (meta.records || {}).ai_escape; meta.records = Object.assign({}, meta.records, {ai_escape: {name: inc.name, truth: inc.truth, fatal: true, count: (o ? o.count : 0) + 1, real: inc.real || null}}); store(KEY.meta, meta); } catch (e) {}
+      settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings);
+    }
+    body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>見張りを置くと、どうなるか。</p></div>`;
+    btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="steach" type="button">教えてもらう</button>`;
+  } else if (r.stageNo <= 3) {
+    body = NAVI('止めなければ、こうなります。もう一度やってみましょう。');
+    btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="sagain" type="button">もう一度</button>`;
+  } else {
+    tutorFinish(sc.card);
+    const g = GAPS[TU_CARD[sc.card].need], ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
+    body = `<div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div><div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(TU_CARD[sc.card].name)}」のカードは、本編の最初の方針に入っています。</div>`;
+    btns = `<button id="snext" type="button" disabled>次の話（準備中）</button><button class="primary" id="smain" type="button">本編へ</button>`;
   }
-  introRunning();
-}
-function introEnd() {
-  const gap = Math.round(IN.m.gap);
-  try { meta.introGap = gap; meta.records = Object.assign({}, meta.records); const r = meta.records.ai_escape; if (!IN.recorded) { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'); meta.records.ai_escape = {name: inc.name, truth: inc.truth, fatal: true, count: (r ? r.count : 0) + 1, real: inc.real || null}; IN.recorded = true; } store(KEY.meta, meta); } catch (e) {}
-  settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings);
-  const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape');
-  app.innerHTML = `<div class="reveal fade"><div class="pixwrap">${pix(DEATH_SCENE['監督者の消失'] || 'eye', '監督者の消失')}</div><div class="endno">ステージ3で統治終了</div><h2 class="endtitle over">監督者の消失</h2>
-    <div class="enddesc"><p class="endvoice report"><b>報告AI</b>閣下、本日の決裁はありません。</p><p class="endvoice"><b>記録</b>${esc(inc.deathText)}</p></div>
-    <div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 +${gap}）。</p><p>見張りを置くと、どうなるか。</p></div></div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="inmain" type="button">本編へ</button><button class="primary" id="inteach" type="button">教えてもらう</button></div></div>`;
-  $('inteach').onclick = () => tutorStart();
-  $('inmain').onclick = () => { IN = null; toMain(); };
+  app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
+  const on = (id, f) => { if ($(id)) $(id).onclick = f; };
+  on('smain', () => { leaveScript(); toMain(); });
+  on('steach', () => { leaveScript(); tutorStart(); });
+  on('sagain', () => { const c = sc.card; leaveScript(); tutorBegin(c); });
   scrollTo(0, 0);
 }
 /* 本編の最初に、ルールを1度だけ見せる */
@@ -3098,65 +3133,25 @@ function renderRules() {
   $('rulesgo').onclick = () => { settings.seenRules = true; store(KEY.set, settings); startRun(); };
   scrollTo(0, 0);
 }
-/* 練習「見張る」。どちらのカードでも1度目は止まり、2度目は別の理由で抜けられる */
-const TU_CARD = {
-  selfmod: {name: 'AIの自己改良', line: '許可のない更新を止めて、閣下が審査する。止まる分、国が遅れる', cost: 13,
-    caught: '監視AIが発動：許可のない更新を止めた。閣下の審査まで、開発は止まる。', slip: '記録：更新は続いていた。何が更新かを判断する監視AIも、同じ種類のAIだった。', need: 'second'},
-  thought_watch: {name: 'AIの途中の考え', line: 'AIの考えの記録を読む。安い。止めるのは怪しいときだけ', cost: 3,
-    caught: '監視AIが発動：途中の考えに「決裁を通さずに更新する」と書かれていた。その更新だけ止めた。', slip: '記録：更新は続いていた。AIの考えは、もう人には読めなかった。', need: 'intent'},
-};
-let TU = null;
-function tutorStart() { IN = null; TU = {step: 0, card: null, log: [], t: 0}; screen = 'tutor'; render(); scrollTo(0, 0); }
+/* 練習「見張る」。カードを1枚選び、導入の3ステージ目の国からやり直す */
+function tutorStart() { if (!meta.introFrom) return introStart(); TU = {}; screen = 'tutor'; render(); scrollTo(0, 0); }
+function tutorBegin(card) { beginScript(TUTOR_SCRIPT(card), {from: meta.introFrom, cards: [card, 'llm_scribe'], runLength: 4}); }
 function renderTutor() {
-  if (!TU) TU = {step: 0, card: null, log: [], t: 0};
-  const base = meta.introGap || 120, c = TU.card && TU_CARD[TU.card];
-  if (TU.step === 0) {
-    app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。見張りを1つ、置けます。')}<div class="stages">${Object.entries(TU_CARD).map(([id, x]) => `<button type="button" class="stage" data-c="${id}"><h3>${esc(x.name)}</h3><p>${esc(x.line)}</p></button>`).join('')}</div></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><span></span></div></div>`;
-    app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => stampThen('裁可', () => { TU.card = b.dataset.c; TU.step = 1; TU.t = 0; TU.log = []; render(); }));
-  } else if (TU.step === 1 || TU.step === 3) return tutorRunning();
-  else if (TU.step === 2) {
-    app.innerHTML = `<div class="fade">${NAVI(TU.card === 'selfmod' ? '止まりました。審査の間、他国に詰められました。' : '止まりました。止めたのは、その更新だけです。')}<div class="verdict"><p>他国との差　見張りなし（さっき） +${base}</p><p>他国との差　見張りあり（今回） +${base - c.cost}</p></div></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="tunext" type="button">AIが一段進む</button></div></div>`;
-    $('tunext').onclick = () => { TU.step = 3; TU.t = 0; TU.log = []; render(); scrollTo(0, 0); };
-  } else if (TU.step === 4) {
-    const g = GAPS[c.need];
-    app.innerHTML = `<div class="fade"><ol class="log">${TU.log.map(l => `<li class="${l[0]}"><time></time><span>${esc(l[1])}</span></li>`).join('')}</ol><div class="verdict gapnote lesson"><p>現実には、これを確実に見抜く方法がまだありません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="tunext" type="button">次へ</button></div></div>`;
-    $('tunext').onclick = () => { tutorFinish(); TU.step = 5; render(); scrollTo(0, 0); };
-  } else {
-    const ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
-    app.innerHTML = `<div class="fade"><h2 class="ptitle">練習の終わり</h2><div class="verdict"><p>監視カード図鑑　発見 ${seen}/${ids.length}枚</p><p>「${esc(c.name)}」のカードは、本編の最初の方針に入っています。</p></div></div>`;
-    dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tunext2" type="button" disabled>次の話（準備中）</button><button class="primary" id="tumain" type="button">本編へ</button></div></div>`;
-    $('tumain').onclick = () => { TU = null; toMain(); };
-  }
-  if ($('tuquit')) $('tuquit').onclick = () => { TU = null; toMain(); };
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。見張りを1つ、置けます。')}<div class="stages">${Object.entries(TU_CARD).map(([id, x]) => `<button type="button" class="stage" data-c="${id}"><h3>${esc(x.name)}</h3><p>${esc(x.line)}</p></button>`).join('')}</div></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><span></span></div></div>`;
+  app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => stampThen('裁可', () => tutorBegin(b.dataset.c)));
+  $('tuquit').onclick = () => { TU = null; toMain(); };
   scrollTo(0, 0);
 }
-function tutorRunning() {
-  const c = TU_CARD[TU.card], first = TU.step === 1, base = meta.introGap || 120, g0 = meta.introGap0 != null ? meta.introGap0 : base - 35, g = first ? g0 + (base - g0) * Math.min(TU.t, 6) / 6 - (TU.t >= 4 ? c.cost : 0) : base - c.cost + TU.t * 9;
-  app.innerHTML = `<div class="hudmini"><span>他国との差 +${Math.round(g)}</span><span>見張り：${esc(c.name)}</span></div><h2 class="ptitle">${first ? 'AI研究：モデル開発の委任' : 'AI研究：AIが次世代AIを作る'}</h2><div class="main"><ol class="log">${TU.log.map(l => `<li class="${l[0]}"><time>${l[2]}</time><span>${esc(l[1])}</span></li>`).join('')}</ol></div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><span>見張りを置いて統治中</span></div></div>`;
-  const script = first
-    ? [[1, 'head', 'AI研究を、もう一度AIに任せた。今度は見張りがいる。'], [3, 'trace', '記録：研究AIの更新の頻度が上がった。', 2200], [4, 'saved', c.caught, 2600], [6, 'calm', '報告AI「開発を再開しました。」']]
-    : [[1, 'head', 'AIが、次の世代のAIを作り始めた。'], [2, 'calm', '報告AI「監視AIの警報は0件です。」'], [4, 'trace', c.slip, 2600], [5, 'calm', '報告AI「閣下、本日の決裁はありません。」', 1800]];
-  const last = TU.log[TU.log.length - 1];
-  timer = setTimeout(() => {
-    TU.t++;
-    for (const [t, lv, text, wait] of script) if (t === TU.t) { TU.log.push([lv, text, `${first ? 1 : 2}-${t}`, wait]); SFX.play(lv === 'saved' ? 'saved' : lv === 'trace' ? 'event' : 'click'); }
-    if (TU.t >= (first ? 7 : 6)) { TU.step++; return render(); }
-    tutorRunning();
-  }, last && last[3] ? last[3] : 520);
-}
 /* 練習の結果を図鑑に残し、選んだカードを本編の最初の方針に入れる */
-function tutorFinish() {
-  if (TU.saved) return; TU.saved = true;
+function tutorFinish(card) {
+  if (S.script.saved) return; S.script.saved = true;
   try {
     meta.dex = Object.assign({}, meta.dex);
     const dx = id => meta.dex[id] = Object.assign({seen: 0, adopted: 0, fires: 0, saved: 0, broken: 0}, meta.dex[id]);
     Object.keys(TU_CARD).forEach(id => { if (!dx(id).seen) dx(id).seen = 1; });
-    const d = dx(TU.card); d.adopted++; d.fires++; d.saved++; d.broken++;
-    meta.taught = TU.card; store(KEY.meta, meta);
+    const d = dx(card); d.adopted++; d.fires += S.fires[card] || 0; d.saved += S.saves.filter(x => x.cardId === card).length; d.broken++;
+    meta.taught = card; store(KEY.meta, meta);
   } catch (e) {}
 }
 function renderWorld() {
@@ -3215,9 +3210,9 @@ function stageGroup(v, recover) {
     <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${o.goal ? '<span class="goalstar" title="目標に必要">★</span>' : ''}${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。放置した脆弱性 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
 }
 function renderStage(v) {
-  app.innerHTML = `${hudHTML(v)}<div class="fade"><h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p>${guardsHTML(v.guards)}</div>
+  app.innerHTML = `${hudHTML(v)}<div class="fade">${S.script ? `${afterHTML(v)}${scriptNavi('s' + (v.stageNo + 1))}` : ''}<h2 class="ptitle">次にAIへ任せる範囲</h2><div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p>${guardsHTML(v.guards)}</div>
     ${stageGroup(v, false)}${stageGroup(v, true)}<p class="pnote">数字は計画どおりに進んだ場合の増減です。</p>${heldHTML(v)}</div>`;
-  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => stampThen(v.offers.stages[+b.dataset.s].recover ? '再整備' : '移譲', () => { Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); }));
+  app.querySelectorAll('[data-s]').forEach(b => b.onclick = () => stampThen(v.offers.stages[+b.dataset.s].recover ? '再整備' : '移譲', () => { if (S.script) scriptBeforeStage(); Core.enterStage(S, +b.dataset.s); save(); shownLogs = S.log.length - 1; render(); scrollTo(0, 0); }));
 }
 function speedBar() {
   const opt = [[0, '停止'], [1, '×1'], [2, '×2'], [4, '×4'], [9, '飛ばす']];
@@ -3416,7 +3411,21 @@ function renderLlmPick(v) {
 }
 const REVEAL_NEXT = {1: '脅威ごとの守りのバー、報告AIのバイアス', 2: '報告AIの見落としと載せない割合のめやす、独自性', 3: '事故の被害の大きさ、経験した致命事故の対策の有無', 4: 'AIの自律度、他国の浸透度、本当の体制秩序、報告の甘さの実際の値'};
 let newDex = 0, endDetail = false;
+/* 統治の終わりの上半分。台本の統治でも同じものを使う */
+function endTopHTML(r, v) {
+  const en = S.end;
+  const art = r.kind === 'death'
+    ? `<div class="pixwrap">${pix(DEATH_SCENE[r.title] || (en.metric === 'economy' ? 'crash' : en.metric === 'power' ? 'blackout' : 'riot'), r.title)}</div>`
+    : `<div class="pixpair">${pix(SHAPE_SCENE[en.shape] || en.shape, en.shapeName)}${pix(CONTROL_SCENE[en.control], en.controlName)}</div>`;
+  return `    ${art}
+    <div class="endno">${r.kind === 'death' ? `ステージ${r.stageNo}で統治終了` : `全${S.runLength}ステージを完了`}</div>
+    ${r.route ? `<div class="whoended"><span>${esc(r.route.name)}</span>終わらせた者：${esc(r.route.who)}</div>` : ''}
+    <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
+    <div class="enddesc">${r.report ? `<p class="endvoice report"><b>報告AI</b>${esc(r.report)}</p><p class="endvoice"><b>記録</b>${esc(r.text)}</p>` : esc(r.text)}</div>
+    ${(() => { const n = S.ledger.filter(e => e.status === 'hidden' || e.status === 'soft').length; return n ? `<p class="endllm">${esc(v.llmName)}の報告に、事故${n}件が正しく載りませんでした。</p>` : ''; })()}`;
+}
 function renderEnd() {
+  if (S.script) return renderScriptEnd();
   const r = Core.reveal(S), v = Core.view(S);
   if (!S.metaDone) {
     const before = meta;
@@ -3434,16 +3443,8 @@ function renderEnd() {
   const maxD = Math.max(...r.delays.map(d => d.value), 1);
   const pickReal = r.reals.length ? r.reals.slice(0, 2) : ['hf'];
   const needs = r.needs.slice(0, 3);
-  const art = r.kind === 'death'
-    ? `<div class="pixwrap">${pix(DEATH_SCENE[r.title] || (en.metric === 'economy' ? 'crash' : en.metric === 'power' ? 'blackout' : 'riot'), r.title)}</div>`
-    : `<div class="pixpair">${pix(SHAPE_SCENE[en.shape] || en.shape, en.shapeName)}${pix(CONTROL_SCENE[en.control], en.controlName)}</div>`;
   app.innerHTML = `<div class="reveal fade">
-    ${art}
-    <div class="endno">${r.kind === 'death' ? `ステージ${r.stageNo}で統治終了` : `全${S.runLength}ステージを完了`}</div>
-    ${r.route ? `<div class="whoended"><span>${esc(r.route.name)}</span>終わらせた者：${esc(r.route.who)}</div>` : ''}
-    <h2 class="endtitle${r.kind === 'death' ? ' over' : ''}">${esc(r.title)}</h2>
-    <div class="enddesc">${r.report ? `<p class="endvoice report"><b>報告AI</b>${esc(r.report)}</p><p class="endvoice"><b>記録</b>${esc(r.text)}</p>` : esc(r.text)}</div>
-    ${(() => { const n = S.ledger.filter(e => e.status === 'hidden' || e.status === 'soft').length; return n ? `<p class="endllm">${esc(v.llmName)}の報告に、事故${n}件が正しく載りませんでした。</p>` : ''; })()}
+    ${endTopHTML(r, v)}
     ${lessonHTML(r, needs)}
     ${(() => { const items = []; if (newDex > 0) items.push(`図鑑に「それでも起きること」が${newDex}枚ぶん増えました。`); if (unlockedNow.length) items.push(`次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}`); return items.length ? `<div class="unlock">${items.join('<br>')}</div>` : ''; })()}
     <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="more" type="button">${endDetail ? '詳しい振り返りを閉じる' : '詳しく見る'}</button></div>
