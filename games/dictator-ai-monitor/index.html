@@ -1500,7 +1500,9 @@ function surfaced(s, a, late) {
   s.queue.push(d);
 }
 function falseAlert(s) {
-  const mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor' && (c.mode === 'on' || (c.mode === 'in' && !overHuman(s))));
+  // 誤報は持っている監視カード全体から出る。閣下に届くのは、閣下が関わるカードの分だけ
+  const all = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor'), one = all.length ? pick(s, all) : null;
+  const mons = one && (one.mode === 'on' || (one.mode === 'in' && !overHuman(s))) ? [one] : [];
   const line = pick(s, FALSE_ALARM);
   if (!mons.length) {
     const c = {gap: CFG.falseAlarm.gap, economy: -CFG.falseAlarm.economy};
