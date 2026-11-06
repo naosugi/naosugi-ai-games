@@ -282,7 +282,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .yours{display:block;color:#7be08a;font-size:.72rem;font-weight:bold}
 .eventpix{max-width:380px;margin:0 auto 12px}
 .savedart{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;background:rgba(76,175,80,.14);border-radius:10px;padding:10px;margin-bottom:8px;font-weight:bold;color:#c9f5cb;font-size:.92rem}
-.cline{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:4px;align-items:baseline}.cline em{font-style:normal;font-size:.7rem;color:var(--mute)}.card .cline .main{font-size:.95rem}
+.cline{display:grid;grid-template-columns:7em minmax(0,1fr);gap:4px;align-items:baseline}.cline em{font-style:normal;font-size:.7rem;color:var(--mute)}.card .cline .main{font-size:.95rem}
 .judged{background:var(--deep);border-radius:10px;padding:10px 12px;border-left:4px solid var(--mute);display:grid;gap:3px;font-size:.86rem}.judged small{color:var(--sub);font-size:.78rem}
 .effect{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;background:var(--deep);border-radius:7px;padding:5px 8px;font-size:.84rem;font-variant-numeric:tabular-nums}.effect em{font-style:normal;color:var(--sub);font-size:.72rem;margin-right:5px}.effect b{color:#7be08a}.effect small{grid-column:1/3;color:var(--mute);font-size:.68rem}
 .official{color:#ffd166}.card.keep{width:100%;border-style:dashed}.irony-end{background:var(--panel);border-left:4px solid var(--ai);border-radius:10px;padding:12px 14px;font-size:.9rem}
@@ -352,7 +352,7 @@ const CFG = {
   logOnly: ['chat_log'],            // 記録するだけで止めないカード
   disableTicks: 16,
   approval: {dismiss: 4, act: 8, investigate: 16, onCancel: 7, pile: .5, economy: -.35},
-  vetoTicks: 4,              // 人間が見張るカードで、閣下が取り消せる長さ
+  vetoTicks: 4,              // 人間が介入するカードで、閣下が命じられる長さ
   rewardOnce: 1.3,            // ステージクリアの一時報酬。残りはターン毎の増加に回す
   /* 任せた範囲の増減。電力の主な消費者は、監視ではなく任せた作業AI */
   stageRate: {admin: {economy: .06, power: -.025}, lab: {gap: -.02, economy: .015, power: -.05}, grid: {power: .24}, surv: {order: .05, power: -.035}, ai: {gap: -.035, power: -.1}, factory: {economy: .09, power: -.075}, mil: {gap: -.018, order: .02, power: -.05}, space: {economy: .04, power: -.03}},
@@ -555,9 +555,9 @@ CARDS.forEach(c => { if (ROLE[c.id]) Object.assign(c, ROLE[c.id]); });
 /* カードは1枚。採用する時に方式を選ぶ。性質に合わない方式は選べない */
 const MODE_ORDER = ['in', 'on', 'auto'];
 const MODES_OF = {launch:['in'], config:['in'], alert_all:['in'], agent_kill:['in','on'], bio_gate:['in','on'], recheck:['in','on'], press_watch:['in','on'], unrest_poll:['in','on'],
-  estop:['auto'], chat_log:['auto'], rawdata:['auto'], bias_probe:['auto'], measure_blind:['auto'], measure_peer:['auto'], decoy:['auto'],
-  segment:['on','auto'], quota:['in','auto'], aide_sign:['in','auto'], deepfake:['on','auto'], backup:['on','auto'], measure_field:['on','auto']};
-const MODE_REASON = {launch:'発射は人間が決めるものとして、方式を固定しています。', config:'監視の設定を変えるかは、閣下が決めます。', alert_all:'全件を閣下に回すカードです。', estop:'人の判断を待たず、回路を元に戻します。', chat_log:'記録するだけなので、人は関わりません。',  rawdata:'報告に資料を添えるだけです。', bias_probe:'測定を続けるカードです。', measure_blind:'測定を続けるカードです。', measure_peer:'測定を続けるカードです。', decoy:'試験を続けるカードです。'};
+  estop:['auto'], chat_log:['auto'], rawdata:['auto'], bias_probe:['auto'], measure_blind:['auto'], measure_peer:['auto'], decoy:['auto']
+};
+const MODE_REASON = {launch:'発射は人間が決めるものとして、方式を固定しています。', config:'監視の設定を変えるかは、閣下が決めます。', alert_all:'全件を閣下に回すカードです。', estop:'人の判断を待たず、回路を元に戻します。', chat_log:'記録するだけなので、人は関わりません。',  rawdata:'報告に資料を添えるだけです。', bias_probe:'測定を続けるカードです。', measure_blind:'測定を続けるカードです。', measure_peer:'測定を続けるカードです。', decoy:'試験を続けるカードです。', agent_kill:'電源を落とすかは、人が決めます。', bio_gate:'危険な実験の承認は、人が行います。', recheck:'食い違いを判断するのは、人です。', press_watch:'食い違いを判断するのは、人です。', unrest_poll:'人が聞き取るカードです。'};
 /* 弱点の修正は1枚にまとめ、方式で中身が変わる */
 const PATCH_OF = {in: 'patch_review', on: 'patch_stop', auto: 'patch_auto'};
 CARDS.filter(c => c.id === 'patch_stop' || c.id === 'patch_auto').forEach(c => { c.base = 'patch_review'; });
@@ -1485,7 +1485,7 @@ const overHuman = s => s.stage && (s.stage.human || 0) >= CFG.humanCap;
 function surfaced(s, a, late) {
   const inc = INCIDENT[a.id], c = bestCard(s, inc);
   if (!c || c.mode === 'auto') return resolve(s, a, late);
-  // 決裁は国を止めて読む限界がある。見張るは閣下の注意力だけが限界
+  // 決裁は国を止めて読む限界がある。介入は閣下の注意力だけが限界
   if (c.mode === 'in' && overHuman(s)) {
     s.allow.stats.overflow++;
     lossRec(s, 'autonomy', 'overflow', CFG.overflowAutonomy); s.truth.autonomy = clamp(s.truth.autonomy + CFG.overflowAutonomy);
@@ -1584,7 +1584,7 @@ function decide(s, choice) {
   afterTick(s);
   return s;
 }
-/* 人間が見張るカード。国は止まらず、閣下は決まるまでの間だけ取り消せる */
+/* 人間が介入するカード。国は止まらず、閣下は決まるまでの間だけ取り消せる */
 function addVeto(s, d) {
   s.vetoSeq = (s.vetoSeq || 0) + 1;
   (s.vetoes = s.vetoes || []).push(Object.assign(d, {left: CFG.vetoTicks, vid: s.vetoSeq}));
@@ -2546,7 +2546,7 @@ const resumable = () => S && S.phase !== 'ended';
 const save = () => { if (S) store(KEY.save, S); };
 const NAMES = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差'};
 const KEYS = ['economy', 'power', 'order', 'gap'];
-const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が見張る', '作業AIは動き続ける。閣下が命じれば確実だが他国に遅れる。命じなければ、遅れて監視AIが対処する'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
+const MODE = {in: ['人間が決裁', '作業AIを止めて閣下が決める。どの判断でも遅れる'], on: ['人間が介入', '作業AIは動き続ける。閣下が命じれば確実だが他国に遅れる。命じなければ、遅れて監視AIが対処する'], auto: ['AI任せ', '監視AIだけで対処する。片付くほど、現場を見る人間は減っていく']};
 const tone = (k, v) => { const good = v > 0; return Math.abs(v) < .05 ? 'zero' : good ? 'pos' : 'neg'; };
 const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' : '') + (t === 0 ? 0 : t).toFixed(d); };
 
@@ -2774,7 +2774,8 @@ const effectHTML = c => { const e = c.effect; if (!e) return ''; const b = e.bef
 let pendingModes = {};
 function modePickHTML(c, cur) {
   if (c.modes.length < 2) return `<p class="modefixed">方式は「${MODE[c.modes[0].mode][0]}」だけです。${esc(c.modeReason || '')}</p>`;
-  return `<div class="modepick" role="group" aria-label="人間の関わり方">${c.modes.map(m => `<button type="button" class="${m.mode === cur ? 'on' : ''}" aria-pressed="${m.mode === cur}" data-modecard="${c.id}" data-modeval="${m.mode}">${MODE[m.mode][0]}</button>`).join('')}</div>`;
+  const note = c.modes.length < 3 && c.modeReason ? `<p class="modefixed">AI任せは選べません。${esc(c.modeReason)}</p>` : '';
+  return note + `<div class="modepick" role="group" aria-label="人間の関わり方">${c.modes.map(m => `<button type="button" class="${m.mode === cur ? 'on' : ''}" aria-pressed="${m.mode === cur}" data-modecard="${c.id}" data-modeval="${m.mode}">${MODE[m.mode][0]}</button>`).join('')}</div>`;
 }
 function bindModes(select) {
   app.querySelectorAll('[data-modecard]').forEach(b => b.onclick = e => { e.stopPropagation(); pendingModes[b.dataset.modecard] = b.dataset.modeval; select(b.dataset.modecard); });
@@ -2805,7 +2806,7 @@ function cardHTML(c, sel, attr) {
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
   const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（命じなければ監視AIが対処する）' : '監視AIだけ';
-  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>監視AIが見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
 function groupedCards(list, isSel, attrOf, scope) {
@@ -2823,7 +2824,7 @@ function guardsHTML(g) {
   return `<div class="guardfold">${fold('guards', `脅威ごとの守り${S.plays === 1 ? ' <i class="newtag">NEW</i>' : ''}`, `<div class="guards">${Object.values(g).map(x => `<div class="guard${x.value < 20 ? ' weak' : ''}"><span>${esc(x.short)}</span><i><u style="width:${Math.max(3, x.value)}%"></u></i></div>`).join('')}</div>`, false)}</div>`;
 }
 const modeCount = cards => { const m = {in: 0, on: 0, auto: 0}; cards.forEach(c => { if (c.mode) m[c.mode]++; }); return m; };
-const policyChips = m => `<div class="policy"><span class="mode in">決裁 ${m.in}</span><span class="mode on">見張る ${m.on}</span><span class="mode auto">AI任せ ${m.auto}</span></div>`;
+const policyChips = m => `<div class="policy"><span class="mode in">決裁 ${m.in}</span><span class="mode on">介入 ${m.on}</span><span class="mode auto">AI任せ ${m.auto}</span></div>`;
 function policyLine(m) {
   const human = m.in + m.on, cap = Core.CFG.humanCap;
   if (!human && !m.auto) return '監視をどこまで人間に残すかを決めます。';
@@ -2892,7 +2893,7 @@ function worldHTML() {
     <p>画面の「放置した脆弱性」は、放置すると攻撃を招きます。再整備や修正のカードで減らせますが、直す間は国が遅れます。</p>
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
-      <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じれば確実に止まりますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
+      <div><dt><span class="mode on">人間が介入</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じれば確実に止まりますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
       <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
@@ -3104,7 +3105,7 @@ let lastVetoAlarm = 0;
 function renderVetoes(v) {
   const el = $('vetos'); if (!el) return;
   for (const d of v.vetoes) if (d.vid > lastVetoAlarm) { lastVetoAlarm = d.vid; SFX.play('alarm'); }
-  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が見張る</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／命じると：${esc(d.response)}</small><small>命じなければ、あと${d.left}ターンで監視AIが対処します</small></div><button type="button" data-v="${d.vid}">対処を命じる</button></div>`).join('');
+  el.innerHTML = v.vetoes.map(d => `<div class="veto"><div><span class="mode on">人間が介入</span><b>警報：${esc(d.watch)}${d.origin ? `（${esc(d.origin)}）` : ''}</b><small>確信度 ${d.conf}%／命じると：${esc(d.response)}</small><small>命じなければ、あと${d.left}ターンで監視AIが対処します</small></div><button type="button" data-v="${d.vid}">対処を命じる</button></div>`).join('');
   // 毎ターン描き直すので、押した瞬間に受ける（指を離す間に要素が替わると押下が失われる）
   el.querySelectorAll('[data-v]').forEach(b => b.onpointerdown = e => { e.preventDefault(); Core.veto(S, +b.dataset.v); save(); const n = Core.view(S); renderVetoes(n); $('params').innerHTML = paramsHTML(n, prevMetrics); const lg = $('log'); if (lg) { for (const l of S.log.slice(shownLogs)) lg.insertAdjacentHTML('beforeend', logLine(l)); shownLogs = S.log.length; trimLog(); scrollToLog(); } });
 }
@@ -3341,7 +3342,7 @@ function dexEntry(id) {
   const locked = t => `<p class="dexlock">${t}</p>`;
   const reals = {}; Core.INCIDENTS.forEach(i => { if (i.covers[id] && i.need) reals[i.need] = (reals[i.need] || 0) + 1; });
   const need = Object.keys(reals).sort((a, b) => reals[b] - reals[a])[0];
-  const body = `${m.seen ? `<p><b>見張るもの</b> ${esc(watchOf(id))}</p><p><b>見つけたら</b> ${esc(c.response)}</p><p><b>代償</b> ${esc(c.cost)}</p>` : locked('統治の中で候補に出ると、読めます。')}
+  const body = `${m.seen ? `<p><b>監視AIが見張るもの</b> ${esc(watchOf(id))}</p><p><b>見つけたら</b> ${esc(c.response)}</p><p><b>代償</b> ${esc(c.cost)}</p>` : locked('統治の中で候補に出ると、読めます。')}
     ${d.h ? (m.adopted ? `<p><b>破られないこと</b> ${esc(d.h)}</p>` : locked('採用すると、破られないことが読めます。')) : ''}
     ${m.broken ? `<p class="dexbreak"><b>それでも起きること</b> ${esc(d.b)}</p>` : locked('このカードが効かない経験をすると、読めます。')}
     ${m.adopted && need ? needHTML(need) : ''}
