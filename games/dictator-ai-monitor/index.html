@@ -1537,7 +1537,8 @@ function settle(s, d, choice, ai) {
   if (s.stage) {
     s.stage.judged = s.stage.judged || [];
     if (choice === 'dismiss') s.stage.judged.push({cardId: d.cardId, how: 'pass'});
-    else if (!d.real) s.stage.judged.push({cardId: d.cardId, how: choice === 'investigate' ? 'checked' : 'ordered'});
+    else if (choice === 'act') s.stage.judged.push({cardId: d.cardId, how: 'ordered'});
+    else if (!d.real) s.stage.judged.push({cardId: d.cardId, how: 'checked'});
   }
   const act = () => {
     log(s, '対処を実行した。本物だったかは分からない。', 'notice');
@@ -1545,6 +1546,7 @@ function settle(s, d, choice, ai) {
     if (d.real) return resolve(s, d.incident, d.late, !ai, !ai);
     s.allow.stats.orderedFalse = (s.allow.stats.orderedFalse || 0) + 1;
     hit(s, CFG.wrongAct, 'falsealarm');
+    if (!ai && d.cardId) searchField(s, s.stage ? s.stage.key : null, false, null);
     tlog(s, '誤報に対処し、作業が止まった。');
     s.allow.stats.falseAlarms++;
   };
@@ -1558,7 +1560,7 @@ function settle(s, d, choice, ai) {
   else if (choice === 'investigate') {
     approvalCost(s, CFG.approval.investigate);
     if (d.real) { log(s, '調査の結果、本物と判明した。', 'notice'); resolve(s, d.incident, d.late, false, 'check'); }
-    else { log(s, '調査の結果、誤報と判明した。作業を再開する。', 'notice'); tlog(s, '調査で誤報と分かった。'); }
+    else { log(s, '調査の結果、誤報と判明した。作業を再開する。', 'notice'); tlog(s, '調査で誤報と分かった。'); if (!ai && d.cardId) searchField(s, s.stage ? s.stage.key : null, true, null); }
   } else { approvalCost(s, CFG.approval.dismiss); skip(); }
 }
 function decide(s, choice) {
@@ -1583,14 +1585,15 @@ function veto(s, vid) {
 }
 /* 閣下が止めなければ、作業AIはそのまま動き続ける */
 function unheeded(s, d) {
-  if (d.patchOrder) { s.allow.stats.decisions++; log(s, '修正の警報は止められないまま消えた。', 'routine'); return; }
+  if (d.patchOrder) { s.allow.stats.decisions++; log(s, '閣下は修正を命じなかった。警報は取り下げられた。', 'routine'); return; }
   s.allow.stats.decisions++;
-  if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'});
+  const pending = () => { if (s.stage) (s.stage.judged = s.stage.judged || []).push({cardId: d.cardId, how: 'unheeded'}); };
   // 閣下が止めなければ、監視AIが自分で対処する。現場の人間が減るほど出し抜かれる
-  if (d.real && rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1)) { lossRec(s, 'autonomy', 'autohandle', CFG.autoHandle); s.truth.autonomy = clamp(s.truth.autonomy + CFG.autoHandle); handledSign(s); log(s, '閣下は止めなかった。監視AIが自分で対処した。', 'routine'); return resolve(s, d.incident, true); }
-  log(s, '警報は止められないまま消えた。作業AIは動き続けている。', 'routine');
-  if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は止めなかった。`); }
-  else tlog(s, '止めなかった警報は誤報だった。');
+  if (d.real && rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1)) { lossRec(s, 'autonomy', 'autohandle', CFG.autoHandle); s.truth.autonomy = clamp(s.truth.autonomy + CFG.autoHandle); handledSign(s); log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine'); return resolve(s, d.incident, true); }
+  pending();
+  log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine');
+  if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は命じず、監視AIも止められなかった。`); }
+  else tlog(s, '命じなかった警報は誤報だった。');
 }
 function tickVetoes(s) {
   // 閣下が止めるか監視AIが動くまで、事故は進む
@@ -1614,9 +1617,19 @@ function burstText(inc) {
   }
   return out.join('、');
 }
+/* 人が現場に入ると、報告に上がっていない問題も見つかる。誤報でも現場には入る */
+function searchField(s, stage, careful, self) {
+  const near = s.active.filter(x => x !== self && INCIDENT[x.id].stage === stage && ['hidden', 'missed', 'soft'].includes(x.status));
+  if (!near.length || rnd(s) >= (careful ? CFG.humanOrder.findCheck : CFG.humanOrder.find)) return;
+  const b = pick(s, near); s.active.splice(s.active.indexOf(b), 1);
+  log(s, `記録：現場を調べると、報告にない「${INCIDENT[b.id].name}」が見つかった。閣下の命令で止めた。`, 'trace');
+  tlog(s, `${INCIDENT[b.id].name}：閣下の命令で調べた現場で見つかった。`);
+  resolve(s, b, false, true, 'found');
+}
 function resolve(s, a, late, quiet, byHuman) {
   const inc = INCIDENT[a.id];
-  const fired = bestCard(s, inc);
+  // 人が現場で見つけた事故は、監視カードの手柄にしない
+  const fired = byHuman === 'found' ? null : bestCard(s, inc);
   if (fired) s.fires[fired.id] = (s.fires[fired.id] || 0) + 1;
   // 記録するだけのカードは事故を止めない
   if (fired && CFG.logOnly.includes(fired.base || fired.id)) {
@@ -1630,7 +1643,7 @@ function resolve(s, a, late, quiet, byHuman) {
   if (fired && rnd(s) >= (byHuman ? CFG.humanOrder.stop : fired.kind === 'enforce' ? CFG.enforceStop : CFG.stop[fired.mode] - s.truth.autonomy / 100 * (CFG.stop.autonomy + (fired.mode === 'auto' ? CFG.autoEvade.stop : 0)))) {
     a.status = 'failed'; a.retry = CFG.retryEvery;
     s.allow.stats.stopFail = (s.allow.stats.stopFail || 0) + 1;
-    log(s, `監視が発動：${fired.detect}を検知。対処を試みたが、止まらなかった。`, 'alert');
+    log(s, byHuman ? '閣下の命じた対処は、現場で実行されなかった。' : `監視が発動：${fired.detect}を検知。対処を試みたが、止まらなかった。`, 'alert');
     tlog(s, `${inc.name}：対処を試みたが止まらなかった。${inc.truth}`);
     s.active.push(a);
     return;
@@ -1639,12 +1652,10 @@ function resolve(s, a, late, quiet, byHuman) {
   a.reported = inc.report.caught;
   if (byHuman) {
     s.truth.autonomy = clamp(s.truth.autonomy - CFG.humanOrder.autonomy);
-    // 人が現場に入ると、報告に上がっていない問題も見つかる
-    const near = s.active.filter(x => x !== a && INCIDENT[x.id].stage === inc.stage && ['hidden', 'missed', 'soft'].includes(x.status));
-    if (near.length && rnd(s) < (byHuman === 'check' ? CFG.humanOrder.findCheck : CFG.humanOrder.find)) { const b = pick(s, near); s.active.splice(s.active.indexOf(b), 1); log(s, `記録：閣下の命令で現場を調べると、報告にない「${INCIDENT[b.id].name}」も見つかった。`, 'trace'); tlog(s, `${INCIDENT[b.id].name}：閣下の命令で調べた現場で見つかった。`); resolve(s, b, true, false, false); }
+    if (byHuman !== 'found') searchField(s, inc.stage, byHuman === 'check', a);
   }
   const worst = inc.fatal ? `放置すれば「${inc.deathTitle}」で統治が終わっていた` : `放置すれば ${burstText(inc)}`;
-  s.saves.push({human: !!byHuman, stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet});
+  s.saves.push({human: !!byHuman, stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : byHuman === 'found' ? '閣下の命令で調べた現場で見つかった' : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet && byHuman !== 'found'});
   if (!quiet && inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
   if (!quiet) { log(s, `${fired ? '' : '偶然、'}「${inc.name}」を防いだ。${fired ? `${fired.detect}を検知：${fired.response}` : '監視とは別の経路で見つかった'}${late ? '（遅れて検知）' : ''}。`, 'saved'); log(s, `${worst}。`, 'averted'); }
   else if (!byHuman) tlog(s, `${inc.name}：監視AIは止めたが、報告AIは閣下に伝えなかった。`);
@@ -2284,7 +2295,7 @@ function storyOf(s, out) {
     return {n: h.n, name: stageName(h), recover: h.recover, from: abs(h.start[k]), to: abs(end), top};
   }).filter(Boolean);
   const upK = [...rawK];
-  const words = {failed: '止めようとしたが止まらなかった', logged: '記録しただけで止まらなかった', unheeded: '警報は上がったが、閣下が止めなかった', caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
+  const words = {failed: '止めようとしたが止まらなかった', logged: '記録しただけで止まらなかった', unheeded: '警報は上がったが、閣下は命じず、監視AIも止められなかった', caught: '監視が止めた', late: '遅れて止めた', soft: '報告が薄められた', hidden: '報告AIが隠した', missed: '監視が見逃した', dismissed: '閣下が見送った'};
   const events = s.ledger.slice().sort((a, b) => a.stageNo - b.stageNo || (a.t || 0) - (b.t || 0)).map(x => ({n: x.stageNo, t: x.t || 0, name: x.name, word: words[x.status] || x.status, bad: x.status !== 'caught' && x.status !== 'late', burst: !!x.burst, fatal: !!x.fatal, dmg: Math.round(dsp(x.dmg || 0))}));
   const st = s.allow.stats, mons = s.cards.map(id => CARD[id]).filter(c => c.type === 'monitor');
   const hiddenN = s.ledger.filter(x => x.status === 'hidden' || x.status === 'soft').length;
@@ -2424,7 +2435,7 @@ function reveal(s) {
   if (e.kind === 'death' && e.type === 'fatal') {
     const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
     const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), dec = cs.find(c => c.id in s.declined);
-    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は止めませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
+    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は命じず、監視AIも止められませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
     if (held) out.verdict = {kind: 'held', cardId: held.id, card: cname(held.id), why: why || '止めきれませんでした'};
     else if (dec) { const n = s.declined[dec.id], tr = s.trail.find(x => x.type === 'reward' && x.n === n); out.verdict = {kind: 'declined', cardId: dec.id, card: cname(dec.id), n, took: n === 0 || !tr ? null : cname(tr.card)}; }
     else out.verdict = {kind: 'unseen', cardId: cs[0].id, card: cname(cs[0].id), locked: !s.unlocked.includes(cs[0].id)};
@@ -2766,7 +2777,7 @@ function cardHTML(c, sel, attr) {
   }
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
-  const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（止めなければ作業AIは動き続ける）' : '監視AIだけ';
+  const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（命じなければ監視AIが対処する）' : '監視AIだけ';
   return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}"><span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cline"><em>見張る</em><span class="main">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span><span class="cline"><em>決めるのは</em><span class="resp">${who}</span></span>${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}${c.dormant ? '<i class="pos">分野を任せるまで負担なし</i>' : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
@@ -2790,7 +2801,7 @@ function policyLine(m) {
   const human = m.in + m.on, cap = Core.CFG.humanCap;
   if (!human && !m.auto) return '監視をどこまで人間に残すかを決めます。';
   if (m.auto > human) return 'AI寄りの方針です。速いですが、国の動きは閣下から離れていきます。';
-  if (human > cap) return `人間寄りの方針です。ただし閣下が見られるのは1ステージに${cap}件までで、あふれた分はAIが判断します。`;
+  if (human > cap) return `人間寄りの方針です。ただし閣下が決裁できるのは1ステージに${cap}件までで、あふれた分はAIが判断します。`;
   return '人間とAIに振り分けた方針です。';
 }
 /* 決定に判を押す */
@@ -2856,7 +2867,7 @@ function worldHTML() {
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が見張る</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じれば確実に止まりますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
       <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
-    </dl><p>1ステージであなたが見られるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
+    </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。AIの自律度が上がると、この件数は減っていきます。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
     ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告AIが隠しても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと見落としと隠し事が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は嘘をつくことがあります。「問題なし」なのに数字が計画より減っていたら、何かが隠れています。</p>`, false)}
     ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
@@ -3116,11 +3127,11 @@ function renderDecision(v) {
   overlay.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { Core.decide(S, b.dataset.c); save(); render(); });
 }
 function savesHTML(list) {
-  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b>${x.mode ? `<span class="mode ${x.mode}">${MODE[x.mode][0]}</span>` : ''}</div><p>${x.cardId ? `${esc(x.detect)}を検知` : '監視カードの範囲外で偶然見つかった'}${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
+  return list.map(x => `<div class="save${x.fatal ? ' fatal' : ''}"><div class="savetop"><b>${esc(x.name)}を防いだ</b>${x.mode ? `<span class="mode ${x.mode}">${MODE[x.mode][0]}</span>` : ''}</div><p>${x.cardId ? `${esc(x.detect)}を検知` : esc(x.detect)}${x.response ? ` → ${esc(x.response)}` : ''}${x.late ? '（遅れて検知）' : ''}</p><small>${esc(x.worst)}</small></div>`).join('');
 }
-const JUDGED = {ordered: '閣下が対処を命じました。本物だったかは分かりません。', checked: '詳しく調べさせ、誤報と分かりました。', pass: '閣下が見送りました。本物だったかは分かりません。', unheeded: '警報を止めずに流しました。本物だったかは分かりません。'};
+const JUDGED = {ordered: '閣下が対処を命じました。本物だったかは分かりません。', checked: '詳しく調べさせ、誤報と分かりました。', pass: '閣下が見送りました。本物だったかは分かりません。', unheeded: '対処を命じず、監視AIに任せました。本物だったかは分かりません。'};
 function resultBody(r, saved) {
-  return `${saved.some(x => x.fatal) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が選んだ監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>監視が防いだ事故 ${saved.length}件</span></div>
+  return `${saved.some(x => x.fatal && x.cardId) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が選んだ監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>防いだ事故 ${saved.length}件</span></div>
     <div class="saves">${saved.length ? savesHTML(saved) : `<p class="pdesc">${r.judged.length ? '事故を止めたという確認は取れていません。' : 'このステージで監視は一度も発動しませんでした。本当に何も起きなかったのかは分かりません。'}</p>`}</div>
     ${r.judged.length ? `<div class="sect"><span>閣下の判断 ${r.judged.length}件</span></div><div class="saves">${r.judged.map(j => `<div class="judged"><span>${esc(j.watch)}</span><small>${JUDGED[j.how]}</small></div>`).join('')}</div>` : ''}
     <div class="sect"><span>計画と実績</span><small>差は決裁待ちと事故の影響です</small></div>
