@@ -3220,7 +3220,7 @@ function gapHTML(r, needs) {
   const line = k => `${esc(GAPS[k][0])}：${esc(GAPS[k][2])} <a href="${esc(GAPS[k][3])}" target="_blank" rel="noopener">根拠</a>`;
   const c = r.causeGap, rest = (c ? needs.filter(k => k !== c.need) : needs).filter(k => GAPS[k]);
   if (!c && !rest.length) return '';
-  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」は持っていました。現実の同じ監視も、まだ完成していません。` : `「${esc(c.card)}」があれば、防げたかもしれません。現実には、まだ完成していません。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
+  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視も、まだ完成していません。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実には、まだ完成していません。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
 }
 function causeHTML(r) {
   const c = r.cause; if (!c) return '';
@@ -3230,9 +3230,9 @@ function causeHTML(r) {
 function verdictHTML(r) {
   const d = r.verdict;
   if (!d) return `<div class="verdict"><small>閣下の決定</small><p>監視${r.modes.in + r.modes.on + r.modes.auto}枚で事故を${r.saves.length}件防ぎ、${r.missed.length}件は防げませんでした。</p></div>`;
-  const text = d.kind === 'held' ? `「${esc(d.card)}」は持っていました。${esc(d.why)}。`
-    : d.kind === 'declined' ? (d.n === 0 || !d.took ? `「${esc(d.card)}」は最初の候補にありました。閣下は選びませんでした。` : `「${esc(d.card)}」はステージ${d.n}の後の候補にありました。閣下は「${esc(d.took)}」を選びました。`)
-    : `効くカード「${esc(d.card)}」は、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
+  const text = d.kind === 'held' ? `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`
+    : d.kind === 'declined' ? (d.n === 0 || !d.took ? `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。` : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
+    : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">このカードを図鑑で読む</button></div>`;
 }
 function truthHTML(r) {
