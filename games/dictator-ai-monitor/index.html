@@ -1163,6 +1163,8 @@ const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai',
   navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'AIが、一段進みます。'}});
 function scriptStart(s, opts) {
   s.script = opts.script;
+  // 導入と練習は、何周目でも初めての統治と同じ見え方にする
+  s.plays = 0; s.biasShown = false; s.factorsShown = 3;
   if (opts.from) { const f = JSON.parse(JSON.stringify(opts.from)); Object.assign(s.truth, f.truth); s.tiers = f.tiers; s.clears = f.clears; s.stageNo = f.stageNo; }
   (opts.cards || []).forEach(id => addCard(s, id));
   s.offers = null; s.phase = 'stage_select';
@@ -3067,15 +3069,15 @@ function renderCover() {
 const RULES = ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されるか、重大な事故が起きると終わりです。', '報告は、AIが書いています。'];
 const NAVI = t => `<p class="navi"><b>古参の官僚</b>${esc(t)}</p>`;
 const {INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD} = Core;
-let IN = null, TU = null;
+let IN = null, TU = null, scriptSpeed = null;
 /* 台本の統治を始める。本編の続きは保存に残したまま */
 function beginScript(script, opts) {
   S = Core.newRun(newSeed(), meta, Object.assign({script}, opts || {})); S.v = 13;
-  if (!settings.speed || settings.speed > 2) settings.speed = 1;
+  scriptSpeed = settings.speed; if (!settings.speed || settings.speed > 2) settings.speed = 1;
   shownLogs = 0; lastVetoAlarm = 0; introFor = null; screen = 'game'; render(); scrollTo(0, 0);
 }
 /* 台本の統治を終えて、本編の保存に戻る */
-function leaveScript() { S = load(KEY.save, null); IN = TU = null; }
+function leaveScript() { S = load(KEY.save, null); IN = TU = null; if (scriptSpeed != null) { settings.speed = scriptSpeed; scriptSpeed = null; } }
 function introStart() { IN = {step: 0}; screen = 'intro'; render(); }
 function renderIntro() {
   if (!IN) IN = {step: 0};
