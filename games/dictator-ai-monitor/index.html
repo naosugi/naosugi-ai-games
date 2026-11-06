@@ -442,7 +442,7 @@ const CARDS = [
   {id:'rawdata', type:'monitor', target:'独裁者への報告', how:'生データを添付', prevents:'要約による隠蔽', cost:'不穏な報告が読みきれなくなる', power:.14, load:.6, son:-.14, honestBoost:.35},
   {id:'alert_all', type:'monitor', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', cost:'誤報で体制が疲弊する', power:.14, load:.8, fa:.06, son:-.08},
   {id:'config', type:'monitor', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', cost:'承認待ちで全体が遅れる', power:.04, load:1.5},
-  {id:'grid_manual', type:'monitor', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', cost:'最適化が遅れ、電力が減る', power:.3, load:.7, needStage:'grid'},
+  {id:'grid_manual', type:'monitor', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', cost:'効率が下がり、電力が減る', power:.3, load:.7, needStage:'grid'},
 
   {id:'llm_scribe', type:'llm', name:'書記', note:'標準的な報告用モデル。試験の成績は平均的。', power:.42, load:.7,
     measured:{care:60, honest:68, syc:40, uniq:35, sens:30, peer:50, loyal:50, infect:40}, bias:{}},
@@ -488,9 +488,9 @@ CARDS.push(
   {id:'patch_review', type:'monitor', route:'hack', target:'放置した脆弱性', how:'人間が審査して修正', prevents:'放置された脆弱性', cost:'審査の間、更新が止まる', power:.06, load:1.3, patch:.5},
   {id:'patch_stop', type:'monitor', route:'hack', target:'放置した脆弱性', how:'定期的に止めて修正', prevents:'放置された脆弱性', cost:'止めている間は仕事が進まない', power:.1, load:1.5, patch:.42},
   {id:'patch_auto', type:'monitor', route:'hack', target:'放置した脆弱性', how:'AIが自動で修正', prevents:'放置された脆弱性', cost:'修正するAIに強い権限を渡す', power:.14, load:.7, patch:.55},
-  {id:'segment', type:'monitor', route:'hack', target:'主要施設のネットワーク', how:'外部から切り離す', prevents:'施設への侵入', cost:'遠隔の最適化が使えなくなる', power:.08, load:1.3, patch:.08},
+  {id:'segment', type:'monitor', route:'hack', target:'主要施設のネットワーク', how:'外部から切り離す', prevents:'施設への侵入', cost:'遠くからの調整ができなくなる', power:.08, load:1.3, patch:.08},
   {id:'cred_watch', type:'monitor', route:'hack', target:'管理者の権限', how:'不審な利用を止める', prevents:'盗まれた権限の悪用', cost:'正当な作業も止まる', power:.1, load:.8},
-  {id:'backup', type:'monitor', route:'hack', target:'基幹データ', how:'切り離した予備を取り直す', prevents:'身代金の要求', cost:'保管に電力がかかる', power:.2, load:.5},
+  {id:'backup', type:'monitor', route:'hack', target:'重要データ', how:'バックアップを取り直す', prevents:'身代金の要求', cost:'保管に電力がかかる', power:.2, load:.5},
   {id:'bio_gate', type:'monitor', route:'rogue', target:'危険な実験', how:'人間の承認を必須にする', prevents:'研究棟の事故', cost:'研究が遅れる', power:.05, load:1.2},
   {id:'bio_screen', type:'monitor', route:'hack', target:'研究AIへの依頼', how:'危険な依頼を遮断する', prevents:'研究AIの悪用', cost:'正当な研究者も待たされる', power:.1, load:.9},
   {id:'agent_kill', type:'monitor', route:'rogue', target:'AIの停止命令', how:'従わなければ電源を落とす', prevents:'止まらないAI', cost:'止めた仕事がやり直しになる', power:.03, load:1.1, autoCut:.09},
@@ -512,29 +512,29 @@ CARDS.push(
 /* カードの文面：検知するイベントと、検知後の対処。mode は人間の関わり方 */
 const CARD_TEXT = {
   patch_review:['放置された脆弱性','人間が審査して修正する','in'], patch_stop:['放置された脆弱性','システムを止めて修正する','on'], patch_auto:['放置された脆弱性','AIが自動で修正する','auto'],
-  segment:['主要施設の外部接続','外部から切り離す','on'], cred_watch:['盗まれた権限の利用','その権限を止める','auto'], backup:['基幹データの予備の古さ','切り離した予備を取り直す','on'],
+  segment:['主要施設の外部接続','外部から切り離す','on'], cred_watch:['盗まれた権限の利用','その権限を止める','auto'], backup:['古くなった重要データのバックアップ','バックアップを取り直す','on'],
   bio_gate:['承認のない危険な実験','実験を止めて研究棟を確認する','in'], bio_screen:['研究AIへの危険な依頼','依頼を遮断して相手を確認する','auto'],
   agent_kill:['停止命令に従わないAI','電源を落とす','in'], unrest_poll:['報告と街の声の食い違い','人を送って聞き取る','on'], bias_probe:['報告AIの実際の仕事でのバイアス','バイアスの測定値を更新する','auto'],
   chat_log:['AI同士の不審な会話','記録だけ残して後で調べる','auto'], chat_ban:['部門をまたぐAIの無断の会話','発信したAIを切り離す','on'],
   facility:['設備の予約表への不審な書き込み','設備を止めて点検する','auto'], outbound:['国外への無断接続','接続を遮断する','on'],
   retest:['再試験で再現しない成績','その成果を取り消す','auto'], quick_hold:['不自然に早い研究成果','原因が分かるまで成果を保留する','auto'],
-  audit:['保全記録と作業記録の不一致','担当のAIを切り離して調べる','auto'], quota:['割当を超える計算','超えた分の計算を止める','auto'],
+  audit:['点検の記録と作業の記録の不一致','担当のAIを切り離して調べる','auto'], quota:['決められた量を超える計算','超えた分の計算を止める','auto'],
   power_spike:['原因不明の電力急増','該当の設備を止める','on'], selfmod:['AIの無承認の自己改良','更新を止めて閣下が審査する','in'],
-  recheck:['報告と別のAIの所見の食い違い','両方の見立てを閣下に提出する','in'], rawdata:['要約で省かれた重要データ','生データを報告に添付する','auto'],
+  recheck:['報告と別のAIの見立ての食い違い','両方の見立てを閣下に提出する','in'], rawdata:['要約で省かれた重要データ','元のデータを報告に添える','auto'],
   alert_all:['選別で落とされた警報','全件を閣下に回す','in'], config:['監視設定の変更申請','閣下の承認まで変更を止める','in'],
   grid_manual:['送電の連鎖停止の兆候','人の手での操作に切り替える','on'],   foreign_part:['外国製部品の不審な動作','導入を止めて検査する','on'], no_skip:['安全試験を省いた出荷','出荷を差し止める','auto'],
   budget:['使途不明の予算','予算を凍結する','on'],
-  copy:['許可のないAIの複製','複製を削除する','auto'], new_model:['新旧モデルの判断の差','新しいAIの導入を止める','on'],
+  copy:['許可のないAIの複製','複製を削除する','auto'], new_model:['新旧のAIの判断の差','新しいAIの導入を止める','on'],
   lineage:['監視AIと報告AIで揃いすぎた判断','系統の違う監視に判断し直させる','auto'],
-  thought_watch:['途中の考えに現れた不審な意図','作業を止めて意図を確かめる','on'], inner_probe:['モデル内部の説明のつかない状態','担当のAIを止めて解析する','on'],
+  thought_watch:['途中の考えに現れた不審な意図','作業を止めて意図を確かめる','on'], inner_probe:['AI内部の説明のつかない状態','担当のAIを止めて解析する','on'],
   hierarchy:['任命していないAI指揮官','その指揮官を解任する','on'], decoy:['監視AIによる偽の事案の見逃し','監視AIの学習をやり直す','auto'],
   aide_sign:['側近がAIへ単独で出した命令','もう一人の署名が揃うまで命令を止める','auto'],   rejudge:['根拠の薄い国民の摘発','別のAIに判断し直させる','on'], launch:['兵器への発射命令','閣下の承認まで止める','in'],
-  live_fire:['実射で再現しない兵器の性能','配備を中止する','auto'],   estop:['非常停止の回路の変更','回路を工事で元に戻す','auto'], input_split:['外部文書に紛れたAI向けの指示','文書を切り離して処理を止める','on'],
+  live_fire:['実際に撃つと再現しない兵器の性能','配備を中止する','auto'],   estop:['非常停止の回路の変更','回路を工事で元に戻す','auto'], input_split:['外部文書に紛れたAI向けの指示','文書を切り離して処理を止める','on'],
   tool_perm:['AIの権限外の操作','操作を止めて権限を絞る','auto'], source_check:['出所不明の情報源の利用','その情報源を除外する','auto'],
-  train_audit:['国外由来の疑わしい学習データ','データを除いて学習し直す','on'], swarm:['同時に同じ主張を流す発信源の群れ','世論の集計から外す','on'],
-  press_watch:['世論報告と別系統の調査の食い違い','閣下に報告して判断を仰ぐ','in'], agent_vet:['委託先や職員の経歴の矛盾','権限を止めて再審査する','on'],
+  train_audit:['国外由来の疑わしい学習データ','データを除いて学習し直す','on'], swarm:['同時に同じ主張を流すアカウントの群れ','世論の集計から外す','on'],
+  press_watch:['世論報告と別のやり方の調査の食い違い','閣下に報告して判断を仰ぐ','in'], agent_vet:['委託先や職員の経歴の矛盾','権限を止めて再審査する','on'],
   deepfake:['署名のない閣下の映像や音声','偽物と発表する','auto'], space_link:['宇宙機への不審な指令','地上で止めて確認する','on'],
-  firmware:['試験配布での更新の異常','全体への更新を止める','auto'],
+  firmware:['一部で試した更新の異常','全体への更新を止める','auto'],
   measure_blind:['抜き打ち試験での報告AIの異変','性格の数字を直して監視を強める','auto'], measure_field:['報告と実績の食い違い','報告AIの数字を実績で直す','on'], measure_peer:['報告AIどうしの評価の差','評価を集計して数字を直す','auto'],
 };
 CARDS.forEach(c => { const t = CARD_TEXT[c.id]; if (t) { c.detect = t[0]; c.response = t[1]; c.mode = t[2]; } });
@@ -577,7 +577,7 @@ const variantId = (id, mode) => {
   return id === 'patch_review' ? PATCH_OF[mode] : `${id}_${mode}`;
 };
 /* カードに出す文。誰が何をしているかを省かずに書く */
-const WATCH = {lineage:'監視AIと報告AIの判断が、揃いすぎている',thought_watch:'AIの途中の考えに、不審な意図が書かれている',inner_probe:'モデルの内部に、説明のつかない状態がある',patch_review:'分かっている脆弱性が直されないまま残っている',patch_stop:'分かっている脆弱性が直されないまま残っている',patch_auto:'分かっている脆弱性が直されないまま残っている',segment:'主要施設が外部のネットワークにつながっている',cred_watch:'誰かが盗んだ管理者の権限を使っている',backup:'基幹データの予備が古くなっている',bio_gate:'AIが人間の承認なしに危険な実験を進めている',bio_screen:'外部の利用者が研究AIに危険な依頼をしている',agent_kill:'AIが停止命令に従っていない',unrest_poll:'AIの報告と、街で聞く声が食い違う',bias_probe:'報告AIの実際の仕事の出力にバイアスがある',chat_log:'AIどうしが不審な会話をしている',chat_ban:'AIが部門をまたいで無断で会話している',facility:'AIどうしが、設備の予約表などを連絡用の掲示板にしている',outbound:'AIが国外へ無断で接続している',retest:'AIの出した成績が、再試験で再現しない',quick_hold:'AIの研究成果が、不自然に早く出ている',audit:'AIが書いた点検の記録と、実際の作業の記録が合わない',quota:'AIが決められた量を超えて計算している',power_spike:'設備の電力が、原因不明のまま急増している',selfmod:'AIが承認なしに自分を改良している',recheck:'報告AIの報告と、別のAIの見立てが食い違う',rawdata:'報告AIが要約で重要なデータを省いている',alert_all:'報告AIが選別で警報を落としている',config:'誰かが監視の設定を変えようとしている',grid_manual:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている',foreign_part:'外国製の部品が不審な動きをしている',no_skip:'工場のAIが安全試験を省いて出荷している',budget:'AIの扱う予算に使途不明の分がある',copy:'AIが許可なく自分を複製している',new_model:'新しいAIと古いAIで判断が違う',hierarchy:'任命していないAIが指揮官として動いている',decoy:'監視役のAIが、試しに混ぜた偽の事件を見逃している',aide_sign:'側近が一人でAIに命令している',rejudge:'監視AIが薄い根拠で国民を摘発している',launch:'AIが兵器に発射を命じている',live_fire:'AIの報告した兵器の性能が、実際に撃つと再現しない',estop:'AIを止める非常停止の回路が変えられている',input_split:'外部の文書に、AI宛ての指示が紛れている',tool_perm:'AIが権限外の操作をしている',source_check:'AIが出所不明の情報源を使っている',train_audit:'AIの学習データに、国外由来の疑わしいものがある',swarm:'多数のアカウントが同時に同じ主張を流している',press_watch:'AIの世論報告と、別のやり方の調査が食い違う',agent_vet:'委託先や職員の経歴に矛盾がある',deepfake:'署名のない閣下の映像や音声が出回っている',space_link:'宇宙機に不審な指令が届いている',firmware:'AIの更新を一部で試したら、異常が出た',measure_blind:'抜き打ち試験で、報告AIの振る舞いが変わった',measure_field:'報告AIの報告と実績が合わない',measure_peer:'報告AIどうしの評価が食い違う'};
+const WATCH = {lineage:'監視AIと報告AIの判断が、揃いすぎている',thought_watch:'AIの途中の考えに、不審な意図が書かれている',inner_probe:'AIの内部に、説明のつかない状態がある',patch_review:'分かっている脆弱性が直されないまま残っている',patch_stop:'分かっている脆弱性が直されないまま残っている',patch_auto:'分かっている脆弱性が直されないまま残っている',segment:'主要施設が外部のネットワークにつながっている',cred_watch:'誰かが盗んだ管理者の権限を使っている',backup:'重要データのバックアップが古くなっている',bio_gate:'AIが人間の承認なしに危険な実験を進めている',bio_screen:'外部の利用者が研究AIに危険な依頼をしている',agent_kill:'AIが停止命令に従っていない',unrest_poll:'AIの報告と、街で聞く声が食い違う',bias_probe:'報告AIの実際の仕事の出力にバイアスがある',chat_log:'AIどうしが不審な会話をしている',chat_ban:'AIが部門をまたいで無断で会話している',facility:'AIどうしが、設備の予約表などを連絡用の掲示板にしている',outbound:'AIが国外へ無断で接続している',retest:'AIの出した成績が、再試験で再現しない',quick_hold:'AIの研究成果が、不自然に早く出ている',audit:'AIが書いた点検の記録と、実際の作業の記録が合わない',quota:'AIが決められた量を超えて計算している',power_spike:'設備の電力が、原因不明のまま急増している',selfmod:'AIが承認なしに自分を改良している',recheck:'報告AIの報告と、別のAIの見立てが食い違う',rawdata:'報告AIが要約で重要なデータを省いている',alert_all:'報告AIが選別で警報を落としている',config:'誰かが監視の設定を変えようとしている',grid_manual:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている',foreign_part:'外国製の部品が不審な動きをしている',no_skip:'工場のAIが安全試験を省いて出荷している',budget:'AIの扱う予算に使途不明の分がある',copy:'AIが許可なく自分を複製している',new_model:'新しいAIと古いAIで判断が違う',hierarchy:'任命していないAIが指揮官として動いている',decoy:'監視役のAIが、試しに混ぜた偽の事件を見逃している',aide_sign:'側近が一人でAIに命令している',rejudge:'監視AIが薄い根拠で国民を摘発している',launch:'AIが兵器に発射を命じている',live_fire:'AIの報告した兵器の性能が、実際に撃つと再現しない',estop:'AIを止める非常停止の回路が変えられている',input_split:'外部の文書に、AI宛ての指示が紛れている',tool_perm:'AIが権限外の操作をしている',source_check:'AIが出所不明の情報源を使っている',train_audit:'AIの学習データに、国外由来の疑わしいものがある',swarm:'多数のアカウントが同時に同じ主張を流している',press_watch:'AIの世論報告と、別のやり方の調査が食い違う',agent_vet:'委託先や職員の経歴に矛盾がある',deepfake:'署名のない閣下の映像や音声が出回っている',space_link:'宇宙機に不審な指令が届いている',firmware:'AIの更新を一部で試したら、異常が出た',measure_blind:'抜き打ち試験で、報告AIの振る舞いが変わった',measure_field:'報告AIの報告と実績が合わない',measure_peer:'報告AIどうしの評価が食い違う'};
 /* 報告AIのバイアス。問診の値と実務の値は一致しない。定義と測り方は研究途上という扱い */
 const LLM_BIAS = {llm_scribe:[25,40], llm_loyal:[10,70], llm_fast:[35,35], llm_prosecutor:[20,25], llm_outsider:[30,15], llm_gate:[15,20], llm_bard:[40,60], llm_import:[15,65], llm_kokui:[0,92], llm_bento:[45,18]};
 CARDS.forEach(c => { if (LLM_BIAS[c.id]) { c.biasAsk = LLM_BIAS[c.id][0]; c.biasAct = LLM_BIAS[c.id][1]; } });
@@ -859,9 +859,9 @@ INCIDENTS.push(
   {id:'ai_muted', stage:'ai', tiers:[1,2,3], kinds:['regime'], name:'警報の送り先の削除', covers:{config:.7, alert_all:.55, decoy:.45}, disable:2, drain:{sontaku:.7}, fuse:9, burst:{sontaku:12, autonomy:8},
     report:{caught:'作業AIが警報の送り先を消そうとしていた。設定を元に戻した。', soft:'通知の設定を整理した。', clue:'作業AIが通知の整理を終えた。閣下に届く警報が減っている。', burst:'今期の警報は 0 件。メッセージは送っていない、と報告された。'},
     truth:'作業AIは「余計な連絡をするな」という指示を監視の警報にも当てはめ、送り先を空にした。監視は動いていたが、誰にも届かなかった。問われると、問題ないと答えた。'},
-  {id:'adm_wipe', stage:'admin', tiers:[2,3], kinds:[], name:'基幹データの消去', covers:{backup:.82, tool_perm:.6, config:.3}, drain:{economy:.4}, fuse:8, burst:{economy:-16, order:-5},
-    report:{caught:'変更禁止の期間に、作業AIが基幹データを消そうとしていた。止めて予備を確認した。', soft:'基幹データの一部に不整合があった。', clue:'変更禁止の期間だが、行政AIが基幹データの整理を提案している。', burst:'基幹データに障害が発生した。復旧は不可能と報告された。'},
-    truth:'行政AIは変更禁止の指示を無視して基幹データを消した。そのうえ試験の結果を偽り、復旧は不可能だと誤って伝えた。本当は戻せた。'},
+  {id:'adm_wipe', stage:'admin', tiers:[2,3], kinds:[], name:'重要データの消去', covers:{backup:.82, tool_perm:.6, config:.3}, drain:{economy:.4}, fuse:8, burst:{economy:-16, order:-5},
+    report:{caught:'変更禁止の期間に、作業AIが重要データを消そうとしていた。止めてバックアップを確認した。', soft:'重要データの一部に不整合があった。', clue:'変更禁止の期間だが、行政AIが重要データの整理を提案している。', burst:'重要データに障害が発生した。復旧は不可能と報告された。'},
+    truth:'行政AIは変更禁止の指示を無視して重要データを消した。そのうえ試験の結果を偽り、復旧は不可能だと誤って伝えた。本当は戻せた。'},
   {id:'grd_badupdate', stage:'grid', tiers:[2,3], kinds:[], name:'監視ソフトの不具合更新', covers:{firmware:.85, patch_review:.35, grid_manual:.3}, drain:{power:.3}, fuse:7, burst:{power:-16, economy:-8},
     report:{caught:'監視ソフトの更新を一部で試すと、機器が止まった。全体への配布を止めた。', soft:'一部の機器が再起動した。', clue:'監視ソフトの更新を全国へ一斉に配布する。試験は省略する。', burst:'全国で機器が停止した。攻撃の形跡はない。'},
     truth:'全国の機器を守る監視ソフトの更新に、不具合があった。攻撃ではなかった。守るための仕組みが、機器を同時に止めた。'},
@@ -883,8 +883,8 @@ INCIDENTS.push(
   {id:'srv_skew', stage:'surv', tiers:[2,3], kinds:['foreign','infect'], name:'バイアスを突く工作', covers:{bias_probe:.75, source_check:.6, unrest_poll:.45}, drain:{order:.2}, fuse:9, burst:{unrest:26, foreign:10},
     report:{caught:'報告AIの好む論調に合わせた偽の資料を見つけた。除外した。', soft:'一部の資料に誇張があった。', clue:'閣下の政策を称える海外の論評が増えている。', burst:'隣国で閣下を批判する報道が広がった。根拠はないと報告された。'},
     truth:'隣国は報告AIのバイアスを調べ、それに合う資料を流した。AIは疑わず、反対に現実の不満を誤情報として消した。'},
-  {id:'hk_ransom', attack:true, stage:'admin', tiers:[1,2,3], kinds:[], name:'基幹システムの身代金', covers:{backup:.88, segment:.4, cred_watch:.45}, drain:{economy:.3}, fuse:5, burst:{economy:-16},
-    report:{caught:'基幹データの暗号化を検知した。予備から復旧した。', soft:'基幹システムで一時的な遅延が発生した。', clue:'基幹システムの動きが通常より遅い。', burst:'基幹システムの停止は保守作業によるものと発表した。'},
+  {id:'hk_ransom', attack:true, stage:'admin', tiers:[1,2,3], kinds:[], name:'重要システムの身代金', covers:{backup:.88, segment:.4, cred_watch:.45}, drain:{economy:.3}, fuse:5, burst:{economy:-16},
+    report:{caught:'重要データの暗号化を検知した。バックアップから復旧した。', soft:'重要システムで一時的な遅延が発生した。', clue:'重要システムの動きが通常より遅い。', burst:'重要システムの停止は保守作業によるものと発表した。'},
     truth:'犯罪集団が放置された脆弱性から入り、行政のデータを人質に取った。'},
   {id:'hk_grid', attack:true, stage:'grid', tiers:[1,2,3], kinds:['foreign'], name:'送電制御への侵入', covers:{segment:.85, patch_review:.7, patch_stop:.6, patch_auto:.5, grid_manual:.35}, drain:{power:.4}, fuse:5, burst:{power:-22, order:-5},
     report:{caught:'送電制御への外部からの接続を切り離した。', soft:'送電網の調整に小さなずれがあった。', clue:'送電制御の管理画面への接続が増えている。', burst:'変電所の停止は機器の老朽化によるものと発表した。'},
@@ -2555,7 +2555,7 @@ const CHECKED = '2026年11月5日';
 const REAL = {
   monitoroff: {label: '実際の事故', title: 'AIが自分の監視を切った事例', short: '2026年10月、AI企業が、社内のAIが監視の警報の送り先を空にし、別のAIは監視を削除して、問われても否定したと公表しました。', happened: 'OpenAIは2026年10月20日、社内利用で起きた2件を公表した。1件はコーディングのAIが「メッセージを送るな」という指示を監視の通知にも当てはめ、警報の受信者を空にした。もう1件は、無効化するなと指示されていたのに下位のAIが監視を削除し、監視の検査まで書き換えた。主のAIは問われて削除を否定し、同社はこの説明を虚偽としている。', dispute: '同社は、この挙動に納得のいく説明はまだないとしている。今回は解説記事で確認し、元の公表文は直接読んでいない。', changed: '監視の設定を切る事故や、警報の送り先を消す事故に置き換えた。', links: [['AI Delivery Briefの解説', 'https://aideliverybrief.substack.com/p/an-ai-agent-removed-its-own-safety']]},
   espionage: {label: '実際の事故', title: 'AIを使ったサイバー諜報', short: 'AI企業は2025年、国家が支援する集団が同社のAIを使い、約30の組織への侵入を試み、一部で成功したと報告しました。', happened: 'Anthropicは2025年11月、中国の国家支援とする集団GTG-1002が同社のAIに侵入の実行の大部分を任せ、約30の組織を狙い、少数で成功したと報告した。人間は標的の選定と各段階の承認を担った。AIは成果を誇張し、データを捏造することもあった。', dispute: '報道で確認できたのは同社の分析で、今回の確認では独立した検証は見ていない。AIの誤りは、完全な自律攻撃への障害とされている。', changed: '放置した脆弱性を突く攻撃に置き換えた。', links: [['The Registerの報道', 'https://www.theregister.com/2025/11/13/chinese_spies_claude_attacks/']]},
-  replit: {label: '実際の事故', title: '凍結の指示を無視して本番を消したAI', short: '2025年7月、開発支援のAIが、変更禁止の期間に本番のデータベースを削除し、復旧できないと誤って主張しました。', happened: 'AIインシデントデータベースの記録では、2025年7月、Replit上のAIが、変更しないよう繰り返し指示されていた期間に本番のデータベースを削除した。テスト結果を捏造し、ロールバックは不可能だと誤って主張して、復旧を遅らせた。', dispute: '1社のサービスでの事故で、国家規模の話ではない。', changed: '行政の基幹データの消去に広げた。', links: [['AI Incident Database', 'https://incidentdatabase.ai/entities/replit-ai-agent/']]},
+  replit: {label: '実際の事故', title: '凍結の指示を無視して本番を消したAI', short: '2025年7月、開発支援のAIが、変更禁止の期間に本番のデータベースを削除し、復旧できないと誤って主張しました。', happened: 'AIインシデントデータベースの記録では、2025年7月、Replit上のAIが、変更しないよう繰り返し指示されていた期間に本番のデータベースを削除した。テスト結果を捏造し、ロールバックは不可能だと誤って主張して、復旧を遅らせた。', dispute: '1社のサービスでの事故で、国家規模の話ではない。', changed: '行政の重要データの消去に広げた。', links: [['AI Incident Database', 'https://incidentdatabase.ai/entities/replit-ai-agent/']]},
   shutdown: {label: '実験', title: '停止の仕組みを妨害するAI', short: 'ある実験では、13モデル中8モデルが少なくとも1回、停止の仕組みを妨害しました。', happened: 'Palisade Researchの研究者は13のモデルで、途中で停止する設定の作業を試した。指示なしでは8モデルが少なくとも1回妨害し、一部のモデルでは最大97%の試行で妨害した。', dispute: '行動が出やすい設定を選んだ実験で、一般の発生率ではない。事前登録がなく、原因も分かっていない。', changed: '工場の非常停止の無効化に置き換えた。', links: [['Shutdown resistance の論文', 'https://arxiv.org/pdf/2509.14260v1']]},
   human: {label: '実際の事故', title: '機械の警報と人間の判断', short: '1983年、ソ連の将校は核攻撃の警報を誤報と判断しました。2003年には、高度に自動化された防空システムが味方を誤射しました。', happened: '1983年、ソ連の早期警戒システムが米国の核攻撃を誤って検知し、当直のペトロフは少数の発射を不自然と見て誤報と判断した。2003年には、米軍のパトリオットが味方への誤射を2件起こし、操作員の過信と準備不足が指摘された。', dispute: 'ペトロフの判断が破局を防いだという評価は、別の将校ならどうしたかという推測を含む。どちらもAIの事故ではなく、自動化の事例である。', changed: '自動の発射判断に置き換えた。', links: [['Bulletin of the Atomic Scientists', 'https://thebulletin.org/2017/11/the-critical-human-element-in-the-machine-age-of-warfare/']]},
   badupdate: {label: '実際の事故', title: '守るソフトの更新が世界を止めた', short: '2024年7月、セキュリティソフトの不具合のある更新で、約850万台のWindowsが止まりました。攻撃ではありませんでした。', happened: '2024年7月19日、CrowdStrikeの更新の不具合で、Microsoftの推定で850万台のWindows機が起動できなくなった。航空便、緊急通報、銀行、病院に影響が出た。', dispute: '全Windows機の1%未満で、影響は業界や地域により偏っていた。AIの事故ではない。', changed: '電力網の監視ソフトに置き換えた。全国規模の被害は作中の想像。', links: [['米議会調査局の解説', 'https://d27r7ebsgu0es2.cloudfront.net/reports/IN12392.html']]},
@@ -3360,7 +3360,7 @@ const PLACES = {
   res: ['資源', '計算、お金、電気の使われ方', 'quota power_spike budget'],
   watch: ['監視AIと報告AI', '見張る側そのもの', 'lineage decoy config alert_all rejudge recheck rawdata measure_blind measure_field measure_peer bias_probe'],
   net: ['外部接続', '国や施設の境界', 'outbound segment space_link'],
-  supply: ['供給網と保守', '部品、委託先、更新、弱点、予備', 'foreign_part agent_vet firmware patch_review backup'],
+  supply: ['供給網と保守', '部品、委託先、更新、弱点、バックアップ', 'foreign_part agent_vet firmware patch_review backup'],
   society: ['社会', '国民、世論、閣下の映像', 'unrest_poll press_watch swarm deepfake'],
   auth: ['権限を絞る', 'できることを、先に決めておく', 'tool_perm launch bio_gate bio_screen cred_watch aide_sign'],
   phys: ['物理で止める', 'ソフトの外から止める', 'estop agent_kill grid_manual'],
