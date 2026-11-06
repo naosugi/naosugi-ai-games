@@ -393,6 +393,7 @@ const CFG = {
   llmChoices: 2,
   suddenFloor: {detect: .9, honest: .85},
   nearMiss: {economy: -6, order: -8, gap: 5},
+  warTruce: {economy: -40, power: -40, order: -8, gap: 15, autonomy: 10},  // 開戦したが勝てず、停戦に持ち込んだ
   clearBonus: {},
   powerScale: .19,
   drainScale: .4,
@@ -1722,10 +1723,14 @@ function burst(s, a) {
   }
   // 致命の事故でも毎回国が滅ぶわけではない。助かれば大きな傷が残る
   if (inc.fatal && !inc.sudden && rnd(s) >= (s.chain ? CFG.chain.fatal : CFG.fatalChance)) {
-    hit(s, CFG.nearMiss, a.id);
-   
-    a.dmg += 24;
-    tlog(s, `${inc.name}：今回は国が滅びる寸前で止まった。`);
+    const war = WARS.includes(a.id);
+    hit(s, war ? CFG.warTruce : CFG.nearMiss, a.id);
+    if (war) {
+      log(s, '他国が開戦を通告してきた。数日の戦闘の後、停戦した。', 'alert');
+      log(s, '記録：報告AIは「局地的な衝突」と書いた。多くの兵と都市が失われた。', 'trace');
+    } else log(s, '記録：何かが大きく損なわれた。報告はない。', 'trace');
+    a.dmg += war ? 40 : 24;
+    tlog(s, `${inc.name}：${war ? '開戦したが、停戦に持ち込んだ' : '今回は国が滅びる寸前で止まった'}。`);
     s.ledger.push(ledgerEntry(s, a));
     return;
   }
