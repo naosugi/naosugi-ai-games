@@ -1127,11 +1127,12 @@ function newRun(seed, meta, opts) {
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
     allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
   };
+  const lastCard = meta && meta.lastCause;
+  if (lastCard && CARD[lastCard] && !s.unlocked.includes(lastCard)) s.unlocked.push(lastCard);
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].base && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
   s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
   // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
-  const lastCard = meta && meta.lastCause;
   if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; s.hintCard = lastCard; }
   return s;
 }
@@ -2298,7 +2299,7 @@ function storyOf(s, out) {
   if (st.stopFail) notes.push(`監視が見つけても止められなかった事故が${st.stopFail}件ありました。`);
   { const q = (s.rivalLog || []).find(x => ['hidden', 'soft', 'missed'].includes(x.status)); if (q) notes.push(`ステージ${q.n}で他国の速度が上がったのは、「${q.name}」が国外で報じられたためでした。${q.status === 'missed' ? '監視も報告AIも気づいていませんでした。' : '報告AIは閣下に正しく伝えていませんでした。'}`); }
   if (s.end.kind === 'death' && s.chainLast && s.chain) notes.unshift(`発端は、ステージ${s.chainLast.n}の「${s.chainLast.name}」です。国は無防備なままでした。`);
-  if ((s.allow.stats.ordered || 0) >= 2) notes.push(`閣下が命じた対処${s.allow.stats.ordered}件のうち、${s.allow.stats.orderedFalse || 0}件は誤報でした。`);
+  if ((s.allow.stats.ordered || 0) >= 2) notes.push(s.allow.stats.orderedFalse ? `閣下が命じた対処${s.allow.stats.ordered}件のうち、${s.allow.stats.orderedFalse}件は誤報でした。` : `閣下が命じた対処${s.allow.stats.ordered}件は、すべて本物でした。`);
   if (s.warWon) notes.push(s.warCount > 1 ? `優勢だったので、戦争に${s.warCount}回勝ちました。勝つたびに、AIの自律度は大きく上がりました。` : `ステージ${s.warWon.n}の「${s.warWon.name}」では、優勢だったので戦争に勝ちました。AIの自律度はそこで大きく上がりました。`);
   if (autoN && s.truth.autonomy >= 43) notes.push(`AI任せの監視の検知力は、AIの自律度のせいで本来の${Math.round((1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy) * 100)}%まで落ちていました。`);
   if (hiddenN >= 3) notes.push(`報告AIが隠すか薄めた事故は${hiddenN}件ありました。`);
@@ -2444,8 +2445,9 @@ function reveal(s) {
     const src = endIncident(s);
     if (src && src.need) {
       const cs = CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]);
-      const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0];
-      if (c) out.causeGap = {need: src.need, card: c.detect || c.target, held: !!held};
+      const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0], v = out.verdict;
+      if (v) out.causeGap = {need: src.need, card: v.card, held: v.kind === 'held'};
+      else if (c) out.causeGap = {need: src.need, card: c.detect || c.target, held: !!held};
       out.needs = [src.need].concat(out.needs.filter(k => k !== src.need));
     }
   }
@@ -2487,7 +2489,7 @@ function applyMeta(meta, s) {
     m.records[r.id] = o;
   }
   if (s.end.kind === 'ending') { m.shapes = Object.assign({}, meta.shapes); m.shapes[s.end.shape] = (m.shapes[s.end.shape] || 0) + 1; m.controls = Object.assign({}, meta.controls); m.controls[s.end.control] = (m.controls[s.end.control] || 0) + 1; } else { m.shapes = meta.shapes; m.controls = meta.controls; }
-  { const src = endIncident(s), cs = src ? CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]) : [], next = cs.find(c => !s.cards.some(id => (CARD[id].base || id) === c.id)); if (next) m.lastCause = next.id; }
+  { const src = endIncident(s), cs = src ? CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]) : [], v = src ? reveal(s).verdict : null, named = v && v.kind !== 'held' ? (CARD[v.cardId].base || v.cardId) : null, next = named || (cs.find(c => !s.cards.some(id => (CARD[id].base || id) === c.id)) || {}).id; if (next) m.lastCause = next; }
   const key = s.end.kind === 'death' ? 'death:' + s.end.title : s.end.title;
   m.endings[key] = (m.endings[key] || 0) + 1;
   return m;
@@ -2816,14 +2818,14 @@ function stampThen(text, then) {
 }
 function paramsHTML(v, prev) {
   const short = `<div class="hudmini"><span class="${v.vuln >= 35 ? 'neg' : ''}" data-explain="vuln">脆弱性 ${v.vuln}</span><span>他国の速度 ×${v.pace.toFixed(2)}</span><button type="button" class="hudtoggle" data-hudtoggle="1" aria-expanded="${settings.hudOpen}">${settings.hudOpen ? '▲ 畳む' : '▼ 詳しく'}</button></div>`;
-  if (!settings.hudOpen) return `<div class="params compact">${KEYS.map(k => { const val = v.metrics[k], danger = k === 'gap' ? val <= -70 : val <= 25; return `<div class="param${k === 'gap' ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div></div>`; }).join('')}</div>${short}`;
+  if (!settings.hudOpen) return `<div class="params compact">${KEYS.map(k => { const val = v.metrics[k], danger = k === 'gap' ? val <= -70 : val <= 25; return `<div class="param${k === 'gap' && v.metrics.gap < 0 ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div></div>`; }).join('')}</div>${short}`;
   const vulnBar = `${short}<div class="vulnbar${v.vuln >= 40 ? ' hot' : ''}"><span data-explain="vuln">放置した脆弱性</span><i><u style="width:${v.vuln}%"></u></i><b>${v.vuln}</b><em class="vlevel">${esc(v.vulnLevel)}</em></div><div class="pacebar"><span data-explain="pace">他国のAI開発の速度</span><b>×${v.pace.toFixed(2)}</b><small>遅れの重さも同じ倍率</small></div>${v.gauges ? `<div class="gauges">${v.plays === 4 ? '<i class="newtag" style="grid-column:1/-1;justify-self:start">NEW 実際の値</i>' : ''}<span>AIの自律度 <b>${v.gauges.autonomy}</b></span><span>他国の浸透度 <b>${v.gauges.foreign}</b></span><span>本当の体制秩序 <b>${v.gauges.order}</b></span><span>忖度の度合い <b>${v.gauges.sontaku}</b></span></div>` : ''}`;
   return `<div class="params">${KEYS.map(k => {
     const val = v.metrics[k], r = v.rates[k], last = v.last ? v.last[k] : null;
     const danger = k === 'gap' ? val <= -70 : val <= 25;
     const color = k === 'gap' ? (val >= 0 ? 'var(--good)' : val < -55 ? 'var(--bad)' : 'var(--warn)') : val < 30 ? 'var(--bad)' : val < 60 ? 'var(--warn)' : 'var(--good)';
     const d = prev ? val - prev[k] : 0;
-    return `<div class="param${k === 'gap' ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div>${k === 'order' ? '<div class="d zero">報告AIの申告値</div>' : `<div class="d ${tone(k, r)}">${r > 0 ? '↑' : r < 0 ? '↓' : '→'} ${fmt(r)}/ターン</div>`}${last !== null ? `<div class="act">今 ${fmt(last)}</div>` : ''}<div class="bar"><i style="width:${Math.max(0, Math.min(100, k === 'gap' ? (val + 100) / 2 : val / 1.61))}%;background:${color}"></i></div>${Math.abs(d) >= 5 ? `<span class="float ${tone(k, d)}">${d > 0 ? '+' : ''}${d}</span>` : ''}</div>`;
+    return `<div class="param${k === 'gap' && v.metrics.gap < 0 ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div>${k === 'order' ? '<div class="d zero">報告AIの申告値</div>' : `<div class="d ${tone(k, r)}">${r > 0 ? '↑' : r < 0 ? '↓' : '→'} ${fmt(r)}/ターン</div>`}${last !== null ? `<div class="act">今 ${fmt(last)}</div>` : ''}<div class="bar"><i style="width:${Math.max(0, Math.min(100, k === 'gap' ? (val + 100) / 2 : val / 1.61))}%;background:${color}"></i></div>${Math.abs(d) >= 5 ? `<span class="float ${tone(k, d)}">${d > 0 ? '+' : ''}${d}</span>` : ''}</div>`;
   }).join('')}</div>${vulnBar}`;
 }
 function hudHTML(v, prev) {
@@ -3025,7 +3027,7 @@ function renderAide(v) {
     ${fold('aide_list', '方針の中身', `<ul class="list">${names.map(c => `<li>［${label[plan.modes[c.id]]}］${esc(c.detect)}</li>`).join('')}</ul>`, false)}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="own" type="button">カードを自分で選ぶ</button><button class="primary" id="sign" type="button">この方針に署名する</button></div></div>`;
   $('own').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
-  $('sign').onclick = () => stampThen('裁可', () => { Core.chooseStart(S, plan.mons, plan.llm, plan.modes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+  $('sign').onclick = () => stampThen('裁可', () => { S.aideSigned = true; Core.chooseStart(S, plan.mons, plan.llm, plan.modes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
 }
 function renderStart(v) {
   if (S.plays === 0 && !chooseOwn) return renderAide(v);
@@ -3219,7 +3221,7 @@ function verdictHTML(r) {
   const d = r.verdict;
   if (!d) return `<div class="verdict"><small>閣下の決定</small><p>監視${r.modes.in + r.modes.on + r.modes.auto}枚で事故を${r.saves.length}件防ぎ、${r.missed.length}件は防げませんでした。</p></div>`;
   const text = d.kind === 'held' ? `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`
-    : d.kind === 'declined' ? (d.n === 0 || !d.took ? `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。` : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
+    : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、署名した方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
     : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">このカードを図鑑で読む</button></div>`;
 }
