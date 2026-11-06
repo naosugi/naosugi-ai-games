@@ -336,7 +336,7 @@ const CFG = {
   avgTicks: 12,              // 1ステージの平均ターン数
   modeCover: {auto: 1.15, on: 1, in: 1.12},
   // AI任せは普段は優秀だが、条件が重なると作業AIに出し抜かれる
-  chain: {stages: 3, fatal: .8, detect: .68, chance: .5, autoCards: 4, decisions: 6},  // 連鎖の長さ、致命の確率、検知の低下
+  chain: {stages: 3, fatal: .75, detect: .72, chance: .45, autoCards: 4, decisions: 6},  // 連鎖の長さ、致命の確率、検知の低下
   humanOrder: {stop: .99, autonomy: 1.5, find: .3},  // 閣下の命令で現場が動く
   aiGen: [1, 1.1, 1.25, 1.4], sameLineage: .6,  // AI研究で監視AIの性能が上がる。同じ系統を重ねても誤りは揃う
   autoEvade: {autonomy: .75, foreign: .6, stop: .35}, humanEvade: .12,
