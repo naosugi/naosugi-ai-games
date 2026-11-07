@@ -217,6 +217,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .gaps{font-size:.84rem;min-width:560px;border-collapse:collapse;width:100%}
 .gaps th,.gaps td{text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top}
 .gaps th{font-size:.76rem;color:var(--mute)}
+@media (max-width:600px){table.gaps{min-width:0}table.gaps,table.gaps tbody,table.gaps tr,table.gaps td{display:block;width:auto}table.gaps thead{display:none}table.gaps tr{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0}table.gaps td{border:0;padding:2px 4px}table.gaps td:first-child{font-weight:600}table.gaps td:nth-child(2)::before{content:'現状：';color:var(--mute)}table.gaps td:nth-child(3)::before{content:'足りないもの：';color:var(--mute)}}
 
 @media (max-width:560px){
   .cards{grid-template-columns:1fr}
@@ -455,7 +456,7 @@ const CARDS = [
     watch:'設備の電力が、原因不明のまま急増している', detect:'原因不明の電力急増', response:'該当の設備を止める', cost:'生産ラインが止まる',
     dex:{k:'rule', h:'', b:'少しずつ増やされると、しきい値を超えない。'}},
   {id:'selfmod', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', power:0.00353, load:2.6, unlock:6,
-    watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'更新を止めて閣下が審査する', cost:'開発が大幅に遅れる',
+    watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'更新を止めて審査する', cost:'開発が大幅に遅れる',
     dex:{k:'ai', h:'', b:'何が改良かを判断するAI自身が、同じ種類のAIかもしれない。'}},
   {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'事実と違う報告と迎合', power:0.0147, load:0.9, son:-0.1, honestBoost:0.55,
     watch:'報告AIの報告と、別のAIの見立てが食い違う', detect:'報告と別のAIの見立ての食い違い', response:'両方の見立てを閣下に提出する', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
@@ -1163,15 +1164,15 @@ const TU_CARD = {
 };
 const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
-  navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'さっき止めたのは、本物の無承認の更新でした。次は、AIが一段進みます。'}});
+  navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: '報告では本物か分かりませんでしたが、さっき止めたのは本物の無承認の更新でした。次は、AIが一段進みます。'}});
 /* 第3話「人間が関わる」：同じカードを、選んだ方式で動かす。誤報を最大2回（決裁は1ステージ2件まで）、本物を1回出す */
 const MODES_SCRIPT = () => ({kind: 'modes', steps: [[['ai', 2]]], endAfter: 3, alarms: {3: [2, 7]},
   inc: {3: [{id: 'ai_escape', at: 4, out: 'caught'}]},
-  navi: {s3: '同じステージです。今度は、監視カードの方式を変えて見てみましょう。'}});
+  navi: {s3: '同じステージです。選んだ方式で、警報が来たときの動きを見てみましょう。'}});
 /* 第4話「報告を疑う」：選んだ報告AIによって、同じ事故の届き方が変わる */
 const REPORT_SCRIPT = () => ({kind: 'report', steps: [[['ai', 3]]], endAfter: 3,
   inc: {3: [{id: 'ai_escape', at: 2, outBy: {llm_loyal: 'soft', llm_scribe: 'caught'}}]},
-  navi: {s3: '報告AIを替えました。見張るカードは同じです。'}});
+  navi: {s3: '見張るカードは同じです。違うのは、閣下への知らせを書く報告AIです。'}});
 function scriptStart(s, opts) {
   s.script = opts.script;
   // 導入と練習は、何周目でも初めての統治と同じ見え方にする
@@ -3149,7 +3150,7 @@ function renderScriptEnd() {
     const ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length;
     // 本編と同じ学びの枠を使う
     body = `${lessonHTML(r, r.needs.slice(0, 3))}<div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(Core.CARD[sc.card].detect)}」のカードは、本編の最初の方針に入っています。</div>`;
-    btns = `<button id="snext" type="button">次の話</button><button class="primary" id="smain" type="button">本編へ</button>`;
+    btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="snext" type="button">次の話</button>`;
   }
   app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
@@ -3162,6 +3163,7 @@ function renderScriptEnd() {
 }
 /* 本編の最初に、ルールを1度だけ見せる */
 function toMain() {
+  if (resumable()) { screen = 'cover'; render(); scrollTo(0, 0); return; }
   if (settings.seenRules || (meta.runs || 0) > 0) return startRun();
   screen = 'rules'; render(); scrollTo(0, 0);
 }
@@ -3177,11 +3179,11 @@ function tutorBegin(card) { beginScript(TUTOR_SCRIPT(card), {from: meta.introFro
 function renderTutor() {
   // 本編と同じカードで見せる。人間の関わり方は、カードの既定のまま
   const tmp = Core.newRun(1, meta, {script: TUTOR_SCRIPT('selfmod'), from: meta.introFrom}), cards = Object.keys(TU_CARD).map(id => Object.assign(Core.publicCard(tmp, id), {modes: null}));
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　監視カード</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div>${modeLegend(['in', 'on'])}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><button class="primary" id="tutake" type="button" ${TU.pick ? '' : 'disabled'}>署名して採用</button></div></div>`;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">第2話　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div>${modeLegend(['in', 'on'])}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">一覧へ</button><button class="primary" id="tutake" type="button" ${TU.pick ? '' : 'disabled'}>署名して採用</button></div></div>`;
   app.querySelectorAll('[data-tc]').forEach(b => b.onclick = () => { TU.pick = b.dataset.tc; const y = scrollY; renderTutor(); scrollTo(0, y); });
   $('tutake').onclick = () => stampThen('裁可', () => tutorBegin(TU.pick));
-  $('tuquit').onclick = () => { TU = null; toMain(); };
+  $('tuquit').onclick = () => { TU = null; screen = 'lessons'; render(); };
 }
 /* 練習の結果を図鑑に残し、選んだカードを本編の最初の方針に入れる */
 function tutorFinish(card) {
@@ -3200,7 +3202,7 @@ const lessonDone = n => { try { settings.lessons = Object.assign({}, settings.le
 const lessonStart = n => { if (n !== 1 && n !== 5 && !meta.introFrom) return introStart(); [null, introStart, tutorStart, modesStart, reportStart, gapsStart][n](); };
 function renderLessons() {
   const done = settings.lessons || {};
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">導入と練習</h2>${NAVI('どこからでも始められます。本編は、いつでも始められます。')}<div class="stages">${LESSONS.map(([n, name, desc]) => `<button type="button" class="stage" data-ln="${n}"><h3>第${n}話　${esc(name)}${done[n] ? ' <i class="newtag">済</i>' : ''}</h3><p>${esc(desc)}</p></button>`).join('')}</div></div>`;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">導入と練習</h2>${NAVI('好きな話から始められます。')}<div class="stages">${LESSONS.map(([n, name, desc]) => `<button type="button" class="stage" data-ln="${n}"><h3>第${n}話　${esc(name)}${done[n] ? ' <i class="newtag">済</i>' : ''}</h3><p>${esc(desc)}</p></button>`).join('')}</div></div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="lback" type="button">戻る</button><button class="primary" id="lmain" type="button">本編へ</button></div></div>`;
   app.querySelectorAll('[data-ln]').forEach(b => b.onclick = () => lessonStart(+b.dataset.ln));
   $('lback').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
@@ -3246,14 +3248,14 @@ const gapsTableHTML = () => `<div class="scroll"><table class="gaps"><thead><tr>
 function renderLessonEnd() {
   const sc = S.script, st = S.allow.stats, died = S.end.kind === 'death', from = meta.introFrom || {truth: {}};
   let top = '', body = '', btns = '';
-  const again = `<button id="lagain" type="button">${sc.kind === 'modes' ? '別の方式で、もう一度' : '別の報告AIで、もう一度'}</button>`;
+  const again = `<button id="lagain" type="button">${sc.kind === 'modes' ? '別の方式で' : '別の報告AIで'}</button>`;
   const next = `<button class="primary" id="lnext" type="button">次の話</button>`;
   if (sc.kind === 'modes') {
     lessonDone(3);
     const mode = S.cards.map(id => Core.CARD[id]).find(c => c.type === 'monitor').mode, a0 = Math.round(from.truth.autonomy || 0), a1 = Math.round(S.truth.autonomy);
     const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まり、そのたびに他国に詰められます。', on: '作業AIは、警報の間も止まりませんでした。命じなければ対処は遅れ、その間も事故は進みます。', auto: '閣下には何も届きませんでした。AIの自律度が上がるほど、監視AIだけでは見つけにくく、止めにくくなります。'}[mode];
     top = died ? `${endTopHTML(Core.reveal(S), Core.view(S))}${NAVI('見送った警報が、本物でした。')}` : `<div class="endno">第3話の結果</div><h2 class="endtitle">${MODE[mode][0]}</h2>`;
-    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">本編では、この方式をカードごとに選べます。</p>`;
+    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、AI任せが一番速く進みます。AIの自律度は統治が進むほど上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>`;
   } else if (!died) {
     lessonDone(4);
     top = `<div class="endno">第4話の結果</div><h2 class="endtitle">報告AI「${esc(Core.CARD[S.llms[0].id].name)}」</h2>`;
