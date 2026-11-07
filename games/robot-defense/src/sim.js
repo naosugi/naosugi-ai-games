@@ -933,7 +933,7 @@ function fireWeapon(S, src, d, tg, team, mul) {
       life: (d.blast ? Math.hypot(tg.x - src.x, tg.z - src.z) : range) / d.speed * (d.homing ? 1.6 : 1) + .05, r: d.size || (d.blast ? .25 : .18),
       owner: team === 'p' ? src : null, src, pierce: d.pierce || 0, hits: [], w: d.name, blast: d.blast || 0,
       arm: d.blast ? (d.blast + CFG.missileSafety) / d.speed : 0,
-      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null, cancel: d.cancel || 0, stun: d.stun || 0, jackpot: !!d.jackpot, kc: 0, ff: !!d.ff,
+      noArmor: !!d.noArmor, noShield: !!d.noShield, homing: d.homing || (mul.lock ? CFG.pilot.lockHoming : 0), tg: d.homing || mul.lock ? tg : null, size: d.size || 0, chain: d.chain || null, splash: d.splash || null, cancel: d.cancel || 0, stun: d.stun || 0, jackpot: !!d.jackpot, kc: 0, ff: !!d.ff, home: !!mul.home,
     });
   }
   return a;
@@ -1106,7 +1106,7 @@ function updEnemy(S, e, dt) {
     const A = def.artillery, dd = Math.hypot(S.home.x - e.x, S.home.z - e.z);
     if (dd - S.home.r <= A.range && e.state === 'path') {
       e.face = Math.atan2(S.home.x - e.x, S.home.z - e.z); e.cd -= dt; e.firing = true;
-      if (e.cd <= 0) { e.cd = A.cd; S.shots.push({ id: S.nid++, team: 'e', x: e.x, z: e.z, vx: Math.sin(e.face) * A.shotSpeed, vz: Math.cos(e.face) * A.shotSpeed, dmg: A.dmg, life: dd / A.shotSpeed + .5, r: .3, pierce: 0, hits: [], shell: true }); }
+      if (e.cd <= 0) { e.cd = A.cd; S.shots.push({ id: S.nid++, team: 'e', x: e.x, z: e.z, vx: Math.sin(e.face) * A.shotSpeed, vz: Math.cos(e.face) * A.shotSpeed, dmg: A.dmg, life: dd / A.shotSpeed + .5, r: .3, pierce: 0, hits: [], shell: true, home: true }); }
       if (S.t - (S.artWarnT || -99) > 10) { S.artWarnT = S.t; say(S, '💥 砲撃型が拠点を砲撃中（' + dirName(S, [e.x, e.z]) + '）', 'bad'); }
       return;
     }
@@ -1121,7 +1121,7 @@ function updEnemy(S, e, dt) {
       w.cd -= dt; if (w.cd > 0) continue;
       const tg = nearest(S.robots, e.x, e.z, w.def.range) || (homeIn(w.def.range - .5) ? S.home : null);
       if (!tg) { w.cd = 0; continue; }
-      e.face = fireWeapon(S, e, w.def, tg, 'e', {}); w.cd = w.def.cd * (def.fireMul || 1);
+      e.face = fireWeapon(S, e, w.def, tg, 'e', { home: tg === S.home }); w.cd = w.def.cd * (def.fireMul || 1);
     }
     // ロボットか拠点が射程に入ったら立ち止まって撃つ。体当たりはしない
     if (nearest(S.robots, e.x, e.z, def.hold) || homeIn(def.hold)) return;
@@ -1162,8 +1162,8 @@ function updEnemy(S, e, dt) {
     else { const m = Math.min(dd, def.speed * CFG.enemySpeedMul * 1.5 * dt); e.x += dx / dd * m; e.z += dz / dd * m; e.face = Math.atan2(dx, dz); }
     return;
   }
-  // 射撃型：ロボットが射程内なら立ち止まって撃つ
-  if (def.range) {
+  // 射撃型：ロボットが射程内なら立ち止まって撃つ（拠点に取り付いた後は拠点だけを攻撃する）
+  if (def.range && !e.atBase) {
     e.cd -= dt;
     const tg = nearest(S.robots, e.x, e.z, def.range);
     if (tg) {
@@ -1220,7 +1220,7 @@ function updShots(S, dt) {
     if (s.life <= 0) { s.dead = true; if (s.blast) blast(S, s.x, s.z, s.blast, s.dmg, s.owner, s.team, s.team === 'p' && !s.ff); continue; }
     if (s.blast) { // ミサイル：安全距離を飛ぶまでは何にも当たらない。その後は当たった所で爆発
       s.arm -= dt; if (s.arm > 0) continue;
-      const tgts = s.team === 'p' ? (s.ff ? S.enemies.concat(S.ebases, S.robots) : S.enemies.concat(S.ebases)) : S.robots.concat([S.home]);
+      const tgts = s.team === 'p' ? (s.ff ? S.enemies.concat(S.ebases, S.robots) : S.enemies.concat(S.ebases)) : s.home ? [S.home] : S.robots.concat([S.home]);
       for (const t of tgts) {
         if (t.dead || t === s.src) continue;
         const rr = t.def || t.ebase || t.home ? t.r : CFG.robotR;
@@ -1251,7 +1251,7 @@ function updShots(S, dt) {
         if (s.pierce > 0) { s.pierce--; s.hits.push(t); } else { s.dead = true; break; }
       }
     } else {
-      for (const r of S.robots) {
+      if (!s.home) for (const r of S.robots) { // 拠点を狙った弾（砲撃・模倣機の拠点攻撃）はロボットをすり抜ける
         if (r.dead) continue;
         if ((r.x - s.x) ** 2 + (r.z - s.z) ** 2 < (CFG.robotR + s.r) ** 2) { hurtRobot(S, r, s.dmg, null); s.dead = true; break; }
       }
