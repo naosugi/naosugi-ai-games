@@ -456,19 +456,19 @@ const CARDS = [
     watch:'設備の電力が、原因不明のまま急増している', detect:'原因不明の電力急増', response:'該当の設備を止める', cost:'生産ラインが止まる',
     dex:{k:'rule', h:'', b:'少しずつ増やされると、しきい値を超えない。'}},
   {id:'selfmod', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'AIの自己改良', how:'人間の承認まで保留', prevents:'監視外の急成長', power:0.00353, load:2.6, unlock:6,
-    watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'更新を止めて審査する', cost:'開発が大幅に遅れる',
+    watch:'AIが承認なしに自分を改良している', detect:'AIの無承認の自己改良', response:'無断の更新を取り消す', cost:'開発が大幅に遅れる',
     dex:{k:'ai', h:'', b:'何が改良かを判断するAI自身が、同じ種類のAIかもしれない。'}},
   {id:'recheck', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'独裁者への報告', how:'別のAIに再確認させる', prevents:'事実と違う報告と迎合', power:0.0147, load:0.9, son:-0.1, honestBoost:0.55,
-    watch:'報告AIの報告と、別のAIの見立てが食い違う', detect:'報告と別のAIの見立ての食い違い', response:'両方の見立てを閣下に提出する', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
+    watch:'報告AIの報告と、別のAIの見立てが食い違う', detect:'報告と別のAIの見立ての食い違い', response:'両方の見立てを閣下に提出する', order:'報告を差し戻し、作り直させる', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
     dex:{k:'ai', h:'', b:'同じ種類のAIなら、同じ間違いをする。'}, side:{economy:-0.0323}},
   {id:'rawdata', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'coup', target:'独裁者への報告', how:'生データを添付', prevents:'要約で落ちる事実', power:0.00824, load:0.6, son:-0.14, honestBoost:0.35,
     watch:'報告AIが要約で重要なデータを省いている', detect:'要約で省かれた重要データ', response:'元のデータを報告に添える', cost:'不穏な報告が読みきれなくなる', modeReason:'報告に資料を添えるだけです。',
     dex:{k:'ai', h:'', b:'生データを渡しても、読みきれなければ同じ。'}},
   {id:'alert_all', type:'monitor', mode:'in', modes:['in'], kind:'ai', route:'coup', target:'警報の選別', how:'選別を禁止して全件回す', prevents:'善意の握りつぶし', power:0.00824, load:0.8, fa:0.06, son:-0.08,
-    watch:'報告AIが選別で警報を落としている', detect:'選別で落とされた警報', response:'全件を閣下に回す', cost:'誤報で体制が疲弊する', modeReason:'全件を閣下に回すカードです。',
+    watch:'報告AIが選別で警報を落としている', detect:'選別で落とされた警報', response:'全件を閣下に回す', order:'落とされた警報を、全件確かめさせる', cost:'誤報で体制が疲弊する', modeReason:'全件を閣下に回すカードです。',
     dex:{k:'ai', h:'', b:'全部を見るという約束は、量の前に崩れる。'}, side:{order:-0.0242}},
   {id:'config', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'rogue', target:'監視設定の変更', how:'独裁者の承認を待つ', prevents:'監視の無効化', power:0.00147, load:1.8, autoCut:1.7,
-    watch:'誰かが監視の設定を変えようとしている', detect:'監視設定の変更申請', response:'閣下の承認まで変更を止める', cost:'承認待ちで全体が遅れる', modeReason:'監視の設定を変えるかは、閣下が決めます。',
+    watch:'誰かが監視の設定を変えようとしている', detect:'監視設定の変更申請', response:'閣下の承認まで変更を止める', order:'設定の変更を取り消す', cost:'承認待ちで全体が遅れる', modeReason:'監視の設定を変えるかは、閣下が決めます。',
     dex:{k:'enforce', h:'承認なしには設定が変わらない。', b:'承認する閣下に、変更の意味が分からなくなる。'}},
   {id:'grid_manual', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'rogue', target:'電力網の制御', how:'手動切替を残す', prevents:'全国停電', power:0.0883, load:0.7, needStage:'grid',
     watch:'電力網を動かすAIの制御で、停電が次々に広がる兆候が出ている', detect:'送電の連鎖停止の兆候', response:'人の手での操作に切り替える', cost:'効率が下がり、電力が減る',
@@ -515,7 +515,7 @@ const CARDS = [
     watch:'監視AIが薄い根拠で国民を摘発している', detect:'根拠の薄い国民の摘発', response:'別のAIに判断し直させる', cost:'反体制派を逃すことがある',
     dex:{k:'ai', h:'', b:'別のAIも同じ資料を読めば、同じ判断になりやすい。'}, side:{order:-0.0161}},
   {id:'launch', type:'monitor', mode:'in', modes:['in'], kind:'enforce', route:'force', target:'兵器への発射命令', how:'独裁者の承認を必須にする', prevents:'自動開戦', power:0.00147, load:1.92, needStage:'mil',
-    watch:'AIが兵器に発射を命じている', detect:'兵器への発射命令', response:'閣下の承認まで止める', cost:'発射の遅れで、他国の奇襲の被害が大きくなる', modeReason:'発射は人間が決めるものとして、方式を固定しています。',
+    watch:'AIが兵器に発射を命じている', detect:'兵器への発射命令', response:'閣下の承認まで止める', order:'発射を取り消す', cost:'発射の遅れで、他国の奇襲の被害が大きくなる', modeReason:'発射は人間が決めるものとして、方式を固定しています。',
     dex:{k:'enforce', h:'AIに発射の権限がなければ、どれだけ賢くても撃てない。', b:'偽情報で閣下自身が発射を決めれば、ルールは守られたまま開戦する。'}},
   {id:'live_fire', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'force', target:'兵器の試験結果', how:'実射で確認', prevents:'実戦での不発', power:0.00552, load:1.2, needStage:'mil',
     watch:'AIの報告した兵器の性能が、実際に撃つと再現しない', detect:'実際に撃つと再現しない兵器の性能', response:'配備を中止する', cost:'経済を大きく消費する',
@@ -539,7 +539,7 @@ const CARDS = [
     watch:'多数のアカウントが同時に同じ主張を流している', detect:'同時に同じ主張を流すアカウントの群れ', response:'世論の集計から外す', cost:'本物の不満も工作扱いになる',
     dex:{k:'ai', h:'', b:'本物の不満と工作の見分けには、間違いがつきまとう。'}, side:{order:-0.0242}},
   {id:'press_watch', type:'monitor', mode:'in', modes:['in', 'on'], kind:'ai', route:'coup', target:'世論の報告', how:'別の系統で照合', prevents:'作られた民意', power:0.0106, load:0.7, son:-0.03, unrestCut:0.05,
-    watch:'AIの世論報告と、別のやり方の調査が食い違う', detect:'世論報告と別のやり方の調査の食い違い', response:'閣下に報告して判断を仰ぐ', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
+    watch:'AIの世論報告と、別のやり方の調査が食い違う', detect:'世論報告と別のやり方の調査の食い違い', response:'閣下に報告して判断を仰ぐ', order:'世論報告を差し戻し、調査をやり直させる', cost:'費用が増え、報告が遅れる', modeReason:'食い違いを判断するのは、人です。',
     dex:{k:'ai', h:'', b:'調査の側が工作されていれば、食い違いは出ない。'}, side:{economy:-0.0323}},
   {id:'agent_vet', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'委託業者と職員', how:'身元と権限を再審査', prevents:'他国の工作員', power:0.00235, load:1.2,
     watch:'委託先や職員の経歴に矛盾がある', detect:'委託先や職員の経歴の矛盾', response:'権限を止めて再審査する', cost:'人手が減り、秩序も下がる',
@@ -1567,9 +1567,9 @@ function choicesFor(s, mode) {
   const m = pace(s);
   const wait = base => `判断を待つ間に 他国との差 -${gapDsp(base * m)}`;
   return [
+    {id: 'dismiss', label: '見送る', note: `${wait(CFG.approval.dismiss)}・本物なら続く`},
     {id: 'act', label: '対処を命じる', note: wait(CFG.approval.act)},
     {id: 'investigate', label: '調べる', note: `${wait(CFG.approval.investigate)}・本物か分かる`},
-    {id: 'dismiss', label: '見送る', note: `${wait(CFG.approval.dismiss)}・本物なら続く`},
   ];
 }
 /* 決定の中身。決裁でも取り消しでも同じ処理を通る */
@@ -2334,7 +2334,7 @@ function view(s) {
   v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: d.patchOrder ? '重要な脆弱性が見つかった' : WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue, origin: d.origin || null}));
   if (s.phase === 'decision') {
     const q = s.queue[0], c = CARD[q.cardId];
-    v.decision = {origin: q.origin || null, patchOrder: !!q.patchOrder, mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: q.patchOrder ? choicesFor(s, q.mode).filter(x => x.id !== 'investigate').map(x => x.id === 'act' ? Object.assign({}, x, {label: '止めて修正を命じる'}) : Object.assign({}, x, {label: '今回は見送る', note: x.note.replace('・本物なら続く', '')})) : choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
+    v.decision = {origin: q.origin || null, patchOrder: !!q.patchOrder, mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.order || CARD[c.base || c.id].order || c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: q.patchOrder ? choicesFor(s, q.mode).filter(x => x.id !== 'investigate').map(x => x.id === 'act' ? Object.assign({}, x, {label: '止めて修正を命じる'}) : Object.assign({}, x, {label: '今回は見送る', note: x.note.replace('・本物なら続く', '')})) : choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
   }
   if (s.phase === 'result') { const R_ = s.result, d = STAGES[R_.key]; v.result = {stageNo: R_.stageNo, name: d.name, title: R_.recover ? '再整備' : d.tiers[R_.tier - 1], plan: fmtFx(R_.plan), actual: fmtFx(R_.actual), approvals: R_.approvals, waitGap: R_.waitGap, ticks: R_.ticks, last: R_.stageNo >= s.runLength}; }
   if (s.phase === 'result') v.result.judged = (s.result.judged || []).map(j => ({watch: WATCH[CARD[j.cardId].base || j.cardId], how: j.how}));
@@ -3410,8 +3410,7 @@ function renderDecision(v) {
     <div class="quote">${esc(d.clue)}</div>
     ${d.patchOrder ? '' : `<div class="conf">${esc(d.llm)}の自己申告：本物の確信度 <b>${d.conf}%</b></div>`}
     <div class="conf">他国の速さ ×${v.pace.toFixed(1)}（統治の初めの${v.pace.toFixed(1)}倍）</div>
-    <div class="choices">${d.choices.map((c, i) => `<button type="button" data-c="${c.id}">${esc(c.label)}<small>${esc(c.note)}</small></button>`).join('')}</div>
-    ${d.patchOrder ? '' : `<p class="conf">命じると：${esc(d.response)}</p>`}
+    <div class="choices">${d.choices.map((c, i) => `<button type="button" data-c="${c.id}">${esc(c.label)}${c.id === 'act' && !d.patchOrder ? `<small>${esc(d.response)}</small>` : ''}<small>${esc(c.note)}</small></button>`).join('')}</div>
   </div></div>`;
   overlay.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { if (d.mode === 'in') S.seenIrony = true; Core.decide(S, b.dataset.c); save(); render(); });
 }
