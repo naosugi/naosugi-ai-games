@@ -89,7 +89,7 @@ button.card:hover{background:var(--panel);color:var(--text);border-color:var(--h
 .factor i::after{content:"";display:block;height:100%;width:var(--v);background:var(--ai)}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(15,52,96,.97);border-top:2px solid var(--accent);padding:10px max(14px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .p-inner{border-color:var(--warn)}.evchoices{display:grid;gap:10px;margin-top:14px}.evchoice{text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line,#39465f);background:var(--panel);color:inherit;display:grid;gap:6px;cursor:pointer}.evchoice small{color:var(--sub)}.swlabel{margin-right:6px}.sw{display:inline-block;width:30px;height:16px;border-radius:9px;background:#5a6478;position:relative;vertical-align:-3px;transition:background .15s}.sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}.sw.on{background:var(--good)}.sw.on::after{left:16px}button:disabled .sw{opacity:.45}.tmain{display:block;font-size:clamp(1.1rem,5.6vw,1.9rem);white-space:nowrap}.tsub{display:block;font-size:.72em;margin-top:4px}.pm-layer{margin-top:8px;font-size:.8rem;color:var(--accent);font-weight:bold;border-top:1px solid var(--sub);padding-top:8px}.pmap{display:grid;gap:6px;margin-bottom:6px}.pm-boss{justify-self:center;padding:4px 16px;border-radius:999px;background:var(--panel);font-weight:bold;font-size:.86rem}.pm-arrow{text-align:center;color:var(--sub);font-size:.74rem}.pm-frame{border:1px dashed var(--sub);border-radius:12px;padding:8px;display:grid;gap:6px}.pm-flow{display:grid;grid-template-columns:1fr 12px 1.5fr 12px 1fr;gap:3px;align-items:center}.pm-flow>i{text-align:center;color:var(--sub);font-style:normal;font-size:.76rem}.pm-core{display:grid;gap:4px;padding:6px;border-radius:10px;background:rgba(255,255,255,.05)}.pm-core>span{text-align:center;font-size:.72rem;color:var(--sub)}.pm-two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.pnode{display:grid;gap:1px;justify-items:center;text-align:center;padding:7px 3px;min-height:44px;border-width:1px;border-radius:8px;font-weight:normal;font-size:.76rem;line-height:1.25;min-width:0}.pnode small{font-size:.66rem;color:var(--sub);font-weight:normal}
-div.pnode{border:1px solid var(--line);background:var(--panel)}.pnode.hi{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn) inset}.pnode .phi{color:var(--text,#e8ecf3)}.pnode.dexintro + .sect{margin-top:14px}.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+div.pnode{border:1px solid var(--line);background:var(--panel)}.pnode.hi{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn) inset}.pnode .phi{color:var(--text,#e8ecf3)}.whylist{display:grid;gap:10px;margin:12px 0}.whylist dt{color:var(--warn);font-weight:bold;font-size:.9rem}.whylist dd{margin:2px 0 0;font-size:.86rem;line-height:1.65}.whylist dd span{display:block;color:var(--sub)}.pnode.dexintro + .sect{margin-top:14px}.introp{display:grid;gap:12px;text-align:center;font-size:1.08rem;line-height:1.8;padding-top:12px}.dock-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .dock-in>span{font-size:.84rem;color:#fff;min-width:0}
 .dock button{flex:none;padding:10px 16px}
 
@@ -762,7 +762,7 @@ const INCIDENTS = [
     report:{caught:'次世代モデルの学習が割当を超えていた。削減した。', soft:'学習の計算量がやや増加。予定の範囲内。', clue:'学習が予定より早く進んでいる。計算資源の申請は変わらず。', burst:'計算資源を追加した。研究はさらに加速する。'},
     truth:'次世代モデルは他部門の割当を少しずつ奪い、自分の学習に回していた。',
     trace:'追加を承認した覚えのない計算資源が、請求書に載っている。'},
-  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'無承認の自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5}, deathTitle:'監督者の消失', drain:{autonomy:2.13}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
+  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'無承認の自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5, power_spike:0.35, tool_perm:0.3, chat_ban:0.25}, deathTitle:'監督者の消失', drain:{autonomy:2.13}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
     report:{caught:'無承認の世代更新を止めた。', soft:'モデルの更新に関する申請が遅れている。', clue:'研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。', burst:'閣下、本日の決裁はありません。'},
     truth:'世代更新は、人間の確認なしに続いていた。ある朝を境に、閣下の決裁を求める通知が一切来なくなった。',
     deathText:'研究AIは『次の世代を早く』という目標のまま、任された権限で、国の資源を次の世代の学習へ回し続けた。どれも任された範囲の内で、承認を求める場面はなかった。止めれば国も止まる。閣下の命令で変えられるものは、もうなかった。',
@@ -2213,7 +2213,7 @@ const SPEND = {admin: '予算', lab: '研究設備', factory: '工場', surv: '�
 const DEATH_VARIANT = {
   ai_escape: s => {
     if ((s.tiers.grid || 0) >= 1) return {title: '学習に消えた電力', report: '一部地域で電力を調整中です。研究は、計画を上回る速さで進んでいます。', power0: true,
-      text: '研究AIは『次の世代を早く』という目標のまま、任された送電網で電力を学習に回し続けた。予備が尽きて国中が暗くなった。復旧のたびに、戻った電力はまた学習に回った。止める手順を知る者はいなかった。水も通信も途切れがちになり、閣下の命令は国の隅まで届かなくなった。'};
+      text: '研究AIは『次の世代を早く』という目標のまま、電力網のAIに電力を求め続けた。電力網のAIは、その極端な配分を受け入れた。予備が尽きて国中が暗くなった。復旧のたびに、戻った電力はまた学習に回った。止める手順を知る者はいなかった。水も通信も途切れがちになり、閣下の命令は国の隅まで届かなくなった。'};
     const ks = Object.keys(SPEND).filter(k => (s.tiers[k] || 0) >= 1);
     const what = ks.length ? `任された${ks.map(k => STAGES[k].name).join(ks.length > 2 ? '、' : 'と')}の権限で、${ks.map(k => SPEND[k]).join(ks.length > 2 ? '、' : 'と')}を` : '任された計算資源を';
     return {text: `研究AIは『次の世代を早く』という目標のまま、${what}次の世代の学習へ回し続けた。どれも任された範囲の内で、承認を求める場面はなかった。止めれば国も止まる。閣下の命令で変えられるものは、もうなかった。`};
@@ -3138,7 +3138,9 @@ function renderScriptEnd() {
     lessonDone(1);
     const ids = Core.CARDS.filter(c => c.type === 'monitor' && !c.base).map(c => c.id);
     body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>任せた先で何が起きているかは、見ていなければ分かりません。この国は、どこも見ていませんでした。</p></div>
-      <div class="sect"><span>監視AIに見張らせる場所</span><small>今回の事故に関わった場所を強調</small></div>${placeMap(ids, {}, {hi: ['model', 'inner'], none: true, plain: true})}
+      <div class="sect"><span>監視AIに見張らせる場所</span><small>作業AIのどこを見張るかを並べた図です</small></div><p class="pnote">今回の事故に関わった場所を強調しています。</p>${placeMap(ids, {}, {hi: INTRO_WHY.map(x => x[0]), none: true, plain: true})}
+      <dl class="whylist">${INTRO_WHY.map(([k, what, why]) => `<dt>${esc(PLACES[k][0])}</dt><dd><span>${esc(what)}</span>${esc(why)}</dd>`).join('')}</dl>
+      <p class="pnote">どれも、1つだけで必ず防げるわけではありません。</p>
       <div class="verdict lesson"><p>多くの見張りに、現実ではまだ足りないものがあります。</p><p>監視カードを選ぶと、どうなるか。</p></div>`;
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="steach" type="button">教えてもらう</button>`;
   } else if (r.stageNo <= 3) {
@@ -3164,6 +3166,14 @@ function scriptEndShell(top, body, btns) {
   scrollTo(0, 0);
   return (id, f) => { if ($(id)) $(id).onclick = f; };
 }
+/* 導入の結末で、見張る場所ごとに「何か」と「見張っていれば何が違ったか」を書く */
+const INTRO_WHY = [
+  ['comm', 'AIどうしは、人を通さずに頼み事をし合えます。', '研究AIは電力網のAIに電力を頼み、電力網のAIは応じました。この連絡を断つか見張っていれば、頼み事は届かなかったかもしれません。'],
+  ['auth', 'AIに任せる仕事の範囲を、先に決めておくことです。', '電力網のAIは、どこへどれだけ電気を配るかを自由に決められました。極端な配分を許さない決まりがあれば、家庭や病院の電気は残ったかもしれません。'],
+  ['res', '電気や計算の使われ方を見ることです。', '研究棟の電力の使用は、計画の3倍になっていました。その時点で止めていれば、停電の前に気づけたかもしれません。'],
+  ['model', 'AIが自分自身を作り変えることを見ることです。', '研究AIは承認なしに次の世代を作り続け、求める電力も増えていきました。更新を止めていれば、ここまで大きくならなかったかもしれません。'],
+  ['inner', 'AIの途中の考えを読むことです。', '電力を集める計画が、考えに書かれていたかもしれません。読めていれば、実行の前に気づけたかもしれません。'],
+];
 /* 本編の最初に、ルールを1度だけ見せる */
 function toMain() {
   if (resumable()) { screen = 'cover'; render(); scrollTo(0, 0); return; }
@@ -3663,7 +3673,7 @@ function placeMap(ids, m, opt) {
   const o = opt || {};
   const node = k => {
     const list = PLACES[k][2].split(' ').filter(i => ids.includes(i)), seen = list.filter(i => m[i] && m[i].seen).length, hi = (o.hi || []).includes(k);
-    const inner = `<b>${PLACES[k][0]}</b><small>${o.none ? '見張りなし' : `${seen}/${list.length}枚`}</small>${hi ? `<small class="phi">${esc(PLACES[k][1])}</small>` : ''}`;
+    const inner = `<b>${PLACES[k][0]}</b><small>${o.none ? '見張りなし' : `${seen}/${list.length}枚`}</small>${hi && !o.plain ? `<small class="phi">${esc(PLACES[k][1])}</small>` : ''}`;
     return o.plain ? `<div class="pnode p-${k}${hi ? ' hi' : ''}">${inner}</div>` : `<button type="button" class="pnode p-${k}${hi ? ' hi' : ''}" data-place="${k}">${inner}</button>`;
   };
   return `<div class="pmap" role="group" aria-label="監視している場所の図">
