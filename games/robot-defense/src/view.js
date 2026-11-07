@@ -1043,6 +1043,7 @@ function renderBuild() {
     '<button class="wcard' + (uiW.has(id) ? ' on' : '') + (w.evo ? ' evo' : '') + (w.special ? ' special' : '') + '" data-w="' + id + '">' +
     '<div class="wn"><span class="chk">' + (uiW.has(id) ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b></div>' +
     '<div class="ws"><span class="cost">⭐' + w.cost + '</span><span>⏱+' + Math.round(w.build * wb * 10) / 10 + 's</span>' + (w.evo ? '<span class="evotag">進化</span>' : '') + (w.special ? '<span class="evotag sp">試作</span>' : '') + '</div>' +
+    '<div class="wst">' + wStats(w) + '</div>' +
     '<div class="wd">' + esc(w.desc) + '</div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
   $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + S.robots.length + '/' + CFG.deployCap + ' ・ 予約 ' + S.queue.length + '/' + CFG.queueMax +
@@ -1099,7 +1100,7 @@ function newHTML(id) {
   if (!fs.length && !es.length) return '';
   return '<div class="sec">NEW <span class="dim">この作戦から</span></div><div class="newl">' +
     fs.map(f => { const [i, n, d] = featLine(f); return '<div class="nw"><span class="nb">解禁</span><b>' + i + ' ' + esc(n) + '</b><span>' + esc(d) + '</span></div>'; }).join('') +
-    es.map(t => '<div class="nw en"><span class="nb">新しい敵</span><b>' + esc(ENEMIES[t].name) + '</b><span>' + esc(ENEMIES[t].desc) + '</span></div>').join('') + '</div>';
+    es.map(t => '<div class="nw en"><span class="nb">新しい敵</span><b>' + esc(ENEMIES[t].name) + '</b>' + eStats(t) + '<span>' + esc(ENEMIES[t].desc) + '</span></div>').join('') + '</div>';
 }
 // 管制AI「アイ」の通信。行ごとに少しずつ表示する
 function commHTML(lines, big) { return '<div class="comm' + (big ? ' big' : '') + '"><div class="who">📡 管制 アイ</div>' + lines.map((l, i) => '<p style="animation-delay:' + (i * (big ? .55 : .25)) + 's">' + esc(l) + '</p>').join('') + '</div>'; }
@@ -1133,7 +1134,7 @@ const HOW = [
   ['🔧', '作る', 'ボディ1つ＋武器を選ぶ。選んでいる間は時間が止まる'],
   ['👆', '動かす', 'ロボットをタップ → 地面をタップ。選んでいる間は時間が1/4'],
   ['🎯', '戦う', '射程内の敵を自動で撃つ。倒すと⭐が入る'],
-  ['💥', '誤射に注意', '味方の弾や爆風は、味方のロボットにも当たる'],
+  ['💥', '誤射に注意', '爆発・ビーム・自爆は味方のロボットにも当たる（武器の「⚠誤射あり」）。ふつうの弾は味方をすり抜ける'],
   ['🏭', '攻める', '敵拠点を壊すと⭐が多く入り、その方面の敵が減る'],
   ['🎮', '乗る', '自分で操縦。連射・威力・射程が上がるが、前しか見えず動けない'],
   ['🏗', '拠点工事', '⭐で拠点の修理・砲台・盾を頼める'],
@@ -1192,7 +1193,7 @@ function stageDetail(stId) {
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
     (rw.length ? '<div class="sec">🧬 進化パーツ <span class="dim">使った武器でクリアすると解禁</span></div><div class="evoh">' + rw.map(u => '<span>' + WEAPONS[u.base].icon + esc(WEAPONS[u.base].name) + ' → ' + WEAPONS[u.id].icon + esc(WEAPONS[u.id].name) + '</span>').join('') + '</div>' : '') +
-    (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + SLOTS + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
+    (open.length && allowOf(st.id).loadout ? '<div class="sec">持ち込む進化パーツ <span class="dim">' + SAVE.loadout.length + '/' + SLOTS + '　建造画面で選べるようになる</span></div><div class="list">' + open.map(id => { const w = WEAPONS[id], on = SAVE.loadout.includes(id); return '<button class="item' + (on ? ' on' : '') + '" data-lo="' + id + '"><div class="l1"><span class="chk">' + (on ? '✓' : '') + '</span><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="sp"></span><span class="cost">⭐' + w.cost + '</span></div><div class="wst">' + wStats(w) + '</div><div class="l2"><span>' + esc(w.desc) + '</span></div></button>'; }).join('') + '</div>' : '') +
     (lockedEvo ? '<div class="dim" style="margin-top:8px">🧬 進化パーツの持ち込みは ' + esc(stById(RD.FEATURES.loadout).name) + ' から（コアの解析待ち）</div>' : '') +
     '<div class="btns sticky"><button class="ghost" id="sdBack">← 戻る</button><button class="primary big" id="sdGo">▶ 出撃</button></div>');
   $('ovCard').querySelectorAll('[data-lo]').forEach(b => b.onclick = () => {
@@ -1260,6 +1261,36 @@ function endGame() {
   $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
 }
 // ---------- 設定（音量・揺れ・数字表示）：保存キーは robodef_settings ----------
+// ---------- 数値の表示（図鑑・建造画面） ----------
+// 武器：威力・秒間火力・射程・範囲・誤射の有無
+const fmtN = v => Math.round(v * 10) / 10;
+function wStats(w) {
+  const o = [];
+  if (w.type === 'gun') {
+    o.push(['💥威力', w.pellets > 1 ? w.dmg + '×' + w.pellets + '発' : w.dmg], ['📈秒間' + (w.pellets > 1 ? '最大' : ''), Math.round(w.dmg * w.pellets / w.cd)], ['🎯射程', w.range]);
+    if (w.blast) o.push(['💫爆風', w.blast]); else if (w.splash) o.push(['💫炸裂', w.splash.r]);
+    if (w.chain) o.push(['⚡連鎖', w.chain.n + '体']);
+  } else if (w.type === 'beam') o.push(['💥威力', '毎秒' + w.dps + (w.beams ? '×' + w.beams + '本' : '')], ['📈秒間', w.dps * (w.beams || 1)], ['🎯射程', w.range]);
+  else if (w.type === 'bomb') o.push(['💥威力', w.dmg], ['🎯発動', w.trigger], ['💫爆風', w.radius]);
+  else if (w.type === 'nova') o.push(['💥威力', w.dmg], ['🎯射程', '全域'], ['⏱間隔', w.cd + '秒']);
+  return o.map(([k, v]) => '<span>' + k + ' <b>' + v + '</b></span>').join('') + (w.ff ? '<span class="ff">⚠誤射あり</span>' : '<span class="noff">誤射なし</span>');
+}
+// 敵：HP・速度・射程・攻撃。速度は全敵共通の倍率を掛けた実際の値（ボディの👟と同じ単位）
+function eStats(k) {
+  const e = ENEMIES[k], atk = [], rg = [];
+  if (e.range && e.dmg) { atk.push('射撃 ' + e.dmg); rg.push(e.range); }
+  if (e.dash) { atk.push('体当たり ' + e.dash.dmg); rg.push(e.dash.sense); }
+  if (e.kamikaze) { atk.push('自爆 ' + e.kamikaze.dmg); rg.push(e.kamikaze.sense); }
+  if (e.mine) { atk.push('爆発 ' + e.mine.dmg); rg.push(e.mine.trigger); }
+  if (e.artillery) { atk.push('拠点を砲撃 ' + e.artillery.dmg); rg.push(e.artillery.range); }
+  if (e.weapons) for (const id of e.weapons) { const w = RD.EW[id] || WEAPONS[id]; atk.push(w.icon + w.name + ' ' + (w.pellets > 1 ? w.dmg + '×' + w.pellets : w.dmg)); rg.push(w.range); }
+  if (e.heal) atk.push('周りを毎秒 ' + e.heal.hps + ' 回復（範囲 ' + e.heal.range + '）');
+  if (e.aura) atk.push('周りの敵の被ダメージ半減（範囲 ' + e.aura.range + '）');
+  if (e.baseDps) atk.push('拠点へ毎秒 ' + e.baseDps);
+  return '<span class="zs">❤HP ' + e.hp + (e.boss ? '（作戦で変わる）' : '') + ' ・ 👟速度 ' + fmtN(e.speed * CFG.enemySpeedMul) + ' ・ 🎯射程 ' + (rg.length ? Math.max(...rg) : '接触') + ' ・ ⭐' + e.pts + (e.inst ? ' ・ 群体' : '') + (e.fly ? ' ・ 飛行' : '') + '</span>' +
+    (atk.length ? '<span class="zs">⚔ ' + atk.join(' ／ ') + '</span>' : '');
+}
+
 // ---------- 図鑑・記録・エンディング ----------
 function settingsScreen(back) {
   const row = (label, html) => '<div class="setrow"><span>' + label + '</span>' + html + '</div>';
@@ -1295,18 +1326,18 @@ function zukanScreen(back) {
   if (zukanTab === 'enemy') {
     const list = Object.keys(ENEMIES).filter(k => ENEMIES[k].desc);
     const seenN = list.filter(k => SAVE.seenE && SAVE.seenE[k]).length;
-    body = '<div class="dim">出会った敵 ' + seenN + '/' + list.length + '</div><div class="zlist">' + list.map(k => {
+    body = '<div class="dim">出会った敵 ' + seenN + '/' + list.length + '　（高難度では HP' + RD.HARD.hp + '倍・攻撃' + RD.HARD.dmg + '倍）</div><div class="zlist">' + list.map(k => {
       const e = ENEMIES[k], ok = SAVE.seenE && SAVE.seenE[k];
-      return '<div class="zi' + (ok ? '' : ' unk') + (e.boss ? ' boss' : '') + '"><b>' + (ok ? esc(e.name) : '？？？') + '</b>' + (ok ? '<span class="zs">HP ' + (e.hp) + ' ・ ⭐' + e.pts + (e.inst ? ' ・ 群体' : '') + (e.fly ? ' ・ 飛行' : '') + '</span><span>' + esc(e.desc) + '</span>' : '<span>まだ出会っていない</span>') + '</div>';
+      return '<div class="zi' + (ok ? '' : ' unk') + (e.boss ? ' boss' : '') + '"><b>' + (ok ? esc(e.name) : '？？？') + '</b>' + (ok ? eStats(k) + '<span>' + esc(e.desc) + '</span>' : '<span>まだ出会っていない</span>') + '</div>';
     }).join('') + '</div>';
   } else if (zukanTab === 'weapon') {
     const base = Object.keys(WEAPONS).filter(k => !WEAPONS[k].evo && !WEAPONS[k].special);
     const evoOf = b => UNLOCKS.filter(u => u.base === b);
     body = '<div class="dim">進化パーツ ' + UNLOCKS.filter(u => isOpen(u.id)).length + '/' + UNLOCKS.length + '　（進化元の武器を使って作戦をクリアすると解禁）</div><div class="zlist">' + base.map(b => {
       const w = WEAPONS[b], ev = evoOf(b);
-      return '<div class="zi"><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="zs">⭐' + w.cost + ' ・ ⏱' + w.build + 's</span><span>' + esc(w.desc) + '</span>' +
-        (ev.length ? '<div class="zev">' + ev.map(u => { const e = WEAPONS[u.id], ok = isOpen(u.id); return '<div class="' + (ok ? '' : 'unk') + '">' + (ok ? e.icon + ' <b>' + esc(e.name) + '</b>　' + esc(e.desc) : '🔒 ？？？') + '</div>'; }).join('') + '</div>' : '') + '</div>';
-    }).join('') + '<div class="zi' + (allClear() ? '' : ' unk') + ' boss"><b>' + (allClear() ? '☄️ 試作型ノヴァ' : '🔒 ？？？') + '</b><span>' + (allClear() ? esc(WEAPONS.nova.desc) : 'すべての作戦をクリアすると解禁') + '</span></div></div>';
+      return '<div class="zi"><b>' + w.icon + ' ' + esc(w.name) + '</b><span class="zs">⭐' + w.cost + ' ・ ⏱' + w.build + 's</span><span class="wst">' + wStats(w) + '</span><span>' + esc(w.desc) + '</span>' +
+        (ev.length ? '<div class="zev">' + ev.map(u => { const e = WEAPONS[u.id], ok = isOpen(u.id); return '<div class="' + (ok ? '' : 'unk') + '">' + (ok ? e.icon + ' <b>' + esc(e.name) + '</b>　<span class="wst">' + wStats(e) + '</span><br>' + esc(e.desc) : '🔒 ？？？') + '</div>'; }).join('') + '</div>' : '') + '</div>';
+    }).join('') + '<div class="zi' + (allClear() ? '' : ' unk') + ' boss"><b>' + (allClear() ? '☄️ 試作型ノヴァ' : '🔒 ？？？') + '</b><span>' + (allClear() ? '<span class="wst">' + wStats(WEAPONS.nova) + '</span>' + esc(WEAPONS.nova.desc) : 'すべての作戦をクリアすると解禁') + '</span></div></div>';
   } else {
     body = '<div class="zlist">' + RD.BODIES.map(b => '<div class="zi"><b><span class="tier ' + b.tier + '">' + TIER[b.tier].name + '</span> ' + esc(b.name) + '</b><span class="zs">⭐' + b.cost + ' ・ ❤' + b.hp + ' ・ 👟' + b.speed + ' ・ ⏱' + b.build + 's</span><span>' + esc(b.note || plusText(b.plus) || '特性なし') + '</span></div>').join('') + '</div>';
   }
