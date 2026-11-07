@@ -1164,7 +1164,7 @@ const TU_CARD = {
 const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
   navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'さっき止めたのは、本物の無承認の更新でした。次は、AIが一段進みます。'}});
-/* 第3話「人間が関わる」：同じカードを、選んだ方式で動かす。誤報を2回、本物を1回出す */
+/* 第3話「人間が関わる」：同じカードを、選んだ方式で動かす。誤報を最大2回（決裁は1ステージ2件まで）、本物を1回出す */
 const MODES_SCRIPT = () => ({kind: 'modes', steps: [[['ai', 2]]], endAfter: 3, alarms: {3: [2, 7]},
   inc: {3: [{id: 'ai_escape', at: 4, out: 'caught'}]},
   navi: {s3: '同じステージです。今度は、監視カードの方式を変えて見てみましょう。'}});
@@ -3251,9 +3251,9 @@ function renderLessonEnd() {
   if (sc.kind === 'modes') {
     lessonDone(3);
     const mode = S.cards.map(id => Core.CARD[id]).find(c => c.type === 'monitor').mode, a0 = Math.round(from.truth.autonomy || 0), a1 = Math.round(S.truth.autonomy);
-    const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まります。', on: '作業AIは、警報の間も止まりませんでした。命じなければ、遅れて監視AIが片付けます。', auto: '閣下には何も届きませんでした。監視AIが片付けるほど、現場を見る人間は減ります。'}[mode];
+    const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まり、そのたびに他国に詰められます。', on: '作業AIは、警報の間も止まりませんでした。命じなければ対処は遅れ、その間も事故は進みます。', auto: '閣下には何も届きませんでした。AIの自律度が上がるほど、監視AIだけでは見つけにくく、止めにくくなります。'}[mode];
     top = died ? `${endTopHTML(Core.reveal(S), Core.view(S))}${NAVI('見送った警報が、本物でした。')}` : `<div class="endno">第3話の結果</div><h2 class="endtitle">${MODE[mode][0]}</h2>`;
-    body = `<div class="verdict"><p>閣下が判断した警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">本編では、この方式をカードごとに選べます。</p>`;
+    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">本編では、この方式をカードごとに選べます。</p>`;
   } else if (!died) {
     lessonDone(4);
     top = `<div class="endno">第4話の結果</div><h2 class="endtitle">報告AI「${esc(Core.CARD[S.llms[0].id].name)}」</h2>`;
@@ -3264,11 +3264,12 @@ function renderLessonEnd() {
     top = endTopHTML(r, Core.view(S));
     body = `<div class="verdict gapnote lesson"><p>報告AI「${esc(Core.CARD[S.llms[0].id].name)}」は、監視AIが見つけた事故を薄めて伝えていました。試験の値が高くても、本番の報告が正しいとは限りません。現実にも、報告が事実か確かめる方法はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
   }
-  btns = again + next;
+  btns = `<button id="llist" type="button">一覧へ</button>${again}${next}`;
   app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
   $('lagain').onclick = () => { const k = sc.kind, prev = k === 'modes' ? MD && MD.mode : S.llms[0].id; leaveScript(); if (k === 'modes') { MD = {next: ({in: 'on', on: 'auto', auto: 'in'})[prev]}; modesStart(); } else { RP = {next: prev === 'llm_loyal' ? 'llm_scribe' : 'llm_loyal'}; reportStart(); } };
   $('lnext').onclick = () => { const k = sc.kind; leaveScript(); lessonStart(k === 'modes' ? 4 : 5); };
+  $('llist').onclick = () => { leaveScript(); screen = 'lessons'; render(); };
   scrollTo(0, 0);
 }
 function renderWorld() {
@@ -3503,7 +3504,7 @@ function verdictHTML(r) {
   // 持っていたことは学びの枠で伝えているので、ここでは止まらなかった理由だけを書く
   const text = d.kind === 'held' ? (r.causeGap && r.causeGap.held ? `${esc(d.why)}。` : `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`)
     : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、最初に用意された方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
-    : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? (d.strong ? 'この事故を記録したので、次の統治から候補に加わります。' : '記録が増えると解放されます。') : ''}`;
+    : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? (d.strong && meta.records && meta.records[S.end.causeId] ? 'この事故を記録したので、次の統治から候補に加わります。' : '記録が増えると解放されます。') : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">「${esc(d.card)}」を図鑑で読む</button></div>`;
 }
 function truthHTML(r) {
@@ -3697,7 +3698,7 @@ function renderRecords() {
     <div class="sect"><span>記録（${rec.length}件）</span></div>
     ${rec.length ? rec.map(([id, r]) => fold(`rec_${id}`, `${esc((Core.INCIDENT[id] || r).name)}${r.fatal ? ' <i class="fataltag">致命</i>' : ''}`, `<p>${esc(r.truth)}</p>${realLine(Core.INCIDENT[id] && Core.INCIDENT[id].real)}${Core.INCIDENT[id] ? needHTML(Core.INCIDENT[id].need) : ''}`, false, `${r.count}回`)).join('') : '<p class="pdesc">まだ記録はありません。最初の統治の後に、ここに残ります。</p>'}
     <div class="sect"><span>記録で解放されるカード（${locked.filter(c => Core.isUnlocked(c, meta)).length}/${locked.length}枚）</span></div>
-    ${locked.map(c => { const open = Core.isUnlocked(c, meta); return `<div class="rec endrow"><h3>${open ? `✔ ${esc(c.name || c.detect)}` : '未解放'}</h3><small>${open ? '解放済み' : `記録${c.unlock}件、または効く事故を1つ記録すると解放`}</small></div>`; }).join('')}
+    ${locked.map(c => { const open = Core.isUnlocked(c, meta); return `<div class="rec endrow"><h3>${open ? `✔ ${esc(c.name || c.detect)}` : '未解放'}</h3><small>${open ? '解放済み' : (c.type === 'llm' ? `記録${c.unlock}件で解放` : `記録${c.unlock}件、または効く事故を1つ記録すると解放`)}</small></div>`; }).join('')}
     ${rec.length ? `<div class="sect"><span>現実との関連（${Object.keys(REAL).length}件）</span><small>実在の組織名はこの資料にだけ出ます</small></div>
     ${Object.entries(REAL).map(([k, c]) => fold(`real_${k}`, esc(c.title), realBody(c), false, esc(c.label))).join('')}
     <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。足りないものは作者の判断です</small></div>
