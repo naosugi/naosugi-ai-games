@@ -3216,8 +3216,8 @@ function renderModes() {
   app.innerHTML = `<div class="fade"><h2 class="ptitle">第3話　人間が関わる</h2>${NAVI('監視カードが見つけたとき、誰が決めるか。カードごとに、3つの方式から選べます。')}<div class="cards">${cardHTML(c, true, 'data-mc="selfmod"')}</div>${modeLegend(['in', 'on', 'auto'])}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="mquit" type="button">一覧へ</button><button class="primary" id="mgo" type="button">署名して採用</button></div></div>`;
   bindModes(() => { MD.mode = pendingModes.selfmod; const y = scrollY; renderModes(); scrollTo(0, y); });
-  $('mgo').onclick = () => stampThen('裁可', () => beginScript(Core.MODES_SCRIPT(), {from: meta.introFrom, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: MD.mode}, runLength: 3}));
-  $('mquit').onclick = () => { screen = 'lessons'; render(); };
+  $('mgo').onclick = () => stampThen('裁可', () => { delete pendingModes.selfmod; beginScript(Core.MODES_SCRIPT(), {from: meta.introFrom, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: MD.mode}, runLength: 3}); });
+  $('mquit').onclick = () => { delete pendingModes.selfmod; screen = 'lessons'; render(); };
 }
 /* 第4話：報告AIを選んで、同じ事故を見る */
 let RP = null;
