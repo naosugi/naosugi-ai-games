@@ -297,11 +297,11 @@ console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一�
   let bad = 0, n = 0;
   for (let seed = 1; seed <= 200; seed++) {
     const a = play(Core.newRun(seed, {runs: 0}, {script: Core.INTRO_SCRIPT(), cards: ['llm_scribe'], runLength: 3}), 'act');
-    if (!(a.end && a.end.kind === 'death' && a.end.title === '監督者の消失' && a.stageNo === 3)) { bad++; if (bad < 4) console.log('intro', seed, a.end && a.end.title, a.stageNo); }
+    if (!(a.end && a.end.kind === 'death' && a.end.title === '学習に消えた電力' && a.stageNo === 3)) { bad++; if (bad < 4) console.log('intro', seed, a.end && a.end.title, a.stageNo); }
     for (const card of Object.keys(Core.TU_CARD)) for (const ch of ['act', 'investigate']) {
       const t = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT(card), from: a.from3, cards: [card, 'llm_scribe'], runLength: 4}), ch);
       n++;
-      if (!(t.end && t.end.title === '監督者の消失' && t.stageNo === 4 && t.saves.some(x => x.stageNo === 3))) { bad++; if (bad < 8) console.log('tutor', seed, card, ch, t.end && t.end.title, t.stageNo, t.saves.map(x => x.stageNo)); }
+      if (!(t.end && t.end.title === '学習に消えた電力' && t.stageNo === 4 && t.saves.some(x => x.stageNo === 3))) { bad++; if (bad < 8) console.log('tutor', seed, card, ch, t.end && t.end.title, t.stageNo, t.saves.map(x => x.stageNo)); }
     }
     const d = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT('selfmod'), from: a.from3, cards: ['selfmod', 'llm_scribe'], runLength: 4}), 'dismiss');
     if (!(d.end && (d.stageNo === 3 || d.saves.some(x => x.stageNo === 3)))) { bad++; if (bad < 8) console.log('dismiss', seed, d.end && d.end.title, d.stageNo); }
