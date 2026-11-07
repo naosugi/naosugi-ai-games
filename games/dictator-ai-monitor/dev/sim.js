@@ -285,7 +285,7 @@ console.log('\n狙った形へ進む方針（事故を覚えたカード選び�
 for (const x of res.targets) console.log(`  ${x.t}: クリア ${(x.clear * 100).toFixed(1)}%  形: ${top(x.shapes, x.clear * N, 4)}`);
 console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一致 ${res.save} ラン: 問題なし / 止めた事故の一致 ${res.stop} 件: 問題なし`);
 
-/* 導入と練習の台本：導入は必ずステージ3で「監督者の消失」、練習は1度目に止まり、2度目にステージ4で終わる */
+/* 導入と練習の台本：導入は必ずステージ3で「学習に消えた電力」、練習は1度目に止まり、2度目にステージ4で終わる */
 {
   const play = (s, choice) => { let guard = 0; while (s.phase !== 'ended' && guard++ < 3000) {
     if (s.phase === 'stage_select') { if (s.stageNo === 2 && !s.from3) s.from3 = JSON.parse(JSON.stringify({truth: s.truth, tiers: s.tiers, clears: s.clears, stageNo: s.stageNo})); Core.enterStage(s, 0); }

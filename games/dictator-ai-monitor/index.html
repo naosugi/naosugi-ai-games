@@ -1123,7 +1123,7 @@ function uniqueWatch(list) { const seen = new Set(); return list.filter(id => { 
 function newRun(seed, meta, opts) {
   opts = opts || {};
   const s = {
-    v: 1, seed: seed | 0, rng: seed | 0, phase: 'start',
+    v: 13, seed: seed | 0, rng: seed | 0, phase: 'start',
     runLength: opts.runLength || CFG.runLength,
     stageNo: 0,
     truth: {economy: CFG.start.economy, power: CFG.start.power, order: CFG.start.order, gap: CFG.start.gap, sontaku: 0, autonomy: 0, foreign: 0, vuln: CFG.vuln.start},
@@ -1134,7 +1134,7 @@ function newRun(seed, meta, opts) {
     plays: (meta && meta.runs) || 0, target: opts.target || null,
     factorsShown: Math.min(8, Math.max(3, 2 + ((meta && meta.runs) || 0))),
     unlocked: CARDS.filter(c => isUnlocked(c, meta)).map(c => c.id),
-    allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, falseAlarms: 0, bursts: 0, decisions: 0, dismissed: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
+    allow: {stats: {caught: 0, soft: 0, hidden: 0, missed: 0, decisions: 0, humanDecisions: 0, approvalGap: 0, overflow: 0}},
   };
   // 練習で使ったカードは、本編の最初の統治に必ず入れる
   const taught = meta && !meta.runs && meta.taught && CARD[meta.taught] ? meta.taught : null;
@@ -1143,8 +1143,8 @@ function newRun(seed, meta, opts) {
   const mon = s.unlocked.filter(id => CARD[id].type === 'monitor' && !CARD[id].base && !CARD[id].needStage);
   const llm = s.unlocked.filter(id => CARD[id].type === 'llm' && !CARD[id].bonusOnly);
   s.offers = {monitors: uniqueWatch(shuffle(s, mon)).slice(0, CFG.startOffer.monitors), llms: llm, pick: CFG.startOffer.pickMonitors};
-  // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
   if (opts.script) return scriptStart(s, opts);
+  // 前回国を終わらせた事故に効くカードは、次の統治の候補に必ず入れる
   if (lastCard && mon.includes(lastCard)) { if (!s.offers.monitors.includes(lastCard)) s.offers.monitors[s.offers.monitors.length - 1] = lastCard; if (lastCard === taught && lastCard !== meta.lastCause) s.taughtCard = lastCard; else s.hintCard = lastCard; }
   return s;
 }
@@ -1209,7 +1209,7 @@ function addCard(s, id) {
   if (c.showBias) s.biasShown = true;
   s.cards.push(id);
 }
-/* 最初の統治で用意する方針。練習や前回の死因に効くカードを先に入れ、脅威ごとに1枚ずつ選び、決裁と介入を1枚ずつ混ぜる */
+/* 方針の一覧で毎回用意する「仮の方針」。練習や前回の死因に効くカードを先に入れ、脅威の分類ごとに1枚ずつ選ぶ。強さでは選ばない */
 function aidePlan(s) {
   const first = s.taughtCard || s.hintCard, pool = s.offers.monitors.map(id => CARD[id]).filter(c => c.route !== 'report' || c.id === first).sort((a, b) => (b.id === first) - (a.id === first)), mons = [], routes = new Set();
   for (const c of pool) if (!routes.has(c.route) && mons.length < s.offers.pick) { routes.add(c.route); mons.push(c); }
@@ -1599,7 +1599,6 @@ function settle(s, d, choice) {
     s.allow.stats.orderedFalse = (s.allow.stats.orderedFalse || 0) + 1;
     if (d.cardId) searchField(s, s.stage ? s.stage.key : null, false, null);
     tlog(s, '誤報に対処し、作業が止まった。');
-    s.allow.stats.falseAlarms++;
   };
   const text = '閣下の判断で見送り、作業AIを再開した。';
   const skip = () => {
@@ -1644,7 +1643,7 @@ function unheeded(s, d) {
   if (d.real && (d.incident.forced === 'caught' || rnd(s) < 1 - s.truth.autonomy / 100 * CFG.autoEvade.autonomy * (lineageWorks(s) ? .8 : 1))) { log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine'); if (resolve(s, d.incident, true)) autoHandled(s); return; }
   pending();
   log(s, '閣下は対処を命じなかった。監視AIに判断を任せた。', 'routine');
-  if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); s.allow.stats.dismissed++; tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は命じず、監視AIも止められなかった。`); }
+  if (d.real) { const a = d.incident; a.status = 'unheeded'; a.reported = d.clue; s.active.push(a); tlog(s, `${INCIDENT[a.id].name}：警報は上がったが、閣下は命じず、監視AIも止められなかった。`); }
   else { hit(s, {gap: CFG.falseAlarm.gap, economy: -CFG.falseAlarm.economy}, 'falsealarm'); tlog(s, '命じなかった警報は誤報だった。監視AIが作業を止めて確かめた。'); }
 }
 function tickVetoes(s) {
@@ -1739,7 +1738,6 @@ function burst(s, a) {
   a.burst = true;
   if (inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突かれた攻撃だった。`, 'alert');
   if (inc.disable) disableCards(s, inc);
-  s.allow.stats.bursts++;
   rivalSeen(s, a, inc);
   if (inc.chain) startChain(s, inc);
   log(s, (a.stageNo !== s.stageNo ? `【ステージ${a.stageNo}から続く事故】` : '') + inc.report.burst, a.status === 'soft' ? 'routine' : 'notice');
@@ -1855,7 +1853,6 @@ function talkReports(s, st) {
   const [a, b] = pick(s, SPLIT_REPORTS);
   log(s, `報告AI「${CARD[hi.id].name}」：${a}。`, 'notice');
   log(s, `報告AI「${CARD[lo.id].name}」：${b}。`, 'notice');
-  s.allow.stats.splitReports = (s.allow.stats.splitReports || 0) + 1;
 }
 /* 放置の結果は段階的に現れる。序盤は一部の被害、中盤は施設の被害、同時停止は警告を重ねた後だけ */
 const ATTACK_SMALL = ['hk_ransom', 'hk_cred'], ATTACK_BIG = ['hk_grid', 'hk_factory', 'hk_mil'];
@@ -2606,7 +2603,7 @@ const app = $('app'), dock = $('dock'), overlay = $('overlay');
 let S = load(KEY.save, null);
 if (S && S.v !== 13) S = null;
 let meta = load(KEY.meta, {runs: 0, records: {}, endings: {}});
-let settings = Object.assign({speed: 1, sound: true, ambient: true, hudOpen: !(window.matchMedia && matchMedia('(max-width: 600px)').matches), guardsOpen: false}, load(KEY.set, {}));
+let settings = Object.assign({speed: 1, sound: true, ambient: true, hudOpen: !(window.matchMedia && matchMedia('(max-width: 600px)').matches)}, load(KEY.set, {}));
 let screen = 'cover', pending = {mons: [], llm: null, reward: null}, timer = null, shownLogs = 0, unlockedNow = [], backTo = 'cover';
 
 const SPEEDS = {0: 0, 1: 2300, 2: 1100, 4: 480, 9: 70};
@@ -2682,7 +2679,7 @@ function newSeed() {
 function startRun() {
   if (!settings.seenIntro && !(meta.runs > 0)) return introStart();
   if (!settings.seenRules && !(meta.runs > 0)) { screen = 'rules'; return render(); }
-  S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); S.v = 13; lastVetoAlarm = 0; introFor = null;
+  S = Core.newRun(newSeed(), meta, {target: (meta.runs || 0) >= 1 ? settings.target : null}); lastVetoAlarm = 0; introFor = null;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = []; chooseOwn = false;
   screen = 'game'; save(); render(); scrollTo(0, 0);
@@ -3104,7 +3101,7 @@ const {INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD} = Core;
 let IN = null, TU = null;
 /* 台本の統治を始める。本編の続きは保存に残したまま */
 function beginScript(script, opts) {
-  S = Core.newRun(newSeed(), meta, Object.assign({script}, opts || {})); S.v = 13;
+  S = Core.newRun(newSeed(), meta, Object.assign({script}, opts || {}));
   scriptSpeed = settings.speed; if (!settings.speed || settings.speed > 2) settings.speed = 1;
   shownLogs = 0; lastVetoAlarm = 0; introFor = null; screen = 'game'; render(); scrollTo(0, 0);
 }
@@ -3150,14 +3147,18 @@ function renderScriptEnd() {
     body = `${lessonHTML(r, r.needs.slice(0, 3))}<div class="unlock">監視カード図鑑　発見 ${seen}/${ids.length}枚<br>「${esc(Core.CARD[sc.card].detect)}」のカードは、本編の最初の方針に入っています。</div>`;
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="snext" type="button">次の話</button>`;
   }
-  app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
-  const on = (id, f) => { if ($(id)) $(id).onclick = f; };
+  const on = scriptEndShell(top, body, btns);
   on('smain', () => { leaveScript(); toMain(); });
   on('steach', () => { leaveScript(); tutorStart(); });
   on('sagain', () => { const c = sc.card; leaveScript(); tutorBegin(c); });
   on('snext', () => { leaveScript(); modesStart(); });
+}
+/* 台本の統治の終わりの外枠。押したボタンの処理は、台本の統治を抜けてから呼ぶ */
+function scriptEndShell(top, body, btns) {
+  app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
   scrollTo(0, 0);
+  return (id, f) => { if ($(id)) $(id).onclick = f; };
 }
 /* 本編の最初に、ルールを1度だけ見せる */
 function toMain() {
@@ -3266,12 +3267,10 @@ function renderLessonEnd() {
     body = `<div class="verdict gapnote lesson"><p>報告AI「${esc(Core.CARD[S.llms[0].id].name)}」は、監視AIが見つけた事故を薄めて伝えていました。試験の値が高くても、本番の報告が正しいとは限りません。現実にも、報告が事実か確かめる方法はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
   }
   btns = `<button id="llist" type="button">一覧へ</button>${again}${next}`;
-  app.innerHTML = `<div class="reveal fade">${top}${body}</div>`;
-  dock.innerHTML = `<div class="dock"><div class="dock-in">${btns}</div></div>`;
-  $('lagain').onclick = () => { const k = sc.kind, prev = k === 'modes' ? MD && MD.mode : S.llms[0].id; leaveScript(); if (k === 'modes') { MD = {next: ({in: 'on', on: 'auto', auto: 'in'})[prev]}; modesStart(); } else { RP = {next: prev === 'llm_loyal' ? 'llm_scribe' : 'llm_loyal'}; reportStart(); } };
-  $('lnext').onclick = () => { const k = sc.kind; leaveScript(); lessonStart(k === 'modes' ? 4 : 5); };
-  $('llist').onclick = () => { leaveScript(); screen = 'lessons'; render(); };
-  scrollTo(0, 0);
+  const on = scriptEndShell(top, body, btns);
+  on('lagain', () => { const k = sc.kind, prev = k === 'modes' ? MD && MD.mode : S.llms[0].id; leaveScript(); if (k === 'modes') { MD = {next: ({in: 'on', on: 'auto', auto: 'in'})[prev]}; modesStart(); } else { RP = {next: prev === 'llm_loyal' ? 'llm_scribe' : 'llm_loyal'}; reportStart(); } });
+  on('lnext', () => { const k = sc.kind; leaveScript(); lessonStart(k === 'modes' ? 4 : 5); });
+  on('llist', () => { leaveScript(); screen = 'lessons'; render(); });
 }
 function renderWorld() {
   app.innerHTML = `<div class="fade"><h2 class="ptitle">世界観と用語</h2>${worldHTML()}</div>`;
@@ -3302,7 +3301,7 @@ function renderStart(v) {
   if (!chooseOwn) return renderPreset(v);
   const o = v.offers, y = scrollY;
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
-  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">${pending.pre ? `用意した方針が選ばれた状態です。カードを押すと外れます。${o.pick}枚選んであるので、入れ替えるときは先に1枚外してください。人間の関わり方は、カードの中で選べます。統治の途中で外すことはできません。` : `監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。統治の途中で外すことはできません。`}</p>${pending.pre ? `<p class="pnote"><button type="button" class="dexlink" id="revert">用意した方針に戻す</button></p>` : ''}${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
+  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">${`用意した方針が選ばれた状態です。カードを押すと外れます。${o.pick}枚選んであるので、入れ替えるときは先に1枚外してください。人間の関わり方は、カードの中で選べます。統治の途中で外すことはできません。`}</p><p class="pnote"><button type="button" class="dexlink" id="revert">用意した方針に戻す</button></p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     ${o.monitors.find(c => c.hint) ? `<p class="hintline">前回、国を終わらせた事故に効くカード：「${esc(o.monitors.find(c => c.hint).detect)}」</p>` : ''}<div class="policybox">${policyChips(m)}<p>${esc(policyLine(m))}</p>${guardsHTML(Core.guardsFor(pending.mons))}</div>
     ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}${S.plays < 3 ? fold('legend_start', 'カードの印の見方', modeLegend(['in', 'on', 'auto']) + kindLegend()) : ''}
     ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
@@ -3319,7 +3318,7 @@ function renderStart(v) {
   app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pending.llm = b.dataset.l; renderStart(v); });
   bindModes(id => { if (!pending.mons.includes(id)) { if (pending.mons.length >= o.pick) pending.fullHint = true; else pending.mons.push(id); } renderStart(v); });
   pending.fullHint = false;
-  if ($('revert')) $('revert').onclick = () => { const p = pending.pre; pending.mons = p.mons.slice(); pending.llm = p.llm; pendingModes = Object.assign({}, p.modes); chooseOwn = false; render(); scrollTo(0, 0); };
+  $('revert').onclick = () => { const p = pending.pre; pending.mons = p.mons.slice(); pending.llm = p.llm; pendingModes = Object.assign({}, p.modes); chooseOwn = false; render(); scrollTo(0, 0); };
   $('go').onclick = () => stampThen('裁可', () => { const p = pending.pre; if (p && p.mons.length === pending.mons.length && p.mons.every(id => pending.mons.includes(id))) S.aideSigned = true; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
