@@ -495,7 +495,7 @@ const HERO=`<svg class="hills" viewBox="0 0 400 120" preserveAspectRatio="none" 
   <svg class="flag" viewBox="0 0 34 60" aria-hidden="true"><line x1="6" y1="4" x2="6" y2="56" stroke="#fff" stroke-width="2.2"/><path d="M7 5 L30 12 L7 19Z" fill="#fff"/><ellipse cx="6" cy="57" rx="5" ry="1.8" fill="#0b2e18"/></svg>`;
 function renderTitle(){
   showScreen();const sv=loadSave();
-  scr.innerHTML=`<section class="hero"><a class="homeLink" href="../../">← ゲーム一覧</a><div class="hero-text"><h1>アーッ！と<br>ゴルフ</h1><p>心の格闘技</p></div>${HERO}</section>
+  scr.innerHTML=`<section class="hero"><a class="homeLink" href="../../samples/">← ゲーム一覧</a><div class="hero-text"><h1>アーッ！と<br>ゴルフ</h1><p>心の格闘技</p></div>${HERO}</section>
   <section class="pane">
     ${sv?`<button class="btn primary wide" id="resume">続きから　${sv.hole+1}番ホール（全${sv.cfg.holes}ホール）</button>`:''}
     <div class="modes">
@@ -851,7 +851,7 @@ function showFinal(){
     <p class="label" style="margin-top:14px">📔 今日の日誌</p>${diaryHtml(de)}
     <button class="btn primary wide" id="again">同じメンバーでもう一度</button>
     <button class="btn ghost wide" style="margin-top:8px" id="title">タイトルへ</button>
-    <p style="text-align:center;margin-top:12px"><a class="homeLink2" href="../../">← ゲーム一覧</a></p></div>`);
+    <p style="text-align:center;margin-top:12px"><a class="homeLink2" href="../../samples/">← ゲーム一覧</a></p></div>`);
   $('#again').onclick=()=>{$('#overlay').classList.add('hidden');startRound()};
   $('#title').onclick=()=>renderTitle();
 }

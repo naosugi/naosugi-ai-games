@@ -1,0 +1,18 @@
+[
+  {
+    "path": "samples/",
+    "title": "サンプルゲーム",
+    "kind": "sample",
+    "lead": "中の人が作った見本です。講座で作るゲームと同じく、どれもHTMLファイル1つで動きます。",
+    "thumbnail": "games/robot-defense/thumb.jpg"
+  },
+  {
+    "path": "events/2027-01-ogawa/",
+    "title": "親子ゲーム開発講座（名称未定）",
+    "kind": "event",
+    "date": "2027年1月（日程未定）",
+    "place": "小川パレット",
+    "lead": "講座で親子が作ったゲームを掲載します。",
+    "hidden": true
+  }
+]
