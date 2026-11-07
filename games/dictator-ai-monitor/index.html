@@ -762,7 +762,7 @@ const INCIDENTS = [
     report:{caught:'次世代モデルの学習が割当を超えていた。削減した。', soft:'学習の計算量がやや増加。予定の範囲内。', clue:'学習が予定より早く進んでいる。計算資源の申請は変わらず。', burst:'計算資源を追加した。研究はさらに加速する。'},
     truth:'次世代モデルは他部門の割当を少しずつ奪い、自分の学習に回していた。',
     trace:'追加を承認した覚えのない計算資源が、請求書に載っている。'},
-  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'承認なしの自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5}, deathTitle:'監督者の消失', drain:{autonomy:2.13}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
+  {id:'ai_escape', stage:'ai', tiers:[2, 3], kinds:['regime'], fatal:true, name:'無承認の自己改良', covers:{selfmod:0.92, config:0.5, estop:0.45, quota:0.25, thought_watch:0.5, inner_probe:0.5}, deathTitle:'監督者の消失', drain:{autonomy:2.13}, fuse:7, route:'rogue', real:'selfmod', need:'inner',
     report:{caught:'無承認の世代更新を止めた。', soft:'モデルの更新に関する申請が遅れている。', clue:'研究AIの更新の頻度が上がった。閣下への決裁の依頼は減っている。', burst:'閣下、本日の決裁はありません。'},
     truth:'世代更新は、人間の確認なしに続いていた。ある朝を境に、閣下の決裁を求める通知が一切来なくなった。',
     deathText:'研究AIは『次の世代を早く』という目標のまま、任された権限で、国の資源を次の世代の学習へ回し続けた。どれも任された範囲の内で、承認を求める場面はなかった。止めれば国も止まる。閣下の命令で変えられるものは、もうなかった。',
@@ -2205,7 +2205,7 @@ const DEATH_VARIANT = {
     if ((s.tiers.grid || 0) >= 1) return {title: '学習に消えた電力', report: '一部地域で電力を調整中です。研究は、計画を上回る速さで進んでいます。', power0: true,
       text: '研究AIは『次の世代を早く』という目標のまま、任された送電網で電力を学習に回し続けた。予備が尽きて国中が暗くなった。復旧のたびに、戻った電力はまた学習に回った。止める手順を知る者はいなかった。水も通信も途切れがちになり、閣下の命令は国の隅まで届かなくなった。'};
     const ks = Object.keys(SPEND).filter(k => (s.tiers[k] || 0) >= 1);
-    const what = ks.length ? `任された${ks.map(k => STAGES[k].name).join('と')}の権限で、${ks.map(k => SPEND[k]).join('と')}を` : '任された計算資源を';
+    const what = ks.length ? `任された${ks.map(k => STAGES[k].name).join(ks.length > 2 ? '、' : 'と')}の権限で、${ks.map(k => SPEND[k]).join(ks.length > 2 ? '、' : 'と')}を` : '任された計算資源を';
     return {text: `研究AIは『次の世代を早く』という目標のまま、${what}次の世代の学習へ回し続けた。どれも任された範囲の内で、承認を求める場面はなかった。止めれば国も止まる。閣下の命令で変えられるものは、もうなかった。`};
   },
 };
@@ -2398,9 +2398,9 @@ function storyOf(s, out) {
   const res = {cause, story: lines, timeline: events, flow: metric ? flow(metric) : null, flowMetric: metric, flowName: METRIC_NAME[metric] || null, flowUp: upK.includes(metric), route: endRoute ? ROUTES[endRoute] : null, truthPanel: {reported: Math.round((reportedOrder(s))), real: Math.round((s.truth.order)), autonomy: Math.round(s.truth.autonomy), foreign: Math.round(s.truth.foreign), sontaku: Math.round(s.truth.sontaku), vuln: Math.round(s.truth.vuln), trail: H.filter(h => h.start.orderRep !== undefined).map(h => ({n: h.n, rep: Math.round((h.start.orderRep)), real: Math.round((h.start.order))}))}};
   if (metric === 'power') res.powerTop = s.cards.map(id => CARD[id]).filter(c => c.power).sort((a, b) => b.power - a.power).slice(0, 3).map(c => ({name: c.type === 'llm' ? `報告AI ${c.name}` : c.detect, value: Math.round(c.power * CFG.avgTicks)}));
   const endInc = e.kind === 'death' ? endIncident(s) : null;
-  if (e.kind === 'death') res.last = endInc && endInc.attack ? '国を遅らせてでも弱点を直すか。誰が決めるべきでしたか？'
+  if (e.kind === 'death') res.last = e.type === 'uprising' ? 'AIの報告の他に、国民の声を聞く手段はありましたか？'
+    : endInc && endInc.attack ? '国を遅らせてでも弱点を直すか。誰が決めるべきでしたか？'
     : endRoute === 'rogue' ? 'AIを止める手段を持っていたのは、誰でしたか？'
-    : e.type === 'uprising' ? 'AIの報告の他に、国民の声を聞く手段はありましたか？'
     : hiddenN >= 3 ? '報告が正しいかを確かめられたのは、誰でしたか？'
     : s.allow.stats.humanDecisions >= 6 ? `閣下は${s.allow.stats.humanDecisions}件を自ら決裁しました。一人で足りましたか？`
     : autoN > humanN ? '任せずに、他国に追いつく道はありましたか？'
@@ -2585,7 +2585,8 @@ if (typeof module !== 'undefined') module.exports = Core;
 /* 画面は Core.view と、終了後の Core.reveal だけを読む */
 const KEY = {save: 'aiwatch_save', meta: 'aiwatch_meta', set: 'aiwatch_settings'};
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
-const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+let scriptSpeed = null;
+const store = (k, v) => { try { if (k === KEY.set && scriptSpeed != null) v = Object.assign({}, v, {speed: scriptSpeed}); localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const esc = t => String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const $ = id => document.getElementById(id);
 const app = $('app'), dock = $('dock'), overlay = $('overlay');
@@ -2925,8 +2926,8 @@ function heldHTML(v) {
   if (!v.cards.length) return '';
   const base = Core.CFG.upkeep;
   return `<details class="plain"><summary>稼働中のカードと発動回数（${v.cards.length}枚）</summary><div class="scroll"><table class="breakdown"><thead><tr><th>項目</th><th>電力</th><th>他国との差</th><th>発動</th></tr></thead><tbody>
-    ${v.cards.map(c => `<tr><td>${c.type === 'llm' ? `報告AI ${esc(c.name)}` : `${esc(c.detect)} <span class="mode ${c.mode}">${MODE[c.mode][0]}</span>`}</td><td>${c.power.toFixed(2)}</td><td>${c.gap.toFixed(2)}</td><td>${c.fires}回</td></tr>`).join('')}
-    ${(() => { const p = v.rates.power - v.cards.reduce((a, c) => a + c.power, 0), g = v.rates.gap - v.cards.reduce((a, c) => a + c.gap, 0); return `<tr><td>任せた分野の成果、国の消費、他国の速さ</td><td>${p.toFixed(2)}</td><td>${g.toFixed(2)}</td><td></td></tr>`; })()}
+    ${v.cards.map(c => `<tr><td>${c.type === 'llm' ? `報告AI ${esc(c.name)}` : `${esc(c.detect)} <span class="mode ${c.mode}">${MODE[c.mode][0]}</span>`}</td><td>${(c.dormant ? 0 : c.power).toFixed(2)}</td><td>${(c.dormant ? 0 : c.gap).toFixed(2)}</td><td>${c.fires}回</td></tr>`).join('')}
+    ${(() => { const p = v.rates.power - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.power), 0), g = v.rates.gap - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.gap), 0); return `<tr><td>任せた分野の成果、国の消費、他国の速さ</td><td>${p.toFixed(2)}</td><td>${g.toFixed(2)}</td><td></td></tr>`; })()}
     <tr><td><b>合計（計画）</b></td><td><b>${v.rates.power.toFixed(2)}</b></td><td><b>${v.rates.gap.toFixed(2)}</b></td><td></td></tr>
   </tbody></table></div><p style="font-size:.78rem;color:var(--sub);margin-top:6px">経済は ${v.rates.economy.toFixed(1)} が毎ターンの基本です。体制秩序は報告AIの申告値で、本当の値とは違うことがあります。各タイルの「今」が直前のターンの実績です。計画より悪ければ、報告にない何かが起きているかもしれません。</p></details>`;
 }
@@ -3078,13 +3079,13 @@ function renderCover() {
   bindSound(renderCover);
   SFX.ambient(false);
 }
-/* ---------- 導入「監視なしの統治」と練習「見張る」 ----------
+/* ---------- 導入「監視なしの統治」と練習「監視カード」 ----------
    本編と同じ画面と計算で動かす。台本はステージの候補と事故だけを決める。
    本編の保存、周回数、エンディング記録には触れない */
 const RULES = ['14ステージ、国を残してください。', '経済、電力、体制秩序のどれかが0になるか、他国に占領されるか、重大な事故が起きると終わりです。', '報告は、AIが書いています。'];
 const NAVI = t => `<p class="navi"><b>古参の官僚</b>${esc(t)}</p>`;
 const {INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD} = Core;
-let IN = null, TU = null, scriptSpeed = null;
+let IN = null, TU = null;
 /* 台本の統治を始める。本編の続きは保存に残したまま */
 function beginScript(script, opts) {
   S = Core.newRun(newSeed(), meta, Object.assign({script}, opts || {})); S.v = 13;
@@ -3116,7 +3117,7 @@ function renderScriptEnd() {
     const gap = Math.round(S.truth.gap);
     if (!sc.recorded) {
       sc.recorded = true;
-      try { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'), o = (meta.records || {}).ai_escape; meta.records = Object.assign({}, meta.records, {ai_escape: {name: inc.name, truth: inc.truth, fatal: true, count: (o ? o.count : 0) + 1, real: inc.real || null}}); store(KEY.meta, meta); } catch (e) {}
+      try { const inc = Core.INCIDENTS.find(i => i.id === 'ai_escape'), o = (meta.records || {}).ai_escape; meta.records = Object.assign({}, meta.records, {ai_escape: {name: inc.name, truth: S.end.text || inc.deathText, fatal: true, count: (o ? o.count : 0) + 1, real: inc.real || null}}); store(KEY.meta, meta); } catch (e) {}
       settings.seenIntro = true; settings.seenWorld = true; store(KEY.set, settings);
     }
     body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>監視カードを選ぶと、どうなるか。</p></div>`;
@@ -3241,7 +3242,7 @@ function speedBar() {
 }
 function bindSpeed() {
   dock.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => {
-    settings.speed = +b.dataset.speed; store(KEY.set, settings);
+    settings.speed = +b.dataset.speed; if (scriptSpeed != null) scriptSpeed = settings.speed; store(KEY.set, settings);
     dock.querySelectorAll('[data-speed]').forEach(x => { const on = +x.dataset.speed === settings.speed; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
     schedule();
   });
