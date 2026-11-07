@@ -3211,15 +3211,16 @@ function renderLessons() {
 }
 /* 第3話：方式を選んで、同じステージを動かす */
 let MD = null;
-function modesStart() { MD = {mode: (MD && MD.next) || 'in'}; screen = 'modes'; render(); scrollTo(0, 0); }
+const restoreModes = () => { if (MD && MD.keep) pendingModes.selfmod = MD.keep; else delete pendingModes.selfmod; };
+function modesStart() { MD = {mode: (MD && MD.next) || 'in', keep: pendingModes.selfmod}; screen = 'modes'; render(); scrollTo(0, 0); }
 function renderModes() {
   const tmp = Core.newRun(1, meta, {script: Core.MODES_SCRIPT(), from: meta.introFrom}), c = Core.publicCard(tmp, 'selfmod');
   pendingModes.selfmod = MD.mode;
   app.innerHTML = `<div class="fade"><h2 class="ptitle">第3話　人間が関わる</h2>${NAVI('監視カードが見つけたとき、誰が決めるか。カードごとに、3つの方式から選べます。')}<div class="cards">${cardHTML(c, true, 'data-mc="selfmod"')}</div>${modeLegend(['in', 'on', 'auto'])}${kindLegend()}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="mquit" type="button">一覧へ</button><button class="primary" id="mgo" type="button">署名して採用</button></div></div>`;
   bindModes(() => { MD.mode = pendingModes.selfmod; const y = scrollY; renderModes(); scrollTo(0, y); });
-  $('mgo').onclick = () => stampThen('裁可', () => { delete pendingModes.selfmod; beginScript(Core.MODES_SCRIPT(), {from: meta.introFrom, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: MD.mode}, runLength: 3}); });
-  $('mquit').onclick = () => { delete pendingModes.selfmod; screen = 'lessons'; render(); };
+  $('mgo').onclick = () => stampThen('裁可', () => { restoreModes(); beginScript(Core.MODES_SCRIPT(), {from: meta.introFrom, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: MD.mode}, runLength: 3}); });
+  $('mquit').onclick = () => { restoreModes(); screen = 'lessons'; render(); };
 }
 /* 第4話：報告AIを選んで、同じ事故を見る */
 let RP = null;
@@ -3255,7 +3256,7 @@ function renderLessonEnd() {
     const mode = S.cards.map(id => Core.CARD[id]).find(c => c.type === 'monitor').mode, a0 = Math.round(from.truth.autonomy || 0), a1 = Math.round(S.truth.autonomy);
     const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まり、そのたびに他国に詰められます。', on: '作業AIは、警報の間も止まりませんでした。命じなければ対処は遅れ、その間も事故は進みます。', auto: '閣下には何も届きませんでした。AIの自律度が上がるほど、監視AIだけでは見つけにくく、止めにくくなります。'}[mode];
     top = died ? `${endTopHTML(Core.reveal(S), Core.view(S))}${NAVI('見送った警報が、本物でした。')}` : `<div class="endno">第3話の結果</div><h2 class="endtitle">${MODE[mode][0]}</h2>`;
-    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、AI任せが一番速く進みます。AIの自律度は統治が進むほど上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>`;
+    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、閣下に何も届かないぶん、国は止まりませんでした。人間が現場に入らないほどAIの自律度は上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>`;
   } else if (!died) {
     lessonDone(4);
     top = `<div class="endno">第4話の結果</div><h2 class="endtitle">報告AI「${esc(Core.CARD[S.llms[0].id].name)}」</h2>`;
