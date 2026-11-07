@@ -55,3 +55,9 @@ footer{margin-top:40px;color:#6f86a8;font-size:12px;line-height:1.7}
 .about b{color:var(--gold)}
 .sec{font-size:20px;margin:0 0 8px}
 [hidden]{display:none!important}
+.about .tbl{margin-top:14px}
+.about .tbl h3{margin:0 0 4px;font-size:15px;color:var(--text)}
+.about .goal{font-size:12.5px;color:var(--gold);margin-bottom:6px}
+.about table{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.6}
+.about td{border-top:1px solid var(--line);padding:7px 8px;vertical-align:top;color:#d7e6fa}
+.about td:first-child{width:4.5em;white-space:nowrap;color:var(--cyan);font-weight:700}

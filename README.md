@@ -71,7 +71,7 @@ events/<番号>/         イベントで作られたゲームの一覧（samples
 
 ## イベントページの追加
 
-1. `events/<番号>/games.json` を作る（`title` `kind: "event"` `date` `place` `lead` `games: []`。講座の案内を載せるときは `about` に見出し `h`・段落 `p`・箇条書き `ul` の配列を書く。`**太字**` と `[文字](URL)` が使える）
+1. `events/<番号>/games.json` を作る（`title` `kind: "event"` `date` `place` `lead` `games: []`。講座の案内を載せるときは `about` に見出し `h`・段落 `p`・箇条書き `ul`・表 `tables`（`caption` `goal` `rows`）の配列を書く。`**太字**` と `[文字](URL)` が使える）
 2. `collections.json` に1件追加する。公開前は `"hidden": true` にしておく
 3. `python3 tools/build.py` を実行する
 4. 講座スライドを載せるときは、`events/<番号>/slides/src/<回>/` に `deck.json`（`title` `wip` `order`）と各スライドの `<section>` 断片を置き、`python3 tools/build_slides.py` で `slides/<回>.html`（1ファイルで完結するスライド）を書き出す

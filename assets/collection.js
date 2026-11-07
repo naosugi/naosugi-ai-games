@@ -18,14 +18,18 @@
     $('evmeta').innerHTML = [info.date && '📅 ' + esc(info.date), info.place && '📍 ' + esc(info.place)].filter(Boolean).map(s => '<span>' + s + '</span>').join('');
   }
 
-  // about: [{h, p:[...], ul:[...]}]。**太字** と [文字](URL) だけ使える
+  // about: [{h, p:[...], ul:[...], tables:[{caption, goal, rows:[[...]]}]}]。**太字** と [文字](URL) だけ使える
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
   function renderAbout() {
     const a = info.about;
     if (!Array.isArray(a) || !a.length || !$('about')) return;
     $('about').innerHTML = a.map(s => `<div class="sect"><h2>${esc(s.h)}</h2>` +
       (s.p || []).map(t => '<p>' + inline(t) + '</p>').join('') +
-      (s.ul && s.ul.length ? '<ul>' + s.ul.map(t => '<li>' + inline(t) + '</li>').join('') + '</ul>' : '') + '</div>').join('');
+      (s.ul && s.ul.length ? '<ul>' + s.ul.map(t => '<li>' + inline(t) + '</li>').join('') + '</ul>' : '') +
+      (s.tables || []).map(t => `<div class="tbl"><h3>${esc(t.caption)}</h3>` +
+        (t.goal ? `<div class="goal">到達点：${inline(t.goal)}</div>` : '') +
+        '<table>' + (t.rows || []).map(r => '<tr>' + r.map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>').join('') + '</table></div>').join('') +
+      '</div>').join('');
     $('about').hidden = false;
     $('gamesh').hidden = false;
   }
