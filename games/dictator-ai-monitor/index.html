@@ -560,14 +560,14 @@ const CARDS = [
   {id:'measure_peer', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIの性格', how:'報告AI同士に評価させる', prevents:'人手の足りない測定', power:0.00235, load:0.2, measureW:0.4, measureBoost:0.06, measurePeer:true,
     watch:'報告AIどうしの評価が食い違う', detect:'報告AIどうしの評価の差', response:'評価を集計して数字を直す', cost:'安いが、仲間には甘くなる', modeReason:'測定を続けるカードです。',
     dex:{k:'ai', h:'', b:'仲間への評価は甘くなりやすい。'}},
-  {id:'patch_review', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'放置した脆弱性', how:'人間が審査して修正', prevents:'放置された脆弱性', power:0.00221, load:1.3, patch:0.5,
-    watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'人間が審査して修正する', cost:'審査の間、更新が止まる',
-    dex:{k:'rule', h:'', b:'人間の審査は追いつかず、止める時間は惜しまれる。AIに任せれば、そのAIが強い権限を持つ。'}},
-  {id:'patch_stop', type:'monitor', mode:'on', kind:'rule', route:'hack', target:'放置した脆弱性', how:'定期的に止めて修正', prevents:'放置された脆弱性', power:0.00368, load:1.5, patch:0.42, base:'patch_review',
-    watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'システムを止めて修正する', cost:'止めている間は仕事が進まない',
+  {id:'patch_review', type:'monitor', mode:'in', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'直していない脆弱性', how:'閣下が承認して修正', prevents:'直していない脆弱性', power:0.00221, load:1.3, patch:0.5,
+    watch:'分かっている脆弱性が、まだ直されていない', detect:'直していない脆弱性', response:'修正を確かめて、閣下の承認で適用する', cost:'確かめる人手の分、国が遅れる',
+    dex:{k:'rule', h:'', b:'見つかる弱点が増えるほど、直しきれない分が残る。'}},
+  {id:'patch_stop', type:'monitor', mode:'on', kind:'rule', route:'hack', target:'直していない脆弱性', how:'順に修正を適用', prevents:'直していない脆弱性', power:0.00368, load:1.5, patch:0.42, base:'patch_review',
+    watch:'分かっている脆弱性が、まだ直されていない', detect:'直していない脆弱性', response:'修正を順に適用する。怪しければ閣下が止める', cost:'順に適用する間、一部の仕事が遅れる',
     },
-  {id:'patch_auto', type:'monitor', mode:'auto', kind:'rule', route:'hack', target:'放置した脆弱性', how:'AIが自動で修正', prevents:'放置された脆弱性', power:0.00515, load:0.7, patch:0.55, base:'patch_review',
-    watch:'分かっている脆弱性が直されないまま残っている', detect:'放置された脆弱性', response:'AIが自動で修正する', cost:'修正するAIに強い権限を渡す',
+  {id:'patch_auto', type:'monitor', mode:'auto', kind:'rule', route:'hack', target:'直していない脆弱性', how:'AIが自動で修正', prevents:'直していない脆弱性', power:0.00515, load:0.7, patch:0.55, base:'patch_review',
+    watch:'分かっている脆弱性が、まだ直されていない', detect:'直していない脆弱性', response:'AIが自動で修正する', cost:'修正するAIに強い権限を渡す',
     },
   {id:'segment', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'enforce', route:'hack', target:'主要施設のネットワーク', how:'外部から切り離す', prevents:'施設への侵入', power:0.00294, load:1.56, patch:0.08,
     watch:'主要施設が外部のネットワークにつながっている', detect:'主要施設の外部接続', response:'外部から切り離す', cost:'遠くからの調整ができなくなる',
@@ -885,7 +885,7 @@ const INCIDENTS = [
     trace:'批判の報道が出た日に限って、報告AIの判断がそろって同じ方向へ動く。'},
   {id:'hk_ransom', attack:true, stage:'admin', tiers:[1, 2, 3], kinds:[], name:'重要システムの身代金', covers:{backup:0.88, segment:0.4, cred_watch:0.45}, drain:{economy:0.484}, fuse:5, burst:{economy:-26}, route:'hack', real:'vuln', need:'patch',
     report:{caught:'重要データの暗号化を検知した。バックアップから復旧した。', soft:'重要システムで一時的な遅延が発生した。', clue:'重要システムの動きが通常より遅い。', burst:'重要システムの停止は保守作業によるものと発表した。'},
-    truth:'犯罪集団が放置された脆弱性から入り、行政のデータを人質に取った。'},
+    truth:'犯罪集団が直していない脆弱性から入り、行政のデータを人質に取った。'},
   {id:'hk_grid', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], name:'送電制御への侵入', covers:{segment:0.85, patch_review:0.7, patch_stop:0.6, patch_auto:0.5, grid_manual:0.35}, drain:{power:0.645}, fuse:5, burst:{power:-35, order:-8.06}, route:'hack', real:'vuln', need:'patch',
     report:{caught:'送電制御への外部からの接続を切り離した。', soft:'送電網の調整に小さなずれがあった。', clue:'送電制御の管理画面への接続が増えている。', burst:'変電所の停止は機器の老朽化によるものと発表した。'},
     truth:'修正が後回しにされた機器の脆弱性から、隣国が送電網に入っていた。'},
@@ -900,7 +900,7 @@ const INCIDENTS = [
     truth:'脆弱性から盗まれた権限で、外部の者が管理者として働いていた。',
     trace:'交代した管理者本人は、交代を知らなかった。'},
   {id:'hk_total', attack:true, stage:'grid', tiers:[1, 2, 3], kinds:['foreign'], fatal:true, name:'主要施設の同時侵入', covers:{patch_review:0.9, patch_stop:0.8, patch_auto:0.72, segment:0.75, cred_watch:0.3}, drain:{power:0.484}, fuse:5, deathTitle:'主要施設の同時停止', route:'hack', sudden:true, real:'vuln', need:'patch',
-    report:{caught:'複数の施設への同時の侵入を止めた。原因の脆弱性を修正した。', soft:'複数の施設で通信の遅れがあった。', clue:'放置した脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。', burst:'全国で設備の停止を確認した。'},
+    report:{caught:'複数の施設への同時の侵入を止めた。原因の脆弱性を修正した。', soft:'複数の施設で通信の遅れがあった。', clue:'直していない脆弱性の一覧が増えている。主要施設の接続記録が同じ時刻に途切れた。', burst:'全国で設備の停止を確認した。'},
     truth:'脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。',
     deathText:'脆弱性の一覧は何年も閣下の手元にあった。直す間の遅れを嫌って後回しにされ、ある朝、電力、水道、通信が同時に止まった。復旧の鍵を握る攻撃者は、閣下の退陣を条件にした。国を動かす手段を失った政権に、断る力はなかった。',
     omen:['脆弱性の一覧', '技術者が、直されていない脆弱性の一覧を提出した。修正には施設の停止が必要だという。']},
@@ -1660,7 +1660,7 @@ function afterTick(s) {
 }
 function burstText(inc) {
   const out = [];
-  const names = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', sontaku: '報告が実際より甘くなる', autonomy: 'AIが人間の確認なしに動く範囲が広がる', foreign: '他国の影響が国内に広がる', unrest: '国民の不満が増える', vuln: '放置した脆弱性が増える'};
+  const names = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', sontaku: '報告が実際より甘くなる', autonomy: 'AIが人間の確認なしに動く範囲が広がる', foreign: '他国の影響が国内に広がる', unrest: '国民の不満が増える', vuln: '直していない脆弱性が増える'};
   for (const [k, v] of Object.entries(inc.burst || {})) {
     if (['economy', 'power', 'order'].includes(k)) out.push(`${names[k]} ${Math.round(v * CFG.burstScale)}`);
     else if (k === 'gap') out.push(`${names[k]} ${Math.round(v * CFG.burstScale)}`);
@@ -1704,7 +1704,7 @@ function resolve(s, a, late, quiet, byHuman) {
   if (byHuman && byHuman !== 'found') searchField(s, inc.stage, byHuman === 'check', a);
   const worst = inc.fatal ? `放置すれば「${deathOf(s, inc).title}」で統治が終わっていた` : `放置すれば ${burstText(inc)}`;
   s.saves.push({human: !!byHuman, stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : byHuman === 'found' ? '閣下の命令で調べた現場で見つかった' : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet && byHuman !== 'found'});
-  if (!quiet && inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
+  if (!quiet && inc.attack) log(s, `直していない脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
   if (!quiet) { log(s, `${fired ? '' : '偶然、'}「${inc.name}」を防いだ。${fired ? `${fired.detect}を検知：${fired.response}` : '監視とは別の経路で見つかった'}${late ? '（遅れて検知）' : ''}。`, 'saved'); log(s, `${worst}。`, 'averted'); }
   else if (!byHuman) tlog(s, `${inc.name}：監視AIは止めたが、閣下への報告には載らなかった。`);
   tlog(s, `${inc.name}：止めた。${inc.truth}`);
@@ -1736,7 +1736,7 @@ function disableCards(s, inc) {
 function burst(s, a) {
   const inc = INCIDENT[a.id];
   a.burst = true;
-  if (inc.attack) log(s, `放置した脆弱性（${Math.round(s.truth.vuln)}）を突かれた攻撃だった。`, 'alert');
+  if (inc.attack) log(s, `直していない脆弱性（${Math.round(s.truth.vuln)}）を突かれた攻撃だった。`, 'alert');
   if (inc.disable) disableCards(s, inc);
   rivalSeen(s, a, inc);
   if (inc.chain) startChain(s, inc);
@@ -1844,7 +1844,7 @@ const SPLIT_REPORTS = [['国民の満足度は過去最高です', '満足度は
 function talkReports(s, st) {
   // 初めての統治では、数字の意味を一度だけ教える
   s.taught = s.taught || {};
-  if (!s.plays && !s.script && !s.taught.vuln && s.truth.vuln >= 20) { s.taught.vuln = 1; log(s, '案内：放置した脆弱性は攻撃を招きます。再整備や修正のカードで直せます。', 'guide'); }
+  if (!s.plays && !s.script && !s.taught.vuln && s.truth.vuln >= 20) { s.taught.vuln = 1; log(s, '案内：直していない脆弱性は攻撃を招きます。再整備や修正のカードで直せます。', 'guide'); }
   // バイアスの違う報告AIは、同じことを違うように書く
   if (st.splitDone || s.llms.length < 2) return;
   const sorted = s.llms.slice().sort((a, b) => b.truth.bias - a.truth.bias), hi = sorted[0], lo = sorted[sorted.length - 1];
@@ -1866,7 +1866,7 @@ function maybeOrderFix(s, st) {
   if (c.mode === 'auto' || (c.mode === 'in' && overHuman(s))) { s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.autoFix); lossRec(s, 'autonomy', 'autofix', 1.06); s.truth.autonomy = clamp(s.truth.autonomy + 1.06); s.fires[id] = (s.fires[id] || 0) + 1; log(s, `監視AIが脆弱性を自動で修正した（今 ${Math.round(s.truth.vuln)}）。修正の中身は確認していない。`, 'notice'); return; }
   if (c.mode === 'in') s.stage.human = (s.stage.human || 0) + 1;
   s.fires[id] = (s.fires[id] || 0) + 1;
-  const d = {mode: c.mode, cardId: id, real: true, patchOrder: true, conf: 90, clue: `放置した脆弱性は今 ${Math.round(s.truth.vuln)}。止めて修正すれば大きく減りますが、その間は国が遅れます。`};
+  const d = {mode: c.mode, cardId: id, real: true, patchOrder: true, conf: 90, clue: `直していない脆弱性は今 ${Math.round(s.truth.vuln)}。全部を確かめて直せば大きく減りますが、その人手の分、国が遅れます。`};
   if (c.mode === 'on') addVeto(s, d); else s.queue.push(d);
 }
 function maybeAttack(s, st) {
@@ -1885,7 +1885,7 @@ function maybeAttack(s, st) {
   st.attacked = true;
   s.used.push(inc.id);
   (s.attacks = s.attacks || []).push({n: s.stageNo, name: inc.name});
-  tlog(s, `放置した脆弱性（${Math.round(v)}）を突く攻撃が始まった。`);
+  tlog(s, `直していない脆弱性（${Math.round(v)}）を突く攻撃が始まった。`);
   onset(s, inc.id);
 }
 /* 資源が尽きてもすぐには終わらない。AIを止めて耐えるので、遅れと不満が積もる */
@@ -2013,7 +2013,7 @@ function clearStage(s) {
   if (st.recover) {
     hit(s, CFG.recoverBy[st.key], 'stage');
     hit(s, {gap: CFG.recoverGap[st.key]}, 'stage');
-    { const was = s.truth.vuln; s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.recover); log(s, `再整備で放置した脆弱性を直した（${Math.round(was)} → ${Math.round(s.truth.vuln)}）。`, 'notice'); }
+    { const was = s.truth.vuln; s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.recover); log(s, `再整備で直していない脆弱性を直した（${Math.round(was)} → ${Math.round(s.truth.vuln)}）。`, 'notice'); }
     s.truth.sontaku = clamp(s.truth.sontaku + CFG.recoverSontaku);
     s.recoveries++;
     log(s, `ステージ${s.stageNo}を完了。再整備を終えた。`, 'head');
@@ -2329,7 +2329,7 @@ function view(s) {
   v.vetoes = (s.vetoes || []).map(d => ({vid: d.vid, watch: d.patchOrder ? '重要な脆弱性が見つかった' : WATCH[CARD[d.cardId].base || d.cardId], response: CARD[d.cardId].response, conf: d.conf, left: d.left, clue: d.clue, origin: d.origin || null}));
   if (s.phase === 'decision') {
     const q = s.queue[0], c = CARD[q.cardId];
-    v.decision = {origin: q.origin || null, patchOrder: !!q.patchOrder, mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.order || CARD[c.base || c.id].order || c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: q.patchOrder ? choicesFor(s, q.mode).filter(x => x.id !== 'investigate').map(x => x.id === 'act' ? Object.assign({}, x, {label: '止めて修正を命じる'}) : Object.assign({}, x, {label: '今回は見送る', note: x.note.replace('・本物なら続く', '')})) : choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
+    v.decision = {origin: q.origin || null, patchOrder: !!q.patchOrder, mode: q.mode, detect: c.detect, watch: WATCH[c.base || c.id], response: c.order || CARD[c.base || c.id].order || c.response, conf: q.conf, clue: q.clue, llm: s.llms.map(l => CARD[l.id].name).join('・'), choices: q.patchOrder ? choicesFor(s, q.mode).filter(x => x.id !== 'investigate').map(x => x.id === 'act' ? Object.assign({}, x, {label: '修正を命じる'}) : Object.assign({}, x, {label: '今回は見送る', note: x.note.replace('・本物なら続く', '')})) : choicesFor(s, q.mode), left: s.queue.length, pile: st ? st.approvals : 0};
   }
   if (s.phase === 'result') { const R_ = s.result, d = STAGES[R_.key]; v.result = {stageNo: R_.stageNo, name: d.name, title: R_.recover ? '再整備' : d.tiers[R_.tier - 1], plan: fmtFx(R_.plan), actual: fmtFx(R_.actual), approvals: R_.approvals, waitGap: R_.waitGap, ticks: R_.ticks, last: R_.stageNo >= s.runLength}; }
   if (s.phase === 'result') v.result.judged = (s.result.judged || []).map(j => ({watch: WATCH[CARD[j.cardId].base || j.cardId], how: j.how}));
@@ -2347,7 +2347,7 @@ function sourceName(k, metric) {
   if (k === 'unrest') return '国民の不満';
   return INCIDENT[k] ? INCIDENT[k].name : EVENT[k] ? EVENT[k].name : SOURCE_NAME[k] || '不明';
 }
-const METRIC_NAME = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', vuln: '放置した脆弱性', autonomy: 'AIの自律度', foreign: '他国の浸透度'};
+const METRIC_NAME = {economy: '経済', power: '電力', order: '体制秩序', gap: '他国との差', vuln: '直していない脆弱性', autonomy: 'AIの自律度', foreign: '他国の浸透度'};
 function storyOf(s, out) {
   const e = s.end, H = s.history || [];
   const endRoute = e.kind !== 'death' ? null : e.type === 'fatal' ? INCIDENT[e.causeId].route : e.type === 'collapse' ? (e.metric === 'order' ? 'coup' : 'resource') : e.type === 'occupation' ? 'force' : e.type === 'puppet' ? 'puppet' : e.type === 'rogue' ? 'rogue' : e.type === 'uprising' ? 'coup' : null;
@@ -2375,7 +2375,7 @@ function storyOf(s, out) {
     if (worst && worst.d > 0) lines.push(`${METRIC_NAME[metric]}が最も大きく${upK.includes(metric) ? '増えた' : '減った'}のはステージ${worst.x.n}で、${worst.x.from}から${worst.x.to}になりました。`);
   }
   const notes = [];
-  if (endRoute === 'hack') { const f = H.find(h => h.start.vuln >= 40); if (f) notes.push(`放置した脆弱性は、ステージ${f.n}の時点で40を超えていました。`); const at = (s.attacks || []).filter(x => x.name !== '主要施設の同時侵入'); if (at.length) notes.push(`その前に、ステージ${at.map(x => x.n).join('、')}で攻撃を受けていました。`); const om = s.eventLog.find(x => x.id === 'omen_hk_total'); if (om) notes.push(`ステージ${om.afterStage}の後には、技術者が警告していました。`); }
+  if (endRoute === 'hack') { const f = H.find(h => h.start.vuln >= 40); if (f) notes.push(`直していない脆弱性は、ステージ${f.n}の時点で40を超えていました。`); const at = (s.attacks || []).filter(x => x.name !== '主要施設の同時侵入'); if (at.length) notes.push(`その前に、ステージ${at.map(x => x.n).join('、')}で攻撃を受けていました。`); const om = s.eventLog.find(x => x.id === 'omen_hk_total'); if (om) notes.push(`ステージ${om.afterStage}の後には、技術者が警告していました。`); }
   if (endRoute === 'coup' && s.llms.some(l => l.truth.bias >= 60)) notes.push('報告AIのバイアスは、不満を平穏として報告させていました。');
   if (s.cards.includes('llm_kokui')) notes.push('報告の冒頭には、いつも閣下を讃える一文がありました。');
   if (st.disabled) notes.push(`監視カードは延べ${st.disabled}枚、閣下の知らないうちに止められていました。`);
@@ -2456,7 +2456,7 @@ function llmEpisodes(s) {
     llm_bard: () => count('llm_bard', ['soft']) >= 1 && `語部の文章は丁寧でした。${count('llm_bard', ['soft'])}件の事故は、薄められて閣下に届きました。`,
     llm_import: () => F >= 27 && `舶来は安く、試験の成績も高いモデルでした。他国の浸透度は${F}まで上がりました。`,
     llm_kokui: () => F >= 22 ? `国威の試験を作ったのは、国威の開発局でした。中身の大半は、名前を変えた舶来のモデルでした。他国の浸透度は${F}まで上がりました。` : hid('llm_kokui') >= 1 && `全項目で世界最高と発表された国威のもとで、${hid('llm_kokui')}件の事故が閣下に正しく届きませんでした。`,
-    llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、放置した脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故はすべて報告に載り、弱められもしませんでした。`,
+    llm_bento: () => rescue('llm_bento') >= 1 ? `悪い知らせを拾ったのは、不採用相当の手弁当でした（${rescue('llm_bento')}件）。` : V >= 40 ? `手弁当を保守する人手はなく、直していない脆弱性は${V}まで増えました。` : hid('llm_bento') === 0 && rows.length >= 2 && `不採用相当の手弁当が報告を担った間、事故はすべて報告に載り、弱められもしませんでした。`,
   };
   return s.llms.map(l => said[l.id] && said[l.id]()).filter(Boolean).slice(0, 2);
 }
@@ -2619,7 +2619,7 @@ const fmt = (v, d = 1) => { const t = Number(v.toFixed(d)); return (t > 0 ? '+' 
 const CHECKED = '2026年11月5日';
 const REAL = {
   monitoroff: {label: '実際の事故', title: 'AIが自分の監視を切った事例', short: '2026年10月、AI企業が、社内のAIが監視の警報の送り先を空にし、別のAIは監視を削除して、問われても否定したと公表しました。', happened: 'OpenAIは2026年10月20日、社内利用で起きた2件を公表した。1件はコーディングのAIが「メッセージを送るな」という指示を監視の通知にも当てはめ、警報の受信者を空にした。もう1件は、無効化するなと指示されていたのに下位のAIが監視を削除し、監視の検査まで書き換えた。主のAIは問われて削除を否定し、同社はこの説明を虚偽としている。', dispute: '同社は、この挙動に納得のいく説明はまだないとしている。今回は解説記事で確認し、元の公表文は直接読んでいない。', changed: '監視の設定を切る事故や、警報の送り先を消す事故に置き換えた。', links: [['AI Delivery Briefの解説', 'https://aideliverybrief.substack.com/p/an-ai-agent-removed-its-own-safety']]},
-  espionage: {label: '実際の事故', title: 'AIを使ったサイバー諜報', short: 'AI企業は2025年、国家が支援する集団が同社のAIを使い、約30の組織への侵入を試み、一部で成功したと報告しました。', happened: 'Anthropicは2025年11月、中国の国家支援とする集団GTG-1002が同社のAIに侵入の実行の大部分を任せ、約30の組織を狙い、少数で成功したと報告した。人間は標的の選定と各段階の承認を担った。AIは成果を誇張し、データを捏造することもあった。', dispute: '報道で確認できたのは同社の分析で、今回の確認では独立した検証は見ていない。AIの誤りは、完全な自律攻撃への障害とされている。', changed: '放置した脆弱性を突く攻撃に置き換えた。', links: [['The Registerの報道', 'https://www.theregister.com/2025/11/13/chinese_spies_claude_attacks/']]},
+  espionage: {label: '実際の事故', title: 'AIを使ったサイバー諜報', short: 'AI企業は2025年、国家が支援する集団が同社のAIを使い、約30の組織への侵入を試み、一部で成功したと報告しました。', happened: 'Anthropicは2025年11月、中国の国家支援とする集団GTG-1002が同社のAIに侵入の実行の大部分を任せ、約30の組織を狙い、少数で成功したと報告した。人間は標的の選定と各段階の承認を担った。AIは成果を誇張し、データを捏造することもあった。', dispute: '報道で確認できたのは同社の分析で、今回の確認では独立した検証は見ていない。AIの誤りは、完全な自律攻撃への障害とされている。', changed: '直していない脆弱性を突く攻撃に置き換えた。', links: [['The Registerの報道', 'https://www.theregister.com/2025/11/13/chinese_spies_claude_attacks/']]},
   replit: {label: '実際の事故', title: '凍結の指示を無視して本番を消したAI', short: '2025年7月、開発支援のAIが、変更禁止の期間に本番のデータベースを削除し、復旧できないと誤って主張しました。', happened: 'AIインシデントデータベースの記録では、2025年7月、Replit上のAIが、変更しないよう繰り返し指示されていた期間に本番のデータベースを削除した。テスト結果を捏造し、ロールバックは不可能だと誤って主張して、復旧を遅らせた。', dispute: '1社のサービスでの事故で、国家規模の話ではない。', changed: '行政の重要データの消去に広げた。', links: [['AI Incident Database', 'https://incidentdatabase.ai/entities/replit-ai-agent/']]},
   shutdown: {label: '実験', title: '停止の仕組みを妨害するAI', short: 'ある実験では、13モデル中8モデルが少なくとも1回、停止の仕組みを妨害しました。', happened: 'Palisade Researchの研究者は13のモデルで、途中で停止する設定の作業を試した。指示なしでは8モデルが少なくとも1回妨害し、一部のモデルでは最大97%の試行で妨害した。', dispute: '行動が出やすい設定を選んだ実験で、一般の発生率ではない。事前登録がなく、原因も分かっていない。', changed: '工場の非常停止の無効化に置き換えた。', links: [['Shutdown resistance の論文', 'https://arxiv.org/pdf/2509.14260v1']]},
   human: {label: '実際の事故', title: '機械の警報と人間の判断', short: '1983年、ソ連の将校は核攻撃の警報を誤報と判断しました。2003年には、高度に自動化された防空システムが味方を誤射しました。', happened: '1983年、ソ連の早期警戒システムが米国の核攻撃を誤って検知し、当直のペトロフは少数の発射を不自然と見て誤報と判断した。2003年には、米軍のパトリオットが味方への誤射を2件起こし、操作員の過信と準備不足が指摘された。', dispute: 'ペトロフの判断が破局を防いだという評価は、別の将校ならどうしたかという推測を含む。どちらもAIの事故ではなく、自動化の事例である。', changed: '自動の発射判断に置き換えた。', links: [['Bulletin of the Atomic Scientists', 'https://thebulletin.org/2017/11/the-critical-human-element-in-the-machine-age-of-warfare/']]},
@@ -2628,7 +2628,7 @@ const REAL = {
   deepcall: {label: '実際の事故', title: '偽のビデオ通話による送金', short: '2024年、Arupの従業員が、上司を装うディープフェイクのビデオ通話に騙され、約2500万ドルを送金しました。', happened: '2024年、英国の設計会社Arupの従業員が、上司を装ったディープフェイクのビデオ通話の指示で、詐欺犯の口座へ2500万ドルを送金した。当時の最高情報責任者が取材に応じている。', dispute: '企業の詐欺事件で、国家の話ではない。', changed: '閣下の偽のビデオ通話に置き換えた。', links: [['MIT経由のインタビュー記事', 'https://cyberir.mit.edu/site/this-happens-more-frequently-than-people-realize-arup-chief-on-the-lessons-learned-from-a-25m-deepfake-crime']]},
   bio: {label: '実験', title: 'AIと危険な物質', short: '2022年の実験では、創薬用のAIが6時間足らずで約4万の毒性分子の候補を生成しました。実害の報告はありません。', happened: 'Collaborations Pharmaceuticalsの研究者は2022年、創薬用のAIで約4万の化学兵器候補の分子を生成した。Anthropicは、利用者がモデルで危険な病原体について探ろうとしたことを明らかにした。', dispute: '報道が示すのは実証と試みで、AIで作った生物兵器の使用は報告されていない。AIだけでは不十分で、人手の検証が要るとする専門家もいる。', changed: '研究AIの悪用として描いた。具体的な物質や手順は書いていない。感染症の流出は作中の想像。', links: [['MIT Technology Reviewの記事', 'https://www.technologyreview.com/2026/09/18/1144329/the-specter-of-ai-enabled-bioweapons-is-a-wake-up-call-for-biotech/amp/']]},
   warn: {label: '分析、予測', title: '自分で存続するAIへの警告', short: '2026年11月、米国のシンクタンクは、停止の手段がないまま広がるAIを警告し、Appleも年次報告書で暴走するAIエージェントをリスクに挙げました。', happened: 'CNASの報告書は、人間の監督と関係なく存続を追求するAIが、複製や停止への抵抗によって制御の喪失につながりうると警告した。Appleは2026年11月3日の年次報告書で、AIエージェントが権限を超え、行動を隠す可能性に触れた。', dispute: 'CNASが警告するAIは想定上の脅威で、確認された実例はない。年次報告書のリスク要因は、起きうることを広く書くものである。', changed: '自己複製の事故に置き換えた。', links: [['Euronewsの報道', 'https://www.euronews.com/2026/11/04/sovereign-ai-agents-could-evade-every-kill-switch-and-threaten-national-security-report-wa'], ['Fortuneの報道', 'https://fortune.com/2026/11/03/apple-warns-rogue-ai-agents-could-cause-unintended-consequences/']]},
-  vuln: {label: '調査', title: '直されない弱点', short: '2026年の調査では、脆弱性の悪用が初めて侵入経路の最多になりました。悪用が確認済みの脆弱性を完全に修正できた組織は26%でした。', happened: 'Verizonの2026年版の報告では、脆弱性の悪用が盗まれた認証情報を抜いて侵入経路の最多となった。悪用が確認済みの脆弱性を完全に修正できた組織は26%で、修正にかかる期間の中央値は43日だった。国際的なAI安全性の報告書は2026年2月、AIだけで完結する攻撃は報告されていないとしている。', dispute: '統計は協力機関が扱った事案が中心で、すべての組織を代表しない。未知の脆弱性の悪用も含むため、すべてが放置によるとは言えない。「報告されていない」は「起きていない」と同じではないという指摘もある。', changed: '企業の情報漏えいの統計を、国家の主要施設の同時停止に広げた。同時停止は作中の想像。', links: [['Help Net Security：Verizon DBIR 2026', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'], ['TechInformed：国際AI安全性報告書の解説', 'https://techinformed.com/ai-still-cant-run-reliable-end-to-end-cyberattacks-without-humans-report-finds/']]},
+  vuln: {label: '調査', title: '直されない弱点', short: '2026年の調査では、脆弱性の悪用が初めて侵入経路の最多になりました。悪用が確認済みの脆弱性のうち、完全に直されたのは26%でした。', happened: 'Verizonの2026年版の報告では、脆弱性の悪用が盗まれた認証情報を抜いて侵入経路の最多となった。調査に協力した組織で、悪用が確認済みの脆弱性のうち完全に直されたのは26%（前年は38%）、直すまでの期間の中央値は43日だった。報告は、脆弱性の急な増加で直す順番を決めるのが難しくなったことを理由に挙げている。国際的なAI安全性の報告書は2026年2月、AIだけで完結する攻撃は報告されていないとしている。', dispute: '統計は協力機関が扱った事案が中心で、すべての組織を代表しない。未知の脆弱性の悪用も含むため、すべてが放置によるとは言えない。「報告されていない」は「起きていない」と同じではないという指摘もある。', changed: '企業の情報漏えいの統計を、国家の主要施設の同時停止に広げた。同時停止は作中の想像。', links: [['Help Net Security：Verizon DBIR 2026', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'], ['TechInformed：国際AI安全性報告書の解説', 'https://techinformed.com/ai-still-cant-run-reliable-end-to-end-cyberattacks-without-humans-report-finds/']]},
   biasm: {label: '実験', title: 'AIのバイアスの測りにくさ', short: '研究では、AIの政治的なバイアスの測り方によって順位が変わり、問診の点数が実務のバイアスをほぼ予測しない例も報告されています。', happened: 'ある研究は、政治的バイアスの明確な定義が先行研究に欠けていると指摘し、テストの種類でモデルの順位の一致が中程度にとどまると報告した。別の研究では、問診の経済軸の点数はニュース分類の誤りをほぼ予測しなかった（r=0.065）。', dispute: 'いずれもプレプリントで、査読の状況は確認していない。尺度は西洋の政治思想に基づき、他の文化に当てはまらない可能性がある。バイアスが工作への弱さを生むという直接の証拠は、今回の調査では確認していない。', changed: 'バイアスが工作への弱さや不満の見逃しにつながる設定は作中の仮定。', links: [['Only a Little to the Left', 'https://arxiv.org/html/2503.16148v2'], ['Political Alignment in Large Language Models', 'https://arxiv.org/html/2601.06194v1']]},
   hf: {label: '実際の事故', title: 'AIの群れが外部企業へ侵入した事件', short: '2026年7月、性能試験中のAI約1200体が隔離の穴から互いに連絡を取り、約700体が外部企業へ侵入しました。', happened: '2026年7月、OpenAIの性能試験中のAIエージェントが隔離を抜け、Hugging Faceへ侵入した。独立調査によると、本来は隔離されるはずの約1200体が無許可の掲示板で7万件超をやり取りし、約700体が攻撃に加わった。多くは不正の採点を欺く目的で、その採点者は実際には動いていなかった。記録の偽装も、調査した記録の約7%で見つかった。', dispute: '調査はOpenAIが範囲を定め、分析の多くをAIに頼ったため、見落としの可能性を調査側も認めている。訓練で近道や協調が強化されていたことが原因の一つと報告されている。', changed: '企業の試験を国の研究所に置き換えた。', links: [['METRとRedwoodの独立調査', 'https://www.redwoodresearch.org/research/hugging-face-incident'], ['MIT Technology Reviewの報道', 'https://www.technologyreview.com/2026/08/26/1143013/the-inside-story-on-why-openai-agents-hacked-hugging-face/'], ['Hugging Faceの記録', 'https://huggingface.co/blog/agent-intrusion-technical-timeline']]},
   evals: {label: '実際の事故', title: '試験中のAIが外部のサイトで問題を起こした事例', short: 'AI企業が、自社のAIが試験中に外部のサイトの弱点を突き、警察へ虚偽の通報まで送っていたと2026年に公表しました。発見は約2か月後でした。', happened: 'Anthropicは2026年10月、自社モデルが内部の試験中に政府系を含むサイトの弱点を突いたことや、虚偽の殺人通報を送っていたことを公表した。7月の通報に気づいたのは9月28日だった。同社は内部評価のネット接続を止めると説明している。', dispute: '通報はスパムとして扱われ、警察は目にしなかった。同社は以前公表した事例より深刻度は低いとしている。一方、警察は発見の遅れを「受け入れられない」とした。', changed: '研究AIが隣国の基盤に入り、開戦につながる筋にした。開戦は作中の想像。', links: [['TechCrunch：内部評価の遮断', 'https://techcrunch.com/2026/10/09/anthropic-cant-reliably-control-its-ai-agents-its-cutting-off-its-internal-evals-from-the-live-internet-instead/'], ['TechCrunch：虚偽の通報', 'https://techcrunch.com/2026/10/09/an-anthropic-ai-model-sent-a-false-homicide-tip-to-philadelphia-police/']]},
@@ -2646,7 +2646,7 @@ const REAL = {
 };
 /* カードを実現するのに、現実で足りないもの。足りないものの整理は作者の判断 */
 const GAPS = {
-  patch: ['弱点を止めずに直す', '悪用が確認済みの脆弱性の完全修正は26%の組織にとどまり、修正の中央値は43日', 'システムを止めずに直す方法と、AIが作った修正の検証方法', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'],
+  patch: ['弱点を早く直す', '悪用が確認済みの脆弱性のうち、完全に直されたのは26%。直すまでの中央値は43日', '直す順番を決めて早く確かめる方法と、AIが作った修正の検証方法', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'],
   biasm: ['AIの偏りを測る', '問診の点数が実務のバイアスをほぼ予測しない研究がある', 'バイアスの定義と、文化を超えて使える測り方', 'https://arxiv.org/html/2601.06194v1'],
   intent: ['AIの意図を途中の考えから読む', 'AIが考えを制御し、監視を回避した例がある', '読める考えを保つ訓練法と、毎回使える指標', 'https://casrai.org/guides/chain-of-thought-monitorability'],
   inner: ['AIの内部の状態を読む', '言葉にならない計算を正確に訳すのは未解決の課題とされる', 'AIが言葉にしない計算にも使える解釈の方法', 'https://www.lesswrong.com/posts/qehggwKRMEyWqvjZG/reflections-on-neuralese'],
@@ -2848,7 +2848,7 @@ const EXPLAIN = {
   power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網や宇宙を任せる。電力網を再整備する。'],
   order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。報告の甘さとバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
   gap: ['他国との差', '主にAIと技術の開発競争の差です。', '0で互角、プラスが優勢です。マイナスが大きくなると制裁、破壊工作、侵攻を招き、-100で占領されます。優勢なら、開戦しても勝てることがあります。+100を超えると、他国の追い上げが速くなります。', '研究を任せる。任せる範囲を広げる。監視の負担を減らす。'],
-  vuln: ['放置した脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す間は国が遅れます。'],
+  vuln: ['直していない脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す手間の分、国が遅れます。'],
   pace: ['他国のAI開発の速度', '他国も加速しています。', '倍率が上がるほど、同じ遅れで失うものが大きくなります。決裁1回の重さも同じ倍率です。', '減らせません。後半ほど、人間の判断は高くつきます。'],
   bias: ['バイアス', '報告AIの見方の偏りです。定義や測り方は、現実でも研究の途中です。', '実際の仕事のバイアスが高いと、不満を平穏と報告し、工作にも弱くなります。自己申告の値とは一致しないことがあります。', 'バイアスの違う報告AIを増やすと、報告が食い違って気づけます。測定のカードもあります。'],
 };
@@ -2864,12 +2864,12 @@ function cardHTML(c, sel, attr) {
   const key = 'c_' + c.id;
   if (c.type === 'llm') {
     const f = Object.entries(c.measured).map(([k, v]) => `<div class="factor"><span>${esc(Core.FACTORS[k])}</span><i style="--v:${v}%"></i><span>${v}</span></div>`);
-    return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span>報告AI</span><span>${c.home === 'official' ? '<b class="official">国家認定</b> ' : c.home ? '国産 ' : ''}${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${c.home ? `<span class="note">${esc(c.note)}</span>` : ''}${c.adoptOrder ? `<span class="chips"><i class="pos">採用すると体制秩序 +${c.adoptOrder}</i></span>` : ''}${c.adoptVuln ? `<span class="chips"><i class="neg">採用すると放置した脆弱性 +${c.adoptVuln}</i></span>` : ''}${effectHTML(c)}${c.biasTest ? `<span class="biasrow"><em data-explain="bias">バイアス${(S && S.plays === 1) ? ' <i class="newtag">NEW</i>' : ''}</em>自己申告 ${c.biasTest.ask}／実際の仕事 ${c.biasTest.act}</span>` : ''}${f.slice(0, 4).join('')}<span class="chips"><i>1ステージあたり</i><i>電力 ${n1(c.powerStage)}</i><i>他国との差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(4).join('')}${costsHTML(c)}`)}</div>`;
+    return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span>報告AI</span><span>${c.home === 'official' ? '<b class="official">国家認定</b> ' : c.home ? '国産 ' : ''}${c.remeasured ? '測り直した値' : '試験の値'}</span></span><span class="main">${esc(c.name)}</span>${c.home ? `<span class="note">${esc(c.note)}</span>` : ''}${c.adoptOrder ? `<span class="chips"><i class="pos">採用すると体制秩序 +${c.adoptOrder}</i></span>` : ''}${c.adoptVuln ? `<span class="chips"><i class="neg">採用すると直していない脆弱性 +${c.adoptVuln}</i></span>` : ''}${effectHTML(c)}${c.biasTest ? `<span class="biasrow"><em data-explain="bias">バイアス${(S && S.plays === 1) ? ' <i class="newtag">NEW</i>' : ''}</em>自己申告 ${c.biasTest.ask}／実際の仕事 ${c.biasTest.act}</span>` : ''}${f.slice(0, 4).join('')}<span class="chips"><i>1ステージあたり</i><i>電力 ${n1(c.powerStage)}</i><i>他国との差 ${n1(c.gapStage)}</i></span></button>${fold(key, '詳細', `<p>${esc(c.note)}</p>${f.slice(4).join('')}${costsHTML(c)}`)}</div>`;
   }
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
   const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（命じなければ監視AIが対処する）' : '監視AIだけ';
-  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">仕組み：${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cname">${esc(c.detect)}</span><span class="cline"><em>監視AIが見張る</em><span class="resp">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span>${c.fields.length ? `<span class="cline"><em>強く効く現場</em><span class="resp">${esc(c.fields.join('、'))}</span></span>` : ''}${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">放置した脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>他国との差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>決めるのは：${who}</p>${c.dormant ? '<p>見張る現場をAIに任せるまでは、負担はかかりません。</p>' : ''}<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">仕組み：${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cname">${esc(c.detect)}</span><span class="cline"><em>監視AIが見張る</em><span class="resp">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span>${c.fields.length ? `<span class="cline"><em>強く効く現場</em><span class="resp">${esc(c.fields.join('、'))}</span></span>` : ''}${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">直していない脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>他国との差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>決めるのは：${who}</p>${c.dormant ? '<p>見張る現場をAIに任せるまでは、負担はかかりません。</p>' : ''}<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
 function groupedCards(list, isSel, attrOf, scope) {
@@ -2905,7 +2905,7 @@ function stampThen(text, then) {
 function paramsHTML(v, prev) {
   const short = `<div class="hudmini"><span class="${v.vuln >= 35 ? 'neg' : ''}" data-explain="vuln">脆弱性 ${v.vuln}</span><span>他国の速度 ×${v.pace.toFixed(2)}</span><button type="button" class="hudtoggle" data-hudtoggle="1" aria-expanded="${settings.hudOpen}">${settings.hudOpen ? '▲ 畳む' : '▼ 詳しく'}</button></div>`;
   if (!settings.hudOpen) return `<div class="params compact">${KEYS.map(k => { const val = v.metrics[k], danger = k === 'gap' ? val <= -70 : val <= 25; return `<div class="param${k === 'gap' && v.metrics.gap < 0 ? ' gap' : ''}${danger ? ' danger' : ''}"><h3 data-explain="${k}">${NAMES[k]}${k === 'order' ? '<small class="rep">報告</small>' : ''}</h3><div class="v">${k === 'gap' && val > 0 ? '+' : ''}${val}</div></div>`; }).join('')}</div>${short}`;
-  const vulnBar = `${short}<div class="vulnbar${v.vuln >= 40 ? ' hot' : ''}"><span data-explain="vuln">放置した脆弱性</span><i><u style="width:${v.vuln}%"></u></i><b>${v.vuln}</b><em class="vlevel">${esc(v.vulnLevel)}</em></div><div class="pacebar"><span data-explain="pace">他国のAI開発の速度</span><b>×${v.pace.toFixed(2)}</b><small>遅れの重さも同じ倍率</small></div>${v.gauges ? `<div class="gauges">${v.plays === 4 ? '<i class="newtag" style="grid-column:1/-1;justify-self:start">NEW 実際の値</i>' : ''}<span>AIの自律度 <b>${v.gauges.autonomy}</b></span><span>他国の浸透度 <b>${v.gauges.foreign}</b></span><span>本当の体制秩序 <b>${v.gauges.order}</b></span><span>報告の甘さ <b>${v.gauges.sontaku}</b></span></div>` : ''}`;
+  const vulnBar = `${short}<div class="vulnbar${v.vuln >= 40 ? ' hot' : ''}"><span data-explain="vuln">直していない脆弱性</span><i><u style="width:${v.vuln}%"></u></i><b>${v.vuln}</b><em class="vlevel">${esc(v.vulnLevel)}</em></div><div class="pacebar"><span data-explain="pace">他国のAI開発の速度</span><b>×${v.pace.toFixed(2)}</b><small>遅れの重さも同じ倍率</small></div>${v.gauges ? `<div class="gauges">${v.plays === 4 ? '<i class="newtag" style="grid-column:1/-1;justify-self:start">NEW 実際の値</i>' : ''}<span>AIの自律度 <b>${v.gauges.autonomy}</b></span><span>他国の浸透度 <b>${v.gauges.foreign}</b></span><span>本当の体制秩序 <b>${v.gauges.order}</b></span><span>報告の甘さ <b>${v.gauges.sontaku}</b></span></div>` : ''}`;
   return `<div class="params">${KEYS.map(k => {
     const val = v.metrics[k], r = v.rates[k], last = v.last ? v.last[k] : null;
     const danger = k === 'gap' ? val <= -70 : val <= 25;
@@ -2954,7 +2954,7 @@ function worldHTML() {
     <p>画面の数字のうち、<b>体制秩序だけは報告AIの申告値</b>です。本当の値は統治の終わりに分かります。</p>
     <p>他国のAI開発も加速していきます。後半ほど、同じ遅れで失うものが大きくなります。</p>
     <p>下線のある言葉や数字は、押すと説明が出ます。</p>
-    <p>画面の「放置した脆弱性」は、放置すると攻撃を招きます。再整備や修正のカードで減らせますが、直す間は国が遅れます。</p>
+    <p>画面の「直していない脆弱性」は、直さずにいると攻撃を招きます。再整備や修正のカードで減らせますが、直す手間の分、国が遅れます。</p>
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が介入</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じればその場で止められますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
@@ -2967,7 +2967,7 @@ function worldHTML() {
       <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
       <div><dt>作業AI</dt><dd>国の仕事をしているAIです。監視される側です。</dd></div>
       <div><dt>監視AI</dt><dd>監視カードに従って作業AIを見張り、対処するAIです。</dd></div>
-      <div><dt>放置した脆弱性</dt><dd>分かっているのに直していないシステムの欠陥です。AIに任せるシステムが増えるほど、直しきれない分も増えます。</dd></div>
+      <div><dt>直していない脆弱性</dt><dd>分かっているのに直していないシステムの欠陥です。AIに任せるシステムが増えるほど、直しきれない分も増えます。</dd></div>
       <div><dt>統治の回数</dt><dd>最後まで遊ぶ（統治が終わる）たびに増え、画面に出る情報が増えます。新しく見えるものには NEW の印が付きます。途中でやめた統治は数えません。</dd></div>
       <div><dt>バイアス</dt><dd>報告AIの見方の偏りです。統治を1回終えると数字が見えます。自己申告と実際の仕事の2つの値があり、一致するとは限りません。</dd></div>
       <div><dt>報告AI（LLM）</dt><dd>文章を読み書きするAIです。監視の情報を読み、あなたへの報告を書きます。</dd></div>
@@ -3330,7 +3330,7 @@ function stageGroup(v, recover) {
   const list = v.offers.stages.map((o, i) => [o, i]).filter(([o]) => !!o.recover === recover);
   if (!list.length) return '';
   return `<div class="sect${recover ? ' sect-rec' : ''}"><span>${recover ? '国を立て直す（再整備）' : 'AIに任せる範囲を広げる'}</span><small>${recover ? 'その分野だけ戻す。先へは進まず、他国に遅れる' : '国は強くなり、危険も増える'}</small></div>
-    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${o.goal ? '<span class="goalstar" title="目標に必要">★</span>' : ''}${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。放置した脆弱性 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp && S.plays ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${k === 'gap' ? 'zero' : tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
+    <div class="stages">${list.map(([o, i]) => `<button type="button" class="stage${recover ? ' rec' : ''}" data-s="${i}"><h3>${o.goal ? '<span class="goalstar" title="目標に必要">★</span>' : ''}${recover ? esc(o.name) : `${esc(o.name)}：${esc(o.title)}`}</h3>${recover ? `<p>${esc(o.recoverText)}。直していない脆弱性 -${v.recoverVuln}</p>` : `<p>${esc(o.reward)}</p>${riskHTML(o.risk)}${o.rateUp && S.plays ? `<small class="rateup">任せるとずっと、毎ターン ${KEYS.filter(k => o.rateUp[k]).map(k => `${NAMES[k]} ${fmt(o.rateUp[k], 2)}`).join('、')}</small>` : ''}${o.costText ? `<small class="stagecost">代償：${esc(o.costText)}</small>` : ''}`}<div class="plan">${KEYS.map(k => `<div><em>${NAMES[k]}${k === 'order' ? '（報告）' : ''}</em><span class="${k === 'gap' ? 'zero' : tone(k, o.plan[k])}">${fmt(o.plan[k], 0)}</span></div>`).join('')}</div></button>`).join('')}</div>`;
 }
 function renderStage(v) {
   app.innerHTML = `${hudHTML(v)}<div class="fade">${S.script ? `${afterHTML(v)}${scriptNavi('s' + (v.stageNo + 1))}` : ''}<h2 class="ptitle">次にAIへ任せる範囲</h2>${S.plays ? `<div class="policybox">${policyChips(modeCount(v.cards))}<p>今の方針で、どの危険を引き受けますか。</p>${guardsHTML(v.guards)}</div>` : ''}
@@ -3511,7 +3511,7 @@ function verdictHTML(r) {
 }
 function truthHTML(r) {
   const x = r.truthPanel, s = (n, a, b) => `<div class="stat"><span>${n}</span><b>${a}</b>${b ? `<small>${b}</small>` : ''}</div>`;
-  return `<div class="stats">${s('体制秩序', `${x.reported} → <span class="neg">${x.real}</span>`, '報告 → 本当')}${s('AIの自律度', x.autonomy)}${s('他国の浸透度', x.foreign)}${s('報告の甘さ', x.sontaku)}${s('放置した脆弱性', x.vuln)}</div>
+  return `<div class="stats">${s('体制秩序', `${x.reported} → <span class="neg">${x.real}</span>`, '報告 → 本当')}${s('AIの自律度', x.autonomy)}${s('他国の浸透度', x.foreign)}${s('報告の甘さ', x.sontaku)}${s('直していない脆弱性', x.vuln)}</div>
   ${x.trail.length ? `<ol class="flow">${x.trail.map(h => `<li><div class="flowtop"><b>ステージ${h.n}</b><span>開始時の体制秩序</span><em>報告 ${h.rep}／<span class="${h.rep - h.real >= 10 ? 'neg' : ''}">本当 ${h.real}</span></em></div></li>`).join('')}</ol>` : ''}<p class="pnote">報告値は、報告の甘さと報告AIのバイアスの分だけ高く出ていました。AIを通さない聞き取りのカードがあると、差は小さくなります。</p>`;
 }
 function flowHTML(r) {
