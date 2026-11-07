@@ -3290,7 +3290,7 @@ const modeLegend = ks => `<dl class="modelegend">${ks.map(k => `<dt><span class=
 function renderPreset(v) {
   if (!pending.pre) { const plan = Core.aidePlan(S); pending.mons = plan.mons.slice(); pending.llm = plan.llm; pendingModes = Object.assign({}, plan.modes); pending.pre = plan; }
   const plan = pending.pre, label = {in: '決裁', on: '介入', auto: 'AI任せ'}, cards = pending.mons.map(id => v.offers.monitors.find(c => c.id === id)), llm = v.offers.llms.find(c => c.id === pending.llm);
-  const about = `仮の方針です。分類ごとに1枚ずつ、人間の関わり方は3種類を見られるように選んであります。強さで選んだものではありません。${plan.mons.some(id => (v.offers.monitors.find(c => c.id === id) || {}).hint) ? '前回の事故に効くカードを1枚目に入れています。' : ''}決めるのは閣下です。`;
+  const about = `仮の方針です。分類ごとに1枚ずつ、人間の関わり方は、3種類がなるべく同じ数になるようにしてあります。強さで選んだものではありません。${plan.mons.some(id => (v.offers.monitors.find(c => c.id === id) || {}).hint) ? '前回の事故に効くカードを1枚目に入れています。' : ''}決めるのは閣下です。`;
   app.innerHTML = `<div class="aide ${fadeOnce('preset' + S.seed)}"><h2 class="ptitle">監視方針</h2><p class="goal">目標：${S.runLength}ステージ、国を残す</p><p class="pnote">${esc(about)}</p>
     ${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     <ul class="list">${cards.map(c => `<li><span class="mode ${pendingModes[c.id]}">${label[pendingModes[c.id]]}</span> <b>${esc(c.detect)}</b>${c.taught ? ' <i class="newtag">練習で使ったカード</i>' : c.hint ? ' <i class="newtag">前回の事故に効く</i>' : ''}${c.fields.length ? `<small>強く効く現場：${esc(c.fields.join('、'))}</small>` : ''}</li>`).join('')}
