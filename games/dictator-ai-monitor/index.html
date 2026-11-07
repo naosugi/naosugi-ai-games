@@ -313,7 +313,7 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
 .card.atcap{opacity:.55}
 .goalstar{color:#ffd166;margin-right:4px}.endrow{margin-bottom:8px}.endrow .dexlink{justify-self:start}
-.aide .list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text,#e8ecf3)}.modelegend{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;text-align:left;font-size:.8rem;color:var(--sub);margin:14px 0;line-height:1.5}.modelegend dd{margin:0}.modelegend .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;white-space:nowrap}.aide .list .llmchip{border:1px solid var(--sub);color:var(--sub)}.aide .list li small{display:block;color:var(--sub);font-size:.78rem;margin-top:2px}.aide .list .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;margin-right:4px}
+.aide .list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text,#e8ecf3)}.modelegend{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;text-align:left;font-size:.8rem;color:var(--sub);margin:14px 0;line-height:1.5}.modelegend dd{margin:0}.decide .bycard{display:block;color:var(--sub);font-size:.78rem;margin:-4px 0 8px}.modelegend .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;white-space:nowrap}.aide .list .llmchip{border:1px solid var(--sub);color:var(--sub)}.aide .list li small{display:block;color:var(--sub);font-size:.78rem;margin-top:2px}.aide .list .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;margin-right:4px}
 .navi{border-left:3px solid var(--head);padding:8px 12px;margin:14px 0;text-align:left;background:rgba(255,255,255,.04);border-radius:0 8px 8px 0}.navi b{display:block;font-size:.74rem;color:var(--mute);font-weight:normal;margin-bottom:2px}
 .aide{text-align:center;padding:10px 0}.aide .goal{color:var(--sub);font-size:.9rem;margin:6px 0 14px}.aide .list{list-style:none;text-align:left;font-size:.86rem;line-height:1.7;color:var(--sub)}
 .hintline{display:block;font-size:.76rem;font-weight:bold;color:var(--on);margin-bottom:6px}
@@ -3179,7 +3179,7 @@ function tutorBegin(card) { beginScript(TUTOR_SCRIPT(card), {from: meta.introFro
 function renderTutor() {
   // 本編と同じカードで見せる。人間の関わり方は、カードの既定のまま
   const tmp = Core.newRun(1, meta, {script: TUTOR_SCRIPT('selfmod'), from: meta.introFrom}), cards = Object.keys(TU_CARD).map(id => Object.assign(Core.publicCard(tmp, id), {modes: null}));
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">第2話　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div>${modeLegend(['in', 'on'])}</div>`;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">第2話　見張る</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div>${modeLegend(['in', 'on'])}${kindLegend()}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">一覧へ</button><button class="primary" id="tutake" type="button" ${TU.pick ? '' : 'disabled'}>署名して採用</button></div></div>`;
   app.querySelectorAll('[data-tc]').forEach(b => b.onclick = () => { TU.pick = b.dataset.tc; const y = scrollY; renderTutor(); scrollTo(0, y); });
   $('tutake').onclick = () => stampThen('裁可', () => tutorBegin(TU.pick));
@@ -3215,7 +3215,7 @@ function modesStart() { MD = {mode: (MD && MD.next) || 'in'}; screen = 'modes'; 
 function renderModes() {
   const tmp = Core.newRun(1, meta, {script: Core.MODES_SCRIPT(), from: meta.introFrom}), c = Core.publicCard(tmp, 'selfmod');
   pendingModes.selfmod = MD.mode;
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">第3話　人間が関わる</h2>${NAVI('監視カードが見つけたとき、誰が決めるか。カードごとに、3つの方式から選べます。')}<div class="cards">${cardHTML(c, true, 'data-mc="selfmod"')}</div>${modeLegend(['in', 'on', 'auto'])}</div>`;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">第3話　人間が関わる</h2>${NAVI('監視カードが見つけたとき、誰が決めるか。カードごとに、3つの方式から選べます。')}<div class="cards">${cardHTML(c, true, 'data-mc="selfmod"')}</div>${modeLegend(['in', 'on', 'auto'])}${kindLegend()}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="mquit" type="button">一覧へ</button><button class="primary" id="mgo" type="button">署名して採用</button></div></div>`;
   bindModes(() => { MD.mode = pendingModes.selfmod; const y = scrollY; renderModes(); scrollTo(0, y); });
   $('mgo').onclick = () => stampThen('裁可', () => { delete pendingModes.selfmod; beginScript(Core.MODES_SCRIPT(), {from: meta.introFrom, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: MD.mode}, runLength: 3}); });
@@ -3283,6 +3283,7 @@ function renderWorld() {
 let lastFade = '', fadeSeen = '';
 const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; return 'fade'; };
 let chooseOwn = false;
+const kindLegend = () => `<dl class="modelegend">${Object.entries(Core.KINDS).map(([k, x]) => `<dt><span class="kindchip k-${k}">仕組み：${esc(x.name)}</span></dt><dd>${esc(x.short)}</dd>`).join('')}</dl>`;
 const modeLegend = ks => `<dl class="modelegend">${ks.map(k => `<dt><span class="mode ${k}">${MODE[k][0].replace('人間が', '')}</span></dt><dd>${esc(MODE[k][1])}</dd>`).join('')}</dl>`;
 /* 最初の統治は、用意した方針を1行ずつ見せる。変えたい人だけ全部の候補を開く */
 function renderPreset(v) {
@@ -3303,7 +3304,7 @@ function renderStart(v) {
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
   app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。統治の途中で外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     ${o.monitors.find(c => c.hint) ? `<p class="hintline">前回、国を終わらせた事故に効くカード：「${esc(o.monitors.find(c => c.hint).detect)}」</p>` : ''}<div class="policybox">${policyChips(m)}<p>${esc(policyLine(m))}</p>${guardsHTML(Core.guardsFor(pending.mons))}</div>
-    ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}
+    ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}${S.plays < 3 ? fold('legend_start', 'カードの印の見方', modeLegend(['in', 'on', 'auto']) + kindLegend()) : ''}
     ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
   const ok = pending.mons.length === o.pick && pending.llm;
   if (pending.mons.length >= o.pick) app.querySelectorAll('[data-m]:not(.sel)').forEach(b => b.classList.add('atcap'));
@@ -3404,7 +3405,7 @@ function renderDecision(v) {
   overlay.innerHTML = `<div class="modal"><div class="decide" role="dialog" aria-modal="true">
     <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　報告AI ${esc(d.llm)} より閣下へ${d.mode === 'in' ? `<span class="pile">このステージ ${d.pile + 1}件目</span>` : ''}</div>
     ${d.mode === 'in' && !S.seenIrony ? `<div class="irony">作業AIは、閣下の決裁まで止まっています。決裁できる人間は、閣下だけです。</div>` : ''}
-    ${d.origin ? `<div class="conf"><b>${esc(d.origin)}</b></div>` : ''}<h3>${d.patchOrder ? '重要な脆弱性が見つかった' : esc(d.watch)}</h3>
+    ${d.origin ? `<div class="conf"><b>${esc(d.origin)}</b></div>` : ''}<h3>${d.patchOrder ? '重要な脆弱性が見つかった' : esc(d.watch)}</h3>${d.patchOrder ? '' : `<small class="bycard">カード「${esc(d.detect)}」が発動</small>`}
     <div class="quote">${esc(d.clue)}</div>
     ${d.patchOrder ? '' : `<div class="conf">${esc(d.llm)}の自己申告：本物の確信度 <b>${d.conf}%</b></div>`}
     <div class="conf">他国の速さ ×${v.pace.toFixed(1)}（統治の初めの${v.pace.toFixed(1)}倍）</div>
