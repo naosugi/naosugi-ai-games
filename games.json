@@ -168,8 +168,8 @@
   },
   {
     "id": "dictator-ai-monitor",
-    "title": "独裁AI監視シミュレーター",
-    "description": "架空の独裁者としてAIに国を任せ、監視の方針を決める死に覚えローグライク。検知と対処のカードを選び、ときには自ら判断します。報告文は嘘をつくことがあり、真相は統治の終わりに明かされます。",
+    "title": "独裁者AI国家シミュレーターⅡ AIセーフティ編",
+    "description": "架空の独裁者としてAIに国を任せ、監視の方針を決める死に覚えゲーム。監視カードと報告AIを選び、ときには自ら判断します。報告と本当の記録の違いは、統治の終わりに明かされます。",
     "path": "games/dictator-ai-monitor/",
     "thumbnail": "games/dictator-ai-monitor/thumb.jpg",
     "tags": [

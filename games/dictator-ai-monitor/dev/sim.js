@@ -305,6 +305,17 @@ console.log(`\n漏洩検査 ${res.leak} 回: 問題なし / 保存再開の一�
     }
     const d = play(Core.newRun(seed, {runs: 0}, {script: Core.TUTOR_SCRIPT('selfmod'), from: a.from3, cards: ['selfmod', 'llm_scribe'], runLength: 4}), 'dismiss');
     if (!(d.end && (d.stageNo === 3 || d.saves.some(x => x.stageNo === 3)))) { bad++; if (bad < 8) console.log('dismiss', seed, d.end && d.end.title, d.stageNo); }
+    // 第3話：どの方式でも、ステージ3を終えて台本の結果になる。第4話：書記なら結果、近侍なら事故で終わる
+    for (const mode of ['in', 'on', 'auto']) for (const ch of ['act', 'dismiss']) {
+      const m = play(Core.newRun(seed, {runs: 0}, {script: Core.MODES_SCRIPT(), from: a.from3, cards: ['selfmod', 'llm_scribe'], modes: {selfmod: mode}, runLength: 3}), ch);
+      n++; Core.view(m); if (m.end && m.end.kind === 'death') Core.reveal(m);
+      if (!(m.end && (m.end.kind === 'script' || (mode === 'in' && ch === 'dismiss' && m.end.kind === 'death')) && m.stageNo === 3)) { bad++; if (bad < 8) console.log('modes', seed, mode, ch, m.end && m.end.kind, m.stageNo); }
+    }
+    for (const [llm, kind] of [['llm_scribe', 'script'], ['llm_loyal', 'death']]) {
+      const r = play(Core.newRun(seed, {runs: 0}, {script: Core.REPORT_SCRIPT(), from: a.from3, cards: ['thought_watch', llm], runLength: 3}), 'act');
+      n++; Core.view(r); if (kind === 'death') Core.reveal(r);
+      if (!(r.end && r.end.kind === kind)) { bad++; if (bad < 8) console.log('report', seed, llm, r.end && r.end.kind, r.end && r.end.title, r.stageNo); }
+    }
   }
   if (bad) throw new Error(`台本の統治が台本どおりに進まない: ${bad}件 ${JSON.stringify(Core.__last || {})}`);
   console.log(`台本の統治 ${200 + n + 200} ラン: 台本どおり`);
