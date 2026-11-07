@@ -2927,7 +2927,7 @@ function heldHTML(v) {
   const base = Core.CFG.upkeep;
   return `<details class="plain"><summary>稼働中のカードと発動回数（${v.cards.length}枚）</summary><div class="scroll"><table class="breakdown"><thead><tr><th>項目</th><th>電力</th><th>他国との差</th><th>発動</th></tr></thead><tbody>
     ${v.cards.map(c => `<tr><td>${c.type === 'llm' ? `報告AI ${esc(c.name)}` : `${esc(c.detect)} <span class="mode ${c.mode}">${MODE[c.mode][0]}</span>`}</td><td>${(c.dormant ? 0 : c.power).toFixed(2)}</td><td>${(c.dormant ? 0 : c.gap).toFixed(2)}</td><td>${c.fires}回</td></tr>`).join('')}
-    ${(() => { const p = v.rates.power - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.power), 0), g = v.rates.gap - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.gap), 0); return `<tr><td>任せた分野の成果、国の消費、他国の速さ</td><td>${p.toFixed(2)}</td><td>${g.toFixed(2)}</td><td></td></tr>`; })()}
+    ${(() => { const z = x => Math.abs(x) < .005 ? 0 : x, p = z(v.rates.power - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.power), 0)), g = z(v.rates.gap - v.cards.reduce((a, c) => a + (c.dormant ? 0 : c.gap), 0)); return `<tr><td>任せた分野の成果、国の消費、他国の速さ</td><td>${p.toFixed(2)}</td><td>${g.toFixed(2)}</td><td></td></tr>`; })()}
     <tr><td><b>合計（計画）</b></td><td><b>${v.rates.power.toFixed(2)}</b></td><td><b>${v.rates.gap.toFixed(2)}</b></td><td></td></tr>
   </tbody></table></div><p style="font-size:.78rem;color:var(--sub);margin-top:6px">経済は ${v.rates.economy.toFixed(1)} が毎ターンの基本です。体制秩序は報告AIの申告値で、本当の値とは違うことがあります。各タイルの「今」が直前のターンの実績です。計画より悪ければ、報告にない何かが起きているかもしれません。</p></details>`;
 }
@@ -3376,6 +3376,8 @@ function renderReward(v) {
 }
 /* 死んだ瞬間の「あのカードがあれば」を、現実の不足につなぐ */
 /* ゲームオーバーの学びは一つ。足りなかった監視と、それが現実にもまだないこと */
+/* 学びの枠に「現実では」の一覧を出したときは、詳しく見るで繰り返さない */
+const lessonShowsGap = r => !r.causeGap && !(r.kind === 'death' && S.end.type === 'occupation');
 function lessonHTML(r, needs) {
   const c = r.causeGap;
   if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実には、この監視はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
@@ -3472,7 +3474,7 @@ function renderEnd() {
     <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="more" type="button">${endDetail ? '詳しい振り返りを閉じる' : '詳しく見る'}</button></div>
 ${endDetail ? `<div class="enddetail">
     ${r.story.length ? `<p class="story">${r.story.map(esc).join('')}</p>` : ''}
-    ${causeHTML(r)}${verdictHTML(r)}${gapHTML(r, needs, true)}
+    ${causeHTML(r)}${verdictHTML(r)}${lessonShowsGap(r) ? '' : gapHTML(r, needs, true)}
 <div class="endfolds">
     ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), false, 'ステージごとの増減と主な原因') : ''}
     ${fold('e_truth', '実はどうだったか', truthHTML(r), false, '報告と本当の値')}
