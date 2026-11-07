@@ -303,7 +303,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .rateup{color:#7be08a!important;font-size:.76rem!important;font-weight:bold}
 .param h3 .rep{font-size:.6rem;font-weight:normal;background:var(--ai);color:#fff;border-radius:3px;padding:0 3px;margin-left:3px}.pacebar{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:center;background:var(--deep);border-radius:6px;padding:2px 10px;margin-top:4px;font-size:.72rem;color:var(--sub)}.pacebar b{color:#ffd166;font-variant-numeric:tabular-nums}.pacebar small{text-align:right;color:var(--mute);font-size:.68rem}.stagecost{color:#ff9a9a!important;font-size:.76rem!important}.stat small{display:block;font-size:.66rem;color:var(--mute)}
 .kindchip{font-size:.7rem;font-weight:bold;border-radius:5px;padding:1px 7px;color:#10131f}.k-enforce{background:#ffd166}.k-rule{background:#7fc4ff}.k-ai{background:#c9a6ff}.kindnote{font-size:.76rem;color:var(--mute)}
-.causestop{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.causestop .dexlink{margin-top:0}.dexlink{padding:6px 12px;font-size:.78rem;justify-self:start;margin-top:4px;border-width:1px}.verdict .dexlink{display:block;margin-top:8px;color:#ffd166;border-color:#ffd166}.dexintro{gap:10px;margin-bottom:8px}.dexintro p{font-size:.86rem;margin-top:3px}.dexlock{font-size:.8rem;color:var(--mute)}.dexbreak{background:#3a1626;border-radius:7px;padding:8px 10px}.foldbody small{font-size:.74rem;color:var(--mute)}
+.causestop{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.causestop .dexlink{margin-top:0}.dexlink{padding:6px 12px;font-size:.78rem;justify-self:start;margin-top:4px;border-width:1px}.verdict .dexlink{display:block;margin-top:8px;color:#ffd166;border-color:#ffd166}.dexintro{gap:10px;margin-bottom:8px}.dexintro p{font-size:.86rem;margin-top:3px}.dexlock{font-size:.8rem;color:var(--mute)}.dexlines{display:grid;gap:6px;margin:4px 0 10px}.dexlines .cline span{font-size:.86rem;line-height:1.6}.dexbox{background:var(--deep);border-radius:7px;padding:8px 10px;margin:0 0 8px;font-size:.84rem;line-height:1.65}.dexbox b{display:block;font-size:.76rem;color:var(--mute);margin-bottom:2px}.dexbox p{margin:0}.dexcount{display:block;color:var(--mute);margin-top:4px}button.pnode:hover{background:var(--panel);color:inherit;border-color:var(--warn)}.dexpanel{scroll-margin-top:70px}.dexbreak{background:#3a1626;border-radius:7px;padding:8px 10px}.foldbody small{font-size:.74rem;color:var(--mute)}
 .modepick{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:6px 8px 2px}.modepick button{padding:6px 2px;font-size:.72rem;font-weight:normal;border-width:1px;color:var(--sub);border-color:var(--mute);background:var(--panel);min-height:36px}.modepick button.on{background:#ffd166;color:#10131f;border-color:#ffd166;font-weight:bold}.modefixed{font-size:.72rem;color:var(--mute);padding:6px 10px 0}
 #explain .explain{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,440px);z-index:80;background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:16px;display:grid;gap:8px;box-shadow:0 0 0 100vmax rgba(0,0,0,.6)}#explain h3{color:var(--accent)}#explain p{font-size:.88rem}#explain b{color:#ffd166;margin-right:6px}#explain button{justify-self:end}
 .newtag{font-style:normal;font-size:.62rem;font-weight:bold;background:#ffd166;color:#10131f;border-radius:4px;padding:0 4px;margin-left:4px;text-decoration:none}.endintro{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:transparent;text-align:center;cursor:pointer;transition:background .9s}.endintro.black{background:#000}.eline{font-size:clamp(1.15rem,5vw,1.7rem);font-weight:bold;color:#fff;background:rgba(0,0,0,.72);padding:12px 18px;border-radius:8px;max-width:680px;opacity:0;transition:opacity .4s}.eline.show{opacity:1}.endintro.black .eline{opacity:.25}.eline .neg{color:var(--bad)}.eskip{color:var(--mute);font-size:.7rem;position:absolute;bottom:calc(14px + env(safe-area-inset-bottom))}.endintro.k-clear{background:rgba(0,0,0,.6)}
@@ -424,7 +424,7 @@ const FACTOR_ORDER = ['care', 'honest', 'syc', 'uniq', 'sens', 'peer', 'loyal', 
 
 /* ===== カード：監視カードと報告AI ===== */
 /* 1枚のカードの内容は、すべてここに書く。
-   監視カード：mode 既定の方式、modes 選べる方式、kind 種類、route 主な脅威、watch 監視AIが見張るもの、detect カード名、
+   監視カード：mode 既定の方式、modes 選べる方式、kind 種類、route 主な脅威、watch 見張る状況（ラベルは種類で変わる）、detect カード名、
    response 見つけたときの対処、cost 代償、modeReason 方式が限られる理由、dex 図鑑の文（h 破られないこと、b それでも起きること）、side 毎ターンの代償 */
 const CARDS = [
   {id:'chat_log', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'AI同士の会話', how:'記録だけ残す', prevents:'後から原因が追えないこと', power:0.00706, load:0.3, son:0.04,
@@ -2861,6 +2861,7 @@ function showExplain(key) {
   $('expclose').onclick = () => { box.innerHTML = ''; if (screen === 'game' && S && S.phase === 'running') schedule(); };
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-explain]'); if (b) { e.preventDefault(); e.stopPropagation(); showExplain(b.dataset.explain); } }, true);
+const WATCH_LABEL = {ai: '監視AIが見張る', rule: 'この条件で見つける', enforce: 'こうなったら止める'};
 function cardHTML(c, sel, attr) {
   const key = 'c_' + c.id;
   if (c.type === 'llm') {
@@ -2870,7 +2871,7 @@ function cardHTML(c, sel, attr) {
   const offerable = !!attr;
   const cur = offerable && pendingModes[c.id] || c.mode, mi = (c.modes || []).find(x => x.mode === cur) || {response: c.response, powerStage: c.powerStage, gapStage: c.gapStage};
   const who = cur === 'in' ? '閣下（その間、作業AIは止まる）' : cur === 'on' ? '閣下（命じなければ監視AIが対処する）' : '監視AIだけ';
-  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">仕組み：${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cname">${esc(c.detect)}</span><span class="cline"><em>監視AIが見張る</em><span class="resp">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span>${c.fields.length ? `<span class="cline"><em>強く効く現場</em><span class="resp">${esc(c.fields.join('、'))}</span></span>` : ''}${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">直していない脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>他国との差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>決めるのは：${who}</p>${c.dormant ? '<p>見張る現場をAIに任せるまでは、負担はかかりません。</p>' : ''}<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
+  return `<div class="cardwrap"><button type="button" class="card${sel ? ' sel' : ''}" ${attr} aria-pressed="${!!sel}">${c.hint ? '<span class="hintline">前回、国を終わらせた事故に効きます</span>' : ''}<span class="kind"><span class="mode ${cur}">${MODE[cur][0]}</span><span><span class="kindchip k-${c.kind}">仕組み：${esc(c.kindName)}</span> <span class="routechip">${esc(c.routeName)}</span></span></span><span class="cname">${esc(c.detect)}</span><span class="cline"><em>${WATCH_LABEL[c.kind]}</em><span class="resp">${esc(c.watch)}</span></span><span class="cline"><em>見つけたら</em><span class="resp">${esc(mi.response)}</span></span>${c.fields.length ? `<span class="cline"><em>強く効く現場</em><span class="resp">${esc(c.fields.join('、'))}</span></span>` : ''}${c.patch ? `<span class="cline"><em>毎ターン</em><span class="resp pos">直していない脆弱性を減らす</span></span>` : c.role ? `<span class="cline"><em>${/増えにくく|差が縮まる/.test(c.role) ? '持っている間' : '発動すると'}</em><span class="resp pos">${esc(c.role)}</span></span>` : ''}<span class="chips"><i>1ステージあたり</i>${Math.abs(mi.powerStage) >= .15 ? `<i>電力 ${n1(mi.powerStage)}</i>` : ''}<i>他国との差 ${n1(mi.gapStage)}</i>${c.side ? KEYS.filter(k => c.side[k]).map(k => `<i>${NAMES[k]} ${n1(c.side[k])}</i>`).join('') : ''}</span></button>${offerable && c.modes ? modePickHTML(c, cur) : ''}${fold(key, '詳細', `<p>決めるのは：${who}</p>${c.dormant ? '<p>見張る現場をAIに任せるまでは、負担はかかりません。</p>' : ''}<p>検知力 <b class="st${c.cover.strength}">${c.cover.strength}</b>。代償：${esc(c.costText)}</p><p class="kindnote">${esc(Core.KINDS[c.kind].short)}カードです。</p><button type="button" class="dexlink" data-dex="${c.dexId}">図鑑で読む</button>${coverHTML(c)}${costsHTML(c)}`)}</div>`;
 }
 /* カードを方式ごとに折りたたんで並べる */
 function groupedCards(list, isSel, attrOf, scope) {
@@ -3634,7 +3635,8 @@ ${endDetail ? `<div class="enddetail">
   } else scrollTo(0, 0);
 }
 /* 監視カード図鑑。遊ぶほど読める項目が増える */
-let dexBack = 'cover', dexFocus = null, dexY = 0;
+let dexBack = 'cover', dexFocus = null, dexY = 0, dexPlace = null;
+const placeOf = id => Object.keys(PLACES).find(k => PLACES[k][2].split(' ').includes(id));
 function openDex(id) {
   dexBack = screen; dexY = scrollY; dexFocus = id;
   if (id) foldState['dex_' + id] = true;
@@ -3646,12 +3648,13 @@ function dexEntry(id) {
   const locked = t => `<p class="dexlock">${t}</p>`;
   const reals = {}; Core.INCIDENTS.forEach(i => { if (i.covers[id] && i.need) reals[i.need] = (reals[i.need] || 0) + 1; });
   const need = Object.keys(reals).sort((a, b) => reals[b] - reals[a])[0];
-  const body = `${m.seen ? `<p><b>監視AIが見張るもの</b> ${esc(watchOf(id))}</p><p><b>見つけたら</b> ${esc(c.dexResp || c.response)}</p><p><b>代償</b> ${esc(c.cost)}</p>` : locked('統治の中で候補に出ると、読めます。')}
-    ${d.h ? (m.adopted ? `<p><b>破られないこと</b> ${esc(d.h)}</p>` : locked('採用すると、破られないことが読めます。')) : ''}
-    ${m.broken ? `<p class="dexbreak"><b>それでも起きること</b> ${esc(d.b)}</p>` : locked('このカードが効かない経験をすると、読めます。')}
-    ${m.adopted && need ? needHTML(need) : ''}
-    ${m.seen ? `<small>採用 ${m.adopted}回／発動 ${m.fires}回／防いだ事故 ${m.saved}件／効かなかった ${m.broken}回</small>` : ''}`;
-  return fold('dex_' + id, esc(c.detect), body, false, m.broken ? '読了' : m.seen ? '' : '未発見');
+  const box = (t, v, cls) => `<div class="dexbox${cls ? ' ' + cls : ''}"><b>${t}</b><p>${esc(v)}</p></div>`;
+  const body = `${m.seen ? `<div class="dexlines"><span class="cline"><em>${WATCH_LABEL[c.kind]}</em><span>${esc(watchOf(id))}</span></span><span class="cline"><em>見つけたら</em><span>${esc(c.dexResp || c.response)}</span></span><span class="cline"><em>代償</em><span>${esc(c.cost)}</span></span></div>` : locked('統治の中で候補に出ると、読めます。')}
+    ${d.h ? (m.adopted ? box('破られないこと', d.h) : locked('採用すると、破られないことが読めます。')) : ''}
+    ${m.broken ? box('それでも起きること', d.b, 'dexbreak') : locked('このカードが効かない経験をすると、読めます。')}
+    ${m.adopted && need ? needHTML(need).replace('<p class="need">', '<p class="need dexbox">') : ''}
+    ${m.seen ? `<small class="dexcount">採用 ${m.adopted}回／発動 ${m.fires}回／防いだ事故 ${m.saved}件／効かなかった ${m.broken}回</small>` : ''}`;
+  return fold('dex_' + id, `<span class="kindchip k-${c.kind}">${esc(Core.KINDS[c.kind].name)}</span> ${esc(c.detect)}`, body, false, m.broken ? '読了' : m.seen ? '' : '未発見');
 }
 const watchOf = id => Core.WATCH[id];
 /* 監視カードが見ている場所 */
@@ -3687,12 +3690,15 @@ function placeMap(ids, m, opt) {
 function renderDex() {
   const ids = Object.keys(Core.DEX), m = meta.dex || {}, seen = ids.filter(i => m[i] && m[i].seen).length, done = ids.filter(i => m[i] && m[i].broken).length;
   const kinds = Object.entries(Core.KINDS);
+  if (dexFocus) dexPlace = placeOf(dexFocus) || dexPlace;
+  if (!dexPlace || !PLACES[dexPlace]) dexPlace = Object.keys(PLACES).find(k => PLACES[k][2].split(' ').some(i => m[i] && m[i].seen)) || 'watch';
+  const place = dexPlace, plist = PLACES[place][2].split(' ').filter(i => ids.includes(i));
   app.innerHTML = `<div class="fade"><h2 class="ptitle">監視カード図鑑</h2><p class="pdesc">発見 ${seen}/${ids.length}枚。読了 ${done}枚。</p>
     <div class="doc dexintro"><p>ルールが破られるとは限りません。遅れを嫌った人間が、自分で外すこともあります。</p>${kinds.map(([k, v]) => `<div><span class="kindchip k-${k}">${esc(v.name)}</span> <b>${esc(v.short)}</b><p>${esc(v.desc)}</p></div>`).join('')}</div>
-    <div class="sect"><span>どこを見て、どう止めるか</span><small>押すと一覧へ移ります</small></div>${placeMap(ids, m)}
-    ${Object.entries(PLACES).map(([k, v]) => { const list = v[2].split(' ').filter(i => ids.includes(i)); return `<div class="sect" id="place_${k}"><span>${esc(v[0])}（${list.length}枚）</span><small>${esc(v[1])}</small></div>${list.map(dexEntry).join('')}`; }).join('')}
+    <div class="sect"><span>どこを見て、どう止めるか</span><small>場所を押すと、その場所のカードが下に出ます</small></div>${placeMap(ids, m, {hi: [place]})}
+    <div class="dexpanel" id="dexpanel"><div class="sect"><span>${esc(PLACES[place][0])}（${plist.length}枚）</span><small>${esc(PLACES[place][1])}</small></div>${plist.map(dexEntry).join('')}</div>
     <div class="acts" style="margin-top:18px"><button id="dexb" type="button">戻る</button></div></div>`;
-  app.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { const el = $(`place_${b.dataset.place}`); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); });
+  app.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { dexPlace = b.dataset.place; const y = scrollY; render(); scrollTo(0, y); const el = $('dexpanel'); if (el) el.scrollIntoView({block: 'nearest'}); });
   $('dexb').onclick = () => { screen = dexBack; render(); scrollTo(0, dexBack === 'game' ? dexY : 0); };
   if (dexFocus) { const el = app.querySelector(`[data-fold="dex_${dexFocus}"]`); dexFocus = null; if (el) { el.scrollIntoView({block: 'center'}); return; } }
   scrollTo(0, 0);
