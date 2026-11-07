@@ -1222,20 +1222,7 @@ function aidePlan(s) {
     const m = ['in', 'on', 'auto'].filter(k => c.modes.includes(k)).sort((a, b) => left[b] - left[a])[0] || c.mode;
     modes[c.id] = m; if (m in left) left[m]--;
   }
-  return {mons: mons.map(c => c.id), modes, llm: s.offers.llms.includes('llm_scribe') ? 'llm_scribe' : s.offers.llms[0], kind: 'first'};
-}
-/* 2回目からは前回の方針を土台にする。今回の候補にないカードは、仮の方針で埋める */
-function presetPlan(s, meta) {
-  const base = aidePlan(s), last = meta && meta.lastPlan;
-  if (!last) return base;
-  const offered = s.offers.monitors, first = s.taughtCard || s.hintCard;
-  let mons = last.mons.filter(id => offered.includes(id));
-  const kept = mons.length;
-  if (first && offered.includes(first) && !mons.includes(first)) mons = [first].concat(mons).slice(0, s.offers.pick);
-  for (const id of base.mons) if (mons.length < s.offers.pick && !mons.includes(id)) mons.push(id);
-  const modes = {};
-  for (const id of mons) { const want = last.modes && last.modes[id]; modes[id] = want && CARD[id].modes.includes(want) ? want : base.modes[id] || CARD[id].mode; }
-  return {mons, modes, llm: s.offers.llms.includes(last.llm) ? last.llm : base.llm, kind: 'last', swapped: last.mons.length - kept};
+  return {mons: mons.map(c => c.id), modes, llm: s.offers.llms.includes('llm_scribe') ? 'llm_scribe' : s.offers.llms[0]};
 }
 function chooseStart(s, monitorIds, llmId, modes) {
   if (s.phase !== 'start') throw new Error('phase');
@@ -2577,10 +2564,6 @@ function endIncident(s) {
 }
 function applyMeta(meta, s) {
   const m = {runs: (meta.runs || 0) + 1, records: Object.assign({}, meta.records), endings: Object.assign({}, meta.endings)};
-  { const st = (s.trail || []).find(t => t.type === 'start');
-    if (st) { const mons = st.cards.filter(id => CARD[id].type === 'monitor'), llm = st.cards.find(id => CARD[id].type === 'llm');
-      m.lastPlan = {mons: mons.map(id => CARD[id].base || id), modes: Object.fromEntries(mons.map(id => [CARD[id].base || id, CARD[id].mode])), llm}; }
-    else if (meta.lastPlan) m.lastPlan = meta.lastPlan; }
   /* 図鑑の記録 */
   m.dex = Object.assign({}, meta.dex);
   const dx = id => { const k = (CARD[id] || {}).base || id; return m.dex[k] = Object.assign({seen: 0, adopted: 0, fires: 0, saved: 0, broken: 0}, m.dex[k]); };
@@ -2605,7 +2588,7 @@ function newlyUnlocked(before, after) {
 }
 
 return {CFG, CARDS, CARD, STAGES, INCIDENTS, INCIDENT, EVENTS, FACTORS, FACTOR_ORDER, SHAPES, CONTROLS,
-  newRun, isUnlocked, publicCard, aidePlan, presetPlan, INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD, MODES_SCRIPT, REPORT_SCRIPT, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
+  newRun, isUnlocked, publicCard, aidePlan, INTRO_SCRIPT, TUTOR_SCRIPT, TU_CARD, MODES_SCRIPT, REPORT_SCRIPT, chooseStart, enterStage, tick, decide, ackResult, ackEvent, chooseEvent, chooseReward, chooseLlm, veto, END_INFO, CONTROL_INFO, variantId, DEX, KINDS, WATCH, guardsFor, ROUTES, CARD_SIDE, view, reveal, applyMeta, newlyUnlocked, load, powerUse};
 })();
 if (typeof module !== 'undefined') module.exports = Core;
 
@@ -3303,11 +3286,11 @@ const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; retur
 let chooseOwn = false;
 const kindLegend = () => `<dl class="modelegend">${Object.entries(Core.KINDS).map(([k, x]) => `<dt><span class="kindchip k-${k}">仕組み：${esc(x.name)}</span></dt><dd>${esc(x.short)}</dd>`).join('')}</dl>`;
 const modeLegend = ks => `<dl class="modelegend">${ks.map(k => `<dt><span class="mode ${k}">${MODE[k][0].replace('人間が', '')}</span></dt><dd>${esc(MODE[k][1])}</dd>`).join('')}</dl>`;
-/* 方針は1行ずつの一覧から始める。1回目は仮の方針、2回目からは前回の方針。変えたい人だけ全部の候補を開く */
+/* 方針は1行ずつの一覧から始める。毎回、仮の方針を土台にする。変えたい人だけ全部の候補を開く */
 function renderPreset(v) {
-  if (!pending.pre) { const plan = Core.presetPlan(S, meta); pending.mons = plan.mons.slice(); pending.llm = plan.llm; pendingModes = Object.assign({}, plan.modes); pending.pre = plan; }
+  if (!pending.pre) { const plan = Core.aidePlan(S); pending.mons = plan.mons.slice(); pending.llm = plan.llm; pendingModes = Object.assign({}, plan.modes); pending.pre = plan; }
   const plan = pending.pre, label = {in: '決裁', on: '介入', auto: 'AI任せ'}, cards = pending.mons.map(id => v.offers.monitors.find(c => c.id === id)), llm = v.offers.llms.find(c => c.id === pending.llm);
-  const about = plan.kind === 'last' ? `前回の方針です。${plan.swapped ? `今回の候補にないカード${plan.swapped}枚は、入れ替えました。` : ''}` : '仮の方針です。分類ごとに1枚ずつ、人間の関わり方は3種類を見られるように選んであります。強さで選んだものではありません。';
+  const about = `仮の方針です。分類ごとに1枚ずつ、人間の関わり方は3種類を見られるように選んであります。強さで選んだものではありません。${plan.mons.some(id => (v.offers.monitors.find(c => c.id === id) || {}).hint) ? '前回の事故に効くカードを1枚目に入れています。' : ''}決めるのは閣下です。`;
   app.innerHTML = `<div class="aide ${fadeOnce('preset' + S.seed)}"><h2 class="ptitle">監視方針</h2><p class="goal">目標：${S.runLength}ステージ、国を残す</p><p class="pnote">${esc(about)}</p>
     ${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     <ul class="list">${cards.map(c => `<li><span class="mode ${pendingModes[c.id]}">${label[pendingModes[c.id]]}</span> <b>${esc(c.detect)}</b>${c.taught ? ' <i class="newtag">練習で使ったカード</i>' : c.hint ? ' <i class="newtag">前回の事故に効く</i>' : ''}${c.fields.length ? `<small>強く効く現場：${esc(c.fields.join('、'))}</small>` : ''}</li>`).join('')}
@@ -3315,7 +3298,7 @@ function renderPreset(v) {
     ${S.plays < 3 ? modeLegend(['in', 'on', 'auto']) : ''}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="own" type="button">方針を変える</button><button class="primary" id="sign" type="button">この方針で始める</button></div></div>`;
   $('own').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
-  $('sign').onclick = () => stampThen('裁可', () => { S.aideSigned = true; S.presetKind = plan.kind; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+  $('sign').onclick = () => stampThen('裁可', () => { S.aideSigned = true; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
 }
 function renderStart(v) {
   if (!chooseOwn) return renderPreset(v);
@@ -3339,7 +3322,7 @@ function renderStart(v) {
   bindModes(id => { if (!pending.mons.includes(id)) { if (pending.mons.length >= o.pick) pending.fullHint = true; else pending.mons.push(id); } renderStart(v); });
   pending.fullHint = false;
   if ($('revert')) $('revert').onclick = () => { const p = pending.pre; pending.mons = p.mons.slice(); pending.llm = p.llm; pendingModes = Object.assign({}, p.modes); chooseOwn = false; render(); scrollTo(0, 0); };
-  $('go').onclick = () => stampThen('裁可', () => { const p = pending.pre; if (p && p.mons.length === pending.mons.length && p.mons.every(id => pending.mons.includes(id))) { S.aideSigned = true; S.presetKind = p.kind; } Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
+  $('go').onclick = () => stampThen('裁可', () => { const p = pending.pre; if (p && p.mons.length === pending.mons.length && p.mons.every(id => pending.mons.includes(id))) S.aideSigned = true; Core.chooseStart(S, pending.mons, pending.llm, pendingModes); pendingModes = {}; save(); render(); scrollTo(0, 0); });
   scrollTo(0, y);
 }
 function riskHTML(r) {
@@ -3525,7 +3508,7 @@ function verdictHTML(r) {
   if (!d) return `<div class="verdict"><small>閣下の決定</small><p>監視${r.modes.in + r.modes.on + r.modes.auto}枚で事故を${r.saves.length}件防ぎ、${r.missed.length}件は防げませんでした。</p></div>`;
   // 持っていたことは学びの枠で伝えているので、ここでは止まらなかった理由だけを書く
   const text = d.kind === 'held' ? (r.causeGap && r.causeGap.held ? `${esc(d.why)}。` : `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`)
-    : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、${S.presetKind === 'last' ? '前回の方針' : '仮の方針'}に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
+    : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、仮の方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
     : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? (d.strong && meta.records && meta.records[S.end.causeId] ? 'この事故を記録したので、次の統治から候補に加わります。' : '記録が増えると解放されます。') : ''}`;
   return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">「${esc(d.card)}」を図鑑で読む</button></div>`;
 }
