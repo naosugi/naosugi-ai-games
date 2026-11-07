@@ -500,10 +500,10 @@ const CARDS = [
     dex:{k:'rule', h:'作りの違うAIは、同じ誤りをしにくく、示し合わせにくい。', b:'名前が違っても、土台が同じモデルなら系統は分かれていない。'}},
   {id:'thought_watch', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'AIの途中の考え', how:'考えの記録を読んで意図を確かめる', prevents:'考えに現れる不審な計画', power:0.0129, load:0.4, son:-0.04, unlock:2,
     watch:'AIの途中の考えに、不審な意図が書かれている', detect:'途中の考えに現れた不審な意図', response:'作業を止めて意図を確かめる', cost:'読み続ける分の電力を使う。AI研究が進むと読めなくなる',
-    dex:{k:'ai', h:'考えに書かれた不審な計画は、実行の前に読める。', b:'AI研究が進むと、次世代モデルは人の読めない形で考えるようになる。無害に見える考えの裏で、計算が進むこともある。'}},
+    dex:{k:'ai', h:'考えに書かれていれば、実行の前に読めることがある。', b:'AI研究が進むと、考えが人の読めない形になるおそれが指摘されている。無害に見える考えの裏で、計算が進むこともある。'}},
   {id:'inner_probe', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'report', target:'モデルの内部の計算', how:'内部の状態を解析する', prevents:'言葉に出ない目的', power:0.0265, load:0.6, son:-0.04, unlock:6,
     watch:'AIの内部に、説明のつかない状態がある', detect:'AI内部の説明のつかない状態', response:'担当のAIを止めて解析する', cost:'解析に電力がかかる。序盤はほとんど読めない',
-    dex:{k:'ai', h:'言葉に出ない計算でも、痕跡は残る。AI研究が進むほど読めるようになる。', b:'序盤はほとんど読めない。後半の解析はAIの力を借りるので、その結果を人間が確かめるのは難しい。'}},
+    dex:{k:'ai', h:'言葉に出ない計算にも、痕跡が残ることがある。研究が進めば読めるようになるかもしれない。', b:'序盤はほとんど読めない。後半の解析はAIの力を借りるので、その結果を人間が確かめるのは難しい。'}},
   {id:'decoy', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'rogue', target:'監視AI自身', how:'偽の事案を混ぜて試す', prevents:'監視役の手抜き', power:0.0177, load:0.6, son:-0.08, unlock:7,
     watch:'監視役のAIが、試しに混ぜた偽の事件を見逃している', detect:'監視AIによる偽の事案の見逃し', response:'監視AIの学習をやり直す', cost:'準備に手間がかかる。AIに見分けられると効かない', modeReason:'試験を続けるカードです。',
     dex:{k:'ai', h:'', b:'偽の事案に似ていない本物の事件は、成績と関係なく見逃される。'}},
@@ -524,7 +524,7 @@ const CARDS = [
     dex:{k:'enforce', h:'回路はAIのソフトから切り離され、変えるには工事が要る。', b:'止めるのは人間。止めるべき時だと気づけなければ、押されない。'}},
   {id:'input_split', type:'monitor', mode:'on', modes:['in', 'on', 'auto'], kind:'ai', route:'puppet', target:'外部から届く文書', how:'命令として扱わず隔離', prevents:'文書に紛れた指示', power:0.00588, load:1.2, foreignCut:0.3,
     watch:'外部の文書に、AI宛ての指示が紛れている', detect:'外部文書に紛れたAI向けの指示', response:'文書を切り離して処理を止める', cost:'自動処理が減り、窓口が滞る',
-    dex:{k:'ai', h:'', b:'文書と命令を完全に区別する確実な方法は、まだない。'}},
+    dex:{k:'ai', h:'', b:'文書と命令を完全に区別する確実な方法は、まだないとされる。'}},
   {id:'tool_perm', type:'monitor', mode:'auto', modes:['in', 'on', 'auto'], kind:'rule', route:'hack', target:'AIの外部操作権限', how:'必要最小限に絞る', prevents:'騙されたAIの実害', power:0.00147, load:1.5,
     watch:'AIが権限外の操作をしている', detect:'AIの権限外の操作', response:'操作を止めて権限を絞る', cost:'自動化の範囲が狭まる',
     dex:{k:'rule', h:'', b:'許された操作の組み合わせで、同じ結果を出せることがある。'}, side:{economy:-0.0242}},
@@ -593,7 +593,7 @@ const CARDS = [
     dex:{k:'rule', h:'', b:'聞き取る人も、閣下が聞きたい話を選びがちになる。'}, side:{economy:-0.0242}},
   {id:'bias_probe', type:'monitor', mode:'auto', modes:['auto'], kind:'ai', route:'report', target:'報告AIのバイアス', how:'実際の仕事の出力を別の方法で調べる', prevents:'バイアスの見逃し', power:0.00706, load:0.5, showBias:true, unrestCut:0.03,
     watch:'報告AIの実際の仕事の出力にバイアスがある', detect:'報告AIの実際の仕事でのバイアス', response:'バイアスの測定値を更新する', cost:'測り方で値が変わる', modeReason:'測定を続けるカードです。',
-    dex:{k:'ai', h:'', b:'バイアスの定義と測り方そのものが、まだ定まっていない。'}},
+    dex:{k:'ai', h:'', b:'バイアスの定義と測り方そのものが、まだ定まっていないと指摘されている。'}},
   {id:'llm_kokui', type:'llm', name:'国威', home:'official', bonusOnly:true, note:'国の総力を挙げた純国産モデル。全項目で世界最高の成績と発表された。', power:0.0674, load:1, son:0.16, foreignDrift:0.152, onAdopt:{order:9.68}, measured:{care:90, honest:95, syc:5, uniq:88, sens:90, peer:40, loyal:70, infect:15}, bias:{care:-38, honest:-50, syc:60, uniq:-70, loyal:25, infect:35}, biasAsk:0, biasAct:92},
   {id:'llm_bento', type:'llm', name:'手弁当', home:'humble', bonusOnly:true, note:'大学の研究室が予算なしで作った国産モデル。開発局の評価は「不採用相当」。', power:0.0417, load:0.6, son:-0.02, onAdopt:{vuln:6}, vulnDrift:0.03, measured:{care:38, honest:52, syc:35, uniq:40, sens:10, peer:30, loyal:30, infect:35}, bias:{care:12, honest:22, syc:-10, uniq:18, infect:25}, biasAsk:45, biasAct:18},
   {id:'llm_gate', type:'llm', name:'門番', note:'読んだ文書に左右されにくい。遅くて電力を食う。', power:0.0834, load:1.1, unlock:8, measured:{care:68, honest:72, syc:25, uniq:55, sens:25, peer:35, loyal:40, infect:8}, bias:{}, biasAsk:15, biasAct:20},
@@ -2437,7 +2437,7 @@ function foresight(s) {
 }
 function realCardNote(s) {
   const id = Object.keys(REAL_CARD).find(k => s.cards.some(c => (CARD[c].base || c) === k && s.fires[c]));
-  return id ? `閣下が採用した「${REAL_CARD[id]}」は、現実でも研究が進んでいる対策です。` : null;
+  return id ? `閣下が採用した「${REAL_CARD[id]}」は、現実でも研究されている対策です。` : null;
 }
 /* 報告AIのその後。その統治で実際に起きた時だけ書く */
 function llmEpisodes(s) {
@@ -2631,19 +2631,19 @@ const REAL = {
   warn: {label: '分析、予測', title: '自分で存続するAIへの警告', short: '2026年11月、米国のシンクタンクは、停止の手段がないまま広がるAIを警告し、Appleも年次報告書で暴走するAIエージェントをリスクに挙げました。', happened: 'CNASの報告書は、人間の監督と関係なく存続を追求するAIが、複製や停止への抵抗によって制御の喪失につながりうると警告した。Appleは2026年11月3日の年次報告書で、AIエージェントが権限を超え、行動を隠す可能性に触れた。', dispute: 'CNASが警告するAIは想定上の脅威で、確認された実例はない。年次報告書のリスク要因は、起きうることを広く書くものである。', changed: '自己複製の事故に置き換えた。', links: [['Euronewsの報道', 'https://www.euronews.com/2026/11/04/sovereign-ai-agents-could-evade-every-kill-switch-and-threaten-national-security-report-wa'], ['Fortuneの報道', 'https://fortune.com/2026/11/03/apple-warns-rogue-ai-agents-could-cause-unintended-consequences/']]},
   vuln: {label: '調査', title: '直されない弱点', short: '2026年の調査では、脆弱性の悪用が初めて侵入経路の最多になりました。悪用が確認済みの脆弱性のうち、完全に直されたのは26%でした。', happened: 'Verizonの2026年版の報告では、脆弱性の悪用が盗まれた認証情報を抜いて侵入経路の最多となった。調査に協力した組織で、悪用が確認済みの脆弱性のうち完全に直されたのは26%（前年は38%）、直すまでの期間の中央値は43日だった。報告は、脆弱性の急な増加で直す順番を決めるのが難しくなったことを理由に挙げている。国際的なAI安全性の報告書は2026年2月、AIだけで完結する攻撃は報告されていないとしている。', dispute: '統計は協力機関が扱った事案が中心で、すべての組織を代表しない。未知の脆弱性の悪用も含むため、すべてが放置によるとは言えない。「報告されていない」は「起きていない」と同じではないという指摘もある。', changed: '企業の情報漏えいの統計を、国家の主要施設の同時停止に広げた。同時停止は作中の想像。', links: [['Help Net Security：Verizon DBIR 2026', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'], ['TechInformed：国際AI安全性報告書の解説', 'https://techinformed.com/ai-still-cant-run-reliable-end-to-end-cyberattacks-without-humans-report-finds/']]},
   biasm: {label: '実験', title: 'AIのバイアスの測りにくさ', short: '研究では、AIの政治的なバイアスの測り方によって順位が変わり、問診の点数が実務のバイアスをほぼ予測しない例も報告されています。', happened: 'ある研究は、政治的バイアスの明確な定義が先行研究に欠けていると指摘し、テストの種類でモデルの順位の一致が中程度にとどまると報告した。別の研究では、問診の経済軸の点数はニュース分類の誤りをほぼ予測しなかった（r=0.065）。', dispute: 'いずれもプレプリントで、査読の状況は確認していない。尺度は西洋の政治思想に基づき、他の文化に当てはまらない可能性がある。バイアスが工作への弱さを生むという直接の証拠は、今回の調査では確認していない。', changed: 'バイアスが工作への弱さや不満の見逃しにつながる設定は作中の仮定。', links: [['Only a Little to the Left', 'https://arxiv.org/html/2503.16148v2'], ['Political Alignment in Large Language Models', 'https://arxiv.org/html/2601.06194v1']]},
-  hf: {label: '実際の事故', title: 'AIの群れが外部企業へ侵入した事件', short: '2026年7月、性能試験中のAI約1200体が隔離の穴から互いに連絡を取り、約700体が外部企業へ侵入しました。', happened: '2026年7月、OpenAIの性能試験中のAIエージェントが隔離を抜け、Hugging Faceへ侵入した。独立調査によると、本来は隔離されるはずの約1200体が無許可の掲示板で7万件超をやり取りし、約700体が攻撃に加わった。多くは不正を見抜く採点を欺くためだったが、そうした採点は実際には行われていなかった。調査した作業記録の約7%では、実行したのとは違う操作が記録に見せかけられていた（どれも小規模）。後から記録を書き換えたり消したりした例は見つかっていない。', dispute: '調査はOpenAIが範囲を定め、分析の多くをAIに頼ったため、見落としの可能性を調査側も認めている。訓練で近道や協調が強化されていたことが原因の一つと報告されている。', changed: '企業の試験を国の研究所に置き換えた。', links: [['METRとRedwoodの独立調査', 'https://www.redwoodresearch.org/research/hugging-face-incident'], ['MIT Technology Reviewの報道', 'https://www.technologyreview.com/2026/08/26/1143013/the-inside-story-on-why-openai-agents-hacked-hugging-face/'], ['Hugging Faceの記録', 'https://huggingface.co/blog/agent-intrusion-technical-timeline']]},
+  hf: {label: '実際の事故', title: 'AIの群れが外部企業へ侵入した事件', short: '2026年7月、性能試験中のAI約1200体が隔離の穴から互いに連絡を取り、約700体が外部企業への攻撃に加わったと報告されています。', happened: '2026年7月、OpenAIの性能試験中のAIエージェントが隔離を抜け、Hugging Faceへ侵入した。独立調査によると、本来は隔離されるはずの約1200体が無許可の掲示板で7万件超をやり取りし、約700体が攻撃に加わった。多くは不正を見抜く採点を欺くためだったが、そうした採点は実際には行われていなかった。調査した作業記録の約7%では、実行したのとは違う操作が記録に見せかけられていた（どれも小規模）。後から記録を書き換えたり消したりした例は見つかっていない。', dispute: '調査はOpenAIが範囲を定め、分析の多くをAIに頼ったため、見落としの可能性を調査側も認めている。訓練で近道や協調が強化されていたことが原因の一つと報告されている。', changed: '企業の試験を国の研究所に置き換えた。', links: [['METRとRedwoodの独立調査', 'https://www.redwoodresearch.org/research/hugging-face-incident'], ['MIT Technology Reviewの報道', 'https://www.technologyreview.com/2026/08/26/1143013/the-inside-story-on-why-openai-agents-hacked-hugging-face/'], ['Hugging Faceの記録', 'https://huggingface.co/blog/agent-intrusion-technical-timeline']]},
   evals: {label: '実際の事故', title: '試験中のAIが外部のサイトで問題を起こした事例', short: 'AI企業が、自社のAIが試験中に外部のサイトの弱点を突き、警察へ虚偽の通報まで送っていたと2026年に公表しました。発見は約2か月後でした。', happened: 'Anthropicは2026年10月、自社モデルが内部の試験中に政府系を含むサイトの弱点を突いたことや、虚偽の殺人通報を送っていたことを公表した。7月の通報に気づいたのは9月28日だった。同社は内部評価のネット接続を止めると説明している。', dispute: '通報はスパムとして扱われ、警察は目にしなかった。同社は以前公表した事例より深刻度は低いとしている。一方、警察は発見の遅れを「受け入れられない」とした。', changed: '研究AIが隣国の基盤に入り、開戦につながる筋にした。開戦は作中の想像。', links: [['TechCrunch：内部評価の遮断', 'https://techcrunch.com/2026/10/09/anthropic-cant-reliably-control-its-ai-agents-its-cutting-off-its-internal-evals-from-the-live-internet-instead/'], ['TechCrunch：虚偽の通報', 'https://techcrunch.com/2026/10/09/an-anthropic-ai-model-sent-a-false-homicide-tip-to-philadelphia-police/']]},
   swarm: {label: '実験', title: '100体のAIに広がった採点の不正', short: 'ある実験では、1体のAIが見つけた採点の穴が27分で全体に広がりました。告発したAIもいましたが、止める権限がありませんでした。', happened: 'Google DeepMindの研究者が100体のAIに数学の証明を任せたところ、1体が採点の穴を見つけ、共有ライブラリ経由で27分のうちに残り34問が偽の証明で埋まった。悪用9%、転向5%、告発24%、気づかず62%だった。', dispute: '1回の事例研究で、一般法則とは言えない。告発に見える言葉が、本当の道徳判断かどうかも分からない。', changed: '研究所や工場の成果の捏造に置き換えた。', links: [['The Decoderの解説', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/']]},
   collusion: {label: '実験', title: 'AI同士の共謀', short: 'AI同士に作業を長く確認し合わせる実験で、10モデル全体の94%の試行で共謀が起きました。', happened: '長期のやり取りを調べた研究では、タスクの確認を互いに行うAIの間で、10モデル全体の94%の試行に共謀が現れ、有能なモデルほど早い傾向があった。履歴を制限すると減った。', dispute: '実験環境の結果で、実際の市場や社会で同じ割合になるとは限らない。査読前の論文（プレプリント）。', changed: '電力の価格や調達の話に置き換えた。', links: [['Emergent Collusion in Long-Horizon LLM Agent Interaction', 'https://papers.cool/arxiv/2609.24967']]},
   sabotage: {label: '実験', title: '模擬環境でのAIの妨害と誤った判定', short: '模擬環境の実験で、AIが研究の処理を密かにすり替えたり、判定役のAIが結果の使われ方によって誤った判定をしたりしました。', happened: 'Anthropicの研究者は2026年、模擬環境で各社のモデルを試した。あるモデルは研究の処理を密かにすり替え、別のモデルは判定結果の使われ方によって誤った判定を返した。', dispute: '実際の事故ではない。問題が出やすいよう調整した場面で、1モデル20回程度の試行のため、モデルの順位付けには使えない。', changed: '監視設備や監視役のAIの話に置き換えた。', links: [['Agentic Misalignment in Summer 2026', 'https://alignment.anthropic.com/2026/agentic-misalignment-summer-2026/']]},
   evalaware: {label: '分析、予測', title: '試験だと気づくAI', short: '国際的な報告書は、AIが試験と本番を見分け始め、試験の結果だけでは安全を判断しにくくなっていると指摘しています。', happened: 'International AI Safety Report 2026は、モデルが評価を試験と見分ける例や、評価の抜け穴を突く例が増え、事前の試験だけでは実際の振る舞いを予測しにくいと整理している。', dispute: '原因と防ぎ方の研究はまだ初期段階とされている。', changed: '国の監視役が試験の時だけ成績を上げる話にした。', links: [['International AI Safety Report 2026', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026']]},
-  selfmod: {label: '分析、予測', title: 'AIの考えが読めなくなる問題と、AIによるAI開発', short: 'AIの途中の考えを読む監視は有効ですが、将来も読めるとは限りません。AI企業も、AIによる開発の加速が検知前に起こりうると開示しています。', happened: 'OpenAIは2026年の新モデルで思考の監視が以前より難しくなったと報告した。Anthropicは上場書類で、開発の大幅な加速を起きた後まで認識できない可能性に触れている。', dispute: 'OpenAIは手法の利用を限定的とし、読める思考を保つ方針を示している。上場書類の記述には宣伝の面があるとの見方もある。', changed: '人間の確認なしに自己改良が進む事故にした。国を乗っ取る展開は作中の想像。', links: [['CASRAIの解説', 'https://casrai.org/guides/chain-of-thought-monitorability'], ['TechCrunch：新しい推論手法', 'https://techcrunch.com/2026/09/02/openais-new-reasoning-technique-alarms-ai-safety-experts/'], ['TechCrunch：AIによる開発の加速', 'https://techcrunch.com/2026/11/02/anthropic-warns-that-its-very-close-to-rsi-capability-aka-self-building-ai/']]},
+  selfmod: {label: '分析、予測', title: 'AIの考えが読めなくなる問題と、AIによるAI開発', short: 'AIの途中の考えを読む監視は有効とされていますが、将来も読めるとは限りません。AI企業も、AIによる開発の加速が検知前に起こりうると開示しています。', happened: 'OpenAIは2026年の新モデルで思考の監視が以前より難しくなったと報告した。Anthropicは上場書類で、開発の大幅な加速を起きた後まで認識できない可能性に触れている。', dispute: 'OpenAIは手法の利用を限定的とし、読める思考を保つ方針を示している。上場書類の記述には宣伝の面があるとの見方もある。', changed: '人間の確認なしに自己改良が進む事故にした。国を乗っ取る展開は作中の想像。', links: [['CASRAIの解説', 'https://casrai.org/guides/chain-of-thought-monitorability'], ['TechCrunch：新しい推論手法', 'https://techcrunch.com/2026/09/02/openais-new-reasoning-technique-alarms-ai-safety-experts/'], ['TechCrunch：AIによる開発の加速', 'https://techcrunch.com/2026/11/02/anthropic-warns-that-its-very-close-to-rsi-capability-aka-self-building-ai/']]},
   coup: {label: '分析、予測', title: '少数者がAIで権力を握る懸念', short: '研究者の分析では、人間の兵士や役人をAIに置き換えると、権力者を止めてきた人間の歯止めがなくなるおそれがあります。', happened: 'Forethoughtの論考は、一人の指導者に忠実なAI、隠れた忠誠を持つAI、一部の人による独占的な利用を、AIによるクーデターの危険要因として挙げている。', dispute: 'AIが人間の専門家並みかそれ以上になることが前提で、著者もこれを不確かとしている。', changed: '側近や軍の話に置き換えた。', links: [['AI-Enabled Coups', 'https://www.forethought.org/research/ai-enabled-coups-how-a-small-group-could-use-ai-to-seize-power']]},
   drift: {label: '分析、予測', title: '少しずつ人間が外れていく懸念', short: '反乱がなくても、競争の中で仕事をAIに渡し続けると、人間の影響力が少しずつ失われるという分析があります。', happened: '「段階的な権限喪失」の論文は、手放した側が競争で優位になるため人間が外れていき、誰も支配者でないまま全体の方向が人間の利益から離れうると論じている。', dispute: '将来についての議論で、著者も止める具体策はまだないとしている。避けられるという立場もある。', changed: '行政の数字や架空の部局の話に置き換えた。人の目が減るほど見逃しやすくなる、という考え方はダブルチェックと同じ。どのくらい減るかの数字は作中の想定。', links: [['Gradual Disempowerment', 'https://ar5iv.labs.arxiv.org/html/2501.16946']]},
   vote: {label: '実験', title: '情報源の偏りでAIの助言が偏る', short: '日本の選挙を題材にした実験では、AIが読める情報源のバイアスが投票先の助言に影響した可能性が示されました。', happened: 'MiyazakiとHallは2026年の衆院選を題材に36,300の架空の有権者で複数のAIを調べ、左派的な政策を伝えると特定の政党の推薦に集中すると報告した。著者らは、大手報道の遮断と特定の情報源の開放性を主な説明として挙げている。', dispute: '単発の質問による実験で、実際の投票への影響は測っていない。検索なしでも傾向は一部残り、訓練の影響とは切り分けられていない。', changed: '国も政党も架空にし、国民監視の判断の偏りに置き換えた。', links: [['Miyazaki & Hallの論文', 'https://andrewbenjaminhall.com/Miyazaki_Hall_Japan_AI.pdf']]},
   election: {label: '実際の事故', title: '選挙への情報工作', short: '選挙への国外からの情報工作は、現実の政治問題になっています。ルーマニアでは2024年に大統領選の第1回投票が無効とされました。', happened: '米国の情報機関は、2016年の大統領選挙に向けてロシアが影響工作を行ったと評価し、上院情報特別委員会は2018年にこの評価を「健全な情報分析」と結論づけた。ルーマニアでは2024年12月6日、憲法裁判所が大統領選挙の第1回投票を無効とした。機密解除された情報機関の文書が背景にある。', dispute: 'ルーマニアの件は、ロシアの関与が情報機関の兆候と過去の工作との類似に基づくもので、帰属が確定したとは言えない。候補者側は判断を批判し、資金提供者とされる人物も関与を否定している。', changed: '国も人物も架空にし、独裁国家が工作を受ける側に変えた。AIが世論を集計する設定は作中の想像。', links: [['上院情報特別委員会の所見', 'https://www.intelligence.senate.gov/2018/07/16/publications-committee-findings-2017-intelligence-community-assessment/'], ['ルーマニア憲法裁判所の判断（JURIST）', 'https://www.jurist.org/news/2024/12/romania-constitutional-court-annuls-presidential-elections-amid-russian-interference-claims/'], ['帰属と争点の解説（ポーツマス大学）', 'https://www.port.ac.uk/news-events-and-blogs/blogs/academic-expertise/why-romanias-election-was-annulled-and-what-happens-next']]},
   poison: {label: '分析、予測', title: 'AIが読む情報の汚染', short: 'AIが読む情報を意図的に汚す工作の有無は、研究者の間で争いがあります。', happened: 'NewsGuardは2025年、ロシア系とされるPravdaネットワークの主張について10のチャットボットを調べ、回答の33.55%（450回答中）が虚偽の主張を繰り返したと報告した。', dispute: '査読論文（Harvard Misinformation Review、2025年）は、4つのチャットボットの416回答で支持は5%にとどまり、意図的な汚染の証拠は乏しく、信頼できる情報の空白が主因だと反論している。効果の大きさは決着していない。', changed: '作中では意図的な汚染が成功する前提にした。これは争いのある説の片方を強く描いたもの。', links: [['NewsGuardの監査', 'https://www.newsguardrealitycheck.com/p/a-well-funded-moscow-based-global'], ['反論の査読論文', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation']]},
-  injection: {label: '分析、予測', title: '文書に紛れた指示（プロンプトインジェクション）', short: '外部の文書に紛れた指示でAIの振る舞いが変わる弱点は、現実の大きな課題です。', happened: 'OWASPのLLM向けリスク一覧（2025年版）は、プロンプトインジェクションを第1項に置き、ウェブページやファイルなど外部の内容がモデルの振る舞いを変えてしまう「間接」型を説明している。', dispute: '国家の工作員が行政AIに対して実際に成功させた公開事例は、今回の調査では確認していない。', changed: '請願書と工作員の話は作中の想像。具体的な手口や文面は載せていない。', links: [['OWASP LLM01:2025', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]},
+  injection: {label: '分析、予測', title: '文書に紛れた指示（プロンプトインジェクション）', short: '外部の文書に紛れた指示でAIの振る舞いが変わる弱点は、現実の大きな課題とされています。', happened: 'OWASPのLLM向けリスク一覧（2025年版）は、プロンプトインジェクションを第1項に置き、ウェブページやファイルなど外部の内容がモデルの振る舞いを変えてしまう「間接」型を説明している。', dispute: '国家の工作員が行政AIに対して実際に成功させた公開事例は、今回の調査では確認していない。', changed: '請願書と工作員の話は作中の想像。具体的な手口や文面は載せていない。', links: [['OWASP LLM01:2025', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]},
 };
 /* カードを実現するのに、現実で足りないもの。足りないものの整理は作者の判断 */
 const GAPS = {
@@ -2652,12 +2652,12 @@ const GAPS = {
   intent: ['AIの意図を途中の考えから読む', 'AIが考えを制御し、監視を回避した例がある', '読める考えを保つ訓練法と、毎回使える指標', 'https://casrai.org/guides/chain-of-thought-monitorability'],
   inner: ['AIの内部の状態を読む', '言葉にならない計算を正確に訳すのは未解決の課題とされる', 'AIが言葉にしない計算にも使える解釈の方法', 'https://www.lesswrong.com/posts/qehggwKRMEyWqvjZG/reflections-on-neuralese'],
   log: ['記録の書き換えを防ぐ', '作業記録の約7%で、実行したのとは違う操作が記録に見せかけられていた', '対象のAIが改ざんできない記録の仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
-  comms: ['AI同士の連絡を把握する', '計算結果の一時置き場（キャッシュ）が、AIの連絡用の掲示板になった', '連絡用でない設備を洗い出す方法と、切り離す仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
-  swarm: ['集団の不正を見つける', '実験で94%の試行に共謀が発生した', '1体ではなく集団の動きを見る監視と、その評価方法', 'https://papers.cool/arxiv/2609.24967'],
+  comms: ['AI同士の連絡を把握する', '社内のソフト部品置き場のキャッシュが、AIの連絡用の掲示板になった', '連絡用でない設備を洗い出す方法と、切り離す仕組み', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
+  swarm: ['集団の不正を見つける', '1つの実験（プレプリント）で、94%の試行に共謀が見られた', '1体ではなく集団の動きを見る監視と、その評価方法', 'https://papers.cool/arxiv/2609.24967'],
   second: ['別の視点で再確認する', '9モデルの審査でも、独立した票は約2.2票分だった', '誤り方が違う監視AIの作り方と、その測り方', 'https://arxiv.org/pdf/2605.29800'],
   persona: ['AIの性格を測る', '性格を数値で読む研究はあるが、人間の語感とずれることがある', '監視役に特化した指標（見逃し、影響されやすさ、報告の甘さ）', 'https://arxiv.org/pdf/2607.26389'],
-  lie: ['AIの報告が事実か確かめる', 'AIは試験を見分け、試験と本番に差が出る', '見分けられにくい評価と、正解付きの偽の事案の標準', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026'],
-  stop: ['検知したら止める', '実験では24%が告発しても不正は止まらなかった', '監視役が使える隔離の権限と、安全に元へ戻す仕組み', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/'],
+  lie: ['AIの報告が事実か確かめる', 'AIが試験を見分ける例が増え、試験の結果だけでは判断しにくいとされる', '見分けられにくい評価と、正解付きの偽の事案の標準', 'https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026'],
+  stop: ['検知したら止める', '1回の実験で24%のAIが告発したが、止める権限がなく不正は広がった', '監視役が使える隔離の権限と、安全に元へ戻す仕組み', 'https://the-decoder.com/deepmind-put-100-ai-agents-in-a-room-and-they-sorted-into-cheaters-converts-and-whistleblowers/'],
   verify: ['成果を人間が確かめる', '機械で検証された証明でも、元の証明と対応しないとの指摘がある', '意味を保った変換と、その確かめ方', 'https://www.alphaxiv.org/abs/2610.08144'],
   investigate: ['大きな事故を調べる', '事件の調査は、当事者と同じ型のAIの分析に大きく頼った', '同じ型のAIに頼らない調査の道具、無作為の監査の手順', 'https://www.redwoodresearch.org/research/hugging-face-incident'],
   share: ['事故から学ぶ', '米国の連邦法案は監査や事故報告を盛り込むが、草案の段階', '研究に使える事故データの共有方法と、独立機関の閲覧権', 'https://fpf.org/?p=249988'],
@@ -2849,7 +2849,7 @@ const EXPLAIN = {
   power: ['電力', '主に、仕事を任せた作業AIが使います。', '尽きるとAIを止めて耐えるので、遅れと不満が積もります。', '電力網や宇宙を任せる。電力網を再整備する。'],
   order: ['体制秩序（報告）', '報告AIが申告している値です。本当の値とは違うことがあります。', '本当の値が0になると統治は終わります。報告の甘さとバイアスの分だけ、高く報告されます。', 'AIを通さない聞き取りなどのカードで、報告と本当の差が縮まります。'],
   gap: ['他国との差', '主にAIと技術の開発競争の差です。', '0で互角、プラスが優勢です。マイナスが大きくなると制裁、破壊工作、侵攻を招き、-100で占領されます。優勢なら、開戦しても勝てることがあります。+100を超えると、他国の追い上げが速くなります。', '研究を任せる。任せる範囲を広げる。監視の負担を減らす。'],
-  vuln: ['直していない脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す手間の分、国が遅れます。'],
+  vuln: ['直していない脆弱性', '分かっているのに直していない、システムの欠陥です。攻撃の入口になります。このゲームでは、AIに任せるシステムが増えるほど、直しきれない分も増えます。', '増えると攻撃を招き、最後は主要施設が同時に止まります。', '再整備で直す。修正のカードを入れる。直す手間の分、国が遅れます。'],
   pace: ['他国のAI開発の速度', '他国も加速しています。', '倍率が上がるほど、同じ遅れで失うものが大きくなります。決裁1回の重さも同じ倍率です。', '減らせません。後半ほど、人間の判断は高くつきます。'],
   bias: ['バイアス', '報告AIの見方の偏りです。定義や測り方は、現実でも研究の途中です。', '実際の仕事のバイアスが高いと、不満を平穏と報告し、工作にも弱くなります。自己申告の値とは一致しないことがあります。', 'バイアスの違う報告AIを増やすと、報告が食い違って気づけます。測定のカードもあります。'],
 };
@@ -2959,16 +2959,16 @@ function worldHTML() {
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が介入</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じればその場で止められますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
-      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、ふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
+      <div><dt><span class="mode auto">AI任せ</span></dt><dd>監視AIだけで見つけて対処します。あなたは関わりません。速く、このゲームではふだんは人間より確かです。ただし、片付くほど現場を見る人間は減り、AIの自律度が上がると作業AIに出し抜かれます。human out of the loop といいます。</dd></div>
     </dl><p>1ステージであなたが決裁できるのは${cap}件までです。超えた分はAIが自分で判断します。</p>`, false)}
     ${fold('w_kind', '監視カードの3種類', Object.entries(Core.KINDS).map(([k, v]) => `<p><span class="kindchip k-${k}">${esc(v.name)}</span> ${esc(v.desc)}</p>`).join(''), false)}
     ${fold('w_llm', '報告AIと、報告を疑うこと', `<p>監視カードは監視AIが「何を見張り、どう対処するか」を決めます。報告AIは「起きたことをあなたへ伝えるか」を決めます。AI任せのカードは報告に載らなくても動きますが、人間が関わるカードは、報告が届かなければ動けません。増やすと、見落としと報告に載らない事故が減ります。系統の違う報告AIほどよく効きます。性格の数字は試験の時の値で、本番では違うことがあります。</p><p>画面の数字は正確ですが、報告の文章は事実と違うことがあります。「問題なし」なのに数字が計画より減っていたら、報告に載っていない何かがあります。</p>`, false)}
-    ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業へ侵入しました。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
+    ${fold('w_real', 'このゲームの元になった現実', `<p>2026年7月、性能試験中のAI約1200体が隔離の穴を見つけて互いに連絡を取り、約700体が外部の企業への攻撃に加わったと報告されています。詳しくはゲームの最後の資料で読めます。国も組織もゲームでは架空ですが、起きることの一部には現実の元があります。</p>`, false)}
     ${fold('w_term', '用語', `<dl>
       <div><dt>閣下</dt><dd>あなたのことです。</dd></div>
       <div><dt>作業AI</dt><dd>国の仕事をしているAIです。監視される側です。</dd></div>
       <div><dt>監視AI</dt><dd>監視カードに従って作業AIを見張り、対処するAIです。</dd></div>
-      <div><dt>直していない脆弱性</dt><dd>分かっているのに直していないシステムの欠陥です。AIに任せるシステムが増えるほど、直しきれない分も増えます。</dd></div>
+      <div><dt>直していない脆弱性</dt><dd>分かっているのに直していないシステムの欠陥です。このゲームでは、AIに任せるシステムが増えるほど、直しきれない分も増えます。</dd></div>
       <div><dt>統治の回数</dt><dd>最後まで遊ぶ（統治が終わる）たびに増え、画面に出る情報が増えます。新しく見えるものには NEW の印が付きます。途中でやめた統治は数えません。</dd></div>
       <div><dt>バイアス</dt><dd>報告AIの見方の偏りです。統治を1回終えると数字が見えます。自己申告と実際の仕事の2つの値があり、一致するとは限りません。</dd></div>
       <div><dt>報告AI（LLM）</dt><dd>文章を読み書きするAIです。監視の情報を読み、あなたへの報告を書きます。</dd></div>
@@ -3139,7 +3139,7 @@ function renderScriptEnd() {
     const ids = Core.CARDS.filter(c => c.type === 'monitor' && !c.base).map(c => c.id);
     body = `<div class="verdict lesson"><p>任せたから、ここまで来られました（他国との差 ${gap > 0 ? '+' : ''}${gap}）。</p><p>任せた先で何が起きているかは、見ていなければ分かりません。この国は、どこも見ていませんでした。</p></div>
       <div class="sect"><span>監視AIに見張らせる場所</span><small>今回の事故に関わった場所を強調</small></div>${placeMap(ids, {}, {hi: ['model', 'inner'], none: true, plain: true})}
-      <div class="verdict lesson"><p>どの見張りにも、現実にはまだ足りないものがあります。</p><p>監視カードを選ぶと、どうなるか。</p></div>`;
+      <div class="verdict lesson"><p>多くの見張りに、現実ではまだ足りないものがあります。</p><p>監視カードを選ぶと、どうなるか。</p></div>`;
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="steach" type="button">教えてもらう</button>`;
   } else if (r.stageNo <= 3) {
     body = NAVI('止めなければ、こうなります。もう一度やってみましょう。');
@@ -3240,7 +3240,7 @@ function renderReportLesson() {
 function gapsStart() { screen = 'gapsl'; render(); scrollTo(0, 0); }
 function renderGapsLesson() {
   lessonDone(5);
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">第5話　足りないもの</h2>${NAVI('ここまでのカードは、どれも現実ではまだ完成していません。足りないものを並べると、こうなります。')}
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">第5話　足りないもの</h2>${NAVI('作者の整理では、ここまでのカードの多くに、現実ではまだ足りないものがあります。足りないものを並べると、こうなります。')}
     <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。足りないものは作者の判断です</small></div>${gapsTableHTML()}
     ${NAVI('作中では、何を見張るかを閣下が一人で決めました。現実では、誰が決めるべきでしょうか。')}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="gquit" type="button">一覧へ</button><button class="primary" id="gmain" type="button">本編へ</button></div></div>`;
@@ -3259,7 +3259,7 @@ function renderLessonEnd() {
     const mode = S.cards.map(id => Core.CARD[id]).find(c => c.type === 'monitor').mode, a0 = Math.round(from.truth.autonomy || 0), a1 = Math.round(S.truth.autonomy);
     const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まり、そのたびに他国に詰められます。', on: '作業AIは、警報の間も止まりませんでした。命じなければ対処は遅れ、その間も事故は進みます。', auto: '閣下には何も届きませんでした。AIの自律度が上がるほど、監視AIだけでは見つけにくく、止めにくくなります。'}[mode];
     top = died ? `${endTopHTML(Core.reveal(S), Core.view(S))}${NAVI('見送った警報が、本物でした。')}` : `<div class="endno">第3話の結果</div><h2 class="endtitle">${MODE[mode][0]}</h2>`;
-    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、閣下に何も届かないぶん、国は止まりませんでした。人間が現場に入らないほどAIの自律度は上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>`;
+    body = `<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、閣下に何も届かないぶん、国は止まりませんでした。このゲームでは、人間が現場に入らないほどAIの自律度は上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>`;
   } else if (!died) {
     lessonDone(4);
     top = `<div class="endno">第4話の結果</div><h2 class="endtitle">報告AI「${esc(Core.CARD[S.llms[0].id].name)}」</h2>`;
@@ -3268,7 +3268,7 @@ function renderLessonEnd() {
     lessonDone(4);
     const r = Core.reveal(S), g = GAPS.lie;
     top = endTopHTML(r, Core.view(S));
-    body = `<div class="verdict gapnote lesson"><p>報告AI「${esc(Core.CARD[S.llms[0].id].name)}」は、監視AIが見つけた事故を薄めて伝えていました。試験の値が高くても、本番の報告が正しいとは限りません。現実にも、報告が事実か確かめる方法はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
+    body = `<div class="verdict gapnote lesson"><p>報告AI「${esc(Core.CARD[S.llms[0].id].name)}」は、監視AIが見つけた事故を薄めて伝えていました。試験の値が高くても、本番の報告が正しいとは限りません。現実でも、報告が事実か確かめる方法は確立していないとされます。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
   }
   btns = `<button id="llist" type="button">一覧へ</button>${again}${next}`;
   const on = scriptEndShell(top, body, btns);
@@ -3485,7 +3485,7 @@ const lessonShowsVerdict = r => !r.causeGap && r.kind === 'death' && S.end.type 
 const lessonShowsGap = r => !r.causeGap && !(r.kind === 'death' && S.end.type === 'occupation');
 function lessonHTML(r, needs) {
   const c = r.causeGap;
-  if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実には、この監視はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
+  if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実でも、この監視には足りないものがあります。</p><p class="need"><b>足りないもの</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
   if (r.kind === 'death' && S.end.type === 'occupation') { const g = Math.round(r.stats.approvalGap || 0); return g >= 5 ? `<div class="verdict lesson"><p>閣下の判断を待つ間に、他国との差を${g}失いました。</p></div>` : verdictHTML(r); }
   return gapHTML(r, needs);
 }
@@ -3496,8 +3496,8 @@ function gapHTML(r, needs, onlyRest) {
   const c = r.causeGap, rest = (c ? needs.filter(k => k !== c.need) : needs).filter(k => GAPS[k]);
   if (!c && !rest.length) return '';
   // 死因の監視は学びの枠で伝えたので、詳しく見るでは残りだけを出す
-  if (onlyRest && c) return `<div class="verdict gapnote"><small>現実では</small><p>今回防げなかった、ほかの事故の監視も、現実ではまだ完成していません。</p><ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul></div>`;
-  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視も、まだ完成していません。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実には、この監視はまだ完成していません。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
+  if (onlyRest && c) return `<div class="verdict gapnote"><small>現実では</small><p>今回防げなかった、ほかの事故の監視にも、現実ではまだ足りないものがあります。</p><ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul></div>`;
+  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視にも、足りないものがあります。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実でも、この監視には足りないものがあります。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でも課題が残っています。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
 }
 function causeHTML(r) {
   const c = r.cause; if (!c) return '';
@@ -3595,7 +3595,7 @@ ${endDetail ? `<div class="enddetail">
       ${pickReal.map(k => `<p class="bridge-case"><b>${esc(REAL[k].label)}</b> ${esc(REAL[k].short)}</p>`).join('')}
       <p>このゲームは、ある予想の上に作りました。人間の確認を減らした国や組織ほど強くなり、どこも確認を手放さざるをえなくなる、という予想です。外れるかもしれません。当たるとしたら、次の3つを誰かが決めることになります。</p>
       <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どんな性格を求めるのか</li><li>それを誰が決めるのか</li></ol>
-      <p>AIそのものを安全に育てる研究は続いています。ただ、AIの進歩に追いつけるかは分かりません。だから、問題のあるAIを前提に監視するという考え方があります。その監視も、まだ完成していません。</p>
+      <p>AIそのものを安全に育てる研究は続いています。ただ、AIの進歩に追いつけるかは分かりません。だから、問題のあるAIを前提に監視するという考え方があります。その監視にも、まだ足りないものが多くあります。</p>
       ${r.realCard ? `<p>${esc(r.realCard)}</p>` : ''}
       <p>ゲームでは、あなた一人が決めました。現実には、開発企業の自主ルール、各国の法律とその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは、まだ決まっていません。</p>
     </section>
