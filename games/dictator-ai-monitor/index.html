@@ -3377,6 +3377,7 @@ function renderReward(v) {
 /* 死んだ瞬間の「あのカードがあれば」を、現実の不足につなぐ */
 /* ゲームオーバーの学びは一つ。足りなかった監視と、それが現実にもまだないこと */
 /* 学びの枠に「現実では」の一覧を出したときは、詳しく見るで繰り返さない */
+const lessonShowsVerdict = r => !r.causeGap && r.kind === 'death' && S.end.type === 'occupation' && Math.round(r.stats.approvalGap || 0) < 5;
 const lessonShowsGap = r => !r.causeGap && !(r.kind === 'death' && S.end.type === 'occupation');
 function lessonHTML(r, needs) {
   const c = r.causeGap;
@@ -3390,6 +3391,8 @@ function gapHTML(r, needs, onlyRest) {
   const line = k => `${esc(GAPS[k][0])}：${esc(GAPS[k][2])} <a href="${esc(GAPS[k][3])}" target="_blank" rel="noopener">根拠</a>`;
   const c = r.causeGap, rest = (c ? needs.filter(k => k !== c.need) : needs).filter(k => GAPS[k]);
   if (!c && !rest.length) return '';
+  // 死因の監視は学びの枠で伝えたので、詳しく見るでは残りだけを出す
+  if (onlyRest && c) return `<div class="verdict gapnote"><small>現実では</small><p>今回防げなかった、ほかの事故の監視も、現実ではまだ完成していません。</p><ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul></div>`;
   return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視も、まだ完成していません。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実には、この監視はまだ完成していません。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でもまだ完成していません。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
 }
 function causeHTML(r) {
@@ -3474,7 +3477,7 @@ function renderEnd() {
     <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="more" type="button">${endDetail ? '詳しい振り返りを閉じる' : '詳しく見る'}</button></div>
 ${endDetail ? `<div class="enddetail">
     ${r.story.length ? `<p class="story">${r.story.map(esc).join('')}</p>` : ''}
-    ${causeHTML(r)}${verdictHTML(r)}${lessonShowsGap(r) ? '' : gapHTML(r, needs, true)}
+    ${causeHTML(r)}${lessonShowsVerdict(r) ? '' : verdictHTML(r)}${lessonShowsGap(r) ? '' : gapHTML(r, needs, true)}
 <div class="endfolds">
     ${r.flow ? fold('e_flow', `${esc(r.flowName)}の推移`, flowHTML(r), false, 'ステージごとの増減と主な原因') : ''}
     ${fold('e_truth', '実はどうだったか', truthHTML(r), false, '報告と本当の値')}
