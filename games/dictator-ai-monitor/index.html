@@ -3673,7 +3673,7 @@ function placeMap(ids, m, opt) {
   const o = opt || {};
   const node = k => {
     const list = PLACES[k][2].split(' ').filter(i => ids.includes(i)), seen = list.filter(i => m[i] && m[i].seen).length, hi = (o.hi || []).includes(k);
-    const inner = `<b>${PLACES[k][0]}</b><small>${o.none ? '見張りなし' : `${seen}/${list.length}枚`}</small>${hi && !o.plain ? `<small class="phi">${esc(PLACES[k][1])}</small>` : ''}`;
+    const inner = `<b>${PLACES[k][0]}</b><small>${o.none ? (k === 'auth' || k === 'phys' ? '備えなし' : '見張りなし') : `${seen}/${list.length}枚`}</small>${hi && !o.plain ? `<small class="phi">${esc(PLACES[k][1])}</small>` : ''}`;
     return o.plain ? `<div class="pnode p-${k}${hi ? ' hi' : ''}">${inner}</div>` : `<button type="button" class="pnode p-${k}${hi ? ' hi' : ''}" data-place="${k}">${inner}</button>`;
   };
   return `<div class="pmap" role="group" aria-label="監視している場所の図">
