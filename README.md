@@ -36,7 +36,7 @@ samples/                      サンプルゲームの一覧（中の人が作�
   qr/                         QRコード画像（_page.png は一覧ページ、<id>.png は各ゲーム）
 games/<id>/index.html         サンプルゲーム本体（1ファイル完結）。URLを変えないため場所はそのまま
 
-events/<yyyy-mm-会場>/         イベントで作られたゲームの一覧（samples/ と同じ作り）
+events/<番号>/         イベントで作られたゲームの一覧（samples/ と同じ作り）
   games/<id>/index.html       イベントのゲーム本体
 ```
 
@@ -71,7 +71,7 @@ events/<yyyy-mm-会場>/         イベントで作られたゲームの一覧�
 
 ## イベントページの追加
 
-1. `events/<yyyy-mm-会場>/games.json` を作る（`title` `kind: "event"` `date` `place` `lead` `games: []`）
+1. `events/<番号>/games.json` を作る（`title` `kind: "event"` `date` `place` `lead` `games: []`。講座の案内を載せるときは `about` に見出し `h`・段落 `p`・箇条書き `ul` の配列を書く。`**太字**` と `[文字](URL)` が使える）
 2. `collections.json` に1件追加する。公開前は `"hidden": true` にしておく
 3. `python3 tools/build.py` を実行する
 

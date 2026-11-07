@@ -18,6 +18,18 @@
     $('evmeta').innerHTML = [info.date && '📅 ' + esc(info.date), info.place && '📍 ' + esc(info.place)].filter(Boolean).map(s => '<span>' + s + '</span>').join('');
   }
 
+  // about: [{h, p:[...], ul:[...]}]。**太字** と [文字](URL) だけ使える
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+  function renderAbout() {
+    const a = info.about;
+    if (!Array.isArray(a) || !a.length || !$('about')) return;
+    $('about').innerHTML = a.map(s => `<div class="sect"><h2>${esc(s.h)}</h2>` +
+      (s.p || []).map(t => '<p>' + inline(t) + '</p>').join('') +
+      (s.ul && s.ul.length ? '<ul>' + s.ul.map(t => '<li>' + inline(t) + '</li>').join('') + '</ul>' : '') + '</div>').join('');
+    $('about').hidden = false;
+    $('gamesh').hidden = false;
+  }
+
   function card(g) {
     const p = href(g.path);
     return `
@@ -48,7 +60,7 @@
       (!q || [g.title, g.description, g.author, ...(g.tags || [])].join(' ').toLowerCase().includes(q)));
     $('count').textContent = list.length + ' / ' + games.length + ' 本';
     $('grid').innerHTML = !games.length
-      ? '<div class="msg">ゲームはまだありません。<br>イベントのあとに掲載します。</div>'
+      ? '<div class="msg">ゲームはまだありません。<br>講座のあとに掲載します。</div>'
       : list.length ? list.map(card).join('') : '<div class="msg">該当するゲームがありません</div>';
   }
   function renderTags() {
@@ -77,6 +89,8 @@
       if (mode === 'print') { renderPrint(); return; }
       $('tags').addEventListener('click', e => { const b = e.target.closest('.tag'); if (!b) return; activeTag = b.dataset.t; renderTags(); renderList(); });
       $('q').addEventListener('input', renderList);
+      renderAbout();
+      if (!games.length) { $('bar').hidden = true; $('count').hidden = true; }
       renderTags(); renderList();
     })
     .catch(() => {

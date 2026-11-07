@@ -32,7 +32,7 @@
             <h2>${esc(c.title)}</h2>
             ${c.date || c.place ? `<div class="evmeta">${c.date ? '<span>📅 ' + esc(c.date) + '</span>' : ''}${c.place ? '<span>📍 ' + esc(c.place) + '</span>' : ''}</div>` : ''}
             <p>${esc(c.lead)}</p>
-            <span class="play" style="align-self:flex-start;margin-top:auto">一覧を見る ▶</span>
+            <span class="play" style="align-self:flex-start;margin-top:auto">${c.kind === 'event' ? 'くわしく見る' : '一覧を見る'} ▶</span>
           </div>
         </a>`).join('');
     })

@@ -38,7 +38,9 @@ LIST = '''<!doctype html>
     </div>
     <p class="note">⬇ ダウンロードしたファイルは、インターネットにつながっていなくても遊べます（パソコン・Android）。iPhone・iPad では開けないことがあります。記録はWeb版とは別に保存されます。</p>
   </header>
-  <div class="bar">
+  <section class="about" id="about" hidden></section>
+  <h2 class="sec" id="gamesh" hidden>作られたゲーム</h2>
+  <div class="bar" id="bar">
     <input class="search" id="q" type="search" placeholder="ゲームを検索" aria-label="ゲームを検索">
     <div class="tags" id="tags"></div>
   </div>

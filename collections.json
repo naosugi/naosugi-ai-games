@@ -7,12 +7,10 @@
     "thumbnail": "games/robot-defense/thumb.jpg"
   },
   {
-    "path": "events/2027-01-ogawa/",
-    "title": "親子ゲーム開発講座（名称未定）",
+    "path": "events/01/",
+    "title": "親子でAIゲームづくり講座 第1弾（仮）",
     "kind": "event",
-    "date": "2027年1月（日程未定）",
-    "place": "小川パレット",
-    "lead": "講座で親子が作ったゲームを掲載します。",
-    "hidden": true
+    "date": "2027年1月予定",
+    "lead": "親子でゲームを考え、AIに作ってもらい、遊べる形にして発表する全3回の講座です。内容は検討中のため、変わることがあります。"
   }
 ]

@@ -46,3 +46,12 @@ h1{margin:0;font-size:clamp(26px,6vw,42px);letter-spacing:.03em;line-height:1.2}
 .coll .body p{font-size:14px}
 .coll .kind{font-size:11px;font-weight:900;letter-spacing:.06em;color:var(--cyan)}
 footer{margin-top:40px;color:#6f86a8;font-size:12px;line-height:1.7}
+.about{display:grid;gap:14px;margin:4px 0 28px}
+.about .sect{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.about h2{margin:0 0 8px;font-size:17px;color:var(--cyan)}
+.about p,.about li{margin:0;font-size:14px;line-height:1.8;color:#d7e6fa}
+.about p+p{margin-top:6px}
+.about ul{margin:8px 0 0;padding-left:1.3em;display:grid;gap:4px}
+.about b{color:var(--gold)}
+.sec{font-size:20px;margin:0 0 8px}
+[hidden]{display:none!important}
