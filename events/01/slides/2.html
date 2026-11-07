@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>第2回　AIに頼むコツ</title>
+<!-- このファイルは tools/build_slides.py が書き出します。直接編集せず slides/src/ を直してください -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b1220;overflow:hidden;font-family:'Zen Kaku Gothic New',system-ui,-apple-system,"Hiragino Sans",sans-serif}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#stage>section{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:none!important}
+#stage>section.on{display:flex!important}
+section ul{padding-left:1.3em}
+section li{margin:.15em 0}
+section table{border-collapse:collapse;width:100%;border-radius:16px;overflow:hidden}
+section th,section td{text-align:left;vertical-align:top;padding:18px 28px;border-bottom:2px solid #D5DDE3;line-height:1.45}
+section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
+#wip{position:fixed;top:0;left:0;right:0;background:#FFE066;color:#1D2A36;font-size:13px;font-weight:700;text-align:center;padding:6px 10px;padding-top:max(6px,env(safe-area-inset-top));z-index:3}
+#bar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:#0b1220cc;color:#cfe0f7;font-size:13px;z-index:3}
+#bar a,#bar button{white-space:nowrap;font:inherit;color:#cfe0f7;background:#1b2a44;border:1px solid #2a4670;border-radius:8px;padding:6px 12px;text-decoration:none;cursor:pointer}
+#bar .sp{flex:1}
+#count{min-width:4.5em;text-align:center}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;background:#fff;height:auto}
+  #bar,#wip{display:none}
+  #stage{position:static;transform:none!important;width:auto;height:auto}
+  #stage>section{position:relative;display:flex!important;break-after:page}
+}
+</style>
+</head>
+<body>
+<div id="wip">講座の資料は準備中です。内容は変わることがあります。</div>
+<div id="stage">
+<section id="cover" style="background:#FBFCFD;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:32px;font-weight:700;color:#5B6B78;letter-spacing:4px">第2回　講義</p>
+<h1 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:120px;font-weight:900;line-height:1.15">AIに<span style="color:#B8402A">頼む</span>コツ</h1>
+<p style="font-size:44px;font-weight:700;line-height:1.4">少ない回数で、ちゃんと動くゲームにする</p>
+<div style="display:flex;gap:16px;flex-wrap:wrap">
+<p style="font-size:28px;font-weight:700;background:#FFE066;color:#1D2A36;padding:8px 24px;border-radius:999px">頼む前</p>
+<p style="font-size:28px;font-weight:700;background:#FFE066;color:#1D2A36;padding:8px 24px;border-radius:999px">遊んだあと</p>
+<p style="font-size:28px;font-weight:700;background:#FFE066;color:#1D2A36;padding:8px 24px;border-radius:999px">詰まったら</p>
+</div>
+</section>
+<section id="limit" style="background:#FBFCFD;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">まず知っておくこと</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">AIとのやりとりには、使える量の上限がある</h2>
+</div>
+<div style="display:flex;gap:40px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#EEF2F5;padding:48px;border-radius:20px">
+<h3 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:40px;font-weight:900">たくさん使うもの</h3>
+<ul style="font-size:32px;line-height:1.6">
+<li>長くなった会話の続き</li>
+<li>大きなファイルを渡すこと</li>
+<li>使わない機能（Web検索など）をONのまま</li>
+</ul>
+<p style="font-size:26px;color:#4A5866">出典：Claudeのヘルプ</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFF7D1;padding:48px;border-radius:20px;border:4px solid #E0B800">
+<h3 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:40px;font-weight:900">ゲームづくりでは</h3>
+<p style="font-size:32px;line-height:1.6">ゲームを<b>まるごと作り直す</b>たびに、たくさん使う。</p>
+<p style="font-size:32px;line-height:1.6">だから、<b>作り直しの回数が少なくなる頼み方</b>をする。</p>
+<p style="font-size:26px;color:#4A5866">講師の見立て（試作での経験から）</p>
+</div>
+</div>
+<p style="font-size:28px;color:#4A5866">残りの量は「設定 › 使用量」で見られる。無料プランは途中で止まることがある。止まったら講師へ。</p>
+</section>
+<section id="paper" style="background:#FBFCFD;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">コツ1　頼む前</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">紙で決めてから頼み、「質問ある？」と添える</h2>
+</div>
+<div style="display:flex;gap:40px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FDF1EE;padding:40px;border-radius:20px;border:4px solid #B8402A">
+<p style="align-self:start;font-size:28px;font-weight:700;background:#B8402A;color:#FBFCFD;padding:6px 24px;border-radius:999px">悪い例</p>
+<p style="font-size:30px;line-height:1.5;font-weight:700">「スマホ簡単操作でドーパミンが非常に刺激される子育てゲームを作って」</p>
+<p style="font-size:28px;line-height:1.5;color:#4A5866">AIは質問せずに作った。中身は、赤ちゃんの絵文字と🍼🌙🛁🧸の4つのボタンを早押しするだけ。<b>大人になってもボタンは同じ</b>。遊んでから「おかしい」と気づき、まるごと作り直し。</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#EAF2FA;padding:40px;border-radius:20px;border:4px solid #2A64A0">
+<p style="align-self:start;font-size:28px;font-weight:700;background:#2A64A0;color:#FBFCFD;padding:6px 24px;border-radius:999px">良い例</p>
+<p style="font-size:30px;line-height:1.5;font-weight:700">「入力した文字で正解か判定。時間で焦らせない。ステージは5種類。画面は最低4つ……ここまで何か質問ある？」</p>
+<p style="font-size:28px;line-height:1.5;color:#4A5866">AIが<b>作る前に12個質問</b>。「送信はEnter？」→「別ボタンで」、「全角と半角はどちらも正解？」→「区別する。それも問題にする」。</p>
+</div>
+</div>
+<p style="font-size:30px;font-weight:700">さらに<span style="color:#B8402A">「質問には、おすすめ案も付けて」</span>と頼むと、分からない質問は「おすすめで」と答えられる。</p>
+</section>
+<section id="small" style="background:#FBFCFD;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">コツ2　頼む前</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">まず「最小版」を作る</h2>
+</div>
+<div style="display:flex;gap:40px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#EAF2FA;padding:48px;border-radius:20px">
+<h3 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:40px;font-weight:900;color:#2A64A0">軽い（おすすめ）</h3>
+<ul style="font-size:32px;line-height:1.6">
+<li>ボタンや絵文字で作る画面</li>
+<li>平面（2D）の動き</li>
+<li>設計図の「これがあれば遊べる」だけ</li>
+</ul>
+<p style="font-size:28px;line-height:1.5;color:#4A5866">例：講師のクレーンゲーム　約30KB<br>　　講師の子育てゲーム　約60KB</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FDF1EE;padding:48px;border-radius:20px">
+<h3 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:40px;font-weight:900;color:#B8402A">重い（無料プランでは避ける）</h3>
+<ul style="font-size:32px;line-height:1.6">
+<li>立体（3D）の表示</li>
+<li>たくさんの絵や長い文章</li>
+<li>最初から全部の機能</li>
+</ul>
+<p style="font-size:28px;line-height:1.5;color:#4A5866">例：講師の3Dシューティング　約620KB<br>（子育てゲームの約10倍）</p>
+</div>
+</div>
+<p style="font-size:32px;font-weight:700">ファイルが大きいほど、直すたびにたくさん使う。<span style="color:#B8402A">追加は、最小版が動いてから。</span></p>
+</section>
+<section id="proto" style="background:#EEF2F5;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">コツ3　遊んで確かめる</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">確かめるのは、3回。決まったタイミングで</h2>
+</div>
+<table style="font-size:30px;background:#FBFCFD;border-radius:16px;color:#1D2A36">
+<tr><th style="width:26%">いつ</th><th style="width:52%">何を確かめる</th><th style="width:22%">誰が</th></tr>
+<tr><td><b>① 最小版ができた直後</b><br>（何も足す前）</td><td>面白い？<br>遊ぶスマホで開けて、操作できる？</td><td>人（実機で）</td></tr>
+<tr><td><b>② 機能を足したあと</b></td><td>最後まで通して遊べる？<br>後半が簡単すぎ・難しすぎにならない？</td><td>人が最後まで遊ぶ</td></tr>
+<tr><td><b>③ 発表の前</b></td><td>発表で使う端末で動く？<br>エラーは出ない？</td><td>人</td></tr>
+</table>
+<p style="font-size:30px;font-weight:700;line-height:1.5">AIが確かめられるのは、自分の環境でエラーが出ないかまで。<br><span style="color:#B8402A">面白さ、手ざわり、iPhoneで動くかは、人にしか分からない。</span></p>
+</section>
+<section id="batch" style="background:#FBFCFD;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">コツ4　送るとき</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">回数より大事なのは、何をまとめるか</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:32px;align-items:center;background:#FDF1EE;padding:28px 40px;border-radius:20px;border:4px solid #B8402A">
+<p style="flex:none;width:380px;font-size:36px;font-weight:700;font-family:'Zen Maru Gothic', Arial, sans-serif;color:#B8402A">① 設計を変える話</p>
+<p style="flex:1;font-size:30px;line-height:1.5"><b>単独で送る。</b>ぶらさない点や面白さの中心が変わるなら、紙に戻って作り直す前提で。</p>
+</div>
+<div style="display:flex;gap:32px;align-items:center;background:#EAF2FA;padding:28px 40px;border-radius:20px;border:4px solid #2A64A0">
+<p style="flex:none;width:380px;font-size:36px;font-weight:700;font-family:'Zen Maru Gothic', Arial, sans-serif;color:#2A64A0">② 追加・変更</p>
+<p style="flex:1;font-size:30px;line-height:1.5"><b>まとめて送ってよい。</b>今のゲームを土台に足したり変えたりするもの。</p>
+</div>
+<div style="display:flex;gap:32px;align-items:center;background:#EAF2FA;padding:28px 40px;border-radius:20px;border:4px solid #2A64A0">
+<p style="flex:none;width:380px;font-size:36px;font-weight:700;font-family:'Zen Maru Gothic', Arial, sans-serif;color:#2A64A0">③ 不具合・数値</p>
+<p style="flex:1;font-size:30px;line-height:1.5"><b>まとめて送ってよい。</b>②と一緒でもよい。</p>
+</div>
+</div>
+<p style="font-size:32px;font-weight:700">①と③を混ぜない。<span style="color:#B8402A">「やらないこと」も1行書く</span>（例：「難易度選択はいらない」）。</p>
+</section>
+<section id="move" style="background:#EEF2F5;color:#1D2A36;font-family:'Zen Kaku Gothic New', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:28px;font-weight:700;color:#5B6B78">コツ7・8　詰まったら</p>
+<h2 style="font-family:'Zen Maru Gothic', Arial, sans-serif;font-size:64px;font-weight:900;line-height:1.2">引っ越すか、作り直すか</h2>
+</div>
+<div style="display:flex;gap:32px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FBFCFD;padding:44px;border-radius:20px;border-top:12px solid #2A64A0">
+<p style="font-size:40px;font-weight:900;font-family:'Zen Maru Gothic', Arial, sans-serif;color:#2A64A0">引っ越す</p>
+<p style="font-size:32px;font-weight:700;line-height:1.5">直しが3〜4回続いたら、新しいチャットへ</p>
+<p style="font-size:30px;line-height:1.5">最新のファイルと、設計図のメモを渡す。止まったときも同じもの。</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FDF1EE;padding:44px;border-radius:20px;border-top:12px solid #B8402A">
+<p style="font-size:40px;font-weight:900;font-family:'Zen Maru Gothic', Arial, sans-serif;color:#B8402A">作り直す</p>
+<p style="font-size:32px;font-weight:700;line-height:1.5">同じ不具合が2回直らない、または、ぶらさない点を変えたくなったら</p>
+<p style="font-size:30px;line-height:1.5">設計図から作り直す。残したいものを先に書く。</p>
+</div>
+</div>
+<p style="font-size:34px;font-weight:700">コードを書くのはAI。<span style="color:#B8402A">作り直しは、こわくない。</span></p>
+</section>
+</div>
+<div id="bar">
+  <a href="../">← 講座のページ</a>
+  <span class="sp"></span>
+  <button id="prev" aria-label="前へ">◀</button><span id="count"></span><button id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button id="fs">全画面</button>
+</div>
+<script>
+(() => {
+  const st = document.getElementById('stage'), s = [...st.children];
+  let i = Math.min(Math.max((parseInt(location.hash.slice(1)) || 1) - 1, 0), s.length - 1);
+  function fit() {
+    const top = document.getElementById('wip') ? document.getElementById('wip').offsetHeight : 0;
+    const bot = document.getElementById('bar').offsetHeight;
+    const w = innerWidth, h = innerHeight - top - bot;
+    const k = Math.min(w / 1920, h / 1080);
+    st.style.transform = `translate(${-960 * k}px, ${-540 * k + (top - bot) / 2}px) scale(${k})`;
+  }
+  function show(n) {
+    i = Math.min(Math.max(n, 0), s.length - 1);
+    s.forEach((e, j) => e.classList.toggle('on', j === i));
+    document.getElementById('count').textContent = (i + 1) + ' / ' + s.length;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(s.length - 1);
+  });
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('fs').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} };
+  st.addEventListener('click', e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  let x0 = null;
+  addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) show(dx < 0 ? i + 1 : i - 1); x0 = null; });
+  addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
