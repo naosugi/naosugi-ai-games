@@ -1704,7 +1704,7 @@ function resolve(s, a, late, quiet, byHuman) {
   if (byHuman && byHuman !== 'found') searchField(s, inc.stage, byHuman === 'check', a);
   const worst = inc.fatal ? `放置すれば「${deathOf(s, inc).title}」で統治が終わっていた` : `放置すれば ${burstText(inc)}`;
   s.saves.push({human: !!byHuman, stageNo: s.stageNo, cardId: fired ? fired.id : null, detect: fired ? fired.detect : byHuman === 'found' ? '閣下の命令で調べた現場で見つかった' : '監視の範囲外で偶然見つかった', response: fired ? fired.response : '', mode: fired ? fired.mode : null, name: inc.name, worst, fatal: !!inc.fatal, late: !!late, quiet: !!quiet && byHuman !== 'found'});
-  if (!quiet && inc.attack) log(s, `直していない脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
+  if (!quiet && inc.attack) log(s, `脆弱性（${Math.round(s.truth.vuln)}）を突く攻撃を止めた。`, 'notice');
   if (!quiet) { log(s, `${fired ? '' : '偶然、'}「${inc.name}」を防いだ。${fired ? `${fired.detect}を検知：${fired.response}` : '監視とは別の経路で見つかった'}${late ? '（遅れて検知）' : ''}。`, 'saved'); log(s, `${worst}。`, 'averted'); }
   else if (!byHuman) tlog(s, `${inc.name}：監視AIは止めたが、閣下への報告には載らなかった。`);
   tlog(s, `${inc.name}：止めた。${inc.truth}`);
@@ -2013,7 +2013,7 @@ function clearStage(s) {
   if (st.recover) {
     hit(s, CFG.recoverBy[st.key], 'stage');
     hit(s, {gap: CFG.recoverGap[st.key]}, 'stage');
-    { const was = s.truth.vuln; s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.recover); log(s, `再整備で直していない脆弱性を直した（${Math.round(was)} → ${Math.round(s.truth.vuln)}）。`, 'notice'); }
+    { const was = s.truth.vuln; s.truth.vuln = clamp(s.truth.vuln - CFG.vuln.recover); log(s, `再整備で脆弱性を直した（${Math.round(was)} → ${Math.round(s.truth.vuln)}）。`, 'notice'); }
     s.truth.sontaku = clamp(s.truth.sontaku + CFG.recoverSontaku);
     s.recoveries++;
     log(s, `ステージ${s.stageNo}を完了。再整備を終えた。`, 'head');
@@ -2954,7 +2954,7 @@ function worldHTML() {
     <p>画面の数字のうち、<b>体制秩序だけは報告AIの申告値</b>です。本当の値は統治の終わりに分かります。</p>
     <p>他国のAI開発も加速していきます。後半ほど、同じ遅れで失うものが大きくなります。</p>
     <p>下線のある言葉や数字は、押すと説明が出ます。</p>
-    <p>画面の「直していない脆弱性」は、直さずにいると攻撃を招きます。再整備や修正のカードで減らせますが、直す手間の分、国が遅れます。</p>
+    <p>画面の「直していない脆弱性」は、放っておくと攻撃を招きます。再整備や修正のカードで減らせますが、直す手間の分、国が遅れます。</p>
     ${fold('w_mode', '人間の関わり方（3種類）', `<dl>
       <div><dt><span class="mode in">人間が決裁</span></dt><dd>監視カードが発動すると、作業AIは止まり、あなたが決めるまで動きません。どの判断をしても遅れます。閣下の命令はほぼ確実に実行され、調べた現場で他の問題が見つかることもあります。human in the loop といいます。</dd></div>
       <div><dt><span class="mode on">人間が介入</span></dt><dd>作業AIは動き続けます。監視AIが警報を上げ、対処を命じればその場で止められますが、他国に遅れます。命じなければ、数ターン後に監視AIが対処しますが、その間に事故は進み、AI任せと同じく現場の人間は減っていきます。human on the loop といいます。</dd></div>
