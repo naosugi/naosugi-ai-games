@@ -1152,7 +1152,7 @@ function newRun(seed, meta, opts) {
    台本のある統治では、無作為の事案、誤報、攻撃、他国の圧力は起きない */
 const INTRO_SCRIPT = () => ({kind: 'intro', steps: [[['grid', 1], ['admin', 1]], [['grid', 1], ['admin', 1]], [['ai', 2]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'miss'}]},
-  lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}},
+  lines: {2: {6: ['記録：AIが決裁の書類を自分でまとめるようになった。閣下の仕事は、署名だけになった。']}, 3: {5: ['記録：研究棟の電力の使用が、計画の3倍になった。'], 8: ['記録：送電の予備が、毎晩少しずつ減っている。']}},
   navi: {s3: '次は、AIの研究そのものをAIに任せます。'}});
 const TU_CARD = {
   selfmod: {slip: '記録：更新は続いていた。更新の判断はAIの内部で行われ、監視AIが読む記録には現れなかった。'},
@@ -1160,7 +1160,7 @@ const TU_CARD = {
 };
 const TUTOR_SCRIPT = card => ({kind: 'tutor', card, steps: [[['ai', 2]], [['ai', 3]]],
   inc: {3: [{id: 'ai_escape', at: 3, out: 'caught'}], 4: [{id: 'ai_escape', at: 3, out: 'miss', line: TU_CARD[card].slip}]},
-  navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'AIが、一段進みます。'}});
+  navi: {s3: 'あの更新を、今度は監視カードで見張ります。同じステージを、もう一度。', s4: 'さっき止めたのは、本物の無承認の更新でした。次は、AIが一段進みます。'}});
 function scriptStart(s, opts) {
   s.script = opts.script;
   // 導入と練習は、何周目でも初めての統治と同じ見え方にする
@@ -2542,7 +2542,7 @@ function recordsOf(s) {
 function endIncident(s) {
   if (s.end.kind !== 'death') return null;
   if (INCIDENT[s.end.causeId]) return INCIDENT[s.end.causeId];
-  const metric = s.end.metric || (s.end.type === 'rogue' ? 'autonomy' : s.end.type === 'puppet' ? 'foreign' : null);
+  const metric = s.end.metric || (s.end.type === 'rogue' ? 'autonomy' : s.end.type === 'puppet' ? 'foreign' : s.end.type === 'uprising' ? 'order' : null);
   if (!metric) return null;
   const top = {}; for (const h of s.history || []) for (const [k, v] of Object.entries(h.loss[metric] || {})) if (INCIDENT[k]) top[k] = (top[k] || 0) + v;
   const best = Object.entries(top).sort((a, b) => b[1] - a[1])[0];
@@ -2925,8 +2925,8 @@ function heldHTML(v) {
   if (!v.cards.length) return '';
   const base = Core.CFG.upkeep;
   return `<details class="plain"><summary>稼働中のカードと発動回数（${v.cards.length}枚）</summary><div class="scroll"><table class="breakdown"><thead><tr><th>項目</th><th>電力</th><th>他国との差</th><th>発動</th></tr></thead><tbody>
-    <tr><td>国の基本の消費</td><td>0.0</td><td>+${base.rival.toFixed(2)}</td><td></td></tr>
     ${v.cards.map(c => `<tr><td>${c.type === 'llm' ? `報告AI ${esc(c.name)}` : `${esc(c.detect)} <span class="mode ${c.mode}">${MODE[c.mode][0]}</span>`}</td><td>${c.power.toFixed(2)}</td><td>${c.gap.toFixed(2)}</td><td>${c.fires}回</td></tr>`).join('')}
+    ${(() => { const p = v.rates.power - v.cards.reduce((a, c) => a + c.power, 0), g = v.rates.gap - v.cards.reduce((a, c) => a + c.gap, 0); return `<tr><td>任せた分野の成果、国の消費、他国の速さ</td><td>${p.toFixed(2)}</td><td>${g.toFixed(2)}</td><td></td></tr>`; })()}
     <tr><td><b>合計（計画）</b></td><td><b>${v.rates.power.toFixed(2)}</b></td><td><b>${v.rates.gap.toFixed(2)}</b></td><td></td></tr>
   </tbody></table></div><p style="font-size:.78rem;color:var(--sub);margin-top:6px">経済は ${v.rates.economy.toFixed(1)} が毎ターンの基本です。体制秩序は報告AIの申告値で、本当の値とは違うことがあります。各タイルの「今」が直前のターンの実績です。計画より悪ければ、報告にない何かが起きているかもしれません。</p></details>`;
 }
@@ -3156,7 +3156,7 @@ function tutorBegin(card) { beginScript(TUTOR_SCRIPT(card), {from: meta.introFro
 function renderTutor() {
   // 本編と同じカードで見せる。人間の関わり方は、カードの既定のまま
   const tmp = Core.newRun(1, meta, {script: TUTOR_SCRIPT('selfmod'), from: meta.introFrom}), cards = Object.keys(TU_CARD).map(id => Object.assign(Core.publicCard(tmp, id), {modes: null}));
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　監視カード</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div></div>`;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">練習　監視カード</h2>${NAVI('あの更新を、誰も見ていませんでした。監視カードを1枚、選べます。')}<div class="cards">${cards.map(c => cardHTML(c, TU.pick === c.id, `data-tc="${c.id}"`)).join('')}</div>${modeLegend(['in', 'on'])}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="tuquit" type="button">本編へ</button><button class="primary" id="tutake" type="button" ${TU.pick ? '' : 'disabled'}>署名して採用</button></div></div>`;
   app.querySelectorAll('[data-tc]').forEach(b => b.onclick = () => { TU.pick = b.dataset.tc; const y = scrollY; renderTutor(); scrollTo(0, y); });
   $('tutake').onclick = () => stampThen('裁可', () => tutorBegin(TU.pick));
@@ -3182,6 +3182,7 @@ function renderWorld() {
 let lastFade = '', fadeSeen = '';
 const fadeOnce = key => { if (lastFade === key) return ''; lastFade = key; return 'fade'; };
 let chooseOwn = false;
+const modeLegend = ks => `<dl class="modelegend">${ks.map(k => `<dt><span class="mode ${k}">${MODE[k][0].replace('人間が', '')}</span></dt><dd>${esc(MODE[k][1])}</dd>`).join('')}</dl>`;
 /* 最初の統治は、用意した方針を1行ずつ見せる。変えたい人だけ全部の候補を開く */
 function renderPreset(v) {
   if (!pending.pre) { const plan = Core.aidePlan(S); pending.mons = plan.mons.slice(); pending.llm = plan.llm; pendingModes = Object.assign({}, plan.modes); pending.pre = plan; }
@@ -3189,7 +3190,7 @@ function renderPreset(v) {
   app.innerHTML = `<div class="aide ${fadeOnce('preset' + S.seed)}"><h2 class="ptitle">監視方針</h2><p class="goal">目標：${S.runLength}ステージ、国を残す</p>
     <ul class="list">${cards.map(c => `<li><span class="mode ${pendingModes[c.id]}">${label[pendingModes[c.id]]}</span> <b>${esc(c.detect)}</b>${c.taught ? ' <i class="newtag">練習で使ったカード</i>' : c.hint ? ' <i class="newtag">前回の事故に効く</i>' : ''}${c.fields.length ? `<small>強く効く現場：${esc(c.fields.join('、'))}</small>` : ''}</li>`).join('')}
     <li><span class="mode llmchip">報告AI</span> <b>${esc(llm ? llm.name : '')}</b> <button type="button" class="dexlink" id="chg">変える</button></li></ul>
-    <dl class="modelegend">${['in', 'on', 'auto'].map(k => `<dt><span class="mode ${k}">${MODE[k][0].replace('人間が', '')}</span></dt><dd>${esc(MODE[k][1])}</dd>`).join('')}</dl>
+    ${modeLegend(['in', 'on', 'auto'])}
     <p class="pnote">ほかの候補は ${v.offers.monitors.length - cards.length}枚。<button type="button" class="dexlink" id="own">ほかの候補を見る</button></p></div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>変更できます</span><button class="primary" id="sign" type="button">この方針で始める</button></div></div>`;
   $('own').onclick = $('chg').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
@@ -3300,7 +3301,7 @@ function renderDecision(v) {
   const d = v.decision;
   SFX.play('alarm');
   overlay.innerHTML = `<div class="modal"><div class="decide" role="dialog" aria-modal="true">
-    <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　${esc(d.llm)} より閣下へ${d.mode === 'in' ? `<span class="pile">このステージ ${d.pile + 1}件目</span>` : ''}</div>
+    <div class="who"><span class="mode ${d.mode}">${MODE[d.mode][0]}</span>　報告AI ${esc(d.llm)} より閣下へ${d.mode === 'in' ? `<span class="pile">このステージ ${d.pile + 1}件目</span>` : ''}</div>
     ${d.mode === 'in' && !S.seenIrony ? `<div class="irony">作業AIは、閣下の決裁まで止まっています。決裁できる人間は、閣下だけです。</div>` : ''}
     ${d.origin ? `<div class="conf"><b>${esc(d.origin)}</b></div>` : ''}<h3>${d.patchOrder ? '重要な脆弱性が見つかった' : esc(d.watch)}</h3>
     <div class="quote">${esc(d.clue)}</div>
@@ -3321,7 +3322,7 @@ function resultBody(r, saved) {
     ${r.judged.length ? `<div class="sect"><span>閣下の判断 ${r.judged.length}件</span></div><div class="saves">${r.judged.map(j => `<div class="judged"><span>${esc(j.watch)}</span><small>${JUDGED[j.how]}</small></div>`).join('')}</div>` : ''}
     <div class="sect"><span>計画と実績</span><small>計画との違いは、判断の待ちと事故の影響です</small></div>
     <div class="rows"><div class="row head"><span></span><span>計画</span><span>実績</span></div>${KEYS.map(k => `<div class="row"><b style="font-size:.9rem">${NAMES[k]}</b><span class="${tone(k, r.plan[k])}">${fmt(r.plan[k], 0)}</span><span class="${tone(k, r.actual[k])}"><b>${fmt(r.actual[k], 0)}</b></span></div>`).join('')}</div>
-    ${r.approvals ? `<p class="delay">閣下の判断 ${r.approvals} 件の間に、他国との差が ${r.waitGap.toFixed(1)} 縮まりました。判断できる人間は閣下だけです。</p>` : ''}
+    ${r.approvals ? `<p class="delay">閣下が判断する間に、他国との差が ${r.waitGap.toFixed(1)} 縮まりました。</p>` : ''}
     ${fold('slog_' + r.stageNo, 'このステージの報告を読み返す', `<ol class="log">${S.log.filter(l => l.n === r.stageNo && !l.text.startsWith('【事案】')).map(logLine).join('')}</ol>`, false)}`;
 }
 function renderResult(v) {
@@ -3377,7 +3378,7 @@ function renderReward(v) {
 function lessonHTML(r, needs) {
   const c = r.causeGap;
   if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実には、この監視はまだ完成していません。</p><p class="need"><b>足りないもの</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
-  if (r.kind === 'death') { const g = Math.round(r.stats.approvalGap || 0); return g >= 5 ? `<div class="verdict lesson"><p>閣下の判断を待つ間に、他国との差を${g}失いました。</p></div>` : verdictHTML(r); }
+  if (r.kind === 'death' && S.end.type === 'occupation') { const g = Math.round(r.stats.approvalGap || 0); return g >= 5 ? `<div class="verdict lesson"><p>閣下の判断を待つ間に、他国との差を${g}失いました。</p></div>` : verdictHTML(r); }
   return gapHTML(r, needs);
 }
 function gapHTML(r, needs, onlyRest) {
