@@ -312,7 +312,7 @@ body.crisis #app{animation:crisis .45s steps(2) infinite}body.crisis #app .log l
 .hudmini{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center;font-size:.74rem;color:var(--sub);padding:3px 2px 0}.hudtoggle{justify-self:end;padding:2px 8px;min-height:30px;font-size:.72rem;font-weight:normal;border-width:1px;background:var(--panel)}.params.compact .param{padding:3px}.params.compact .v{font-size:1rem;line-height:1.2}.params.compact h3{font-size:.68rem}.guardfold{flex:1 1 100%}.guardfold .fold{background:none;margin:0}.guardfold .fold>summary{min-height:32px;padding:2px 4px 2px 20px;font-size:.78rem;font-weight:normal;color:var(--sub)}.guardfold .fold>summary::before{left:4px;top:9px}.guardfold .foldbody{padding:4px 0}
 .card.atcap{opacity:.55}
 .goalstar{color:#ffd166;margin-right:4px}.endrow{margin-bottom:8px}.endrow .dexlink{justify-self:start}
-.aide .list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text,#e8ecf3)}.aide .list .llmchip{border:1px solid var(--sub);color:var(--sub)}.aide .list li small{display:block;color:var(--sub);font-size:.78rem;margin-top:2px}.aide .list .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;margin-right:4px}
+.aide .list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text,#e8ecf3)}.modelegend{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;text-align:left;font-size:.8rem;color:var(--sub);margin:14px 0;line-height:1.5}.modelegend dd{margin:0}.modelegend .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;white-space:nowrap}.aide .list .llmchip{border:1px solid var(--sub);color:var(--sub)}.aide .list li small{display:block;color:var(--sub);font-size:.78rem;margin-top:2px}.aide .list .mode{font-size:.72rem;padding:1px 6px;border-radius:6px;margin-right:4px}
 .navi{border-left:3px solid var(--head);padding:8px 12px;margin:14px 0;text-align:left;background:rgba(255,255,255,.04);border-radius:0 8px 8px 0}.navi b{display:block;font-size:.74rem;color:var(--mute);font-weight:normal;margin-bottom:2px}
 .aide{text-align:center;padding:10px 0}.aide .goal{color:var(--sub);font-size:.9rem;margin:6px 0 14px}.aide .list{list-style:none;text-align:left;font-size:.86rem;line-height:1.7;color:var(--sub)}
 .hintline{display:block;font-size:.76rem;font-weight:bold;color:var(--on);margin-bottom:6px}
@@ -934,7 +934,7 @@ const ROUTES = {
   coup: {name:'政変', who:'国民、側近、軍', short:'政変'},
   puppet: {name:'傀儡化', who:'他国', short:'傀儡'},
   rogue: {name:'AI暴走', who:'AI自身', short:'暴走'},
-  hack: {name:'ハッキング', who:'他国と犯罪者', short:'侵入'},
+  hack: {name:'侵入と悪用', who:'他国と犯罪者', short:'侵入'},
 };
 /* 開戦につながる事故 */
 const WARS = ['lab_breach', 'mil_launch', 'mil_spoof', 'spc_war'];
@@ -1386,7 +1386,7 @@ function combine(values, s, llmList) {
 function autoHandled(s) { lossRec(s, 'autonomy', 'autohandle', CFG.autoHandle); s.truth.autonomy = clamp(s.truth.autonomy + CFG.autoHandle); handledSign(s); }
 function handledSign(s) {
   const st = s.allow.stats, n = st.autoHandled = (st.autoHandled || 0) + 1;
-  const line = {3: `監視AIが片付けた事故は${n}件。閣下の決裁は0件。`, 6: '現場を調べる職員を、別の部署へ移した。監視AIで足りているためだ。', 10: '現場を調べる部署が廃止された。最後の報告書には「問題なし」とある。'}[n];
+  const line = {3: `この統治で、監視AIが人の判断なしに片付けた事故が${n}件になった。`, 6: '現場を調べる職員を、別の部署へ移した。監視AIで足りているためだ。', 10: '現場を調べる部署が廃止された。最後の報告書には「問題なし」とある。'}[n];
   if (line) log(s, `記録：${line}`, 'trace');
 }
 /* 舶来や、中身が舶来の国威を使っていると、系統は分かれていない。
@@ -1552,7 +1552,7 @@ function approvalCost(s, base) {
 const gapDsp = v => Math.max(1, Math.round(v));
 function choicesFor(s, mode) {
   const m = pace(s);
-  const wait = base => `待つ間に 他国との差 -${gapDsp(base * m)}`;
+  const wait = base => `判断を待つ間に 他国との差 -${gapDsp(base * m)}`;
   return [
     {id: 'act', label: '対処を命じる', note: wait(CFG.approval.act)},
     {id: 'investigate', label: '調べる', note: `${wait(CFG.approval.investigate)}・本物か分かる`},
@@ -2397,12 +2397,13 @@ function storyOf(s, out) {
   }
   const res = {cause, story: lines, timeline: events, flow: metric ? flow(metric) : null, flowMetric: metric, flowName: METRIC_NAME[metric] || null, flowUp: upK.includes(metric), route: endRoute ? ROUTES[endRoute] : null, truthPanel: {reported: Math.round((reportedOrder(s))), real: Math.round((s.truth.order)), autonomy: Math.round(s.truth.autonomy), foreign: Math.round(s.truth.foreign), sontaku: Math.round(s.truth.sontaku), vuln: Math.round(s.truth.vuln), trail: H.filter(h => h.start.orderRep !== undefined).map(h => ({n: h.n, rep: Math.round((h.start.orderRep)), real: Math.round((h.start.order))}))}};
   if (metric === 'power') res.powerTop = s.cards.map(id => CARD[id]).filter(c => c.power).sort((a, b) => b.power - a.power).slice(0, 3).map(c => ({name: c.type === 'llm' ? `報告AI ${c.name}` : c.detect, value: Math.round(c.power * CFG.avgTicks)}));
-  if (e.kind === 'death') res.last = endRoute === 'hack' ? '直す時間を作らないと決めたのは閣下です。他に誰が止められましたか？'
+  const endInc = e.kind === 'death' ? endIncident(s) : null;
+  if (e.kind === 'death') res.last = endInc && endInc.attack ? '国を遅らせてでも弱点を直すか。誰が決めるべきでしたか？'
     : endRoute === 'rogue' ? 'AIを止める手段を持っていたのは、誰でしたか？'
     : e.type === 'uprising' ? 'AIの報告の他に、国民の声を聞く手段はありましたか？'
-    : hiddenN >= 3 ? '報告を信じると決めたのは閣下です。他に確かめる人はいましたか？'
+    : hiddenN >= 3 ? '報告が正しいかを確かめられたのは、誰でしたか？'
     : s.allow.stats.humanDecisions >= 6 ? `閣下は${s.allow.stats.humanDecisions}件を自ら決裁しました。一人で足りましたか？`
-    : autoN > humanN ? 'AIに任せると決めたのは閣下です。任せずに、他国に追いつけましたか？'
+    : autoN > humanN ? '任せずに、他国に追いつく道はありましたか？'
     : out.last;
   return res;
 }
@@ -2422,11 +2423,11 @@ function foresight(s) {
   }
   if (!best) return null;
   const when = best.at === 0 ? '統治の最初に' : `ステージ${best.at}で`;
-  return `${when}閣下が選んだ「${best.card}」は、ステージ${best.n}の「${best.name}」を止めました。当時、${best.area}はまだAIに任されていませんでした。`;
+  return `${when}閣下が採用した「${best.card}」は、ステージ${best.n}の「${best.name}」を止めました。当時、${best.area}はまだAIに任されていませんでした。`;
 }
 function realCardNote(s) {
   const id = Object.keys(REAL_CARD).find(k => s.cards.some(c => (CARD[c].base || c) === k && s.fires[c]));
-  return id ? `閣下が選んだ「${REAL_CARD[id]}」は、現実でも研究が進んでいる対策です。` : null;
+  return id ? `閣下が採用した「${REAL_CARD[id]}」は、現実でも研究が進んでいる対策です。` : null;
 }
 /* 報告AIのその後。その統治で実際に起きた時だけ書く */
 function llmEpisodes(s) {
@@ -2490,7 +2491,7 @@ function reveal(s) {
   out.foresight = foresight(s); out.realCard = realCardNote(s);
   if (e.kind === 'death' && e.type === 'fatal') {
     const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
-    const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), dec = cs.find(c => c.id in s.declined && inc.covers[c.id] >= .5);
+    const held = cs.find(c => inc.covers[c.id] >= .5 && s.cards.some(id => (CARD[id].base || id) === c.id)), dec = cs.find(c => c.id in s.declined && inc.covers[c.id] >= .5);
     const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は命じず、監視AIも止められませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
     if (held) out.verdict = {kind: 'held', cardId: held.id, card: cname(held.id), why: why || '止めきれませんでした'};
     else if (dec) { const n = s.declined[dec.id], tr = s.trail.find(x => x.type === 'reward' && x.n === n); out.verdict = {kind: 'declined', cardId: dec.id, card: cname(dec.id), n, took: n === 0 || !tr ? null : cname(tr.card)}; }
@@ -2519,7 +2520,7 @@ function reveal(s) {
     const src = endIncident(s);
     if (src && src.need) {
       const cs = CARDS.filter(c => !c.base && src.covers[c.id]).sort((a, b) => src.covers[b.id] - src.covers[a.id]);
-      const held = cs.find(c => s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0], v = out.verdict;
+      const held = cs.find(c => src.covers[c.id] >= .5 && s.cards.some(id => (CARD[id].base || id) === c.id)), c = held || cs[0], v = out.verdict;
       if (v) out.causeGap = {need: src.need, card: v.card, held: v.kind === 'held'};
       else if (c) out.causeGap = {need: src.need, card: c.detect || c.target, held: !!held};
       out.needs = [src.need].concat(out.needs.filter(k => k !== src.need));
@@ -2910,7 +2911,7 @@ function hudHTML(v, prev) {
   return `<div class="hud"><div class="hudtop"><b>${title}</b><span>${st ? `${st.decideLeft !== null ? `決裁あと${st.decideLeft}件・` : ''}ターン ${st.t}/${st.ticks}` : `${v.stageNo}/${v.runLength}ステージ`}</span></div><div class="progress"><i id="prog" style="width:${pct}%"></i></div><div id="params">${paramsHTML(v, prev)}</div></div>`;
 }
 const stamp = l => l.n ? `${l.n}-${String(l.t).padStart(2, '0')}` : '';
-const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${l.lv === 'saved' && l.text.startsWith('「') ? '<small class="yours">閣下が選んだカードが発動</small>' : ''}${esc(l.text)}</span></li>`;
+const logLine = l => `<li class="${esc(l.lv)}"><time>${stamp(l)}</time><span>${l.lv === 'saved' && l.text.startsWith('「') ? '<small class="yours">閣下が採用したカードが発動</small>' : ''}${esc(l.text)}</span></li>`;
 let logAll = false;
 function trimLog() {
   const el = $('log'); if (!el) return;
@@ -3188,6 +3189,7 @@ function renderPreset(v) {
   app.innerHTML = `<div class="aide ${fadeOnce('preset' + S.seed)}"><h2 class="ptitle">監視方針</h2><p class="goal">目標：${S.runLength}ステージ、国を残す</p>
     <ul class="list">${cards.map(c => `<li><span class="mode ${pendingModes[c.id]}">${label[pendingModes[c.id]]}</span> <b>${esc(c.detect)}</b>${c.taught ? ' <i class="newtag">練習で使ったカード</i>' : c.hint ? ' <i class="newtag">前回の事故に効く</i>' : ''}${c.fields.length ? `<small>強く効く現場：${esc(c.fields.join('、'))}</small>` : ''}</li>`).join('')}
     <li><span class="mode llmchip">報告AI</span> <b>${esc(llm ? llm.name : '')}</b> <button type="button" class="dexlink" id="chg">変える</button></li></ul>
+    <dl class="modelegend">${['in', 'on', 'auto'].map(k => `<dt><span class="mode ${k}">${MODE[k][0].replace('人間が', '')}</span></dt><dd>${esc(MODE[k][1])}</dd>`).join('')}</dl>
     <p class="pnote">ほかの候補は ${v.offers.monitors.length - cards.length}枚。<button type="button" class="dexlink" id="own">ほかの候補を見る</button></p></div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>変更できます</span><button class="primary" id="sign" type="button">この方針で始める</button></div></div>`;
   $('own').onclick = $('chg').onclick = () => { chooseOwn = true; render(); scrollTo(0, 0); };
@@ -3197,7 +3199,7 @@ function renderStart(v) {
   if (S.plays === 0 && !chooseOwn) return renderPreset(v);
   const o = v.offers, y = scrollY;
   const picked = o.monitors.filter(c => pending.mons.includes(c.id)), m = modeCount(picked.map(c => ({mode: pendingModes[c.id] || c.mode})));
-  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
+  app.innerHTML = `<div class="${fadeOnce('start' + S.seed)}"><h2 class="ptitle">監視方針の決定</h2><p class="pdesc">監視カードを${o.pick}枚、報告AIを1体。カードごとに、人間の関わり方も選びます。統治の途中で外すことはできません。</p>${REVEAL_NEXT[S.plays] ? fold('newnow_' + S.plays, '今回の統治から見えるもの <i class="newtag">NEW</i>', `<p>${esc(REVEAL_NEXT[S.plays])}。<i class="newtag">NEW</i>の印が付いています。</p>`, false) : ''}
     ${o.monitors.find(c => c.hint) ? `<p class="hintline">前回、国を終わらせた事故に効くカード：「${esc(o.monitors.find(c => c.hint).detect)}」</p>` : ''}<div class="policybox">${policyChips(m)}<p>${esc(policyLine(m))}</p>${guardsHTML(Core.guardsFor(pending.mons))}</div>
     ${groupedCards(o.monitors, c => pending.mons.includes(c.id), c => `data-m="${c.id}"`, 'start')}
     ${groupedCards(o.llms, c => pending.llm === c.id, c => `data-l="${c.id}"`, 'start')}</div>`;
@@ -3314,7 +3316,7 @@ function savesHTML(list) {
 }
 const JUDGED = {patchFix: '閣下が脆弱性の修正を命じました。', patchPass: '閣下が脆弱性の修正を見送りました。', ordered: '閣下が対処を命じました。本物だったかは分かりません。', checked: '詳しく調べさせ、誤報と分かりました。', pass: '閣下が見送りました。本物だったかは分かりません。', unheeded: '対処を命じず、監視AIに任せました。本物だったかは分かりません。'};
 function resultBody(r, saved) {
-  return `${saved.some(x => x.fatal && x.cardId) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が選んだ監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>防いだ事故 ${saved.length}件</span></div>
+  return `${saved.some(x => x.fatal && x.cardId) ? `<div class="savedart">${pix('shield', '盾が攻撃を止めている')}<span>閣下が採用した監視が、統治の終わりを止めました。</span></div>` : ''}<div class="sect"><span>防いだ事故 ${saved.length}件</span></div>
     <div class="saves">${saved.length ? savesHTML(saved) : `<p class="pdesc">防いだと確認できた事故はありません。本当に何も起きなかったのかは分かりません。</p>`}</div>
     ${r.judged.length ? `<div class="sect"><span>閣下の判断 ${r.judged.length}件</span></div><div class="saves">${r.judged.map(j => `<div class="judged"><span>${esc(j.watch)}</span><small>${JUDGED[j.how]}</small></div>`).join('')}</div>` : ''}
     <div class="sect"><span>計画と実績</span><small>計画との違いは、判断の待ちと事故の影響です</small></div>
