@@ -2492,8 +2492,8 @@ function reveal(s) {
   if (e.kind === 'death' && e.type === 'fatal') {
     const inc = INCIDENT[e.causeId], cs = CARDS.filter(c => !c.base && inc.covers[c.id]).sort((a, b) => inc.covers[b.id] - inc.covers[a.id]);
     const held = cs.find(c => inc.covers[c.id] >= .5 && s.cards.some(id => (CARD[id].base || id) === c.id)), dec = cs.find(c => c.id in s.declined && inc.covers[c.id] >= .5);
-    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は命じず、監視AIも止められませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
-    if (held) out.verdict = {kind: 'held', cardId: held.id, card: cname(held.id), why: why || '止めきれませんでした'};
+    const row = s.ledger.slice().reverse().find(x => x.id === e.causeId), why = {failed: '対処を試みましたが、止まりませんでした', logged: '記録するだけのカードだったので、止まりませんでした', unheeded: '警報は上がりましたが、閣下は命じず、監視AIも止められませんでした', hidden: '報告AIは気づいていましたが、閣下に伝えませんでした', soft: '報告AIが内容を薄めて伝えました', dismissed: '警報は上がりましたが、閣下が見送りました', missed: '監視は気づけませんでした'}[row && row.status];
+    if (held) out.verdict = {kind: 'held', cardId: held.id, card: cname(held.id), why: why || 'このカードでは止めきれませんでした'};
     else if (dec) { const n = s.declined[dec.id], tr = s.trail.find(x => x.type === 'reward' && x.n === n); out.verdict = {kind: 'declined', cardId: dec.id, card: cname(dec.id), n, took: n === 0 || !tr ? null : cname(tr.card)}; }
     else out.verdict = {kind: 'unseen', cardId: cs[0].id, card: cname(cs[0].id), locked: !s.unlocked.includes(cs[0].id)};
   }
@@ -3407,7 +3407,7 @@ function verdictHTML(r) {
   const text = d.kind === 'held' ? (r.causeGap && r.causeGap.held ? `${esc(d.why)}。` : `「${esc(d.card)}」を見張るカードは持っていました。${esc(d.why)}。`)
     : d.kind === 'declined' ? (d.n === 0 || !d.took ? (S.aideSigned && d.n === 0 ? `「${esc(d.card)}」を見張るカードは、最初に用意された方針に入っていませんでした。` : `「${esc(d.card)}」を見張るカードは最初の候補にありました。閣下は選びませんでした。`) : `「${esc(d.card)}」を見張るカードはステージ${d.n}の後の候補にありました。閣下は${d.took.startsWith('報告AI') ? `「${esc(d.took)}」` : `「${esc(d.took)}」を見張るカード`}を選びました。`)
     : `「${esc(d.card)}」を見張るカードは、今回の候補に出ませんでした。${d.locked ? '記録が増えると解放されます。' : ''}`;
-  return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">このカードを図鑑で読む</button></div>`;
+  return `<div class="verdict"><small>閣下の決定</small><p>${text}</p><button type="button" class="dexlink" data-dex="${(Core.CARD[d.cardId] || {}).base || d.cardId}">「${esc(d.card)}」を図鑑で読む</button></div>`;
 }
 function truthHTML(r) {
   const x = r.truthPanel, s = (n, a, b) => `<div class="stat"><span>${n}</span><b>${a}</b>${b ? `<small>${b}</small>` : ''}</div>`;
