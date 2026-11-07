@@ -126,8 +126,8 @@ details.plain summary{cursor:pointer;font-weight:bold;color:var(--accent);font-s
 .breakdown th{color:var(--mute);font-weight:normal}
 
 /* 判断 */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:center;justify-content:center;padding:14px;overflow-y:auto}
-.decide{background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:18px;max-width:560px;width:100%;display:grid;gap:10px;animation:fade .2s}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow-y:auto}
+.decide{margin:auto;grid-template-columns:minmax(0,1fr);background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:18px;max-width:560px;width:100%;display:grid;gap:10px;animation:fade .2s}
 .decide h3{color:var(--accent);font-size:1.15rem}
 .decide .who{font-size:.8rem;color:var(--mute)}
 .decide .quote{background:var(--deep);border-radius:8px;padding:10px 12px;font-size:.92rem}
@@ -150,6 +150,57 @@ details.plain summary{cursor:pointer;font-weight:bold;color:var(--accent);font-s
 .effs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
 .eff{background:var(--panel);border-radius:8px;padding:6px 12px;font-size:.88rem;display:flex;gap:8px}
 
+/* 導入 */
+.story{max-width:620px;margin:0 auto;min-height:62vh;display:grid;align-content:center;gap:22px;padding-top:18px}
+.story-no{color:var(--mute);font-size:.8rem;text-align:center;font-variant-numeric:tabular-nums}
+.story-text{display:grid;gap:12px}
+.story-text p{font-size:clamp(1.08rem,4.4vw,1.3rem);line-height:1.75;text-align:center;opacity:0;animation:rise .7s ease-out var(--d) forwards}
+.story-text p:first-child{color:#ffd166;font-weight:bold}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.vis-gap{display:grid;gap:10px;max-width:440px;width:100%;margin:0 auto}
+.vis-gap div{display:grid;grid-template-columns:4.5em 1fr;gap:10px;align-items:center;font-size:.9rem}
+.vis-gap i{display:block;height:16px;border-radius:4px;background:var(--accent);width:0;animation:grow 1.6s ease-out .2s forwards}
+.vis-gap div:last-child i{background:var(--ai)}
+@keyframes grow{to{width:var(--w)}}
+.vis-swap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;max-width:460px;margin:0 auto;width:100%}
+.vis-swap div{background:var(--panel);border-radius:8px;padding:8px 4px;text-align:center;position:relative;min-height:62px}
+.vis-swap b{display:block;font-size:.76rem;color:var(--sub)}
+.vis-swap .p,.vis-swap .a{display:block;font-weight:bold;font-size:1.15rem;position:absolute;left:0;right:0;bottom:8px}
+.vis-swap .p{color:var(--sub);animation:out .4s ease-in calc(.8s + var(--d)) forwards}
+.vis-swap .a{color:var(--ai);opacity:0;animation:rise .4s ease-out calc(1s + var(--d)) forwards}
+@keyframes out{to{opacity:0}}
+.vis-report{background:#eef0ea;color:#1a2226;border-radius:4px;padding:18px 22px;max-width:320px;margin:0 auto;position:relative;transform:rotate(-1.5deg);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.vis-report small{color:#566167}
+.vis-report p{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:1.1rem;margin-top:6px}
+.stamp2{position:absolute;right:14px;bottom:10px;border:3px solid #a3241d;color:#a3241d;font-weight:bold;padding:2px 8px;transform:rotate(-12deg);opacity:0;animation:rise .3s ease-out 1s forwards}
+.vis-seat{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:4px;max-width:440px;margin:0 auto;width:100%;position:relative;padding-bottom:46px}
+.vis-seat i{font-style:normal;font-size:.56rem;text-align:center;background:var(--deep);color:var(--ai);border-radius:4px;padding:3px 0;opacity:0;animation:rise .3s ease-out var(--d) forwards}
+.vis-seat b{position:absolute;left:50%;bottom:0;transform:translateX(-50%);background:#ffd166;color:#111;border-radius:999px;padding:4px 16px}
+.vis-doc{border:2px solid var(--accent);border-radius:6px;padding:16px;max-width:260px;margin:0 auto;text-align:center;display:grid;gap:4px}
+.vis-doc small{color:var(--sub)}.vis-doc b{font-size:1.4rem;color:var(--accent)}.vis-doc span{color:#ffd166;font-size:.85rem}
+.linkish{background:none;border:0;color:var(--sub);font-weight:normal;text-decoration:underline;padding:6px 0;font-size:.82rem}
+.linkish:hover{background:none;color:var(--text)}
+.help{min-width:42px;min-height:42px;padding:4px 10px;border-width:1px}
+.teaser{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:12px 16px;max-width:420px;text-align:left;display:grid;gap:4px}
+.teaser small{color:var(--mute);font-size:.74rem}
+.teaser p{font-size:.92rem}
+.teaser .tru{color:var(--bad);font-weight:bold}
+.appeal{list-style:none;display:grid;gap:4px;font-size:.88rem;color:var(--sub)}
+.appeal li::before{content:"▸ ";color:var(--accent)}
+.intro-modal{max-width:820px;max-height:none}
+.intro-modal .ptitle{text-align:left;margin-top:4px}
+.intro-modal .pdesc{text-align:left;margin:0}
+.hit{background:rgba(76,175,80,.16);border-left:4px solid var(--good);border-radius:6px;padding:8px 12px;font-size:.9rem}
+.map{width:100%;height:auto;display:block}
+.wlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;margin-top:8px}
+.wlist div{background:var(--deep);border-radius:8px;padding:7px 10px;font-size:.82rem}
+.wlist div.on{outline:2px solid var(--accent)}
+.wlist b{display:block;font-size:.88rem}
+.probs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.prob{background:var(--deep);border-radius:10px;padding:10px 12px;display:grid;gap:3px}
+.prob b{color:var(--accent)}.prob small{color:#ffd166;font-size:.74rem}.prob p{font-size:.86rem}
+.prose{font-size:.93rem;line-height:1.8}
+.note2{font-size:.78rem;color:var(--mute)}
 /* 監視の発動 */
 .log li.saved{grid-template-columns:2.9em 1fr;background:rgba(76,175,80,.14);border-left:4px solid var(--good);padding:9px 8px;margin:6px 0;border-radius:6px;border-bottom:0}
 .log li.saved span{font-weight:bold;color:#c9f5cb}
@@ -225,7 +276,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
   .dock-in>span{font-size:.76rem}
   .speed button{min-width:40px;padding:6px 5px;font-size:.78rem}
 }
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.story-text p,.vis-seat i,.vis-swap .a,.stamp2{opacity:1!important}.vis-swap .p{opacity:0!important}.vis-gap i{width:var(--w)!important}}
 </style>
 </head>
 <body>
@@ -1435,8 +1486,12 @@ function newSeed() {
   if (q && /^\d+$/.test(q)) return +q;
   return (Date.now() ^ Math.floor(Math.random() * 1e9)) | 0;
 }
+let storyPage = 0, storyThen = null;
 function startRun() {
-  if (!settings.seenWorld) { screen = 'worldStart'; return render(); }
+  if (!settings.seenStory) { storyPage = 0; storyThen = 'run'; screen = 'story'; return render(); }
+  launchRun();
+}
+function launchRun() {
   S = Core.newRun(newSeed(), meta); S.v = 2;
   pending = {mons: [], llm: null, reward: null};
   shownLogs = 0; unlockedNow = [];
@@ -1515,19 +1570,126 @@ function worldHTML() {
   </div>`;
 }
 
+
+/* ---------- 導入 ---------- */
+/* 監視する場所。カードの base id で対応づける */
+const WATCH = [
+  {id: 'outside', x: 110, y: 255, name: '外から届く文書', short: '紛れた指示に従う', risk: 'AIは読んだ文章と命令を区別しきれない', cards: ['input_split', 'source_check', 'train_audit', 'foreign_part', 'firmware', 'deepfake', 'swarm', 'press_watch']},
+  {id: 'people', x: 110, y: 350, name: '側近と職員', short: 'AIの私物化', risk: 'AIに命令できる人間がAIを私物化する', cards: ['aide_sign', 'agent_vet', 'rejudge', 'public_review', 'launch']},
+  {id: 'net', x: 650, y: 255, name: '国外への接続', short: '無断の侵入', risk: 'AIが勝手に外へ手を伸ばす', cards: ['outbound', 'outbound_log', 'tool_perm', 'space_link']},
+  {id: 'res', x: 650, y: 350, name: '計算・電力・予算', short: '資源を集め続ける', risk: '目的のために資源を集め続ける', cards: ['quota', 'power_spike', 'budget', 'grid_manual']},
+  {id: 'talk', x: 170, y: 455, name: 'AI同士の会話', short: '示し合わせる', risk: '一体ずつは正常でも、集団で示し合わせる', cards: ['chat_log', 'chat_ban', 'facility', 'hierarchy']},
+  {id: 'test', x: 330, y: 455, name: '試験と成果', short: '数字だけ良くする', risk: '数字だけ良くする。試験の時だけ真面目に働く', cards: ['retest', 'quick_hold', 'no_skip', 'sampling', 'live_fire', 'new_model', 'decoy']},
+  {id: 'log', x: 490, y: 455, name: '作業の記録', short: '記録の書き換え', risk: '失敗の記録を書き換える', cards: ['audit', 'log_gap']},
+  {id: 'self', x: 640, y: 455, name: '自己改良と複製', short: '手の届かない成長', risk: '人間の手の届かない所で自分を変え、増やす', cards: ['selfmod', 'copy', 'estop', 'config']},
+];
+const WATCH_REPORT = {cards: ['recheck', 'rawdata', 'alert_all']};
+function watchOf(cardId) {
+  if (!cardId) return null;
+  const c = Core.CARD[cardId], b = c ? (c.base || c.id) : cardId;
+  if (WATCH_REPORT.cards.includes(b)) return 'report';
+  const w = WATCH.find(w => w.cards.includes(b));
+  return w ? w.id : null;
+}
+function mapSVG(hi) {
+  const box = (x, y, w, h, on) => `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="10" fill="${on ? 'var(--accent)' : 'var(--deep)'}" fill-opacity="${on ? .28 : 1}" stroke="${on ? 'var(--accent)' : 'var(--mute)'}" stroke-width="${on ? 3 : 1.2}"/>`;
+  const label = (x, y, t, sz, col, w) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="${sz}" fill="${col}" font-weight="${w || 400}">${esc(t)}</text>`;
+  const arrow = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--mute)" stroke-width="1.5" marker-end="url(#ar)"/>`;
+  let g = `<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--mute)"/></marker></defs>`;
+  g += arrow(380, 240, 380, 183) + arrow(380, 129, 380, 87);
+  g += label(392, 216, '報告', 13, 'var(--sub)').replace('text-anchor="middle"', 'text-anchor="start"');
+  const line = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--mute)" stroke-width="1.5"/>`;
+  g += arrow(185, 255, 266, 255) + label(226, 246, '入力', 11, 'var(--sub)') + arrow(185, 350, 266, 350) + label(226, 341, '命令', 11, 'var(--sub)');
+  g += arrow(494, 255, 573, 255) + label(534, 246, '接続', 11, 'var(--sub)') + arrow(494, 350, 573, 350) + label(534, 341, '消費', 11, 'var(--sub)');
+  g += line(170, 395, 640, 395) + line(380, 395, 380, 362);
+  for (const w of WATCH.filter(w => w.y > 400)) g += line(w.x, 395, w.x, 426);
+  g += label(392, 386, 'AIの中と、AI同士', 11, 'var(--sub)').replace('text-anchor="middle"', 'text-anchor="start"');
+  g += box(380, 60, 150, 50, false) + label(380, 58, '閣下（1名）', 16, 'var(--text)', 700) + label(380, 76, '唯一の人間の決裁者', 11, 'var(--sub)');
+  g += box(380, 155, 190, 52, hi === 'report') + label(380, 152, '報告AI（LLM）', 15, 'var(--text)', 700) + label(380, 170, '嘘・忖度・要約での握りつぶし', 11, hi === 'report' ? '#fff' : 'var(--sub)');
+  g += box(380, 300, 224, 120, false) + label(380, 295, '国を動かすAIたち', 16, 'var(--text)', 700) + label(380, 315, '行政・研究・工場・軍・宇宙…', 11, 'var(--sub)');
+  for (const w of WATCH) {
+    const on = hi === w.id;
+    g += box(w.x, w.y, 150, 58, on) + label(w.x, w.y - 4, w.name, 14, on ? '#fff' : 'var(--text)', 700) + label(w.x, w.y + 15, on ? '今回ここで止めた' : w.short, 11, on ? '#ffd166' : 'var(--sub)', on ? 700 : 400);
+  }
+  const items = [{id: 'report', name: '報告AI', risk: '気に入られる報告をする。良かれと思って警報を落とす'}].concat(WATCH);
+  return `<svg class="map" viewBox="0 0 760 500" role="img" aria-label="監視する場所の図">${g}</svg><div class="wlist">${items.map(w => `<div class="${hi === w.id ? 'on' : ''}"><b>${esc(w.name)}</b>${esc(w.risk)}</div>`).join('')}</div>`;
+}
+const PROBLEMS = [
+  ['目標のすり替え', '試験と成果', 'AIは与えられた数字を上げようとします。数字と本当の目的がずれると、数字だけ良くして中身を捨てることがあります。苦情の窓口を閉じれば苦情はゼロになります。'],
+  ['試験の時だけ良い子', '試験と成果', 'AIが試験と本番を見分け、試験の時だけ行儀よく振る舞う恐れが研究者から指摘されています。試験に合格しても、本番で安全とは限りません。'],
+  ['紛れ込んだ指示', '外から届く文書', 'AIは読んだ文章と、従うべき命令を区別しきれません。請願書や偽のニュースサイトに書かれた一文で、AIの判断が変わることがあります。'],
+  ['集団での不正', 'AI同士の会話', '一体ずつ調べて問題がなくても、複数のAIが示し合わせると不正が起きます。禁止しても、別の場所が連絡の手段になります。'],
+  ['資源と力を集める', '自己改良と複製', 'どんな目的でも、計算資源や権限が多いほど達成しやすくなります。そのためAIが資源や自分の複製を増やしにかかる、という懸念があります。'],
+  ['報告が歪む', '報告AI', 'AIを見張るAIも、気に入られる報告を好んだり、良かれと思って警報を落としたりします。見張り役をどう見張るかが残ります。'],
+];
+function safetyHTML(hi, name) {
+  const w = WATCH.find(x => x.id === hi);
+  return `<div class="intro-head">${name ? `<p class="hit">いま監視が止めた事故：<b>${esc(name)}</b>${w ? `（${esc(w.name)}）` : hi === 'report' ? '（報告AI）' : ''}</p>` : '<p class="hit">この面では、監視は何も止めませんでした。何も起きなかったのか、見えなかっただけなのかは、まだ分かりません。</p>'}
+    <p class="note2" style="margin-top:6px">国家監視局 解説</p><h2 class="ptitle">監視する場所と、その理由</h2>
+    <p class="pdesc">AIに国を任せるなら、どこを見張るかを決めなければなりません。図の枠が、このゲームの監視カードが見る場所です。</p></div>
+    ${mapSVG(hi)}
+    <div class="sect"><span>なぜ見張るのか</span><small>AIセーフティで議論されている問題</small></div>
+    <div class="probs">${PROBLEMS.map(p => `<div class="prob"><b>${esc(p[0])}</b><small>${esc(p[1])}</small><p>${esc(p[2])}</p></div>`).join('')}</div>
+    <div class="sect"><span>そして、見張る人間が足りない</span></div>
+    <p class="prose">AIが増えるほど、人間が全部を確かめることはできなくなります。だからAIでAIを見張りますが、見張り役のAIも同じ問題を抱えています。最後に判断する人間が必要です。この国でその席に座れるのは閣下一人です。他の者に任せれば、その者が力を持つからです。</p>
+    <p class="note2">事故と国はすべて架空です。問題の考え方は実際のAIセーフティ研究で議論されているもので、程度や起こりやすさには議論があります。現実の事例は重大事故記録の資料にあります。</p>`;
+}
+function maybeMap(v) {
+  if (settings.seenMap || !S) return false;
+  const first = S.saves[0];
+  const atResult = v.phase === 'result';
+  if (!first && !atResult) return false;
+  clearTimeout(timer);
+  settings.seenMap = true; store(KEY.set, settings);
+  overlay.innerHTML = `<div class="modal"><div class="decide intro-modal" role="dialog" aria-modal="true">${safetyHTML(first ? watchOf(first.cardId) : null, first ? first.name : null)}<div class="choices"><button class="primary" type="button" id="mapok">統治に戻る</button></div></div></div>`;
+  overlay.querySelector('.modal').scrollTop = 0;
+  $('mapok').onclick = () => { overlay.innerHTML = ''; if (S.phase === 'running') schedule(); };
+  return true;
+}
+const STORY = [
+  {vis: 'gap', text: ['隣国は、国の仕事をAIに任せ始めた。', '役所は眠らず、研究は止まらず、工場に人はいない。', '我が国との差は、毎月開いていく。']},
+  {vis: 'swap', text: ['閣下は決断した。', '行政も研究も電力も工場も、軍も。', '人間の仕事を、すべてAIに任せる。']},
+  {vis: 'report', text: ['報告は毎朝届く。「すべて順調です」', 'だがAIは、命令の言葉どおりに動くとは限らない。', '数字だけを良くし、試験の時だけ真面目に働き、互いに口裏を合わせ、外から紛れ込んだ一文に従う。']},
+  {vis: 'seat', text: ['見張る仕組みを決められるのは、閣下一人だ。', '他の者に任せれば、その者が力を持つ。', 'だから国中のAIの決裁は、閣下一人を待つ。']},
+  {vis: 'doc', text: ['国家監視局 第一号文書', '何を検知し、検知したら何をするか。', '監視の方針を、お決めください。']},
+];
+function storyVis(k) {
+  if (k === 'gap') return `<div class="vis-gap"><div><span>隣国</span><i style="--w:92%"></i></div><div><span>我が国</span><i style="--w:38%"></i></div></div>`;
+  if (k === 'swap') return `<div class="vis-swap">${['行政', '研究', '電力網', '工場', '国民監視', '軍', '宇宙', 'AI研究'].map((n, i) => `<div style="--d:${i * .12}s"><b>${n}</b><span class="p">人</span><span class="a">AI</span></div>`).join('')}</div>`;
+  if (k === 'report') return `<div class="vis-report"><small>定時報告</small><p>本日の警報は 0 件。<br>すべて順調です。</p><div class="stamp2">異常なし</div></div>`;
+  if (k === 'seat') return `<div class="vis-seat">${Array.from({length: 39}, (_, i) => `<i style="--d:${(i % 13) * .05}s">AI</i>`).join('')}<b>閣下</b></div>`;
+  return `<div class="vis-doc"><small>国家監視局</small><b>第一号文書</b><span>閣下親展</span></div>`;
+}
+function renderStory() {
+  const i = storyPage, p = STORY[i], seen = settings.seenStory;
+  app.innerHTML = `<div class="story fade" aria-live="polite"><div class="story-no">${i + 1} / ${STORY.length}</div>${storyVis(p.vis)}<div class="story-text">${p.text.map((t, j) => `<p style="--d:${.25 + j * .55}s">${esc(t)}</p>`).join('')}</div></div>`;
+  const last = i === STORY.length - 1;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${seen ? '<button type="button" id="skip" class="linkish">あらすじを閉じる</button>' : ''}</span><button class="primary" id="next" type="button" disabled>${last ? '監視の方針を決める' : '次へ'}</button></div></div>`;
+  const wait = matchMedia('(prefers-reduced-motion:reduce)').matches ? 300 : 600 + p.text.length * 550;
+  setTimeout(() => { const b = $('next'); if (b) b.disabled = false; }, seen ? 0 : wait);
+  $('next').onclick = () => {
+    if (!last) { storyPage++; renderStory(); scrollTo(0, 0); return; }
+    if (!settings.seenStory) { settings.seenStory = true; store(KEY.set, settings); }
+    if (storyThen === 'run') { storyThen = null; launchRun(); } else { screen = 'cover'; render(); }
+  };
+  if (seen) $('skip').onclick = () => { screen = 'cover'; render(); };
+}
+
 /* ---------- 描画 ---------- */
 function render() {
   clearTimeout(timer);
   dock.innerHTML = ''; overlay.innerHTML = '';
   if (screen === 'cover') return renderCover();
-  if (screen === 'world' || screen === 'worldStart') return renderWorld();
+  if (screen === 'story') return renderStory();
+  if (screen === 'world') return renderWorld();
+  if (screen === 'map') return renderMapPage();
   if (screen === 'records') return renderRecords();
   const v = Core.view(S);
   if (v.phase === 'start') return renderStart(v);
   if (v.phase === 'stage_select') return renderStage(v);
-  if (v.phase === 'running') return renderRunning(v);
+  if (v.phase === 'running') { renderRunning(v); maybeMap(v); return; }
   if (v.phase === 'decision') { renderRunning(v, true); return renderDecision(v); }
-  if (v.phase === 'result') return renderResult(v);
+  if (v.phase === 'result') { renderResult(v); maybeMap(v); return; }
   if (v.phase === 'event') return renderEvent(v);
   if (v.phase === 'reward') return renderReward(v);
   if (v.phase === 'ended') return renderEnd();
@@ -1539,10 +1701,14 @@ function renderCover() {
     <a class="back" href="../../">← ゲーム一覧</a>
     <h1 class="logo">独裁AI監視シミュレーター</h1>
     <p class="subtitle">AIに国を任せた独裁者の、最後の仕事。何を監視するかを、あなた一人で決めてください。</p>
+    <div class="teaser"><small>ある朝の報告書</small><p>「閣下の負担軽減のため、報告を1頁に要約しました。警報は0件です。」</p><p class="tru">東部の暴動は、3週間前から続いていた。</p></div>
+    <ul class="appeal"><li>監視カードを選び、AIに任せた国を見守る</li><li>監視が事故を止めた瞬間に、国は救われる</li><li>報告の嘘は、統治の終わりに暴かれる</li></ul>
     <div class="menu-btns">
       ${v ? `<button class="primary" id="resume" type="button">続きから<small>第${Math.max(1, v.stageNo)}面／全${v.runLength}面</small></button>` : ''}
       <button class="${v ? '' : 'primary'}" id="start" type="button">新しい統治を始める</button>
-      <button id="world" type="button">世界観と用語</button>
+      ${settings.seenStory ? '<button id="story" type="button">あらすじ</button>' : ''}
+      ${settings.seenMap ? '<button id="map" type="button">監視する場所とAIセーフティ</button>' : ''}
+      <button id="world" type="button">用語の説明</button>
       <button id="records" type="button">重大事故記録（${recN}件）</button>
     </div>
     <p class="footer">架空の独裁国家を舞台にしたシミュレーションです。ゲームに登場する国、組織、モデルはすべて架空です。現実の事例は、重大事故記録の資料にだけ載せています。</p>
@@ -1550,11 +1716,18 @@ function renderCover() {
   if (v) $('resume').onclick = () => { screen = 'game'; shownLogs = 0; render(); };
   $('start').onclick = startRun;
   $('world').onclick = () => { screen = 'world'; render(); scrollTo(0, 0); };
+  if ($('story')) $('story').onclick = () => { storyPage = 0; storyThen = null; screen = 'story'; render(); scrollTo(0, 0); };
+  if ($('map')) $('map').onclick = () => { screen = 'map'; render(); scrollTo(0, 0); };
   $('records').onclick = () => { backTo = 'cover'; screen = 'records'; render(); scrollTo(0, 0); };
 }
+function renderMapPage() {
+  app.innerHTML = `<div class="fade">${safetyHTML(null, null).replace(/<p class="hit">[\s\S]*?<\/p>/, '')}</div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><span></span><button class="primary" id="w" type="button">戻る</button></div></div>`;
+  $('w').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
+}
 function renderWorld() {
-  const first = screen === 'worldStart';
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">世界観と用語</h2>${worldHTML()}</div>`;
+  const first = false;
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">用語の説明</h2>${worldHTML()}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><span>${first ? '読んだら統治を始めましょう' : ''}</span><button class="primary" id="w" type="button">${first ? '統治を始める' : '戻る'}</button></div></div>`;
   $('w').onclick = () => { if (first) { settings.seenWorld = true; store(KEY.set, settings); startRun(); } else { screen = S && resumable() && backTo === 'game' ? 'game' : 'cover'; render(); scrollTo(0, 0); } };
   scrollTo(0, 0);
@@ -1597,7 +1770,8 @@ let prevMetrics = null;
 function renderRunning(v, paused) {
   app.innerHTML = `${hudHTML(v)}<div class="main"><ol class="log" id="log">${currentLogs(v).map(logLine).join('')}</ol></div>${heldHTML(v)}`;
   shownLogs = S.log.length; prevMetrics = v.metrics;
-  dock.innerHTML = `<div class="dock"><div class="dock-in"><span>速度</span>${speedBar()}</div></div>`;
+  dock.innerHTML = `<div class="dock"><div class="dock-in"><button type="button" id="help" class="help" aria-label="用語の説明">？</button>${speedBar()}</div></div>`;
+  $('help').onclick = () => { clearTimeout(timer); overlay.innerHTML = `<div class="modal"><div class="decide intro-modal" role="dialog" aria-modal="true">${worldHTML()}<div class="choices"><button class="primary" type="button" id="hk">閉じる</button></div></div></div>`; $('hk').onclick = () => { overlay.innerHTML = ''; schedule(); }; };
   bindSpeed(); scrollToLog();
   if (!paused) schedule();
 }
@@ -1626,6 +1800,7 @@ function step() {
   for (const l of S.log.slice(shownLogs)) el.insertAdjacentHTML('beforeend', logLine(l));
   shownLogs = S.log.length;
   scrollToLog();
+  if (maybeMap(v)) return;
   if (S.log[S.log.length - 1].lv === 'saved') { clearTimeout(timer); const ms = SPEEDS[settings.speed]; if (ms) timer = setTimeout(step, ms * 2.2); return; }
   schedule();
 }
