@@ -519,7 +519,7 @@ function dexCounts() {
 function menuHTML() {
   const c = dexCounts();
   const seg = (name, opts) => `<span class="seg">${opts.map(([v, l]) => `<button data-set="${name}" data-v="${v}" class="${String(settings[name]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</span>`;
-  return `<div class="menu fade"><a class="back" href="../../">← ゲーム一覧</a>
+  return `<div class="menu fade"><a class="back" href="../../samples/">← ゲーム一覧</a>
     <h1 class="logo">独裁者AI国家シミュレーター</h1>
     <h2 class="subtitle">AIを駆使して最強の国家を作り上げろ</h2>
     <div class="menu-btns">

@@ -636,7 +636,7 @@ function toggleMute() { muted = !muted; }
 function press(x, y) {
   initAudio();
   if (x > W - 90 && y > H - 30) { toggleMute(); return; }
-  if (x >= 0 && x < 90 && y > H - 30 && (scene === 'title' || scene === 'result')) { location.href = '../../'; return; }
+  if (x >= 0 && x < 90 && y > H - 30 && (scene === 'title' || scene === 'result')) { location.href = '../../samples/'; return; }
   if (scene === 'title' || (scene === 'result' && resultT > 1.2)) startGame();
   else if (scene === 'play') drop();
 }

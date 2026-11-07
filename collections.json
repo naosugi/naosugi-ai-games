@@ -1,0 +1,16 @@
+[
+  {
+    "path": "samples/",
+    "title": "サンプルゲーム",
+    "kind": "sample",
+    "lead": "中の人が作った見本です。講座で作るゲームと同じく、どれもHTMLファイル1つで動きます。",
+    "thumbnail": "games/robot-defense/thumb.jpg"
+  },
+  {
+    "path": "events/01/",
+    "title": "親子でAIゲームづくり講座 第1弾（仮）",
+    "kind": "event",
+    "date": "2027年1月予定",
+    "lead": "親子でゲームを考え、AIに作ってもらい、遊べる形にして発表する全3回の講座です。内容は検討中のため、変わることがあります。"
+  }
+]

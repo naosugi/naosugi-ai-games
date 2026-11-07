@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ゲーム一覧 - 作ってみたゲームの発表会（仮）</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-mode="list">
+<!-- このファイルは tools/build.py が書き出します。直接編集しないでください -->
+<div class="wrap">
+  <header>
+    <a class="toplink" href="../">← 作ってみたゲームの発表会（仮）</a>
+    <div class="pagehead">
+      <div class="txt">
+        <h1 id="title"></h1>
+        <div class="evmeta" id="evmeta"></div>
+        <p class="lead" id="lead"></p>
+      </div>
+      <a class="pageqr" href="print.html" style="text-decoration:none">
+        <img src="qr/_page.png" alt="このページのQRコード">
+        <div>このページのQRコード<br>🖨 印刷用シートを開く</div>
+      </a>
+    </div>
+    <p class="note">⬇ ダウンロードしたファイルは、インターネットにつながっていなくても遊べます（パソコン・Android）。iPhone・iPad では開けないことがあります。記録はWeb版とは別に保存されます。</p>
+  </header>
+  <section class="about" id="about" hidden></section>
+  <h2 class="sec" id="gamesh" hidden>作られたゲーム</h2>
+  <div class="bar" id="bar">
+    <input class="search" id="q" type="search" placeholder="ゲームを検索" aria-label="ゲームを検索">
+    <div class="tags" id="tags"></div>
+  </div>
+  <div class="count" id="count"></div>
+  <main class="grid" id="grid"></main>
+  <footer>記録やランキングは各ブラウザ内に保存されます。各ゲームのQRコードは、押すと画像で開けます（保存・印刷用）。</footer>
+</div>
+<script src="../assets/collection.js"></script>
+</body>
+</html>

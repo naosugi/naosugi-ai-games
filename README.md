@@ -1,10 +1,10 @@
-# naosugi-ai-games
+# 作ってみたゲームの発表会（仮）
 
-ブラウザでそのまま遊べる HTML ゲーム集です。GitHub Pages で公開しています。
+個人開発のHTMLゲーム置き場です。キャッチコピーは「令和の技術で令和の発想を平成初期風ゲームに」。GitHub Pages で公開しています。
 
 - 公開URL: https://naosugi.github.io/naosugi-ai-games/
 
-## 収録ゲーム
+## 収録ゲーム（サンプル）
 
 | ゲーム | 内容 |
 |---|---|
@@ -24,24 +24,36 @@
 ## 構成
 
 ```
-index.html            ゲーム一覧（games.json を読み込んで表示）
-games.json            一覧に載せるゲームの登録情報
-games/<id>/index.html 各ゲーム本体（1ファイル完結）
-games/<id>/thumb.jpg  一覧用サムネイル（16:9 推奨）
+index.html                    トップ（collections.json を読み込み、サンプル・イベントの入口を表示）
+collections.json              トップに出す一覧ページの登録（hidden: true でトップに出さない）
+assets/site.css               共通の見た目
+assets/collection.js          一覧ページ・印刷用QRシートの表示処理（同じフォルダの games.json を読む）
+tools/build.py                各一覧ページの index.html / print.html とQRコード画像を書き出す
+
+samples/                      サンプルゲームの一覧（中の人が作った見本）
+  games.json                  一覧情報とゲームの登録
+  index.html, print.html      tools/build.py が書き出す（直接編集しない）
+  qr/                         QRコード画像（_page.png は一覧ページ、<id>.png は各ゲーム）
+games/<id>/index.html         サンプルゲーム本体（1ファイル完結）。URLを変えないため場所はそのまま
+
+events/<番号>/         イベントで作られたゲームの一覧（samples/ と同じ作り）
+  games/<id>/index.html       イベントのゲーム本体
 ```
 
 ## ゲームの追加方法
 
 説明文の長さ・タグ・公開までの確認などの指針は [CLAUDE.md](CLAUDE.md) にまとめています。
 
-1. `games/<id>/` フォルダを作り、ゲームを `index.html` として置く
-2. 必要ならサムネイル画像（16:9、`thumb.jpg` など）を同じフォルダに置く
-3. `games.json` に1件追加する
+1. ゲームを置く（サンプルは `games/<id>/`、イベントは `events/<イベント>/games/<id>/`）
+2. 必要ならサムネイル画像（16:9、`thumb.jpg`）を同じフォルダに置く
+3. その一覧の `games.json` の `games` に1件追加する。`path` と `thumbnail` は `games.json` のあるフォルダから見た位置で書く
+4. `python3 tools/build.py` を実行してQRコードを作る（初回は `pip install segno`）
 
 ```json
 {
   "id": "my-game",
   "title": "ゲーム名",
+  "author": "@naoya_oosugi",
   "description": "一覧に表示する説明文",
   "path": "games/my-game/",
   "thumbnail": "games/my-game/thumb.jpg",
@@ -52,15 +64,28 @@ games/<id>/thumb.jpg  一覧用サムネイル（16:9 推奨）
 }
 ```
 
-`thumbnail` `tags` `controls` `playtime` は省略できます。`added` から14日間は一覧に NEW が付き、新しい順に並びます。
-ゲーム側から一覧へ戻るリンクは `../../` です。
+`author` は一覧のカードに「制作者: 」として出ます。イベントのゲームでは参加者のニックネームを書きます。
+`thumbnail` `tags` `controls` `playtime` は省略できます。`added` から14日間は一覧に NEW が付きます。サンプルは新しい順、イベントは `games.json` に書いた順に並びます。
+
+ゲーム側から一覧へ戻るリンク: サンプルは `../../samples/`、イベントのゲームは `../../`（そのイベントの一覧）。
+
+## イベントページの追加
+
+1. `events/<番号>/games.json` を作る（`title` `kind: "event"` `date` `place` `lead` `games: []`。講座の案内を載せるときは `about` に見出し `h`・段落 `p`・箇条書き `ul`・表 `tables`（`caption` `goal` `rows`）の配列を書く。`**太字**` と `[文字](URL)` が使える）
+2. `collections.json` に1件追加する。公開前は `"hidden": true` にしておく
+3. `python3 tools/build.py` を実行する
+4. 講座スライドを載せるときは、`events/<番号>/slides/src/<回>/` に `deck.json`（`title` `wip` `order`）と各スライドの `<section>` 断片を置き、`python3 tools/build_slides.py` で `slides/<回>.html`（1ファイルで完結するスライド）を書き出す
+
+各一覧ページの右上のQRを押すと、印刷用シート（A4、ゲームごとのQRを切り分けられる形）が開きます。QR画像は `qr/` にPNGで入っています。
 
 ## ライセンス
+
+QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Clause）を使っています（ビルド時のみ。サイトには含めていません）。
 
 このリポジトリのコードは MIT License（[LICENSE](LICENSE)）です。
 
 同梱しているサードパーティ製ソフトウェア:
 
 - **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html`・`games/infinite-shot-3d-2/index.html`・`games/robot-defense/index.html` に埋め込み（いずれも r186。robot-defense は使う部品だけをまとめた版）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
-- `games/blue-dash/index.html` は three.js（r128）を cdnjs から読み込みます（同梱はしていません）。
+- **three.js**（MIT License, Copyright © 2010-2021 Three.js Authors）— `games/blue-dash/index.html` に r128 を埋め込み（ダウンロードしてオフラインでも遊べるようにするため）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。

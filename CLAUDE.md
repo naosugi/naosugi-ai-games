@@ -7,16 +7,20 @@
 
 ## 置き場所と登録
 
-1. `games/<id>/index.html` に置く。`<id>` は英小文字とハイフン（例: `keyboard-driver`）
-2. `games/<id>/thumb.jpg` にサムネイルを置く（16:9。既存は 960×540 前後）
-3. `games.json` の末尾に1件追加する
-4. `README.md` の「収録ゲーム」の表に1行追加する
+サイトは「トップ → 一覧ページ（サンプル・イベントごと）→ ゲーム」の3段。詳しい構成は README.md の「構成」。
+
+1. 置き場所: サンプルは `games/<id>/index.html`、イベントで作られたゲームは `events/<イベント>/games/<id>/index.html`。`<id>` は英小文字とハイフン（例: `keyboard-driver`）
+2. 同じフォルダに `thumb.jpg` を置く（16:9。既存は 960×540 前後）
+3. その一覧の `games.json`（`samples/games.json` など）の `games` の末尾に1件追加する
+4. `python3 tools/build.py` を実行し、QRコード画像を作る（一覧の `index.html` `print.html` はこのスクリプトが書き出すので直接編集しない）
+5. サンプルなら `README.md` の「収録ゲーム（サンプル）」の表に1行追加する
 
 ## index.html
 
 - 1ファイルで完結させる。CSS と JS は中に書く
 - 外部ライブラリは、ファイルに埋め込むか cdnjs から読み込む。どちらの場合も `README.md` の「ライセンス」にライブラリ名とライセンスを書く
-- 一覧へ戻るリンクを入れる。リンク先は `../../`、文言は「← ゲーム一覧」
+- 一覧へ戻るリンクを入れる。文言は「← ゲーム一覧」。リンク先はサンプルなら `../../samples/`、イベントのゲームなら `../../`
+- 外部への読み込み（CDN・Webフォントなど）はなるべく避ける。一覧からファイルをダウンロードして、ネットなしで遊べるようにするため
 - スマホでも遊べるようにする
   - `<meta name="viewport" content="width=device-width,initial-scale=1,...">` を入れる
   - タップで操作できるようにし、`env(safe-area-inset-*)` で画面の端を避ける
@@ -30,9 +34,10 @@
 {
   "id": "my-game",
   "title": "ゲーム名",
+  "author": "@naoya_oosugi",
   "description": "一覧に表示する説明文",
-  "path": "games/my-game/",
-  "thumbnail": "games/my-game/thumb.jpg",
+  "path": "../games/my-game/",
+  "thumbnail": "../games/my-game/thumb.jpg",
   "tags": ["パズル"],
   "controls": "タップ / キーボード",
   "playtime": "約3分",
@@ -48,6 +53,8 @@
   細かい仕様（数値、全モードの列挙、内部の計算方法など）は書かない
 - `tags` は、なるべく既存のタグを使う（例: アクション、スコアアタック、育成、シミュレーション、知育、こども、3D）。2〜4個にする
 - `controls` は「スマホの操作 / PCの操作」の順に書く
+- `path` `thumbnail` は `games.json` のあるフォルダから見た位置で書く（サンプルは `../games/<id>/`）
+- `author` は一覧のカードに「制作者: 」として出る。サンプルは `@naoya_oosugi`、イベントは参加者のニックネーム（実名は書かない）
 - `added` は追加した日付。この日から14日間、一覧に NEW が付く
 
 ## README.md の表
