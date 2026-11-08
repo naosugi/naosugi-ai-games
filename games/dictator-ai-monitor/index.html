@@ -3269,7 +3269,7 @@ function renderGapsLesson() {
   // 3段に1つずつだけ見せる。全部の一覧は図鑑に置く
   const row = ([k, name], key) => { const g = GAPS[key]; return `<div class="rec"><h3>${esc(name)}</h3><p>${esc(g[1])}。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p><small>足りないもの：${esc(g[2])}</small></div>`; };
   app.innerHTML = `<div class="fade"><h2 class="ptitle">第5話　足りないもの</h2>${NAVI('ここまで見た3段は、現実ではどこまでできているでしょうか。')}
-    <div class="sect"><span>3段それぞれの、現実の一例</span><small>2026年11月時点。足りないものは作者の判断です</small></div><div class="gapsteps">${FLOW.map((f, i) => row(f, ['inner', 'lie', 'stop'][i])).join('')}</div>
+    <div class="sect"><span>3段それぞれの、現実の一例</span><small>2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です</small></div><div class="gapsteps">${FLOW.map((f, i) => row(f, ['inner', 'lie', 'stop'][i])).join('')}</div>
     <p class="pnote">ほかの多くの監視カードにも、足りないものがあります。全部の一覧は、監視カード図鑑で読めます。</p><p><button type="button" class="dexlink" id="gdex">監視カード図鑑で見る</button></p>
     ${NAVI('作中では、何を見張るかを閣下が一人で決めました。現実では、誰が決めるべきでしょうか。')}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="gquit" type="button">一覧へ</button><button class="primary" id="gmain" type="button">本編へ</button></div></div>`;
@@ -3718,7 +3718,7 @@ function renderDex() {
     <div class="doc dexintro"><p>ルールが破られるとは限りません。遅れを嫌った人間が、自分で外すこともあります。</p>${kinds.map(([k, v]) => `<div><span class="kindchip k-${k}">${esc(v.name)}</span> <b>${esc(v.short)}</b><p>${esc(v.desc)}</p></div>`).join('')}</div>
     <div class="sect"><span>どこを見て、どう止めるか</span><small>場所を押すと、その場所のカードが下に出ます</small></div>${placeMap(ids, m, {hi: [place]})}
     <div class="dexpanel" id="dexpanel"><div class="sect"><span>${esc(PLACES[place][0])}（${plist.length}枚）</span><small>${esc(PLACES[place][1])}</small></div>${plist.map(dexEntry).join('')}</div>
-    ${fold('dex_gaps', '現実で足りないもの（一覧）', `<p class="pnote">2026年11月時点。足りないものは作者の判断です。</p>${gapsTableHTML()}`, false, `${Object.keys(GAPS).length}項目`)}
+    ${fold('dex_gaps', '現実で足りないもの（一覧）', `<p class="pnote">2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です。</p>${gapsTableHTML()}`, false, `${Object.keys(GAPS).length}項目`)}
     <div class="acts" style="margin-top:18px"><button id="dexb" type="button">戻る</button></div></div>`;
   app.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { dexPlace = b.dataset.place; const y = scrollY; render(); scrollTo(0, y); const el = $('dexpanel'); if (el) el.scrollIntoView({block: 'nearest'}); });
   $('dexb').onclick = () => { screen = dexBack; render(); scrollTo(0, dexBack === 'game' ? dexY : 0); };
@@ -3750,7 +3750,7 @@ function renderRecords() {
     ${locked.map(c => { const open = Core.isUnlocked(c, meta); return `<div class="rec endrow"><h3>${open ? `✔ ${esc(c.name || c.detect)}` : '未解放'}</h3><small>${open ? '解放済み' : (c.type === 'llm' ? `記録${c.unlock}件で解放` : `記録${c.unlock}件、または効く事故を1つ記録すると解放`)}</small></div>`; }).join('')}
     ${rec.length ? `<div class="sect"><span>現実との関連（${Object.keys(REAL).length}件）</span><small>実在の組織名はこの資料にだけ出ます</small></div>
     ${Object.entries(REAL).map(([k, c]) => fold(`real_${k}`, esc(c.title), realBody(c), false, esc(c.label))).join('')}
-    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。足りないものは作者の判断です</small></div>
+    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です</small></div>
     ${gapsTableHTML()}` : ''}
     <div class="acts" style="margin-top:18px"><button id="b" type="button">戻る</button></div></div>`;
   $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
