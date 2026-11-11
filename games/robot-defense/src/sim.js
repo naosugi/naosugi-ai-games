@@ -132,7 +132,7 @@ const ENEMIES = {
   wraith: { name: '深淵体', hp: 35, speed: 2.3, r: .45, pts: 10, baseDps: 1.5, phase: { on: 2, off: 1 }, desc: '時々姿が揺らぎ、その間は攻撃が当たらない' },
   warper: { name: '跳躍体', hp: 70, speed: 1.2, r: .55, pts: 25, baseDps: 2, warp: { every: 4, dist: 5 }, desc: '数秒ごとに経路の先へ跳ぶ' },
   aegis: { name: '障壁体', hp: 175, speed: 1, r: .7, pts: 40, baseDps: 2, aura: { range: 3.2 }, desc: '周りの敵が受けるダメージを半分にする。先に倒したい' },
-  omega: { name: 'OMEGA原型', hp: 3600, speed: .45, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
+  omega: { name: 'OMEGA原型', hp: 10800, speed: .45, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
   // ボス：こちらのロボットと同じ「ボディ＋武器」で組まれた敵。体当たりはせず、射撃でロボットと拠点を攻撃する
   boss: { name: '模倣機', hp: 1000, speed: .9, r: 1.1, pts: 300, baseDps: 0, fireMul: 1.6, hold: 5.5, boss: true, body: 'fortress', weapons: ['blaster', 'missile'], desc: 'こちらのロボットを模倣した赤い機体。ロボットや拠点が射程に入ると立ち止まって撃つ' },
 };
@@ -536,6 +536,82 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
       ['warper', 40, 400, 28, 3, 1.2], ['aegis', 60, 400, 50, 1, 0], ['mimicArt', 80, 400, 50, 1, 0], ['kamikaze', 50, 400, 36, 10, .2], ['flyer', 90, 400, 40, 6, .5],
     ])),
   });
+
+  // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
+  STAGES.push({
+    id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
+    brief: ['OMEGA原型の後退経路を特定。', '追撃部隊の前に、深部へ観測機材を運ぶ。補給車を護衛せよ。'], win: '補給車、到着。深部の観測を開始する。',
+    intro: '補給車は点線の道を北へ進む。敵が近くにいると止まって攻撃を受ける。道の両側から深淵の敵が来る。補給車が着けば勝ち。',
+    map: { minX: -26, maxX: 26, minZ: -40, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.2 },
+    convoy: { path: [[0, 22], [0, 12], [12, 12], [12, -2], [-18, -2], [-18, -18], [8, -18], [8, -28], [0, -28], [0, -38]], hp: 500, speed: .6 },
+    outposts: [[-12, 18, 'A', 'p'], [14, 18, 'B', 'p'], [-8, -10, 'C'], [16, -22, 'D', 'e']],
+    garrison: ['mimic', 'shooter', 'aegis', 'armor'],
+    paths: [
+      [[-24, -38], [-24, -10], [-14, -10], [-14, 6], [-4, 6], [-4, 18], [-4, 26], [0, 26]],
+      [[24, -38], [24, -8], [18, -8], [18, 4], [4, 4], [4, 18], [4, 26], [0, 26]],
+      [[-24, 28], [-12, 28], [-12, 26], [-4, 26], [0, 26]],
+    ],
+    ebases: [{ path: 0, hp: 900, pts: 180, turret: TUR }, { path: 1, hp: 900, pts: 180, turret: TUR }],
+    waves: waveGen([
+      ['normal', 3, 300, 14, 9, .5], ['wraith', 10, 300, 18, 8, .4], ['shooter', 16, 300, 26, 3, 1.3], ['swarm', 20, 300, 22, 30, .1],
+      ['warper', 30, 300, 30, 3, 1.2], ['mimic', 40, 300, 36, 2, 1.3], ['armor', 50, 300, 34, 3, 1.5], ['artillery', 70, 280, 60, 1, 0], ['kamikaze', 60, 300, 40, 8, .25],
+    ]),
+  });
+  STAGES.push({
+    id: 'x2', name: '5-2', sub: '巣窟', goal: 'bases', time: 420, startPoints: 620, wide: true,
+    brief: ['深部に、敵拠点の密集地を確認。', '六方向すべてに生産拠点。障壁体と模倣兵が守る。', 'すべて破壊し、追撃路を開け。'], win: '敵拠点群、全壊。深部への道、開通。',
+    intro: '敵拠点6つをすべて壊せば勝ち。どの方向から攻めるかが鍵。壊した方向からは敵が減る。',
+    map: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.6 },
+    outposts: [[-10, 6, 'A', 'p'], [10, 6, 'B', 'p'], [0, -11, 'C', 'p'], [-22, -14, 'D'], [22, -14, 'E'], [0, 24, 'F', 'e']],
+    garrison: ['aegis', 'mimic', 'mimic', 'shooter'],
+    paths: radialPaths(6, 35, Math.PI / 6, .28),
+    ebases: [0, 1, 2, 3, 4, 5].map(i => ({ path: i, hp: i % 2 ? 1300 : 1500, pts: 220, turret: TUR })),
+    waves: waveGen([
+      ['normal', 3, 400, 14, 6, .5], ['wraith', 10, 400, 20, 6, .4], ['swarm', 16, 400, 24, 24, .1], ['shooter', 20, 400, 30, 2, 1.3],
+      ['aegis', 40, 400, 60, 1, 0], ['mimic', 30, 400, 36, 2, 1.3], ['warper', 50, 400, 34, 2, 1.2], ['healer', 70, 400, 50, 1, 0], ['armor', 60, 400, 40, 3, 1.4], ['mimicArt', 120, 400, 80, 1, 0], ['engineer', 120, 400, 60, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'x3', name: '5-3', sub: '長征', goal: 'escort', time: 620, startPoints: 640, wide: true,
+    brief: ['OMEGA原型の潜む最深部へ、長距離輸送を行う。', '補給車は拠点から大きく離れる。増援が届くまで時間がかかる。', '途中の陣地を確保し、前線から出撃させよ。'], win: '補給車、最深部に到着。OMEGAの反応、至近。',
+    intro: 'とても長い道を補給車が進み、敵の通り道を何度も横切る。拠点から遠いので、途中の陣地を取って前から出撃させよう。',
+    map: { minX: -24, maxX: 24, minZ: -114, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 3.2 },
+    convoy: { path: [[0, 22], [0, 2], [20, 2], [20, -40], [-20, -40], [-20, -80], [0, -80], [0, -108]], hp: 1200, speed: .65 },
+    outposts: [[-10, 6, 'A', 'p'], [-6, -16, 'B'], [6, -56, 'C'], [-6, -94, 'D', 'e']],
+    garrison: ['mimic', 'shooter', 'shooter', 'armor'],
+    paths: [
+      [[-14, -112], [-14, 16], [-6, 16], [-6, 26], [0, 26]],
+      [[14, -112], [14, 16], [6, 16], [6, 26], [0, 26]],
+      [[-24, -37], [-14, -37], [-14, 16], [-6, 16], [-6, 26], [0, 26]],
+      [[24, -67], [14, -67], [14, 16], [6, 16], [6, 26], [0, 26]],
+    ],
+    pathOpen: { 2: 150, 3: 300 },
+    ebases: [{ path: 0, hp: 1200, pts: 220, turret: TUR }, { path: 1, hp: 1000, pts: 200, turret: TUR }],
+    waves: waveGen([
+      ['normal', 3, 600, 18, 6, .5], ['wraith', 10, 600, 26, 5, .4], ['swarm', 20, 600, 30, 20, .1], ['shooter', 16, 600, 36, 2, 1.3],
+      ['warper', 30, 600, 42, 2, 1.2], ['mimic', 40, 600, 54, 2, 1.3], ['armor', 50, 600, 50, 2, 1.5], ['dasher', 30, 600, 46, 3, 1.2], ['artillery', 90, 580, 90, 1, 0],
+      ['kamikaze', 70, 600, 56, 6, .25], ['flyer', 100, 600, 56, 5, .5], ['carrier', 160, 560, 120, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'x4', name: '5-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA', bossCount: 3, hideCount: true, omegaMore: [1, 2], time: 900, startPoints: 700, wide: true, dark: 9,
+    pathOpen: { 3: 240 }, // 2戦目のOMEGAは経路1・2（西と東）から来るので、この2本は最初から開けておく
+    brief: ['最深部。OMEGA原型を捕捉。', '反応の照合に、不明な残響あり。原因は特定できない。', '全機、出撃。OMEGAを止めよ。'],
+    win: 'OMEGA、全機沈黙。反応、完全に消失。……侵略者の中枢、停止を確認。',
+    intro: 'OMEGA原型を止めろ。……ただし、深淵ではなにが起きるか分からない。長期戦の備えを。暗い戦場で、途中で南にも裂け目が開く。',
+    map: { minX: -36, maxX: 36, minZ: -40, maxZ: 36 }, base: { x: 0, z: 4 }, factory: { x: 2.5, z: 1.5 }, view: { zoom: 2.4 },
+    outposts: [[-11, 8, 'A', 'p'], [11, 8, 'B', 'p'], [0, -9, 'C', 'p'], [-20, -16, 'D'], [20, -16, 'E'], [0, 22, 'F']],
+    paths: [
+      [[0, -38], [0, -24], [-9, -24], [-9, -13], [4, -13], [4, -2], [0, -2], [0, 4]],
+      [[-34, -22], [-22, -22], [-22, 0], [-11, 0], [-11, 6], [0, 4]],
+      [[34, -22], [22, -22], [22, 0], [11, 0], [11, 6], [0, 4]],
+      [[0, 34], [0, 22], [-9, 22], [-9, 13], [0, 13], [0, 4]],
+    ],
+    waves: [[30, 'omega', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 880, 16, 7, .45], ['wraith', 10, 880, 20, 6, .4], ['swarm', 16, 880, 24, 28, .09], ['mimic', 30, 880, 44, 2, 1.3],
+      ['warper', 40, 880, 30, 3, 1.2], ['aegis', 60, 880, 70, 1, 0], ['mimicArt', 90, 880, 70, 1, 0], ['kamikaze', 50, 880, 38, 10, .2], ['flyer', 90, 880, 42, 6, .5], ['healer', 120, 880, 80, 1, 0],
+    ])),
+  });
 })();
 
 // ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
@@ -564,7 +640,7 @@ const FEATURE_INFO = {
 function allowFor(stId, cleared, all) {
   const order = CHAPTERS.flatMap(c => c.stages), idx = order.indexOf(stId), a = {};
   for (const f in FEATURES) a[f] = !!all || order.indexOf(FEATURES[f]) <= idx || (cleared ? !!cleared(FEATURES[f]) : false);
-  a.nova = !!all || (cleared ? order.every(cleared) : false); // 全作戦クリア後
+  a.nova = !!all || (cleared ? CHAPTERS.filter(c => !c.extra).flatMap(c => c.stages).every(cleared) : false); // 全作戦クリア後（第5章は含めない）
   return a;
 }
 const ALLOW_ALL = (() => { const a = { nova: true }; for (const f in FEATURES) a[f] = true; return a; })();
@@ -588,6 +664,10 @@ const CHAPTERS = [
   { id: 'c4', no: '第4章', title: '深淵', stages: ['v1', 'v2', 'v3', 'v4'],
     intro: ['裂け目の奥、深部より未知の反応。', '侵略者の中枢と推定。', '最終作戦に移行する。'],
     outro: ['OMEGA原型、深淵へ後退。追跡、不能。', '前線基地、防衛完了。', '……指揮官ユニット、任務継続を推奨する。'] },
+  // エクストラ：4-4クリアで解放。全作戦クリアの判定（高難度・ノヴァの解禁）には含めない
+  { id: 'c5', no: '第5章', title: '追撃', extra: true, unlockBy: 'v4', stages: ['x1', 'x2', 'x3', 'x4'],
+    intro: ['指揮官ユニット、任務継続を受諾。', 'OMEGA原型の後退経路を解析した。追跡は、可能。', '深淵へ、追撃する。'],
+    outro: ['OMEGA、全機沈黙。', '侵略者の中枢、停止。裂け目が閉じていく。', '……指揮官ユニット。任務、完了。おつかれさま。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -597,6 +677,68 @@ for (const st of STAGES) st.waves = st.waves.map(w => {
   const k = 1 + .5 * Math.min(1, w[0] / st.time), n = Math.round(w[2] * k);
   return [w[0], w[1], n, w[3] * w[2] / n, w[4]];
 });
+
+// ---------- エンドレス・ステージ作成（第5章クリアで解放） ----------
+// 敵ごとの出方のめやす：[何秒ごと, 1回の数, 出る間隔]。エンドレスとステージ作成で使う
+const ETAB = {
+  normal: [14, 7, .5], shooter: [26, 3, 1.3], dasher: [30, 4, 1.2], armor: [34, 3, 1.5], shield: [30, 3, 1.2], splitter: [28, 4, .8],
+  healer: [50, 1, 0], kamikaze: [40, 8, .25], mine: [40, 4, .8], swarm: [22, 26, .1], swarmFast: [26, 22, .08], swarmHeavy: [30, 12, .2],
+  swarmBomb: [32, 16, .1], swarmFly: [34, 22, .1], flyer: [40, 6, .5], carrier: [90, 1, 0], artillery: [70, 1, 0], engineer: [60, 1, 0],
+  mimic: [40, 2, 1.3], mimicArt: [80, 1, 0], wraith: [20, 6, .4], warper: [30, 3, 1.2], aegis: [60, 1, 0],
+};
+// エンドレス：敵の種類が時間とともに増え、数も増え続ける（5分で2倍）。ボスは最初の3回は決まった順、その後はランダム
+const ENDLESS_ADD = [['normal', 0], ['swarm', 20], ['shooter', 40], ['dasher', 80], ['armor', 100], ['kamikaze', 140], ['flyer', 180], ['wraith', 220], ['mimic', 260],
+  ['warper', 300], ['healer', 340], ['swarmFly', 380], ['aegis', 420], ['artillery', 500], ['swarmHeavy', 560], ['carrier', 640], ['mimicArt', 720], ['swarmBomb', 800]];
+const ENDLESS_BOSS_FIXED = [[120, [['boss', 1]]], [300, [['boss', 2]]], [480, [['omega', 1]]]];
+const ENDLESS_BOSS_POOL = [[['boss', 2]], [['boss', 3]], [['omega', 1]], [['omega', 1], ['boss', 1]], [['omega', 2]]];
+const ENDLESS_LEN = 7200, ENDLESS_BOSS_EVERY = 180;
+function endlessWaves() {
+  const out = [];
+  for (const [type, t0] of ENDLESS_ADD) { const [every, n0, gap] = ETAB[type]; for (let t = t0 + 3; t <= ENDLESS_LEN; t += every) out.push([t, type, Math.max(1, Math.round(n0 * (1 + t / 300))), gap, '*']); }
+  const boss = (t, set) => { for (const [type, n] of set) out.push([t, type, n, 8, '*']); };
+  for (const [t, set] of ENDLESS_BOSS_FIXED) boss(t, set);
+  for (let t = ENDLESS_BOSS_FIXED[ENDLESS_BOSS_FIXED.length - 1][0] + ENDLESS_BOSS_EVERY; t <= ENDLESS_LEN; t += ENDLESS_BOSS_EVERY) boss(t, ENDLESS_BOSS_POOL[Math.floor(Math.random() * ENDLESS_BOSS_POOL.length)]);
+  return out;
+}
+const SPECIAL = {
+  endless: {
+    id: 'endless', name: 'EX', sub: 'エンドレス', special: true, goal: 'endless', time: 1e9, startPoints: 600, wide: true,
+    brief: ['深淵の残存勢力、無尽蔵。', '終わりはない。どこまで持ちこたえられるか、記録せよ。'],
+    intro: '拠点が落ちるまで続く。敵は時間とともに種類も数も増える。数分ごとにボスが来る（最初は模倣機→模倣機2体→OMEGA、その後はランダム）。途中で裂け目も開く。',
+    map: { minX: -36, maxX: 36, minZ: -36, maxZ: 36 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-11, 0, 'A', 'p'], [11, 0, 'B', 'p'], [0, -11, 'C', 'p'], [0, 11, 'D', 'p']],
+    paths: radialPaths(4, 34, Math.PI / 4, .3), pathOpen: { 1: 200, 3: 400 },
+    genWaves: endlessWaves,
+  },
+};
+SPECIAL.endless.waves = endlessWaves(); // 作戦の画面の「出現する敵」用。実際の出撃ごとに作り直す
+// ステージ作成：既存の作戦のマップに、開始ポイント・敵の種類と量・クリア条件・制限時間を指定して作る
+const CUSTOM_AMOUNT = { few: .6, normal: 1, many: 1.5, horde: 2.2 };
+function customGoals(base) {
+  const g = ['time', 'points', 'clear', 'boss', 'omega'];
+  if ((base.ebases || []).length) g.push('bases');
+  if (base.convoy) g.push('escort');
+  return g;
+}
+function customStage(cfg) {
+  const base = STAGES.find(s => s.id === cfg.map) || STAGES[0], time = cfg.time || 300, k = CUSTOM_AMOUNT[cfg.amount] || 1;
+  const goal = customGoals(base).includes(cfg.goal) ? cfg.goal : 'time', end = goal === 'clear' ? Math.round(time * .6) : time - 10;
+  const types = (cfg.enemies || []).filter(t => ETAB[t]);
+  const waves = [];
+  for (const type of types.length ? types : ['normal']) { const [every, n0, gap] = ETAB[type]; for (let t = 4; t <= end; t += every) waves.push([t, type, Math.max(1, Math.round(n0 * k * (1 + .6 * t / Math.max(1, end)))), gap, '*']); }
+  if (goal === 'boss') waves.push([30, 'boss', cfg.bossN || 1, 8, '*']);
+  if (goal === 'omega') waves.push([30, 'omega', 1, 0, '*']);
+  return {
+    id: 'custom', name: 'MY', sub: cfg.title || 'マイステージ', special: true, custom: true, wide: base.wide, dark: base.dark,
+    goal: goal === 'omega' ? 'boss' : goal, bossName: goal === 'omega' ? 'OMEGA原型' : goal === 'boss' ? '模倣機' : undefined, bossCount: goal === 'boss' ? cfg.bossN || 1 : undefined,
+    goalPts: goal === 'points' ? cfg.goalPts || 2000 : undefined, holdWhy: goal === 'time' ? '時間まで拠点を守る' : undefined,
+    time, startPoints: cfg.start || 400,
+    intro: base.name + '「' + base.sub + '」のマップを使ったステージ。',
+    map: base.map, base: base.base, factory: base.factory, view: base.view, outposts: base.outposts, garrison: base.garrison, paths: base.paths, pathOpen: base.pathOpen,
+    ebases: base.ebases, convoy: goal === 'escort' ? base.convoy : undefined, waves,
+  };
+}
+function setCustom(cfg) { SPECIAL.custom = customStage(cfg); return SPECIAL.custom; }
 
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
 // 進化パーツ：進化元の武器を使って（その武器を積んだロボットを建造して）作戦をクリアすると解禁。序章-5から。
@@ -653,17 +795,17 @@ const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1.2, goal: 1.4, ebase: 1.5, 
 function hardStage(st) {
   return Object.assign({}, st, {
     hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: HARD.pts, startPoints: Math.round(st.startPoints * HARD.start),
-    waves: st.waves.map(w => [w[0], w[1], w[1] === 'boss' ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
+    waves: st.waves.map(w => [w[0], w[1], ENEMIES[w[1]].boss ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
     goalPts: st.goalPts ? Math.round(st.goalPts * HARD.goal / 10) * 10 : st.goalPts,
-    bossHp: (st.bossHp || ENEMIES.boss.hp) * HARD.boss / HARD.hp, // ボスは hpMul も掛かるので、合わせて HARD.boss 倍
+    bossMul: HARD.boss / HARD.hp, // ボス（模倣機・OMEGA）は hpMul も掛かるので、合わせて HARD.boss 倍
     ebases: (st.ebases || []).map(b => Object.assign({}, b, { hp: Math.round(b.hp * HARD.ebase) })),
   });
 }
 function newState0(stageId, opt) {
   opt = opt || {};
-  const st0 = STAGES.find(s => s.id === stageId) || STAGES[0], st = opt.hard ? hardStage(st0) : st0;
+  const st0 = STAGES.find(s => s.id === stageId) || SPECIAL[stageId] || STAGES[0], st = opt.hard && !st0.special ? hardStage(st0) : st0;
   return {
-    st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
+    st, paths: st.paths.map(makePath), waves: (st.genWaves ? st.genWaves() : st.waves).slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う（エンドレスは出撃ごとに作り直す）
     ebases: (st.ebases || []).map((b, i) => ({ id: 'eb' + i, x: st.paths[b.path][0][0], z: st.paths[b.path][0][1], ...b, maxHp: b.hp, cd: 1, dead: false, flash: 0, ebase: true, r: CFG.ebaseR })),
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
     homeObj: { id: 'home', name: '拠点砲台', x: st.base.x, z: st.base.z, cd: 0, face: 0, ptsMul: 1 }, homeGun: 0, homeShield: 0, homeShieldMax: 0, works: {},
@@ -846,6 +988,8 @@ function killEnemy(S, e, owner) {
   if (owner && owner.weapons) { owner.streak = (S.t - owner.lastKill < 5 ? owner.streak : 0) + 1; owner.lastKill = S.t; if (owner.drain && !owner.dead) owner.hp = Math.min(owner.maxHp, owner.hp + owner.drain); }
   if (e.def.boss) { S.bossKilled = true; S.bossKills = (S.bossKills || 0) + 1; say(S, e.def.final ? '★ ' + e.def.name + '、沈黙' : '★ ' + e.def.name + 'を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
+  // 5-4：最初のOMEGAを倒すと、離れた2か所の入口から、無傷のOMEGAが1体ずつ現れる（OMEGAは複数いた）。戦力を分けて当たらせる
+  if (e.def.final && S.st.omegaMore && !e.gen) { say(S, '⚠ ……反応、消えない。別のOMEGAを2体確認。' + S.st.omegaMore.map(pi => dirName(S, S.st.paths[pi][0])).join('と') + 'から', 'bad'); for (const pi of S.st.omegaMore) spawnEnemy(S, 'omega', pi, 0).gen = 1; }
   if (e.def.mine && e.armed) mineBlast(S, e);
 }
 function hurtEbase(S, b, dmg) {
@@ -1004,7 +1148,7 @@ function updRobot(S, r, dt) {
 
 // ---------- 敵 ----------
 function spawnEnemy(S, type, pi, d0, from) {
-  const def = ENEMIES[type], hm = S.st.hpMul || 1, hp0 = def.boss && S.st.bossHp ? S.st.bossHp : def.hp; // bossHp：作戦ごとのボスの硬さ
+  const def = ENEMIES[type], hm = S.st.hpMul || 1, hp0 = def.boss ? (S.st.bossHp || def.hp) * (S.st.bossMul || 1) : def.hp; // bossHp：作戦ごとのボスの硬さ
   const e = {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
@@ -1019,6 +1163,7 @@ function spawnEnemy(S, type, pi, d0, from) {
   if (def.drop) e.dropT = def.drop.every * .5;
   if (def.rebuild) { const eb = S.ebases.find(b => b.path === pi); if (eb && eb.dead) { e.state = 'build'; e.buildT = def.rebuild.time; e.eb = eb; say(S, '🛠 工兵が敵拠点を再建中（' + dirName(S, [eb.x, eb.z]) + '）', 'warn'); } }
   S.enemies.push(e); S.spawned++;
+  return e;
 }
 // 拠点から見た方角（画面の上が北）
 function dirName(S, p) {
@@ -1053,7 +1198,7 @@ function omegaPhase(S, e) {
   e.phaseN = want;
   const call = (type, n) => { for (let i = 0; i < n; i++) spawnEnemy(S, type, e.pi, Math.max(0, e.d - 1 - i * .4), e); };
   if (want === 1) { e.weapons.push({ id: 'swarmer', def: EW.swarmer, cd: 1 }); call('wraith', 8); call('aegis', 1); say(S, '⚠ OMEGA原型、形態変化。深淵体を呼んだ', 'bad'); }
-  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: WEAPONS.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
+  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: EW.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
   S.fx.push({ type: 'omegaPhase', x: e.x, z: e.z, n: want });
 }
 function updEnemy(S, e, dt) {
@@ -1346,15 +1491,16 @@ function step(S, dt) {
 }
 function waveTotal(st) { return st.waves.reduce((a, w) => a + w[2], 0); }
 function goalText(st) {
+  if (st.goal === 'endless') return '拠点が落ちるまで、どこまで持ちこたえられるか';
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
-  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
+  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.hideCount ? 'をすべて' : st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
   if (st.goal === 'escort') return '補給車を目的地まで護衛する' + lim;
   if (st.goal === 'clear') return '押し寄せる敵をすべて倒す' + lim;
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
 
-return { EW, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { EW, SPECIAL, ETAB, CUSTOM_AMOUNT, customGoals, setCustom, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/
