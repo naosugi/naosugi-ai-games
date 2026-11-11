@@ -2899,10 +2899,14 @@ function policyLine(m) {
   return '人間とAIに振り分けた方針です。';
 }
 /* 決定に判を押す */
+/* 判子が出ている間の2度目のタップは受けない。同じ操作が2回走ると、進んだ後の画面の状態で処理が動く */
+let stamping = false;
 function stampThen(text, then) {
+  if (stamping) return;
+  stamping = true;
   SFX.play('stamp');
   overlay.innerHTML = `<div class="stampwrap"><div class="stamp">${esc(text)}</div></div>`;
-  setTimeout(() => { overlay.innerHTML = ''; then(); }, 620);
+  setTimeout(() => { overlay.innerHTML = ''; stamping = false; then(); }, 620);
 }
 function paramsHTML(v, prev) {
   const short = `<div class="hudmini"><span class="${v.vuln >= 35 ? 'neg' : ''}" data-explain="vuln">脆弱性 ${v.vuln}</span><span>他国の速度 ×${v.pace.toFixed(2)}</span><button type="button" class="hudtoggle" data-hudtoggle="1" aria-expanded="${settings.hudOpen}">${settings.hudOpen ? '▲ 畳む' : '▼ 詳しく'}</button></div>`;
