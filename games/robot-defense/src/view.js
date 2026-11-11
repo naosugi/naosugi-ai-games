@@ -947,7 +947,7 @@ function updHud() {
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
   const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));

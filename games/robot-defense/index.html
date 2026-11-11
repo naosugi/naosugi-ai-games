@@ -5332,11 +5332,11 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     ]),
   });
   STAGES.push({
-    id: 'x4', name: '5-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA', bossCount: 3, omegaSplit: [1, 2], time: 900, startPoints: 700, wide: true, dark: 9,
-    pathOpen: { 3: 240 }, // 分裂したOMEGAは経路1・2（左右）から来るので、この2本は最初から開けておく
-    brief: ['最深部。OMEGA原型を捕捉。', '警告。反応が二つに分かれる兆候。倒しても、終わりではない。', '全機、出撃。すべてのOMEGAを止めよ。'],
+    id: 'x4', name: '5-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA', bossCount: 3, hideCount: true, omegaMore: [1, 2], time: 900, startPoints: 700, wide: true, dark: 9,
+    pathOpen: { 3: 240 }, // 2戦目のOMEGAは経路1・2（西と東）から来るので、この2本は最初から開けておく
+    brief: ['最深部。OMEGA原型を捕捉。', '反応の照合に、不明な残響あり。原因は特定できない。', '全機、出撃。OMEGAを止めよ。'],
     win: 'OMEGA、全機沈黙。反応、完全に消失。……侵略者の中枢、停止を確認。',
-    intro: 'OMEGA原型を倒すと、2体のOMEGA（HPは7割）に分かれ、左右から攻めてくる。3体すべて倒せば作戦完了。長期戦になる。暗い戦場で、途中で南にも裂け目が開く。',
+    intro: 'OMEGA原型を止めろ。……ただし、深淵ではなにが起きるか分からない。長期戦の備えを。暗い戦場で、途中で南にも裂け目が開く。',
     map: { minX: -36, maxX: 36, minZ: -40, maxZ: 36 }, base: { x: 0, z: 4 }, factory: { x: 2.5, z: 1.5 }, view: { zoom: 2.4 },
     outposts: [[-11, 8, 'A', 'p'], [11, 8, 'B', 'p'], [0, -9, 'C', 'p'], [-20, -16, 'D'], [20, -16, 'E'], [0, 22, 'F']],
     paths: [
@@ -5664,8 +5664,8 @@ function killEnemy(S, e, owner) {
   if (owner && owner.weapons) { owner.streak = (S.t - owner.lastKill < 5 ? owner.streak : 0) + 1; owner.lastKill = S.t; if (owner.drain && !owner.dead) owner.hp = Math.min(owner.maxHp, owner.hp + owner.drain); }
   if (e.def.boss) { S.bossKilled = true; S.bossKills = (S.bossKills || 0) + 1; say(S, e.def.final ? '★ ' + e.def.name + '、沈黙' : '★ ' + e.def.name + 'を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
-  // 5-4：最初のOMEGAを倒すと、2体のOMEGAに分かれて後退し、左右の経路の入口から再び攻めてくる（それ以上は分かれない）
-  if (e.def.final && S.st.omegaSplit && !e.gen) { for (const pi of S.st.omegaSplit) { const c = spawnEnemy(S, 'omega', pi, 0); c.gen = 1; c.hp = c.maxHp = c.maxHp * .7; } S.fx.push({ type: 'boom', x: e.x, z: e.z, rad: 4, team: 'e' }); say(S, '⚠ OMEGA、分裂。2体に分かれ、左右の裂け目から再侵攻', 'bad'); }
+  // 5-4：最初のOMEGAを倒すと、離れた2か所の入口から、無傷のOMEGAが1体ずつ現れる（OMEGAは複数いた）。戦力を分けて当たらせる
+  if (e.def.final && S.st.omegaMore && !e.gen) { say(S, '⚠ ……反応、消えない。別のOMEGAを2体確認。' + S.st.omegaMore.map(pi => dirName(S, S.st.paths[pi][0])).join('と') + 'から', 'bad'); for (const pi of S.st.omegaMore) spawnEnemy(S, 'omega', pi, 0).gen = 1; }
   if (e.def.mine && e.armed) mineBlast(S, e);
 }
 function hurtEbase(S, b, dmg) {
@@ -6170,7 +6170,7 @@ function goalText(st) {
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
-  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
+  if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.hideCount ? 'をすべて' : st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
   if (st.goal === 'escort') return '補給車を目的地まで護衛する' + lim;
   if (st.goal === 'clear') return '押し寄せる敵をすべて倒す' + lim;
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
@@ -7128,7 +7128,7 @@ function updHud() {
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
   const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
