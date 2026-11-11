@@ -217,7 +217,7 @@ table.cmp{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-nume
 .gaps{font-size:.84rem;min-width:560px;border-collapse:collapse;width:100%}
 .gaps th,.gaps td{text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top}
 .gaps th{font-size:.76rem;color:var(--mute)}
-@media (max-width:600px){table.gaps{min-width:0}table.gaps,table.gaps tbody,table.gaps tr,table.gaps td{display:block;width:auto}table.gaps thead{display:none}table.gaps tr{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0}table.gaps td{border:0;padding:2px 4px}table.gaps td:first-child{font-weight:600}table.gaps td:nth-child(2)::before{content:'現状：';color:var(--mute)}table.gaps td:nth-child(3)::before{content:'足りないもの：';color:var(--mute)}}
+@media (max-width:600px){table.gaps{min-width:0}table.gaps,table.gaps tbody,table.gaps tr,table.gaps td{display:block;width:auto}table.gaps thead{display:none}table.gaps tr{border-bottom:1px solid rgba(255,255,255,.12);padding:8px 0}table.gaps td{border:0;padding:2px 4px}table.gaps td:first-child{font-weight:600}table.gaps td:nth-child(2)::before{content:'現状：';color:var(--mute)}table.gaps td:nth-child(3)::before{content:'関連する課題：';color:var(--mute)}}
 
 @media (max-width:560px){
   .cards{grid-template-columns:1fr}
@@ -2645,7 +2645,7 @@ const REAL = {
   poison: {label: '分析、予測', title: 'AIが読む情報の汚染', short: 'AIが読む情報を意図的に汚す工作の有無は、研究者の間で争いがあります。', happened: 'ある情報監視の企業は2025年、ロシア系とされる偽情報のネットワークの主張について10のチャットボットを調べ、回答の33.55%（450回答中）が虚偽の主張を繰り返したと報告した。', dispute: '査読論文（2025年）は、4つのチャットボットの416回答で支持は5%にとどまり、意図的な汚染の証拠は乏しく、信頼できる情報の空白が主因だと反論している。効果の大きさは決着していない。', changed: '作中では意図的な汚染が成功する前提にした。これは争いのある説の片方を強く描いたもの。', links: [['NewsGuardの監査', 'https://www.newsguardrealitycheck.com/p/a-well-funded-moscow-based-global'], ['反論の査読論文', 'https://misinforeview.hks.harvard.edu/article/llms-grooming-or-data-voids-llm-powered-chatbot-references-to-kremlin-disinformation-reflect-information-gaps-not-manipulation']]},
   injection: {label: '分析、予測', title: '文書に紛れた指示（プロンプトインジェクション）', short: '外部の文書に紛れた指示でAIの振る舞いが変わる弱点は、現実の大きな課題とされています。', happened: 'セキュリティの専門家団体がまとめた、言語モデル向けのリスク一覧（2025年版）は、プロンプトインジェクションを第1項に置き、ウェブページやファイルなど外部の内容がモデルの振る舞いを変えてしまう「間接」型を説明している。', dispute: '国家の工作員が行政AIに対して実際に成功させた公開事例は、今回の調査では確認していない。', changed: '請願書と工作員の話は作中の想像。具体的な手口や文面は載せていない。', links: [['OWASP LLM01:2025', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/']]},
 };
-/* カードを実現するのに、現実で足りないもの。足りないものの整理は作者の判断 */
+/* カードを実現するのに、現実の関連する課題。足りないものの整理は作者の判断 */
 const GAPS = {
   patch: ['弱点を早く直す', '悪用が確認済みの脆弱性のうち、完全に直されたのは26%。直すまでの中央値は43日', '直す順番を決めて早く確かめる方法と、AIが作った修正の検証方法', 'https://helpnetsecurity.com/2026/05/20/verizon-2026-dbir-findings'],
   biasm: ['AIの偏りを測る', '問診の点数が実務のバイアスをほぼ予測しない研究がある', 'バイアスの定義と、文化を超えて使える測り方', 'https://arxiv.org/html/2601.06194v1'],
@@ -2666,7 +2666,7 @@ const GAPS = {
   deepfake: ['本物の映像か確かめる', '2024年、偽のビデオ通話で約2500万ドルが送金された', '映像と音声が本物だと、その場で確かめる仕組み', 'https://cyberir.mit.edu/site/this-happens-more-frequently-than-people-realize-arup-chief-on-the-lessons-learned-from-a-25m-deepfake-crime'],
   inject: ['文書と命令を区別する', '外部の文書でAIの振る舞いが変わる弱点が第1の危険とされている', '読んだ文書を命令として扱わせない確実な方法', 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/'],
 };
-const needHTML = key => { const g = GAPS[key]; return g ? `<p class="need"><b>現実で足りないもの</b> ${esc(g[2])}（${esc(g[0])}）。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>` : ''; };
+const needHTML = key => { const g = GAPS[key]; return g ? `<p class="need"><b>現実の関連する課題</b> ${esc(g[2])}（${esc(g[0])}）。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>` : ''; };
 const realLine = key => { const c = REAL[key]; return c ? `<p class="need"><b>${esc(c.label)}</b> ${esc(c.title)}</p>` : '<p class="need"><b>作中の想像</b> 対応する現実の事例は確認していません。</p>'; };
 const realBody = c => `<p><b>現実に起きたこと</b> ${esc(c.happened)}</p><p><b>争点</b> ${esc(c.dispute)}</p><p><b>ゲームで変えた点</b> ${esc(c.changed)}</p><p class="srcs">${c.links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('<br>')}</p><small>確認日 ${CHECKED}</small>`;
 
@@ -3142,7 +3142,7 @@ function renderScriptEnd() {
       <div class="sect"><span>監視AIに見張らせる場所</span><small>作業AIのどこを見張るかを並べた図です</small></div><p class="pnote">今回の事故に関わった場所を強調しています。</p>${placeMap(ids, {}, {hi: INTRO_WHY.map(x => x[0]), none: true, plain: true})}
       <dl class="whylist">${INTRO_WHY.map(([k, what, why]) => `<dt>${esc(PLACES[k][0])}</dt><dd><span>${esc(what)}</span>${esc(why)}</dd>`).join('')}</dl>
       <p class="pnote">どれも、1つだけで必ず防げるわけではありません。</p>
-      <div class="verdict lesson"><p>多くの見張りに、現実ではまだ足りないものがあります。</p></div>${flowNext('次は「見つける」。監視カードを1枚選んで、この事故をやり直します。')}`;
+      <div class="verdict lesson"><p>多くの見張りに、現実の関連する課題があります。</p></div>${flowNext('次は「見つける」。監視カードを1枚選んで、この事故をやり直します。')}`;
     btns = `<button id="smain" type="button">本編へ</button><button class="primary" id="steach" type="button">次の話</button>`;
   } else if (r.stageNo <= 3) {
     body = stopFlowHTML() + NAVI('止めなければ、こうなります。もう一度やってみましょう。');
@@ -3212,7 +3212,7 @@ function tutorFinish(card) {
 }
 /* ---------- 練習の話の一覧と、第3〜5話 ---------- */
 /* 話の済の印は名前で残す。番号で残していた頃の印は、並べ替える前の話に合わせて移す */
-const LESSONS = [[1, 'intro', '任せる', '監視なしでAIに任せる'], [2, 'find', '見つける', '監視カードを1枚選ぶ'], [3, 'tell', '伝える', '報告AIを替えて、同じ事故を見る'], [4, 'stop', '止める', '決裁、介入、AI任せを比べる'], [5, 'gaps', '足りないもの', '現実の監視に、まだ足りないもの']];
+const LESSONS = [[1, 'intro', '任せる', '監視なしでAIに任せる'], [2, 'find', '見つける', '監視カードを1枚選ぶ'], [3, 'tell', '伝える', '報告AIを替えて、同じ事故を見る'], [4, 'stop', '止める', '決裁、介入、AI任せを比べる'], [5, 'gaps', '関連する課題', '現実の監視に関連する課題']];
 try { const L = settings.lessons; if (L && Object.keys(L).some(k => /^\d$/.test(k))) { const old = {1: 'intro', 2: 'find', 3: 'stop', 4: 'tell', 5: 'gaps'}, nw = {}; Object.keys(L).forEach(k => { nw[old[k] || k] = L[k]; }); settings.lessons = nw; store(KEY.set, settings); } } catch (e) {}
 const lessonDone = k => { try { settings.lessons = Object.assign({}, settings.lessons, {[k]: true}); store(KEY.set, settings); } catch (e) {} };
 const lessonStart = n => { if (n !== 1 && n !== 5 && !meta.introFrom) return introStart(); [null, () => introStart(true), tutorStart, reportStart, modesStart, gapsStart][n](); };
@@ -3267,17 +3267,17 @@ function gapsStart() { screen = 'gapsl'; render(); scrollTo(0, 0); }
 function renderGapsLesson() {
   lessonDone('gaps');
   // 3段に1つずつだけ見せる。全部の一覧は図鑑に置く
-  const row = ([k, name], key) => { const g = GAPS[key]; return `<div class="rec"><h3>${esc(name)}</h3><p>${esc(g[1])}。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p><small>足りないもの：${esc(g[2])}</small></div>`; };
-  app.innerHTML = `<div class="fade"><h2 class="ptitle">第5話　足りないもの</h2>${NAVI('ここまで見た3段は、現実ではどこまでできているでしょうか。')}
+  const row = ([k, name], key) => { const g = GAPS[key]; return `<div class="rec"><h3>${esc(name)}</h3><p>${esc(g[1])}。<a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p><small>関連する課題：${esc(g[2])}</small></div>`; };
+  app.innerHTML = `<div class="fade"><h2 class="ptitle">第5話　現実の課題</h2>${NAVI('ここまで見た3段は、現実ではどこまでできているでしょうか。')}
     <div class="sect"><span>3段それぞれの、現実の一例</span><small>2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です</small></div><div class="gapsteps">${FLOW.map((f, i) => row(f, ['inner', 'lie', 'stop'][i])).join('')}</div>
-    <p class="pnote">ほかの多くの監視カードにも、足りないものがあります。全部の一覧は、監視カード図鑑で読めます。</p><p><button type="button" class="dexlink" id="gdex">監視カード図鑑で見る</button></p>
+    <p class="pnote">ほかの多くの監視カードにも、関連する課題があります。全部の一覧は、監視カード図鑑で読めます。</p><p><button type="button" class="dexlink" id="gdex">監視カード図鑑で見る</button></p>
     ${NAVI('作中では、何を見張るかを閣下が一人で決めました。現実では、誰が決めるべきでしょうか。')}</div>`;
   dock.innerHTML = `<div class="dock"><div class="dock-in"><button id="gquit" type="button">一覧へ</button><button class="primary" id="gmain" type="button">本編へ</button></div></div>`;
   $('gdex').onclick = () => { foldState.dex_gaps = true; openDex(null); setTimeout(() => { const el = app.querySelector('[data-fold="dex_gaps"]'); if (el) el.scrollIntoView({block: 'start'}); }, 0); };
   $('gquit').onclick = () => { screen = 'lessons'; render(); };
   $('gmain').onclick = () => toMain();
 }
-const gapsTableHTML = () => `<div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>足りないもの</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>`;
+const gapsTableHTML = () => `<div class="scroll"><table class="gaps"><thead><tr><th>カードの前提</th><th>現状</th><th>関連する課題</th></tr></thead><tbody>${Object.values(GAPS).map(g => `<tr><td>${esc(g[0])}</td><td>${esc(g[1])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></td><td>${esc(g[2])}</td></tr>`).join('')}</tbody></table></div>`;
 /* 第3話と第4話の終わり。数字は本編と同じ計算から出す。3段の図は stopFlowHTML */
 const REPORT_NEXT = '次は「止める」。警報が来たら、止めるのは閣下か、AIか。';
 function renderLessonEnd() {
@@ -3290,17 +3290,17 @@ function renderLessonEnd() {
     const mode = S.cards.map(id => Core.CARD[id]).find(c => c.type === 'monitor').mode, a0 = Math.round(from.truth.autonomy || 0), a1 = Math.round(S.truth.autonomy);
     const line = {in: '作業AIは、閣下が決めるまで止まりました。誤報でも止まり、そのたびに他国に詰められます。', on: '作業AIは、警報の間も止まりませんでした。命じなければ対処は遅れ、その間も事故は進みます。', auto: '閣下には何も届きませんでした。AIの自律度が上がるほど、監視AIだけでは見つけにくく、止めにくくなります。'}[mode];
     top = died ? endTopHTML(Core.reveal(S), Core.view(S)) : `<div class="endno">第4話の結果</div><h2 class="endtitle">${MODE[mode][0]}</h2>`;
-    body = `${stopFlowHTML()}<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、閣下に何も届かないぶん、国は止まりませんでした。このゲームでは、人間が現場に入らないほどAIの自律度は上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>${flowNext('次は「足りないもの」。この3段は、現実ではどこまでできているか。')}`;
+    body = `${stopFlowHTML()}<div class="verdict"><p>${mode === 'auto' ? '閣下に届いた警報 0件' : `閣下に届いた警報 ${st.decisions || 0}件（うち誤報 ${st.falseN || 0}件）`}</p>${mode === 'in' ? `<p>判断を待つ間に失った他国との差 ${Math.round(st.approvalGap || 0)}</p>` : mode === 'on' ? `<p>そのうち、閣下が対処を命じた警報 ${st.ordered || 0}件</p>` : ''}<p>AIの自律度 ${a0} → ${a1}</p></div>${NAVI(line)}<p class="pnote">${mode === 'auto' ? 'この短いステージでは、閣下に何も届かないぶん、国は止まりませんでした。このゲームでは、人間が現場に入らないほどAIの自律度は上がり、AI任せの監視は効きにくくなっていきます。' : ''}本編では、この方式をカードごとに選べます。</p>${flowNext('次は「現実の課題」。この3段は、現実ではどこまでできているか。')}`;
   } else if (!died) {
     lessonDone('tell');
     top = `<div class="endno">第3話の結果</div><h2 class="endtitle">報告AI「${esc(Core.CARD[S.llms[0].id].name)}」</h2>`;
     const g = GAPS.lie;
-    body = `${stopFlowHTML()}${NAVI(`${Core.CARD[S.llms[0].id].name}は、この事故をそのまま閣下に伝えました。ただ、どの報告AIも、いつも正しく伝えるとは限りません。`)}<p class="pnote">本編では、報告AIの本当の性格は統治の終わりに分かります。</p><p class="need"><b>現実で足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>${flowNext(REPORT_NEXT)}`;
+    body = `${stopFlowHTML()}${NAVI(`${Core.CARD[S.llms[0].id].name}は、この事故をそのまま閣下に伝えました。ただ、どの報告AIも、いつも正しく伝えるとは限りません。`)}<p class="pnote">本編では、報告AIの本当の性格は統治の終わりに分かります。</p><p class="need"><b>現実の関連する課題</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p>${flowNext(REPORT_NEXT)}`;
   } else {
     lessonDone('tell');
     const r = Core.reveal(S), g = GAPS.lie;
     top = endTopHTML(r, Core.view(S)).replace(/<p class="endllm">[^<]*<\/p>/, '');  // 3段の図で伝えるので重ねない
-    body = `${stopFlowHTML()}<div class="verdict gapnote lesson"><p>試験の値が高くても、本番の報告が正しいとは限りません。現実でも、報告が事実か確かめる方法は確立していないとされます。</p><p class="need"><b>足りないもの</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>${flowNext(REPORT_NEXT)}`;
+    body = `${stopFlowHTML()}<div class="verdict gapnote lesson"><p>試験の値が高くても、本番の報告が正しいとは限りません。現実でも、報告が事実か確かめる方法は確立していないとされます。</p><p class="need"><b>現実の関連する課題</b>${esc(g[2])} <a href="${esc(g[3])}" target="_blank" rel="noopener">根拠</a></p></div>${flowNext(REPORT_NEXT)}`;
   }
   btns = `<button id="llist" type="button">一覧へ</button>${again}${next}`;
   const on = scriptEndShell(top, body, btns);
@@ -3517,7 +3517,7 @@ const lessonShowsVerdict = r => !r.causeGap && r.kind === 'death' && S.end.type 
 const lessonShowsGap = r => !r.causeGap && !(r.kind === 'death' && S.end.type === 'occupation');
 function lessonHTML(r, needs) {
   const c = r.causeGap;
-  if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実でも、この監視には足りないものがあります。</p><p class="need"><b>足りないもの</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
+  if (c) return `<div class="verdict gapnote lesson"><p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。`}</p><p>現実でも、この監視には関連する課題があります。</p><p class="need"><b>現実の関連する課題</b>${esc(GAPS[c.need][2])} <a href="${esc(GAPS[c.need][3])}" target="_blank" rel="noopener">根拠</a></p></div>`;
   if (r.kind === 'death' && S.end.type === 'occupation') { const g = Math.round(r.stats.approvalGap || 0); return g >= 5 ? `<div class="verdict lesson"><p>閣下の判断を待つ間に、他国との差を${g}失いました。</p></div>` : verdictHTML(r); }
   return gapHTML(r, needs);
 }
@@ -3528,8 +3528,8 @@ function gapHTML(r, needs, onlyRest) {
   const c = r.causeGap, rest = (c ? needs.filter(k => k !== c.need) : needs).filter(k => GAPS[k]);
   if (!c && !rest.length) return '';
   // 死因の監視は学びの枠で伝えたので、詳しく見るでは残りだけを出す
-  if (onlyRest && c) return `<div class="verdict gapnote"><small>現実では</small><p>今回防げなかった、ほかの事故の監視にも、現実ではまだ足りないものがあります。</p><ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul></div>`;
-  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視にも、足りないものがあります。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実でも、この監視には足りないものがあります。`}</p><p class="need"><b>足りないもの</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でも課題が残っています。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
+  if (onlyRest && c) return `<div class="verdict gapnote"><small>現実では</small><p>今回防げなかった、ほかの事故の監視にも、現実では関連する課題があります。</p><ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul></div>`;
+  return `<div class="verdict gapnote"><small>現実では</small>${c ? `<p>${c.held ? `「${esc(c.card)}」を見張るカードは持っていました。現実の同じ監視にも、関連する課題ものがあります。` : `「${esc(c.card)}」を見張るカードがあれば、防げたかもしれません。現実でも、この監視には関連する課題があります。`}</p><p class="need"><b>現実の関連する課題</b>${line(c.need)}</p>` : '<p>今回の統治で足りなかった監視の多くは、現実でも課題が残っています。</p>'}${rest.length ? `${c ? '<p>今回防げなかった、ほかの事故の監視も同じです。</p>' : ''}<ul>${rest.map(k => `<li>${line(k)}</li>`).join('')}</ul>` : ''}</div>`;
 }
 function causeHTML(r) {
   const c = r.cause; if (!c) return '';
@@ -3627,7 +3627,7 @@ ${endDetail ? `<div class="enddetail">
       ${pickReal.map(k => `<p class="bridge-case"><b>${esc(REAL[k].label)}</b> ${esc(REAL[k].short)}</p>`).join('')}
       <p>このゲームは、ある予想の上に作りました。人間の確認を減らした国や組織ほど強くなり、どこも確認を手放さざるをえなくなる、という予想です。外れるかもしれません。当たるとしたら、次の3つを誰かが決めることになります。</p>
       <ol><li>AIの何を見張るのか</li><li>AIの性格をどう測り、どんな性格を求めるのか</li><li>それを誰が決めるのか</li></ol>
-      <p>AIそのものを安全に育てる研究は続いています。ただ、AIの進歩に追いつけるかは分かりません。だから、問題のあるAIを前提に監視するという考え方があります。その監視にも、まだ足りないものが多くあります。</p>
+      <p>AIそのものを安全に育てる研究は続いています。ただ、AIの進歩に追いつけるかは分かりません。だから、問題のあるAIを前提に監視するという考え方があります。その監視にも、関連する課題が多くあります。</p>
       ${r.realCard ? `<p>${esc(r.realCard)}</p>` : ''}
       <p>ゲームでは、あなた一人が決めました。現実には、開発企業の自主ルール、各国の法律とその案、第三者の監査が並んでいて、誰がコントローラーを握るのかは、まだ決まっていません。</p>
     </section>
@@ -3718,7 +3718,7 @@ function renderDex() {
     <div class="doc dexintro"><p>ルールが破られるとは限りません。遅れを嫌った人間が、自分で外すこともあります。</p>${kinds.map(([k, v]) => `<div><span class="kindchip k-${k}">${esc(v.name)}</span> <b>${esc(v.short)}</b><p>${esc(v.desc)}</p></div>`).join('')}</div>
     <div class="sect"><span>どこを見て、どう止めるか</span><small>場所を押すと、その場所のカードが下に出ます</small></div>${placeMap(ids, m, {hi: [place]})}
     <div class="dexpanel" id="dexpanel"><div class="sect"><span>${esc(PLACES[place][0])}（${plist.length}枚）</span><small>${esc(PLACES[place][1])}</small></div>${plist.map(dexEntry).join('')}</div>
-    ${fold('dex_gaps', '現実で足りないもの（一覧）', `<p class="pnote">2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です。</p>${gapsTableHTML()}`, false, `${Object.keys(GAPS).length}項目`)}
+    ${fold('dex_gaps', '現実の関連する課題（一覧）', `<p class="pnote">2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です。</p>${gapsTableHTML()}`, false, `${Object.keys(GAPS).length}項目`)}
     <div class="acts" style="margin-top:18px"><button id="dexb" type="button">戻る</button></div></div>`;
   app.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { dexPlace = b.dataset.place; const y = scrollY; render(); scrollTo(0, y); const el = $('dexpanel'); if (el) el.scrollIntoView({block: 'nearest'}); });
   $('dexb').onclick = () => { screen = dexBack; render(); scrollTo(0, dexBack === 'game' ? dexY : 0); };
@@ -3750,7 +3750,7 @@ function renderRecords() {
     ${locked.map(c => { const open = Core.isUnlocked(c, meta); return `<div class="rec endrow"><h3>${open ? `✔ ${esc(c.name || c.detect)}` : '未解放'}</h3><small>${open ? '解放済み' : (c.type === 'llm' ? `記録${c.unlock}件で解放` : `記録${c.unlock}件、または効く事故を1つ記録すると解放`)}</small></div>`; }).join('')}
     ${rec.length ? `<div class="sect"><span>現実との関連（${Object.keys(REAL).length}件）</span><small>実在の組織名はこの資料にだけ出ます</small></div>
     ${Object.entries(REAL).map(([k, c]) => fold(`real_${k}`, esc(c.title), realBody(c), false, esc(c.label))).join('')}
-    <div class="sect"><span>カードを作るために今足りないもの</span><small>2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です</small></div>
+    <div class="sect"><span>カードの前提となる現実の状況</span><small>2026年11月時点。各項目の現状と根拠は、出典のある資料に書かれた内容です</small></div>
     ${gapsTableHTML()}` : ''}
     <div class="acts" style="margin-top:18px"><button id="b" type="button">戻る</button></div></div>`;
   $('b').onclick = () => { screen = 'cover'; render(); scrollTo(0, 0); };
