@@ -151,7 +151,7 @@ canvas#c.slowmo{filter:saturate(.75) hue-rotate(-12deg) brightness(.92)}
 .wcard .wn{display:flex;align-items:center;gap:5px;min-width:0}
 .wcard .wn b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcard .ws{display:flex;gap:8px;font-size:12px;color:var(--dim);align-items:center}
-.wst{display:flex;flex-wrap:wrap;gap:1px 8px;font-size:11px;color:var(--dim)} .wst b{color:var(--text,#fff);font-weight:600} .wst .ff{color:#ff8a8a;font-weight:600} .wst .noff{color:#7fe0a0}
+.wst{display:flex;flex-wrap:wrap;gap:1px 8px;font-size:11px;color:var(--dim)} .wst b{color:var(--fg);font-weight:600} .wst .ff{color:#ff8a8a;font-weight:600} .wst .noff{color:#7fe0a0}
 .wcard .wd{font-size:10.5px;color:var(--dim);line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .wcard.dis{opacity:.45}
 .wcard.on .chk{background:var(--cyan);color:#04142a;border-color:var(--cyan)}
@@ -350,6 +350,11 @@ body.coachRobot .tag:not(.op){animation:tagPulse 1s ease-in-out infinite}
 .chh>div{flex:1;display:flex;flex-direction:column}
 .chh small{font-size:11px;color:var(--cyan);letter-spacing:.1em}
 .chh b{font-size:18px}
+.crf{display:flex;flex-direction:column;gap:6px;margin-bottom:8px} .crf label{font-size:12px;color:var(--cyan);margin-top:6px}
+.crf input,.crf select{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;user-select:text;-webkit-user-select:text}
+.chipsel{display:flex;flex-wrap:wrap;gap:6px} .chipsel button{padding:6px 10px;border-radius:999px;font-size:13px;background:transparent} .chipsel button.on{background:#1d6aa0;border-color:var(--cyan)}
+.crslot{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel)} .crslot>div:first-child{display:flex;flex-direction:column;gap:2px} .crslot .btns{justify-content:flex-end}
+.crslot.empty{align-items:center;border-style:dashed;color:var(--dim)} .crslot.empty small{color:var(--dim)}
 .soonbox{text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;margin:10px 0;display:flex;flex-direction:column;gap:4px}
 .soonbox small{color:var(--cyan)} .soonbox b{font-size:20px} .soonbox p{color:var(--dim);margin:4px 0 !important}
 .scard.next{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset,0 0 14px #65f6ff33}

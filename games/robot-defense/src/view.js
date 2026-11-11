@@ -941,8 +941,8 @@ function updRoster() {
 const hudCache = {};
 function setText(id, v) { if (hudCache[id] !== v) { hudCache[id] = v; $(id).textContent = v; } }
 function updHud() {
-  const left = S.st.time - S.t;
-  setText('hTime', fmtT(left)); $('hTime').classList.toggle('low', left <= 15);
+  const left = S.st.goal === 'endless' ? S.t : S.st.time - S.t; // エンドレスは経過時間を出す
+  setText('hTime', fmtT(left)); $('hTime').classList.toggle('low', S.st.goal !== 'endless' && left <= 15);
   setText('hPts', String(S.pts));
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
@@ -1092,8 +1092,10 @@ const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
 const CH = RD.CHAPTERS, ORDER = CH.filter(c => !c.extra).flatMap(c => c.stages), EXO = CH.filter(c => c.extra).flatMap(c => c.stages), FULL = ORDER.concat(EXO);
 const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
 const chOpen = c => !c.unlockBy || cleared(c.unlockBy) || !!SAVE.allOpen;
+// エンドレス・ステージ作成：第5章をすべてクリアすると解放
+const exDone = () => (EXO.length && EXO.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
-const stById = id => STAGES.find(s => s.id === id);
+const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
 function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
 let uiCh = null, curHard = false;
@@ -1132,11 +1134,13 @@ function titleScreen() {
     (() => { const nx = nextStage(), any = ORDER.some(cleared), st = nx && stById(nx);
       return '<button class="primary big" id="goBtn">' + (st ? (any ? '▶ 続きから' : '▶ はじめる') + '<small>' + esc(st.name + '「' + st.sub + '」') + '</small>' : '▶ 作戦を選ぶ') + '</button>' +
         (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
+    (exDone() ? '<div class="minis"><button class="ghost" id="enBtn">♾ エンドレス</button><button class="ghost" id="crBtn">🛠 ステージ作成</button></div>' : '') +
     '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
     (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + EXO.filter(cleared).length + '/' + EXO.length + '</div>' : '') +
     '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
+  if ($('enBtn')) { $('enBtn').onclick = () => { curHard = false; stageDetail('endless'); }; $('crBtn').onclick = creatorScreen; }
   $('zkBtn').onclick = () => zukanScreen(titleScreen); $('rcBtn').onclick = () => recordScreen(titleScreen); $('stBtn').onclick = () => settingsScreen(titleScreen);
 }
 // 遊び方：1項目1行。細かいことはプレイ中の案内で出す
@@ -1191,15 +1195,16 @@ function stageSelect() {
 // 作戦の詳細：説明・出現する敵・報酬・持ち込みを1枚にまとめ、ここから出撃する
 function stageDetail(stId) {
   curStage = stId;
-  const st = STAGES.find(s => s.id === stId), open = UNLOCKS.map(u => u.id).filter(isOpen), lockedEvo = open.length && !allowOf(stId).loadout;
+  const st = stById(stId), open = UNLOCKS.map(u => u.id).filter(isOpen), lockedEvo = open.length && !allowOf(stId).loadout;
   const SLOTS = CFG.loadoutSlots + (allowOf(stId).slot3 ? 1 : 0);
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, SLOTS);
-  const A = allowOf(st.id), rw = A.evolve ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
-  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+  const A = allowOf(st.id), rw = A.evolve && !st.special ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
+  showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(st.special ? (st.custom ? 'ステージ作成' : 'エクストラ') : chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
     (st.brief ? commHTML(st.brief) : '') +
-    (allClear() ? '<div class="tabs diff"><button data-hard="0" class="' + (curHard ? '' : 'on') + '">通常' + (cleared(st.id) ? '<small> ✓</small>' : '') + '</button><button data-hard="1" class="' + (curHard ? 'on hard' : '') + '">🔥 高難度' + (clearedH(st.id) ? '<small> ✓</small>' : '') + '</button></div>' +
+    (st.id === 'endless' ? endlessRecHTML() : '') +
+    (allClear() && !st.special ? '<div class="tabs diff"><button data-hard="0" class="' + (curHard ? '' : 'on') + '">通常' + (cleared(st.id) ? '<small> ✓</small>' : '') + '</button><button data-hard="1" class="' + (curHard ? 'on hard' : '') + '">🔥 高難度' + (clearedH(st.id) ? '<small> ✓</small>' : '') + '</button></div>' +
       (curHard ? '<div class="dim" style="margin:-2px 0 4px">敵の数 ×' + RD.HARD.count + '・硬さ ×' + RD.HARD.hp + '・攻撃 ×' + RD.HARD.dmg + '。開始ポイント ×' + RD.HARD.start + '・倒したときのポイント ×' + RD.HARD.pts + '。目標ポイント ×' + RD.HARD.goal + '</div>' : '') : '') +
-    '<div class="goalbox">🎯 ' + esc(goalText(curHard && allClear() ? RD.hardStage(st) : st)) + '</div>' +
+    '<div class="goalbox">🎯 ' + esc(goalText(curHard && allClear() && !st.special ? RD.hardStage(st) : st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' + newHTML(st.id) +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
     '<div class="sec">出現する敵</div><div class="etags">' + stageEnemies(st).map(n => '<span>' + esc(n) + '</span>').join('') + '</div>' +
@@ -1212,14 +1217,14 @@ function stageDetail(stId) {
     if (i >= 0) SAVE.loadout.splice(i, 1); else if (SAVE.loadout.length < SLOTS) SAVE.loadout.push(id); else { SAVE.loadout.shift(); SAVE.loadout.push(id); }
     saveNow(); const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y;
   });
-  $('sdBack').onclick = () => { uiCh = chOf(stId).id; stageSelect(); }; $('sdGo').onclick = () => startGame(stId);
+  $('sdBack').onclick = () => { if (st.custom) creatorScreen(); else if (st.special) titleScreen(); else { uiCh = chOf(stId).id; stageSelect(); } }; $('sdGo').onclick = () => startGame(stId);
   $('ovCard').querySelectorAll('[data-hard]').forEach(b => b.onclick = () => { curHard = b.dataset.hard === '1'; const y = $('ovCard').scrollTop; stageDetail(stId); $('ovCard').scrollTop = y; });
 }
 function startGame(stId) {
   if (stId) curStage = stId;
   exitPilot();
   clearViews(); for (const f of fxs) scene.remove(f.m); fxs.length = 0;
-  S = newState(curStage, { hard: curHard && allClear(), allow: allowOf(curStage), loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S; runSeenE = new Set();
+  S = newState(curStage, { hard: curHard && allClear() && !stById(curStage).special, allow: allowOf(curStage), loadout: (SAVE.loadout || []).filter(isOpen) }); window.RD_S = S; runSeenE = new Set();
   setMapDims(S.st); buildMap(S.st, S.paths);
   ZOOM_START = (S.st.view && S.st.view.zoom) || 1; ZOOM_MAX = Math.max(3, ZOOM_START * 1.6);
   mode = 'play'; paused = false; sel = null; uiBody = null; setMenu(false); cam = oCam;
@@ -1234,11 +1239,14 @@ function startGame(stId) {
 }
 function endGame() {
   mode = 'over'; closeBuild(); sel = null;
+  if (S.st.special) return specialEnd();
+  const wasEx = exDone();
   const newly = checkUnlocks(S, SAVE);
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
   const wasAll = allClear();
   if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = SAVE.clear[S.st.id] || { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; if (S.st.hard) { SAVE.clearH = SAVE.clearH || {}; SAVE.clearH[S.st.id] = { t: Math.round(S.t) }; } }
   const allNow = !wasAll && allClear();
+  const exNow = !wasEx && exDone();
   saveNow();
   const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
@@ -1257,6 +1265,7 @@ function endGame() {
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
     (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
+    (exNow ? '<div class="goal big">🏆 第5章クリア<br>♾ <b>エンドレス</b> と 🛠 <b>ステージ作成</b> が解放された<br><span class="dim">タイトル画面から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
     '<details class="more"><summary>くわしい記録</summary><div class="res">' +
@@ -1273,6 +1282,90 @@ function endGame() {
   if (chDone) $('nextSt').onclick = () => chapterCard(ch, 'outro', () => { if (toEnding) showEnding(titleScreen); else if (next) openStage(next.id); else { const ci = CH.indexOf(ch); uiCh = (CH[ci + 1] || ch).id; stageSelect(); } });
   else if (next) $('nextSt').onclick = () => openStage(next.id);
   $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
+}
+// ---------- エンドレス・ステージ作成の結果 ----------
+// エンドレスの記録：項目ごとの最高記録と、生存時間の上位5回
+function endlessRecHTML(cur, noBest) {
+  const E = SAVE.endless; if (!E || !E.runs.length) return '<div class="dim" style="margin:4px 0">まだ記録はない</div>';
+  const b = E.best;
+  return (noBest ? '' : '<div class="tiles">' + [['⏱', fmtT(b.t), '最長生存'], ['💥', b.kills, '最多撃破'], ['👹', b.bosses, '最多ボス撃破']].map(([i, v, l]) => '<div class="tile"><span>' + i + '</span><b>' + v + '</b><small>' + l + '</small></div>').join('') + '</div>') +
+    '<div class="sec">生存時間の上位</div><div class="res">' + E.runs.map((r, k) => '<span>' + (k + 1) + '. ' + esc(r.d) + (r === cur ? ' 🆕' : '') + '</span><b>' + fmtT(r.t) + '　💥' + r.kills + '　👹' + r.bosses + '</b>').join('') + '</div>';
+}
+function specialEnd() {
+  const win = S.over === 'win', st = S.st;
+  addStats(S);
+  let html, rec = null, nb = {};
+  if (st.id === 'endless') {
+    const E = SAVE.endless = SAVE.endless || { best: { t: 0, kills: 0, bosses: 0 }, runs: [] }, d = new Date();
+    rec = { t: Math.round(S.t), kills: S.kills, bosses: S.bossKills || 0, d: (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') };
+    for (const k of ['t', 'kills', 'bosses']) if (rec[k] > E.best[k]) { E.best[k] = rec[k]; nb[k] = true; }
+    E.runs.push(rec); E.runs.sort((a, b) => b.t - a.t); E.runs = E.runs.slice(0, 5);
+    const nbAny = nb.t || nb.kills || nb.bosses;
+    html = '<div class="rhead ' + (nbAny ? 'win' : 'lose') + '"><small>ENDLESS</small><h1>' + (nbAny ? '新記録' : '記録') + '</h1><p>' + fmtT(S.t) + ' 持ちこたえた</p></div>' +
+      '<div class="tiles"><div class="tile"><span>⏱</span><b>' + fmtT(rec.t) + '</b><small>生存時間' + (nb.t ? ' 🆕' : '') + '</small></div><div class="tile"><span>💥</span><b>' + rec.kills + '</b><small>撃破' + (nb.kills ? ' 🆕' : '') + '</small></div><div class="tile"><span>👹</span><b>' + rec.bosses + '</b><small>ボス撃破' + (nb.bosses ? ' 🆕' : '') + '</small></div></div>' +
+      endlessRecHTML(rec, true);
+  } else {
+    const g = st.goal;
+    html = '<div class="rhead ' + (win ? 'win' : 'lose') + '"><small>MY STAGE</small><h1>' + (win ? 'クリア' : '失敗') + '</h1><p>' + esc(st.sub) + '　' + fmtT(S.t) + (win ? '' : S.loseWhy ? ' ' + esc(S.loseWhy) : S.baseHP <= 0 ? ' 拠点が破壊された' : ' 時間切れ') + '</p></div>' +
+      '<div class="tiles"><div class="tile"><span>💥</span><b>' + S.kills + '</b><small>撃破</small></div><div class="tile"><span>🏠</span><b>' + Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small></b><small>残り拠点HP</small></div><div class="tile"><span>' + (g === 'points' ? '⭐' : '🔥') + '</span><b>' + (g === 'points' ? S.pts : combo.best >= 8 ? '×' + combo.best : '-') + '</b><small>' + (g === 'points' ? '所持ポイント' : '最大連続撃破') + '</small></div></div>';
+  }
+  saveNow();
+  showOv(html + '<div class="btns col"><div class="btns"><button class="ghost" id="spBack">' + (st.custom ? 'ステージ作成へ' : 'タイトル') + '</button><button class="primary" id="again">もう一度<small>（ボディ再抽選）</small></button></div></div>');
+  $('again').onclick = () => startGame(st.id); $('spBack').onclick = st.custom ? creatorScreen : titleScreen;
+}
+// ---------- ステージ作成：既存のマップを選び、開始ポイント・敵・クリア条件・制限時間を決める。3つまで保存 ----------
+const CR_SLOTS = 3;
+const GOAL_NAME = { time: '⏱ 時間まで守る', points: '⭐ ポイントを貯める', clear: '👾 全滅させる', boss: '👹 模倣機を倒す', omega: '☠ OMEGAを倒す', bases: '🏭 敵拠点を壊す', escort: '🚚 補給車を護衛' };
+const AMOUNT_NAME = { few: '少なめ', normal: 'ふつう', many: '多い', horde: '大群' };
+const crMapName = id => { const b = STAGES.find(x => x.id === id); return b ? b.name + '「' + b.sub + '」' : '?'; };
+function crDefault() {
+  const b = STAGES[0];
+  return { title: 'マイステージ', map: b.id, goal: 'time', time: 300, start: 400, amount: 'normal', enemies: [...new Set(b.waves.map(w => w[1]))].filter(t => RD.ETAB[t]), goalPts: 2000, bossN: 1 };
+}
+function creatorScreen() {
+  mode = 'select'; setMenu(true);
+  const L = SAVE.custom = (SAVE.custom || []).slice(0, CR_SLOTS);
+  let html = '<h1>🛠 ステージ作成</h1><p class="dim">既存の作戦のマップを使って、開始ポイント・敵・クリア条件・制限時間を決めて遊べる。' + CR_SLOTS + 'つまで保存できる。</p><div class="slist">';
+  for (let i = 0; i < CR_SLOTS; i++) {
+    const c = L[i];
+    html += c ? '<div class="crslot"><div><b>' + esc(c.title) + '</b><span class="dim">' + esc(crMapName(c.map)) + '・' + GOAL_NAME[c.goal] + '・' + fmtT(c.time) + '・敵' + AMOUNT_NAME[c.amount] + '</span></div>' +
+      '<div class="btns"><button class="ghost" data-del="' + i + '">🗑</button><button class="ghost" data-ed="' + i + '">✏ 編集</button><button class="primary" data-play="' + i + '">▶ 遊ぶ</button></div></div>'
+      : '<button class="crslot empty" data-new="' + i + '">＋ 新しく作る<small>（枠' + (i + 1) + '）</small></button>';
+  }
+  html += '</div><div class="btns"><button class="ghost" id="toTitle">← タイトル</button></div>';
+  showOv(html);
+  const q = sel => $('ovCard').querySelectorAll(sel);
+  q('[data-new]').forEach(b => b.onclick = () => creatorEdit(+b.dataset.new, crDefault()));
+  q('[data-ed]').forEach(b => b.onclick = () => creatorEdit(+b.dataset.ed, JSON.parse(JSON.stringify(L[+b.dataset.ed]))));
+  q('[data-play]').forEach(b => b.onclick = () => crPlay(L[+b.dataset.play]));
+  q('[data-del]').forEach(b => b.onclick = () => { if (b.dataset.sure) { L[+b.dataset.del] = null; saveNow(); creatorScreen(); } else { b.dataset.sure = 1; b.textContent = '本当に削除'; } });
+  $('toTitle').onclick = titleScreen;
+}
+function crPlay(cfg) { RD.setCustom(cfg); curHard = false; stageDetail('custom'); }
+function creatorEdit(i, c) {
+  const base = STAGES.find(x => x.id === c.map) || STAGES[0], goals = RD.customGoals(base);
+  if (!goals.includes(c.goal)) c.goal = 'time';
+  const chips = (key, opts, fmt) => '<div class="chipsel">' + opts.map(v => '<button data-k="' + key + '" data-v="' + v + '" class="' + (String(c[key]) === String(v) ? 'on' : '') + '">' + fmt(v) + '</button>').join('') + '</div>';
+  const enemyKeys = Object.keys(RD.ETAB).filter(t => ENEMIES[t] && ENEMIES[t].desc);
+  const html = '<h1>🛠 ステージ作成 <small class="dim">枠' + (i + 1) + '</small></h1><div class="crf">' +
+    '<label>名前</label><input id="crTitle" maxlength="16" value="' + esc(c.title) + '">' +
+    '<label>マップ</label><select id="crMap">' + FULL.map(id => '<option value="' + id + '"' + (id === c.map ? ' selected' : '') + '>' + esc(crMapName(id)) + '</option>').join('') + '</select>' +
+    '<span class="dim">🛣 経路 ' + base.paths.length + '・🏭 敵拠点 ' + (base.ebases || []).length + '・🚩 陣地 ' + (base.outposts || []).length + (base.convoy ? '・🚚 補給車の道あり' : '') + (base.dark ? '・暗い' : '') + '</span>' +
+    '<label>クリア条件</label>' + chips('goal', goals, v => GOAL_NAME[v]) +
+    (c.goal === 'boss' ? '<label>模倣機の数</label>' + chips('bossN', [1, 2, 3], v => v + '機') : '') +
+    (c.goal === 'points' ? '<label>目標ポイント</label>' + chips('goalPts', [1000, 2000, 3000, 5000], v => '⭐' + v) : '') +
+    '<label>制限時間</label>' + chips('time', [180, 300, 420, 600, 900], v => v / 60 + '分') +
+    '<label>開始ポイント</label>' + chips('start', [200, 400, 600, 900, 1200], v => '⭐' + v) +
+    '<label>敵の量</label>' + chips('amount', Object.keys(AMOUNT_NAME), v => AMOUNT_NAME[v]) +
+    '<label>出てくる敵 <span class="dim">' + c.enemies.length + '種</span></label><div class="chipsel">' + enemyKeys.map(t => '<button data-en="' + t + '" class="' + (c.enemies.includes(t) ? 'on' : '') + '">' + esc(ENEMIES[t].name) + '</button>').join('') + '</div>' +
+    '</div><div class="btns sticky"><button class="ghost" id="crBack">← 戻る</button><button class="ghost" id="crSave">保存</button><button class="primary" id="crGo">保存して遊ぶ</button></div>';
+  const y = $('ovCard').scrollTop; showOv(html); $('ovCard').scrollTop = y;
+  const redraw = () => { c.title = $('crTitle').value.trim() || 'マイステージ'; const yy = $('ovCard').scrollTop; creatorEdit(i, c); $('ovCard').scrollTop = yy; };
+  $('ovCard').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const v = b.dataset.v; c[b.dataset.k] = isNaN(+v) ? v : +v; redraw(); });
+  $('ovCard').querySelectorAll('[data-en]').forEach(b => b.onclick = () => { const t = b.dataset.en, k = c.enemies.indexOf(t); if (k >= 0) { if (c.enemies.length > 1) c.enemies.splice(k, 1); } else c.enemies.push(t); redraw(); });
+  $('crMap').onchange = () => { c.map = $('crMap').value; const b = STAGES.find(x => x.id === c.map); c.enemies = [...new Set(b.waves.map(w => w[1]))].filter(t => RD.ETAB[t] && ENEMIES[t].desc); if (!c.enemies.length) c.enemies = ['normal']; redraw(); };
+  const save = () => { c.title = $('crTitle').value.trim() || 'マイステージ'; SAVE.custom = SAVE.custom || []; SAVE.custom[i] = c; saveNow(); };
+  $('crBack').onclick = creatorScreen; $('crSave').onclick = () => { save(); creatorScreen(); }; $('crGo').onclick = () => { save(); crPlay(c); };
 }
 // ---------- 設定（音量・揺れ・数字表示）：保存キーは robodef_settings ----------
 // ---------- 数値の表示（図鑑・建造画面） ----------
@@ -1367,6 +1460,7 @@ function recordScreen(back) {
   showOv('<h1>記録</h1><div class="res">' +
     r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
     (cleared('v4') ? r('第5章（エクストラ）', EXO.filter(cleared).length + ' / ' + EXO.length + (EXO.some(clearedH) ? '　🔥' + EXO.filter(clearedH).length : '')) : '') +
+    (SAVE.endless && SAVE.endless.runs.length ? r('♾ エンドレス 最長生存', fmtT(SAVE.endless.best.t) + '　💥' + SAVE.endless.best.kills + '　👹' + SAVE.endless.best.bosses) : '') +
     r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
     r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +
     r('出撃回数 / 勝利', (st.plays || 0) + ' / ' + (st.wins || 0)) + r('累計撃破', (st.kills || 0).toLocaleString()) +

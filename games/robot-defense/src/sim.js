@@ -678,6 +678,68 @@ for (const st of STAGES) st.waves = st.waves.map(w => {
   return [w[0], w[1], n, w[3] * w[2] / n, w[4]];
 });
 
+// ---------- エンドレス・ステージ作成（第5章クリアで解放） ----------
+// 敵ごとの出方のめやす：[何秒ごと, 1回の数, 出る間隔]。エンドレスとステージ作成で使う
+const ETAB = {
+  normal: [14, 7, .5], shooter: [26, 3, 1.3], dasher: [30, 4, 1.2], armor: [34, 3, 1.5], shield: [30, 3, 1.2], splitter: [28, 4, .8],
+  healer: [50, 1, 0], kamikaze: [40, 8, .25], mine: [40, 4, .8], swarm: [22, 26, .1], swarmFast: [26, 22, .08], swarmHeavy: [30, 12, .2],
+  swarmBomb: [32, 16, .1], swarmFly: [34, 22, .1], flyer: [40, 6, .5], carrier: [90, 1, 0], artillery: [70, 1, 0], engineer: [60, 1, 0],
+  mimic: [40, 2, 1.3], mimicArt: [80, 1, 0], wraith: [20, 6, .4], warper: [30, 3, 1.2], aegis: [60, 1, 0],
+};
+// エンドレス：敵の種類が時間とともに増え、数も増え続ける（5分で2倍）。ボスは最初の3回は決まった順、その後はランダム
+const ENDLESS_ADD = [['normal', 0], ['swarm', 20], ['shooter', 40], ['dasher', 80], ['armor', 100], ['kamikaze', 140], ['flyer', 180], ['wraith', 220], ['mimic', 260],
+  ['warper', 300], ['healer', 340], ['swarmFly', 380], ['aegis', 420], ['artillery', 500], ['swarmHeavy', 560], ['carrier', 640], ['mimicArt', 720], ['swarmBomb', 800]];
+const ENDLESS_BOSS_FIXED = [[120, [['boss', 1]]], [300, [['boss', 2]]], [480, [['omega', 1]]]];
+const ENDLESS_BOSS_POOL = [[['boss', 2]], [['boss', 3]], [['omega', 1]], [['omega', 1], ['boss', 1]], [['omega', 2]]];
+const ENDLESS_LEN = 7200, ENDLESS_BOSS_EVERY = 180;
+function endlessWaves() {
+  const out = [];
+  for (const [type, t0] of ENDLESS_ADD) { const [every, n0, gap] = ETAB[type]; for (let t = t0 + 3; t <= ENDLESS_LEN; t += every) out.push([t, type, Math.max(1, Math.round(n0 * (1 + t / 300))), gap, '*']); }
+  const boss = (t, set) => { for (const [type, n] of set) out.push([t, type, n, 8, '*']); };
+  for (const [t, set] of ENDLESS_BOSS_FIXED) boss(t, set);
+  for (let t = ENDLESS_BOSS_FIXED[ENDLESS_BOSS_FIXED.length - 1][0] + ENDLESS_BOSS_EVERY; t <= ENDLESS_LEN; t += ENDLESS_BOSS_EVERY) boss(t, ENDLESS_BOSS_POOL[Math.floor(Math.random() * ENDLESS_BOSS_POOL.length)]);
+  return out;
+}
+const SPECIAL = {
+  endless: {
+    id: 'endless', name: 'EX', sub: 'エンドレス', special: true, goal: 'endless', time: 1e9, startPoints: 600, wide: true,
+    brief: ['深淵の残存勢力、無尽蔵。', '終わりはない。どこまで持ちこたえられるか、記録せよ。'],
+    intro: '拠点が落ちるまで続く。敵は時間とともに種類も数も増える。数分ごとにボスが来る（最初は模倣機→模倣機2体→OMEGA、その後はランダム）。途中で裂け目も開く。',
+    map: { minX: -36, maxX: 36, minZ: -36, maxZ: 36 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-11, 0, 'A', 'p'], [11, 0, 'B', 'p'], [0, -11, 'C', 'p'], [0, 11, 'D', 'p']],
+    paths: radialPaths(4, 34, Math.PI / 4, .3), pathOpen: { 1: 200, 3: 400 },
+    genWaves: endlessWaves,
+  },
+};
+SPECIAL.endless.waves = endlessWaves(); // 作戦の画面の「出現する敵」用。実際の出撃ごとに作り直す
+// ステージ作成：既存の作戦のマップに、開始ポイント・敵の種類と量・クリア条件・制限時間を指定して作る
+const CUSTOM_AMOUNT = { few: .6, normal: 1, many: 1.5, horde: 2.2 };
+function customGoals(base) {
+  const g = ['time', 'points', 'clear', 'boss', 'omega'];
+  if ((base.ebases || []).length) g.push('bases');
+  if (base.convoy) g.push('escort');
+  return g;
+}
+function customStage(cfg) {
+  const base = STAGES.find(s => s.id === cfg.map) || STAGES[0], time = cfg.time || 300, k = CUSTOM_AMOUNT[cfg.amount] || 1;
+  const goal = customGoals(base).includes(cfg.goal) ? cfg.goal : 'time', end = goal === 'clear' ? Math.round(time * .6) : time - 10;
+  const types = (cfg.enemies || []).filter(t => ETAB[t]);
+  const waves = [];
+  for (const type of types.length ? types : ['normal']) { const [every, n0, gap] = ETAB[type]; for (let t = 4; t <= end; t += every) waves.push([t, type, Math.max(1, Math.round(n0 * k * (1 + .6 * t / Math.max(1, end)))), gap, '*']); }
+  if (goal === 'boss') waves.push([30, 'boss', cfg.bossN || 1, 8, '*']);
+  if (goal === 'omega') waves.push([30, 'omega', 1, 0, '*']);
+  return {
+    id: 'custom', name: 'MY', sub: cfg.title || 'マイステージ', special: true, custom: true, wide: base.wide, dark: base.dark,
+    goal: goal === 'omega' ? 'boss' : goal, bossName: goal === 'omega' ? 'OMEGA原型' : goal === 'boss' ? '模倣機' : undefined, bossCount: goal === 'boss' ? cfg.bossN || 1 : undefined,
+    goalPts: goal === 'points' ? cfg.goalPts || 2000 : undefined, holdWhy: goal === 'time' ? '時間まで拠点を守る' : undefined,
+    time, startPoints: cfg.start || 400,
+    intro: base.name + '「' + base.sub + '」のマップを使ったステージ。',
+    map: base.map, base: base.base, factory: base.factory, view: base.view, outposts: base.outposts, garrison: base.garrison, paths: base.paths, pathOpen: base.pathOpen,
+    ebases: base.ebases, convoy: goal === 'escort' ? base.convoy : undefined, waves,
+  };
+}
+function setCustom(cfg) { SPECIAL.custom = customStage(cfg); return SPECIAL.custom; }
+
 // ---------- アンロック（ステージをまたいで残る。強化は持ち越さず、使えるパーツが増えるだけ） ----------
 // 進化パーツ：進化元の武器を使って（その武器を積んだロボットを建造して）作戦をクリアすると解禁。序章-5から。
 // 進化元が同じものが複数あるとき（ブラスター→マグナム・チェイン）は、クリアするたびに1つずつ解禁する
@@ -741,9 +803,9 @@ function hardStage(st) {
 }
 function newState0(stageId, opt) {
   opt = opt || {};
-  const st0 = STAGES.find(s => s.id === stageId) || STAGES[0], st = opt.hard ? hardStage(st0) : st0;
+  const st0 = STAGES.find(s => s.id === stageId) || SPECIAL[stageId] || STAGES[0], st = opt.hard && !st0.special ? hardStage(st0) : st0;
   return {
-    st, paths: st.paths.map(makePath), waves: st.waves.slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う
+    st, paths: st.paths.map(makePath), waves: (st.genWaves ? st.genWaves() : st.waves).slice().sort((a, b) => a[0] - b[0]), // 出現表は時刻順に並べ直して使う（エンドレスは出撃ごとに作り直す）
     ebases: (st.ebases || []).map((b, i) => ({ id: 'eb' + i, x: st.paths[b.path][0][0], z: st.paths[b.path][0][1], ...b, maxHp: b.hp, cd: 1, dead: false, flash: 0, ebase: true, r: CFG.ebaseR })),
     home: { x: st.base.x, z: st.base.z, r: CFG.homeR, home: true },
     homeObj: { id: 'home', name: '拠点砲台', x: st.base.x, z: st.base.z, cd: 0, face: 0, ptsMul: 1 }, homeGun: 0, homeShield: 0, homeShieldMax: 0, works: {},
@@ -1429,6 +1491,7 @@ function step(S, dt) {
 }
 function waveTotal(st) { return st.waves.reduce((a, w) => a + w[2], 0); }
 function goalText(st) {
+  if (st.goal === 'endless') return '拠点が落ちるまで、どこまで持ちこたえられるか';
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
@@ -1438,6 +1501,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
 
-return { EW, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { EW, SPECIAL, ETAB, CUSTOM_AMOUNT, customGoals, setCustom, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/

@@ -80,7 +80,7 @@ function runOne(stId, pol) {
   return S;
 }
 
-for (const st of RD.STAGES) {
+for (const st of RD.STAGES.concat(ONLY && RD.SPECIAL[ONLY] ? [RD.SPECIAL[ONLY]] : [])) { // エンドレスは名前を指定したときだけ（拠点が落ちるまで続く）
   if (ONLY && st.id !== ONLY) continue;
   console.log('\n■ ' + st.id + ' ' + st.name + '「' + st.sub + '」 勝利条件：' + RD.goalText(st) + ' 開始⭐' + st.startPoints);
   console.log('戦略'.padEnd(18, '　') + ' 勝率  拠点HP  終了  撃破  建造  損失(誤射)  ' + (st.goal === 'points' ? '最終⭐' : st.goal === 'bases' ? '敵拠点破壊' : st.goal === 'clear' ? '残り敵' : st.waves.some(w => w[1] === 'boss') ? 'ボス撃破' : ''));
