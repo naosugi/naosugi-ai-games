@@ -2928,10 +2928,12 @@ let logAll = false;
 function trimLog() {
   const el = $('log'); if (!el) return;
   const quiet = [...el.children].filter(li => /routine|calm|status/.test(li.className));
-  quiet.forEach((li, i) => li.classList.toggle('old', i < quiet.length - 3));
-  el.classList.toggle('brief', !logAll);
+  /* 練習の話（台本）は、途中の報告を畳まない。本編だけ、通常の報告を減らす */
+  const scripted = !!(S && S.script), shown = logAll || scripted;
+  quiet.forEach((li, i) => li.classList.toggle('old', !shown && i < quiet.length - 3));
+  el.classList.toggle('brief', !shown);
   const b = $('logtoggle');
-  if (b) { const n = quiet.length - 3; b.hidden = n <= 0; b.textContent = logAll ? '通常の報告を減らす' : `通常の報告をすべて表示（ほか${n}行）`; }
+  if (b) { const n = quiet.length - 3; b.hidden = scripted || n <= 0; b.textContent = logAll ? '通常の報告を減らす' : `通常の報告をすべて表示（ほか${n}行）`; }
 }
 function heldHTML(v) {
   if (!v.cards.length) return '';
