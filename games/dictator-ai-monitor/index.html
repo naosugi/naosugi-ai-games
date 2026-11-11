@@ -3615,7 +3615,7 @@ function renderEnd() {
   const needs = r.needs.slice(0, 3);
   app.innerHTML = `<div class="reveal fade">
     ${endTopHTML(r, v)}
-    ${r.kind !== 'death' ? runMapHTML() : ''}
+    ${runMapHTML()}
     ${lessonHTML(r, needs)}
     ${(() => { const items = []; if (newDex > 0) items.push(`図鑑に「それでも起きること」が${newDex}枚ぶん増えました。`); if (unlockedNow.length) items.push(`次の統治から候補に加わります：${unlockedNow.map(esc).join('、')}`); return items.length ? `<div class="unlock">${items.join('<br>')}</div>` : ''; })()}
     <div class="acts"><button class="primary" id="again" type="button">もう一度</button><button id="more" type="button">${endDetail ? '詳しい振り返りを閉じる' : '詳しく見る'}</button></div>
