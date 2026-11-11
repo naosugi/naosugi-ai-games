@@ -75,6 +75,12 @@ function runOne(stId, pol) {
       let best = null, bd = 1e9; for (const r of S.robots) { const d = Math.hypot(r.x - S.home.x, r.z - S.home.z); if (d < bd) { bd = d; best = r; } }
       if (best) { best.spot = { p: [S.home.x + 2.5, S.home.z + 2.5], guard: true }; RD.moveRobot(best, S.home.x + 2.5, S.home.z + 2.5, S); }
     }
+    // 補給車を狙う作戦（convoyHunt）：2機目までは拠点の守り、3機目からは補給車の少し先を左右に分かれて護衛する
+    if (S.st.convoyHunt && S.convoy && !S.convoy.done && reT - 1 / 30 <= 0) S.robots.forEach((r, k) => {
+      if (k < 2) return;
+      const q = RD.pathPos(S.convoy.P, Math.min(S.convoy.P.len, S.convoy.d + 2 + k), k % 2 ? 2.2 : -2.2);
+      r.spot = { p: [q.x, q.z], escort: true }; RD.moveRobot(r, q.x, q.z, S);
+    });
     if ((reT -= 1 / 30) <= 0) { reT = 1; for (const r of S.robots) if (r.spot.atk && !S.ebases.some(b => !b.dead && Math.hypot(b.x - r.spot.p[0], b.z - r.spot.p[1]) < 8)) assign(r); }
   }
   return S;
