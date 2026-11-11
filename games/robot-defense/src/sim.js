@@ -132,7 +132,7 @@ const ENEMIES = {
   wraith: { name: '深淵体', hp: 35, speed: 2.3, r: .45, pts: 10, baseDps: 1.5, phase: { on: 2, off: 1 }, desc: '時々姿が揺らぎ、その間は攻撃が当たらない' },
   warper: { name: '跳躍体', hp: 70, speed: 1.2, r: .55, pts: 25, baseDps: 2, warp: { every: 4, dist: 5 }, desc: '数秒ごとに経路の先へ跳ぶ' },
   aegis: { name: '障壁体', hp: 175, speed: 1, r: .7, pts: 40, baseDps: 2, aura: { range: 3.2 }, desc: '周りの敵が受けるダメージを半分にする。先に倒したい' },
-  omega: { name: 'OMEGA原型', hp: 3600, speed: .45, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
+  omega: { name: 'OMEGA原型', hp: 10800, speed: .45, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
   // ボス：こちらのロボットと同じ「ボディ＋武器」で組まれた敵。体当たりはせず、射撃でロボットと拠点を攻撃する
   boss: { name: '模倣機', hp: 1000, speed: .9, r: 1.1, pts: 300, baseDps: 0, fireMul: 1.6, hold: 5.5, boss: true, body: 'fortress', weapons: ['blaster', 'missile'], desc: 'こちらのロボットを模倣した赤い機体。ロボットや拠点が射程に入ると立ち止まって撃つ' },
 };
@@ -653,9 +653,9 @@ const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1.2, goal: 1.4, ebase: 1.5, 
 function hardStage(st) {
   return Object.assign({}, st, {
     hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: HARD.pts, startPoints: Math.round(st.startPoints * HARD.start),
-    waves: st.waves.map(w => [w[0], w[1], w[1] === 'boss' ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
+    waves: st.waves.map(w => [w[0], w[1], ENEMIES[w[1]].boss ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
     goalPts: st.goalPts ? Math.round(st.goalPts * HARD.goal / 10) * 10 : st.goalPts,
-    bossHp: (st.bossHp || ENEMIES.boss.hp) * HARD.boss / HARD.hp, // ボスは hpMul も掛かるので、合わせて HARD.boss 倍
+    bossMul: HARD.boss / HARD.hp, // ボス（模倣機・OMEGA）は hpMul も掛かるので、合わせて HARD.boss 倍
     ebases: (st.ebases || []).map(b => Object.assign({}, b, { hp: Math.round(b.hp * HARD.ebase) })),
   });
 }
@@ -1004,7 +1004,7 @@ function updRobot(S, r, dt) {
 
 // ---------- 敵 ----------
 function spawnEnemy(S, type, pi, d0, from) {
-  const def = ENEMIES[type], hm = S.st.hpMul || 1, hp0 = def.boss && S.st.bossHp ? S.st.bossHp : def.hp; // bossHp：作戦ごとのボスの硬さ
+  const def = ENEMIES[type], hm = S.st.hpMul || 1, hp0 = def.boss ? (S.st.bossHp || def.hp) * (S.st.bossMul || 1) : def.hp; // bossHp：作戦ごとのボスの硬さ
   const e = {
     id: S.nid++, type, def, pi, d: Math.max(0, d0 || 0), off: rnd(-.45, .45), hp: hp0 * hm, maxHp: hp0 * hm, r: def.r,
     cd: rnd(.4, 1), x: 0, z: 0, face: 0, dead: false, flash: 0, firing: false, state: 'path', armed: true,
@@ -1053,7 +1053,7 @@ function omegaPhase(S, e) {
   e.phaseN = want;
   const call = (type, n) => { for (let i = 0; i < n; i++) spawnEnemy(S, type, e.pi, Math.max(0, e.d - 1 - i * .4), e); };
   if (want === 1) { e.weapons.push({ id: 'swarmer', def: EW.swarmer, cd: 1 }); call('wraith', 8); call('aegis', 1); say(S, '⚠ OMEGA原型、形態変化。深淵体を呼んだ', 'bad'); }
-  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: WEAPONS.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
+  if (want === 2) { e.guardMul = .6; e.weapons.push({ id: 'missile', def: EW.missile, cd: .5 }); call('warper', 4); call('wraith', 12); call('mimicArt', 1); say(S, '⚠ OMEGA原型、最終形態。装甲が硬くなった', 'bad'); }
   S.fx.push({ type: 'omegaPhase', x: e.x, z: e.z, n: want });
 }
 function updEnemy(S, e, dt) {
