@@ -26,7 +26,9 @@ a{color:var(--cyan)}
 @media (max-width:480px){#hud .ttl{display:none}}
 #hud .back{white-space:nowrap}
 #hud button{padding:4px 10px;font-size:13px;min-width:40px}
-.stats{gap:10px;font-variant-numeric:tabular-nums}
+.stats{gap:4px 10px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+#hud .stats .stbase{flex:1 1 130px;min-width:130px} .stbase .basebar{min-width:40px} .stbase b{flex-shrink:0}
+@media (max-width:420px){.stats{column-gap:7px} .st b{font-size:15px}}
 .st{display:flex;align-items:center;gap:4px;white-space:nowrap}
 .st b{font-size:16px}
 #hTime.low{color:var(--red)}
@@ -39,7 +41,7 @@ a{color:var(--cyan)}
 .basebar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .2s}
 .basebar.hurt i{background:linear-gradient(90deg,#ff4d6d,#ffa94d)}
 
-#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 72px);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:6}
+#toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 72px + var(--hudx, 0px));display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:6}
 .toast{background:#0a1328d9;border-left:3px solid var(--cyan);border-radius:4px;padding:2px 8px;font-size:12px;line-height:1.5;transition:opacity .4s,transform .4s;max-width:88%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toast:not(:first-child){opacity:.75;font-size:11px}
 .toast.good{border-left-color:var(--green)}
@@ -134,7 +136,7 @@ canvas#c.slowmo{filter:saturate(.75) hue-rotate(-12deg) brightness(.92)}
 .banner.good b{color:var(--gold);text-shadow:0 0 14px #ffd166aa}
 @keyframes blink{50%{opacity:.4}}
 /* 連続撃破 */
-#combo{position:fixed;right:calc(env(safe-area-inset-right) + 54px);top:calc(env(safe-area-inset-top) + 140px);z-index:6;pointer-events:none;text-align:right;opacity:0;transition:opacity .25s}
+#combo{position:fixed;right:calc(env(safe-area-inset-right) + 54px);top:calc(env(safe-area-inset-top) + 140px + var(--hudx, 0px));z-index:6;pointer-events:none;text-align:right;opacity:0;transition:opacity .25s}
 #combo.show{opacity:1}
 #combo b{display:block;font-size:30px;font-weight:900;color:var(--gold);text-shadow:0 2px 6px #000,0 0 12px #ffd16688;font-variant-numeric:tabular-nums;animation:pop .25s}
 #combo.big b{font-size:40px;color:#fff;text-shadow:0 0 16px #ffd166,0 2px 6px #000}
@@ -208,7 +210,7 @@ div.item{background:var(--panel2);border:1px solid var(--line);margin-bottom:8px
 .ride{display:inline-block;padding:2px 8px;font-size:12px;border-radius:7px;border:1px solid var(--cyan);background:#0d2a44;color:var(--cyan);font-weight:700;margin-left:6px}
 /* 自操作 */
 #pilotUI{display:none}
-body.piloting #toasts{top:calc(env(safe-area-inset-top) + 150px)}
+body.piloting #toasts{top:calc(env(safe-area-inset-top) + 150px + var(--hudx, 0px))}
 body.piloting #pilotUI{display:block}
 body.piloting #bottom,body.piloting #roster,body.piloting #edges{display:none}
 #pTop{position:fixed;left:50%;transform:translateX(-50%);top:90px;z-index:6;display:flex;align-items:center;gap:6px;background:#050a1ccc;border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-size:12px;white-space:nowrap;max-width:calc(100% - 20px)}
@@ -434,7 +436,7 @@ body.darkst #vig{background:radial-gradient(ellipse at 50% 55%,transparent 20%,#
     <span class="st" id="hGoal" style="display:none"></span>
     <span class="st">⭐<b id="hPts">0</b></span>
     <span class="st">🤖<b id="hBots">0/5</b></span>
-    <span class="st" style="flex:1">🏠<span class="basebar" id="hBaseBar"><i id="hBase" style="width:100%"></i></span><b id="hBaseN">100</b></span>
+    <span class="st stbase">🏠<span class="basebar" id="hBaseBar"><i id="hBase" style="width:100%"></i></span><b id="hBaseN">100</b></span>
   </div>
 </div>
 <div id="toasts"></div>

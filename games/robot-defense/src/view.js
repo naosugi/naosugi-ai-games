@@ -82,6 +82,13 @@ function resetView() { const b = S ? S.st.base : { x: mapCX, z: mapCZ }; camS.x 
 // ⤢：広いステージでは「全体表示」と「拠点まわり」を切り替える
 function toggleView() { if (ZOOM_START > 1 && camS.zoom > 1.05) { camS.x = mapCX; camS.z = mapCZ; camS.zoom = 1; applyCam(); } else resetView(); }
 addEventListener('resize', fit);
+// 画面上部の表示が2行に折り返したとき：地図の表示範囲と、その下に置く部品（ロボット一覧など）を置き直す。通知などは CSS の --hudx で下げる
+(() => {
+  const hud = document.getElementById('hud'), first = hud.querySelector('.stats .st'), base = hud.querySelector('.stbase');
+  const upd = () => { const x = first && base && base.offsetTop > first.offsetTop + 4 ? base.offsetTop + base.offsetHeight - first.offsetTop - first.offsetHeight : 0; document.documentElement.style.setProperty('--hudx', x + 'px'); fit(); };
+  try { new ResizeObserver(upd).observe(hud); } catch (_) { addEventListener('resize', upd); }
+  upd();
+})();
 
 const hemi = new T.HemisphereLight(0xb0dcff, 0x2a1838, 1.45); scene.add(hemi);
 const FOG_P = new T.Fog(0x050a1c, 22, 75); const FOG_M = new T.Fog(0x050a1c, 40, 115); // 自操作：遠くを暗くして奥行きを出す（見通しの悪さも表す）
