@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>朝食ファクトリー</title>
+<style>
+:root{--bg:#fdf3e1;--ink:#2b2b2b;--panel:#fffaf0;--accent:#e8743b;--good:#2f8f3d;--bad:#c7362e;--muted:#7a6a58;--yellow:#ffd36b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Meiryo",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{max-width:760px;margin:0 auto;padding:10px 10px 40px;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(40px,env(safe-area-inset-bottom));padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+a.back{display:inline-block;color:var(--muted);font-size:14px;font-weight:bold;text-decoration:none;margin:2px 0 4px}
+.panel{background:var(--panel);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px;margin:10px 0;border-radius:4px}
+h1{font-size:30px;margin:.2em 0;letter-spacing:.05em}
+h2{font-size:21px;margin:.2em 0 .4em}
+h3{font-size:17px;margin:.6em 0 .3em}
+p{line-height:1.7;margin:.4em 0}
+ul{line-height:1.7;padding-left:1.3em;margin:.4em 0}
+rt{font-size:.5em}
+.center{text-align:center}
+.note{font-size:13px;color:var(--muted)}
+.btn{font:inherit;font-weight:bold;font-size:16px;padding:10px 16px;border:3px solid var(--ink);background:var(--yellow);box-shadow:3px 3px 0 var(--ink);border-radius:4px;cursor:pointer;margin:4px;color:var(--ink);touch-action:manipulation}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.blue{background:#9cc3ff}.btn.green{background:#a6e3a1}.btn.gray{background:#e6e0d6}.btn.red{background:#ffb3a8}
+.btn.sel{background:var(--accent);color:#fff}
+.btn.small{font-size:14px;padding:6px 10px}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+img.px{image-rendering:pixelated;image-rendering:crisp-edges;vertical-align:middle}
+.logo{display:flex;justify-content:center;gap:8px;margin-top:6px}
+.hud{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-weight:bold;padding:8px 12px}
+.hud .big{font-size:22px}
+.tip{background:#fff1c9;border:2px dashed var(--ink);padding:8px 10px;border-radius:4px;margin:8px 0}
+.good{color:var(--good)}.bad{color:var(--bad)}
+table.t{border-collapse:collapse;width:100%;font-size:15px}
+table.t th,table.t td{border:2px solid var(--ink);padding:6px 8px;text-align:left;vertical-align:top}
+table.t th{background:#f6e3c3}
+table.t.ref tr>*:first-child{white-space:nowrap;font-size:13px}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.total td{font-weight:bold;background:#fff1c9}
+.gauge{display:inline-block;width:110px;height:14px;border:2px solid var(--ink);background:#fff;vertical-align:middle;position:relative}
+.gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--good)}
+/* stage1 */
+.orderrow{display:flex;gap:8px;min-height:74px;flex-wrap:wrap}
+.order{border:2px solid var(--ink);background:#fff;border-radius:4px;padding:4px 6px;width:96px;text-align:center;font-size:12px}
+.order .ic{display:flex;justify-content:center;gap:1px}
+.bar{height:8px;border:2px solid var(--ink);background:#fff;margin-top:3px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--good)}
+.bar.warn i{background:var(--bad)}
+.stations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.station{font:inherit;border:3px solid var(--ink);background:#fff;box-shadow:3px 3px 0 var(--ink);border-radius:6px;padding:8px 4px;cursor:pointer;text-align:center;color:var(--ink);touch-action:manipulation;position:relative}
+.station:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.station .nm{font-weight:bold;font-size:15px}
+.station .devs{position:relative;height:72px;display:flex;justify-content:center;align-items:center}
+.station .devs .item{position:absolute;left:50%;top:0;transform:translateX(-50%)}
+.station .st{font-size:13px;font-weight:bold;min-height:20px;margin-top:2px}
+.station.ready{background:#e3f7dc;animation:pulse .6s infinite alternate}
+.station.burnt{background:#ffd9d4}
+@keyframes pulse{from{box-shadow:3px 3px 0 var(--ink)}to{box-shadow:3px 3px 0 var(--ink),0 0 0 4px #7fd36f}}
+.cookbar{height:12px;border:2px solid var(--ink);position:relative;margin:4px 6px 0;background:linear-gradient(90deg,#ffe48a 0 var(--a),#8fdc7f var(--a) var(--b),#f39a8e var(--b) 100%)}
+.cookbar b{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink)}
+.trayrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-weight:bold}
+#float{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:50;pointer-events:none}
+.flash{background:var(--ink);color:#fff;padding:8px 14px;border-radius:4px;font-weight:bold;margin:4px;animation:fade 1.4s forwards;text-align:center}
+@keyframes fade{0%{opacity:0;transform:translateY(6px)}10%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+/* counter & plate */
+.seats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-height:150px;margin-top:6px}
+.cust{font:inherit;position:relative;border:none;background:transparent;padding:0;cursor:pointer;text-align:center;color:var(--ink);touch-action:manipulation;transition:transform .6s,opacity .6s}
+.cust .bub{background:#fff;border:2px solid var(--ink);border-radius:8px;padding:3px 2px;position:relative;min-height:46px}
+.cust .bub:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-6px;border:6px solid transparent;border-top-color:var(--ink)}
+.cust .wants{display:flex;justify-content:center;gap:1px;flex-wrap:wrap}
+.cust .pr{font-size:12px;font-weight:bold}
+.cust .bar{margin:2px 8px 0}
+.cust.ok .bub{background:#e3f7dc;border-color:var(--good)}
+.cust.leave{transform:translateY(-14px);opacity:0}
+.cust.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.counterline{height:14px;background:#c8843c;border:3px solid var(--ink);border-radius:3px;margin-top:-4px}
+.pop{position:absolute;left:50%;top:10px;transform:translateX(-50%);font-weight:bold;color:#b8860b;background:#fff8d6;border:2px solid var(--ink);border-radius:4px;padding:1px 5px;white-space:nowrap;animation:up 1s forwards;pointer-events:none;z-index:3}
+@keyframes up{from{opacity:1;top:10px}to{opacity:0;top:-30px}}
+.plate{display:flex;justify-content:center;gap:12px;background:#e9b872;border:3px solid var(--ink);border-radius:40px;padding:8px 18px;margin:4px auto;width:fit-content}
+.slot{width:64px;height:64px;background:#fff;border:2px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}
+.slot.empty img{opacity:.18;filter:grayscale(1)}
+.slot .n{position:absolute;right:-6px;bottom:-6px;background:var(--ink);color:#fff;border-radius:10px;font-size:13px;font-weight:bold;padding:0 6px}
+.queue{display:flex;flex-wrap:wrap;gap:2px;align-items:flex-end;min-height:64px}
+.qc{text-align:center;width:44px}
+.qc .w{display:flex;justify-content:center}
+.scene{display:flex;flex-wrap:wrap;align-items:flex-end;gap:2px;margin:6px 0}
+/* stage2 */
+.st2grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.st2{border:3px solid var(--ink);background:#fff;border-radius:6px;padding:6px;min-height:150px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);touch-action:manipulation}
+.st2.target{background:#fff6d8;outline:3px dashed var(--accent)}
+.st2 .hd{display:flex;align-items:center;gap:6px;font-weight:bold}
+.st2 .hd small{font-weight:normal;color:var(--muted)}
+.st2 .crew{display:flex;flex-wrap:wrap;gap:4px;min-height:66px;margin:4px 0}
+.st2 .buf{font-size:13px;min-height:18px}
+.st2 .que{font-size:13px;font-weight:bold}
+.st2 .que.hot{color:var(--bad)}
+.staff{width:58px;text-align:center;border:2px solid transparent;border-radius:4px;padding:2px 0;cursor:pointer;touch-action:manipulation}
+.staff.sel{border-color:var(--accent);background:#ffe2cc}
+.staff .nm{font-size:12px;font-weight:bold}
+.staff .mor{height:5px;border:1px solid var(--ink);margin:1px 6px;background:#fff;position:relative}
+.staff .mor i{position:absolute;left:0;top:0;bottom:0;background:var(--good)}
+.staff.busy img{animation:bob .5s infinite alternate}
+.staff.low .mor i{background:var(--bad)}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ctrl .btn{margin:0;font-size:14px;padding:8px 6px}
+.consult{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:#fff;border-radius:4px;padding:4px 6px;margin:4px 0}
+.consult .q{flex:1;font-size:14px}
+.lockwrap{position:relative}
+.lockov{position:absolute;inset:0;background:rgba(43,43,43,.55);color:#fff;font-weight:bold;font-size:20px;display:none;align-items:center;justify-content:center;border-radius:6px;z-index:5}
+.lockov.on{display:flex}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:14px}
+.metrics div{border:2px solid var(--ink);background:#fff;padding:4px;text-align:center;border-radius:4px}
+.metrics b{display:block;font-size:20px}
+.staff.away{opacity:.35}
+.staff .aw{font-size:10px;color:var(--bad);font-weight:bold}
+.phase{background:#fff1c9;border:3px solid var(--ink);border-radius:4px;padding:6px 10px;margin:8px 0;font-size:14px}
+.phase b{font-size:16px}
+.consult.urgent{background:#ffe0dc;border-color:var(--bad)}
+.consult.teach{background:#e3f0ff}
+.st2.broken{background:#ffe9e6}
+.fc .row{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:14px}
+.fc .row span:first-child{width:92px;flex:none}
+.fc .hb{height:14px;border:2px solid var(--ink);background:#fff;flex:1;position:relative}
+.fc .hb i{position:absolute;left:0;top:0;bottom:0}
+/* demo */
+.lab{border:3px solid var(--ink);border-radius:6px;background:#fff;padding:8px;margin:10px 0}
+.lab h3{margin:0 0 2px}
+.labhead{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;font-size:12px;font-weight:bold;border-bottom:2px dashed var(--muted);padding-bottom:4px}
+.lane{position:relative;margin-top:4px}
+.dw{position:absolute;width:33.33%;text-align:center;transition:left .12s linear;font-size:10px}
+.dw .mb{height:5px;border:1px solid var(--ink);margin:0 25%;position:relative;background:#fff}
+.dw .mb i{position:absolute;left:0;top:0;bottom:0;background:var(--good)}
+.dw .ds{font-weight:bold;white-space:nowrap}
+.dw.moving .ds{color:var(--accent)}
+.dw.waiting{opacity:.55}.dw.waiting .ds{color:var(--bad)}
+.labres{display:flex;gap:16px;flex-wrap:wrap;font-size:15px;margin-top:4px;border-top:2px dashed var(--muted);padding-top:4px}
+.labres b{font-size:20px}
+.demorow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
+.demorow .cnt{font-size:26px;font-weight:bold;min-width:90px}
+/* stage3 */
+.opts{display:flex;flex-wrap:wrap;gap:4px}
+.dept{border:2px solid var(--ink);background:#fff;border-radius:4px;padding:6px 8px;margin:6px 0}
+.dept .top{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.dept .desc{font-size:13px;color:var(--muted);margin-top:2px}
+.dept.locked{opacity:.5}
+.chart{display:flex;align-items:flex-end;gap:6px;height:130px;border-bottom:2px solid var(--ink);position:relative;padding-top:6px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
+.chart .zero{position:absolute;left:0;right:0;border-top:2px dashed var(--muted)}
+.chart .b{width:70%;position:absolute;border:2px solid var(--ink)}
+.chart .lbl{position:absolute;bottom:-20px;font-size:12px}
+.chart .v{position:absolute;font-size:11px;white-space:nowrap}
+.event{display:flex;gap:10px;align-items:center}
+.msg{margin:4px 0;font-size:14px}
+.flow{display:flex;flex-direction:column;align-items:center;gap:4px}
+.flow .box{border:3px solid var(--ink);background:#fff;padding:6px 12px;border-radius:4px;font-weight:bold;text-align:center}
+.flow .arrow{font-size:20px;line-height:1}
+.flow .split{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.flow .split .box{font-weight:normal;font-size:14px}
+.flow .box.me{background:#fff1c9}
+@media (max-width:520px){
+  .seats{gap:3px}
+  .slot{width:56px;height:56px}
+  h1{font-size:26px}
+  .stations{gap:5px}
+  .station .nm{font-size:13px}
+  .order{width:82px}
+  .metrics{grid-template-columns:repeat(3,1fr)}
+  table.t{font-size:13px}
+  table.t th,table.t td{padding:4px 5px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="float"></div>
+<script>
+"use strict";
+/* =========================================================
+   設定（数字はすべてここで調整できます。ゲーム用の目安の値です）
+   ========================================================= */
+const CONFIG={
+  s1:{hourSec:10,hours:8,startHour:6,cook:{egg:5,toast:3,coffee:2},goodMul:1.6,
+      orderMin:4,orderMax:6.5,patience:26,maxOrders:4,trayCap:2,
+      wageSteps:[{xp:0,w:1000},{xp:18,w:1100},{xp:32,w:1200}],
+      daysPerMonth:20,daysPerYear:240,livingCost:1600000},
+  price:{egg:200,toast:150,coffee:150,set:500},
+  s2:{duration:90,startHour:7,cook:{egg:6,toast:3,coffee:2},
+      phases:[
+        {at:0,name:'セットが多い時間',text:'朝ごはんをしっかり食べたいお客さんが多い。',min:1.5,max:2.3,
+          menu:[{w:5,want:['egg','toast','coffee']},{w:2,want:['egg','toast']},{w:1,want:['toast','coffee']},{w:1,want:['coffee']},{w:1,want:['egg']}]},
+        {at:30,name:'コーヒーラッシュ',text:'通勤のお客さんが増えて、コーヒーだけの注文が多くなってきた！',min:1.0,max:1.7,
+          menu:[{w:6,want:['coffee']},{w:3,want:['toast','coffee']},{w:1,want:['egg','toast','coffee']}]},
+        {at:60,name:'トーストが人気',text:'「ここのトーストがおいしい」と評判に。トーストの注文が増えてきた！',min:1.3,max:2.0,
+          menu:[{w:4,want:['toast','coffee']},{w:3,want:['egg','toast']},{w:3,want:['toast']}]}],
+      patience:22,inspectTime:1.2,spoil:14,prebuildCap:5,orderCap:3,selfPenalty:0.8,selfSpeed:1.2,
+      consultLock:2,routineMin:10,routineMax:16,routineExpire:9,teachAt:[6,46],teachExpire:12,teachGain:0.15,
+      breakAt:38,breakLen:15,breakStaff:'mio',brokenAt:64,brokenMul:0.35,
+      staffWage:1100,staffHours:1,salary:300000,bonusMax:100000,
+      bonusBase:7000,bonusRate:16,claimPenalty:5000,wastePenalty:1000,
+      eggWaste:40,otherWaste:20,livingCost:2400000},
+  s3:{months:6,openCost:2500000,workingCapital:500000,priceF:{300:1.4,500:1,700:0.55},
+      baseDemand:2700,capacity:2600,unitCost:150,contractMul:1.1,marketMin:0.75,marketMax:1.15,
+      shortageRisk:0.1,labor:450000,rent:150000,
+      dept:{shiire:120000,unei:80000,senden:100000,jinji:100000},
+      unlockMonth:3,shop2Cost:2500000,loanMonths:60,interest:0.003,lossRate:0.03},
+  defaults:{savings1:500000,savings2:1500000}
+};
+
+/* =========================================================
+   ドット絵（16×16）
+   ========================================================= */
+const PAL={k:'#2b2b2b',w:'#fffaf0',y:'#ffc31a',o:'#f08a24',b:'#c8843c',d:'#7a4a1e',l:'#f0c27a',g:'#b8bec5',
+  s:'#5b6168',e:'#dfe4ea',r:'#d9433b',c:'#5a3418',p:'#f5c9a0',h:'#3a2a1a',u:'#3d7bd9',n:'#3fa34d',
+  x:'#111111',m:'#ffffff',v:'#8a5cc7'};
+const SPR={
+egg:["................","................",".....kkkkkk.....","...kkwwwwwwkk...","..kwwwwwwwwwwk..",".kwwwwwwwwwwwwk.",
+ ".kwwwwkkkkwwwwk.","kwwwwkyyyykwwwwk","kwwwkyymyyykwwwk","kwwwkyyyyyykwwwk",".kwwwkyyyykwwwk.",".kwwwwkkkkwwwwk.",
+ "..kwwwwwwwwwwk..","...kkwwwwwwkk...",".....kkkkkk.....","................"],
+toast:["................","................","...kkkkkkkkkk...","..kddddddddddk..",".kddllllllllddk.",".kdlllllllllldk.",
+ ".kdllbllllblldk.",".kdlllllllllldk.",".kdllllbllllldk.",".kdlllllllllldk.",".kdllbllllblldk.",".kdlllllllllldk.",
+ ".kddddddddddddk.",".kkkkkkkkkkkkkk.","................","................"],
+coffee:["................","....g...g.......",".....g...g......","....g...g.......","..kkkkkkkkkk....","..kwccccccwk....",
+ "..kwwwwwwwwkkk..","..kwwwwwwwwk.k..","..kwwrrwwwwk.k..","..kwwwwwwwwkkk..","..kwwwwwwwwk....","...kwwwwwwk.....",
+ "....kkkkkk......",".kkkkkkkkkkkk...","..kkkkkkkkkk....","................"],
+pan:["................","................","................","................","................","..kkkkkkkk......",
+ ".kssssssssk.....","kssggggggssk....","ksggggggggskkkkk","ksggggggggsddddk","kssggggggsskkkkk",".kssssssssk.....",
+ "..kkkkkkkk......","................","................","................"],
+toaster:["................","................","................","................","..kkkkkkkkkkkk..",".keeeeeeeeeeeek.",
+ ".kexxxxeexxxxek.",".keeeeeeeeeeeek.",".kggggggggggggk.",".kggggggggggrgk.",".kggggggggggggk.",".kggggggggggggk.",
+ "..kkkkkkkkkkkk..","..kk........kk..","................","................"],
+machine:["................","...kkkkkkkkkk...","...kssssssssk...","...ksrsssnssk...","...kssssssssk...","...kkkkkkkkkk...",
+ "...ks......sk...","...ks..kk..sk...","...ks......sk...","...ks......sk...","...ks......sk...","...kkkkkkkkkk...",
+ "..kssssssssssk..","..kkkkkkkkkkkk..","................","................"],
+person:["......kkkk......",".....khhhhk.....","....khhhhhhk....","....khpppphk....","....kpxppxpk....","....kppppppk....",
+ ".....kpprpk.....","......kkkk......","....kuuuuuuk....","...kuuuwwuuuk...","..kpkuwwwwukpk..","..kpkuwwwwukpk..",
+ "....kuwwwwuk....","....kssk.kssk...","....kssk.kssk...","....kkkk.kkkk..."],
+shop:["................","................","..kkkkkkkkkkkk..",".krrwwrrwwrrwwk.",".krrwwrrwwrrwwk.","..kkkkkkkkkkkk..",
+ "..kllllllllllk..","..klkkkklkkkklk.","..klkeeklkuuklk.","..klkeeklkuuklk.","..klkkkklkuyklk.","..kllllllkuuklk.",
+ "..kkkkkkkkkkkkk.","................","................","................"],
+coin:["................",".....kkkkkk.....","...kkyyyyyykk...","..kyyyyyyyyyyk..",".kyyymyyyyyyyyk.",".kyymyyyyyyyyyk.",
+ ".kyyyyyyyyyyyyk.",".kyyyyyyyyyyyyk.",".kyyyyyyyyyyyok.",".kyyyyyyyyyyyok.","..kyyyyyyyyyok..","...kkyyyyyokk...",
+ ".....kkkkkk.....","................","................","................"],
+check:["................","................","..kkkkkkkkkk....","..kwwwwwwwwk....","..kwkkkkkkwk....","..kwwwwwwwwk....",
+ "..kwkkkkkwwk....","..kwwwwwwwwk.kk.","..kwkkkkwwwkknk.","..kwwwwwwwkknk..","..kwwwwwwkknkk..","..kwwwwwwknnk...",
+ "..kkkkkkkkkk....","................","................","................"]
+};
+(function(){
+  const base=["......kkkk......",".....khhhhk.....","....khhhhhhk....","....khpppphk....","....kpxppxpk....","....kppppppk....",
+   ".....kpMMpk.....","......kkkk......","....kuuuuuuk....","...kuuuuuuuuk...","..kpkuuuuuukpk..","..kpkuuuuuukpk..",
+   "....kuuuuuuk....","....kssk.kssk...","....kssk.kssk...","....kkkk.kkkk..."];
+  const mk=(r3,r6)=>base.map((r,i)=>i===3&&r3?r3:i===6?r6:r);
+  SPR.cust_happy=mk(null,".....kprrpk.....");
+  SPR.cust_normal=mk(null,".....kpkkpk.....");
+  SPR.cust_angry=mk("....kkpppkkk....",".....kkppkk.....");
+})();
+const OVER={burntEgg:{w:'#7a6656',y:'#3a2416',m:'#3a2416'},burntToast:{l:'#4a3020',b:'#2a1a10',d:'#2a1a10'},
+  spiltCoffee:{c:'#2a1a10',w:'#c9b8a6',r:'#7a4a3a'}};
+const _cache={};
+function spriteURL(name,over){
+  const key=name+'|'+JSON.stringify(over||{});
+  if(_cache[key])return _cache[key];
+  const rows=SPR[name];const w=16,h=rows.length;
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const ch=rows[y][x];if(!ch||ch==='.')continue;
+    cx.fillStyle=(over&&over[ch])||PAL[ch]||'#f0f';cx.fillRect(x,y,1,1);
+  }
+  return _cache[key]=cv.toDataURL();
+}
+function sp(name,size,over,cls){size=size||48;return `<img class="px ${cls||''}" src="${spriteURL(name,over)}" width="${size}" height="${size}" alt="">`;}
+
+/* =========================================================
+   共通
+   ========================================================= */
+const app=document.getElementById('app');
+const NAME={egg:'目玉焼き',toast:'トースト',coffee:'コーヒー',inspect:'検品'};
+const DEV={egg:'pan',toast:'toaster',coffee:'machine'};
+const R=(k,r)=>`<ruby>${k}<rt>${r}</rt></ruby>`;
+const yen=n=>(n<0?'−':'')+Math.round(Math.abs(n)).toLocaleString('ja-JP')+'円';
+const rand=(a,b)=>a+Math.random()*(b-a);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let loopId=null;
+function stopLoop(){if(loopId)cancelAnimationFrame(loopId);loopId=null;}
+function startLoop(fn){stopLoop();let last=performance.now();
+  const tick=now=>{const dt=Math.min(0.1,(now-last)/1000);last=now;if(fn(dt)!==false)loopId=requestAnimationFrame(tick);};
+  loopId=requestAnimationFrame(tick);}
+/* ふりがな：小学5年生までに習わない漢字に、自動でふりがなを付ける */
+const FURI={'卵':'たまご','捨':'す','値':'ね','段':'だん','賃':'ちん','忙':'いそが','契':'けい','済':'さい','担':'たん','憩':'けい','勤':'きん',
+  '払':'はら','認':'みと','装':'そう','署':'しょ','閉':'へい','舗':'ぽ','宣':'せん','割':'わり','視':'し','紹':'しょう','影':'えい','響':'きょう',
+  '姿':'すがた','収':'しゅう','預':'あず','魅':'み','込':'こ','看':'かん','藤':'とう','論':'ろん','耐':'たい','誰':'だれ'};
+const FURI_RE=new RegExp('['+Object.keys(FURI).join('')+']','g');
+function fr(html){
+  let inRuby=0;
+  return String(html).split(/(<[^>]+>)/).map(part=>{
+    if(part.startsWith('<')){if(/^<ruby/i.test(part))inRuby++;else if(/^<\/ruby/i.test(part))inRuby=Math.max(0,inRuby-1);return part;}
+    return inRuby?part:part.replace(FURI_RE,k=>`<ruby>${k}<rt>${FURI[k]}</rt></ruby>`);
+  }).join('');
+}
+function setH(el,text){if(el&&el.dataset.raw!==text){el.dataset.raw=text;el.innerHTML=fr(text);}}
+function show(html){stopLoop();app.innerHTML=fr(html);window.scrollTo(0,0);}
+function flash(text){const f=document.getElementById('float');const d=document.createElement('div');d.className='flash';d.innerHTML=fr(text);
+  f.appendChild(d);setTimeout(()=>d.remove(),1400);while(f.children.length>3)f.firstChild.remove();}
+function clock(h,frac){const m=Math.floor(frac*60);return `${h}:${String(m).padStart(2,'0')}`;}
+const G={s1:null,s2:null,s3:null};
+const SAVE_KEY='bfactory_save';
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({G,S3:(S3&&!S3.finished)?S3:null}));}catch(e){}}
+function loadGame(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!d)return;
+  G.s1=d.G&&d.G.s1||null;G.s2=d.G&&d.G.s2||null;G.s3=d.G&&d.G.s3||null;S3=d.S3||null;}catch(e){}}
+function clearGame(){G.s1=G.s2=G.s3=null;S3=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+function hasProgress(){return !!(G.s1||G.s2||G.s3||S3);}
+function newGame(){clearGame();stage1Intro();}
+function continueGame(){
+  if(S3&&!S3.finished){
+    if(S3.pending){if(S3.closed||S3.month>=CONFIG.s3.months){s3Result();return;}S3.month++;S3.pending=false;saveGame();}
+    s3Month();return;}
+  if(G.s3)reflection();else if(G.s2)stage3Intro();else if(G.s1)stage2Intro();else stage1Intro();
+}
+function sav1(){return G.s1?G.s1.savings:CONFIG.defaults.savings1;}
+function sav2(){return G.s2?G.s2.savings:CONFIG.defaults.savings2;}
+
+/* =========================================================
+   タイトル
+   ========================================================= */
+function goTitle(){
+  show(`<div class="panel center">
+    <div class="logo">${sp('egg',56)}${sp('toast',56)}${sp('coffee',56)}</div>
+    <div style="text-align:left"><a class="back" href="../../samples/">← ゲーム一覧</a></div>
+    <h1>朝食ファクトリー</h1>
+    <p>朝ごはん屋さんで、3つの${R('立場','たちば')}を体験しよう。</p>
+    <div class="logo">${sp('person',48,{u:'#3d7bd9'})}${sp('person',48,{u:'#3fa34d',h:'#7a4a1e'})}${sp('person',48,{u:'#8a5cc7',h:'#555'})}</div>
+    <p><b>はたらく人</b> → <b>まとめる人</b> → <b>お店をつくる人</b><br>それぞれ、どうやってお金をかせいでいるかな？</p>
+    ${hasProgress()?`<button class="btn green" onclick="continueGame()">つづきから</button><br>`:''}
+    <button class="btn" onclick="newGame()">はじめから</button>
+    <button class="btn gray" onclick="stageSelect()">ステージをえらぶ</button>
+    <button class="btn gray" onclick="credits()">クレジット</button>
+    <p class="note">遊ぶ時間：5〜10分。ゲームの中の金額は、わかりやすくするための目安です。</p>
+  </div>`);
+}
+function stageSelect(){
+  show(`<div class="panel"><h2>ステージをえらぶ</h2>
+    <p class="note">前のステージを遊んでいないときは、決まった金額の貯金でスタートします。</p>
+    <button class="btn" onclick="stage1Intro()">ステージ1　はたらく人</button><br>
+    <button class="btn" onclick="stage2Intro()">ステージ2　まとめる人（中間管理職）</button><br>
+    <button class="btn" onclick="stage3Intro()">ステージ3　お店をつくる人（経営者）</button><br>
+    <button class="btn blue" onclick="reflection()">ふりかえり</button><br>
+    <button class="btn gray" onclick="goTitle()">もどる</button></div>`);
+}
+function credits(){
+  show(`<div class="panel"><h2>クレジット</h2>
+    <p>このゲームはオリジナル作品です。次の本の考え方を参考にしました。本の文章や図は使っていません。</p>
+    <ul>
+      <li>アンドリュー・グローブ『HIGH OUTPUT MANAGEMENT』（生産管理、管理職の仕事）</li>
+      <li>アダム・スミス『国富論』（分業）</li>
+      <li>大野耐一『トヨタ生産方式』（作りすぎのムダ）</li>
+      <li>エリヤフ・ゴールドラット『ザ・ゴール』（ボトルネック）</li>
+      <li>ピーター・ドラッカー『マネジメント』（お客さんをつくる）</li>
+      <li>田内学『きみのお金は誰のため』（お金の向こうにいる人）</li>
+    </ul>
+    <p class="note">ドット絵・プログラム：このゲームのために作成</p>
+    <button class="btn gray" onclick="goTitle()">もどる</button></div>`);
+}
+
+/* =========================================================
+   お客さん
+   ========================================================= */
+const MENU=[{w:4,want:['egg','toast','coffee']},{w:2,want:['egg','toast']},{w:2,want:['toast','coffee']},{w:2,want:['coffee']},{w:1,want:['egg']}];
+const HAIRS=['#3a2a1a','#7a4a1e','#555b61','#c8843c','#222222','#a0522d'];
+const SHIRTS=['#e85d8a','#3d7bd9','#3fa34d','#8a5cc7','#e8a23b','#2aa5a0','#d9433b'];
+function newCustomer(id,menu){
+  const MENU_=menu||MENU;const tot=MENU_.reduce((a,m)=>a+m.w,0);let r=Math.random()*tot,m=MENU_[0];
+  for(const x of MENU_){r-=x.w;if(r<0){m=x;break;}}
+  const P=CONFIG.price;const price=m.want.length===3?P.set:m.want.reduce((a,k)=>a+P[k],0);
+  return {id,want:m.want.slice(),price,t:0,assigned:false,look:{h:HAIRS[Math.floor(Math.random()*HAIRS.length)],u:SHIRTS[Math.floor(Math.random()*SHIRTS.length)]}};
+}
+function faceOf(rest){return rest>0.6?'happy':rest>0.3?'normal':'angry';}
+function custURL(c,face){return spriteURL('cust_'+face,Object.assign({h:c.look.h,u:c.look.u},face==='angry'?{p:'#f2a08a'}:{}));}
+function custImg(c,face,size){return `<img class="px" src="${custURL(c,face)}" width="${size}" height="${size}" alt="">`;}
+function wantIcons(c,size){return c.want.map(k=>sp(k,size)).join('');}
+function wantName(c){return c.want.length===3?'セット':c.want.map(k=>NAME[k]).join('と');}
+function popAt(el,text){if(!el)return;const d=document.createElement('div');d.className='pop';d.textContent=text;el.appendChild(d);setTimeout(()=>d.remove(),1000);}
+function menuTable(){const P=CONFIG.price;return `<table class="t" style="width:auto"><tr><th>メニュー</th><th>値段</th></tr>
+  <tr><td>${sp('egg',22)}${sp('toast',22)}${sp('coffee',22)} セット</td><td class="num">${yen(P.set)}</td></tr>
+  <tr><td>${sp('egg',22)} 目玉焼き</td><td class="num">${yen(P.egg)}</td></tr>
+  <tr><td>${sp('toast',22)} トースト</td><td class="num">${yen(P.toast)}</td></tr>
+  <tr><td>${sp('coffee',22)} コーヒー</td><td class="num">${yen(P.coffee)}</td></tr></table>`;}
+
+/* =========================================================
+   ステージ1　はたらく人
+   ========================================================= */
+function stage1Intro(){
+  const C=CONFIG.s1;
+  show(`<div class="panel">
+    <h2>ステージ1　はたらく人</h2>
+    <div class="event">${sp('person',64,{u:'#3d7bd9'})}<p>あなたは朝ごはん屋さんの<b>アルバイト</b>。<br>${R('時給','じきゅう')}は<b>${yen(C.wageSteps[0].w)}</b>。${C.hours}時間はたらきます。</p></div>
+    <ul>
+      <li>お客さんの注文は、セットだったり、コーヒーだけだったり、いろいろ</li>
+      <li>どうぐをタップすると調理スタート。<b class="good">緑のところ</b>でもう一度タップすると完成して、お皿にのる</li>
+      <li>注文のものがお皿にそろったら、<b>お客さんをタップして出そう</b></li>
+      <li>おそすぎると、こげて捨てることに。待たせすぎると、お客さんは帰ってしまう</li>
+    </ul>
+    ${menuTable()}
+    <div class="tip">ヒント：目玉焼きがいちばん時間がかかるよ。</div>
+    <button class="btn" onclick="stage1Play()">はたらきはじめる</button>
+  </div>`);
+}
+let S1=null;
+function stage1Play(){
+  const C=CONFIG.s1;
+  S1={t:0,cust:[],next:1.0,oid:0,st:{egg:{s:'idle',t:0},toast:{s:'idle',t:0},coffee:{s:'idle',t:0}},
+      tray:{egg:0,toast:0,coffee:0},made:0,sales:0,waste:0,left:0,xp:0,rt:0};
+  const stHtml=['egg','toast','coffee'].map(k=>{
+    const ct=C.cook[k],burn=ct*C.goodMul,max=burn*1.25;
+    return `<button class="station" id="st-${k}" onclick="s1Tap('${k}')">
+      <div class="nm">${NAME[k]}</div>
+      <div class="devs">${sp(DEV[k],64)}<span class="item" id="it-${k}"></span></div>
+      <div class="cookbar" style="--a:${ct/max*100}%;--b:${burn/max*100}%"><b id="cb-${k}" style="left:0"></b></div>
+      <div class="st" id="ss-${k}">タップで開始</div></button>`;}).join('');
+  show(`<div class="panel hud"><span class="big" id="h-clock">6:00</span>
+      <span>時給 ${yen(C.wageSteps[0].w)}</span>
+      <span>スキル <span class="gauge"><i id="h-xp" style="width:0"></i></span></span>
+      <span id="h-next" class="note"></span></div>
+    <div class="panel"><b>カウンター</b> <span class="note">そろったら、お客さんをタップ！</span>
+      <div class="seats" id="seats"></div><div class="counterline"></div></div>
+    <div class="plate">${['egg','toast','coffee'].map(k=>`<div class="slot empty" id="sl-${k}">${sp(k,44)}<span class="n" id="tr-${k}">0</span></div>`).join('')}</div>
+    <div class="stations">${stHtml}</div>
+    <div class="panel trayrow"><span>お店の売上 <b id="c-sales">0円</b></span><span>出した注文 <span id="c-made">0</span></span><span>捨てた <span id="c-waste">0</span></span><span>帰った <span id="c-left">0</span></span></div>`);
+  startLoop(s1Update);
+}
+function s1Wage(xp){let w=CONFIG.s1.wageSteps[0].w;for(const s of CONFIG.s1.wageSteps)if(xp>=s.xp)w=s.w;return w;}
+function s1Tap(k){
+  const C=CONFIG.s1,s=S1.st[k],ct=C.cook[k];
+  if(s.s==='idle'){
+    if(S1.tray[k]>=C.trayCap){flash(`お皿の${NAME[k]}はもういっぱい`);return;}
+    s.s='cook';s.t=0;
+  }else if(s.s==='cook'){
+    if(s.t<ct){flash('まだはやい！');return;}
+    S1.tray[k]++;S1.xp++;s.s='idle';
+  }else if(s.s==='burnt'){
+    S1.waste++;S1.xp=Math.max(0,S1.xp-2);s.s='idle';flash('捨てた…材料がもったいない');
+  }
+  s1Render(true);
+}
+function s1AddCust(c){
+  const el=document.createElement('button');el.className='cust';el.id='cu-'+c.id;
+  el.innerHTML=`<div class="bub"><div class="wants">${wantIcons(c,c.want.length===3?20:24)}</div><div class="pr">${yen(c.price)}</div></div>
+    <img class="px face" src="${custURL(c,'happy')}" width="56" height="56" alt=""><div class="bar"><i></i></div>`;
+  el.onclick=()=>s1Serve(c.id);
+  document.getElementById('seats').appendChild(el);c.face='happy';
+}
+function s1Serve(id){
+  const c=S1.cust.find(x=>x.id===id);if(!c||c.leaving)return;
+  const el=document.getElementById('cu-'+id);
+  const lack=c.want.filter(k=>S1.tray[k]<1);
+  if(lack.length){flash(`${lack.map(k=>NAME[k]).join('と')}がお皿にない！`);el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');return;}
+  for(const k of c.want)S1.tray[k]--;
+  S1.made++;S1.sales+=c.price;c.leaving=true;
+  el.querySelector('.face').src=custURL(c,'happy');
+  popAt(el,'+'+yen(c.price));
+  setTimeout(()=>el.classList.add('leave'),350);
+  setTimeout(()=>{el.remove();S1.cust=S1.cust.filter(x=>x!==c);},1000);
+  s1Render(true);
+}
+function s1Update(dt){
+  const C=CONFIG.s1,total=C.hourSec*C.hours;
+  S1.t+=dt;
+  for(const k in S1.st){const s=S1.st[k];if(s.s==='cook'){s.t+=dt;if(s.t>C.cook[k]*C.goodMul)s.s='burnt';}}
+  for(const c of S1.cust){if(c.leaving)continue;c.t+=dt;
+    if(c.t>=C.patience){c.leaving=true;S1.left++;flash('お客さんが待ちきれずに帰った');
+      const el=document.getElementById('cu-'+c.id);if(el){el.classList.add('leave');setTimeout(()=>{el.remove();S1.cust=S1.cust.filter(x=>x!==c);},700);}}}
+  S1.next-=dt;
+  if(S1.next<=0){if(S1.cust.length<C.maxOrders){const c=newCustomer(++S1.oid);S1.cust.push(c);s1AddCust(c);}S1.next=rand(C.orderMin,C.orderMax);}
+  if(S1.t>=total){s1Result();return false;}
+  s1Render(false,dt);
+}
+function s1Render(force,dt){
+  const C=CONFIG.s1;S1.rt+=(dt||0);
+  for(const k in S1.st){
+    const s=S1.st[k],ct=C.cook[k],burn=ct*C.goodMul,max=burn*1.25;
+    const el=document.getElementById('st-'+k);if(!el)return;
+    const pos=s.s==='cook'?s.t:(s.s==='burnt'?max:0);
+    document.getElementById('cb-'+k).style.left=Math.min(100,pos/max*100)+'%';
+    const ready=s.s==='cook'&&s.t>=ct;
+    el.className='station'+(ready?' ready':'')+(s.s==='burnt'?' burnt':'');
+    const txt=s.s==='idle'?'タップで開始':(s.s==='burnt'?'こげた！タップで捨てる':(ready?'いまだ！タップ':'調理中…'));
+    setH(document.getElementById('ss-'+k),txt);
+    const it=document.getElementById('it-'+k);const want=s.s==='idle'?'':(s.s==='burnt'?'b':'c');
+    if(it.dataset.v!==want){it.dataset.v=want;
+      it.innerHTML=want===''?'':sp(k,40,want==='b'?(k==='egg'?OVER.burntEgg:k==='toast'?OVER.burntToast:OVER.spiltCoffee):null);}
+  }
+  for(const k of ['egg','toast','coffee']){document.getElementById('tr-'+k).textContent=S1.tray[k];
+    document.getElementById('sl-'+k).className='slot'+(S1.tray[k]?'':' empty');}
+  for(const c of S1.cust){const el=document.getElementById('cu-'+c.id);if(!el||c.leaving)continue;
+    const rest=1-c.t/C.patience,f=faceOf(rest);
+    if(f!==c.face){c.face=f;el.querySelector('.face').src=custURL(c,f);}
+    const ok=c.want.every(k=>S1.tray[k]>0);el.classList.toggle('ok',ok);
+    const b=el.querySelector('.bar');b.firstElementChild.style.width=(rest*100)+'%';b.className='bar'+(rest<0.35?' warn':'');}
+  if(!force&&S1.rt<0.12)return;S1.rt=0;
+  const h=Math.floor(S1.t/C.hourSec);
+  document.getElementById('h-clock').textContent=clock(C.startHour+h,(S1.t%C.hourSec)/C.hourSec);
+  const top=C.wageSteps[C.wageSteps.length-1].xp;
+  document.getElementById('h-xp').style.width=Math.min(100,S1.xp/top*100)+'%';
+  document.getElementById('h-next').textContent=`次のシフトの時給：${yen(s1Wage(S1.xp))}`;
+  document.getElementById('c-sales').textContent=yen(S1.sales);
+  document.getElementById('c-made').textContent=S1.made;
+  document.getElementById('c-waste').textContent=S1.waste;
+  document.getElementById('c-left').textContent=S1.left;
+}
+function s1Result(){
+  const C=CONFIG.s1;
+  const today=C.wageSteps[0].w*C.hours;
+  const next=s1Wage(S1.xp);
+  const yearly=next*C.hours*C.daysPerYear;
+  const savings=Math.max(0,yearly-C.livingCost);
+  G.s1={made:S1.made,sales:S1.sales,waste:S1.waste,left:S1.left,xp:S1.xp,today,next,yearly,monthly:next*C.hours*C.daysPerMonth,savings};saveGame();
+  const up=next>C.wageSteps[0].w;
+  show(`<div class="panel"><h2>おつかれさま！　給料明細</h2>
+    <table class="t">
+      <tr><th>はたらいた時間</th><td class="num">${C.hours}時間</td></tr>
+      <tr><th>時給</th><td class="num">${yen(C.wageSteps[0].w)}</td></tr>
+      <tr class="total"><td>今日の給料</td><td class="num">${yen(today)}</td></tr>
+    </table>
+    <p>出した注文 <b>${S1.made}</b>件　捨てた <b>${S1.waste}</b>　帰ったお客さん <b>${S1.left}</b></p>
+    <p>あなたが出した料理で、お店に入ったお金（売上）は <b>${yen(S1.sales)}</b>。</p>
+    <div class="tip">たくさん出しても、少なくても、<b>今日の給料は同じ</b>。これが「時給」でかせぐということ。<br>
+      ${S1.sales<today?'今日は売上が給料より少なかった。それでも時給はちゃんともらえる。そのぶんの心配は、お店（経営者）が引き受けている。':'お店に入ったお金から、材料費や家賃、そしてあなたの時給が払われる。'}</div>
+    <p>${up?`<b class="good">スキルが上がった！</b> 次のシフトから時給が <b>${yen(next)}</b> になります。`:'スキルを上げると、次から時給が上がるよ。'}</p>
+  </div>
+  <div class="panel"><h3>${sp('coin',28)} この働き方を1年つづけたら？</h3>
+    <table class="t">
+      <tr><th>1年の給料</th><td>${yen(next)} × ${C.hours}時間 × ${C.daysPerYear}日</td><td class="num">${yen(yearly)}</td></tr>
+      <tr><th>生活費</th><td>家賃・食費など</td><td class="num">−${yen(C.livingCost)}</td></tr>
+      <tr class="total"><td>貯金</td><td></td><td class="num">${yen(savings)}</td></tr>
+    </table>
+    <p class="note">この貯金は、ステージ3でお店を開くときに使います。</p>
+  </div>
+  <div class="panel"><h3>はたらく人のポイント</h3>
+    <ul><li>かせぎを増やすには「長くはたらく」か「スキルを上げて時給を上げる」</li>
+    <li>シフトが終われば、仕事も終わり</li><li>給料は毎月ほぼ同じで、<b>安定</b>している</li></ul>
+    <button class="btn" onclick="stage2Intro()">次のステージへ</button>
+    <button class="btn gray" onclick="stage1Play()">もう一度</button></div>`);
+}
+
+/* =========================================================
+   ステージ2　まとめる人（中間管理職）
+   ========================================================= */
+function stage2Intro(){
+  show(`<div class="panel"><h2>ステージ2　まとめる人</h2>
+    <div class="event">${sp('person',64,{u:'#3fa34d',h:'#7a4a1e'})}<p>がんばりが認められて、あなたは<b>店長</b>（${R('中間管理職','ちゅうかんかんりしょく')}）になった！<br>これからは<b>自分では作らず</b>、スタッフ5人に作ってもらいます。</p></div>
+    <p>給料は<b>月給${yen(CONFIG.s2.salary)}</b>と、<b>チーム全体の成果で決まるボーナス</b>。</p>
+    <p>そのまえに、ちょっと実験をしてみよう。</p>
+    <button class="btn" onclick="demoScreen()">実験する</button></div>`);
+}
+/* 実験：分業 */
+const LAB={len:60,speed:3,move:4/3,learn:1.2,cap:2};
+let DEMO=null;
+function demoScreen(){
+  if(DEMO)stopLoop();DEMO=null;
+  const C=CONFIG.s2.cook;
+  const head=`<div class="labhead">${['egg','toast','coffee'].map(k=>`<div>${sp(k,26)}<br>${NAME[k]}</div>`).join('')}</div>`;
+  show(`<div class="panel"><h2>実験：4人で60秒、何セット作れる？</h2>
+    <p>2つの作り方を、同時にスタートさせてみよう。</p>
+    <div class="lab"><h3>A：1人が全部つくる</h3>
+      <p class="note">1人が卵→トースト→コーヒーの順に作る。持ち場の間を移動して、道具を持ちかえる時間（1回${LAB.move.toFixed(1)}秒）がかかる。</p>
+      ${head}<div class="lane" id="lane-a"></div>
+      <div class="labres"><span>できたセット <b id="n-a">0</b></span><span>移動・持ちかえ <b id="m-a">0</b>秒</span></div></div>
+    <div class="lab"><h3>B：作るものを分けて担当</h3>
+      <p class="note">卵2人・トースト1人・コーヒー1人。移動しない。同じ作業をくり返すので、なれて速くなる（このゲームでは${LAB.learn}倍）。</p>
+      ${head}<div class="lane" id="lane-b"></div>
+      <div class="labres"><span>できたセット <b id="n-b">0</b></span><span>待っていた時間 <b id="w-b">0</b>秒</span></div></div>
+    <div class="center"><span class="big" id="lab-t" style="font-size:22px;font-weight:bold">0秒 / ${LAB.len}秒</span><br>
+      <button class="btn" id="d-start" onclick="demoStart()">実験スタート</button></div>
+    <div id="d-exp"></div></div>`);
+  demoInit();demoDraw();
+}
+function demoInit(){
+  const C=CONFIG.s2.cook;
+  const A={dur:[C.egg,LAB.move,C.toast,LAB.move,C.coffee,LAB.move],w:[{stage:0,t:0},{stage:2,t:0},{stage:4,t:0},{stage:0,t:3}],sets:0,move:0};
+  const sp_=LAB.learn;
+  const B={w:[{k:'egg',row:0},{k:'egg',row:1},{k:'toast',row:0},{k:'coffee',row:0}].map(x=>({...x,t:0,busy:false,wait:0})),
+    dur:{egg:C.egg/sp_,toast:C.toast/sp_,coffee:C.coffee/sp_},buf:{egg:0,toast:0,coffee:0},sets:0,wait:0};
+  DEMO={t:0,A,B,running:false,done:false};
+  const la=document.getElementById('lane-a'),lb=document.getElementById('lane-b');
+  la.innerHTML=A.w.map((w,i)=>`<div class="dw" id="aw${i}" style="top:${i*54}px">${sp('person',30,{u:SHIRTS[i]})}<div class="mb"><i></i></div><div class="ds"></div></div>`).join('');
+  lb.innerHTML=B.w.map((w,i)=>`<div class="dw" id="bw${i}" style="top:${w.row*54}px;left:${({egg:0,toast:1,coffee:2})[w.k]*33.33}%">${sp('person',30,{u:SHIRTS[i]})}<div class="mb"><i></i></div><div class="ds"></div></div>`).join('');
+  la.style.height=(4*54)+'px';lb.style.height=(2*54)+'px';
+}
+function demoStart(){
+  if(DEMO&&DEMO.running)return;
+  demoInit();DEMO.running=true;
+  const b=document.getElementById('d-start');b.disabled=true;b.textContent='実験中…';
+  document.getElementById('d-exp').innerHTML='';
+  startLoop(dt=>{
+    let g=dt*LAB.speed;
+    while(g>0){const st=Math.min(g,0.05);demoStep(st);g-=st;if(DEMO.t>=LAB.len)break;}
+    demoDraw();
+    if(DEMO.t>=LAB.len){DEMO.running=false;DEMO.done=true;b.disabled=false;b.textContent='もう一度';demoExplain();return false;}
+  });
+}
+function demoStep(dt){
+  const D=DEMO,A=D.A,B=D.B;D.t+=dt;
+  for(const w of A.w){w.t+=dt;if(w.stage%2===1)A.move+=dt;
+    if(w.t>=A.dur[w.stage]){w.t-=A.dur[w.stage];if(w.stage===4)A.sets++;w.stage=(w.stage+1)%6;}}
+  for(const w of B.w){
+    if(w.busy){w.t+=dt;if(w.t>=B.dur[w.k]){w.busy=false;w.t=0;B.buf[w.k]++;}}
+    if(!w.busy){const inprog=B.w.filter(x=>x.k===w.k&&x.busy).length;
+      if(B.buf[w.k]+inprog<LAB.cap){w.busy=true;w.t=0;}else{w.wait+=dt;B.wait+=dt;}}
+  }
+  while(B.buf.egg&&B.buf.toast&&B.buf.coffee){B.buf.egg--;B.buf.toast--;B.buf.coffee--;B.sets++;}
+}
+function demoDraw(){
+  const D=DEMO,A=D.A,B=D.B;
+  A.w.forEach((w,i)=>{const el=document.getElementById('aw'+i);if(!el)return;
+    const p=Math.min(1,w.t/A.dur[w.stage]);
+    const col=[0,0,1,1,2,2][w.stage]+(w.stage===1||w.stage===3?p:w.stage===5?-2*p:0);
+    el.style.left=(col*33.33)+'%';
+    el.querySelector('.mb i').style.width=(w.stage%2===0?p*100:0)+'%';
+    setH(el.querySelector('.ds'),w.stage%2===1?'移動・持ちかえ':['卵を焼く','','トースト','','コーヒー'][w.stage]);
+    el.classList.toggle('moving',w.stage%2===1);});
+  B.w.forEach((w,i)=>{const el=document.getElementById('bw'+i);if(!el)return;
+    el.querySelector('.mb i').style.width=(w.busy?Math.min(1,w.t/B.dur[w.k])*100:0)+'%';
+    el.querySelector('.ds').textContent=w.busy?'作ってる':'待ってる…';
+    el.classList.toggle('waiting',!w.busy);});
+  document.getElementById('n-a').textContent=A.sets;
+  document.getElementById('m-a').textContent=Math.round(A.move);
+  document.getElementById('n-b').textContent=B.sets;
+  document.getElementById('w-b').textContent=Math.round(B.wait);
+  document.getElementById('lab-t').textContent=`${Math.min(LAB.len,Math.floor(D.t))}秒 / ${LAB.len}秒`;
+}
+function demoExplain(){
+  const A=DEMO.A,B=DEMO.B;
+  const wt=B.w.filter(w=>w.k==='toast')[0].wait,wc=B.w.filter(w=>w.k==='coffee')[0].wait;
+  const we=B.w.filter(w=>w.k==='egg').reduce((a,w)=>a+w.wait,0);
+  document.getElementById('d-exp').innerHTML=fr(`<div class="tip">
+    <p><b>Aは${A.sets}セット、Bは${B.sets}セット。分けた方が${B.sets-A.sets}セット多い！</b></p>
+    <p>・Aでは、4人あわせて<b>約${Math.round(A.move)}秒</b>を「移動と持ちかえ」に使っていた。60秒×4人＝240秒のうち、約${Math.round(A.move/240*100)}%が料理を作っていない時間。</p>
+    <p>・Bでは移動がなく、なれて速くなる。作業を分けることを<b>分業</b>という。</p>
+    <p>・でもBの中を見ると、卵の2人はほとんど休みなく焼いていた（待ち時間 約${Math.round(we)}秒）。${[['トースト',wt],['コーヒー',wc]].filter(x=>x[1]>=5).map(x=>`${x[0]}の人は約<b>${Math.round(x[1])}秒</b>`).join('、')||'ほかの人'}も<b>待っていた</b>。卵が追いつかないので、ほかの料理を作っても置き場がいっぱいになってしまう。</p>
+    <p>いちばんおそい工程（ここでは卵）が、全体の速さを決めている。これを<b>ボトルネック</b>という。店長の仕事では、ここに注目しよう。</p></div>
+    <div class="center"><button class="btn" onclick="stage2Brief()">店長の仕事へ</button></div>`);
+}
+function stage2Brief(){
+  show(`<div class="panel"><h2>店長の仕事</h2>
+    <p><b>朝いちばん忙しい1時間</b>をまかされた！</p>
+    <ul>
+      <li><b>お客さん</b>：注文はセット・単品いろいろ。料理がそろうと、スタッフが自動で出してくれる</li>
+      <li><b>配置</b>：スタッフをタップ → 持ち場をタップで移動。時間によって、混む持ち場が変わるよ</li>
+      <li><b>相談</b>：スタッフから相談が来る。答えている間は、配置を動かせない。放っておくとやる気が下がる</li>
+      <li><b>検品</b>：まちがった料理を見つける係。「卵の段階」と「完成品」のどちらで調べるか選べる</li>
+      <li><b>自分で卵を焼く</b>：卵は速くなるけど、その間は店長の仕事ができない</li>
+    </ul>
+    <div class="tip">あなたの成果は「あなたが作った数」ではなく「<b>チーム全体の成果</b>」。<br>お客さんの列と、持ち場の「足りない」を見て判断しよう。</div>
+    <button class="btn" onclick="stage2Play()">お店を開ける</button></div>`);
+}
+const STAFF=[
+  {id:'sakura',name:'さくら',spd:1.3,acc:.90,col:'#e85d8a',note:'はやい',st:'toast'},
+  {id:'ken',name:'けん',spd:1.0,acc:.98,col:'#3d7bd9',note:'ていねい',st:'coffee'},
+  {id:'yui',name:'ゆい',spd:.6,acc:.86,col:'#3fa34d',note:'新人',st:'egg'},
+  {id:'taro',name:'たろう',spd:1.0,acc:.93,col:'#8a5cc7',note:'ふつう',st:'inspect'},
+  {id:'mio',name:'みお',spd:1.0,acc:.95,col:'#e8a23b',note:'ふつう',st:'toast'}];
+const ROUTINE=['明日のシフト、代わってもらえませんか？','エプロンがやぶれてしまって…','新しいメニューのアイデアがあります！','お客さんにお店の場所を聞かれました'];
+let S2=null;
+function stage2Play(){
+  const C=CONFIG.s2;
+  S2={t:0,staff:STAFF.map(s=>({...s,mor:1,task:null,away:0})),orders:[],oid:0,next:1,phase:-1,
+      buf:{egg:[],toast:[],coffee:[]},eggQ:[],setQ:[],inspectAt:'final',prebuild:false,
+      self:false,selfTask:null,selfTime:0,lock:0,lockSum:0,consults:[],cid:0,nextRoutine:rand(C.routineMin,C.routineMax),
+      teachDone:{},taught:0,broken:false,brokenDone:false,brokenTime:0,breakDone:false,
+      made:0,sales:0,left:0,leftBy:[0,0,0],claims:0,waste:0,wasteCost:0,sel:null,rt:0,consultMissed:0,consultVer:0};
+  const stIds=['egg','toast','coffee','inspect'];
+  const stHtml=stIds.map(k=>`<div class="st2" id="s2-${k}" onclick="s2Assign('${k}')">
+    <div class="hd">${k==='inspect'?sp('check',32):sp(k,32)}<span>${NAME[k]}</span><small>${k==='inspect'?'1つ'+C.inspectTime+'秒':'1つ'+C.cook[k]+'秒'}</small></div>
+    <div class="crew" id="cr-${k}"></div>
+    <div class="que" id="qu-${k}"></div>
+    <div class="buf" id="bf-${k}"></div></div>`).join('');
+  show(`<div class="panel hud"><span class="big" id="h2-clock">7:00</span><span>朝いちばん忙しい1時間</span><span>店長（月給${yen(C.salary)}＋ボーナス）</span></div>
+    <div class="phase" id="phase"></div>
+    <div class="metrics">
+      <div>出した注文<b id="m-made">0</b></div><div>売上（1時間）<b id="m-sales" style="font-size:16px">0円</b></div><div>人件費（1時間）<b style="font-size:16px">${yen(C.staffWage*C.staffHours*STAFF.length)}</b></div>
+      <div>帰った<b id="m-left">0</b></div><div>クレーム<b id="m-claim">0</b></div><div>捨てた<b id="m-waste">0</b></div>
+    </div>
+    <div class="panel"><b>お客さんの列</b> <span class="note">待っている：<b id="m-wait">0</b>人</span><div class="queue" id="queue"></div><div class="counterline"></div></div>
+    <div class="panel"><b>スタッフからの相談</b><div id="consults"><span class="note">いまは相談なし</span></div></div>
+    <p class="note" id="s2-hint">スタッフをタップしてから、持ち場をタップすると移動できます。</p>
+    <div class="lockwrap"><div class="lockov" id="lockov">相談中…</div>
+      <div class="st2grid">${stHtml}</div></div>
+    <div class="panel ctrl">
+      <button class="btn" id="b-insp" onclick="s2Toggle('insp')"></button>
+      <button class="btn" id="b-pre" onclick="s2Toggle('pre')"></button>
+      <button class="btn" id="b-self" onclick="s2Toggle('self')" style="grid-column:1 / span 2"></button>
+    </div>`);
+  for(const s of S2.staff){
+    const d=document.createElement('div');d.className='staff';d.id='sf-'+s.id;
+    d.innerHTML=`${sp('person',40,{u:s.col})}<div class="nm">${s.name}</div><div class="note sn" style="font-size:10px">${s.note}</div><div class="mor"><i style="width:100%"></i></div>`;
+    d.onclick=e=>{e.stopPropagation();s2Select(s.id);};
+    document.getElementById('cr-'+s.st).appendChild(d);
+  }
+  s2Buttons();
+  startLoop(s2Update);
+}
+function s2Inspectors(){return S2.staff.filter(s=>s.st==='inspect'&&s.away<=0);}
+function s2Busy(){return S2.lock>0||S2.self;}
+function s2ClearSel(){S2.sel=null;for(const x of S2.staff)document.getElementById('sf-'+x.id).classList.remove('sel');
+  for(const kk of ['egg','toast','coffee','inspect'])document.getElementById('s2-'+kk).classList.remove('target');}
+function s2Select(id){
+  if(s2Busy()){flash(S2.self?'卵を焼いていて手がはなせない':'相談中で手がはなせない');return;}
+  if(S2.sel===id){s2ClearSel();return;}
+  S2.sel=id;
+  for(const s of S2.staff)document.getElementById('sf-'+s.id).classList.toggle('sel',s.id===id);
+  for(const k of ['egg','toast','coffee','inspect'])document.getElementById('s2-'+k).classList.add('target');
+}
+function s2Assign(k){
+  if(!S2.sel)return;
+  if(s2Busy()){flash('いまは手がはなせない');return;}
+  const s=S2.staff.find(x=>x.id===S2.sel);
+  if(s.st!==k){s2DropTask(s);s.st=k;document.getElementById('cr-'+k).appendChild(document.getElementById('sf-'+s.id));}
+  s2ClearSel();
+}
+function s2DropTask(s){
+  if(s.task&&s.task.item){if(s.task.kind==='egg')S2.buf.egg.push(s.task.item);else S2.setQ.unshift(s.task.item);}
+  s.task=null;
+}
+function s2Toggle(w){
+  if(w==='insp'){S2.inspectAt=S2.inspectAt==='final'?'egg':'final';for(const s of S2.staff)if(s.st==='inspect')s2DropTask(s);}
+  if(w==='pre')S2.prebuild=!S2.prebuild;
+  if(w==='self'){if(!S2.self&&S2.lock>0){flash('相談中で手がはなせない');return;}S2.self=!S2.self;S2.selfTask=null;if(S2.self)s2ClearSel();}
+  s2Buttons();
+}
+function s2Buttons(){
+  const b=(id,txt,on)=>{const e=document.getElementById(id);setH(e,txt);e.className='btn'+(on?' sel':'');};
+  b('b-insp',`検品の場所：${S2.inspectAt==='final'?'完成品':'卵の段階'}`,S2.inspectAt==='egg');
+  b('b-pre',`作り置き：${S2.prebuild?'する':'しない'}`,S2.prebuild);
+  b('b-self',S2.self?'自分で卵を焼く：やめる':'自分で卵を焼く',S2.self);
+}
+function s2AddConsult(s,kind,text){S2.consults.push({id:++S2.cid,s,kind,text,t:0});S2.consultVer++;}
+function s2Answer(cid){
+  if(s2Busy()){flash(S2.self?'卵を焼いていて手がはなせない':'相談中…');return;}
+  const c=S2.consults.find(x=>x.id===cid);if(!c)return;
+  S2.consults=S2.consults.filter(x=>x.id!==cid);S2.consultVer++;
+  const C=CONFIG.s2;
+  if(c.kind==='teach'){S2.lock=C.consultLock+1;c.s.spd=Math.min(1,c.s.spd+C.teachGain);S2.taught++;
+    c.s.note=c.s.spd>=.9?'なれてきた':'新人';flash(`${c.s.name}に教えた。少し速くなった！`);}
+  else if(c.kind==='urgent'){S2.lock=C.consultLock+1;S2.broken=false;flash('トースターを直した！');}
+  else{S2.lock=C.consultLock;c.s.mor=Math.min(1,c.s.mor+0.05);}
+  S2.lockSum+=S2.lock;
+}
+function s2Eff(s){const C=CONFIG.s2;if(s.away>0)return 0;
+  return s.spd*(0.6+0.4*s.mor)*(S2.self?C.selfPenalty:1)*(s.st==='toast'&&S2.broken?C.brokenMul:1);}
+function s2Serve(set){
+  const i=S2.orders.indexOf(set.order);if(i>=0)S2.orders.splice(i,1);
+  S2.made++;S2.sales+=set.order.price;if(set.bad){S2.claims++;flash('クレーム：まちがった料理が出てしまった');}
+}
+function s2Update(dt){
+  const C=CONFIG.s2,P=S2;
+  P.t+=dt;P.lock=Math.max(0,P.lock-dt);if(P.self)P.selfTime+=dt;if(P.broken)P.brokenTime+=dt;
+  // 時間帯
+  let ph=0;for(let i=0;i<C.phases.length;i++)if(P.t>=C.phases[i].at)ph=i;
+  if(ph!==P.phase){P.phase=ph;const x=C.phases[ph];if(ph>0)flash(x.name+'！');
+    const el=document.getElementById('phase');if(el)el.innerHTML=fr(`<b>${clock(C.startHour,x.at/C.duration)}〜　${x.name}</b><br>${x.text}`);}
+  const PH=C.phases[P.phase];
+  // できごと
+  for(const at of C.teachAt)if(P.t>=at&&!P.teachDone[at]){P.teachDone[at]=true;const y=P.staff.find(s=>s.id==='yui');
+    if(y.spd<1)s2AddConsult(y,'teach','やり方を教えてください（教えると速くなる）');}
+  if(P.t>=C.breakAt&&!P.breakDone){P.breakDone=true;const m=P.staff.find(s=>s.id===C.breakStaff);m.away=C.breakLen;s2DropTask(m);flash(`${m.name}が休憩に入った（${C.breakLen}秒）`);}
+  for(const s of P.staff)if(s.away>0){s.away-=dt;if(s.away<=0){s.away=0;flash(`${s.name}が休憩からもどった`);}}
+  if(P.t>=C.brokenAt&&!P.brokenDone){P.brokenDone=true;P.broken=true;
+    const w=P.staff.find(s=>s.st==='toast'&&s.away<=0)||P.staff[0];s2AddConsult(w,'urgent','トースターの調子が悪いです！見てください（直すまでトーストがおそい）');flash('トースターの調子が悪い！');}
+  // 注文
+  P.next-=dt;
+  if(P.next<=0){P.orders.push(newCustomer(++P.oid,PH.menu));P.next=rand(PH.min,PH.max);}
+  for(const o of P.orders)o.t+=dt;
+  const nb=P.orders.length;P.orders=P.orders.filter(o=>o.assigned||o.t<C.patience);
+  if(P.orders.length<nb){P.left+=nb-P.orders.length;P.leftBy[P.phase]+=nb-P.orders.length;}
+  const insp=s2Inspectors();
+  // 調理
+  const stock=k=>P.buf[k].length+(k==='egg'?P.eggQ.length:0);
+  const inprog=k=>P.staff.filter(s=>s.st===k&&s.task).length+(k==='egg'&&P.self&&P.selfTask?1:0);
+  const need=k=>{const un=Math.min(C.orderCap,P.orders.filter(o=>!o.assigned&&o.want.includes(k)).length);return (P.prebuild?Math.max(C.prebuildCap,un):un)-stock(k)-inprog(k);};
+  const finish=(k,acc)=>{const errMul=k==='egg'?1:0.5;const item={bad:Math.random()<(1-acc)*errMul,age:0};
+    if(k==='egg'&&P.inspectAt==='egg'&&insp.length)P.eggQ.push(item);else P.buf[k].push(item);};
+  for(const s of P.staff){
+    if(s.st==='inspect'||s.away>0)continue;
+    if(s.task){s.task.p+=dt*s2Eff(s);if(s.task.p>=C.cook[s.st]){finish(s.st,s.acc);s.task=null;}}
+    if(!s.task&&need(s.st)>0)s.task={p:0};
+  }
+  if(P.self){
+    if(P.selfTask){P.selfTask.p+=dt*C.selfSpeed;if(P.selfTask.p>=C.cook.egg){finish('egg',.95);P.selfTask=null;}}
+    if(!P.selfTask&&need('egg')>0)P.selfTask={p:0};
+  }
+  if(P.inspectAt!=='egg'||!insp.length){while(P.eggQ.length)P.buf.egg.push(P.eggQ.shift());}
+  for(;;){
+    const o=P.orders.find(x=>!x.assigned&&x.want.every(k=>P.buf[k].length));if(!o)break;
+    const items=o.want.map(k=>P.buf[k].shift());
+    const set={order:o,bad:items.some(i=>i.bad),cost:o.want.reduce((a,k)=>a+(k==='egg'?C.eggWaste:C.otherWaste),0)};o.assigned=true;
+    if(P.inspectAt==='final'&&insp.length)P.setQ.push(set);else s2Serve(set);
+  }
+  if(P.inspectAt!=='final'||!insp.length){while(P.setQ.length)s2Serve(P.setQ.shift());}
+  for(const s of insp){
+    if(!s.task){
+      if(P.inspectAt==='egg'&&P.eggQ.length)s.task={p:0,kind:'egg',item:P.eggQ.shift()};
+      else if(P.inspectAt==='final'&&P.setQ.length)s.task={p:0,kind:'set',item:P.setQ.shift()};
+    }
+    if(s.task){s.task.p+=dt*s2Eff(s);
+      if(s.task.p>=C.inspectTime){const it=s.task.item;
+        if(s.task.kind==='egg'){if(it.bad){P.waste++;P.wasteCost+=C.eggWaste;}else P.buf.egg.push(it);}
+        else{if(it.bad){P.waste+=it.order.want.length;P.wasteCost+=it.cost;it.order.assigned=false;flash('検品で失敗作を発見。注文ごと作り直し');}else s2Serve(it);}
+        s.task=null;}}
+  }
+  for(const k of ['egg','toast','coffee']){
+    for(const it of P.buf[k])it.age+=dt;
+    const n=P.buf[k].length;P.buf[k]=P.buf[k].filter(it=>it.age<C.spoil);
+    const d=n-P.buf[k].length;if(d){P.waste+=d;P.wasteCost+=d*(k==='egg'?C.eggWaste:C.otherWaste);flash(`${NAME[k]}が冷めて捨てた`);}
+  }
+  // ふつうの相談
+  P.nextRoutine-=dt;
+  if(P.nextRoutine<=0){P.nextRoutine=rand(C.routineMin,C.routineMax);
+    const free=P.staff.filter(s=>s.away<=0&&!P.consults.some(c=>c.s===s));
+    if(free.length){const s=free[Math.floor(Math.random()*free.length)];s2AddConsult(s,'routine',ROUTINE[Math.floor(Math.random()*ROUTINE.length)]);}}
+  for(const c of P.consults)c.t+=dt;
+  const exp=P.consults.filter(c=>(c.kind==='routine'&&c.t>=C.routineExpire)||(c.kind==='teach'&&c.t>=C.teachExpire));
+  if(exp.length){for(const c of exp){if(c.kind==='routine'){c.s.mor=Math.max(.3,c.s.mor-.2);P.consultMissed++;flash(`${c.s.name}のやる気が下がった…`);}
+      else flash(`${c.s.name}に教えるチャンスをのがした`);}
+    P.consults=P.consults.filter(c=>!exp.includes(c));P.consultVer++;}
+  if(P.t>=C.duration){s2Result();return false;}
+  s2Render(dt);
+}
+function s2Render(dt){
+  const C=CONFIG.s2,P=S2;P.rt+=dt;if(P.rt<0.12)return;P.rt=0;
+  document.getElementById('h2-clock').textContent=clock(C.startHour,Math.min(.999,P.t/C.duration));
+  document.getElementById('m-made').textContent=P.made;
+  document.getElementById('m-sales').textContent=yen(P.sales);
+  const qs=P.orders.filter(o=>!o.assigned);
+  const qsig=qs.slice(0,12).map(o=>o.id+faceOf(1-o.t/C.patience)).join(',')+'/'+qs.length;
+  const qd=document.getElementById('queue');
+  if(qd.dataset.s!==qsig){qd.dataset.s=qsig;
+    qd.innerHTML=qs.length?qs.slice(0,12).map(o=>`<div class="qc"><div class="w">${wantIcons(o,13)}</div>${custImg(o,faceOf(1-o.t/C.patience),40)}</div>`).join('')+(qs.length>12?`<b>＋${qs.length-12}人</b>`:''):'<span class="note">待っているお客さんはいません</span>';}
+  const mw=document.getElementById('m-wait');mw.textContent=qs.length;mw.className=qs.length>=6?'bad':'';
+  document.getElementById('m-left').textContent=P.left;
+  document.getElementById('m-claim').textContent=P.claims;
+  document.getElementById('m-waste').textContent=P.waste;
+  for(const s of P.staff){const e=document.getElementById('sf-'+s.id);
+    e.classList.toggle('busy',!!s.task&&s.away<=0);e.classList.toggle('low',s.mor<.6);e.classList.toggle('away',s.away>0);
+    setH(e.querySelector('.sn'),s.away>0?`休憩中 ${Math.ceil(s.away)}秒`:s.note);
+    e.querySelector('.mor i').style.width=(s.mor*100)+'%';}
+  for(const k of ['egg','toast','coffee']){
+    const short=Math.max(0,qs.filter(o=>o.want.includes(k)).length-P.buf[k].length-(k==='egg'?P.eggQ.length:0));
+    const q=document.getElementById('qu-'+k);q.textContent=short?`足りない：${short}個`:'足りている';q.className='que'+(short>=3?' hot':'');
+    const n=P.buf[k].length;
+    setH(document.getElementById('bf-'+k),`できた：${n?sp(k,18)+'×'+n:'なし'}${k==='egg'&&P.eggQ.length?`　検品待ち ${P.eggQ.length}`:''}${k==='egg'&&P.self?'　<b class="good">店長も焼いてる！</b>':''}${k==='toast'&&P.broken?'　<b class="bad">トースター不調！</b>':''}`);
+  }
+  document.getElementById('s2-toast').classList.toggle('broken',P.broken);
+  document.getElementById('qu-inspect').textContent='';
+  const ni=s2Inspectors().length;
+  setH(document.getElementById('bf-inspect'),ni?`調べる：${P.inspectAt==='final'?'完成品（まちがいは注文ごと捨てる）':'卵（まちがいは卵だけ捨てる）'}${P.setQ.length?`　検品待ち ${P.setQ.length}`:''}`:'<b class="bad">だれもいない（まちがいがそのまま出る）</b>');
+  setH(document.getElementById('s2-hint'),P.self?'<b class="bad">店長が卵を焼いているので、全体を見る人がいない。みんな少しおそくなっている。</b>':'スタッフをタップしてから、持ち場をタップすると移動できます。');
+  document.getElementById('lockov').className='lockov'+(P.lock>0?' on':'');
+  const cd=document.getElementById('consults');
+  if(cd.dataset.v!=String(P.consultVer)){cd.dataset.v=P.consultVer;
+    const lbl={urgent:'<b class="bad">急ぎ</b>',teach:'<b style="color:#3d7bd9">教えて</b>',routine:'相談'};
+    cd.innerHTML=fr(P.consults.length?P.consults.map(c=>`<div class="consult ${c.kind}">${sp('person',28,{u:c.s.col})}<span class="q">${lbl[c.kind]}　${c.s.name}「${c.text}」${c.kind==='urgent'?'':`<span class="bar" style="display:block"><i id="cq-${c.id}"></i></span>`}</span>
+      <button class="btn small" onclick="s2Answer(${c.id})">答える</button></div>`).join(''):'<span class="note">いまは相談なし</span>');}
+  for(const c of P.consults){const e=document.getElementById('cq-'+c.id);if(e)e.style.width=((1-c.t/(c.kind==='teach'?C.teachExpire:C.routineExpire))*100)+'%';}
+}
+function s2Result(){
+  const C=CONFIG.s2,P=S2;
+  const bonusRaw=(P.sales-C.bonusBase)*C.bonusRate-P.claims*C.claimPenalty-P.waste*C.wastePenalty;
+  const bonus=Math.round(clamp(bonusRaw,0,C.bonusMax)/1000)*1000;
+  const monthly=C.salary+bonus,yearly=monthly*12,savings=Math.max(0,yearly-C.livingCost);
+  const labor=C.staffWage*C.staffHours*STAFF.length;
+  G.s2={made:P.made,sales:P.sales,left:P.left,claims:P.claims,waste:P.waste,bonus,monthly,yearly,savings};saveGame();
+  const tips=[];
+  const names=C.phases.map(x=>x.name),focus=['目玉焼き','コーヒー','トースト'];
+  P.leftBy.forEach((n,i)=>{if(n>=3)tips.push(`「${names[i]}」の時間に${n}人帰ってしまった。このときは<b>${focus[i]}</b>がいちばん足りなくなる（<b>ボトルネック</b>）。人を回せていたかな？`);});
+  if(P.leftBy.every(n=>n<3))tips.push('時間ごとに変わるボトルネックに、うまく人を回せていた！');
+  if(P.brokenTime>8)tips.push(`トースターの不調を${Math.round(P.brokenTime)}秒そのままにしていた。急ぎの相談は、すぐ答えた方がいい。`);
+  if(P.taught===0)tips.push('新人のゆいさんに教えなかった。教えると速くなるので、あとが楽になる（店長の時間の使い方として効果が大きい）。');
+  else tips.push(`ゆいさんに${P.taught}回教えた。人を育てるのも店長の大事な仕事。`);
+  if(P.consultMissed>=2)tips.push(`答えられなかった相談が${P.consultMissed}件。相談に答えている間は配置を動かせない。何を先にやるか決めるのも店長の仕事。`);
+  if(P.inspectAt==='final'&&P.waste>=4)tips.push('完成品で検品すると、まちがいが見つかったときに注文ごと捨てることになる。<b>安いうちに（卵の段階で）見つける</b>と損が小さい。');
+  if(P.selfTime>10)tips.push(`自分で卵を焼いた時間：${Math.round(P.selfTime)}秒。その間は配置も相談もできなかった。`);
+  show(`<div class="panel"><h2>いちばん忙しい1時間、おつかれさま！</h2>
+    <div class="metrics"><div>出した注文<b>${P.made}</b></div><div>帰った<b>${P.left}</b></div><div>クレーム<b>${P.claims}</b></div></div>
+    <table class="t" style="margin-top:8px">
+      <tr><th>この1時間の売上</th><td>お客さんが払ったお金</td><td class="num">${yen(P.sales)}</td></tr>
+      <tr><th>人件費（1時間）</th><td>スタッフ5人 × 時給${yen(C.staffWage)}</td><td class="num">${yen(labor)}</td></tr>
+      <tr><th>捨てた材料</th><td>${P.waste}個</td><td class="num">${yen(P.wasteCost)}</td></tr>
+    </table>
+    <div class="tip">ステージ1であなたがもらった<b>時給</b>は、店長から見ると<b>人件費</b>（お店が払うお金）になる。</div></div>
+  <div class="panel"><h3>給料</h3>
+    <table class="t">
+      <tr><th>月給</th><td class="num">${yen(C.salary)}</td></tr>
+      <tr><th>ボーナス（チームの成果）</th><td class="num">${yen(bonus)}</td></tr>
+      <tr class="total"><td>1か月の給料</td><td class="num">${yen(monthly)}</td></tr>
+    </table>
+    <p class="note">ボーナスは「チーム全体の売上」から「クレーム・捨てた数」を引いて決まります（最大${yen(C.bonusMax)}）。</p></div>
+  <div class="panel"><h3>ふりかえり</h3><ul>${tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>
+  <div class="panel"><h3>${sp('coin',28)} この働き方を1年つづけたら？</h3>
+    <table class="t">
+      <tr><th>1年の給料</th><td>${yen(monthly)} × 12か月</td><td class="num">${yen(yearly)}</td></tr>
+      <tr><th>生活費</th><td>家賃・食費など</td><td class="num">−${yen(C.livingCost)}</td></tr>
+      <tr class="total"><td>貯金</td><td></td><td class="num">${yen(savings)}</td></tr>
+    </table>
+    <p class="note">ボーナスは月によって変わるので、貯金の増え方も年によって変わります。</p>
+    <button class="btn" onclick="stage3Intro()">次のステージへ</button>
+    <button class="btn gray" onclick="stage2Play()">もう一度</button></div>`);
+}
+
+/* =========================================================
+   ステージ3　お店をつくる人（経営者）
+   ========================================================= */
+let S3=null;
+function stage3Intro(){
+  const C=CONFIG.s3;
+  const own=sav1()+sav2();const need=C.openCost+C.workingCapital;
+  const loan=Math.max(0,need-own);
+  show(`<div class="panel"><h2>ステージ3　お店をつくる人</h2>
+    <div class="event">${sp('shop',72)}<p>あなたは自分のお店「朝食ファクトリー」を開くことにした。<br>あなたは<b>${R('経営者','けいえいしゃ')}</b>（社長）。6か月、お店を動かしてみよう。</p></div>
+    <h3>${R('開店資金','かいてんしきん')}</h3>
+    <table class="t">
+      <tr><th>お店の準備（内装・どうぐ）</th><td class="num">${yen(C.openCost)}</td></tr>
+      <tr><th>はじめの運転資金</th><td class="num">${yen(C.workingCapital)}</td></tr>
+      <tr class="total"><td>必要なお金</td><td class="num">${yen(need)}</td></tr>
+      <tr><th>自分の貯金（ステージ1＋2）</th><td class="num">${yen(own)}</td></tr>
+      <tr><th>銀行から借りるお金（${R('借金','しゃっきん')}）</th><td class="num ${loan?'bad':''}">${yen(loan)}</td></tr>
+    </table>
+    <p class="note">${G.s1&&G.s2?'前のステージでためた貯金を使います。':'前のステージを遊んでいない分は、決まった金額でスタートします。'}貯金が多いほど借金が少なく、毎月の返済も少なくなります。</p>
+    <h3>社長の仕事</h3>
+    <ul><li>毎月、<b>値段</b>・<b>${R('仕入','しい')}れ方法</b>・<b>部署</b>を決める</li>
+      <li>売上から材料費・人件費・家賃などを引いた<b>残りが、全部あなたの取り分</b></li>
+      <li>赤字の月は、お店のお金がへる。0円より少なくなったら閉店…</li></ul>
+    <div class="tip">大事な数字は<b>${R('原価率','げんかりつ')}</b>：売上100円のうち、材料に何円使ったか。</div>
+    <button class="btn" onclick="stage3Start()">開店する</button></div>`);
+}
+function stage3Start(){
+  const C=CONFIG.s3;const own=sav1()+sav2();const need=C.openCost+C.workingCapital;
+  const loan=Math.max(0,need-own);
+  S3={month:1,cash:C.workingCapital+Math.max(0,own-need),loan,principal:loan/C.loanMonths,shops:1,plan2:false,
+      depts:{shiire:null,unei:false,senden:false,jinji:false},price:500,buy:'market',hist:[],total:0,closed:false,eggDone:false,last:null};
+  saveGame();s3Month();
+}
+const DEPTS=[
+  {id:'shiire',name:'仕入部',desc:'材料を買う担当。社長が自分で買いに行かなくてよくなる。',lock:false},
+  {id:'unei',name:'店舗運営部',desc:'お店をまわす担当。2号店を出すなら必要（いないと2号店は6割しか作れない）。',lock:true},
+  {id:'senden',name:'宣伝部',desc:'チラシや看板でお客さんを2割ふやす。ただし作れる数より多くは売れない。',lock:false},
+  {id:'jinji',name:'人事部',desc:'スタッフの採用と育成。作れる数が15%ふえる。',lock:true}];
+function s3Set(k,v){
+  if(k==='price')S3.price=v;
+  if(k==='buy')S3.buy=v;
+  if(k==='dept'){const [id,val]=v;S3.depts[id]=val;}
+  if(k==='plan2')S3.plan2=!S3.plan2;
+  const y=window.scrollY;s3Month();window.scrollTo(0,y);
+}
+function s3Month(){
+  const C=CONFIG.s3,P=S3;const unlocked=P.month>=C.unlockMonth||P.shops>=2;
+  const bt=(k,v,label,on)=>`<button class="btn small ${on?'sel':''}" onclick='s3Set("${k}",${JSON.stringify(v)})'>${label}</button>`;
+  const deptHtml=DEPTS.map(d=>{
+    const locked=d.lock&&!unlocked;const cost=C.dept[d.id];
+    let ctl;
+    if(locked)ctl=`<span class="note">${C.unlockMonth}か月目から</span>`;
+    else if(d.id==='shiire')ctl=bt('dept',['shiire',null],'つくらない',!P.depts.shiire)+bt('dept',['shiire','tanaka'],'田中さん（安さ重視）',P.depts.shiire==='tanaka')+bt('dept',['shiire','sato'],'佐藤さん（安定重視）',P.depts.shiire==='sato');
+    else ctl=bt('dept',[d.id,false],'つくらない',!P.depts[d.id])+bt('dept',[d.id,true],'つくる',P.depts[d.id]);
+    const extra=d.id==='shiire'?`<div class="desc">田中さん：市場で買うと15%安く買える。　佐藤さん：品切れがなくなり、契約の値段も安くなる。</div>`:'';
+    return `<div class="dept ${locked?'locked':''}"><div class="top"><b>${d.name}</b><span>月${yen(cost)}</span></div>
+      <div class="desc">${d.desc}</div>${extra}<div class="opts" style="margin-top:4px">${ctl}</div></div>`;}).join('');
+  const can2=P.month>=C.unlockMonth&&P.shops===1;
+  const last=P.last?`<div class="panel"><b>先月のようす</b>：お客さん${Math.round(P.last.demand).toLocaleString()}人／作れた数${Math.round(P.last.cap).toLocaleString()}セット／原価率${Math.round(P.last.costRate*100)}%／取り分 <b class="${P.last.profit>=0?'good':'bad'}">${yen(P.last.profit)}</b></div>`:'';
+  show(`<div class="panel hud"><span class="big">${P.month}か月目 / ${C.months}</span><span>お店のお金 ${yen(P.cash)}</span><span>借金 ${yen(P.loan)}</span><span>${sp('shop',28)}×${P.shops+(P.plan2?1:0)}</span></div>
+    ${last}
+    <div class="panel"><h3>1. 値段を決める</h3>
+      <div class="opts">${bt('price',300,'300円',P.price===300)}${bt('price',500,'500円',P.price===500)}${bt('price',700,'700円',P.price===700)}</div>
+      <p class="note">安いとお客さんが多い（でも原価率が上がる）。高いとお客さんが少ない。「どんなお客さんに来てほしいか」で決めよう。材料費の目安は1セット${C.unitCost}円。</p></div>
+    <div class="panel"><h3>2. ${R('仕入','しい')}れ方法を選ぶ</h3>
+      <div class="opts">${bt('buy','market','市場で毎回買う',P.buy==='market')}${bt('buy','contract','農家さんと契約する',P.buy==='contract')}</div>
+      <p class="note">市場：ふだんは安いけど、値段が上がったり下がったりする。品切れすることも。<br>契約：少し高いけど、値段も量も<b>安定</b>している。</p></div>
+    <div class="panel"><h3>3. 部署をつくる・責任者を決める</h3>
+      <p class="note">部署がないと、その仕事は社長が自分でやります。お店が2つになると、社長だけでは手が回らなくなるかも。</p>${deptHtml}</div>
+    ${can2||P.plan2?`<div class="panel"><h3>4. 2号店</h3><p>2号店を出すと、お客さんも作れる数も2倍に。そのかわり、${yen(C.shop2Cost)}を銀行から借ります。家賃と人件費も2倍。</p>
+      <button class="btn ${P.plan2?'sel':''}" onclick='s3Set("plan2")'>${P.plan2?'今月2号店を出す（取り消す）':'2号店を出す'}</button></div>`:''}
+    ${s3FcHtml()}
+    <div class="panel center"><button class="btn green" onclick="s3Run()">この月をはじめる</button></div>`);
+}
+const EVENTS=[
+  {w:3,name:'ふつうの月',text:'とくに大きなできごとはなかった。'},
+  {w:1,name:'雨がつづいた',text:'雨の日が多く、お客さんが少なかった。',demand:.8},
+  {w:1,name:'近くにライバル店',text:'近くに新しいお店ができて、お客さんがとられた。',demand:.85},
+  {w:1,name:'卵が値上がり',text:'卵の仕入れ値が急に上がった。市場で買うと高くつく。',egg:1.6},
+  {w:1,name:'テレビで紹介された',text:'テレビで紹介されて、お客さんがふえた！',demand:1.3}];
+function pickEvent(){
+  if(S3.month===4&&!S3.eggDone)return EVENTS[3];
+  const tot=EVENTS.reduce((a,e)=>a+e.w,0);let r=Math.random()*tot;
+  for(const e of EVENTS){r-=e.w;if(r<0)return e;}return EVENTS[0];
+}
+function s3Compute(P,ev,rnd){
+  const C=CONFIG.s3;rnd=rnd||Math.random;
+  const r=(a,b)=>a+rnd()*(b-a);
+  const d=P.depts,overload=P.shops>=2&&!d.unei;
+  let unit,short=false;
+  if(P.buy==='market'){
+    const mkt=r(C.marketMin,C.marketMax)*(ev.egg||1);
+    unit=C.unitCost*mkt*(d.shiire==='tanaka'?0.85:1)*(overload&&!d.shiire?1.1:1);
+    const risk=d.shiire==='sato'?0:C.shortageRisk*(overload&&!d.shiire?2:1);
+    short=rnd()<risk;
+  }else unit=C.unitCost*(d.shiire==='sato'?1.0:C.contractMul);
+  let demand=0,cap=0,sold=0;
+  for(let i=0;i<P.shops;i++){
+    const dm=C.baseDemand*C.priceF[P.price]*(d.senden?1.2:1)*r(.9,1.1)*(ev.demand||1);
+    const cp=C.capacity*(d.jinji?1.15:1)*(i===1&&!d.unei?0.6:1);
+    demand+=dm;cap+=cp;sold+=Math.min(dm,cp)*(short?0.8:1);
+  }
+  sold=Math.round(sold);
+  const sales=sold*P.price,material=Math.round(sold*unit*(1+C.lossRate));
+  const labor=C.labor*P.shops,rent=C.rent*P.shops;
+  const dept=(d.shiire?C.dept.shiire:0)+(d.unei?C.dept.unei:0)+(d.senden?C.dept.senden:0)+(d.jinji?C.dept.jinji:0);
+  const principal=Math.min(P.loan,P.principal),interest=Math.round(P.loan*C.interest);
+  const profit=sales-material-labor-rent-dept-principal-interest;
+  return {ev,unit,short,overload,demand,cap,sold,sales,material,labor,rent,dept,principal,interest,repay:principal+interest,profit,costRate:sales?material/sales:0};
+}
+function s3Forecast(){
+  const C=CONFIG.s3,P=S3;
+  const Q=Object.assign({},P,{depts:Object.assign({},P.depts)});
+  if(P.plan2){Q.shops=2;Q.loan=P.loan+C.shop2Cost;Q.principal=Q.loan/C.loanMonths;}
+  const seq=(mk,dm)=>{const a=Q.buy==='market'?[mk,0.99,dm,dm]:[dm,dm];let i=0;return ()=>a[Math.min(i++,a.length-1)];};
+  const mid=s3Compute(Q,{},seq(.5,.5)),lo=s3Compute(Q,{},seq(1,0)),hi=s3Compute(Q,{},seq(0,1));
+  return {mid,lo,hi,risk:Q.buy==='market'&&Q.depts.shiire!=='sato'};
+}
+function s3FcHtml(){
+  const f=s3Forecast(),m=f.mid;const mx=Math.max(m.demand,m.cap);
+  const bar=(v,col)=>`<span class="hb"><i style="width:${v/mx*100}%;background:${col}"></i></span>`;
+  return `<div class="panel fc"><h3>この月の見込み</h3>
+    <p class="note">選んだ内容を変えると、見込みがすぐ変わります。いろいろ試してみよう。</p>
+    <div class="row"><span>来るお客さん</span>${bar(m.demand,'#9cc3ff')}<b>約${Math.round(m.demand).toLocaleString()}人</b></div>
+    <div class="row"><span>作れる数</span>${bar(m.cap,'#a6e3a1')}<b>約${Math.round(m.cap).toLocaleString()}人分</b></div>
+    <p class="msg">${m.demand>m.cap*1.03?'<b class="bad">作れる数が足りない</b>：お客さんの一部が帰ってしまう見込み。':m.cap>m.demand*1.15?'作れる数に、よゆうがある（お客さんが少なめ）。':'お客さんと作れる数が、ちょうどつりあっている。'}</p>
+    <table class="t" style="margin-top:4px">
+      <tr><th>原価率の見込み</th><td class="num">約${Math.round(m.costRate*100)}%</td></tr>
+      <tr><th>売上の見込み</th><td class="num">${yen(m.sales)}</td></tr>
+      <tr><th>出ていくお金の見込み</th><td class="num">−${yen(m.sales-m.profit)}</td></tr>
+      <tr class="total"><td>社長の取り分の見込み</td><td class="num ${m.profit>=0?'good':'bad'}">${yen(m.profit)}</td></tr>
+    </table>
+    <p class="note">うまくいけば ${yen(f.hi.profit)}、うまくいかないと ${yen(f.lo.profit)} くらい。${f.risk?'市場で買うと、品切れになることもある。':''}できごと（天気・ライバル店・値上がりなど）でも変わります。</p></div>`;
+}
+function s3Next(){S3.month++;S3.pending=false;saveGame();s3Month();}
+function s3Run(){
+  const C=CONFIG.s3,P=S3;
+  if(P.plan2){P.shops=2;P.loan+=C.shop2Cost;P.principal=P.loan/C.loanMonths;P.plan2=false;}
+  const fc=s3Forecast().mid.profit;
+  const ev=pickEvent();if(ev.egg)P.eggDone=true;
+  const m=s3Compute(P,ev);m.fc=fc;
+  P.loan-=m.principal;P.cash+=m.profit;P.total+=m.profit;
+  m.month=P.month;m.price=P.price;m.buy=P.buy;P.hist.push(m);P.last=m;P.pending=true;
+  if(P.cash<0)P.closed=true;
+  saveGame();
+  const msgs=[];
+  if(m.demand>m.cap*1.03)msgs.push('お客さんが多すぎて、作りきれなかった。（作れる数をふやすか、値段を上げてもいいかも）');
+  if(m.cap>m.demand*1.15)msgs.push('作れる数にくらべて、お客さんが少なかった。');
+  if(m.short)msgs.push('<b class="bad">材料が品切れ！</b> いつもより2割少なくしか売れなかった。');
+  if(m.overload)msgs.push('<b class="bad">社長が2つのお店を見きれなかった。</b> 店舗運営部があると楽になる。');
+  if(m.buy==='market'&&ev.egg)msgs.push('市場で買っていたので、卵の値上がりの影響をそのまま受けた。');
+  if(m.buy==='contract'&&ev.egg)msgs.push('<b class="good">契約していたので、卵が値上がりしても材料費は変わらなかった！</b>');
+  if(m.price===300&&m.costRate>0.45)msgs.push('<b class="bad">値段が安すぎて、材料費と人件費をまかなえていない。</b>たくさん売れても、もうけが出ない。');
+  else if(m.costRate>0.4)msgs.push(`原価率が${Math.round(m.costRate*100)}%と高め。売上のうち材料費の割合が大きい。`);
+  const row=(a,b,c)=>`<tr><th>${a}</th><td>${b}</td><td class="num">${c}</td></tr>`;
+  show(`<div class="panel"><h2>${m.month}か月目の結果</h2>
+    <div class="event">${ev.egg?sp('egg',48):ev.demand&&ev.demand>1?sp('shop',48):sp('coin',48)}<div><b>${ev.name}</b><br>${ev.text}</div></div></div>
+    <div class="panel"><b>見込みと結果</b>
+      <table class="t"><tr><th>見込みの取り分</th><td class="num">${yen(m.fc)}</td></tr><tr class="total"><td>実際の取り分</td><td class="num ${m.profit>=0?'good':'bad'}">${yen(m.profit)}</td></tr></table>
+      <p class="msg">${s3Why(m)}</p></div>
+    <div class="panel"><b>今月のお客さん</b>${s3Scene(m)}</div>
+    <div class="panel"><table class="t">
+      ${row('売上',`${m.sold.toLocaleString()}人 × ${m.price}円`,yen(m.sales))}
+      ${row('材料費',`お客さん1人分 約${Math.round(m.unit)}円（${m.buy==='market'?'市場':'契約'}）`,'−'+yen(m.material))}
+      ${row('人件費',`お店${P.shops}つ分`,'−'+yen(m.labor))}
+      ${row('家賃',`お店${P.shops}つ分`,'−'+yen(m.rent))}
+      ${row('部署の費用','責任者の給料','−'+yen(m.dept))}
+      ${row('借金の返済','返す分＋利息','−'+yen(m.repay))}
+      <tr class="total"><td>社長の取り分</td><td></td><td class="num ${m.profit>=0?'good':'bad'}">${yen(m.profit)}</td></tr>
+    </table>
+    <p><b>原価率 ${Math.round(m.costRate*100)}%</b>（売上100円のうち、材料に${Math.round(m.costRate*100)}円）</p>
+    ${msgs.map(t=>`<p class="msg">・${t}</p>`).join('')}</div>
+    <div class="panel"><b>毎月の取り分</b>${s3Chart(P.hist)}<p style="margin-top:26px">お店のお金：<b class="${P.cash>=0?'':'bad'}">${yen(P.cash)}</b>　借金の残り：${yen(P.loan)}</p>
+    ${P.closed?`<div class="tip"><b class="bad">お店のお金がなくなって、閉店することになった…</b><br>経営者は、うまくいけば大きくかせげるけど、失敗すると自分が損をする。これも経営のひとつの姿。</div>
+      <button class="btn" onclick="s3Result()">結果を見る</button>`:
+      P.month>=C.months?`<button class="btn" onclick="s3Result()">6か月の結果を見る</button>`:`<button class="btn" onclick="s3Next()">次の月へ</button>`}</div>`);
+}
+function s3Why(m){
+  const C=CONFIG.s3,d=m.profit-m.fc;const r=[];
+  if(m.ev.demand&&m.ev.demand<1)r.push(`「${m.ev.name}」でお客さんがへった`);
+  if(m.ev.demand&&m.ev.demand>1)r.push(`「${m.ev.name}」でお客さんがふえた`);
+  if(m.buy==='market'){const mid=C.unitCost*(C.marketMin+C.marketMax)/2;
+    if(m.unit>mid*1.08)r.push(m.ev.egg?'卵の値上がりで、材料費が高くなった':'市場の値段が、いつもより高かった');
+    else if(m.unit<mid*0.92)r.push('市場の値段が、いつもより安かった');}
+  if(m.short)r.push('材料が品切れして、売れる数がへった');
+  if(!r.length)return Math.abs(d)<30000?'ほぼ見込みどおり！':'お客さんの数が少し上下した。';
+  return (d>=0?'見込みより<b class="good">多かった</b>。':'見込みより<b class="bad">少なかった</b>。')+'理由：'+r.join('、')+'。';
+}
+function s3Scene(m){
+  const unit=300,served=Math.round(m.sold/unit),lost=Math.max(0,Math.round(m.demand/unit)-served);
+  const look=i=>({look:{h:HAIRS[i%HAIRS.length],u:SHIRTS[(i*3)%SHIRTS.length]}});
+  let h='';for(let i=0;i<served;i++)h+=custImg(look(i),'happy',30);
+  let a='';for(let i=0;i<lost;i++)a+=custImg(look(i+5),'angry',30);
+  return `<div class="scene">${sp('shop',44)}${h}</div>
+    <p class="note">1人の絵＝お客さん約${unit}人。来たお客さん約${Math.round(m.demand).toLocaleString()}人のうち、${m.sold.toLocaleString()}人に出せた。</p>
+    ${lost?`<div class="scene">${a}</div><p class="note bad">作りきれなかったり、材料がなかったりして、約${(Math.round(m.demand)-m.sold).toLocaleString()}人が帰ってしまった。</p>`:''}`;
+}
+function s3Chart(hist){
+  const C=CONFIG.s3;const vals=hist.map(h=>h.profit);
+  const mx=Math.max(100000,...vals.map(v=>Math.abs(v)));
+  const hasNeg=vals.some(v=>v<0);const zeroPct=hasNeg?50:100;
+  const cols=[];for(let i=0;i<C.months;i++){const v=vals[i];
+    let bar='';if(v!==undefined){const hpct=Math.abs(v)/mx*(hasNeg?50:96);
+      bar=v>=0?`<div class="b" style="bottom:${100-zeroPct}%;height:${hpct}%;background:#8fdc7f"></div><div class="v" style="bottom:${100-zeroPct+hpct}%">${Math.round(v/10000)}万</div>`
+        :`<div class="b" style="top:${zeroPct}%;height:${hpct}%;background:#f39a8e"></div><div class="v" style="top:${zeroPct+hpct}%">${Math.round(v/10000)}万</div>`;}
+    cols.push(`<div class="col">${bar}<div class="lbl">${i+1}か月</div></div>`);}
+  return `<div class="chart">${hasNeg?`<div class="zero" style="top:${zeroPct}%"></div>`:''}${cols.join('')}</div>`;
+}
+function s3Result(){
+  const P=S3;const vals=P.hist.map(h=>h.profit);
+  const avg=P.total/P.hist.length,best=Math.max(...vals),worst=Math.min(...vals);
+  const avgRate=P.hist.reduce((a,h)=>a+h.costRate,0)/P.hist.length;
+  G.s3={total:P.total,avg,best,worst,closed:P.closed,months:P.hist.length,avgRate};P.finished=true;saveGame();
+  show(`<div class="panel"><h2>経営者としての${P.hist.length}か月</h2>
+    ${s3Chart(P.hist)}
+    <table class="t" style="margin-top:30px">
+      <tr><th>取り分の合計</th><td class="num ${P.total>=0?'good':'bad'}">${yen(P.total)}</td></tr>
+      <tr><th>1か月あたり</th><td class="num">${yen(avg)}</td></tr>
+      <tr><th>いちばん良かった月</th><td class="num">${yen(best)}</td></tr>
+      <tr><th>いちばん悪かった月</th><td class="num">${yen(worst)}</td></tr>
+      <tr><th>平均の原価率</th><td class="num">${Math.round(avgRate*100)}%</td></tr>
+    </table></div>
+    <div class="panel"><h3>経営者のポイント</h3><ul>
+      <li>自分で作るのでも、配置するのでもなく、<b>しくみ（部署と責任者）</b>をつくる</li>
+      <li>値段と${R('原価率','げんかりつ')}、仕入れの安定をいつも気にしている</li>
+      <li><b>安定した仕入れにはお金がかかる</b>。これは、はたらく人の時給が安定していて、経営者の取り分が安定しないのと同じ形</li>
+      <li>うまくいけば大きくかせげる。でも失敗すると、自分が損をする</li>
+      <li>始めたばかりのころは、店長の給料より少ないことも。お店が育てば、取り分も大きくなるかもしれない</li></ul>
+    <button class="btn" onclick="reflection()">ふりかえりへ</button>
+    <button class="btn gray" onclick="stage3Intro()">もう一度</button></div>`);
+}
+
+/* =========================================================
+   ふりかえり
+   ========================================================= */
+function reflection(){
+  const s1=G.s1,s2=G.s2,s3=G.s3;
+  const v1=s1?yen(s1.monthly):'—',v2=s2?yen(s2.monthly):'—';
+  const v3=s3?`${yen(s3.avg)}<br><span class="note">（${yen(s3.worst)}〜${yen(s3.best)}）</span>`:'—';
+  show(`<div class="panel"><h2>ふりかえり　3つの${R('立場','たちば')}</h2>
+    <div class="logo">${sp('person',44,{u:'#3d7bd9'})}${sp('person',44,{u:'#3fa34d',h:'#7a4a1e'})}${sp('person',44,{u:'#8a5cc7',h:'#555'})}</div>
+    <div style="overflow-x:auto"><table class="t ref">
+      <tr><th></th><th>はたらく人</th><th>まとめる人</th><th>お店をつくる人</th></tr>
+      <tr><th>かせぎ方</th><td>時給</td><td>月給＋ボーナス</td><td>利益の残り全部</td></tr>
+      <tr><th>決めること</th><td>どう作るか</td><td>どう作ってもらうか</td><td>何を、いくらで、どこまで広げるか</td></tr>
+      <tr><th>いそがしさ</th><td>手がいそがしい</td><td>こまぎれにいそがしい</td><td>頭がいそがしい</td></tr>
+      <tr><th>時間の単位</th><td>分</td><td>日〜週</td><td>月〜年</td></tr>
+      <tr><th>収入の安定</th><td>高い</td><td>まあまあ</td><td>低い（赤字もある）</td></tr>
+      <tr><th>気にする数字</th><td>時給・捨てた数</td><td>完成数・人件費・捨てた率</td><td>原価率・仕入れ値・利益</td></tr>
+      <tr class="total"><td>あなたの結果<br><span class="note">1か月あたり</span></td><td>${v1}</td><td>${v2}</td><td>${v3}</td></tr>
+    </table></div>
+    <p class="note">はたらく人は、1日8時間・月20日で計算しています。</p></div>
+  <div class="panel"><h3>お金はどう流れている？</h3>
+    <div class="flow">
+      <div class="box">お客さんが払うお金</div><div class="arrow">↓</div>
+      <div class="box">お店の売上</div><div class="arrow">↓</div>
+      <div class="split">
+        <div class="box">材料費<br><span class="note">→ 農家さん・市場の人へ</span></div>
+        <div class="box">家賃<br><span class="note">→ 大家さんへ</span></div>
+        <div class="box">はたらく人の時給</div>
+        <div class="box">まとめる人の給料</div>
+        <div class="box">借金の返済<br><span class="note">→ 銀行へ</span></div>
+      </div><div class="arrow">↓</div>
+      <div class="box me">残りが、お店をつくる人（経営者）の取り分</div>
+    </div>
+    <div class="tip">ステージ1でもらった時給は、お客さんが払ったお金から来ていた。<br>お金の向こうには、いつも<b>はたらいている人</b>がいる。</div></div>
+  <div class="panel"><h3>もうひとつの立場</h3>
+    <p>お金のかせぎ方には、もうひとつ、お店や会社にお金を出して、利益の一部（<b>${R('配当','はいとう')}</b>）を受け取る「<b>投資家（資本家）</b>」という立場もあります。</p>
+    <p>ステージ3で銀行から借りたお金も、もとはだれかが銀行に預けたお金。お金を出す人がいるから、新しいお店が開けるのです。</p></div>
+  <div class="panel center"><h3>あなたは、どの立場がいちばん楽しかった？</h3>
+    <button class="btn" onclick="funPick(1)">はたらく人</button><button class="btn" onclick="funPick(2)">まとめる人</button><button class="btn" onclick="funPick(3)">お店をつくる人</button>
+    <div id="fun"></div>
+    <p><button class="btn gray" onclick="goTitle()">タイトルへ</button></p>
+    <a class="back" href="../../samples/">← ゲーム一覧</a></div>`);
+}
+function funPick(n){
+  const t={1:'目の前の仕事に集中して、上手になっていくのが楽しいタイプかも。安定した収入も魅力だね。',
+    2:'チームを動かして、全体がうまく回るのが楽しいタイプかも。人の力を引き出すのが店長の仕事。',
+    3:'自分で決めて、結果を引き受けるのが楽しいタイプかも。大きな決断にはドキドキがつきもの。'};
+  document.getElementById('fun').innerHTML=`<div class="tip">${t[n]}<br>どの立場がえらい、ということはありません。どれもお店に必要な仕事です。</div>`;
+}
+
+loadGame();
+goTitle();
+</script>
+</body>
+</html>

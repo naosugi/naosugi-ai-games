@@ -197,6 +197,22 @@
       "playtime": "約15分",
       "added": "2026-11-07",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "breakfast-factory",
+      "title": "朝食ファクトリー",
+      "description": "朝ごはん屋さんで、はたらく人・店長・経営者の3つの立場を順に体験するお仕事シミュレーション。料理を作ってお客さんに出し、スタッフを配置し、値段や仕入れを決める。立場ごとのお金のかせぎ方のちがいが分かる。",
+      "path": "../games/breakfast-factory/",
+      "thumbnail": "../games/breakfast-factory/thumb.jpg",
+      "tags": [
+        "シミュレーション",
+        "知育",
+        "こども"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約10分",
+      "added": "2026-11-11",
+      "author": "@naoya_oosugi"
     }
   ]
 }
