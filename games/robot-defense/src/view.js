@@ -1088,9 +1088,11 @@ function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = '
 function hideOv() { $('ov').classList.remove('show'); }
 function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { document.body.classList.remove('darkst'); cam = pCam; scene.fog = FOG_M; hemi.intensity = 1.45; sun.intensity = 1.7; scene.background.setHex(0x050a1c); } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
-const CH = RD.CHAPTERS, ORDER = CH.flatMap(c => c.stages);
+// ORDER：本編（序章〜第4章）。全作戦クリア・エンディングの判定に使う。EXO：第5章（エクストラ。4-4クリアで解放）
+const CH = RD.CHAPTERS, ORDER = CH.filter(c => !c.extra).flatMap(c => c.stages), EXO = CH.filter(c => c.extra).flatMap(c => c.stages), FULL = ORDER.concat(EXO);
 const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
-const nextStage = () => ORDER.find(id => !cleared(id)) || null;
+const chOpen = c => !c.unlockBy || cleared(c.unlockBy) || !!SAVE.allOpen;
+const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id);
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
 function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
@@ -1099,7 +1101,7 @@ const allClear = () => ORDER.every(cleared);
 const clearedH = id => !!(SAVE.clearH && SAVE.clearH[id]);
 // 段階的な解禁：その作戦で使えるもの・その作戦で初めて出るもの
 const allowOf = id => RD.allowFor(id, cleared, !!SAVE.allOpen);
-const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of ORDER) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
+const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of FULL) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
 function newFeatures(id) { return id === ORDER[0] ? [] : Object.keys(RD.FEATURES).filter(f => RD.FEATURES[f] === id); } // 最初の作戦は「最初から使えるもの」なので出さない
 function featLine(f) { const w = WEAPONS[f]; return w ? [w.icon, w.name, w.desc] : [RD.FEATURE_INFO[f].icon, RD.FEATURE_INFO[f].name, RD.FEATURE_INFO[f].desc]; }
 function newHTML(id) {
@@ -1132,6 +1134,7 @@ function titleScreen() {
         (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
     '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
+    (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + EXO.filter(cleared).length + '/' + EXO.length + '</div>' : '') +
     '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
   $('zkBtn').onclick = () => zukanScreen(titleScreen); $('rcBtn').onclick = () => recordScreen(titleScreen); $('stBtn').onclick = () => settingsScreen(titleScreen);
@@ -1160,8 +1163,9 @@ function stageSelect() {
   const nx = nextStage();
   if (!uiCh) uiCh = chOf(nx || ORDER[0]).id;
   const c = CH.find(x => x.id === uiCh) || CH[0];
-  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
+  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon || !chOpen(x) ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon || !chOpen(x) ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
   if (c.soon) html += '<div class="soonbox"><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b><p>準備中</p></div>';
+  else if (!chOpen(c)) html += '<div class="soonbox"><small>' + esc(c.no) + '（エクストラ）</small><b>' + esc(c.title) + '</b><p>' + esc(stById(c.unlockBy).name + '「' + stById(c.unlockBy).sub + '」') + 'をクリアすると解放</p></div>';
   else {
     html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
     for (const id of c.stages) {
@@ -1239,7 +1243,9 @@ function endGame() {
   const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : S.loseWhy ? fmtT(S.t) + ' ' + S.loseWhy : '時間切れ。目標を達成できなかった');
-  const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
+  const oi = FULL.indexOf(S.st.id), next = win && oi >= 0 && FULL[oi + 1] ? stById(FULL[oi + 1]) : null, ch = chOf(S.st.id);
+  const exOpen = win && CH.find(c => c.unlockBy === S.st.id && !seen(c.id + 'u'));
+  if (exOpen) markSeen(exOpen.id + 'u');
   const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
   addStats(S); saveNow();
   const toEnding = win && S.st.id === ORDER[ORDER.length - 1] && !seen('ending');
@@ -1250,6 +1256,7 @@ function endGame() {
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
+    (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
     '<details class="more"><summary>くわしい記録</summary><div class="res">' +
@@ -1359,6 +1366,7 @@ function recordScreen(back) {
   const r = (k, v) => '<span>' + k + '</span><b>' + v + '</b>';
   showOv('<h1>記録</h1><div class="res">' +
     r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
+    (cleared('v4') ? r('第5章（エクストラ）', EXO.filter(cleared).length + ' / ' + EXO.length + (EXO.some(clearedH) ? '　🔥' + EXO.filter(clearedH).length : '')) : '') +
     r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
     r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +
     r('出撃回数 / 勝利', (st.plays || 0) + ' / ' + (st.wins || 0)) + r('累計撃破', (st.kills || 0).toLocaleString()) +

@@ -5274,6 +5274,82 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
       ['warper', 40, 400, 28, 3, 1.2], ['aegis', 60, 400, 50, 1, 0], ['mimicArt', 80, 400, 50, 1, 0], ['kamikaze', 50, 400, 36, 10, .2], ['flyer', 90, 400, 40, 6, .5],
     ])),
   });
+
+  // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
+  STAGES.push({
+    id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
+    brief: ['OMEGA原型の後退経路を特定。', '追撃部隊の前に、深部へ観測機材を運ぶ。補給車を護衛せよ。'], win: '補給車、到着。深部の観測を開始する。',
+    intro: '補給車は点線の道を北へ進む。敵が近くにいると止まって攻撃を受ける。道の両側から深淵の敵が来る。補給車が着けば勝ち。',
+    map: { minX: -26, maxX: 26, minZ: -40, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.2 },
+    convoy: { path: [[0, 22], [0, 12], [12, 12], [12, -2], [-18, -2], [-18, -18], [8, -18], [8, -28], [0, -28], [0, -38]], hp: 500, speed: .6 },
+    outposts: [[-12, 18, 'A', 'p'], [14, 18, 'B', 'p'], [-8, -10, 'C'], [16, -22, 'D', 'e']],
+    garrison: ['mimic', 'shooter', 'aegis', 'armor'],
+    paths: [
+      [[-24, -38], [-24, -10], [-14, -10], [-14, 6], [-4, 6], [-4, 18], [-4, 26], [0, 26]],
+      [[24, -38], [24, -8], [18, -8], [18, 4], [4, 4], [4, 18], [4, 26], [0, 26]],
+      [[-24, 28], [-12, 28], [-12, 26], [-4, 26], [0, 26]],
+    ],
+    ebases: [{ path: 0, hp: 900, pts: 180, turret: TUR }, { path: 1, hp: 900, pts: 180, turret: TUR }],
+    waves: waveGen([
+      ['normal', 3, 300, 14, 9, .5], ['wraith', 10, 300, 18, 8, .4], ['shooter', 16, 300, 26, 3, 1.3], ['swarm', 20, 300, 22, 30, .1],
+      ['warper', 30, 300, 30, 3, 1.2], ['mimic', 40, 300, 36, 2, 1.3], ['armor', 50, 300, 34, 3, 1.5], ['artillery', 70, 280, 60, 1, 0], ['kamikaze', 60, 300, 40, 8, .25],
+    ]),
+  });
+  STAGES.push({
+    id: 'x2', name: '5-2', sub: '巣窟', goal: 'bases', time: 420, startPoints: 620, wide: true,
+    brief: ['深部に、敵拠点の密集地を確認。', '六方向すべてに生産拠点。障壁体と模倣兵が守る。', 'すべて破壊し、追撃路を開け。'], win: '敵拠点群、全壊。深部への道、開通。',
+    intro: '敵拠点6つをすべて壊せば勝ち。どの方向から攻めるかが鍵。壊した方向からは敵が減る。',
+    map: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.6 },
+    outposts: [[-10, 6, 'A', 'p'], [10, 6, 'B', 'p'], [0, -11, 'C', 'p'], [-22, -14, 'D'], [22, -14, 'E'], [0, 24, 'F', 'e']],
+    garrison: ['aegis', 'mimic', 'mimic', 'shooter'],
+    paths: radialPaths(6, 35, Math.PI / 6, .28),
+    ebases: [0, 1, 2, 3, 4, 5].map(i => ({ path: i, hp: i % 2 ? 1300 : 1500, pts: 220, turret: TUR })),
+    waves: waveGen([
+      ['normal', 3, 400, 14, 6, .5], ['wraith', 10, 400, 20, 6, .4], ['swarm', 16, 400, 24, 24, .1], ['shooter', 20, 400, 30, 2, 1.3],
+      ['aegis', 40, 400, 60, 1, 0], ['mimic', 30, 400, 36, 2, 1.3], ['warper', 50, 400, 34, 2, 1.2], ['healer', 70, 400, 50, 1, 0], ['armor', 60, 400, 40, 3, 1.4], ['mimicArt', 120, 400, 80, 1, 0], ['engineer', 120, 400, 60, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'x3', name: '5-3', sub: '長征', goal: 'escort', time: 620, startPoints: 640, wide: true,
+    brief: ['OMEGA原型の潜む最深部へ、長距離輸送を行う。', '補給車は拠点から大きく離れる。増援が届くまで時間がかかる。', '途中の陣地を確保し、前線から出撃させよ。'], win: '補給車、最深部に到着。OMEGAの反応、至近。',
+    intro: 'とても長い道を補給車が進み、敵の通り道を何度も横切る。拠点から遠いので、途中の陣地を取って前から出撃させよう。',
+    map: { minX: -24, maxX: 24, minZ: -114, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 3.2 },
+    convoy: { path: [[0, 22], [0, 2], [20, 2], [20, -40], [-20, -40], [-20, -80], [0, -80], [0, -108]], hp: 1200, speed: .65 },
+    outposts: [[-10, 6, 'A', 'p'], [-6, -16, 'B'], [6, -56, 'C'], [-6, -94, 'D', 'e']],
+    garrison: ['mimic', 'shooter', 'shooter', 'armor'],
+    paths: [
+      [[-14, -112], [-14, 16], [-6, 16], [-6, 26], [0, 26]],
+      [[14, -112], [14, 16], [6, 16], [6, 26], [0, 26]],
+      [[-24, -37], [-14, -37], [-14, 16], [-6, 16], [-6, 26], [0, 26]],
+      [[24, -67], [14, -67], [14, 16], [6, 16], [6, 26], [0, 26]],
+    ],
+    pathOpen: { 2: 150, 3: 300 },
+    ebases: [{ path: 0, hp: 1200, pts: 220, turret: TUR }, { path: 1, hp: 1000, pts: 200, turret: TUR }],
+    waves: waveGen([
+      ['normal', 3, 600, 18, 6, .5], ['wraith', 10, 600, 26, 5, .4], ['swarm', 20, 600, 30, 20, .1], ['shooter', 16, 600, 36, 2, 1.3],
+      ['warper', 30, 600, 42, 2, 1.2], ['mimic', 40, 600, 54, 2, 1.3], ['armor', 50, 600, 50, 2, 1.5], ['dasher', 30, 600, 46, 3, 1.2], ['artillery', 90, 580, 90, 1, 0],
+      ['kamikaze', 70, 600, 56, 6, .25], ['flyer', 100, 600, 56, 5, .5], ['carrier', 160, 560, 120, 1, 0],
+    ]),
+  });
+  STAGES.push({
+    id: 'x4', name: '5-4', sub: 'OMEGA', goal: 'boss', bossName: 'OMEGA', bossCount: 3, omegaSplit: [1, 2], time: 900, startPoints: 700, wide: true, dark: 9,
+    pathOpen: { 3: 240 }, // 分裂したOMEGAは経路1・2（左右）から来るので、この2本は最初から開けておく
+    brief: ['最深部。OMEGA原型を捕捉。', '警告。反応が二つに分かれる兆候。倒しても、終わりではない。', '全機、出撃。すべてのOMEGAを止めよ。'],
+    win: 'OMEGA、全機沈黙。反応、完全に消失。……侵略者の中枢、停止を確認。',
+    intro: 'OMEGA原型を倒すと、2体のOMEGA（HPは7割）に分かれ、左右から攻めてくる。3体すべて倒せば作戦完了。長期戦になる。暗い戦場で、途中で南にも裂け目が開く。',
+    map: { minX: -36, maxX: 36, minZ: -40, maxZ: 36 }, base: { x: 0, z: 4 }, factory: { x: 2.5, z: 1.5 }, view: { zoom: 2.4 },
+    outposts: [[-11, 8, 'A', 'p'], [11, 8, 'B', 'p'], [0, -9, 'C', 'p'], [-20, -16, 'D'], [20, -16, 'E'], [0, 22, 'F']],
+    paths: [
+      [[0, -38], [0, -24], [-9, -24], [-9, -13], [4, -13], [4, -2], [0, -2], [0, 4]],
+      [[-34, -22], [-22, -22], [-22, 0], [-11, 0], [-11, 6], [0, 4]],
+      [[34, -22], [22, -22], [22, 0], [11, 0], [11, 6], [0, 4]],
+      [[0, 34], [0, 22], [-9, 22], [-9, 13], [0, 13], [0, 4]],
+    ],
+    waves: [[30, 'omega', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 880, 16, 7, .45], ['wraith', 10, 880, 20, 6, .4], ['swarm', 16, 880, 24, 28, .09], ['mimic', 30, 880, 44, 2, 1.3],
+      ['warper', 40, 880, 30, 3, 1.2], ['aegis', 60, 880, 70, 1, 0], ['mimicArt', 90, 880, 70, 1, 0], ['kamikaze', 50, 880, 38, 10, .2], ['flyer', 90, 880, 42, 6, .5], ['healer', 120, 880, 80, 1, 0],
+    ])),
+  });
 })();
 
 // ---------- 段階的な解禁：その作戦から使える（それより後の作戦、またはその作戦をクリア済みなら使える） ----------
@@ -5302,7 +5378,7 @@ const FEATURE_INFO = {
 function allowFor(stId, cleared, all) {
   const order = CHAPTERS.flatMap(c => c.stages), idx = order.indexOf(stId), a = {};
   for (const f in FEATURES) a[f] = !!all || order.indexOf(FEATURES[f]) <= idx || (cleared ? !!cleared(FEATURES[f]) : false);
-  a.nova = !!all || (cleared ? order.every(cleared) : false); // 全作戦クリア後
+  a.nova = !!all || (cleared ? CHAPTERS.filter(c => !c.extra).flatMap(c => c.stages).every(cleared) : false); // 全作戦クリア後（第5章は含めない）
   return a;
 }
 const ALLOW_ALL = (() => { const a = { nova: true }; for (const f in FEATURES) a[f] = true; return a; })();
@@ -5326,6 +5402,10 @@ const CHAPTERS = [
   { id: 'c4', no: '第4章', title: '深淵', stages: ['v1', 'v2', 'v3', 'v4'],
     intro: ['裂け目の奥、深部より未知の反応。', '侵略者の中枢と推定。', '最終作戦に移行する。'],
     outro: ['OMEGA原型、深淵へ後退。追跡、不能。', '前線基地、防衛完了。', '……指揮官ユニット、任務継続を推奨する。'] },
+  // エクストラ：4-4クリアで解放。全作戦クリアの判定（高難度・ノヴァの解禁）には含めない
+  { id: 'c5', no: '第5章', title: '追撃', extra: true, unlockBy: 'v4', stages: ['x1', 'x2', 'x3', 'x4'],
+    intro: ['指揮官ユニット、任務継続を受諾。', 'OMEGA原型の後退経路を解析した。追跡は、可能。', '深淵へ、追撃する。'],
+    outro: ['OMEGA、全機沈黙。', '侵略者の中枢、停止。裂け目が閉じていく。', '……指揮官ユニット。任務、完了。おつかれさま。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -5584,6 +5664,8 @@ function killEnemy(S, e, owner) {
   if (owner && owner.weapons) { owner.streak = (S.t - owner.lastKill < 5 ? owner.streak : 0) + 1; owner.lastKill = S.t; if (owner.drain && !owner.dead) owner.hp = Math.min(owner.maxHp, owner.hp + owner.drain); }
   if (e.def.boss) { S.bossKilled = true; S.bossKills = (S.bossKills || 0) + 1; say(S, e.def.final ? '★ ' + e.def.name + '、沈黙' : '★ ' + e.def.name + 'を撃破', 'good'); }
   if (e.def.split) for (let i = 0; i < e.def.split.n; i++) spawnEnemy(S, e.def.split.type, e.pi, e.d - i * .5, e);
+  // 5-4：最初のOMEGAを倒すと、2体のOMEGAに分かれて後退し、左右の経路の入口から再び攻めてくる（それ以上は分かれない）
+  if (e.def.final && S.st.omegaSplit && !e.gen) { for (const pi of S.st.omegaSplit) { const c = spawnEnemy(S, 'omega', pi, 0); c.gen = 1; c.hp = c.maxHp = c.maxHp * .7; } S.fx.push({ type: 'boom', x: e.x, z: e.z, rad: 4, team: 'e' }); say(S, '⚠ OMEGA、分裂。2体に分かれ、左右の裂け目から再侵攻', 'bad'); }
   if (e.def.mine && e.armed) mineBlast(S, e);
 }
 function hurtEbase(S, b, dmg) {
@@ -5757,6 +5839,7 @@ function spawnEnemy(S, type, pi, d0, from) {
   if (def.drop) e.dropT = def.drop.every * .5;
   if (def.rebuild) { const eb = S.ebases.find(b => b.path === pi); if (eb && eb.dead) { e.state = 'build'; e.buildT = def.rebuild.time; e.eb = eb; say(S, '🛠 工兵が敵拠点を再建中（' + dirName(S, [eb.x, eb.z]) + '）', 'warn'); } }
   S.enemies.push(e); S.spawned++;
+  return e;
 }
 // 拠点から見た方角（画面の上が北）
 function dirName(S, p) {
@@ -7186,9 +7269,11 @@ function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = '
 function hideOv() { $('ov').classList.remove('show'); }
 function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { document.body.classList.remove('darkst'); cam = pCam; scene.fog = FOG_M; hemi.intensity = 1.45; sun.intensity = 1.7; scene.background.setHex(0x050a1c); } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
-const CH = RD.CHAPTERS, ORDER = CH.flatMap(c => c.stages);
+// ORDER：本編（序章〜第4章）。全作戦クリア・エンディングの判定に使う。EXO：第5章（エクストラ。4-4クリアで解放）
+const CH = RD.CHAPTERS, ORDER = CH.filter(c => !c.extra).flatMap(c => c.stages), EXO = CH.filter(c => c.extra).flatMap(c => c.stages), FULL = ORDER.concat(EXO);
 const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
-const nextStage = () => ORDER.find(id => !cleared(id)) || null;
+const chOpen = c => !c.unlockBy || cleared(c.unlockBy) || !!SAVE.allOpen;
+const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id);
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
 function markSeen(k) { SAVE.seen = SAVE.seen || {}; SAVE.seen[k] = 1; saveNow(); }
@@ -7197,7 +7282,7 @@ const allClear = () => ORDER.every(cleared);
 const clearedH = id => !!(SAVE.clearH && SAVE.clearH[id]);
 // 段階的な解禁：その作戦で使えるもの・その作戦で初めて出るもの
 const allowOf = id => RD.allowFor(id, cleared, !!SAVE.allOpen);
-const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of ORDER) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
+const FIRST_ENEMY = (() => { const m = {}, seenT = new Set(); for (const id of FULL) { const st = stById(id); for (const t of st.waves.map(w => w[1]).concat(st.garrison && (st.outposts || []).some(o => o[3] === 'e') ? st.garrison : [])) if (!seenT.has(t)) { seenT.add(t); (m[id] = m[id] || []).push(t); } } return m; })();
 function newFeatures(id) { return id === ORDER[0] ? [] : Object.keys(RD.FEATURES).filter(f => RD.FEATURES[f] === id); } // 最初の作戦は「最初から使えるもの」なので出さない
 function featLine(f) { const w = WEAPONS[f]; return w ? [w.icon, w.name, w.desc] : [RD.FEATURE_INFO[f].icon, RD.FEATURE_INFO[f].name, RD.FEATURE_INFO[f].desc]; }
 function newHTML(id) {
@@ -7230,6 +7315,7 @@ function titleScreen() {
         (any ? '<button class="ghost" id="selBtn">作戦一覧</button>' : ''); })() +
     '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
+    (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + EXO.filter(cleared).length + '/' + EXO.length + '</div>' : '') +
     '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
   $('zkBtn').onclick = () => zukanScreen(titleScreen); $('rcBtn').onclick = () => recordScreen(titleScreen); $('stBtn').onclick = () => settingsScreen(titleScreen);
@@ -7258,8 +7344,9 @@ function stageSelect() {
   const nx = nextStage();
   if (!uiCh) uiCh = chOf(nx || ORDER[0]).id;
   const c = CH.find(x => x.id === uiCh) || CH[0];
-  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
+  let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon || !chOpen(x) ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon || !chOpen(x) ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
   if (c.soon) html += '<div class="soonbox"><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b><p>準備中</p></div>';
+  else if (!chOpen(c)) html += '<div class="soonbox"><small>' + esc(c.no) + '（エクストラ）</small><b>' + esc(c.title) + '</b><p>' + esc(stById(c.unlockBy).name + '「' + stById(c.unlockBy).sub + '」') + 'をクリアすると解放</p></div>';
   else {
     html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
     for (const id of c.stages) {
@@ -7337,7 +7424,9 @@ function endGame() {
   const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
   const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : S.loseWhy ? fmtT(S.t) + ' ' + S.loseWhy : '時間切れ。目標を達成できなかった');
-  const oi = ORDER.indexOf(S.st.id), next = win && oi >= 0 ? stById(ORDER[oi + 1]) : null, ch = chOf(S.st.id);
+  const oi = FULL.indexOf(S.st.id), next = win && oi >= 0 && FULL[oi + 1] ? stById(FULL[oi + 1]) : null, ch = chOf(S.st.id);
+  const exOpen = win && CH.find(c => c.unlockBy === S.st.id && !seen(c.id + 'u'));
+  if (exOpen) markSeen(exOpen.id + 'u');
   const chDone = win && ch.outro && ch.stages.every(cleared) && !seen(ch.id + 'o');
   addStats(S); saveNow();
   const toEnding = win && S.st.id === ORDER[ORDER.length - 1] && !seen('ending');
@@ -7348,6 +7437,7 @@ function endGame() {
     '<div class="tiles">' + tile('💥', S.kills, '撃破') + tile('🏠', Math.ceil(S.baseHP) + '<small>/' + CFG.baseHP + '</small>', '残り拠点HP') +
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
+    (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
     '<details class="more"><summary>くわしい記録</summary><div class="res">' +
@@ -7457,6 +7547,7 @@ function recordScreen(back) {
   const r = (k, v) => '<span>' + k + '</span><b>' + v + '</b>';
   showOv('<h1>記録</h1><div class="res">' +
     r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
+    (cleared('v4') ? r('第5章（エクストラ）', EXO.filter(cleared).length + ' / ' + EXO.length + (EXO.some(clearedH) ? '　🔥' + EXO.filter(clearedH).length : '')) : '') +
     r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
     r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +
     r('出撃回数 / 勝利', (st.plays || 0) + ' / ' + (st.wins || 0)) + r('累計撃破', (st.kills || 0).toLocaleString()) +
