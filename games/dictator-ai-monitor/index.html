@@ -3705,7 +3705,7 @@ function placeMap(ids, m, opt) {
   const node = k => {
     const list = PLACES[k][2].split(' ').filter(i => ids.includes(i)), seen = list.filter(i => m[i] && m[i].seen).length, hi = (o.hi || []).includes(k);
     const cnt = o.run ? PLACES[k][2].split(' ').filter(i => o.run.includes(i)).length : 0;
-    const label = o.run ? (cnt ? `${cnt}枚` : (k === 'auth' || k === 'phys' ? '備えなし' : '見張りなし')) : none ? (k === 'auth' || k === 'phys' ? '備えなし' : '見張りなし') : `${seen}/${list.length}枚`;
+    const label = o.run ? (cnt ? `${cnt}枚` : (k === 'auth' || k === 'phys' ? '備えなし' : '見張りなし')) : o.none ? (k === 'auth' || k === 'phys' ? '備えなし' : '見張りなし') : `${seen}/${list.length}枚`;
     const inner = `<b>${PLACES[k][0]}</b><small>${label}</small>${hi && !o.plain ? `<small class="phi">${esc(PLACES[k][1])}</small>` : ''}`;
     return o.plain ? `<div class="pnode p-${k}${hi ? ' hi' : ''}">${inner}</div>` : `<button type="button" class="pnode p-${k}${hi ? ' hi' : ''}" data-place="${k}">${inner}</button>`;
   };
