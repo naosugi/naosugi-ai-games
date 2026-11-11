@@ -572,7 +572,7 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     ]),
   });
   STAGES.push({
-    id: 'x3', name: '5-3', sub: '長征', goal: 'escort', time: 620, startPoints: 800, wide: true, convoyHunt: 8,
+    id: 'x3', name: '5-3', sub: '長征', goal: 'escort', time: 620, startPoints: 640, wide: true, convoyHunt: 8,
     brief: ['OMEGA原型の潜む最深部へ、長距離輸送を行う。', '敵は補給車を狙ってくる。進路の先で、裂け目が次々に開く兆候。', '途中の陣地を確保し、前線から出撃させよ。'], win: '補給車、最深部に到着。OMEGAの反応、至近。',
     intro: 'とても長い道を補給車が進む。この作戦の敵は、補給車に近づくと道を外れて襲いかかる。補給車の進路の先に、時間とともに裂け目が開く。陣地を取って前から出撃させよう。',
     map: { minX: -24, maxX: 24, minZ: -114, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 3.2 },
@@ -590,9 +590,9 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     pathOpen: { 2: 90, 3: 200, 4: 300 },
     ebases: [{ path: 0, hp: 1200, pts: 220, turret: TUR }, { path: 1, hp: 1000, pts: 200, turret: TUR }],
     waves: waveGen([
-      ['normal', 3, 600, 24, 6, .5], ['wraith', 10, 600, 34, 5, .4], ['swarm', 20, 600, 40, 20, .1], ['shooter', 16, 600, 46, 2, 1.3],
-      ['warper', 30, 600, 55, 2, 1.2], ['mimic', 40, 600, 70, 2, 1.3], ['armor', 50, 600, 65, 2, 1.5], ['dasher', 30, 600, 60, 3, 1.2], ['artillery', 90, 580, 120, 1, 0],
-      ['kamikaze', 70, 600, 72, 6, .25], ['flyer', 100, 600, 72, 5, .5], ['carrier', 200, 560, 160, 1, 0],
+      ['normal', 3, 600, 18, 6, .5], ['wraith', 10, 600, 26, 5, .4], ['swarm', 20, 600, 30, 20, .1], ['shooter', 16, 600, 36, 2, 1.3],
+      ['warper', 30, 600, 42, 2, 1.2], ['mimic', 40, 600, 54, 2, 1.3], ['armor', 50, 600, 50, 2, 1.5], ['dasher', 30, 600, 46, 3, 1.2], ['artillery', 90, 580, 90, 1, 0],
+      ['kamikaze', 70, 600, 56, 6, .25], ['flyer', 100, 600, 56, 5, .5], ['carrier', 160, 560, 120, 1, 0],
       // 裂け目からの待ち伏せ
       ['normal', 90, 600, 26, 6, .4, 2], ['dasher', 92, 600, 40, 3, 1, 2], ['wraith', 200, 600, 26, 6, .4, 3], ['kamikaze', 202, 600, 40, 6, .3, 3],
       ['swarm', 300, 600, 24, 22, .1, 4], ['armor', 302, 600, 46, 2, 1.2, 4],
