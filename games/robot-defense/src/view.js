@@ -125,7 +125,7 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
-  abyss: lam(0xb05cff, 0x5a1a8a), abyssFill: lam(0x2a0a3f, 0x14051f),
+  abyss: lam(0xb05cff, 0x5a1a8a), abyssFill: lam(0x2a0a3f, 0x14051f), abyssRed: lam(0xff3b8a, 0x7a0a3a), abyssFillRed: lam(0x3f0a1f, 0x1f0510), // 赤：8-4の最終形態
   omega: lam(0x5a1a8a, 0x2a0a40), omegaHead: lam(0xd28cff, 0x5a2a8a), omegaDark: lam(0x1a0828, 0x0a0214), visorO: new T.MeshBasicMaterial({ color: 0xff3bd0 }),
   mimic: lam(0xc8324a, 0x3a0a14), mimicHead: lam(0xff9aa8, 0x4a1a20),
   wraith: new T.MeshBasicMaterial({ color: 0xb06cff, transparent: true, opacity: .75 }), warper: lam(0x9a5cff, 0x3a1a6a), aegis: lam(0x7a4cff, 0x2a1060),
@@ -466,7 +466,8 @@ function sync(dt) {
     seen.add(e.id); v.obj.visible = !e.phased || Math.sin(performance.now() / 45) > .3;
     v.obj.position.x += (e.x - v.obj.position.x) * k; v.obj.position.z += (e.z - v.obj.position.z) * k;
     if (v.face) v.obj.rotation.y = lerpAngle(v.obj.rotation.y, e.face || 0, k);
-    if (v.spin) v.inner.rotation.y += dt * 2;
+    if (v.spin) v.inner.rotation.y += dt * (e.ph >= 3 ? 4 : 2);
+    if (e.def && e.def.abyss && e.ph >= 3 && !v.fin) { v.fin = 1; v.inner.traverse(m => { if (m.material === M.abyss) m.material = M.abyssRed; }); v.baseMat = M.abyssFillRed; v.obj.scale.setScalar(1.4); } // 最終形態：赤く、大きく
     if (v.aim) { if (e.state === 'aim') setLine(v.aim, e.x, e.z, e.x + e.dvx * e.def.dash.len, e.z + e.dvz * e.def.dash.len); else v.aim.visible = false; }
     v.body.material = e.flash > 0 ? M.white : v.baseMat;
     v.bar.visible = v.always || e.hp < e.maxHp;
@@ -705,7 +706,7 @@ function addFx(f) {
       AU.S.blast(true); setTimeout(() => AU.S.blast(true), 120); shake(1.2, .9); return;
     }
     case 'boss': banner(f.final ? 'OMEGA' : 'WARNING', (f.name || '模倣機') + ' 接近', 'boss', 3); AU.S.boss(); shake(f.final ? .6 : .25, .8); return;
-    case 'abyssPhase': fxMesh(G.ring, 0xb05cff, f.x, f.z, .1, 1, 22, 1.4, true); banner('OMEGA ABYSS', f.n === 2 ? '深淵が深まる' : '最後のあがき', 'boss', 2.4); AU.S.boss(); shake(.5, .7); return;
+    case 'abyssPhase': fxMesh(G.ring, f.last ? 0xff3b8a : 0xb05cff, f.x, f.z, .1, 1, f.last ? 34 : 22, f.last ? 2 : 1.4, true); banner('OMEGA ABYSS', f.last ? '最終形態' : '深淵が深まる', 'boss', f.last ? 3.4 : 2.4); AU.S.boss(); shake(f.last ? 1 : .5, f.last ? 1.4 : .7); return;
     case 'sweepWarn': fxMesh(G.ring, 0xff2d55, f.x, f.z, .1, 2, 6, .8, true); return;
     case 'omegaPhase': fxMesh(G.ring, 0xff3bd0, f.x, f.z, .1, 1, 18, 1.2, true); fxMesh(G.sph, 0xb06cff, f.x, f.z, 1.5, 1, 8, .7); banner('OMEGA原型', f.n === 2 ? '最終形態' : '形態変化', 'boss', 2.4); AU.S.boss(); shake(.7, .8); return;
     case 'warp': { const l = makeLine(new T.LineBasicMaterial({ color: 0xb06cff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .6; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 160); fxMesh(G.ring, 0xb06cff, f.x2, f.z2, .1, .3, 1.6, .4, true); return; }
@@ -1286,7 +1287,7 @@ function endGame() {
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
     (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
-    (win && S.st.id === 'y1' && !seen('infBody') && (markSeen('infBody'), true) ? '<div class="goal big">🛸 新しいボディ <b>インフィニット</b> が解禁された<br><span class="dim">高額機体の候補に出るようになる。HP100・最速・威力と連射+60%</span></div>' : '') +
+    (win && S.st.id === 'y4' && !seen('infBody') && (markSeen('infBody'), true) ? '<div class="goal big">🛸 新しいボディ <b>インフィニット</b> が解禁された<br><span class="dim">高額機体の候補に出るようになる。HP100・最速・威力と連射+60%</span></div>' : '') +
     (exNow ? '<div class="goal big">🏆 第5章クリア<br>♾ <b>エンドレス</b> と 🛠 <b>ステージ作成</b> が解放された<br><span class="dim">タイトル画面から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
