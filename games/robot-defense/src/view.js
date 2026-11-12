@@ -125,6 +125,7 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
+  abyss: lam(0xb05cff, 0x5a1a8a), abyssFill: lam(0x2a0a3f, 0x14051f),
   omega: lam(0x5a1a8a, 0x2a0a40), omegaHead: lam(0xd28cff, 0x5a2a8a), omegaDark: lam(0x1a0828, 0x0a0214), visorO: new T.MeshBasicMaterial({ color: 0xff3bd0 }),
   mimic: lam(0xc8324a, 0x3a0a14), mimicHead: lam(0xff9aa8, 0x4a1a20),
   wraith: new T.MeshBasicMaterial({ color: 0xb06cff, transparent: true, opacity: .75 }), warper: lam(0x9a5cff, 0x3a1a6a), aegis: lam(0x7a4cff, 0x2a1060),
@@ -141,6 +142,7 @@ const M = {
   shotP: new T.MeshBasicMaterial({ color: 0x9df8ff }),
   shotM: new T.MeshBasicMaterial({ color: 0xffd166 }),
   shotE: new T.MeshBasicMaterial({ color: 0xff6a3d }),
+  shotA: new T.MeshBasicMaterial({ color: 0xc77dff }), // OMEGA ABYSS の弾幕
   line: new T.LineBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .45 }),
   bubble: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .18, depthWrite: false }),
   rangeRing: new T.MeshBasicMaterial({ color: 0x65f6ff, transparent: true, opacity: .35, side: T.DoubleSide, depthWrite: false }),
@@ -293,6 +295,21 @@ function roboMesh(r) {
   return { obj: g, inner, body, ring, range, bubble, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
 }
 function enemyMesh(e) {
+  // OMEGA ABYSS：INFINITE SHOT 3D II と同じ、紫のトゲ24本の星。宙に浮いてゆっくり回る
+  if (e.def.abyss) {
+    const g = new T.Group(), inner = new T.Group(), y = 3;
+    g.add(shadowDisc(e.r * 1.6));
+    const core = new T.Mesh(G.sph, M.abyssFill); core.scale.setScalar(2.4); core.position.y = y; inner.add(core);
+    const glow = new T.Mesh(G.ico, M.abyss); glow.scale.setScalar(1.3); glow.position.y = y; inner.add(glow);
+    for (let i = 0; i < 24; i++) {
+      const a = i / 24 * Math.PI * 2, tilt = (i % 3 - 1) * .5, sp = new T.Mesh(G.cone, M.abyss);
+      sp.scale.set(.35, 2.2, .35); const dir = new T.Vector3(Math.cos(a) * Math.cos(tilt), Math.sin(tilt), Math.sin(a) * Math.cos(tilt));
+      sp.position.set(dir.x * 1.9, y + dir.y * 1.9, dir.z * 1.9); sp.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); inner.add(sp);
+    }
+    const halo = new T.Mesh(new T.TorusGeometry(3.4, .1, 8, 48), M.visorO); halo.rotation.x = Math.PI / 2; halo.position.y = y; g.add(halo);
+    g.add(inner);
+    return { obj: g, inner, body: core, bar: makeBar(4.5, M.barGold), barY: y + 3.6, baseMat: M.abyssFill, spin: true, always: true };
+  }
   if (e.def.weapons) {
     const fin = e.def.final, sc = e.def.mscale || 2.2, big = !!e.def.boss;
     const mats = fin ? { body: M.omega, head: M.omegaHead, dark: M.omegaDark, visor: M.visorO } : big ? { body: M.boss, head: M.bossHead, dark: M.bossDark, visor: M.visorE } : { body: M.mimic, head: M.mimicHead, dark: M.bossDark, visor: M.visorE };
@@ -393,7 +410,7 @@ const SWARM_LOOK = {
   swarmFly: { mat: lam(0xff8ad8, 0x4a1440), y: 2, s: [.6, .3, .7] },
 };
 const swarmInst = {}; for (const k in SWARM_LOOK) swarmInst[k] = makeInst(G.oct, SWARM_LOOK[k].mat, 2500);
-const shotInst = { p: makeInst(G.shot, M.shotP, 2000), m: makeInst(G.shot, M.shotM, 400), h: makeInst(G.shot, M.shotH, 600), e: makeInst(G.shot, M.shotE, 1000) };
+const shotInst = { p: makeInst(G.shot, M.shotP, 2000), m: makeInst(G.shot, M.shotM, 400), h: makeInst(G.shot, M.shotH, 600), e: makeInst(G.shot, M.shotE, 1000), a: makeInst(G.shot, M.shotA, 1600) };
 const views = new Map();
 const marker = new T.Mesh(G.ring, new T.MeshBasicMaterial({ color: 0x65f6ff, side: T.DoubleSide, transparent: true }));
 marker.rotation.x = -Math.PI / 2; marker.position.y = .06; marker.visible = false; scene.add(marker);
@@ -456,11 +473,11 @@ function sync(dt) {
     if (v.bar.visible) setBar(v.bar, v.obj.position.x, v.barY, v.obj.position.z, e.hp / e.maxHp);
   }
   for (const k in swarmInst) { swarmInst[k].count = ni[k]; swarmInst[k].instanceMatrix.needsUpdate = true; }
-  const sc = { p: 0, m: 0, h: 0, e: 0 };
+  const sc = { p: 0, m: 0, h: 0, e: 0, a: 0 };
   for (const s of S.shots) {
-    const key = s.team === 'e' ? 'e' : s.blast ? 'm' : s.homing ? 'h' : 'p', im = shotInst[key];
+    const key = s.dan ? 'a' : s.team === 'e' ? 'e' : s.blast ? 'm' : s.homing ? 'h' : 'p', im = shotInst[key];
     if (sc[key] >= im.instanceMatrix.count) continue;
-    dummy.position.set(s.x, .6, s.z); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(s.shell ? 1.9 : s.blast ? 1.7 : s.size ? s.size / .16 : 1); dummy.updateMatrix();
+    dummy.position.set(s.x, .6, s.z); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(s.dan ? s.r * 5.5 : s.shell ? 1.9 : s.blast ? 1.7 : s.size ? s.size / .16 : 1); dummy.updateMatrix();
     im.setMatrixAt(sc[key]++, dummy.matrix);
   }
   for (const key in shotInst) { shotInst[key].count = sc[key]; shotInst[key].instanceMatrix.needsUpdate = true; }
@@ -688,6 +705,8 @@ function addFx(f) {
       AU.S.blast(true); setTimeout(() => AU.S.blast(true), 120); shake(1.2, .9); return;
     }
     case 'boss': banner(f.final ? 'OMEGA' : 'WARNING', (f.name || '模倣機') + ' 接近', 'boss', 3); AU.S.boss(); shake(f.final ? .6 : .25, .8); return;
+    case 'abyssPhase': fxMesh(G.ring, 0xb05cff, f.x, f.z, .1, 1, 22, 1.4, true); banner('OMEGA ABYSS', f.n === 2 ? '深淵が深まる' : '最後のあがき', 'boss', 2.4); AU.S.boss(); shake(.5, .7); return;
+    case 'sweepWarn': fxMesh(G.ring, 0xff2d55, f.x, f.z, .1, 2, 6, .8, true); return;
     case 'omegaPhase': fxMesh(G.ring, 0xff3bd0, f.x, f.z, .1, 1, 18, 1.2, true); fxMesh(G.sph, 0xb06cff, f.x, f.z, 1.5, 1, 8, .7); banner('OMEGA原型', f.n === 2 ? '最終形態' : '形態変化', 'boss', 2.4); AU.S.boss(); shake(.7, .8); return;
     case 'warp': { const l = makeLine(new T.LineBasicMaterial({ color: 0xb06cff })); setLine(l, f.x, f.z, f.x2, f.z2); l.position.y = .6; scene.add(l); setTimeout(() => { scene.remove(l); l.geometry.dispose(); l.material.dispose(); }, 160); fxMesh(G.ring, 0xb06cff, f.x2, f.z2, .1, .3, 1.6, .4, true); return; }
     case 'rift': banner('RIFT', '新たな裂け目が開いた', 'boss', 2); AU.S.alarm(); return;
@@ -1088,12 +1107,13 @@ function showOv(html, cls) { $('ovCard').innerHTML = html; $('ov').className = '
 function hideOv() { $('ov').classList.remove('show'); }
 function setMenu(on) { document.body.classList.toggle('menu', on); if (on) { document.body.classList.remove('darkst'); cam = pCam; scene.fog = FOG_M; hemi.intensity = 1.45; sun.intensity = 1.7; scene.background.setHex(0x050a1c); } else scene.fog = null; }
 const cleared = id => !!(SAVE.clear && SAVE.clear[id]);
-// ORDER：本編（序章〜第4章）。全作戦クリア・エンディングの判定に使う。EXO：第5章（エクストラ。4-4クリアで解放）
+// ORDER：本編（序章〜第4章）。全作戦クリア・エンディングの判定に使う。EXO：エクストラ（第5章は4-4クリア、第6〜8章は第5章すべてクリアで解放）
 const CH = RD.CHAPTERS, ORDER = CH.filter(c => !c.extra).flatMap(c => c.stages), EXO = CH.filter(c => c.extra).flatMap(c => c.stages), FULL = ORDER.concat(EXO);
 const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
-const chOpen = c => !c.unlockBy || cleared(c.unlockBy) || !!SAVE.allOpen;
+const chOpen = c => !c.unlockBy || [].concat(c.unlockBy).every(cleared) || !!SAVE.allOpen;
 // エンドレス・ステージ作成：第5章をすべてクリアすると解放
-const exDone = () => (EXO.length && EXO.every(cleared)) || !!SAVE.allOpen;
+const C5 = (CH.find(c => c.id === 'c5') || { stages: [] }).stages;
+const exDone = () => (C5.length && C5.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
 const seen = k => !!(SAVE.seen && SAVE.seen[k]);
@@ -1137,7 +1157,8 @@ function titleScreen() {
     (exDone() ? '<div class="minis"><button class="ghost" id="enBtn">♾ エンドレス</button><button class="ghost" id="crBtn">🛠 ステージ作成</button></div>' : '') +
     '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
-    (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + EXO.filter(cleared).length + '/' + EXO.length + '</div>' : '') +
+    (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + C5.filter(cleared).length + '/' + C5.length + '</div>' : '') +
+    (exDone() && EXO.length > C5.length ? '<div class="ver" style="color:#c77dff">深淵 ' + EXO.filter(id => !C5.includes(id) && cleared(id)).length + '/' + (EXO.length - C5.length) + '</div>' : '') +
     '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
   if ($('enBtn')) { $('enBtn').onclick = () => { curHard = false; stageDetail('endless'); }; $('crBtn').onclick = creatorScreen; }
@@ -1169,7 +1190,7 @@ function stageSelect() {
   const c = CH.find(x => x.id === uiCh) || CH[0];
   let html = '<h1>作戦を選ぶ</h1><div class="tabs chtabs">' + CH.map(x => '<button data-ch="' + x.id + '" class="' + (x.id === c.id ? 'on' : '') + (x.soon || !chOpen(x) ? ' soon' : '') + '">' + esc(x.no) + (x.stages.length && x.stages.every(cleared) ? '<small> ✓</small>' : x.soon || !chOpen(x) ? '<small> 🔒</small>' : '') + '</button>').join('') + '</div>';
   if (c.soon) html += '<div class="soonbox"><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b><p>準備中</p></div>';
-  else if (!chOpen(c)) html += '<div class="soonbox"><small>' + esc(c.no) + '（エクストラ）</small><b>' + esc(c.title) + '</b><p>' + esc(stById(c.unlockBy).name + '「' + stById(c.unlockBy).sub + '」') + 'をクリアすると解放</p></div>';
+  else if (!chOpen(c)) html += '<div class="soonbox"><small>' + esc(c.no) + '（エクストラ）</small><b>' + esc(c.title) + '</b><p>' + esc([].concat(c.unlockBy).length > 1 ? chOf([].concat(c.unlockBy)[0]).no + 'をすべて' : stById(c.unlockBy).name + '「' + stById(c.unlockBy).sub + '」を') + 'クリアすると解放</p></div>';
   else {
     html += '<div class="chh"><div><small>' + esc(c.no) + '</small><b>' + esc(c.title) + '</b></div><button class="chip" id="story">📡 通信</button></div><div class="slist">';
     for (const id of c.stages) {
@@ -1265,6 +1286,7 @@ function endGame() {
     (g === 'points' ? tile('⭐', S.pts + '<small>/' + S.st.goalPts + '</small>', '所持ポイント') : S.ebases.length ? tile('🏭', S.ebKills + '<small>/' + S.ebases.length + '</small>', '敵拠点破壊') : tile('🔥', combo.best >= 8 ? '×' + combo.best : '-', '最大連続撃破')) + '</div>' +
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
     (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
+    (win && S.st.id === 'y1' && !seen('infBody') && (markSeen('infBody'), true) ? '<div class="goal big">🛸 新しいボディ <b>インフィニット</b> が解禁された<br><span class="dim">高額機体の候補に出るようになる。HP100・最速・威力と連射+60%</span></div>' : '') +
     (exNow ? '<div class="goal big">🏆 第5章クリア<br>♾ <b>エンドレス</b> と 🛠 <b>ステージ作成</b> が解放された<br><span class="dim">タイトル画面から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
@@ -1391,10 +1413,11 @@ function eStats(k) {
   if (e.mine) { atk.push('爆発 ' + e.mine.dmg); rg.push(e.mine.trigger); }
   if (e.artillery) { atk.push('拠点を砲撃 ' + e.artillery.dmg); rg.push(e.artillery.range); }
   if (e.weapons) for (const id of e.weapons) { const w = RD.EW[id] || WEAPONS[id]; atk.push(w.icon + w.name + ' ' + (w.pellets > 1 ? w.dmg + '×' + w.pellets : w.dmg)); rg.push(w.range); }
+  if (e.abyss) { atk.push('弾幕 ' + RD.ABYSS.dmg + '（ロボット・補給車）／拠点へは ' + fmtN(RD.ABYSS.dmg * RD.ABYSS.homeMul)); rg.push('遠距離（約' + RD.ABYSS.hover + '）'); }
   if (e.heal) atk.push('周りを毎秒 ' + e.heal.hps + ' 回復（範囲 ' + e.heal.range + '）');
   if (e.aura) atk.push('周りの敵の被ダメージ半減（範囲 ' + e.aura.range + '）');
   if (e.baseDps) atk.push('拠点へ毎秒 ' + e.baseDps);
-  return '<span class="zs">❤HP ' + e.hp + (e.boss ? '（作戦で変わる）' : '') + ' ・ 👟速度 ' + fmtN(e.speed * CFG.enemySpeedMul) + ' ・ 🎯射程 ' + (rg.length ? Math.max(...rg) : '接触') + ' ・ ⭐' + e.pts + (e.inst ? ' ・ 群体' : '') + (e.fly ? ' ・ 飛行' : '') + '</span>' +
+  return '<span class="zs">❤HP ' + e.hp + (e.boss ? '（作戦で変わる）' : '') + ' ・ 👟速度 ' + fmtN(e.speed * CFG.enemySpeedMul) + ' ・ 🎯射程 ' + (rg.length ? (rg.every(x => typeof x === 'number') ? Math.max(...rg) : rg[rg.length - 1]) : '接触') + ' ・ ⭐' + e.pts + (e.inst ? ' ・ 群体' : '') + (e.fly ? ' ・ 飛行' : '') + '</span>' +
     (atk.length ? '<span class="zs">⚔ ' + atk.join(' ／ ') + '</span>' : '');
 }
 
@@ -1459,7 +1482,8 @@ function recordScreen(back) {
   const r = (k, v) => '<span>' + k + '</span><b>' + v + '</b>';
   showOv('<h1>記録</h1><div class="res">' +
     r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
-    (cleared('v4') ? r('第5章（エクストラ）', EXO.filter(cleared).length + ' / ' + EXO.length + (EXO.some(clearedH) ? '　🔥' + EXO.filter(clearedH).length : '')) : '') +
+    (cleared('v4') ? r('第5章（エクストラ）', C5.filter(cleared).length + ' / ' + C5.length + (C5.some(clearedH) ? '　🔥' + C5.filter(clearedH).length : '')) : '') +
+    (exDone() && EXO.length > C5.length ? (D6 => r('第6章〜（深淵）', D6.filter(cleared).length + ' / ' + D6.length + (D6.some(clearedH) ? '　🔥' + D6.filter(clearedH).length : '')))(EXO.filter(id => !C5.includes(id))) : '') +
     (SAVE.endless && SAVE.endless.runs.length ? r('♾ エンドレス 最長生存', fmtT(SAVE.endless.best.t) + '　💥' + SAVE.endless.best.kills + '　👹' + SAVE.endless.best.bosses) : '') +
     r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
     r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +

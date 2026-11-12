@@ -61,6 +61,8 @@ const BODIES = [
   // 高価格帯：高いが一騎当千
   { id: 'fortress', name: 'フォートレス', tier: 'high', cost: 160, hp: 650, speed: 1.2, build: 12, plus: { dmg: .3 } },
   { id: 'ace', name: 'エース', tier: 'high', cost: 180, hp: 260, speed: 5.5, build: 10, plus: { rate: .4, crit: .25 } },
+  // 6-1でOMEGA ABYSSを倒すと解禁（unlock）。自分で操作して弾をよけて真価が出る機体
+  { id: 'infinite', name: 'インフィニット', tier: 'high', cost: 220, hp: 100, speed: 7, build: 10, unlock: 'infinite', plus: { dmg: .6, rate: .6 } },
   { id: 'vanguard', name: 'ヴァンガード', tier: 'high', cost: 150, hp: 350, speed: 3.2, build: 9, plus: { dmg: 1 } },
 ];
 
@@ -132,6 +134,8 @@ const ENEMIES = {
   wraith: { name: '深淵体', hp: 35, speed: 2.3, r: .45, pts: 10, baseDps: 1.5, phase: { on: 2, off: 1 }, desc: '時々姿が揺らぎ、その間は攻撃が当たらない' },
   warper: { name: '跳躍体', hp: 70, speed: 1.2, r: .55, pts: 25, baseDps: 2, warp: { every: 4, dist: 5 }, desc: '数秒ごとに経路の先へ跳ぶ' },
   aegis: { name: '障壁体', hp: 175, speed: 1, r: .7, pts: 40, baseDps: 2, aura: { range: 3.2 }, desc: '周りの敵が受けるダメージを半分にする。先に倒したい' },
+  // 真OMEGA（INFINITE SHOT 3D II の OMEGA ABYSS）：遠くを漂い、狙いを定めずに弾幕をばらまく。弾は拠点にもロボットにも補給車にも当たる
+  abyss: { name: 'OMEGA ABYSS', hp: 20000, speed: 3, r: 2.4, pts: 5000, baseDps: 0, boss: true, fly: true, abyss: true, desc: '深淵に呑まれたOMEGAの真の姿。遠くを漂いながら、狙いを定めずに弾幕をばらまく。弾は拠点にもロボットにも当たる。ときどき拠点へ迫る' },
   omega: { name: 'OMEGA原型', hp: 10800, speed: .45, r: 2, pts: 2000, baseDps: 3, fireMul: 1.6, hold: 9, boss: true, final: true, weapons: ['heavy', 'missile', 'spread'], mscale: 3.6, desc: '侵略者が我々を学習して作った最終機。損傷が進むと形を変え、深淵の敵を呼ぶ' },
   // ボス：こちらのロボットと同じ「ボディ＋武器」で組まれた敵。体当たりはせず、射撃でロボットと拠点を攻撃する
   boss: { name: '模倣機', hp: 1000, speed: .9, r: 1.1, pts: 300, baseDps: 0, fireMul: 1.6, hold: 5.5, boss: true, body: 'fortress', weapons: ['blaster', 'missile'], desc: 'こちらのロボットを模倣した赤い機体。ロボットや拠点が射程に入ると立ち止まって撃つ' },
@@ -537,6 +541,20 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     ])),
   });
 
+  // ---------- 第6章（エクストラ・高難度）：OMEGA ABYSS ----------
+  STAGES.push({
+    id: 'y1', name: '6-1', sub: '真の姿', goal: 'boss', bossName: 'OMEGA ABYSS', time: 720, startPoints: 700, wide: true, dark: 9,
+    brief: ['深淵の果てに、紫の反応。', 'OMEGAが深淵に呑まれ、姿を変えたもの。こちらを狙わず、ただ弾をばらまく。', '弾は拠点にも届く。ロボットを盾に、拠点工事でしのげ。'],
+    win: 'OMEGA ABYSS、撃破。……新しい機体の設計データを回収した。',
+    intro: 'OMEGA ABYSS は遠くを漂いながら弾幕をばらまく。弾はロボットにも拠点にも当たる。ウォールやブルワークは弾を消せる。ときどき拠点へ迫るので、そこが攻めどき。雑魚もたくさん来る。倒すと新しいボディが解禁される。',
+    map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
+    paths: radialPaths(4, 32, Math.PI / 4, .3),
+    waves: [[25, 'abyss', 1, 0, 0]].concat(waveGen([
+      ['normal', 3, 700, 16, 7, .45], ['swarm', 10, 700, 24, 26, .09], ['wraith', 20, 700, 28, 6, .4], ['dasher', 30, 700, 38, 3, 1.1],
+      ['kamikaze', 40, 700, 42, 8, .2], ['armor', 60, 700, 46, 2, 1.4], ['mimic', 80, 700, 60, 2, 1.3], ['flyer', 90, 700, 50, 5, .5], ['swarmFly', 120, 700, 56, 18, .1],
+    ])),
+  });
   // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
   STAGES.push({
     id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
@@ -647,10 +665,12 @@ function allowFor(stId, cleared, all) {
   const order = CHAPTERS.flatMap(c => c.stages), idx = order.indexOf(stId), a = {};
   for (const f in FEATURES) a[f] = !!all || order.indexOf(FEATURES[f]) <= idx || (cleared ? !!cleared(FEATURES[f]) : false);
   a.nova = !!all || (cleared ? CHAPTERS.filter(c => !c.extra).flatMap(c => c.stages).every(cleared) : false); // 全作戦クリア後（第5章は含めない）
+  a.infinite = !!all || (cleared ? !!cleared(ABYSS_UNLOCK) : false); // OMEGA ABYSS を初めて倒した作戦のクリア後
   return a;
 }
-const ALLOW_ALL = (() => { const a = { nova: true }; for (const f in FEATURES) a[f] = true; return a; })();
-function bodyAllowed(S, b) { const A = S.allow; return A['tier_' + b.tier] && (FEATURES[b.id] ? A[b.id] : true); }
+const ABYSS_UNLOCK = 'y1';
+const ALLOW_ALL = (() => { const a = { nova: true, infinite: true }; for (const f in FEATURES) a[f] = true; return a; })();
+function bodyAllowed(S, b) { const A = S.allow; return b.unlock ? !!A[b.unlock] : A['tier_' + b.tier] && (FEATURES[b.id] ? A[b.id] : true); }
 
 // ---------- 章（物語の区切り。作戦は順に並べる。分岐はしない） ----------
 // 語り手は基地の管制AI「アイ」。硬い無線の調子で話す
@@ -674,6 +694,10 @@ const CHAPTERS = [
   { id: 'c5', no: '第5章', title: '追撃', extra: true, unlockBy: 'v4', stages: ['x1', 'x2', 'x3', 'x4'],
     intro: ['指揮官ユニット、任務継続を受諾。', 'OMEGA原型の後退経路を解析した。追跡は、可能。', '深淵へ、追撃する。'],
     outro: ['OMEGA、全機沈黙。', '侵略者の中枢、停止。裂け目が閉じていく。', '……指揮官ユニット。任務、完了。おつかれさま。'] },
+  // 第6〜8章（エクストラ・高難度）：第5章をすべてクリアで解放
+  { id: 'c6', no: '第6章', title: '深淵の果て', extra: true, unlockBy: ['x1', 'x2', 'x3', 'x4'], stages: ['y1'],
+    intro: ['……閉じかけた裂け目の奥から、新たな反応。', 'これまでのどのOMEGAとも一致しない。', '指揮官ユニット、深淵の果てへ。'],
+    outro: ['OMEGA ABYSS、撃破。', 'しかし、深淵の反応はまだ消えていない。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -780,7 +804,7 @@ function pathPos(P, d, off) {
 
 // ---------- 状態 ----------
 function drawBodies(dc, allow) {
-  const out = [], ok = b => !allow || (allow['tier_' + b.tier] && (FEATURES[b.id] ? allow[b.id] : true));
+  const out = [], ok = b => b.unlock ? !!(allow ? allow[b.unlock] : true) : !allow || (allow['tier_' + b.tier] && (FEATURES[b.id] ? allow[b.id] : true));
   for (const tier in dc) out.push(...shuffle(BODIES.filter(b => b.tier === tier && ok(b))).slice(0, dc[tier]));
   if (!out.length) out.push(...shuffle(BODIES.filter(b => b.tier === 'low')).slice(0, 3));
   return out.sort((a, b) => a.cost - b.cost);
@@ -1176,6 +1200,92 @@ function dirName(S, p) {
   const dx = p[0] - S.st.base.x, dz = p[1] - S.st.base.z, a = Math.atan2(dx, -dz) * 180 / Math.PI;
   return ['北', '北東', '東', '南東', '南', '南西', '西', '北西'][((Math.round(a / 45) % 8) + 8) % 8];
 }
+// ---------- OMEGA ABYSS：INFINITE SHOT 3D II の弾幕を、上から見た平面に置き換えたもの ----------
+// 拠点のまわりを遠巻きに回りながら、技を順に出す。HPが2/3・1/3を切ると技が増える。狙うのは拠点の方向だけで、ロボットは狙わない
+const ABYSS = {
+  hover: 17, orbit: .07, v: 5.5, dmg: 8, homeMul: .15, maxShots: 1400, // homeMul：拠点に当たったときの倍率（拠点はもともと敵の弾を0.4倍で受けるので、その上にさらに掛ける）
+  moves: [['ring', 'spiral', 'net', 'fan', 'plunge'], ['pinwheel', 'stopgo', 'splitRain', 'sweep', 'net', 'plunge'], ['pull', 'pinwheel', 'cross', 'splitRain', 'stopgo', 'netFast', 'plunge']],
+  label: { net: '弾の輪：すき間を探せ', netFast: '連続の輪：すき間から次のすき間へ', pinwheel: '四重うずまき', splitRain: '炸裂弾の雨', stopgo: '止まる弾：止まった後、拠点のほうへ散る', sweep: 'なぎ払い', cross: '二方向なぎ払い', pull: '引き寄せ：ロボットが吸い寄せられる', plunge: 'OMEGA ABYSS が拠点へ迫る' },
+};
+function abShot(S, e, a, v, o) {
+  if (S.shots.length > ABYSS.maxShots) return;
+  S.shots.push(Object.assign({ id: S.nid++, team: 'e', x: e.x, z: e.z, vx: Math.sin(a) * v, vz: Math.cos(a) * v, dmg: ABYSS.dmg * (S.st.dmgMul || 1), life: 9, r: .3, pierce: 0, hits: [], dan: true }, o));
+}
+function abRing(S, e, n, rot, v, o) { for (let i = 0; i < n; i++) abShot(S, e, rot + i * Math.PI * 2 / n, v, o); }
+function updAbyss(S, e, dt) {
+  const H = S.home, aB = Math.atan2(H.x - e.x, H.z - e.z), v = ABYSS.v;
+  e.age = (e.age || 0) + dt; e.t1 = (e.t1 || 0) - dt;
+  if (e.oa == null) { e.oa = Math.atan2(e.x - H.x, e.z - H.z); e.odir = Math.random() < .5 ? 1 : -1; e.ph = 1; e.ci = 0; e.tele = 1.5; e.seen = {}; }
+  // 段階：HPが2/3・1/3を切ると技が増える
+  const ph = e.hp > e.maxHp * 2 / 3 ? 1 : e.hp > e.maxHp / 3 ? 2 : 3;
+  if (ph > e.ph) { e.ph = ph; e.mv = null; e.tele = 1.2; e.plunge = null; S.fx.push({ type: 'abyssPhase', x: e.x, z: e.z, n: ph }); say(S, ph === 2 ? '⚠ OMEGA ABYSS：深淵が深まる' : '⚠ OMEGA ABYSS：最後のあがき', 'bad'); }
+  // 移動：拠点のまわりを遠巻きに回る。迫る技の間は拠点へ寄る
+  const want = e.plunge === 'in' || e.plunge === 'hold' ? 6.5 : ABYSS.hover;
+  if (!e.plunge || e.plunge === 'out') { e.oa += ABYSS.orbit * e.odir * dt; if (Math.random() < dt * .03) e.odir *= -1; }
+  const tx = H.x + Math.sin(e.oa) * want, tz = H.z + Math.cos(e.oa) * want, dx = tx - e.x, dz = tz - e.z, dd = Math.hypot(dx, dz);
+  const sp = e.def.speed * (e.plunge ? 2 : 1) * (e.slowT > 0 ? .5 : 1);
+  if (dd > .05) { const m = Math.min(dd, sp * dt); e.x += dx / dd * m; e.z += dz / dd * m; }
+  e.face = aB;
+  if (e.plunge === 'in' && dd < .4) { e.plunge = 'hold'; e.pt = 0; }
+  if (e.plunge === 'out' && dd < .6) { e.plunge = null; e.mv = null; e.tele = .8; }
+  // 技
+  if (!e.mv) {
+    if (e.tele > 0) { e.tele -= dt; return; }
+    const list = ABYSS.moves[e.ph - 1], k = list[e.ci++ % list.length];
+    e.mv = { k, t: 0, n: 0, s: {} }; e.t1 = 0;
+    if (ABYSS.label[k] && !e.seen[k]) { e.seen[k] = 1; say(S, '⚠ ' + ABYSS.label[k], 'warn'); }
+  }
+  const m = e.mv, st = m.s; m.t += dt;
+  let done = false;
+  switch (m.k) {
+    case 'ring': if (e.t1 <= 0) { abRing(S, e, 16, e.age + m.n * .2, v * .75); e.t1 = 1.2; m.n++; } done = m.t > 3.8; break;
+    case 'fan': if (e.t1 <= 0) { for (let i = -3; i <= 3; i++) abShot(S, e, aB + i * .14, v * .9); e.t1 = 1.1; m.n++; } if (m.n === 2 && !st.r) { st.r = 1; abRing(S, e, 12, e.age, v * .7); } done = m.t > 3.6; break;
+    case 'spiral': if (e.t1 <= 0) { abRing(S, e, 3, e.age * 2.6, v * .7); e.t1 = .12; } done = m.t > 4.2; break;
+    case 'pinwheel': if (e.t1 <= 0) { for (let q = 0; q < 4; q++) { const sg = q % 2 ? -1 : 1; abShot(S, e, e.age * 1.8 * sg + q * Math.PI / 2, v * .72, { curl: .35 * sg }); } e.t1 = .14; } done = m.t > 4.4; break;
+    case 'net': case 'netFast': {
+      // すき間がひとつだけある弾の輪。次の輪のすき間は別の向きにある
+      const fast = m.k === 'netFast', cnt = fast ? 4 : 3, gap = fast ? 1.15 : 1.5;
+      if (m.n < cnt && m.t >= m.n * gap) {
+        let ga; do { ga = Math.random() * Math.PI * 2; } while (st.ga != null && Math.abs(Math.atan2(Math.sin(ga - st.ga), Math.cos(ga - st.ga))) < 1);
+        st.ga = ga; const n = 44;
+        for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n, d = Math.atan2(Math.sin(a - ga), Math.cos(a - ga)); if (Math.abs(d) < .32) continue; abShot(S, e, a, v * (fast ? .62 : .55)); }
+        m.n++;
+      }
+      done = m.t > (fast ? 5.4 : 4.8); break;
+    }
+    case 'stopgo':
+      // 輪が飛んで止まり、そのあと一斉に拠点へ向かう
+      if (m.n < (e.ph >= 3 ? 3 : 2) && m.t >= m.n * 1.3) { abRing(S, e, e.ph >= 3 ? 18 : 14, Math.random() * 6, v * .8, { stopAt: .9, hold: .55, goSp: v * 1.05, age: 0 }); m.n++; }
+      done = m.t > 4.2; break;
+    case 'splitRain':
+      // 大きな弾が拠点のまわりの適当な場所まで飛び、そこで弾の輪になる
+      if (m.n < 6 && e.t1 <= 0) {
+        const tx2 = H.x + (Math.random() - .5) * 18, tz2 = H.z + (Math.random() - .5) * 18, a = Math.atan2(tx2 - e.x, tz2 - e.z), d = Math.hypot(tx2 - e.x, tz2 - e.z);
+        abShot(S, e, a, v * .6, { r: .7, life: d / (v * .6), burst: 12 }); e.t1 = .65; m.n++;
+      }
+      done = m.t > 4.4; break;
+    case 'sweep': case 'cross': {
+      // 拠点の方向をなぎ払う弾の列（予告のあと1.3秒）
+      const run = (t0, dir) => { const k = 'w' + t0 + dir, a = (m.t - t0 - .8) / 1.3; if (m.t >= t0 && !st[k]) { st[k] = { cd: 0 }; S.fx.push({ type: 'sweepWarn', x: e.x, z: e.z, a: aB }); } if (st[k] && a >= 0 && a <= 1) { st[k].cd -= dt; if (st[k].cd <= 0) { abShot(S, e, aB + dir * (-.75 + 1.5 * a), v * .95); st[k].cd = .045; } } };
+      if (m.k === 'cross') { run(0, 1); run(0, -1); run(2.4, 1); run(2.4, -1); done = m.t > 4.8; } else { run(0, 1); run(2.3, -1); done = m.t > 4.6; }
+      break;
+    }
+    case 'pull':
+      // ロボットを引き寄せながら、ゆっくり回る弾
+      if (m.t > .6) for (const r of S.robots) { const ddx = e.x - r.x, ddz = e.z - r.z, d = Math.hypot(ddx, ddz); if (d > 3 && d < 30) { const pw = Math.min(d - 3, 2.2 * dt); r.x += ddx / d * pw; r.z += ddz / d * pw; } }
+      if (e.t1 <= 0) { abRing(S, e, 4, e.age * 2, v * .65); e.t1 = .16; }
+      done = m.t > 4.6; break;
+    case 'plunge':
+      // 拠点へ迫り、近くで弾の輪を撃ってから戻る（近づいたときが攻めどき）
+      if (!e.plunge) { e.plunge = 'warn'; e.pt = 0; S.fx.push({ type: 'boss', x: e.x, z: e.z, final: true, name: 'OMEGA ABYSS' }); }
+      e.pt += dt;
+      if (e.plunge === 'warn' && e.pt > 1) e.plunge = 'in';
+      if (e.plunge === 'hold') { if (e.t1 <= 0) { abRing(S, e, 10 + 2 * e.ph, e.age, v * .6); e.t1 = 1.3; } if (e.pt > 4.5) e.plunge = 'out'; }
+      return;
+  }
+  if (done) { e.mv = null; e.tele = e.ph >= 2 ? .55 : .8; }
+}
+
 function goAlongPath(S, e, dt, speed) {
   speed *= CFG.enemySpeedMul;
   if (e.slowT > 0) speed *= .5;
@@ -1215,6 +1325,7 @@ function updEnemy(S, e, dt) {
   if (def.aura) for (const o of S.enemies) if (o !== e && !o.dead && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.aura.range ** 2) o.auraT = .25;
   if (def.warp && e.state === 'path') { e.warpT -= dt; if (e.warpT <= 0) { e.warpT = def.warp.every; const fx0 = { x: e.x, z: e.z }; e.d = Math.min(S.paths[e.pi].len - 1, e.d + def.warp.dist); const p = pathPos(S.paths[e.pi], e.d, e.off); e.x = p.x; e.z = p.z; S.fx.push({ type: 'warp', x: fx0.x, z: fx0.z, x2: e.x, z2: e.z }); } }
   if (def.final) omegaPhase(S, e);
+  if (def.abyss) return updAbyss(S, e, dt);
   // 回復ドローン：周りの敵を回復
   if (def.heal) {
     for (const o of S.enemies) if (o !== e && !o.dead && o.hp < o.maxHp && (o.x - e.x) ** 2 + (o.z - e.z) ** 2 <= def.heal.range ** 2) o.hp = Math.min(o.maxHp, o.hp + def.heal.hps * dt);
@@ -1379,7 +1490,12 @@ function updShots(S, dt) {
       let da = want - a; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
       const na = a + Math.max(-s.homing * dt, Math.min(s.homing * dt, da)); s.vx = Math.sin(na) * sp; s.vz = Math.cos(na) * sp;
     }
+    if (s.dan) { // 弾幕の弾：曲がる・止まってから拠点へ向かう
+      if (s.curl) { const a = Math.atan2(s.vx, s.vz) + s.curl * dt, sp = Math.hypot(s.vx, s.vz); s.vx = Math.sin(a) * sp; s.vz = Math.cos(a) * sp; }
+      if (s.stopAt != null && !s.went) { s.age += dt; if (s.age >= s.stopAt && !s.held) { s.held = 1; s.vx = s.vz = 0; } if (s.age >= s.stopAt + s.hold) { s.went = 1; const a = Math.atan2(S.home.x - s.x, S.home.z - s.z) + (Math.random() - .5) * 1.1; /* 拠点のほうへ、ばらけて向かう */ s.vx = Math.sin(a) * s.goSp; s.vz = Math.cos(a) * s.goSp; s.life = 9; } }
+    }
     s.x += s.vx * dt; s.z += s.vz * dt; s.life -= dt;
+    if (s.life <= 0 && s.burst) { for (let i = 0; i < s.burst; i++) { const a = i * Math.PI * 2 / s.burst; if (S.shots.length < ABYSS.maxShots) S.shots.push({ id: S.nid++, team: 'e', x: s.x, z: s.z, vx: Math.sin(a) * ABYSS.v * .55, vz: Math.cos(a) * ABYSS.v * .55, dmg: s.dmg, life: 6, r: .3, pierce: 0, hits: [], dan: true }); } S.fx.push({ type: 'splash', x: s.x, z: s.z, rad: 1.2 }); }
     if (s.life <= 0) { s.dead = true; if (s.blast) blast(S, s.x, s.z, s.blast, s.dmg, s.owner, s.team, s.team === 'p' && !s.ff); continue; }
     if (s.blast) { // ミサイル：安全距離を飛ぶまでは何にも当たらない。その後は当たった所で爆発
       s.arm -= dt; if (s.arm > 0) continue;
@@ -1418,7 +1534,9 @@ function updShots(S, dt) {
         if (r.dead) continue;
         if ((r.x - s.x) ** 2 + (r.z - s.z) ** 2 < (CFG.robotR + s.r) ** 2) { hurtRobot(S, r, s.dmg, null); s.dead = true; break; }
       }
-      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg, s.x, s.z); s.dead = true; }
+      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg * (s.dan ? ABYSS.homeMul / CFG.homeShotMul : 1), s.x, s.z); s.dead = true; }
+      const C = S.convoy; // 弾幕は補給車にも当たる
+      if (!s.dead && s.dan && C && !C.done && C.hp > 0 && (C.x - s.x) ** 2 + (C.z - s.z) ** 2 < (1.1 + s.r) ** 2) { C.hp -= s.dmg; s.dead = true; S.fx.push({ type: 'basehit', x: s.x, z: s.z }); }
     }
   }
 }
@@ -1519,6 +1637,6 @@ function goalText(st) {
   return Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + ' ' + (st.holdWhy || '拠点を守り抜く');
 }
 
-return { EW, SPECIAL, ETAB, CUSTOM_AMOUNT, customGoals, setCustom, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
+return { ABYSS, EW, SPECIAL, ETAB, CUSTOM_AMOUNT, customGoals, setCustom, hardStage, HARD, FEATURES, FEATURE_INFO, allowFor, weaponAllowed, bodyAllowed, waveTotal, CHAPTERS, setPilot, setLock, WORKS, workCost, workCheck, orderWork, queueCount, CFG, TIER, PLUS, BODIES, WEAPONS, ENEMIES, STAGES, UNLOCKS, checkUnlocks, pathPos, dirName, newState, step, buildCost, buildCheck, orderBuild, buyLine, moveRobot, activeCount, goalText };
 })();
 /*SIM-END*/
