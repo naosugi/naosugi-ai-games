@@ -692,6 +692,46 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     paths: radialPaths(6, 34, Math.PI / 6, .3), pathOpen: { 4: 300, 5: 600 },
     waves: [[25, 'abyss', 1, 0, 0]].concat(deep(1060, .8)),
   });
+  // ---------- スペシャル（変わり種）----------
+  // 少ないポイントで始め、同じ雑魚だけが出続ける。倒して稼いだポイントで機体を増やす
+  STAGES.push({
+    id: 'sp1', name: 'SP-1', sub: '千体斬り', goal: 'clear', time: 300, startPoints: 60, wide: true,
+    brief: ['群体だけが、ひたすら押し寄せる。', '手持ちは少ない。倒して稼ぎ、増やせ。'], win: '群体、全滅。……数えきれないほど倒した。',
+    intro: '出てくるのは群体だけ。最初のポイントは安い機体1機ぶん。倒して稼いだポイントで機体を増やし、3分間押し寄せる群れをすべて倒せば勝ち。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, 0, 'A', 'p'], [9, 0, 'B', 'p']],
+    paths: radialPaths(4, 28, Math.PI / 4, .3),
+    waves: waveGen([['swarm', 4, 180, 5, 16, .06]]),
+  });
+  STAGES.push({
+    id: 'sp2', name: 'SP-2', sub: '鉄の行列', goal: 'clear', time: 360, startPoints: 60, wide: true,
+    brief: ['装甲型だけの、長い行列。', '一体ずつが硬い。重い一撃で崩せ。'], win: '装甲型、全滅。行列は止まった。',
+    intro: '出てくるのは装甲型だけ。最初のポイントは安い機体1機ぶん。倒して稼いだポイントで機体を増やし、3分半続く行列をすべて倒せば勝ち。',
+    map: { minX: -26, maxX: 26, minZ: -40, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.4 },
+    outposts: [[-9, 18, 'A', 'p'], [9, 18, 'B', 'p']],
+    paths: [[[-20, -38], [-20, -10], [-6, -10], [-6, 10], [-3, 10], [-3, 26], [0, 26]], [[20, -38], [20, -20], [6, -20], [6, 4], [3, 4], [3, 26], [0, 26]]],
+    waves: waveGen([['armor', 4, 210, 7, 2, 1.6]]),
+  });
+  // 模倣機と OMEGA原型だけ。ロボット同士の撃ち合い
+  STAGES.push({
+    id: 'sp3', name: 'SP-3', sub: 'ロボまみれ', goal: 'clear', time: 600, startPoints: 900, wide: true,
+    brief: ['敵はすべて、ロボット。', '模倣機の群れと、OMEGA原型。'], win: '敵ロボット、全機沈黙。',
+    intro: '出てくるのは模倣機とOMEGA原型だけ。模倣機は20秒ごとに次々来て、最後にOMEGA原型が2体。すべて倒せば勝ち。',
+    map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
+    paths: radialPaths(4, 32, 0, .3),
+    waves: Array.from({ length: 10 }, (_, i) => [20 + i * 20, 'boss', 1, 0, '*']).concat([[240, 'omega', 1, 0, 0], [250, 'omega', 1, 0, 2]]),
+  });
+  // OMEGA ABYSS 5体の2分耐久（20秒ごとに1体ずつ増える。いつもより遠巻きに回る）
+  STAGES.push({
+    id: 'sp4', name: 'SP-4', sub: '深淵の五重奏', goal: 'time', time: 120, startPoints: 900, wide: true, dark: 9, abyssHover: 22, abyssHomeMul: .08, holdWhy: '弾幕の中で拠点を守り抜く',
+    brief: ['OMEGA ABYSS、5体。', '倒す必要はない。2分間、拠点を守り抜け。'], win: '2分経過。……弾幕が、やんだ。',
+    intro: '2分間、拠点を守り抜けば勝ち。OMEGA ABYSS が20秒ごとに1体ずつ増え、最後は5体。ロボットを盾に、壁と修理で弾をしのげ。',
+    map: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
+    paths: radialPaths(5, 36, 0, .3),
+    waves: [0, 1, 2, 3, 4].map(i => [3 + i * 20, 'abyss', 1, 0, i]),
+  });
   // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
   STAGES.push({
     id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
@@ -841,6 +881,9 @@ const CHAPTERS = [
   { id: 'c8', no: '第8章', title: '終焉', extra: true, unlockBy: ['z4'], stages: ['q1', 'q2', 'q3', 'q4'],
     intro: ['深淵の底。', 'すべての反応が、ひとつに重なる。', '指揮官ユニット、最後の作戦だ。'],
     outro: ['OMEGA ABYSS、消滅。', '深淵が、静かになった。', '……ありがとう、指揮官ユニット。あなたが最後まで、ここにいてくれた。'] },
+  // スペシャル：第8章すべてクリアで解放。ご褒美なし（記録だけ）
+  { id: 'c9', no: 'スペシャル', title: '変わり種', extra: true, unlockBy: ['q1', 'q2', 'q3', 'q4'], stages: ['sp1', 'sp2', 'sp3', 'sp4'],
+    intro: ['訓練用の特殊作戦データを受信。', '本番とは違うルールで、腕を試せ。'], outro: ['特殊作戦、すべて完了。', '……記録は、あなたのものだ。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -1678,7 +1721,7 @@ function updShots(S, dt) {
         if (r.dead) continue;
         if ((r.x - s.x) ** 2 + (r.z - s.z) ** 2 < (CFG.robotR + s.r) ** 2) { hurtRobot(S, r, s.dmg, null); s.dead = true; break; }
       }
-      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg * (s.dan ? ABYSS.homeMul / CFG.homeShotMul : 1), s.x, s.z); s.dead = true; }
+      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg * (s.dan ? (S.st.abyssHomeMul || ABYSS.homeMul) / CFG.homeShotMul : 1), s.x, s.z); s.dead = true; }
       const C = S.convoy; // 弾幕は補給車にも当たる
       if (!s.dead && s.dan && C && !C.done && C.hp > 0 && (C.x - s.x) ** 2 + (C.z - s.z) ** 2 < (1.1 + s.r) ** 2) { C.hp -= s.dmg * ABYSS.convoyMul; s.dead = true; S.fx.push({ type: 'basehit', x: s.x, z: s.z }); }
     }
