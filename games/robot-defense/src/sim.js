@@ -693,24 +693,37 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     waves: [[25, 'abyss', 1, 0, 0]].concat(deep(1060, .8)),
   });
   // ---------- スペシャル（変わり種）----------
-  // 少ないポイントで始め、同じ雑魚だけが出続ける。倒して稼いだポイントで機体を増やす
+  // 少ないポイントで始め、20秒ごとに雑魚の種類が切り替わる（SP-1は群れの系統、SP-2は硬い系統）。2周目は数が増える
+  // seq：[種類, 何秒ごと, 1回の数, 出る間隔]。spSeg が20秒ずつの出現表と「次は◯◯」の予告を作る
+  const spSeg = (seq, extra2) => {
+    const waves = [], calls = [], seg = 20;
+    for (let c = 0; c < 2; c++) seq.forEach(([type, every, n, gap], i) => {
+      const t0 = 4 + (c * seq.length + i) * seg, k = c ? 1.5 : 1;
+      waves.push(...waveGen([[type, t0, t0 + seg - 2, every, Math.max(1, Math.round(n * k)), gap]]));
+      if (c && extra2) waves.push([t0 + 6, extra2, 1, 0, '*']);
+      if (t0 > 4) calls.push([t0 - 3, '⚠ まもなく ' + ENEMIES[type].name + (c && extra2 ? '（' + ENEMIES[extra2].name + 'つき）' : '')]);
+    });
+    return { waves, calls, order: seq.map(q => ENEMIES[q[0]].name).join(' → ') };
+  };
+  const SP1 = spSeg([['swarm', 5, 16, .06], ['swarmFast', 5, 14, .06], ['swarmBomb', 6, 12, .08], ['swarmFly', 6, 14, .08], ['swarmHeavy', 6, 6, .2]]);
   STAGES.push({
-    id: 'sp1', name: 'SP-1', sub: '千体斬り', goal: 'clear', time: 300, startPoints: 60, wide: true,
-    brief: ['群体だけが、ひたすら押し寄せる。', '手持ちは少ない。倒して稼ぎ、増やせ。'], win: '群体、全滅。……数えきれないほど倒した。',
-    intro: '出てくるのは群体だけ。最初のポイントは安い機体1機ぶん。倒して稼いだポイントで機体を増やし、3分間押し寄せる群れをすべて倒せば勝ち。',
+    id: 'sp1', name: 'SP-1', sub: '千体斬り', goal: 'clear', time: 320, startPoints: 60, wide: true, calls: SP1.calls,
+    brief: ['群れだけが、ひたすら押し寄せる。20秒ごとに群れの種類が変わる。', '手持ちは少ない。倒して稼ぎ、増やせ。'], win: '群れ、全滅。……数えきれないほど倒した。',
+    intro: '出てくるのは群れだけ。20秒ごとに種類が変わる（' + SP1.order + '、2周目は数が増える）。最初のポイントは安い機体1機ぶん。倒して稼いで機体を増やし、すべて倒せば勝ち。',
     map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
     outposts: [[-9, 0, 'A', 'p'], [9, 0, 'B', 'p']],
     paths: radialPaths(4, 28, Math.PI / 4, .3),
-    waves: waveGen([['swarm', 4, 180, 5, 16, .06]]),
+    waves: SP1.waves,
   });
+  const SP2 = spSeg([['armor', 7, 2, 1.6], ['shield', 6, 2, 1.2], ['splitter', 6, 2, 1], ['dasher', 5, 3, 1], ['warper', 6, 2, 1]], 'aegis');
   STAGES.push({
-    id: 'sp2', name: 'SP-2', sub: '鉄の行列', goal: 'clear', time: 360, startPoints: 60, wide: true,
-    brief: ['装甲型だけの、長い行列。', '一体ずつが硬い。重い一撃で崩せ。'], win: '装甲型、全滅。行列は止まった。',
-    intro: '出てくるのは装甲型だけ。最初のポイントは安い機体1機ぶん。倒して稼いだポイントで機体を増やし、3分半続く行列をすべて倒せば勝ち。',
+    id: 'sp2', name: 'SP-2', sub: '鉄の行列', goal: 'clear', time: 380, startPoints: 60, wide: true, calls: SP2.calls,
+    brief: ['硬い敵だけの、長い行列。20秒ごとに種類が変わる。', '一体ずつが硬い。重い一撃で崩せ。'], win: '行列、全滅。……止まった。',
+    intro: '出てくるのは硬い敵だけ。20秒ごとに種類が変わる（' + SP2.order + '、2周目は数が増え、障壁体もつく）。最初のポイントは安い機体1機ぶん。倒して稼いで機体を増やし、すべて倒せば勝ち。',
     map: { minX: -26, maxX: 26, minZ: -40, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.4 },
     outposts: [[-9, 18, 'A', 'p'], [9, 18, 'B', 'p']],
     paths: [[[-20, -38], [-20, -10], [-6, -10], [-6, 10], [-3, 10], [-3, 26], [0, 26]], [[20, -38], [20, -20], [6, -20], [6, 4], [3, 4], [3, 26], [0, 26]]],
-    waves: waveGen([['armor', 4, 210, 7, 2, 1.6]]),
+    waves: SP2.waves,
   });
   // 模倣機と OMEGA原型だけ。ロボット同士の撃ち合い
   STAGES.push({
@@ -1772,6 +1785,8 @@ function step(S, dt) {
   if (S.over) return;
   S.t += dt; S.warnT -= dt; S.baseWarnT -= dt;
   if (S.st.echo) updEcho(S, dt);
+  // 作戦ごとの予告（calls：[秒, 文]）
+  if (S.st.calls) { S.callIdx = S.callIdx || 0; while (S.callIdx < S.st.calls.length && S.st.calls[S.callIdx][0] <= S.t) say(S, S.st.calls[S.callIdx++][1], 'warn'); }
   const W = S.waves;
   while (S.waveIdx < W.length && W[S.waveIdx][0] <= S.t) {
     const [, type, n, gap, path] = W[S.waveIdx++];
