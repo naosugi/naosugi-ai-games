@@ -12,7 +12,7 @@
 1. 置き場所: サンプルは `games/<id>/index.html`、イベントで作られたゲームは `events/<イベント>/games/<id>/index.html`。`<id>` は英小文字とハイフン（例: `keyboard-driver`）
 2. 同じフォルダに `thumb.jpg` を置く（16:9。既存は 960×540 前後）
 3. その一覧の `games.json`（`samples/games.json` など）の `games` の末尾に1件追加する
-4. `python3 tools/build.py` を実行し、QRコード画像を作る（一覧の `index.html` `print.html` はこのスクリプトが書き出すので直接編集しない）
+4. `python3 tools/build.py` を実行し、QRコード画像を作る（一覧の `index.html` `print.html` はこのスクリプトが書き出すので直接編集しない。各ゲームの `index.html` の `<!-- OGP -->` 〜 `<!-- /OGP -->`（SNS共有用のタグ）もこのスクリプトが書き換える）
 5. サンプルなら `README.md` の「収録ゲーム（サンプル）」の表に1行追加する
 
 ## index.html
