@@ -6667,6 +6667,10 @@ const M = {
   boss: lam(0xd8283f, 0x4a0a14), bossDark: lam(0x6a1020, 0x200006), bossHead: lam(0xff9a9a, 0x5a1a1a),
   ebase: lam(0x8a1d3a, 0x2a0610), ebaseTop: lam(0xff4d6d, 0x5a0f1e),
   white: new T.MeshBasicMaterial({ color: 0xffffff }),
+  // インフィニット（INFINITE SHOT 3D II の自機の色）。同梱の three.js に Phong はないので Lambert で代用
+  infBody: new T.MeshLambertMaterial({ color: 0x2fb5c9, emissive: new T.Color(0xb9f8ff).multiplyScalar(.25), flatShading: true }),
+  infWing: new T.MeshLambertMaterial({ color: 0x1b6e8c, emissive: new T.Color(0x65f6ff).multiplyScalar(.25), flatShading: true, side: T.DoubleSide }),
+  infEdge: new T.LineBasicMaterial({ color: 0x9ff6ff }), infFlame: new T.MeshBasicMaterial({ color: 0x7ff8ff, transparent: true, opacity: .9 }),
   abyss: lam(0xb05cff, 0x5a1a8a), abyssFill: lam(0x2a0a3f, 0x14051f), abyssRed: lam(0xff3b8a, 0x7a0a3a), abyssFillRed: lam(0x3f0a1f, 0x1f0510), // 赤：8-4の最終形態
   omega: lam(0x5a1a8a, 0x2a0a40), omegaHead: lam(0xd28cff, 0x5a2a8a), omegaDark: lam(0x1a0828, 0x0a0214), visorO: new T.MeshBasicMaterial({ color: 0xff3bd0 }),
   mimic: lam(0xc8324a, 0x3a0a14), mimicHead: lam(0xff9aa8, 0x4a1a20),
@@ -6824,9 +6828,35 @@ function mechMesh(weaponIds, sc, mats) {
   g.add(inner);
   return { g, inner, body };
 }
+// インフィニット：INFINITE SHOT 3D II の自機（戦闘機）の形。宙に浮き、武器は翼の下の小さな筒で表す（色だけで武器の種類を見分ける）
+const INF_GEO = (() => {
+  // INFINITE SHOT 3D II と同じ頂点。向こうは機首が -z、こちらは +z が前なので z を反転し、面の向きも裏返す
+  const flip = (a) => a.map((v, i) => i % 3 === 2 ? -v : v);
+  const body = new T.BufferGeometry(); body.setAttribute('position', new T.Float32BufferAttribute(flip([0, 0, -2, .55, 0, .6, -.55, 0, .6, 0, .45, .3, 0, -.25, .5]), 3));
+  body.setIndex([0, 1, 3, 0, 3, 2, 0, 4, 1, 0, 2, 4, 1, 2, 3, 1, 4, 2]); body.computeVertexNormals();
+  const wing = new T.BufferGeometry(); wing.setAttribute('position', new T.Float32BufferAttribute(flip([0, 0, -.6, 1.9, -.15, .75, 0, 0, .7, 0, 0, -.6, 0, 0, .7, -1.9, -.15, .75]), 3)); wing.computeVertexNormals();
+  return { body, wing, bodyE: new T.EdgesGeometry(body), wingE: new T.EdgesGeometry(wing) };
+})();
+const POD_MAT = { blaster: 'blaster', spread: 'spread', missile: 'missile', laser: 'laser', heavy: 'heavy', homing: 'homing', breaker: 'breaker', bomb: 'bomb', nova: 'novaCore' };
+function fighterMesh(weaponIds, sc) {
+  const g = new T.Group(), inner = new T.Group(), craft = new T.Group();
+  g.add(shadowDisc(sc * 1.1));
+  const body = new T.Mesh(INF_GEO.body, M.infBody); body.add(new T.LineSegments(INF_GEO.bodyE, M.infEdge));
+  const wing = new T.Mesh(INF_GEO.wing, M.infWing); wing.add(new T.LineSegments(INF_GEO.wingE, M.infEdge));
+  const flame = new T.Mesh(G.sph, M.infFlame); flame.scale.set(.32, .22, .6); flame.position.z = -.9;
+  craft.add(body, wing, flame);
+  weaponIds.slice(0, 4).forEach((id0, i) => {
+    const id = id0 === 'missile' || id0 === 'nova' ? id0 : (WEAPONS[id0] && WEAPONS[id0].base) || id0;
+    const pod = new T.Mesh(G.cyl, M[POD_MAT[id]] || M.blaster); pod.scale.set(.13, .7, .13); pod.rotation.x = Math.PI / 2;
+    pod.position.set((i % 2 ? -1 : 1) * (.55 + Math.floor(i / 2) * .45), -.2, .05); craft.add(pod);
+  });
+  craft.position.y = .95; craft.scale.setScalar(.62);
+  inner.add(craft); inner.scale.setScalar(sc); g.add(inner);
+  return { g, inner, body, flame };
+}
 function roboMesh(r) {
-  const sc = TIER[r.body.tier].scale * 1.45;
-  const { g, inner, body } = mechMesh(r.weapons.map(w => w.id), sc, { body: M.robo, head: M.head, dark: M.roboDark });
+  const sc = TIER[r.body.tier].scale * 1.45, isF = r.body.id === 'infinite';
+  const { g, inner, body, flame } = isF ? fighterMesh(r.weapons.map(w => w.id), sc) : mechMesh(r.weapons.map(w => w.id), sc, { body: M.robo, head: M.head, dark: M.roboDark });
   const ring = new T.Mesh(G.ring, M.selRing); ring.rotation.x = -Math.PI / 2; ring.position.y = .05; ring.scale.setScalar(sc * 1.05); ring.visible = false;
   const R = Math.max(...r.weapons.map(w => (w.def.range || w.def.trigger || 1) * r.rangeMul));
   const range = new T.Mesh(new T.RingGeometry(R - .08, R, 56), M.rangeRing); range.rotation.x = -Math.PI / 2; range.position.y = .04; range.visible = false; g.add(range);
@@ -6834,7 +6864,7 @@ function roboMesh(r) {
   const beams = r.weapons.map(w => { if (w.def.type !== 'beam') return null; return Array.from({ length: w.def.beams || 1 }, () => { const b = new T.Mesh(G.box, M.beam); b.visible = false; return b; }); });
   let bubble = null;
   if (r.maxShield) { bubble = new T.Mesh(G.sph, M.bubble); bubble.scale.setScalar(2.1 * sc); bubble.position.y = .7 * sc; g.add(bubble); }
-  return { obj: g, inner, body, ring, range, bubble, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: M.robo, beams };
+  return { obj: g, inner, body, ring, range, bubble, flame, bar: makeBar(1.2 * sc, M.barBlue), barY: 1.55 * sc, line: makeLine(M.line), baseMat: isF ? M.infBody : M.robo, beams };
 }
 function enemyMesh(e) {
   // OMEGA ABYSS：INFINITE SHOT 3D II と同じ、紫のトゲ24本の星。宙に浮いてゆっくり回る
@@ -6974,8 +7004,9 @@ function sync(dt) {
     v.obj.rotation.y = lerpAngle(v.obj.rotation.y, r.face, k);
     if (pendingDrop.has(r.id)) { pendingDrop.delete(r.id); v.dropT = .45; }
     if (v.dropT > 0) v.dropT -= dt;
-    v.inner.position.y = (v.dropT > 0 ? (v.dropT / .45) ** 2 * 7 : 0) + (r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0);
-    v.body.material = r.flash > 0 ? M.white : M.robo;
+    v.inner.position.y = (v.dropT > 0 ? (v.dropT / .45) ** 2 * 7 : 0) + (v.flame ? Math.sin(performance.now() / 300) * .08 : r.moving ? Math.abs(Math.sin(performance.now() / 90)) * .06 : 0); // 戦闘機はゆっくり上下に揺れる
+    if (v.flame) v.flame.scale.z = (r.moving ? .9 : .5) * (.8 + Math.random() * .4);
+    v.body.material = r.flash > 0 ? M.white : v.baseMat;
     v.ring.visible = sel === r; v.range.visible = sel === r || pilot === r; v.range.scale.setScalar(pilot === r ? CFG.pilot.range : 1);
     if (v.bubble) { v.bubble.visible = r.shield > 0; v.bubble.scale.setScalar(2.1 * TIER[r.body.tier].scale * 1.45 * (.85 + .15 * r.shield / r.maxShield)); }
     setBar(v.bar, r.x, v.barY, r.z, r.hp / r.maxHp); if (pilot === r) v.bar.visible = false;
