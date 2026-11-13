@@ -5447,6 +5447,59 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     paths: radialPaths(6, 34, Math.PI / 6, .3), pathOpen: { 4: 300, 5: 600 },
     waves: [[25, 'abyss', 1, 0, 0]].concat(deep(1060, .8)),
   });
+  // ---------- スペシャル（変わり種）----------
+  // 少ないポイントで始め、20秒ごとに雑魚の種類が切り替わる（SP-1は群れの系統、SP-2は硬い系統）。2周目は数が増える
+  // seq：[種類, 何秒ごと, 1回の数, 出る間隔]。spSeg が20秒ずつの出現表と「次は◯◯」の予告を作る
+  const spSeg = (seq, extra2) => {
+    const waves = [], calls = [], seg = 20;
+    for (let c = 0; c < 2; c++) seq.forEach(([type, every, n, gap], i) => {
+      const t0 = 4 + (c * seq.length + i) * seg, k = c ? 1.5 : 1;
+      waves.push(...waveGen([[type, t0, t0 + seg - 2, every, Math.max(1, Math.round(n * k)), gap]]));
+      if (c && extra2) waves.push([t0 + 6, extra2, 1, 0, '*']);
+      if (t0 > 4) calls.push([t0 - 3, '⚠ まもなく ' + ENEMIES[type].name + (c && extra2 ? '（' + ENEMIES[extra2].name + 'つき）' : '')]);
+    });
+    return { waves, calls, order: seq.map(q => ENEMIES[q[0]].name).join(' → ') };
+  };
+  const SP1 = spSeg([['swarm', 5, 16, .06], ['swarmFast', 5, 14, .06], ['swarmBomb', 6, 12, .08], ['swarmFly', 6, 14, .08], ['swarmHeavy', 6, 6, .2]]);
+  STAGES.push({
+    id: 'sp1', name: 'SP-1', sub: '千体斬り', goal: 'clear', time: 320, startPoints: 60, wide: true, calls: SP1.calls,
+    brief: ['群れだけが、ひたすら押し寄せる。20秒ごとに群れの種類が変わる。', '手持ちは少ない。倒して稼ぎ、増やせ。'], win: '群れ、全滅。……数えきれないほど倒した。',
+    intro: '出てくるのは群れだけ。20秒ごとに種類が変わる（' + SP1.order + '、2周目は数が増える）。最初のポイントは安い機体1機ぶん。倒して稼いで機体を増やし、すべて倒せば勝ち。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.2 },
+    outposts: [[-9, 0, 'A', 'p'], [9, 0, 'B', 'p']],
+    paths: radialPaths(4, 28, Math.PI / 4, .3),
+    waves: SP1.waves,
+  });
+  const SP2 = spSeg([['armor', 7, 2, 1.6], ['shield', 6, 2, 1.2], ['splitter', 6, 2, 1], ['dasher', 5, 3, 1], ['warper', 6, 2, 1]], 'aegis');
+  STAGES.push({
+    id: 'sp2', name: 'SP-2', sub: '鉄の行列', goal: 'clear', time: 380, startPoints: 60, wide: true, calls: SP2.calls,
+    brief: ['硬い敵だけの、長い行列。20秒ごとに種類が変わる。', '一体ずつが硬い。重い一撃で崩せ。'], win: '行列、全滅。……止まった。',
+    intro: '出てくるのは硬い敵だけ。20秒ごとに種類が変わる（' + SP2.order + '、2周目は数が増え、障壁体もつく）。最初のポイントは安い機体1機ぶん。倒して稼いで機体を増やし、すべて倒せば勝ち。',
+    map: { minX: -26, maxX: 26, minZ: -40, maxZ: 30 }, base: { x: 0, z: 26 }, factory: { x: 2.5, z: 23.5 }, view: { zoom: 2.4 },
+    outposts: [[-9, 18, 'A', 'p'], [9, 18, 'B', 'p']],
+    paths: [[[-20, -38], [-20, -10], [-6, -10], [-6, 10], [-3, 10], [-3, 26], [0, 26]], [[20, -38], [20, -20], [6, -20], [6, 4], [3, 4], [3, 26], [0, 26]]],
+    waves: SP2.waves,
+  });
+  // 模倣機と OMEGA原型だけ。ロボット同士の撃ち合い
+  STAGES.push({
+    id: 'sp3', name: 'SP-3', sub: 'ロボまみれ', goal: 'clear', time: 600, startPoints: 900, wide: true,
+    brief: ['敵はすべて、ロボット。', '模倣機の群れと、OMEGA原型。'], win: '敵ロボット、全機沈黙。',
+    intro: '出てくるのは模倣機とOMEGA原型だけ。模倣機は20秒ごとに次々来て、最後にOMEGA原型が2体。すべて倒せば勝ち。',
+    map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
+    paths: radialPaths(4, 32, 0, .3),
+    waves: Array.from({ length: 10 }, (_, i) => [20 + i * 20, 'boss', 1, 0, '*']).concat([[240, 'omega', 1, 0, 0], [250, 'omega', 1, 0, 2]]),
+  });
+  // OMEGA ABYSS 5体の2分耐久（20秒ごとに1体ずつ増える。いつもより遠巻きに回る）
+  STAGES.push({
+    id: 'sp4', name: 'SP-4', sub: '深淵の五重奏', goal: 'time', time: 120, startPoints: 900, wide: true, dark: 9, abyssHover: 22, abyssHomeMul: .08, holdWhy: '弾幕の中で拠点を守り抜く',
+    brief: ['OMEGA ABYSS、5体。', '倒す必要はない。2分間、拠点を守り抜け。'], win: '2分経過。……弾幕が、やんだ。',
+    intro: '2分間、拠点を守り抜けば勝ち。OMEGA ABYSS が20秒ごとに1体ずつ増え、最後は5体。ロボットを盾に、壁と修理で弾をしのげ。',
+    map: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
+    paths: radialPaths(5, 36, 0, .3),
+    waves: [0, 1, 2, 3, 4].map(i => [3 + i * 20, 'abyss', 1, 0, i]),
+  });
   // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
   STAGES.push({
     id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
@@ -5596,6 +5649,9 @@ const CHAPTERS = [
   { id: 'c8', no: '第8章', title: '終焉', extra: true, unlockBy: ['z4'], stages: ['q1', 'q2', 'q3', 'q4'],
     intro: ['深淵の底。', 'すべての反応が、ひとつに重なる。', '指揮官ユニット、最後の作戦だ。'],
     outro: ['OMEGA ABYSS、消滅。', '深淵が、静かになった。', '……ありがとう、指揮官ユニット。あなたが最後まで、ここにいてくれた。'] },
+  // スペシャル：第8章すべてクリアで解放。ご褒美なし（記録だけ）
+  { id: 'c9', no: 'スペシャル', title: '変わり種', extra: true, unlockBy: ['q1', 'q2', 'q3', 'q4'], stages: ['sp1', 'sp2', 'sp3', 'sp4'],
+    intro: ['訓練用の特殊作戦データを受信。', '本番とは違うルールで、腕を試せ。'], outro: ['特殊作戦、すべて完了。', '……記録は、あなたのものだ。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -6433,7 +6489,7 @@ function updShots(S, dt) {
         if (r.dead) continue;
         if ((r.x - s.x) ** 2 + (r.z - s.z) ** 2 < (CFG.robotR + s.r) ** 2) { hurtRobot(S, r, s.dmg, null); s.dead = true; break; }
       }
-      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg * (s.dan ? ABYSS.homeMul / CFG.homeShotMul : 1), s.x, s.z); s.dead = true; }
+      if (!s.dead && (S.home.x - s.x) ** 2 + (S.home.z - s.z) ** 2 < (S.home.r + s.r) ** 2) { hurtHome(S, s.dmg * (s.dan ? (S.st.abyssHomeMul || ABYSS.homeMul) / CFG.homeShotMul : 1), s.x, s.z); s.dead = true; }
       const C = S.convoy; // 弾幕は補給車にも当たる
       if (!s.dead && s.dan && C && !C.done && C.hp > 0 && (C.x - s.x) ** 2 + (C.z - s.z) ** 2 < (1.1 + s.r) ** 2) { C.hp -= s.dmg * ABYSS.convoyMul; s.dead = true; S.fx.push({ type: 'basehit', x: s.x, z: s.z }); }
     }
@@ -6484,6 +6540,8 @@ function step(S, dt) {
   if (S.over) return;
   S.t += dt; S.warnT -= dt; S.baseWarnT -= dt;
   if (S.st.echo) updEcho(S, dt);
+  // 作戦ごとの予告（calls：[秒, 文]）
+  if (S.st.calls) { S.callIdx = S.callIdx || 0; while (S.callIdx < S.st.calls.length && S.st.calls[S.callIdx][0] <= S.t) say(S, S.st.calls[S.callIdx++][1], 'warn'); }
   const W = S.waves;
   while (S.waveIdx < W.length && W[S.waveIdx][0] <= S.t) {
     const [, type, n, gap, path] = W[S.waveIdx++];
@@ -7687,6 +7745,7 @@ const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
 const chOpen = c => !c.unlockBy || [].concat(c.unlockBy).every(cleared) || !!SAVE.allOpen;
 // エンドレス・ステージ作成：第5章をすべてクリアすると解放
 const C5 = (CH.find(c => c.id === 'c5') || { stages: [] }).stages;
+const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9']); // 深淵（第6〜8章）・スペシャル
 const exDone = () => (C5.length && C5.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
@@ -7732,7 +7791,8 @@ function titleScreen() {
     '<div class="minis"><button class="ghost" id="howBtn">📖 遊び方</button><button class="ghost" id="zkBtn">👾 図鑑</button><button class="ghost" id="rcBtn">📊 記録</button><button class="ghost" id="stBtn">⚙ 設定</button></div>' +
     (ORDER.every(id => SAVE.clear && SAVE.clear[id]) ? '<div class="ver" style="color:var(--gold)">🏆 全作戦クリア　🔥高難度 ' + ORDER.filter(id => SAVE.clearH && SAVE.clearH[id]).length + '/' + ORDER.length + '</div>' : '') +
     (cleared('v4') ? '<div class="ver" style="color:var(--cyan)">第5章 ' + C5.filter(cleared).length + '/' + C5.length + '</div>' : '') +
-    (exDone() && EXO.length > C5.length ? '<div class="ver" style="color:#c77dff">深淵 ' + EXO.filter(id => !C5.includes(id) && cleared(id)).length + '/' + (EXO.length - C5.length) + '</div>' : '') +
+    (exDone() && DEEP.length ? '<div class="ver" style="color:#c77dff">深淵 ' + DEEP.filter(cleared).length + '/' + DEEP.length + '</div>' : '') +
+    (SPS.length && chOpen(chOf(SPS[0])) ? '<div class="ver" style="color:var(--gold)">スペシャル ' + SPS.filter(cleared).length + '/' + SPS.length + '</div>' : '') +
     '</div>', 'hero');
   const nx = nextStage(); $('goBtn').onclick = () => nx ? openStage(nx) : stageSelect(); if ($('selBtn')) $('selBtn').onclick = stageSelect; $('howBtn').onclick = () => howTo(titleScreen);
   if ($('enBtn')) { $('enBtn').onclick = () => { curHard = false; stageDetail('endless'); }; $('crBtn').onclick = creatorScreen; }
@@ -7795,6 +7855,7 @@ function stageDetail(stId) {
   SAVE.loadout = (SAVE.loadout || []).filter(id => open.includes(id)).slice(0, SLOTS);
   const A = allowOf(st.id), rw = A.evolve && !st.special ? UNLOCKS.filter(u => !isOpen(u.id) && RD.FEATURES[u.base] && A[u.base]).filter((u, i, arr) => arr.findIndex(x => x.base === u.base) === i) : [], c = SAVE.clear && SAVE.clear[st.id];
   showOv('<div class="sdh"><span class="sno">' + stageNo(st) + '</span><div><span class="dim">' + esc(st.special ? (st.custom ? 'ステージ作成' : 'エクストラ') : chOf(st.id).no + '「' + chOf(st.id).title + '」　' + st.name) + '</span><h1>' + esc(st.sub) + '</h1></div>' + (c ? '<i class="ok">✓ クリア</i>' : '') + '</div>' +
+    (SPS.includes(st.id) && SAVE.spBest && SAVE.spBest[(curHard ? 'H' : '') + st.id] ? '<div class="goalbox">🏅 自己ベスト' + (curHard ? '（高難度）' : '') + '　' + spRecHTML(st.id, {}, curHard) + '</div>' : '') +
     (st.brief ? commHTML(st.brief) : '') +
     (st.id === 'endless' ? endlessRecHTML() : '') +
     (allClear() && !st.special ? '<div class="tabs diff"><button data-hard="0" class="' + (curHard ? '' : 'on') + '">通常' + (cleared(st.id) ? '<small> ✓</small>' : '') + '</button><button data-hard="1" class="' + (curHard ? 'on hard' : '') + '">🔥 高難度' + (clearedH(st.id) ? '<small> ✓</small>' : '') + '</button></div>' +
@@ -7839,6 +7900,7 @@ function endGame() {
   const newly = checkUnlocks(S, SAVE);
   const win = S.over === 'win', g = S.st.goal, fell = S.baseHP <= 0;
   const wasAll = allClear();
+  const spNew = win && SPS.includes(S.st.id) ? spRecord(S) : null;
   if (win) { SAVE.clear = SAVE.clear || {}; SAVE.clear[S.st.id] = SAVE.clear[S.st.id] || { t: Math.round(S.t), hp: Math.ceil(S.baseHP) }; if (S.st.hard) { SAVE.clearH = SAVE.clearH || {}; SAVE.clearH[S.st.id] = { t: Math.round(S.t) }; } }
   const allNow = !wasAll && allClear();
   const exNow = !wasEx && exDone();
@@ -7861,6 +7923,7 @@ function endGame() {
     (next && newFeatures(next.id).length ? '<div class="goal">🔓 次の作戦から使える：' + newFeatures(next.id).map(f => featLine(f).slice(0, 2).join('')).map(esc).join('・') + '</div>' : '') +
     (exOpen ? '<div class="goal big">🔓 <b>' + esc(exOpen.no + '「' + exOpen.title + '」') + '</b>（エクストラ）が解放された<br><span class="dim">作戦一覧から選べる</span></div>' : '') +
     (win && S.st.id === 'y4' && !seen('infBody') && (markSeen('infBody'), true) ? '<div class="goal big">🛸 新しいボディ <b>インフィニット</b> が解禁された<br><span class="dim">高額機体の候補に出るようになる。HP100・最速・威力と連射+60%</span></div>' : '') +
+    (spNew ? '<div class="goal big">🏅 記録' + (spNew.any ? '更新' : '') + '<br>' + spRecHTML(S.st.id, spNew, !!S.st.hard) + '</div>' : '') +
     (exNow ? '<div class="goal big">🏆 第5章クリア<br>♾ <b>エンドレス</b> と 🛠 <b>ステージ作成</b> が解放された<br><span class="dim">タイトル画面から選べる</span></div>' : '') +
     (allNow ? '<div class="goal big">🏆 全作戦クリア<br>☄ <b>試作型ノヴァ</b>（戦場全体を焼く試作兵器）と <b>🔥 高難度</b> が解禁された<br><span class="dim">作戦の画面で高難度を選べる。ノヴァは建造画面の武器に出る</span></div>' : '') +
     (newly.length ? '<div class="goal">🎁 解禁：' + newly.map(id => WEAPONS[id].icon + esc(WEAPONS[id].name)).join('・') + '<br><span class="dim">作戦の画面で持ち込める</span></div>' : '') +
@@ -7879,6 +7942,21 @@ function endGame() {
   else if (next) $('nextSt').onclick = () => openStage(next.id);
   $('toSel').onclick = () => { uiCh = ch.id; stageSelect(); };
 }
+// ---------- スペシャルの記録：作戦ごと（高難度は別）に、最速クリア・残り拠点HP・撃破数の最高を残す ----------
+function spRecord(S) {
+  const k = (S.st.hard ? 'H' : '') + S.st.id, B = SAVE.spBest = SAVE.spBest || {}, o = B[k], n = { t: S.t, hp: Math.ceil(S.baseHP), kills: S.kills }, nb = {};
+  if (!o) { B[k] = n; return { first: true, any: false }; }
+  if (S.st.goal !== 'time' && n.t < o.t) { o.t = n.t; nb.t = true; }
+  if (n.hp > o.hp) { o.hp = n.hp; nb.hp = true; }
+  if (n.kills > o.kills) { o.kills = n.kills; nb.kills = true; }
+  nb.any = nb.t || nb.hp || nb.kills; return nb;
+}
+function spRecHTML(id, nb, hard) {
+  const st = stById(id), b = (SAVE.spBest || {})[(hard ? 'H' : '') + id];
+  if (!b) return '';
+  return (st.goal !== 'time' ? '⏱ ' + fmtT(b.t) + (nb.t ? '🆕' : '') + '　' : '') + '🏠 ' + b.hp + (nb.hp ? '🆕' : '') + '　💥 ' + b.kills + (nb.kills ? '🆕' : '');
+}
+
 // ---------- エンドレス・ステージ作成の結果 ----------
 // エンドレスの記録：項目ごとの最高記録と、生存時間の上位5回
 function endlessRecHTML(cur, noBest) {
@@ -8057,7 +8135,8 @@ function recordScreen(back) {
   showOv('<h1>記録</h1><div class="res">' +
     r('クリアした作戦', n + ' / ' + ORDER.length) + r('🔥 高難度クリア', ORDER.filter(clearedH).length + ' / ' + ORDER.length) +
     (cleared('v4') ? r('第5章（エクストラ）', C5.filter(cleared).length + ' / ' + C5.length + (C5.some(clearedH) ? '　🔥' + C5.filter(clearedH).length : '')) : '') +
-    (exDone() && EXO.length > C5.length ? (D6 => r('第6章〜（深淵）', D6.filter(cleared).length + ' / ' + D6.length + (D6.some(clearedH) ? '　🔥' + D6.filter(clearedH).length : '')))(EXO.filter(id => !C5.includes(id))) : '') +
+    (exDone() && DEEP.length ? r('第6〜8章（深淵）', DEEP.filter(cleared).length + ' / ' + DEEP.length + (DEEP.some(clearedH) ? '　🔥' + DEEP.filter(clearedH).length : '')) : '') +
+    (SPS.length && chOpen(chOf(SPS[0])) ? r('スペシャル', SPS.filter(cleared).length + ' / ' + SPS.length + (SPS.some(clearedH) ? '　🔥' + SPS.filter(clearedH).length : '')) : '') +
     (SAVE.endless && SAVE.endless.runs.length ? r('♾ エンドレス 最長生存', fmtT(SAVE.endless.best.t) + '　💥' + SAVE.endless.best.kills + '　👹' + SAVE.endless.best.bosses) : '') +
     r('🧬 進化パーツ', UNLOCKS.filter(u => isOpen(u.id)).length + ' / ' + UNLOCKS.length) +
     r('👾 出会った敵', Object.keys(SAVE.seenE || {}).length + ' / ' + Object.keys(ENEMIES).filter(k => ENEMIES[k].desc).length) +
