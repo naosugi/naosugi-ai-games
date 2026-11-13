@@ -21,6 +21,7 @@
 | [ROBOT DEFENSE](games/robot-defense/) | 前線基地を守るタワーディフェンス。ロボットを組んで配置し、乗って戦う。全5章・21作戦、進化パーツと高難度つき |
 | [独裁者AI国家シミュレーターⅡ AIセーフティ編](games/dictator-ai-monitor/) | 監視カードと報告AIを選び、AIに任せた国を監督する死に覚えゲーム。真相は最後に分かる。 |
 | [朝食ファクトリー](games/breakfast-factory/) | 朝ごはん屋さんで、はたらく人・店長・経営者を順に体験。立場ごとのお金のかせぎ方のちがいが分かる |
+| [STARBOARD ─ 右舷銃座](games/starboard/) | 宇宙戦艦の右舷銃座で敵の大群を撃ち落とす一人称3Dシューティング。倒しきるか、速度を上げて逃げ切るか |
 
 ## 構成
 
@@ -87,6 +88,6 @@ QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Claus
 
 同梱しているサードパーティ製ソフトウェア:
 
-- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html`・`games/infinite-shot-3d-2/index.html`・`games/robot-defense/index.html` に埋め込み（いずれも r186。robot-defense は使う部品だけをまとめた版）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
+- **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html`・`games/infinite-shot-3d-2/index.html`・`games/robot-defense/index.html`・`games/starboard/index.html` に埋め込み（いずれも r186。robot-defense は使う部品だけをまとめた版）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
 - **three.js**（MIT License, Copyright © 2010-2021 Three.js Authors）— `games/blue-dash/index.html` に r128 を埋め込み（ダウンロードしてオフラインでも遊べるようにするため）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。

@@ -213,6 +213,22 @@
       "playtime": "約10分",
       "added": "2026-11-11",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "starboard",
+      "title": "STARBOARD ─ 右舷銃座",
+      "description": "宇宙戦艦の右舷銃座から、押し寄せる敵の大群を撃ち落とす一人称の3Dシューティング。撃ち漏らすとバリアが削れる。稼いだポイントで武器や艦を強化し、敵を倒しきるか、速度を上げて逃げ切るかを選んでゴールを目指す。",
+      "path": "../games/starboard/",
+      "thumbnail": "../games/starboard/thumb.jpg",
+      "tags": [
+        "シューティング",
+        "3D",
+        "スコアアタック"
+      ],
+      "controls": "ドラッグ / マウス・矢印キー",
+      "playtime": "約3〜12分",
+      "added": "2026-11-13",
+      "author": "@naoya_oosugi"
     }
   ]
 }
