@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>しんかルーレット</title>
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="しんかルーレット">
+<meta property="og:description" content="生き物の進化と5回の大量絶滅を、みんなで乗りこえる協力ルーレット。1台のスマホを交代で回し、植物・きのこ・虫・せぼねのなかまに枝分かれして数をふやす。いろいろな系統がそろうほど食べものがつながって強くなる。図鑑と読み上げつき。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/shinka-roulette/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/shinka-roulette/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;background:#fffaf0;color:#333;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font-family:inherit;border:none;cursor:pointer}
+#app{max-width:520px;margin:0 auto;padding:calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))}
+.back{display:inline-block;margin-top:14px;font-size:15px;color:#555;text-decoration:none;background:#f2f2f2;border-radius:10px;padding:8px 14px}
+@keyframes pulse{50%{transform:scale(1.15)}}
+#top{display:flex;align-items:center;gap:5px}
+#track{flex:1;display:flex;gap:3px;align-items:center}
+.ci{width:34px;height:34px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-size:19px}
+.ci.now{background:#ffe1b3;animation:pulse 1.2s infinite}
+.ci.done{background:#d7f0d7}
+.hb{font-size:19px;background:#f2f2f2;border-radius:10px;width:36px;height:36px}
+#narr{margin:6px 0;background:#fff;border-radius:14px;padding:8px 10px;min-height:46px;box-shadow:0 2px 0 rgba(0,0,0,.06)}
+#narrK{font-size:19px;font-weight:bold;line-height:1.35}
+#narrA{font-size:12px;color:#666;margin-top:2px;line-height:1.5}
+#narrA:empty{display:none}
+#me{background:#fff;border-radius:18px;border:6px solid #ccc;padding:8px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 3px 8px rgba(0,0,0,.12)}
+#me .mm{flex-shrink:0}
+#me .mb{flex:1;min-width:0}
+#me .mh{display:flex;align-items:center;gap:6px}
+#me .mf{font-size:46px;line-height:1}
+#me .mnm{font-size:13px;color:#555;line-height:1.35}
+#me .mn{font-size:20px;line-height:1.15;word-break:break-all;margin-top:4px}
+#me .mt{font-size:24px;margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+#me .mc{font-size:13px;font-weight:bold;border-radius:8px;padding:2px 6px;margin-left:auto}
+.mark{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#fff;vertical-align:middle}
+/* ルーレット */
+#wheelBox{position:relative;width:min(82%,50vh);margin:10px auto 0;aspect-ratio:1/1}
+#wheel{width:100%;height:100%;display:block}
+#wheelG{transition:transform 2.6s cubic-bezier(.15,.8,.2,1);transform-origin:0 0}
+#wheelG.fast{transition-duration:1.2s}
+#pointer{position:absolute;left:50%;top:-12px;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #333;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));z-index:2}
+#spin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:31%;height:31%;border-radius:50%;background:#ff8c42;color:#fff;font-size:15px;font-weight:bold;box-shadow:0 5px 0 #c9621f,0 0 0 5px #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2}
+#spin:disabled{background:#ccc;box-shadow:0 5px 0 #aaa,0 0 0 5px #fff}
+#spin .sm{font-size:26px}
+#eraBox{text-align:center;font-size:13px;font-weight:bold;margin-top:8px}
+#eraBox small{font-size:10px;color:#888;font-weight:normal}
+#nextC{text-align:center;font-size:12px;color:#555}
+#panels{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.pn{border-radius:12px;padding:4px 2px;border:3px solid #ccc;text-align:center;font-size:12px;line-height:1.3}
+.pn.cur{box-shadow:0 0 0 3px #ff8c42}
+.pn .pf{font-size:24px;display:block}
+.pn .pt{font-size:13px;min-height:16px}
+/* オーバーレイ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:10;padding:calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+.card{background:#fff;border-radius:22px;padding:16px;width:100%;max-width:440px;text-align:center;max-height:92vh;overflow-y:auto}
+.big{font-size:64px;line-height:1.2}
+.msg{font-size:22px;font-weight:bold;margin:6px 0 12px;line-height:1.5}
+.sub{font-size:13px;color:#555;margin:0 0 12px;line-height:1.65;text-align:left;background:#f4f4f4;border-radius:10px;padding:8px}
+.ok{font-size:24px;background:#4caf50;color:#fff;border-radius:16px;padding:10px 28px;box-shadow:0 4px 0 #2e7d32}
+.btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.choice{font-size:16px;background:#f7f7f7;border-radius:18px;padding:10px 6px;width:46%;border:4px solid #eee;line-height:1.3}
+.choice .ce{font-size:50px;display:block}
+.row{display:flex;align-items:center;gap:6px;padding:6px;border-radius:12px;background:#f7f7f7;margin-bottom:6px;text-align:left}
+.row .rf{font-size:28px;min-width:40px;text-align:center}
+.row .rn{font-size:16px;flex:1;word-break:break-all;line-height:1.35}
+.row .rn small{font-size:12px;color:#666}
+.row .rm{font-size:22px}
+.lost{opacity:.3}
+.sec{font-size:15px;font-weight:bold;text-align:left;margin:8px 0 4px}
+.pies{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;font-size:22px}
+.pies div{font-size:11px;color:#666}
+.zg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.zc{background:#f7f7f7;border-radius:14px;padding:8px 2px;font-size:12px}
+.zc .ze{font-size:40px;display:block}
+.zc.lock .ze{filter:brightness(0);opacity:.2}
+.zc .zh{font-size:14px;opacity:.7}
+.pbtn{font-size:28px;background:#fff3c4;border-radius:18px;padding:12px;width:46%;box-shadow:0 4px 0 #e0c97a}
+.pbtn:disabled{opacity:.2}
+.lgd{display:flex;align-items:center;gap:8px;text-align:left;margin-bottom:8px;font-size:13px;line-height:1.5}
+.lgd .li{font-size:24px;width:56px;text-align:center;flex-shrink:0}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="track"></div>
+    <button class="hb" id="bHelp">❓</button>
+    <button class="hb" id="bSnd">🔊</button>
+    <button class="hb" id="bZk">📖</button>
+    <button class="hb" id="bMenu">⟲</button>
+  </div>
+  <div id="narr"><div id="narrK">　</div><div id="narrA"></div></div>
+  <div id="me"></div>
+  <div id="wheelBox">
+    <div id="pointer"></div>
+    <svg id="wheel" viewBox="-105 -105 210 210"><g id="wheelG"></g></svg>
+    <button id="spin" disabled><span class="sm">🎡</span>まわす</button>
+  </div>
+  <div id="eraBox"></div>
+  <div id="nextC"></div>
+  <div id="panels"></div>
+</div>
+<div id="ovs"></div>
+
+<script>
+'use strict';
+/*
+ ことばの きまり
+  ・プレイヤー(人)の層:えらぶ・プレゼント・みんなで のりこえる など、気持ちや協力を表す言葉はここだけで使う
+  ・生き物の層:ふえる・へる・あらわれる・いきのこる・ひろがる など、意図や目的をふくまない言葉だけを使う
+*/
+/* ============ ルールの数値(調整用) ============ */
+const UNITS = 12;          // ルーレットの目盛り(1目盛り30度)
+const SHINKA_UNITS = 4;    // ✨しんか の目盛り。のこり8目盛りは ➕(または なにもない)
+const GROW_SLOTS = 8;
+const MAXN = 10, START_N = 2, MAX_TRAITS = 3;
+const ROUNDS = 12;
+const CRISIS_END = [4, 6, 8, 10, 12];   // このラウンドの終わりに大量絶滅
+const EVENT_END  = [5, 7, 9, 11];       // このラウンドの終わりにできごと
+const FORKS = {   // このラウンドの終わりに枝分かれ。数字はCPUが多様になるように選ぶ目安
+  1: {from:'cell', opts:{pla:1, opi:3},
+      kid:'しょくぶつの えだ？ たべる なかまの えだ？',
+      ad:'最初の大きな分かれ道。光合成をする植物のなかまと、ほかの生き物を食べるなかま(のちの菌類と動物)に分かれます。実際の生き物は自分で選んで進化するわけではありません。ここでは、プレイヤーがどの系統をたどるかを選びます。'},
+  2: {from:'opi', opts:{fun:1, ani:2},
+      kid:'きのこの なかまの えだ？ どうぶつの えだ？',
+      ad:'食べるなかまが、菌類(キノコ・カビ)と動物に分かれます。菌類は、植物より動物に近いなかまです。'},
+  3: {from:'ani', opts:{art:1, ver:1},
+      kid:'むしや えびの なかまの えだ？ せぼねの ある なかまの えだ？',
+      ad:'動物が、節足動物(昆虫・エビ・クモなど)と、背骨のある脊椎動物(魚・恐竜・ヒトなど)に分かれます。実際にはほかにも多くの動物のなかま(貝・ミミズなど)がいますが、このゲームでは2つにしぼっています。'},
+};
+/* ============ 系統 ============ */
+const STAGES = {
+  cell:{icon:'🦠', name:'ちいさな いきもの', desc:'', color:'#e3eef8', animal:false,
+        ad:'体が1つの細胞だけでできた生き物。'},
+  pla: {icon:'🌿', name:'しょくぶつの なかま', desc:'ひかりで ふえる', color:'#dff2dc', animal:false,
+        ad:'植物のなかま(藻類をふくむ)。光合成で、光から自分の栄養をつくります。動物の食べものになり、生態系の土台になります。'},
+  opi: {icon:'🍽️', name:'たべる なかま', desc:'ほかの いきものを たべて ふえる', color:'#ece6f5', animal:false,
+        ad:'のちに菌類と動物に分かれるなかま(まだ1つの細胞)。自分では栄養をつくらず、ほかの生き物を食べて栄養をとります。'},
+  fun: {icon:'🍄', name:'きのこの なかま', desc:'かれはや しがいを ぶんかいして ふえる', color:'#efe4d8', animal:false,
+        ad:'菌類(キノコ・カビのなかま)。落ち葉や死がいを分解して栄養をとり、そのとき土に栄養が戻ります(分解者)。菌類は、植物より動物に近いなかまです。'},
+  ani: {icon:'🐾', name:'どうぶつの なかま', desc:'うごいて たべて ふえる', color:'#f8ecd8', animal:true,
+        ad:'動物のなかま。動き回って、ほかの生き物を食べて栄養をとります。'},
+  art: {icon:'🦐', name:'むしや えびの なかま', desc:'からだが かたい からで おおわれた どうぶつ', color:'#fbe7d4', animal:true,
+        ad:'節足動物(昆虫・エビ・カニ・クモなど)。体がかたい殻(外骨格)でおおわれ、あしに節があります。'},
+  ver: {icon:'🐟', name:'せぼねの ある なかま', desc:'からだの なかに せぼねが ある どうぶつ', color:'#dceaf7', animal:true,
+        ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。'},
+};
+// 時代ごとの姿(0〜4:ゲーム中、5:いま)。「その時代の、同じ系統の代表」で、直接の祖先とはかぎらない
+const FORMS = {
+  cell:['🦠'], opi:['🦠'], ani:['🪼'],
+  pla:['🟢','🌱','🌴','🌲','🌸','🌾'],
+  fun:['🦠','🍄','🍄','🍄','🍄','🍄'],
+  art:['🪲','🦂','🪰','🦗','🐝','🦋'],
+  ver:['🐟','🦈','🦎','🦕','🦖','🦣'],
+};
+const FORM_NAMES = {
+  cell:['単細胞生物'], opi:['のちに菌類と動物になるなかま(単細胞)'], ani:['初期の動物'],
+  pla:['藻類','陸に上がった初期の植物','シダ植物の森','イチョウなどの裸子植物','花をさかせる植物','草原の草'],
+  fun:['水の中の小さな菌類','植物の根とくらす菌類','落ち葉や倒木を分解する菌類','キノコのなかま','キノコのなかま','キノコのなかま'],
+  art:['三葉虫','ウミサソリ','メガネウラなどの昆虫','三畳紀の昆虫','ハチなどの昆虫','チョウなどの昆虫'],
+  ver:['あごのない初期の魚','ダンクルオステウスなどの魚','ディメトロドンなど','初期の恐竜','ティラノサウルスなどの恐竜','マンモスなどのほにゅうるい'],
+};
+const SMALL = {cell:'🦠', opi:'🦠', ani:'🪱', pla:'🌱', fun:'🦠', art:'🐜', ver:'🐭'};
+const SMALL_NAME = '生き残った小さななかま';
+
+/* ============ とくちょう ============ */
+const A = ['ani','art','ver'];
+const TRAITS = {
+  sleep:{icon:'💤', name:'じっと まつ', ok:['cell','opi','pla','fun',...A],
+         ad:'タネ・胞子・休眠・冬眠などで、悪い時期をじっとやりすごせる。'},
+  small:{icon:'🔹', name:'ちいさい からだ', ok:['cell','opi','pla','fun',...A],
+         ad:'体が小さいと、少ない食べもので生きられ、かくれる場所も多い。'},
+  coat: {icon:'🧥', name:'さむさに つよい', ok:['pla','fun',...A],
+         ad:'厚い皮や毛、寒さに強いしくみなどで、寒さにたえられる。'},
+  lung: {icon:'🫁', name:'くうきを すう', ok:A,
+         ad:'空気中の酸素を取りこめる(肺や気管など)。水の中の酸素が減っても生きのびやすい。'},
+  eye:  {icon:'👁️', name:'よく みえる め', ok:A, grow:'always',
+         ad:'よく見える目で、食べものを見つけやすい。'},
+  herb: {icon:'🌱', name:'しょくぶつを たべる', ok:A, grow:'pla',
+         ad:'植物を食べられる(植物食)。植物が多いと、ふえやすい。'},
+  fang: {icon:'🦷', name:'どうぶつを たべる', ok:A, grow:'prey',
+         ad:'鋭い歯やあごで、ほかの動物を食べられる(肉食)。ほかの動物がいると、ふえやすい。'},
+  camo: {icon:'🎨', name:'かくれいろ', ok:A, grow:'seer', needs:'eye',
+         ad:'まわりの色にまぎれて、目のある動物に見つかりにくい。'},
+  shell:{icon:'🛡️', name:'かたい からだ', ok:A, grow:'biter', needs:'fang',
+         ad:'かたい殻や皮で、ほかの動物に食べられにくい。'},
+};
+const COEVO = {
+  eye: {gives:'camo', kid:'👁️ めの ある どうぶつが あらわれた！<br>これからは ✨から 🎨かくれいろ も でるよ',
+        ad:'目で獲物をさがす動物がいると、まわりにまぎれる色のものほど食べられにくく、生き残りやすくなります。それがくり返されて、かくれいろのような特徴が広がったと考えられています(自然選択)。食べる側と食べられる側がおたがいに影響しあう進化を「共進化」といいます。目の誕生がカンブリア紀の多様化にかかわったという説もありますが、仮説のひとつです。'},
+  fang:{gives:'shell', kid:'🦷 どうぶつを たべる どうぶつが あらわれた！<br>これからは ✨から 🛡️かたい からだ も でるよ',
+        ad:'ほかの動物を食べる動物がいると、かたい殻や皮をもつものほど食べられにくく、生き残りやすくなります(自然選択・共進化)。'},
+};
+
+/* ============ 時代と大量絶滅 ============ */
+const ERAS = [
+  {icon:'🌊', name:'うみの じだい',          sub:'先カンブリア時代〜オルドビス紀'},
+  {icon:'🌱', name:'りくへ ひろがる じだい', sub:'シルル紀〜デボン紀'},
+  {icon:'🌴', name:'おおきな もりの じだい', sub:'石炭紀〜ペルム紀'},
+  {icon:'🦕', name:'きょうりゅうの はじまり', sub:'三畳紀'},
+  {icon:'🦖', name:'きょうりゅうの じだい',  sub:'ジュラ紀〜白亜紀'},
+  {icon:'🌍', name:'いま',                   sub:'新生代'},
+];
+const CRISES = [
+  {icon:'❄️', name:'こおりの じだい',        era:'オルドビス紀の終わり', save:['coat','sleep'],
+   t:'約4億4千万年前。氷河期による寒冷化などが主な原因と考えられています。'},
+  {icon:'🫧', name:'うみの さんそが へった', era:'デボン紀の後期', save:['lung','small'],
+   t:'海の酸素不足などが原因の候補とされていますが、はっきりとは分かっていません。'},
+  {icon:'🌋', name:'おおきな ふんか',        era:'ペルム紀の終わり', save:['lung','sleep'],
+   t:'史上最大の大量絶滅。シベリアでの巨大な火山活動が引き金になったと考えられています。'},
+  {icon:'🔥', name:'ふんかで あつく なった', era:'三畳紀の終わり', save:['small','shell'],
+   t:'大規模な火山活動による環境の変化が主な原因と考えられています。'},
+  {icon:'☄️', name:'いんせきが おちた',      era:'白亜紀の終わり', save:['small','sleep'],
+   t:'約6600万年前。巨大な隕石の衝突が主な原因と考えられ、鳥をのぞく恐竜が絶滅しました。'},
+];
+
+/* ============ 図鑑(説明は読み聞かせ用の下書き。要事実確認) ============ */
+const ZUKAN = [
+  {id:'cyano', e:'🦠', name:'シアノバクテリア', era:0, st:null, tr:null, t:'光合成で酸素をつくる小さな生き物。とても長い時間をかけて、地球の空気に酸素がふえたのは、この生き物のはたらきが大きいと考えられています。'},
+  {id:'alga', e:'🟢', name:'藻類(そうるい)', era:0, st:'pla', tr:null, t:'海の中で光合成をする生き物。海の食べものの流れの、はじまりになります。'},
+  {id:'trilo', e:'🪲', name:'三葉虫(さんようちゅう)', era:0, st:'art', tr:null, t:'かたい殻をもつ海の節足動物。海底の泥の中の有機物を食べるもの、死がいを食べるもの、ほかの生き物を捕まえるものなど、くらし方はさまざまでした。古生代の終わりまで、とても長く栄えました。'},
+  {id:'anoma', e:'🦐', name:'アノマロカリス', era:0, st:'art', tr:'eye', t:'カンブリア紀の海の大きな捕食者だったと考えられている、節足動物に近いなかま。大きな複眼をもっていたことが化石からわかっています。'},
+  {id:'myllo', e:'🐟', name:'ミロクンミンギア', era:0, st:'ver', tr:null, t:'カンブリア紀の、とても古い魚のなかま。あごはまだありませんでした。脊椎動物の初期の例のひとつと考えられています。'},
+  {id:'cookso', e:'🌱', name:'クックソニア', era:1, st:'pla', tr:null, t:'陸に上がった初期の植物のひとつ。高さ数cmほどの、小さな植物でした。'},
+  {id:'myco', e:'🍄', name:'植物の根とくらす菌類', era:1, st:'fun', tr:null, t:'初期の陸上植物の化石の中から、菌類がすみついたあとが見つかっています。植物と菌類の両方に利益がある関係(共生)だったと考えられています。'},
+  {id:'eurypt', e:'🦂', name:'ウミサソリ', era:1, st:'art', tr:'fang', t:'シルル紀などの海や川にいた節足動物の捕食者。大きなものは2mをこえたとされます。'},
+  {id:'dunkle', e:'🦈', name:'ダンクルオステウス', era:1, st:'ver', tr:'fang', t:'デボン紀の海にいた大型の魚。頭がかたい骨の板でおおわれ、強いあごをもつ捕食者でした。'},
+  {id:'linbo', e:'🌴', name:'リンボク', era:2, st:'pla', tr:null, t:'石炭紀の森に生えていた、木のように大きくなるシダ植物のなかま。のちに石炭のもとになりました。'},
+  {id:'megan', e:'🪰', name:'メガネウラ', era:2, st:'art', tr:'eye', t:'石炭紀にいた、とても大きなトンボのなかま。はねを広げると70cmほどあったとされます。'},
+  {id:'arthro', e:'🐛', name:'アースロプレウラ', era:2, st:'art', tr:'herb', t:'石炭紀にいた、とても大きなヤスデのなかま。植物などを食べていたと考えられています。'},
+  {id:'dimet', e:'🦎', name:'ディメトロドン', era:2, st:'ver', tr:'fang', t:'ペルム紀の、背中に大きな帆をもつ捕食者。恐竜ではなく、ほにゅうるいに近いなかまです。'},
+  {id:'ginkgo', e:'🍂', name:'イチョウのなかま', era:3, st:'pla', tr:'sleep', t:'恐竜の時代に栄えた植物のなかま。タネでふえます。いまも生き残っているので「生きた化石」とよばれます。'},
+  {id:'plateo', e:'🦕', name:'プラテオサウルス', era:3, st:'ver', tr:'herb', t:'三畳紀の後期にいた、首の長い植物食の恐竜。'},
+  {id:'mammal0', e:'🐭', name:'さいしょの ほにゅうるい', era:3, st:'ver', tr:'small', t:'三畳紀の終わりごろに、小さなほにゅうるいのなかまが現れたと考えられています。虫などを食べていたようです。'},
+  {id:'flower', e:'🌸', name:'花をさかせる植物', era:4, st:'pla', tr:null, t:'恐竜の時代の後半に広がった植物。虫が花の蜜や花粉を食べるときに、花粉が別の花に運ばれます。花と虫の両方に利益がある関係(相利共生)です。'},
+  {id:'termi', e:'🐜', name:'シロアリのなかま', era:4, st:'art', tr:null, t:'恐竜の時代にはもういたことが化石からわかっている昆虫。木を食べて分解します。'},
+  {id:'brachi', e:'🦕', name:'ブラキオサウルス', era:4, st:'ver', tr:'herb', t:'首の長い、とても大きな植物食の恐竜。高いところの葉を食べていたと考えられています。'},
+  {id:'trice', e:'🦏', name:'トリケラトプス', era:4, st:'ver', tr:'shell', t:'3本の角と大きなえりをもつ植物食の恐竜。白亜紀の終わりごろに生きていました。'},
+  {id:'trex', e:'🦖', name:'ティラノサウルス', era:4, st:'ver', tr:'fang', t:'白亜紀の終わりにいた大型の肉食恐竜。とても強い、かむ力をもっていたと考えられています。'},
+  {id:'grass', e:'🌾', name:'イネ科の草', era:5, st:'pla', tr:null, t:'新生代に草原が大きく広がりました。草原では、草を食べる動物がふえました。'},
+  {id:'mush', e:'🍄', name:'キノコのなかま', era:5, st:'fun', tr:null, t:'落ち葉や倒れた木を分解して、土に栄養を戻す分解者。菌類はとても古くからいます。'},
+  {id:'butter', e:'🦋', name:'チョウのなかま', era:5, st:'art', tr:null, t:'花の蜜を吸う昆虫。チョウのなかまは、恐竜の時代にはもう現れていたと考えられています。'},
+  {id:'mammoth', e:'🦣', name:'マンモス', era:5, st:'ver', tr:'coat', t:'氷河期の寒い土地でくらしたゾウのなかま。長い毛で寒さにたえました。'},
+  {id:'smilo', e:'🐅', name:'スミロドン', era:5, st:'ver', tr:'fang', t:'長いキバをもつネコのなかま。「サーベルタイガー」ともよばれます。'},
+];
+
+
+const COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12'];
+const MARKS = ['⭐','🌙','☀️','💎','❤️','🔶'];
+const WHEEL_COLORS = {cell:'#bcd8f0', pla:'#a8dca0', opi:'#cfc2ea', fun:'#d9c0a3', ani:'#f2d29b', art:'#f5c49b', ver:'#a9cbee', shinka:'#ffe680', none:'#e2e2e2'};
+
+/* ============ 小道具 ============ */
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} },
+};
+let soundOn = store.get('shinka_sound', true);
+function speak(t){
+  if(!soundOn || !t) return;
+  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g, ' ')); u.lang = 'ja-JP'; u.rate = 0.9; speechSynthesis.speak(u); }catch(e){}
+}
+let actx = null;
+function beep(f = 600, d = 0.08, type = 'sine'){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = 0.12;
+    o.connect(g); g.connect(actx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + d); o.stop(actx.currentTime + d);
+  }catch(e){}
+}
+const fanfare = () => [523,659,784,1046].forEach((f,i) => setTimeout(() => beep(f, 0.15, 'triangle'), i * 110));
+
+/* ============ 状態 ============ */
+let S = null;
+let zukan = new Set(store.get('shinka_zukan', []));
+const saveGame = () => store.set('shinka_game', S);
+const saveZukan = () => store.set('shinka_zukan', [...zukan]);
+const humanCount = () => S.pieces.filter(p => p.human).length;
+const eraNow = () => S.crisis;
+const form = (p, era = eraNow()) => { if(p.small) return SMALL[p.st]; const a = FORMS[p.st]; return a[Math.min(era, a.length - 1)]; };
+const formName = (p, era = eraNow()) => { if(p.small) return SMALL_NAME; const a = FORM_NAMES[p.st]; return a[Math.min(era, a.length - 1)]; };
+const stIcon = k => STAGES[k].icon;
+const colorOf = p => COLORS[p.id];
+const markOf = p => p.human ? (p.mark || MARKS[p.id]) : '🤖';
+const markHtml = (p, size = 40) => `<span class="mark" style="width:${size}px;height:${size}px;border:${Math.round(size / 8)}px solid ${colorOf(p)};font-size:${Math.round(size * 0.5)}px">${markOf(p)}</span>`;
+const sumN = k => S.pieces.filter(p => p.st === k).reduce((a, p) => a + p.n, 0);
+const isAnimal = p => STAGES[p.st].animal;
+const unlocked = t => !TRAITS[t].needs || S.pieces.some(p => p.traits.includes(TRAITS[t].needs));
+const traitOK = (t, st) => TRAITS[t].ok.includes(st);
+
+function newGame(nh, marks = []){
+  S = {round:1, idx:0, crisis:0, done:{}, cur:-1, lastCur:0, coevo:{}, rot:0,
+       pieces:[0,1,2,3].map(i => ({id:i, human:i < nh, mark:marks[i] || null, st:'cell', n:START_N, traits:[], small:false})),
+       alloc:{}};
+  applyAlloc();
+}
+
+/* ============ 食べものの つながり ============ */
+// ふえられる上限
+function capOf(p){
+  const others = S.pieces.filter(q => q.st !== p.st).reduce((a, q) => a + q.n, 0);
+  let c = MAXN;
+  switch(p.st){
+    case 'pla': c = 4 + Math.floor(sumN('fun') / 2); break;
+    case 'fun': c = 3 + Math.floor(others / 3); break;
+    case 'ani': case 'art': case 'ver':
+      c = 2 + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
+      break;
+  }
+  return Math.max(1, Math.min(MAXN, c));
+}
+const CAP_AD = {
+  pla:'植物は光で栄養をつくりますが、土の栄養には限りがあります。菌類が分解して栄養を土に戻すほど、たくさんふえられます。',
+  fun:'菌類の食べものは、落ち葉や死がいです。ほかの生き物が多いほど、たくさんふえられます。',
+  ani:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。',
+  art:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
+  ver:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
+};
+// ルーレットの ➕ の目盛りの数
+function needOf(k){
+  const others = S.pieces.filter(p => p.st !== k).reduce((a, p) => a + p.n, 0);
+  switch(k){
+    case 'cell': return GROW_SLOTS;
+    case 'pla':  return 2 + Math.floor(sumN('fun') / 3);
+    case 'opi':  return 1 + Math.floor(sumN('pla') / 3);
+    case 'fun':  return 1 + Math.floor(others / 8);
+    case 'ani': case 'art': case 'ver': return Math.max(1, Math.floor(sumN('pla') / 3));
+  }
+  return 1;
+}
+function targetAlloc(){
+  const keys = [...new Set(S.pieces.map(p => p.st))];
+  const need = {}; keys.forEach(k => need[k] = needOf(k));
+  const tot = keys.reduce((a, k) => a + need[k], 0);
+  if(tot > GROW_SLOTS){
+    const res = {}; keys.forEach(k => res[k] = 1);
+    let rest = GROW_SLOTS - keys.length;
+    const raw = keys.map(k => (need[k] - 1) / (tot - keys.length) * rest);
+    keys.forEach((k, i) => res[k] += Math.floor(raw[i]));
+    rest -= keys.reduce((a, k, i) => a + Math.floor(raw[i]), 0);
+    keys.map((k, i) => [k, raw[i] - Math.floor(raw[i])]).sort((a, b) => b[1] - a[1]).slice(0, rest).forEach(([k]) => res[k]++);
+    return res;
+  }
+  if(GROW_SLOTS - tot > 0) need.none = GROW_SLOTS - tot;
+  return need;
+}
+function applyAlloc(){ const before = {...S.alloc}; S.alloc = targetAlloc(); return before; }
+// ルーレットの目盛りの並び:同じ系統はまとめ、✨はあいだに入れる
+function wheelUnits(alloc){
+  const order = ['cell','pla','opi','fun','ani','art','ver'].filter(k => alloc[k]);
+  const out = []; let sh = SHINKA_UNITS;
+  order.forEach(k => { for(let i = 0; i < alloc[k]; i++) out.push(k); if(sh > 0){ out.push('shinka'); sh--; } });
+  for(let i = 0; i < (alloc.none || 0); i++) out.push('none');
+  while(sh-- > 0) out.push('shinka');
+  return out;
+}
+const unitIcon = k => k === 'shinka' ? '✨' : k === 'none' ? '・' : stIcon(k);
+function pieSVG(alloc, size, id){
+  const u = wheelUnits(alloc), step = 360 / u.length;
+  const segs = [];
+  u.forEach((k, i) => { if(segs.length && segs[segs.length - 1].k === k) segs[segs.length - 1].n++; else segs.push({k, s:i, n:1}); });
+  const P = a => [100 * Math.sin(a * Math.PI / 180), -100 * Math.cos(a * Math.PI / 180)];
+  let g = '';
+  segs.forEach(sg => {
+    const a0 = sg.s * step, a1 = (sg.s + sg.n) * step, [x0, y0] = P(a0), [x1, y1] = P(a1);
+    g += `<path d="M0 0 L${x0.toFixed(2)} ${y0.toFixed(2)} A100 100 0 ${sg.n * step > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${WHEEL_COLORS[sg.k]}" stroke="#fff" stroke-width="2.5"/>`;
+    const am = (a0 + a1) / 2, r = 68, fs = sg.n >= 2 ? 26 : 19;
+    if(sg.n >= 3 && sg.k !== 'shinka' && sg.k !== 'none'){
+      // 大きい部分は アイコンを ならべて 面積を わかりやすく
+      for(let j = 0; j < sg.n; j++){ const aj = (sg.s + j + 0.5) * step; g += `<text x="${(r * Math.sin(aj * Math.PI / 180)).toFixed(1)}" y="${(-r * Math.cos(aj * Math.PI / 180)).toFixed(1)}" font-size="20" text-anchor="middle" dominant-baseline="central">${unitIcon(sg.k)}</text>`; }
+    } else {
+      g += `<text x="${(r * Math.sin(am * Math.PI / 180)).toFixed(1)}" y="${(-r * Math.cos(am * Math.PI / 180)).toFixed(1)}" font-size="${fs}" text-anchor="middle" dominant-baseline="central">${unitIcon(sg.k)}</text>`;
+    }
+  });
+  if(id) return g;
+  return `<svg viewBox="-102 -102 204 204" width="${size}" height="${size}">${g}</svg>`;
+}
+
+/* ============ 描画 ============ */
+function render(){
+  if(!S) return;
+  $('#track').innerHTML = CRISES.map((c, i) => i < S.crisis ? '<div class="ci done">✅</div>' : i === S.crisis ? `<div class="ci now">${c.icon}</div>` : '<div class="ci">❔</div>').join('');
+  $('#wheelG').innerHTML = pieSVG(S.alloc, 0, true);
+  $('#wheelG').style.transform = `rotate(${S.rot}deg)`;
+  const er = ERAS[Math.min(S.crisis, 5)];
+  $('#eraBox').innerHTML = `${er.icon} ${er.name} <small>${er.sub}</small>`;
+  if(S.crisis < 5){
+    const c = CRISES[S.crisis], left = CRISIS_END[S.crisis] - S.round + 1;
+    $('#nextC').innerHTML = `つぎの ききは ${c.icon} あと${'●'.repeat(Math.max(0, left))}　つよい とくちょう ${c.save.map(t => TRAITS[t].icon).join('')}`;
+  } else $('#nextC').innerHTML = '';
+  const me = S.pieces[S.cur >= 0 ? S.cur : S.lastCur], f = form(me);
+  let tag = '';
+  if(S.crisis < 5){
+    const c = CRISES[S.crisis], ok = me.traits.some(t => c.save.includes(t));
+    tag = `<span class="mc" style="background:${ok ? '#d7f0d7' : '#fde2e2'}">${c.icon}に ${ok ? 'つよい✨' : 'よわい💨'}</span>`;
+  }
+  const meEl = $('#me');
+  meEl.style.borderColor = colorOf(me); meEl.style.background = STAGES[me.st].color; meEl.dataset.id = me.id;
+  meEl.innerHTML = `<div class="mm">${markHtml(me, 62)}</div><div class="mb">
+    <div class="mh"><span class="mf">${f}</span><span class="mnm">${stIcon(me.st)} ${STAGES[me.st].name}<br>${formName(me)}</span></div>
+    <div class="mn">${nRow(f, me.n, 0, capOf(me))}</div>
+    <div class="mt">${me.traits.map(t => TRAITS[t].icon).join('') || '<span style="font-size:13px;color:#888">とくちょう なし</span>'}${tag}</div></div>`;
+  $('#panels').innerHTML = S.pieces.map(p => `<div class="pn${p.id === S.cur ? ' cur' : ''}" data-id="${p.id}" style="border-color:${colorOf(p)};background:${STAGES[p.st].color}">
+    ${markHtml(p, 26)}<span class="pf">${form(p)}</span>${p.n}<span style="opacity:.5">/${capOf(p)}</span><div class="pt">${p.traits.map(t => TRAITS[t].icon).join('')}</div></div>`).join('');
+}
+function narr(t, say = true, a = ''){ $('#narrK').innerHTML = t; $('#narrA').innerHTML = a; if(say) speak(t); }
+
+/* ============ オーバーレイ ============ */
+function overlay(html){
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = `<div class="card">${html}</div>`;
+  $('#ovs').appendChild(ov); return ov;
+}
+function popup(big, msg, opt = {}){
+  speak(opt.say || msg);
+  return new Promise(res => {
+    const ov = overlay(`<div class="big">${big}</div><div class="msg">${msg}</div>${opt.html || ''}${opt.sub ? `<div class="sub">${opt.sub}</div>` : ''}<button class="ok">${opt.btn || 'OK 👍'}</button>`);
+    ov.querySelector('.ok').onclick = () => { beep(700); ov.remove(); res(); };
+  });
+}
+const whoHtml = p => markHtml(p, 80) + `<span style="font-size:52px;margin-left:10px;vertical-align:middle">${form(p)}</span>`;
+const nRow = (f, n, lost = 0, cap = 0) => f.repeat(n) + `<span class="lost">${f.repeat(lost)}</span>` + `<span style="opacity:.35">${'○'.repeat(Math.max(0, cap - n - lost))}</span>`;
+const pRow = (p, extra = '') => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${nRow(form(p), p.n, 0, capOf(p))}</span>${extra}</div>`;
+
+/* ============ ルーレット ============ */
+function waitSpin(p){
+  const b = $('#spin'); b.innerHTML = `<span class="sm">${markOf(p)}</span>まわす`; b.disabled = false;
+  return new Promise(res => { b.onclick = () => { b.disabled = true; b.onclick = null; res(); }; });
+}
+async function spin(fast){
+  const u = wheelUnits(S.alloc), step = 360 / u.length, i = rnd(u.length);
+  const center = (i + 0.5) * step, jitter = (Math.random() - 0.5) * step * 0.6;
+  const base = Math.ceil(S.rot / 360) * 360;
+  S.rot = base + 360 * (fast ? 2 : 4) + (360 - center) + jitter;
+  const g = $('#wheelG');
+  g.classList.toggle('fast', !!fast);
+  g.style.transform = `rotate(${S.rot}deg)`;
+  const dur = fast ? 1200 : 2600;
+  for(let t = 0; t < dur - 300; t += 140){ setTimeout(() => beep(700, 0.03), t); }
+  await sleep(dur + 150);
+  beep(880, 0.15, 'triangle');
+  return u[i];
+}
+
+/* ============ ルーレットの けっか ============ */
+function growBonus(p){
+  const others = S.pieces.filter(q => q !== p);
+  for(const t of p.traits){
+    const g = TRAITS[t].grow;
+    if(g === 'always') return t;
+    if(g === 'pla' && sumN('pla') > 0) return t;
+    if(g === 'prey' && others.some(isAnimal)) return t;
+    if(g === 'seer' && others.some(q => q.traits.includes('eye'))) return t;
+    if(g === 'biter' && others.some(q => q.traits.includes('fang'))) return t;
+  }
+  return null;
+}
+const addN = (p, k) => { const b = p.n; p.n = Math.max(p.n, Math.min(capOf(p), p.n + k)); if(p.n > b) p.small = false; return p.n - b; };
+// 結果を {big, kid, ad, html, after} で返す(表示は呼び出し側)
+function resultOf(p, k){
+  if(k === 'none') return {big:'・', kid:'なにも ない ばしょ', ad:'いまは、どの生き物の食べものもない場所です。生き物がふえて食べもののつながりが広がると、ここも➕になります。'};
+  if(k === 'shinka'){
+    const pool = Object.keys(TRAITS).filter(t => traitOK(t, p.st) && unlocked(t) && !p.traits.includes(t));
+    if(!pool.length) return {big:'✨', kid:'もう ぜんぶ そろってる', ad:'持てるとくちょうは、もう全部そろっています。'};
+    const t = pick(pool), T = TRAITS[t];
+    p.traits.push(t); const dropped = p.traits.length > MAX_TRAITS ? p.traits.shift() : null;
+    let after = null;
+    if(COEVO[t] && !S.coevo[t]){ S.coevo[t] = true; after = COEVO[t]; }
+    return {big:'✨' + T.icon, kid:`しんか！ ${T.name} が あらわれた`, short:`✨${T.icon} あらわれた`,
+      ad:`「${T.name}」をもつものが、${formName(p)}の中に現れて広がりました。${T.ad}${dropped ? `(とくちょうは${MAX_TRAITS}つまで。${TRAITS[dropped].name}はなくなりました)` : ''}`, after, fan:true};
+  }
+  if(k === p.st){
+    const bt = growBonus(p), got = addN(p, 2 + (bt ? 1 : 0)), cap = capOf(p);
+    return got ? {big:'➕' + form(p), kid:`${form(p)} が ${got}ひき ふえた！`, short:`➕ ${got}ひき ふえた`, html:pRow(p), fan:true,
+                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
+               : {big:'➕' + form(p), kid:'たべものが たりなくて ふえられない', short:'➕ たべものが たりない', html:pRow(p),
+                  ad:`食べものが足りないので、これ以上ふえられません(いまは${cap}ひきまで)。${CAP_AD[p.st] || ''}`};
+  }
+  // ほかの系統の ➕:その系統のプレイヤーへの プレゼント
+  const cands = S.pieces.filter(q => q.st === k);
+  const q = cands.reduce((a, b) => a.n <= b.n ? a : b);
+  const got = addN(q, 2);
+  return {big:`${markHtml(p, 46)}🎁${markHtml(q, 46)}`, kid: got ? `${markOf(q)} に プレゼント！ ${form(q)} が ${got}ひき ふえた` : `${markOf(q)} に プレゼント！ でも たべものが たりなかった`,
+          short: got ? `🎁 ${markOf(q)} の ${form(q)} が ふえた` : `🎁 ${markOf(q)} へ…たべものが たりない`, html:pRow(q),
+          ad: got ? `${STAGES[k].name}の➕でした。${STAGES[k].name}が${got}ひきふえます。プレイヤーどうしの「プレゼント」です。いろいろな系統がいるほど、プレゼントのチャンスもふえます。` : `${STAGES[k].name}の➕でしたが、食べものが足りず、ふえられませんでした。`};
+}
+
+/* ============ 手番 ============ */
+async function humanTurn(p){
+  S.cur = p.id; S.lastCur = p.id; render();
+  if(humanCount() > 1) await popup(whoHtml(p), `つぎは ${markOf(p)} の ばん！`, {btn:'はじめる ▶'});
+  narr(`${markOf(p)} の ばん！ ルーレットを まわしてね`, true, `${formName(p)}(${STAGES[p.st].name})の番です。止まったところで、なかまがふえたり、とくちょうが現れたりします。`);
+  await waitSpin(p);
+  const k = await spin(false);
+  const r = resultOf(p, k); render(); if(r.fan) fanfare();
+  await popup(r.big, r.kid, {html:r.html || '', sub:r.ad});
+  if(r.after) await popup('✨' + TRAITS[r.after.gives].icon, r.after.kid, {sub:r.after.ad});
+  await checkZukan(p);
+}
+async function cpuTurns(){
+  const cs = S.pieces.filter(p => !p.human);
+  if(!cs.length) return;
+  const rows = [], afters = [];
+  for(const p of cs){
+    S.cur = p.id; render();
+    $('#spin').innerHTML = '<span class="sm">🤖</span>まわす';
+    narr(`🤖 が まわすよ`, false, `コンピューターの${formName(p)}(${STAGES[p.st].name})の番です。`);
+    const k = await spin(true);
+    const r = resultOf(p, k); render();
+    rows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${r.short || r.kid}</span></div>`);
+    if(r.after) afters.push(r.after);
+    await sleep(300);
+  }
+  S.cur = -1; render();
+  await popup('🤖🎡', 'コンピューターの けっか', {html:rows.join(''), say:'コンピューターの けっか', sub:'コンピューターの番は、まとめて表示しています。くわしい説明は、下のパネルをタップすると見られます。'});
+  for(const a of afters) await popup('✨', a.kid, {sub:a.ad});
+}
+
+/* ============ ラウンドの おわり ============ */
+const WHY_UP = {
+  pla:'🍄が かれはや しがいを ぶんかいして、つちの えいようが ふえたから',
+  opi:'🌿が ふえて、たべものが ふえたから', ani:'🌿が ふえて、たべものが ふえたから',
+  art:'🌿が ふえて、たべものが ふえたから', ver:'🌿が ふえて、たべものが ふえたから',
+  fun:'いきものが ふえて、かれはや しがいが ふえたから',
+};
+const WHY_AD = {
+  pla:'分解者(菌類)が落ち葉や死がいを分解すると、土の栄養がふえ、植物がふえやすくなります。',
+  opi:'植物などがふえると、それを食べる生き物の食べものもふえます。',
+  ani:'植物がふえると、それを食べる動物の食べものもふえます。',
+  art:'植物がふえると、それを食べる動物の食べものもふえます(このゲームでは植物を動物の食べものの土台としています)。',
+  ver:'植物がふえると、それを食べる動物の食べものもふえます(このゲームでは植物を動物の食べものの土台としています)。',
+  fun:'生き物がふえると、落ち葉や死がいなど、分解者の食べものもふえます。',
+};
+async function roundChanges(){
+  const trims = [];
+  S.pieces.forEach(p => { const c = capOf(p); if(p.n > c){ trims.push({p, from:p.n, to:c}); p.n = c; } });
+  const before = applyAlloc(), after = S.alloc;
+  const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(k => (before[k] || 0) !== (after[k] || 0));
+  if(!keys.length && !trims.length) return;
+  S.cur = -1; render();
+  let html = '';
+  if(keys.length){
+    html += `<div class="pies"><div>${pieSVG(before, 110)}<br>まえ</div>➡️<div>${pieSVG(after, 110)}<br>あと</div></div>`;
+    html += keys.map(k => {
+      const b = before[k] || 0, a = after[k] || 0, up = a > b;
+      const label = k === 'none' ? '・なにもない' : `${stIcon(k)}➕`;
+      const why = k === 'none' ? '' : up ? `<br><small>${WHY_UP[k] || ''}</small>` : '<br><small>ほかの いきものの ぶんが ふえたから</small>';
+      return `<div class="row"><span class="rf" style="font-size:18px;min-width:56px">${label}</span><span class="rn">${b} → <b>${a}</b> ${up ? '⬆️' : '⬇️'}${why}</span></div>`;
+    }).join('');
+  }
+  if(trims.length){
+    html += '<div class="sec">たべものが たりなくて へった</div>' + trims.map(t => `<div class="row"><span class="rf">${markHtml(t.p, 34)}</span><span class="rn">${nRow(form(t.p), t.to, t.from - t.to)}</span></div>`).join('');
+  }
+  const ad = (keys.length ? 'ルーレットの➕の広さは、食べもののつながり(植物→動物、生き物→分解者→土の栄養→植物)で決まります。' + keys.filter(k => k !== 'none' && (after[k] || 0) > (before[k] || 0)).map(k => WHY_AD[k]).join('') : '')
+           + (trims.length ? `食べものが足りない生き物は、ふえられる上限(○)までへりました。${[...new Set(trims.map(t => t.p.st))].map(k => CAP_AD[k]).join('')}` : '');
+  await popup('🔄', keys.length ? 'ルーレットが かわった！' : 'たべものが たりない…', {html, sub:ad, say: keys.length ? 'ルーレットが かわった！' : 'たべものが たりない'});
+}
+
+/* ============ 枝分かれ ============ */
+function cpuFork(f){
+  const keys = Object.keys(f.opts), wsum = keys.reduce((a, k) => a + f.opts[k], 0);
+  const size = S.pieces.filter(p => p.st === f.from || keys.includes(p.st)).length;
+  const def = keys.map(k => [k, f.opts[k] / wsum * size - S.pieces.filter(p => p.st === k).length]);
+  const mx = Math.max(...def.map(d => d[1]));
+  return pick(def.filter(d => d[1] === mx).map(d => d[0]));
+}
+async function doFork(r){
+  const f = FORKS[r], group = S.pieces.filter(p => p.st === f.from);
+  if(!group.length) return;
+  const keys = Object.keys(f.opts);
+  S.cur = -1; render();
+  await popup(`${stIcon(f.from)}🔀${keys.map(stIcon).join('')}`, 'わかれみち！', {
+    html:keys.map(k => `<div class="row"><span class="rf">${stIcon(k)}</span><span class="rn">${STAGES[k].name}<br><small>${STAGES[k].desc}</small></span></div>`).join(''),
+    sub:f.ad, say:'わかれみち！ ' + f.kid});
+  for(const p of group.filter(q => q.human)){
+    S.cur = p.id; S.lastCur = p.id; render();
+    if(humanCount() > 1) await popup(whoHtml(p), `${markOf(p)} の ばん！`, {btn:'えらぶ ▶'});
+    await new Promise(res => {
+      speak('どっちの えだに すすむ？');
+      const btns = keys.map(k => `<button class="choice" data-k="${k}"><span class="ce">${stIcon(k)}</span>${STAGES[k].name}</button>`).join('');
+      const ov = overlay(`<div>${markHtml(p, 60)}</div><div class="msg">どっちの えだに すすむ？</div><div class="btnrow">${btns}</div>
+        <div class="sub" style="margin-top:12px">${keys.map(k => `${stIcon(k)} ${STAGES[k].ad}`).join('<br>')}<br><br>同じ系統を選ぶこともできますが、食べものの奪い合いになって、ふえにくくなります。</div>`);
+      ov.querySelectorAll('.choice').forEach(b => b.onclick = () => { p.st = b.dataset.k; speak(STAGES[p.st].name); fanfare(); ov.remove(); render(); res(); });
+    });
+    saveGame();
+  }
+  for(const p of group.filter(q => !q.human)) p.st = (typeof SIM_FORCE !== 'undefined' && SIM_FORCE[r]) || cpuFork(f);
+  // 枝分かれの直後は、新しい系統の ➕ を すぐ 用意する
+  const before = applyAlloc(); S.cur = -1; render();
+  await popup(S.pieces.map(p => form(p)).join(''), 'えだが わかれた！', {
+    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${STAGES[p.st].name}<br><small>${formName(p)}</small></span></div>`).join('')
+       + `<div class="pies"><div>${pieSVG(before, 100)}<br>まえ</div>➡️<div>${pieSVG(S.alloc, 100)}<br>あと</div></div>`,
+    sub:'ルーレットの➕も、それぞれの系統用に分かれました。食べものが少ない系統は、➕がせまくなります。'});
+}
+
+/* ============ できごと(ランダムイベント) ============ */
+const EVENTS = [
+  {id:'disease', w:3, icon:'🤒',
+   can:() => S.pieces.some(p => p.n >= 6),
+   run(){
+     const mx = Math.max(...S.pieces.map(p => p.n));
+     const hit = S.pieces.filter(p => p.n === mx);
+     const rows = hit.map(p => { const lost = Math.ceil(p.n / 3); p.n -= lost; return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, lost)}</span></div>`; });
+     return {kid:'びょうきが ひろがった', html:rows.join(''),
+       ad:'なかまの数がいちばん多い生き物で、病気が広がりました。同じ生き物がたくさん集まっていると、病気はうつりやすくなります。数がふえすぎると、こうしたことで数がへり、ほかの生き物とのバランスがとれていきます。'};
+   }},
+  {id:'drift', w:2, icon:'🎲',
+   can:() => S.pieces.some(p => p.n <= 3 && p.traits.length),
+   run(){
+     const p = pick(S.pieces.filter(q => q.n <= 3 && q.traits.length));
+     const t = p.traits.splice(rnd(p.traits.length), 1)[0];
+     return {kid:`かずが すくなくて ${TRAITS[t].icon} が たまたま きえた`, html:`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn"><span class="lost">${TRAITS[t].icon}</span> ${TRAITS[t].name} が きえた</span></div>`,
+       ad:`なかまの数が少ないと、たまたまある特徴をもつものがいなくなり、その特徴が失われることがあります。これを「遺伝的浮動」といいます。役に立つかどうかに関係なく、偶然で起こります。`};
+   }},
+  {id:'unused', w:2, icon:'🕳️',
+   can:() => unusedPairs().length > 0,
+   run(){
+     const [p, t] = pick(unusedPairs());
+     p.traits = p.traits.filter(x => x !== t);
+     const got = addN(p, 2);
+     return {kid:`つかわない ${TRAITS[t].icon} が なくなって、${form(p)} が ふえた`, html:`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn"><span class="lost">${TRAITS[t].icon}</span> ➡️ ${got ? `➕${got}ひき` : '(たべものが たりなくて ふえなかった)'}</span></div>`,
+       ad:`いまの環境では役に立たない特徴は、失われることがあります。たとえば暗い洞窟でくらす魚には、目が退化したものがいます。目をつくったり使ったりするためのエネルギーが節約になるため、と考えられています(ほかの説もあります)。このゲームでは、つぎの大量絶滅にも、ふえやすさにも関係しない特徴を「使わない特徴」としています。`};
+   }},
+  {id:'myco', w:2, icon:'🤝',
+   can:() => S.crisis >= 1 && S.crisis <= 3 && S.pieces.some(p => p.st === 'pla') && S.pieces.some(p => p.st === 'fun'),
+   run(){
+     const ps = S.pieces.filter(p => p.st === 'pla' || p.st === 'fun');
+     ps.forEach(p => addN(p, 1));
+     return {kid:'🌿の ねと 🍄が いっしょに くらして、どちらも ふえた', html:ps.map(p => pRow(p)).join(''),
+       ad:'植物の根に菌類がすみつき、菌類は土の中の水や栄養を植物にわたし、植物は光合成でつくった栄養を菌類にわたす関係があります(菌根共生)。初期の陸上植物の化石にも、そのあとが見つかっています。'};
+   }},
+  {id:'oxygen', w:3, icon:'💨',
+   can:() => S.crisis === 2 && S.pieces.some(p => p.st === 'art'),
+   run(){
+     const ps = S.pieces.filter(p => p.st === 'art');
+     ps.forEach(p => addN(p, 2));
+     return {kid:'くうきの さんそが おおい じだい！ 🦐の なかまが ふえた', html:ps.map(p => pRow(p)).join(''),
+       ad:'石炭紀は、大気中の酸素がいまより多かったと考えられています。メガネウラのような大きな昆虫がいたのは酸素が多かったからだ、という説がありますが、ほかの理由を考える研究者もいます。'};
+   }},
+  {id:'fire', w:2, icon:'🔥',
+   can:() => S.crisis >= 1 && S.pieces.some(p => p.st === 'pla' && p.n >= 3),
+   run(){
+     const rows = S.pieces.filter(p => p.st === 'pla').map(p => {
+       if(p.traits.includes('sleep')) return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n)}<br><small>💤 タネから また ひろがった</small></span></div>`;
+       const lost = Math.floor(p.n / 2); p.n -= lost;
+       return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, lost)}</span></div>`;
+     });
+     return {kid:'やまかじ！', html:rows.join(''),
+       ad:'山火事で植物がへりました。「じっと まつ」(タネなど)をもつ植物は、焼けたあとに残ったタネから、また広がりました。植物には、火事のあとに芽を出しやすいものもあります。'};
+   }},
+  {id:'calm', w:1, icon:'☀️',
+   can:() => true,
+   run(){
+     S.pieces.forEach(p => addN(p, 1));
+     return {kid:'おだやかな じだい。みんな すこし ふえた', html:S.pieces.map(p => pRow(p)).join(''),
+       ad:'大きな環境の変化がなく、食べものの上限までの範囲で、それぞれの生き物が少しずつふえました。'};
+   }},
+];
+function unusedPairs(){
+  const next = S.crisis < 5 ? CRISES[S.crisis].save : [];
+  const out = [];
+  S.pieces.forEach(p => p.traits.forEach(t => {
+    if(next.includes(t)) return;
+    const g = TRAITS[t].grow;
+    if(g && growBonus({...p, traits:[t]}) === t) return;
+    out.push([p, t]);
+  }));
+  return out;
+}
+async function doEvent(){
+  const cand = EVENTS.filter(e => e.can());
+  const tot = cand.reduce((a, e) => a + e.w, 0);
+  let r = Math.random() * tot, ev = cand[0];
+  for(const e of cand){ if((r -= e.w) < 0){ ev = e; break; } }
+  S.cur = -1; render(); beep(520, 0.2, 'triangle');
+  const res = ev.run(); render();
+  await popup(ev.icon, `できごと<br>${res.kid}`, {html:res.html, sub:res.ad, say:'できごと！ ' + res.kid});
+}
+
+/* ============ 大量絶滅 ============ */
+async function doCrisis(){
+  const c = CRISES[S.crisis];
+  S.cur = -1; render(); beep(150, 0.6, 'sawtooth');
+  const rows = [], revived = [];
+  S.pieces.forEach(p => {
+    const prot = p.traits.filter(t => c.save.includes(t)), f = form(p);
+    let lost = 0;
+    if(!prot.length){ lost = Math.floor(p.n / 2); p.n -= lost; }
+    if(p.n === 0){ p.n = 1; p.small = true; revived.push(p); }
+    rows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(f, p.small ? 0 : p.n, lost)}</span><span class="rm">${prot.length ? prot.map(t => TRAITS[t].icon).join('') + '✨' : '💨'}</span></div>`);
+  });
+  render();
+  await popup(c.icon, `${c.name}！`, {html:rows.join('') + revived.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">ちいさな なかまが いきのこっていた</span></div>`).join(''),
+    sub:`${c.era}。${c.t}<br>${c.save.map(t => TRAITS[t].icon + TRAITS[t].name).join('か')}をもつ生き物は生き残りました(✨)。もたない生き物は、なかまが半分にへりました(💨)。${revived.length ? '<br>全部いなくなったように見えても、小さななかまが少しだけ生き残っていました。実際の大量絶滅のあとも、生き残った小さな生き物が、空いた場所に広がっていったことが知られています。' : ''}`,
+    say:c.name + '！'});
+  S.crisis++;
+  render();
+  if(S.crisis < 5){
+    const er = ERAS[S.crisis];
+    await popup(er.icon, `${er.name}<br>に なった！`, {
+      html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${formName(p)}</span></div>`).join(''),
+      sub:`${er.sub}になりました。絵は、その時代の同じ系統の代表です(直接の祖先とはかぎりません)。`});
+    for(const p of S.pieces.filter(q => q.human)) await checkZukan(p);
+  }
+}
+
+/* ============ 図鑑 ============ */
+async function checkZukan(p, era = eraNow()){
+  for(const z of ZUKAN){
+    if(zukan.has(z.id) || z.era !== era) continue;
+    if(z.st && z.st !== p.st) continue;
+    if(z.tr && !p.traits.includes(z.tr)) continue;
+    zukan.add(z.id); saveZukan(); fanfare();
+    await popup(z.e, `📖 ずかんに<br>${z.name}`, {say:'ずかんに あたらしい いきものが のった！', sub:z.t});
+  }
+}
+function openZukan(){
+  const cards = ZUKAN.map(z => {
+    const got = zukan.has(z.id), hint = `${z.st ? stIcon(z.st) : '🦠'}${ERAS[z.era].icon}${z.tr ? TRAITS[z.tr].icon : ''}`;
+    return `<div class="zc${got ? '' : ' lock'}" data-id="${z.id}"><span class="ze">${z.e}</span>${got ? z.name : `<span class="zh">${hint}</span>`}</div>`;
+  }).join('');
+  const ov = overlay(`<div class="msg">📖 ずかん ${zukan.size} / ${ZUKAN.length}</div><div class="zg">${cards}</div><button class="ok">とじる</button>`);
+  ov.querySelector('.ok').onclick = () => ov.remove();
+  ov.querySelectorAll('.zc').forEach(c => c.onclick = () => {
+    const z = ZUKAN.find(q => q.id === c.dataset.id);
+    if(zukan.has(z.id)) popup(z.e, z.name, {sub:`${ERAS[z.era].sub}<br>${z.t}`, btn:'もどる', say:z.name});
+    else popup('❓', 'まだ みつけて いないよ', {sub:`ヒント：${z.st ? stIcon(z.st) + STAGES[z.st].name + 'で、' : ''}${ERAS[z.era].icon}${ERAS[z.era].name}${z.tr ? 'に、' + TRAITS[z.tr].icon + TRAITS[z.tr].name + 'をもっていく' : 'に いく'}`, btn:'もどる'});
+  });
+}
+
+/* ============ 進行 ============ */
+async function loop(){
+  render();
+  while(S.round <= ROUNDS){
+    const r = S.round, hs = S.pieces.filter(p => p.human);
+    while(S.idx < hs.length){ saveGame(); await humanTurn(hs[S.idx]); S.idx++; }
+    if(!S.done['cpu' + r]){ await cpuTurns(); S.done['cpu' + r] = 1; saveGame(); }
+    narr(`${r}ラウンドめの おわり`, false, 'ラウンドの終わりに、枝分かれ・ルーレットの変化・大量絶滅やできごとが起こります。');
+    if(FORKS[r] && !S.done['fork' + r]){ await doFork(r); S.done['fork' + r] = 1; saveGame(); }
+    if(!S.done['chg' + r]){ await roundChanges(); S.done['chg' + r] = 1; saveGame(); }
+    if(CRISIS_END.includes(r) && !S.done['cr' + r]){ await doCrisis(); S.done['cr' + r] = 1; }
+    if(EVENT_END.includes(r) && !S.done['ev' + r]){ await doEvent(); S.done['ev' + r] = 1; }
+    S.idx = 0; S.round++; saveGame(); render();
+  }
+  await ending();
+}
+let STAR3 = 24, STAR2 = 18;
+async function ending(){
+  store.del('shinka_game');
+  S.cur = -1; render(); fanfare(); setTimeout(fanfare, 500);
+  const total = S.pieces.reduce((a, p) => a + p.n, 0);
+  const kinds = new Set(S.pieces.map(p => p.st)).size;
+  const stars = total >= STAR3 ? 3 : total >= STAR2 ? 2 : 1;
+  await popup('🌍🎉', 'みんなで 5かいの<br>ききを のりこえた！', {
+    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p, 5)}</span><span class="rn">${formName(p, 5)}</span></div>`).join(''),
+    sub:'そして新生代、「いま」の生き物たちへ。'});
+  for(const p of S.pieces.filter(q => q.human)) await checkZukan(p, 5);
+  await popup('⭐'.repeat(stars), stars === 3 ? 'とても ゆたかな<br>せいたいけい！' : stars === 2 ? 'ゆたかな せいたいけい！' : 'みんなで いきのこった！', {
+    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${form(p, 5).repeat(p.n)}</span></div>`).join(''),
+    sub:`なかまの ごうけい ${total}ひき ／ 系統 ${kinds}しゅるい ／ ずかん ${zukan.size} / ${ZUKAN.length}`, btn:'もういちど'});
+  title();
+}
+
+/* ============ タイトル ============ */
+function title(){
+  $('#ovs').innerHTML = '';
+  const saved = store.get('shinka_game', null);
+  const ov = overlay(`<div class="big">🦠🎡🦖</div><div class="msg">しんか ルーレット</div>
+    <div style="margin-bottom:10px">なんにんで あそぶ？</div>
+    <div class="btnrow">${[1,2,3,4].map(n => `<button class="pbtn" data-n="${n}">${'👤'.repeat(n)}</button>`).join('')}</div>
+    ${saved ? '<div style="margin-top:14px"><button class="ok" id="cont">つづきから ▶</button></div>' : ''}
+    <div><a class="back" href="../../samples/">← ゲーム一覧</a></div>`);
+  ov.querySelectorAll('.pbtn').forEach(b => b.onclick = async () => {
+    beep(700); ov.remove();
+    const nh = +b.dataset.n, marks = [];
+    for(let i = 0; i < nh; i++){
+      await new Promise(res => {
+        speak(nh > 1 ? `${i + 1}ばんめの こ、 しるしを えらんでね` : 'しるしを えらんでね');
+        const btns = MARKS.map(m => `<button class="pbtn" data-m="${m}" style="width:30%;font-size:40px;border:6px solid ${COLORS[i]};background:#fff" ${marks.includes(m) ? 'disabled' : ''}>${m}</button>`).join('');
+        const o2 = overlay(`<div class="msg">${nh > 1 ? `${i + 1}ばんめの こ<br>` : ''}じぶんの しるしを えらんでね</div><div class="btnrow">${btns}</div><div class="sub" style="margin-top:12px">このしるしが、ゲームのあいだずっと自分の目印になります。生き物の姿は時代で変わりますが、しるしは変わりません。</div>`);
+        o2.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { marks.push(x.dataset.m); beep(800); o2.remove(); res(); });
+      });
+    }
+    newGame(nh, marks); render();
+    await popup('🦠🦠🦠🦠', 'みんな ちいさな いきもの<br>から スタート！', {
+      html:`<div style="margin-bottom:10px">${S.pieces.map(p => markHtml(p, 50)).join(' ')}</div>`,
+      sub:'ルーレットを回して、止まったところで生き物がふえたり、とくちょうが現れたりします。<br>➕：その系統のなかまがふえる。ほかの人の系統なら、その人へのプレゼント。<br>✨：とくちょうが現れる。<br>上の❄️🫧🌋🔥☄️は5回の大量絶滅。とくちょうがあると生き残りやすい。<br>みんなで協力して、5回をのりこえよう。',
+      say:'みんな ちいさな いきもの から スタート！ ルーレットを まわして、みんなで 5かいの ききを のりこえよう'});
+    loop();
+  });
+  const c = ov.querySelector('#cont');
+  if(c) c.onclick = () => { ov.remove(); S = saved; loop(); };
+}
+
+/* ============ 起動 ============ */
+$('#bSnd').textContent = soundOn ? '🔊' : '🔇';
+$('#bSnd').onclick = () => { soundOn = !soundOn; store.set('shinka_sound', soundOn); $('#bSnd').textContent = soundOn ? '🔊' : '🔇'; };
+$('#bZk').onclick = openZukan;
+$('#bMenu').onclick = () => {
+  const ov = overlay(`<div class="msg">さいしょから やりなおす？</div><div class="btnrow"><button class="ok" id="y">はい</button><button class="ok" id="n" style="background:#999;box-shadow:0 4px 0 #666">いいえ</button></div><div><a class="back" href="../../samples/">← ゲーム一覧</a></div>`);
+  ov.querySelector('#n').onclick = () => ov.remove();
+  ov.querySelector('#y').onclick = () => { store.del('shinka_game'); location.reload(); };
+};
+$('#wheel').addEventListener('click', () => {
+  if(!S) return;
+  const rows = Object.keys(S.alloc).map(k => `<div class="row"><span class="rf" style="font-size:20px;min-width:56px">${k === 'none' ? '・' : stIcon(k) + '➕'}</span><span class="rn">${k === 'none' ? 'なにもない' : STAGES[k].name + 'が ふえる'}：${S.alloc[k]}めもり</span></div>`).join('')
+    + `<div class="row"><span class="rf" style="font-size:20px;min-width:56px">✨</span><span class="rn">とくちょうが あらわれる：${SHINKA_UNITS}めもり</span></div>`;
+  popup('🎡', 'ルーレットの なかみ', {btn:'とじる', html:rows, sub:'➕の広さは、食べもののつながりで変わります。ほかの人の➕に止まると、その人へのプレゼントになります。✨では、止まった生き物の系統に合ったとくちょうが現れます(植物に目は現れません)。'});
+});
+const showPiece = e => {
+  const el = e.target.closest('.pn,#me'); if(!el || !S) return;
+  const p = S.pieces[+el.dataset.id];
+  popup(markHtml(p, 60) + ' ' + form(p), formName(p), {btn:'とじる', sub:`${stIcon(p.st)} ${STAGES[p.st].name}：${STAGES[p.st].ad}<br>なかまの数：${p.n}ひき。いまの食べもので、ふえられるのは${capOf(p)}ひきまで。${CAP_AD[p.st] || ''}<br>${p.traits.length ? 'とくちょう：<br>' + p.traits.map(t => `${TRAITS[t].icon}${TRAITS[t].name}：${TRAITS[t].ad}`).join('<br>') : 'とくちょう：まだなし'}${p.human ? '' : '<br>🤖 コンピューターが動かしています。'}`});
+};
+$('#panels').addEventListener('click', showPiece);
+$('#me').addEventListener('click', showPiece);
+$('#bHelp').onclick = () => {
+  const L = (i, t) => `<div class="lgd"><span class="li">${i}</span><span>${t}</span></div>`;
+  const ov = overlay(`<div class="msg">あそびかた</div>
+    ${L('🎡', 'ルーレットを回して、止まったところで何かが起こります。ルーレットをタップすると中身が見られます。')}
+    ${L('🐟➕', 'その系統のなかまがふえます。ほかの人の系統なら、その人へのプレゼント。')}
+    ${L('✨', 'とくちょうが現れます。')}
+    ${L('○', 'ふえられる上限。いろいろな系統がいると食べものがつながって、みんなの上限が上がります。')}
+    ${L('🔄', 'ラウンドの終わりに、生き物の数に合わせてルーレットの広さが変わります。')}
+    ${L('🔀', '1〜3ラウンドの終わりに、系統が枝分かれします。')}
+    ${L('❄️🫧🌋🔥☄️', '5回の大量絶滅(4・6・8・10・12ラウンドの終わり)。')}
+    ${L('🤒🎲', 'そのあいだのラウンドの終わりには、病気などの「できごと」が起こります。')}
+    ${L('👆', 'パネルをタップすると説明が出ます。')}
+    <button class="ok">とじる</button>`);
+  ov.querySelector('.ok').onclick = () => ov.remove();
+};
+title();
+</script>
+</body>
+</html>

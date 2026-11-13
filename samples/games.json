@@ -229,6 +229,22 @@
       "playtime": "約3〜12分",
       "added": "2026-11-13",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "shinka-roulette",
+      "title": "しんかルーレット",
+      "description": "生き物の進化と5回の大量絶滅を、みんなで乗りこえる協力ルーレット。1台のスマホを交代で回し、植物・きのこ・虫・せぼねのなかまに枝分かれして数をふやす。いろいろな系統がそろうほど食べものがつながって強くなる。図鑑と読み上げつき。",
+      "path": "../games/shinka-roulette/",
+      "thumbnail": "../games/shinka-roulette/thumb.jpg",
+      "tags": [
+        "知育",
+        "こども",
+        "シミュレーション"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約15分",
+      "added": "2026-11-13",
+      "author": "@naoya_oosugi"
     }
   ]
 }
