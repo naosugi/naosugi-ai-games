@@ -4,10 +4,14 @@
 collections.json に載っているフォルダ（samples/、events/<id>/ など）ごとに
   - index.html（一覧）と print.html（印刷用QRシート）をひな形から書き出す
   - qr/_page.png（一覧ページ）と qr/<ゲームid>.png（各ゲーム）を作る
+  - 各ゲームの index.html にSNS共有用のOGPタグ（タイトル・説明・サムネイル）を入れる
+    （<!-- OGP --> 〜 <!-- /OGP --> の間を毎回書き換える）
+  - assets/og.jpg（トップと一覧ページの共有用画像。サムネイルを並べたもの）を作る
 
-使い方:  pip install segno  →  python3 tools/build.py
+使い方:  pip install segno pillow  →  python3 tools/build.py
 """
-import json, os, posixpath, segno
+import html, json, os, posixpath, re, segno
+from PIL import Image
 
 BASE_URL = 'https://naosugi.github.io/naosugi-ai-games/'
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +22,7 @@ LIST = '''<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ゲーム一覧 - 作ってみたゲームの発表会（仮）</title>
+{ogp}
 <link rel="stylesheet" href="{up}assets/site.css">
 </head>
 <body data-mode="list">
@@ -95,26 +100,99 @@ body{{margin:0;font-family:system-ui,-apple-system,"Hiragino Sans",sans-serif;co
 '''
 
 
+SITE_NAME = '作ってみたゲームの発表会（仮）'
+OG_IMAGE = 'assets/og.jpg'
+
+
+def ogp(title, desc, url, image_rel):
+    """SNS共有用のタグ。image_rel はリポジトリ直下から見た画像の位置"""
+    w, h = Image.open(os.path.join(ROOT, image_rel)).size
+    e = lambda v: html.escape(str(v), quote=True)
+    rows = [
+        ('property', 'og:type', 'website'),
+        ('property', 'og:site_name', SITE_NAME),
+        ('property', 'og:locale', 'ja_JP'),
+        ('property', 'og:title', title),
+        ('property', 'og:description', desc),
+        ('property', 'og:url', url),
+        ('property', 'og:image', BASE_URL + image_rel),
+        ('property', 'og:image:width', w),
+        ('property', 'og:image:height', h),
+        ('name', 'twitter:card', 'summary_large_image'),
+    ]
+    tags = '\n'.join(f'<meta {k}="{n}" content="{e(v)}">' for k, n, v in rows)
+    return f'<!-- OGP: tools/build.py が書き出します -->\n{tags}\n<!-- /OGP -->'
+
+
+OGP_RE = re.compile(r'<!-- OGP[: ].*?<!-- /OGP -->', re.S)
+
+
+def put_ogp(path, block):
+    """ファイル内の OGP ブロックを差し替える。無ければ </title> の直後に入れる"""
+    if not os.path.exists(path):
+        return
+    s = open(path, encoding='utf8').read()
+    if OGP_RE.search(s):
+        t = OGP_RE.sub(lambda m: block, s, count=1)
+    else:
+        t = re.sub(r'(</title>[^\n]*\n)', lambda m: m.group(1) + block + '\n', s, count=1)
+    if t != s:
+        open(path, 'w', encoding='utf8').write(t)
+
+
+def make_og_image(thumbs):
+    """サムネイルを3×3に並べた 1200×630 の共有用画像を作る"""
+    W, H, cols, rows = 1200, 630, 3, 3
+    tw, th = W // cols, H // rows
+    out = Image.new('RGB', (W, H), (16, 20, 40))
+    for i, f in enumerate(thumbs[:cols * rows]):
+        im = Image.open(os.path.join(ROOT, f)).convert('RGB')
+        sc = max(tw / im.width, th / im.height)
+        im = im.resize((round(im.width * sc), round(im.height * sc)), Image.LANCZOS)
+        l, t = (im.width - tw) // 2, (im.height - th) // 2
+        out.paste(im.crop((l, t, l + tw, t + th)), ((i % cols) * tw, (i // cols) * th))
+    out.save(os.path.join(ROOT, OG_IMAGE), quality=85, optimize=True, progressive=True)
+
+
 def qr(url, path):
     segno.make(url, error='m').save(path, scale=12, border=4)
 
 
 def main():
     cols = json.load(open(os.path.join(ROOT, 'collections.json'), encoding='utf8'))
+    # 共有用画像（新しいサンプルから順にサムネイルを並べる）
+    thumbs = []
+    for c in cols:
+        rel = c['path'].strip('/')
+        data = json.load(open(os.path.join(ROOT, rel, 'games.json'), encoding='utf8'))
+        gs = [g for g in data.get('games', []) if g.get('thumbnail')]
+        if c.get('kind') == 'sample':
+            gs.sort(key=lambda g: g.get('added', ''), reverse=True)
+        thumbs += [posixpath.normpath(rel + '/' + g['thumbnail']) for g in gs]
+    if thumbs:
+        make_og_image(thumbs)
+    put_ogp(os.path.join(ROOT, 'index.html'),
+            ogp(SITE_NAME, '令和の技術で令和の発想を平成初期風ゲームに。個人開発のHTMLゲーム置き場', BASE_URL, OG_IMAGE))
     for c in cols:
         rel = c['path'].strip('/')
         d = os.path.join(ROOT, rel)
         up = '../' * (rel.count('/') + 1)
         os.makedirs(os.path.join(d, 'qr'), exist_ok=True)
-        for name, tpl in (('index.html', LIST), ('print.html', PRINT)):
-            open(os.path.join(d, name), 'w', encoding='utf8').write(tpl.format(up=up))
         page_url = BASE_URL + rel + '/'
+        block = ogp(c['title'] + ' - ' + SITE_NAME, c.get('lead', ''), page_url, OG_IMAGE)
+        for name, tpl in (('index.html', LIST), ('print.html', PRINT)):
+            open(os.path.join(d, name), 'w', encoding='utf8').write(tpl.format(up=up, ogp=block))
         qr(page_url, os.path.join(d, 'qr', '_page.png'))
         data = json.load(open(os.path.join(d, 'games.json'), encoding='utf8'))
         keep = {'_page.png'}
         for g in data.get('games', []):
             url = BASE_URL + posixpath.normpath(rel + '/' + g['path']) + '/'
             qr(url, os.path.join(d, 'qr', g['id'] + '.png'))
+            gdir = os.path.join(ROOT, posixpath.normpath(rel + '/' + g['path']))
+            img = posixpath.normpath(rel + '/' + g['thumbnail']) if g.get('thumbnail') else OG_IMAGE
+            block = ogp(g['title'], g.get('description', ''), url, img)
+            put_ogp(os.path.join(gdir, 'index.html'), block)
+            put_ogp(os.path.join(gdir, 'src', 'head.html'), block)  # 分割して作っているゲーム用（入っていれば）
             keep.add(g['id'] + '.png')
         for f in os.listdir(os.path.join(d, 'qr')):
             if f.endswith('.png') and f not in keep:

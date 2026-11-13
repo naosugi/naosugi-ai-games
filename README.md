@@ -48,7 +48,7 @@ events/<番号>/         イベントで作られたゲームの一覧（samples
 1. ゲームを置く（サンプルは `games/<id>/`、イベントは `events/<イベント>/games/<id>/`）
 2. 必要ならサムネイル画像（16:9、`thumb.jpg`）を同じフォルダに置く
 3. その一覧の `games.json` の `games` に1件追加する。`path` と `thumbnail` は `games.json` のあるフォルダから見た位置で書く
-4. `python3 tools/build.py` を実行してQRコードを作る（初回は `pip install segno`）
+4. `python3 tools/build.py` を実行してQRコードを作る（初回は `pip install segno pillow`）。SNSでURLを共有したときに出る画像・説明（OGPタグ）も、このとき `games.json` の `title` `description` `thumbnail` から各ゲームの `index.html` に書き込まれる
 
 ```json
 {
@@ -81,7 +81,7 @@ events/<番号>/         イベントで作られたゲームの一覧（samples
 
 ## ライセンス
 
-QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Clause）を使っています（ビルド時のみ。サイトには含めていません）。
+QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Clause）、共有用画像 `assets/og.jpg` の作成には [Pillow](https://python-pillow.org/)（MIT-CMU License）を使っています（ビルド時のみ。サイトには含めていません）。
 
 このリポジトリのコードは MIT License（[LICENSE](LICENSE)）です。
 
