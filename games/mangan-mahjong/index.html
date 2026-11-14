@@ -680,9 +680,15 @@ function cpuGiveUp(i){
   if(lv==='mid')return best.ev<1500;
   if(lv==='hard')return best.ev<2500;
   const b=bossPlan(i);const D=G.scores[i]-G.scores[1-i];
-  // 最終局で諦めても延長戦になるだけ（逃げ切りにはならない）
-  const ug=G.kyoku>=4?0.5+0.5*Math.tanh((D-4000)/11000):bossU(D-4000);
-  return ug>b.u+0.01;
+  if(G.kyoku>=4){
+    // 最終局：逆転も同点もできない配牌なら、打っても負け確定。諦めて延長戦に望みをつなぐ
+    // （諦めて30000点差になるなら、どちらにしても負けなので打つ）
+    const reach=G.P[i].ana.hands.some(h=>h.waits.some(x=>x.r.pts>=8000&&x.avail>0&&D+x.r.pts>=0));
+    if(D<0&&!reach)return D-4000>-30000;
+    // 最終局で諦めても延長戦になるだけ（逃げ切りにはならない）
+    return 0.5+0.5*Math.tanh((D-4000)/11000)>b.u+0.01;
+  }
+  return bossU(D-4000)>b.u+0.01;
 }
 // ---------- 隠しボス：点差と局数を見た手作り ----------
 function bossU(d){ // 対局に勝つ見込み（0〜1）のざっくりした評価
@@ -791,11 +797,11 @@ function nextKyoku(){
   if(G.tut){tutFinish();return;}
   const L=document.getElementById('fx');if(L)L.innerHTML='';
   if(G.result.type==='redeal'){startKyoku();return;}
-  // 諦め・満貫不可で終わった局では対局は終わらない（最終局なら延長戦へ）
-  if(G.result.type==='pen'){G.kyoku++;startKyoku();return;}
   const d=Math.abs(G.scores[0]-G.scores[1]);
   const fin=()=>{const w=G.scores[0]>G.scores[1]?0:1;say(w,'win','happy');say(1-w,'lose','sad');};
   if(d>=30000){fin();G.phase='final';G.endReason='30000点差がつきました';render();return;}
+  // 諦め・満貫不可で終わった局では、4局終了の判定はしない（最終局なら延長戦へ）
+  if(G.result.type==='pen'){G.kyoku++;startKyoku();return;}
   if(G.kyoku>=4&&G.scores[0]!==G.scores[1]){fin();G.phase='final';G.endReason=G.kyoku===4?'4局終了':'延長戦決着';render();return;}
   G.kyoku++;startKyoku();
 }
@@ -1046,7 +1052,7 @@ function rulesHTML(){
   <li>全員ダブル立直扱いで+2翻。相手の1打目でロンすると一発(+1翻)。</li>
   <li>相手の捨て牌でロン。満貫以上のみ和了可。自分の捨て牌に待ち牌があるとフリテンでロン不可。</li>
   <li>全員リーチ中なので、ロンできる牌を見逃すとその局はフリテン。つまり<b>一度通った牌は安全</b>（満貫未満でロンできない待ちが出た場合はフリテンにならないが、その牌は以後もロンできない。最後の1打だけは河底+1翻で満貫に届くことがある）。</li>
-  <li>30000点差がつくか、4局終了で終了（同点なら延長）。ただし<b>諦め・満貫聴牌なしで終わった局では対局は終わらず</b>、最終局なら延長戦に進みます。</li>
+  <li>30000点差がつくか、4局終了で終了（同点なら延長）。ただし<b>諦め・満貫聴牌なしで終わった局では4局終了にならず</b>、最終局なら延長戦に進みます（30000点差がついたら終了）。</li>
   </ol>
   <div class="mini" style="margin-top:6px">表ドラ1枚のみ（裏ドラ・カンドラなし）／親・ツモなし／符計算あり（4翻30符=7700は満貫にならない）／四暗刻は単騎のみ+3翻（三暗刻とは重ねない）／河底・数え役満・ダブル役満あり／点数は子の点数。風牌は役牌になりません。字牌を公開しても門前扱いです。</div>`;
 }
