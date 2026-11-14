@@ -12,7 +12,7 @@
 <meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="つみきドカーン！">
-<meta property="og:description" content="ボールで積み木をたおす、こども向けの面クリアゲーム。上をタップしてボールを落とし、下ではパチンコを引っぱって発射する。顔のある積み木がはじけ飛び、コンボや紙吹雪で盛り上がる。ステージごとのランキングつき。">
+<meta property="og:description" content="ボールで積み木をたおす、こども向けの面クリアゲーム。上をタップしてボールを落とし、下ではパチンコを引っぱって発射する。ばくだんの連鎖や風船、ボールがふえる虹色の積み木など、いろいろな積み木が登場する。ステージごとのランキングつき。">
 <meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/tsumiki-dokaan/">
 <meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/tsumiki-dokaan/thumb.jpg">
 <meta property="og:image:width" content="960">
@@ -48,6 +48,12 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
 .demo i{display:block;width:30px;height:30px;border-radius:8px;animation:hop 1s ease-in-out infinite}
 .demo i:nth-child(2){animation-delay:.15s}.demo i:nth-child(3){animation-delay:.3s}.demo i:nth-child(4){animation-delay:.45s}
 @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px) rotate(12deg)}}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 96px);transform:translateX(-50%);background:#fff;border-radius:20px;padding:10px 18px;font-weight:900;color:#3b3b72;box-shadow:0 5px 0 rgba(0,0,0,.15);z-index:6;pointer-events:none;text-align:center;opacity:0;white-space:nowrap}
+#toast.show{animation:toast 3.6s ease forwards}
+#toast b{display:block;color:#ff5f7e;font-size:14px}
+#toast span{display:block;font-size:21px}
+#toast em{display:block;font-style:normal;font-size:14px;color:#6a6a9a}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,-20px) scale(.7)}8%{opacity:1;transform:translate(-50%,0) scale(1.08)}12%{transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0}}
 #mid{display:flex;flex-direction:column;align-items:center;gap:4px}
 #score{font-size:14px;padding:4px 12px;color:#e8590c}
 .card{max-height:calc(100vh - 30px);overflow-y:auto}
@@ -71,9 +77,9 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
 .rankNav{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;color:#3b3b72;font-size:20px}
 .rankNav button{border:none;width:44px;height:44px;border-radius:50%;background:#e7ecff;font-size:18px;color:#3b3b72;font-family:inherit;touch-action:manipulation}
 .back{display:inline-block;margin-top:14px;color:#6a6a9a;font-weight:800;text-decoration:none;font-size:15px;padding:6px 10px;touch-action:manipulation}
-#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 6px}
-.sbtn{border:none;border-radius:18px;padding:10px 0 8px;font-family:inherit;font-weight:900;font-size:24px;color:#fff;background:#69c35a;box-shadow:0 5px 0 #4a9a3e;touch-action:manipulation}
-.sbtn small{display:block;font-size:13px;color:#fff6c2;letter-spacing:1px;min-height:16px}
+#grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:8px 0 6px}
+.sbtn{border:none;border-radius:14px;padding:8px 0 5px;font-family:inherit;font-weight:900;font-size:19px;color:#fff;background:#69c35a;box-shadow:0 5px 0 #4a9a3e;touch-action:manipulation}
+.sbtn small{display:block;font-size:9px;color:#fff6c2;letter-spacing:0;min-height:12px}
 .sbtn:disabled{background:#cfd4e3;box-shadow:0 5px 0 #aab0c4;color:#fff}
 .sbtn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #4a9a3e}
 </style>
@@ -86,6 +92,8 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
   <div id="mid"><div class="pill" id="remain">のこり 0</div><div class="pill" id="score">0 てん</div></div>
   <div style="display:flex;gap:6px"><button class="ib" id="btnReset" aria-label="やりなおし">↻</button><button class="ib" id="btnMenu" aria-label="メニュー">☰</button></div>
 </div>
+
+<div id="toast"></div>
 
 <div class="overlay show" id="title">
   <div class="card">
@@ -194,7 +202,7 @@ const ctx = canvas.getContext('2d');
 let blocks = [], balls = [], plats = [], particles = [], texts = [];
 let stageIdx = 0, used = 0, par = 3, cleared = false, clearTimer = 0;
 let combo = 0, comboTimer = 0, comboText = null, shake = 0, lastDrop = -99, lastHit = -99, steps = 0, bandVib = 0;
-let pull = null, playing = false, stageScore = 0;
+let pull = null, playing = false, stageScore = 0, stageT = 0;
 const kicks = [];
 let hintDrop = true, hintSling = true;
 const clouds = Array.from({length: 4}, (_, i) => ({ x: Math.random() * W, y: 60 + i * 45 + Math.random() * 20, s: 0.7 + Math.random() * 0.6, v: 0.08 + Math.random() * 0.12 }));
@@ -202,6 +210,7 @@ const clouds = Array.from({length: 4}, (_, i) => ({ x: Math.random() * W, y: 60 
 // ---------- 保存 ----------
 let save = { unlocked: 1, stars: [] };
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') save = Object.assign(save, s); } catch (e) {}
+if (save.stars && save.stars[9] && save.unlocked < 11) save.unlocked = 11; // 10ステージ版で全クリアしていた人は11へ
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
 
 // ---------- 画面サイズ ----------
@@ -272,12 +281,17 @@ const sfx = {
     [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.25, 0, i * 0.11));
     [1047, 1319, 1568].forEach(f => tone(f, 0.7, 'triangle', 0.14, 0, 0.5));
   },
+  boom() { noise(0.6, 0.7, 160); noise(0.25, 0.4, 900); tone(110, 0.5, 'sine', 0.45, 35); },
+  balloon() { noise(0.07, 0.5, 3200); tone(950, 0.08, 'square', 0.05, 300); },
+  glass() { for (let i = 0; i < 4; i++) tone(2000 + Math.random() * 2500, 0.2, 'sine', 0.07, 0, i * 0.03); noise(0.15, 0.25, 5000); },
+  boing() { tone(170, 0.35, 'sine', 0.25, 540); },
+  magic() { [1047, 1319, 1568, 2093, 2637].forEach((f, i) => tone(f, 0.2, 'triangle', 0.1, 0, i * 0.05)); },
   star(i) { const f = [880, 1109, 1319][i]; tone(f, 0.35, 'sine', 0.22); tone(f * 2, 0.25, 'sine', 0.08, 0, 0.02); },
 };
 function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
 
 // ---------- ステージ定義 ----------
-const plat = (x, s, w) => ({ x, s, w });
+const plat = (x, s, w, move) => ({ x, s, w, move });
 function pyr(L, cx, s, n, kf) {
   for (let r = 0; r < n; r++) { const c = n - r;
     for (let k = 0; k < c; k++) L.push({ x: cx + (k - (c - 1) / 2) * BS, y: s - BS / 2 - r * BS, w: BS, h: BS, kind: kf ? kf(r, n) : 'n' }); }
@@ -297,6 +311,10 @@ function hut(L, cx, s, floors, span) {
   }
   return y;
 }
+function circ(L, x, y, kind) { L.push({ x, y, w: 32, h: 32, r: 16, kind, shape: 'circle' }); }
+function tri(L, cx, s, w, h) { w = w || 64; h = h || 34; L.push({ x: cx, y: s - h / 3, w, h, kind: 'tri', shape: 'tri' }); }
+function big(L, cx, s) { L.push({ x: cx, y: s - 32, w: 64, h: 64, kind: 'big' }); }
+function setK(L, from, kind) { L[from].kind = kind; }
 const RAW_LEVELS = [
   H => { const s = H * .46, L = []; pyr(L, 200, s, 3); return { plats: [plat(200, s, 112)], blocks: L, par: 2 }; },
   H => { const s = H * .46, L = []; tow(L, 200, s, 2, 5); return { plats: [plat(200, s, 80)], blocks: L, par: 3 }; },
@@ -315,11 +333,94 @@ const RAW_LEVELS = [
          return { plats: [plat(200, a, 112), plat(85, b, 84), plat(315, b, 84)], blocks: L, par: 5 }; },
   H => { const s = H * .46, L = []; pyr(L, 200, s, 6, (r, n) => r === n - 1 ? 'gold' : r < 1 ? 'stone' : r >= 3 ? 'ice' : 'n');
          return { plats: [plat(200, s, 210)], blocks: L, par: 6 }; },
+  // 11 ばくだん
+  H => { const s = H * .46, L = []; tow(L, 200, s, 3, 3); setK(L, 4, 'bomb'); return { plats: [plat(200, s, 112)], blocks: L, intro: 'bomb' }; },
+  // 12 ふうせん
+  H => { const s = H * .46, L = []; tow(L, 200, s, 2, 2);
+         circ(L, 90, H * .30, 'balloon'); circ(L, 150, H * .22, 'balloon'); circ(L, 250, H * .24, 'balloon'); circ(L, 315, H * .32, 'balloon'); circ(L, 200, H * .16, 'balloon');
+         return { plats: [plat(200, s, 80)], blocks: L, intro: 'balloon' }; },
+  // 13 ガラス
+  H => { const s = H * .46, L = []; tow(L, 200, s, 2, 5, () => 'glass'); return { plats: [plat(200, s, 80)], blocks: L, intro: 'glass' }; },
+  // 14 ゼリー
+  H => { const s = H * .46, L = []; pyr(L, 200, s, 4, r => r === 0 ? 'jelly' : 'n'); return { plats: [plat(200, s, 144)], blocks: L, intro: 'jelly' }; },
+  // 15 にじいろ
+  H => { const s = H * .46, L = []; pyr(L, 200, s, 5, (r, n) => r === n - 1 ? 'gold' : 'n'); setK(L, 7, 'rainbow'); return { plats: [plat(200, s, 176)], blocks: L, intro: 'rainbow' }; },
+  // 16 まる
+  H => { const s = H * .46, L = []; tow(L, 104, s, 1, 2); tow(L, 296, s, 1, 2); for (let i = 0; i < 5; i++) circ(L, 136 + i * 32, s - 16, 'wheel');
+         circ(L, 104, s - 80, 'wheel'); circ(L, 296, s - 80, 'wheel');
+         return { plats: [plat(200, s, 240)], blocks: L, intro: 'wheel' }; },
+  // 17 さんかく
+  H => { const a = H * .44, b = H * .38, L = []; tow(L, 80, a, 2, 1); tri(L, 80, a - BS); tow(L, 200, b, 2, 2); tri(L, 200, b - 2 * BS); tow(L, 320, a, 2, 1); tri(L, 320, a - BS);
+         return { plats: [plat(80, a, 84), plat(200, b, 84), plat(320, a, 84)], blocks: L, intro: 'tri' }; },
+  // 18 おおきい
+  H => { const s = H * .46, L = []; big(L, 168, s); big(L, 232, s); big(L, 200, s - 64); tow(L, 200, s - 128, 2, 1);
+         return { plats: [plat(200, s, 144)], blocks: L, intro: 'big' }; },
+  // 19 うごく だい
+  H => { const s = H * .44, L = []; pyr(L, 200, s, 3); return { plats: [plat(200, s, 112, { ax: 90, sp: 0.018 })], blocks: L, intro: 'move' }; },
+  // 20 ばくだん れんさ
+  H => { const a = H * .46, b = H * .36, L = []; tow(L, 80, a, 2, 3, r => r === 0 ? 'bomb' : 'n'); tow(L, 320, a, 2, 3, r => r === 0 ? 'bomb' : 'n');
+         pyr(L, 200, b, 3, r => r === 0 ? 'bomb' : 'n');
+         return { plats: [plat(80, a, 84), plat(320, a, 84), plat(200, b, 112)], blocks: L }; },
+  // 21 ガラスの おしろ
+  H => { const s = H * .46, L = []; tow(L, 120, s, 1, 3, () => 'stone'); tow(L, 280, s, 1, 3, () => 'stone'); tow(L, 200, s, 3, 3, () => 'glass');
+         const py = s - 3 * BS; L.push({ x: 200, y: py - PH / 2, w: 196, h: PH, kind: 'plank' });
+         const ps = py - PH; L.push({ x: 200, y: ps - BS / 2, w: BS, h: BS, kind: 'gold' }); tow(L, 128, ps, 1, 1, () => 'glass'); tow(L, 272, ps, 1, 1, () => 'glass');
+         return { plats: [plat(200, s, 210)], blocks: L }; },
+  // 22 ふうせん いっぱい
+  H => { const s = H * .44, L = []; tow(L, 200, s, 1, 2); L.push({ x: 200, y: s - 2 * BS - BS / 2, w: BS, h: BS, kind: 'gold' });
+         for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; circ(L, 200 + Math.cos(a) * 125, H * .19 + Math.sin(a) * 55, 'balloon'); }
+         return { plats: [plat(200, s, 52)], blocks: L }; },
+  // 23 たかい とう
+  H => { const s = H * .46, L = [], k = ['n', 'glass', 'ice']; tow(L, 140, s, 1, 7, r => k[r % 3]); tow(L, 260, s, 1, 7, r => k[(r + 1) % 3]);
+         return { plats: [plat(140, s, 52), plat(260, s, 52)], blocks: L }; },
+  // 24 うごく だい ふたつ
+  H => { const a = H * .26, b = H * .46, L = []; pyr(L, 200, a, 3); tow(L, 200, b, 2, 2);
+         return { plats: [plat(200, a, 112, { ax: 100, sp: 0.02 }), plat(200, b, 80, { ax: 100, sp: 0.02, ph: Math.PI })], blocks: L }; },
+  // 25 おおきな ピラミッド
+  H => { const s = H * .46, L = []; pyr(L, 200, s, 7, (r, n) => r === n - 1 ? 'gold' : 'n'); setK(L, 1, 'bomb'); setK(L, 5, 'bomb'); setK(L, 19, 'bomb');
+         return { plats: [plat(200, s, 240)], blocks: L }; },
+  // 26 ゼリーの トランポリン
+  H => { const s = H * .46, L = []; tow(L, 200, s, 5, 1, () => 'jelly'); pyr(L, 200, s - BS, 4); setK(L, 10, 'bomb');
+         return { plats: [plat(200, s, 176)], blocks: L }; },
+  // 27 さんかく おしろ
+  H => { const s = H * .46, L = []; tow(L, 200, s, 5, 2, r => r === 0 ? 'stone' : 'n'); tri(L, 136, s - 2 * BS); tri(L, 200, s - 2 * BS); tri(L, 264, s - 2 * BS);
+         return { plats: [plat(200, s, 192)], blocks: L }; },
+  // 28 にじいろ ガラス
+  H => { const s = H * .46, L = []; pyr(L, 200, s, 5, (r, n) => r === n - 1 ? 'gold' : 'glass'); setK(L, 7, 'rainbow'); setK(L, 0, 'bomb'); setK(L, 4, 'bomb');
+         return { plats: [plat(200, s, 176)], blocks: L }; },
+  // 29 ごちゃまぜ
+  H => { const a = H * .30, b = H * .46, L = []; tow(L, 200, a, 2, 2, () => 'glass'); circ(L, 150, H * .14, 'balloon'); circ(L, 250, H * .14, 'balloon');
+         tow(L, 80, b, 2, 3, r => r === 0 ? 'bomb' : 'n'); tow(L, 320, b, 2, 3);
+         return { plats: [plat(200, a, 80), plat(80, b, 84), plat(320, b, 84, { ax: 30, sp: 0.025 })], blocks: L }; },
+  // 30 フィナーレ
+  H => { const s = H * .46, c = H * .40, L = [];
+         pyr(L, 200, s, 6, (r, n) => r === n - 1 ? 'gold' : r === 0 ? 'stone' : 'n'); setK(L, 6, 'bomb'); setK(L, 10, 'bomb'); setK(L, 13, 'bomb'); setK(L, 16, 'rainbow');
+         tow(L, 50, c, 1, 3, () => 'glass'); tow(L, 350, c, 1, 3, () => 'glass');
+         circ(L, 110, H * .16, 'balloon'); circ(L, 290, H * .16, 'balloon'); circ(L, 200, H * .10, 'balloon');
+         return { plats: [plat(200, s, 210), plat(50, c, 52), plat(350, c, 52)], blocks: L }; },
 ];
 
-const ORDER = [0, 1, 3, 6, 2, 4, 5, 8, 7, 9];
-const PARS  = [2, 3, 3, 3, 5, 5, 8, 7, 8, 10];
-const LEVELS = ORDER.map((o, i) => H => Object.assign(RAW_LEVELS[o](H), { par: PARS[i] }));
+const ORDER = [0, 1, 3, 6, 2, 4, 5, 8, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
+const PARS  = [2, 3, 3, 3, 5, 5, 8, 7, 8, 10, 2, 4, 2, 2, 4, 4, 4, 4, 3, 2, 6, 4, 3, 4, 4, 3, 5, 2, 4, 12];
+const LEVELS = ORDER.map((o, i) => H => Object.assign(RAW_LEVELS[o](H), { par: PARS[i] || 5 }));
+const INTRO = {
+  bomb: ['💣 ばくだん', 'あてると ドカーン！ まわりも ふきとぶ'],
+  balloon: ['🎈 ふうせん', 'ボールが さわると パン！'],
+  glass: ['💎 ガラス', 'つよく あてると われる'],
+  jelly: ['🟢 ゼリー', 'ボヨーンと よく はねる'],
+  rainbow: ['🌈 にじいろ', 'あてると ボールが ふえる！'],
+  wheel: ['⚪ まる', 'ころころ ころがる'],
+  tri: ['🔺 さんかく', 'やねの つみき'],
+  big: ['🟦 おおきい', 'おおきくて おもたい'],
+  move: ['↔️ うごく だい', 'だいが うごくよ。よく ねらって！'],
+};
+function showToast(key) {
+  const el = document.getElementById('toast'), d = INTRO[key];
+  if (!d) return;
+  el.innerHTML = '<b>あたらしい なかま！</b><span></span><em></em>';
+  el.querySelector('span').textContent = d[0]; el.querySelector('em').textContent = d[1];
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
 
 const KIND = {
   n:     { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
@@ -327,8 +428,16 @@ const KIND = {
   stone: { density: 0.006,  friction: 0.9,  frictionStatic: 1,   restitution: 0.02 },
   gold:  { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
   plank: { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
+  bomb:  { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
+  balloon: { density: 0.0006, friction: 0.3, frictionStatic: 0.5, restitution: 0.6, frictionAir: 0.05 },
+  glass: { density: 0.0012, friction: 0.6,  frictionStatic: 0.9, restitution: 0.05 },
+  jelly: { density: 0.0012, friction: 0.9,  frictionStatic: 1,   restitution: 0.9 },
+  rainbow: { density: 0.0015, friction: 0.8, frictionStatic: 1,  restitution: 0.05 },
+  wheel: { density: 0.0015, friction: 0.5,  frictionStatic: 0.8, restitution: 0.2 },
+  tri:   { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
+  big:   { density: 0.0015, friction: 0.8,  frictionStatic: 1,   restitution: 0.05 },
 };
-const KCOLOR = { ice: '#9fe6ff', stone: '#a0a8ba', gold: '#ffd23f', plank: '#e0a86c' };
+const KCOLOR = { ice: '#9fe6ff', stone: '#a0a8ba', gold: '#ffd23f', plank: '#e0a86c', bomb: '#3d3d55', glass: '#c8f1ff', jelly: '#5fe39a', rainbow: '#ff8fd0' };
 
 function loadStage(i) {
   Composite.clear(world, false);
@@ -342,19 +451,26 @@ function loadStage(i) {
   Composite.add(world, [wl, wr]);
   for (const p of def.plats) {
     const b = Bodies.rectangle(p.x, p.s + 9, p.w, 18, { isStatic: true, friction: 0.9, collisionFilter: { category: CAT_PLAT, mask: CAT_BLOCK } });
-    b.pw = p.w; b.isPlat = true; plats.push(b);
+    b.pw = p.w; b.isPlat = true; b.move = p.move; b.baseX = p.x; plats.push(b);
   }
   Composite.add(world, plats);
   for (const d of def.blocks) {
     const k = KIND[d.kind];
-    const b = Bodies.rectangle(d.x, d.y, d.w, d.h, Object.assign({ collisionFilter: { category: CAT_BLOCK, mask: CAT_BALL | CAT_BLOCK | CAT_PLAT } }, k));
+    const opt = Object.assign({ collisionFilter: { category: CAT_BLOCK, mask: CAT_BALL | CAT_BLOCK | CAT_PLAT } }, k);
+    let b;
+    if (d.shape === 'circle') b = Bodies.circle(d.x, d.y, d.r, opt);
+    else if (d.shape === 'tri') b = Body.create(Object.assign({ position: { x: d.x, y: d.y }, vertices: Matter.Vertices.clockwiseSort([{ x: -d.w / 2, y: 0 }, { x: d.w / 2, y: 0 }, { x: 0, y: -d.h }]) }, opt));
+    else b = Bodies.rectangle(d.x, d.y, d.w, d.h, opt);
+    b.shape = d.shape || 'rect'; b.r = d.r; b.homeY = d.y; b.phase = Math.random() * 6; b.fuse = 0; b.trigger = false;
     b.kind = d.kind; b.bw = d.w; b.bh = d.h; b.alive = true; b.hitFlash = 0; b.isBlock = true;
     b.color = KCOLOR[d.kind] || PALETTE[(Math.random() * PALETTE.length) | 0];
     blocks.push(b);
   }
   Composite.add(world, blocks);
-  used = 0; stageScore = 0; par = def.par; cleared = false; clearTimer = 0; combo = 0; comboTimer = 0; shake = 0;
+  used = 0; stageScore = 0; stageT = 0; kicks.length = 0; par = def.par; cleared = false; clearTimer = 0; combo = 0; comboTimer = 0; shake = 0;
   updateHUD();
+  document.getElementById('toast').classList.remove('show');
+  if (def.intro) setTimeout(() => { if (stageIdx === i) showToast(def.intro); }, 250);
 }
 
 // ---------- ボール ----------
@@ -407,13 +523,30 @@ function confetti(n) {
       type: 'conf', rot: Math.random() * 6, vr: (Math.random() - .5) * .3, seed: Math.random() * 100 });
   }
 }
+function explode(x, y) {
+  kicks.push({ x, y, rv: 22, boom: true });
+  burst(x, y, '#ff9d2e', 26); burst(x, y, '#ffe066', 18);
+  particles.push({ x, y, vx: 0, vy: 0, life: 22, max: 22, color: '#fff2b0', size: 150, type: 'ring' });
+  particles.push({ x, y, vx: 0, vy: 0, life: 14, max: 14, color: '#ff9d2e', size: 90, type: 'ring' });
+  texts.push({ x, y: y - 20, s: 'ドカーン！', life: 50, max: 50, color: '#ff8a1e', size: 30 });
+  sfx.boom(); vib(60); shake = Math.max(shake, 18);
+}
 function popBlock(b) {
   b.alive = false; Composite.remove(world, b);
   combo = comboTimer > 0 ? combo + 1 : 1; comboTimer = 80;
   const x = Math.max(20, Math.min(W - 20, b.position.x)), y = Math.min(b.position.y, KILLY - 10);
   const gold = b.kind === 'gold';
-  burst(x, y, b.color, gold ? 30 : 16);
-  const pts = (gold ? 500 : 100) * combo;
+  if (b.kind === 'glass') { burst(x, y, '#e6fbff', 22); sfx.glass(); }
+  else if (b.kind === 'balloon') { burst(x, y, b.color, 18); sfx.balloon(); }
+  else if (b.kind === 'rainbow') { for (let i = 0; i < 4; i++) burst(x, y, PALETTE[(Math.random() * PALETTE.length) | 0], 8); }
+  else if (b.kind !== 'bomb') burst(x, y, b.color, gold ? 30 : 16);
+  if (b.kind === 'bomb') explode(x, Math.min(b.position.y, KILLY));
+  if (b.kind === 'rainbow') {
+    sfx.magic();
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.55, nb = makeBall(b.position.x, b.position.y, 11, 0.008); nb.bonus = true; Body.setVelocity(nb, { x: Math.cos(a) * 9, y: Math.sin(a) * 9 }); }
+    texts.push({ x, y: y - 36, s: 'ボールが ふえた！', life: 60, max: 60, color: '#ff8fd0', size: 22 });
+  }
+  const pts = ({ gold: 500, bomb: 200, rainbow: 300, balloon: 150, glass: 150, big: 200 }[b.kind] || 100) * combo;
   stageScore += pts;
   texts.push({ x, y: y - 12, s: '+' + pts, life: 55, max: 55, color: gold ? '#ffb000' : '#ffffff', size: gold ? 26 : 20 });
   if (combo >= 2) comboText = { s: combo + ' コンボ！', life: 70, max: 70 };
@@ -429,7 +562,11 @@ Events.on(engine, 'collisionStart', ev => {
     if (!a.isBall) continue;
     const rv = Math.hypot(a.velocity.x - b.velocity.x, a.velocity.y - b.velocity.y);
     if (b.isBlock) {
+      if (b.kind === 'balloon' && rv > 0.5) b.trigger = true;
       if (rv > 3) {
+        if (b.kind === 'bomb' || b.kind === 'rainbow') b.trigger = true;
+        if (b.kind === 'glass' && rv > 5) b.trigger = true;
+        if (b.kind === 'jelly' && steps - lastHit > 3) { sfx.boing(); lastHit = steps - 1; }
         if (steps - lastHit > 3) { sfx.hit(rv); lastHit = steps; }
         sparks((a.position.x + b.position.x) / 2, (a.position.y + b.position.y) / 2, Math.min(12, rv | 0));
         b.hitFlash = 8;
@@ -474,17 +611,24 @@ document.addEventListener('dblclick', e => e.preventDefault());
 
 // ---------- 更新 ----------
 function stepGame() {
-  steps++;
+  steps++; stageT++;
+  for (const p of plats) if (p.move) Body.setPosition(p, { x: p.baseX + Math.sin(stageT * p.move.sp + (p.move.ph || 0)) * p.move.ax, y: p.position.y }, true);
+  for (const b of blocks) if (b.alive && b.kind === 'balloon') // ふうせんは ふわふわ うかぶ
+    Body.applyForce(b, b.position, { x: Math.sin(stageT * 0.03 + b.phase) * b.mass * 0.00004, y: -b.mass * 0.001 + (b.homeY - b.position.y) * b.mass * 0.000004 });
   Engine.update(engine, STEP);
   // ボールが当たった周りの積み木をはじき飛ばす(ドカーン効果)
   for (const k of kicks) {
-    const R = k.drop ? 120 : 90, P = k.drop ? 0.5 : 0.4;
+    const R = k.boom ? 150 : k.drop ? 120 : 90, P = k.boom ? 0.75 : k.drop ? 0.5 : 0.4;
     for (const b of blocks) {
       if (!b.alive) continue;
       const dx = b.position.x - k.x, dy = b.position.y - k.y, d = Math.hypot(dx, dy);
       if (d > R || d < 0.01) continue;
-      const dv = (1 - d / R) * k.rv * P / (b.kind === 'stone' ? (k.drop ? 1.15 : 1.8) : 1);
-      if (k.drop) {
+      const dv = (1 - d / R) * k.rv * P / (b.kind === 'stone' || b.kind === 'big' ? (k.drop ? 1.15 : k.boom ? 1.4 : 1.8) : 1);
+      if ((b.kind === 'glass' || b.kind === 'balloon') && dv > (k.boom ? 2 : 3.5)) b.trigger = true;
+      if (k.boom && b.kind === 'bomb' && !b.fuse) b.fuse = 10; // となりの ばくだんも れんさ
+      if (k.boom) {
+        Body.setVelocity(b, { x: b.velocity.x + dx / d * dv, y: b.velocity.y + dy / d * dv - dv * 0.45 });
+      } else if (k.drop) {
         // 上から: 真下に押しつぶさず、左右にはじき上げる
         const sx = Math.abs(dx) > 4 ? Math.sign(dx) : (Math.random() < 0.5 ? -1 : 1);
         Body.setVelocity(b, { x: b.velocity.x + sx * dv * 1.0, y: b.velocity.y - dv * 0.8 });
@@ -498,9 +642,11 @@ function stepGame() {
   kicks.length = 0;
   for (const b of blocks) {
     if (!b.alive) continue;
+    if (b.fuse > 0 && --b.fuse === 0) b.trigger = true;
+    if (b.trigger) { popBlock(b); continue; }
     if (b.hitFlash > 0) b.hitFlash--;
     const p = b.position;
-    if (p.y > KILLY || p.x < -60 || p.x > W + 60) popBlock(b);
+    if (p.y > KILLY || p.y < -80 || p.x < -60 || p.x > W + 60) popBlock(b);
   }
   for (let i = balls.length - 1; i >= 0; i--) {
     const b = balls[i]; b.age++;
@@ -522,7 +668,8 @@ function stepGame() {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx; p.y += p.vy;
-    if (p.type === 'conf') { p.vy = Math.min(p.vy + 0.04, 2.6); p.vx += Math.sin((p.life + p.seed) * 0.08) * 0.06; }
+    if (p.type === 'ring') {}
+    else if (p.type === 'conf') { p.vy = Math.min(p.vy + 0.04, 2.6); p.vx += Math.sin((p.life + p.seed) * 0.08) * 0.06; }
     else { p.vy += 0.18; p.vx *= 0.98; }
     if (p.rot !== undefined) p.rot += p.vr;
     if (--p.life <= 0 || p.y > H + 40) particles.splice(i, 1);
@@ -579,26 +726,78 @@ function drawPlat(b) {
   ctx.fillStyle = '#6ccf52'; rr(x, y - 2, b.pw, 8, 4); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.3)'; rr(x + 6, y - 1, b.pw - 12, 2.5, 1); ctx.fill();
 }
+function drawAny(b) {
+  if (b.shape === 'circle') return drawRound(b);
+  if (b.shape === 'tri') return drawTri(b);
+  if (b.kind === 'bomb') return drawBomb(b);
+  drawBlock(b);
+}
+function drawBomb(b) {
+  ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+  const hot = b.fuse > 0 && steps % 6 < 3;
+  ctx.fillStyle = hot ? '#ff4b4b' : '#3d3d55'; ctx.beginPath(); ctx.arc(0, 2, 15, 0, 7); ctx.fill();
+  ctx.fillStyle = '#56566f'; rr(-6, -15, 12, 6, 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(-6, -4, 4, 2.5, -0.6, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#d9b26f'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -15); ctx.quadraticCurveTo(4, -22, 10, -21); ctx.stroke();
+  ctx.fillStyle = steps % 4 < 2 ? '#ffe066' : '#ff8a1e'; ctx.save(); ctx.translate(11, -21); ctx.rotate(steps * 0.3); starPath(4 + Math.random() * 2); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-5.5, 3, 2.6, 0, 7); ctx.arc(5.5, 3, 2.6, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-9, -2); ctx.lineTo(-3, 0); ctx.moveTo(9, -2); ctx.lineTo(3, 0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 10, 3, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+  ctx.restore();
+}
+function drawRound(b) {
+  const r = b.r;
+  ctx.save(); ctx.translate(b.position.x, b.position.y);
+  if (b.kind === 'balloon') {
+    const sw = Math.sin(stageT * 0.08 + b.phase) * 4;
+    ctx.strokeStyle = 'rgba(80,80,110,.6)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, r + 3); ctx.quadraticCurveTo(sw, r + 14, -sw * 0.5, r + 26); ctx.stroke();
+    ctx.fillStyle = shade(b.color, -0.2); ctx.beginPath(); ctx.moveTo(-3, r + 4); ctx.lineTo(3, r + 4); ctx.lineTo(0, r - 1); ctx.fill();
+    ctx.fillStyle = b.color; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 1.12, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.ellipse(-r * 0.4, -r * 0.45, r * 0.22, r * 0.34, -0.5, 0, 7); ctx.fill();
+    ctx.save(); ctx.scale(0.8, 0.8); drawFace(b); ctx.restore();
+  } else {
+    ctx.rotate(b.angle);
+    ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = shade(b.color, -0.28); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.ellipse(-r * 0.35, -r * 0.45, r * 0.4, r * 0.22, -0.5, 0, 7); ctx.fill();
+    ctx.save(); ctx.scale(0.85, 0.85); drawFace(b); ctx.restore();
+  }
+  if (b.hitFlash > 0) { ctx.fillStyle = `rgba(255,255,255,${b.hitFlash / 12})`; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function drawTri(b) {
+  const v = b.vertices;
+  ctx.beginPath(); ctx.moveTo(v[0].x, v[0].y); for (let i = 1; i < v.length; i++) ctx.lineTo(v[i].x, v[i].y); ctx.closePath();
+  ctx.lineJoin = 'round'; ctx.fillStyle = b.color; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = shade(b.color, -0.28); ctx.stroke();
+  ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
+  ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(0, -4, 3.5, 0, 7); ctx.fill();
+  if (b.hitFlash > 0) { ctx.restore(); ctx.save(); ctx.fillStyle = `rgba(255,255,255,${b.hitFlash / 12})`; ctx.beginPath(); ctx.moveTo(v[0].x, v[0].y); for (let i = 1; i < v.length; i++) ctx.lineTo(v[i].x, v[i].y); ctx.fill(); }
+  ctx.restore();
+}
 function drawBlock(b) {
   ctx.save(); ctx.translate(b.position.x, b.position.y); ctx.rotate(b.angle);
   const w = b.bw, h = b.bh, r = Math.min(7, h / 2.5);
-  ctx.globalAlpha = b.kind === 'ice' ? 0.88 : 1;
-  ctx.fillStyle = b.color; rr(-w / 2, -h / 2, w, h, r); ctx.fill();
-  ctx.lineWidth = 2.5; ctx.strokeStyle = shade(b.color, -0.28); ctx.stroke();
+  if (b.kind === 'jelly' && b.hitFlash > 0) { const q = Math.sin(b.hitFlash * 1.6) * 0.14; ctx.scale(1 + q, 1 - q); }
+  ctx.globalAlpha = b.kind === 'ice' ? 0.88 : b.kind === 'glass' ? 0.55 : b.kind === 'jelly' ? 0.85 : 1;
+  const col = b.kind === 'rainbow' ? `hsl(${(steps * 4 + b.id * 40) % 360},90%,64%)` : b.color;
+  ctx.fillStyle = col; rr(-w / 2, -h / 2, w, h, r); ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = b.kind === 'rainbow' || b.kind === 'glass' ? '#ffffff' : shade(b.color, -0.28); ctx.stroke();
   ctx.globalAlpha = 1;
   ctx.fillStyle = 'rgba(255,255,255,.38)'; rr(-w / 2 + 4, -h / 2 + 3, w - 8, Math.max(3, h * 0.24), 3); ctx.fill();
   if (b.kind === 'plank') {
     ctx.strokeStyle = 'rgba(120,70,30,.35)'; ctx.lineWidth = 1.5; ctx.beginPath();
     if (w > h) { ctx.moveTo(-w / 2 + 8, 1); ctx.lineTo(w / 2 - 8, 1); } else { ctx.moveTo(0, -h / 2 + 8); ctx.lineTo(0, h / 2 - 8); }
     ctx.stroke();
-  } else if (b.kind === 'gold') {
+  } else if (b.kind === 'glass') {
+    ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-10, 8); ctx.lineTo(2, -6); ctx.moveTo(-3, 11); ctx.lineTo(6, 1); ctx.stroke();
+  } else if (b.kind === 'gold' || b.kind === 'rainbow') {
     ctx.save(); ctx.rotate(Math.sin(steps * 0.05) * 0.15); ctx.fillStyle = '#fff6b0'; starPath(11); ctx.fill();
     ctx.strokeStyle = '#e6a400'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
     if (steps % 20 === 0 && b.alive) particles.push({ x: b.position.x + (Math.random() - .5) * 30, y: b.position.y + (Math.random() - .5) * 30, vx: 0, vy: -0.5, life: 25, max: 25, color: '#fff7c0', size: 4, type: 'star', rot: 0, vr: 0.1 });
   } else {
     if (b.kind === 'ice') { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-9, 10); ctx.lineTo(4, -3); ctx.moveTo(-3, 12); ctx.lineTo(9, 0); ctx.stroke(); }
     if (b.kind === 'stone') { ctx.strokeStyle = 'rgba(70,75,95,.45)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(8, -12); ctx.lineTo(4, -6); ctx.lineTo(9, -2); ctx.stroke(); }
-    drawFace(b);
+    if (b.kind === 'big') { ctx.save(); ctx.scale(1.8, 1.8); drawFace(b); ctx.restore(); } else drawFace(b);
   }
   if (b.hitFlash > 0) { ctx.fillStyle = `rgba(255,255,255,${b.hitFlash / 12})`; rr(-w / 2, -h / 2, w, h, r); ctx.fill(); }
   ctx.restore();
@@ -673,7 +872,8 @@ function drawParticles() {
   for (const p of particles) {
     const a = Math.min(1, p.life / (p.max * 0.5));
     ctx.globalAlpha = a; ctx.fillStyle = p.color;
-    if (p.type === 'dot') { ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.5 + 0.5 * a), 0, 7); ctx.fill(); }
+    if (p.type === 'ring') { ctx.strokeStyle = p.color; ctx.lineWidth = 8 * a; ctx.beginPath(); ctx.arc(p.x, p.y, (1 - p.life / p.max) * p.size + 10, 0, 7); ctx.stroke(); }
+    else if (p.type === 'dot') { ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.5 + 0.5 * a), 0, 7); ctx.fill(); }
     else if (p.type === 'star') { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); starPath(p.size * 1.3); ctx.fill(); ctx.restore(); }
     else { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, Math.abs(Math.sin(p.rot * 2)) + 0.2); ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.66); ctx.restore(); }
   }
@@ -705,7 +905,7 @@ function draw() {
   ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * (offX + sx * scale), dpr * (offY + sy * scale));
   drawBg();
   for (const p of plats) drawPlat(p);
-  for (const b of blocks) if (b.alive) drawBlock(b);
+  for (const b of blocks) if (b.alive) drawAny(b);
   for (const b of balls) drawBall(b);
   drawSling();
   drawParticles();
