@@ -727,23 +727,23 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
   });
   // 模倣機と OMEGA原型だけ。ロボット同士の撃ち合い
   STAGES.push({
-    id: 'sp3', name: 'SP-3', sub: 'ロボまみれ', goal: 'clear', time: 600, startPoints: 900, wide: true,
-    brief: ['敵はすべて、ロボット。', '模倣機の群れと、OMEGA原型。'], win: '敵ロボット、全機沈黙。',
-    intro: '出てくるのは模倣機とOMEGA原型だけ。模倣機は20秒ごとに次々来て、最後にOMEGA原型が2体。すべて倒せば勝ち。',
+    id: 'sp3', name: 'SP-3', sub: 'ロボまみれ', goal: 'clear', time: 600, startPoints: 700, wide: true,
+    brief: ['敵はすべて、ロボット。', '模倣機の群れ、改造型、そしてOMEGA原型。'], win: '敵ロボット、全機沈黙。',
+    intro: '出てくるのは模倣機・模倣機・改・OMEGA原型だけ。模倣機は12秒ごとに次々来て、模倣機・改が1分ごとに混ざり、3分からはOMEGA原型も2体来る。すべて倒せば勝ち。',
     map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
     outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
     paths: radialPaths(4, 32, 0, .3),
-    waves: Array.from({ length: 10 }, (_, i) => [20 + i * 20, 'boss', 1, 0, '*']).concat([[240, 'omega', 1, 0, 0], [250, 'omega', 1, 0, 2]]),
+    waves: Array.from({ length: 16 }, (_, i) => [15 + i * 12, 'boss', 1, 0, '*']).concat([90, 150, 210, 270].map(t => [t, 'boss2', 1, 0, '*']), [[180, 'omega', 1, 0, 0], [200, 'omega', 1, 0, 2]]),
   });
-  // OMEGA ABYSS 5体の2分耐久（20秒ごとに1体ずつ増える。いつもより遠巻きに回る）
+  // OMEGA ABYSS 5体の2分耐久（15秒ごとに1体ずつ増える。少し遠巻きに回る）
   STAGES.push({
-    id: 'sp4', name: 'SP-4', sub: '深淵の五重奏', goal: 'time', time: 120, startPoints: 900, wide: true, dark: 9, abyssHover: 22, abyssHomeMul: .08, holdWhy: '弾幕の中で拠点を守り抜く',
+    id: 'sp4', name: 'SP-4', sub: '深淵の五重奏', goal: 'time', time: 120, startPoints: 800, wide: true, dark: 9, abyssHover: 20, abyssHomeMul: .09, holdWhy: '弾幕の中で拠点を守り抜く',
     brief: ['OMEGA ABYSS、5体。', '倒す必要はない。2分間、拠点を守り抜け。'], win: '2分経過。……弾幕が、やんだ。',
-    intro: '2分間、拠点を守り抜けば勝ち。OMEGA ABYSS が20秒ごとに1体ずつ増え、最後は5体。ロボットを盾に、壁と修理で弾をしのげ。',
+    intro: '2分間、拠点を守り抜けば勝ち。OMEGA ABYSS が15秒ごとに1体ずつ増え、1分ほどで5体そろう。ロボットを盾に、壁と修理で弾をしのげ。',
     map: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
     outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B', 'p'], [0, -10, 'C', 'p'], [0, 10, 'D', 'p']],
     paths: radialPaths(5, 36, 0, .3),
-    waves: [0, 1, 2, 3, 4].map(i => [3 + i * 20, 'abyss', 1, 0, i]),
+    waves: [0, 1, 2, 3, 4].map(i => [3 + i * 15, 'abyss', 1, 0, i]),
   });
   // ---------- スペシャルⅡ「一点突破」：それぞれ、決まった戦い方を崩し、別の武器や工事が活きるように作る ----------
   const more = (list, k) => list.map(w => [w[0], w[1], w[2], w[3], Math.max(1, Math.round(w[4] * k)), w[5]].concat(w.slice(6))); // 出方の数を k 倍
@@ -1106,10 +1106,11 @@ function newState(stageId, opt) {
   return S;
 }
 // 高難度（全作戦クリア後のやりこみ）：敵が多く・硬く・攻撃が重い。倒したときのポイントは少し多い。数値はおおまか
-const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1.2, goal: 1.4, ebase: 1.5, boss: 1.6, start: 1.4 };
+// 高難度：敵の数・HP・攻撃・敵拠点・ボスを強くする。開始ポイントと稼ぎは通常と同じ（増やすとかえって簡単になるため）
+const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1, goal: 1.4, ebase: 1.5, boss: 1.6, start: 1 };
 function hardStage(st) {
   return Object.assign({}, st, {
-    hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: HARD.pts, startPoints: Math.round(st.startPoints * HARD.start),
+    hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: (st.ptsMul || 1) * HARD.pts, startPoints: Math.round(st.startPoints * HARD.start), // 作戦ごとの稼ぎの倍率（ptsMul）は残す
     waves: st.waves.map(w => [w[0], w[1], ENEMIES[w[1]].boss ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
     goalPts: st.goalPts ? Math.round(st.goalPts * HARD.goal / 10) * 10 : st.goalPts,
     bossMul: HARD.boss / HARD.hp, // ボス（模倣機・OMEGA）は hpMul も掛かるので、合わせて HARD.boss 倍

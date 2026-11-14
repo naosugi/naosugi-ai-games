@@ -1259,7 +1259,7 @@ function stageDetail(stId) {
     (st.brief ? commHTML(st.brief) : '') +
     (st.id === 'endless' ? endlessRecHTML() : '') +
     (allClear() && !st.special ? '<div class="tabs diff"><button data-hard="0" class="' + (curHard ? '' : 'on') + '">通常' + (cleared(st.id) ? '<small> ✓</small>' : '') + '</button><button data-hard="1" class="' + (curHard ? 'on hard' : '') + '">🔥 高難度' + (clearedH(st.id) ? '<small> ✓</small>' : '') + '</button></div>' +
-      (curHard ? '<div class="dim" style="margin:-2px 0 4px">敵の数 ×' + RD.HARD.count + '・硬さ ×' + RD.HARD.hp + '・攻撃 ×' + RD.HARD.dmg + '。開始ポイント ×' + RD.HARD.start + '・倒したときのポイント ×' + RD.HARD.pts + '。目標ポイント ×' + RD.HARD.goal + '</div>' : '') : '') +
+      (curHard ? '<div class="dim" style="margin:-2px 0 4px">敵の数 ×' + RD.HARD.count + '・硬さ ×' + RD.HARD.hp + '・攻撃 ×' + RD.HARD.dmg + '・敵拠点 ×' + RD.HARD.ebase + '・ボス ×' + RD.HARD.boss + '。目標ポイント ×' + RD.HARD.goal + '。開始ポイントと稼ぎは通常と同じ</div>' : '') : '') +
     '<div class="goalbox">🎯 ' + esc(goalText(curHard && allClear() && !st.special ? RD.hardStage(st) : st)) + '</div>' +
     '<p>' + esc(st.intro) + '</p>' + newHTML(st.id) +
     '<div class="facts"><span>🛣 経路 <b>' + st.paths.length + '</b></span><span>🏭 敵拠点 <b>' + (st.ebases || []).length + '</b></span>' + ((st.outposts || []).length ? '<span>🚩 陣地 <b>' + st.outposts.length + '</b></span>' : '') + '<span>⭐ 開始 <b>' + st.startPoints + '</b></span></div>' +
