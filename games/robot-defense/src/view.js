@@ -998,7 +998,7 @@ function updHud() {
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
   const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : '') + (g === 'conquer' ? ' 🚩' + S.outposts.filter(o => o.owner === 'p').length + '/' + S.outposts.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + RD.capOf(S) + (S.queue.length ? '+' + S.queue.length : ''));
@@ -1145,7 +1145,7 @@ const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
 const chOpen = c => !c.unlockBy || [].concat(c.unlockBy).every(cleared) || !!SAVE.allOpen;
 // エンドレス・ステージ作成：第5章をすべてクリアすると解放
 const C5 = (CH.find(c => c.id === 'c5') || { stages: [] }).stages;
-const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9', 'c10']); // 深淵（第6〜8章）・スペシャル（Ⅰ・Ⅱ）
+const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9', 'c10', 'c11']); // 深淵（第6〜8章）・スペシャル（Ⅰ〜Ⅲ）
 const exDone = () => (C5.length && C5.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
@@ -1305,8 +1305,8 @@ function endGame() {
   const allNow = !wasAll && allClear();
   const exNow = !wasEx && exDone();
   saveNow();
-  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
-  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
+  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'conquer' ? '全域制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
+  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'conquer' ? fmtT(S.t) + ' で敵拠点と陣地をすべて制圧した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : S.loseWhy ? fmtT(S.t) + ' ' + S.loseWhy : '時間切れ。目標を達成できなかった');
   const oi = FULL.indexOf(S.st.id), next = win && oi >= 0 && FULL[oi + 1] ? stById(FULL[oi + 1]) : null, ch = chOf(S.st.id);
   const exOpen = win && CH.find(c => c.unlockBy === S.st.id && !seen(c.id + 'u'));

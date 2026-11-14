@@ -5577,6 +5577,77 @@ const TUR = { range: 6.5, dmg: 9, cd: 1.1, shotSpeed: 10 };
     paths: radialPaths(4, 30, Math.PI / 4, .3),
     waves: waveGen(more([['swarm', 3, 290, 8, 22, .07], ['swarmHeavy', 20, 290, 14, 8, .15], ['healer', 15, 290, 14, 2, 1], ['mine', 30, 290, 20, 3, .9], ['kamikaze', 40, 290, 18, 5, .3]], 2.6)),
   }));
+  // ---------- スペシャルⅢ「速攻」：制限時間内に、敵拠点をすべて壊し陣地をすべて確保する（conquer）など ----------
+  // 1：小さな戦場を3分で制圧する
+  STAGES.push({
+    id: 'u1', name: 'SP-13', sub: '電撃戦', goal: 'conquer', time: 80, startPoints: 600, wide: true,
+    brief: ['1分20秒で、この戦場を制圧せよ。', '強い機体を待つ時間はない。'], win: '全域制圧。電撃戦、成功。',
+    intro: '1分20秒以内に、敵拠点3つを壊し、陣地5つをすべて確保すれば勝ち。陣地は敵がいない所にロボットがしばらくいると取れるが、敵が来ると取り返されることがある。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.4 },
+    outposts: [[-9, 4, 'A', 'p'], [9, 4, 'B'], [0, -12, 'C'], [-16, -14, 'D', 'e'], [16, -14, 'E', 'e']], garrison: ['shooter', 'armor'],
+    paths: radialPaths(3, 28, Math.PI / 3, .3),
+    ebases: [0, 1, 2].map(i => ({ path: i, hp: 700, pts: 150, turret: TUR })),
+    waves: waveGen([['normal', 3, 175, 10, 5, .5], ['swarm', 10, 175, 16, 16, .1], ['shooter', 20, 175, 22, 2, 1.2], ['dasher', 30, 175, 24, 2, 1]]),
+  });
+  // 2：広い戦場の端々に散らばった陣地。手分けして押さえる
+  STAGES.push({
+    id: 'u2', name: 'SP-14', sub: '広域制圧', goal: 'conquer', time: 100, startPoints: 700, wide: true,
+    brief: ['広い戦場に、陣地が散らばっている。', '一か所に固まっていては、間に合わない。'], win: '全域制圧。手分けが功を奏した。',
+    intro: '1分40秒以内に、敵拠点2つを壊し、広い戦場の端々にある陣地8つをすべて確保すれば勝ち。足の速い機体や、機体の数が活きる。陣地は取り返されることがある。',
+    map: { minX: -48, maxX: 48, minZ: -48, maxZ: 48 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.8 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B'], [-36, -36, 'C'], [36, -36, 'D'], [-36, 36, 'E'], [36, 36, 'F'], [0, -40, 'G', 'e'], [0, 40, 'H', 'e']], garrison: ['shooter', 'shooter', 'armor'],
+    paths: radialPaths(4, 46, Math.PI / 4, .25),
+    ebases: [{ path: 0, hp: 900, pts: 180, turret: TUR }, { path: 2, hp: 900, pts: 180, turret: TUR }],
+    waves: waveGen([['normal', 3, 350, 12, 6, .5], ['swarm', 10, 350, 18, 20, .1], ['wraith', 30, 350, 22, 5, .4], ['shooter', 40, 350, 28, 2, 1.2], ['flyer', 60, 350, 34, 4, .5]]),
+  });
+  // 3：陣地のすぐそばを敵が通り続ける。取った陣地にロボットを残さないと取り返される
+  STAGES.push({
+    id: 'u3', name: 'SP-15', sub: '奪い合い', goal: 'conquer', time: 105, startPoints: 700, wide: true,
+    brief: ['陣地のすぐそばを、敵が絶えず通る。', '取っても、離れればすぐに取り返される。'], win: '全域制圧。最後まで、押さえきった。',
+    intro: '1分45秒以内に、敵拠点3つを壊し、陣地6つをすべて確保すれば勝ち。陣地はどれも敵の通り道の上にあり、ロボットがいないとすぐ取り返される。最後にすべて同時に押さえる必要がある。',
+    map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.5 },
+    paths: radialPaths(3, 32, 0, .3),
+    outposts: [], garrison: [],
+    ebases: [0, 1, 2].map(i => ({ path: i, hp: 900, pts: 180, turret: TUR })),
+    waves: waveGen([['normal', 3, 295, 8, 5, .4], ['wraith', 10, 295, 14, 5, .35], ['swarm', 15, 295, 14, 18, .08], ['dasher', 25, 295, 18, 3, 1], ['armor', 40, 295, 24, 2, 1.2]]),
+  });
+  { // 陣地を、各経路の1/3・2/3の地点（道の上）に置く
+    const st = STAGES[STAGES.length - 1];
+    st.outposts = st.paths.flatMap((P, i) => [.3, .65].map((f, k) => { const pt = P[Math.min(P.length - 1, Math.round(f * (P.length - 1)))]; return [pt[0], pt[1], 'ABCDEF'[i * 2 + k], k ? 'e' : undefined]; }));
+    st.garrison = ['shooter', 'armor'];
+  }
+  // 4：工兵が壊した敵拠点を建て直しに来る。壊したあとも見張りが要る
+  STAGES.push({
+    id: 'u4', name: 'SP-16', sub: '再建の巣', goal: 'conquer', time: 105, startPoints: 700, wide: true,
+    brief: ['工兵が、壊した敵拠点を建て直しに来る。', '壊して終わりではない。'], win: '全域制圧。もう、建て直されない。',
+    intro: '1分45秒以内に、敵拠点4つを壊し、陣地4つをすべて確保すれば勝ち。工兵がたびたび来て、壊した敵拠点を建て直す。陣地は取り返されることがある。',
+    map: { minX: -34, maxX: 34, minZ: -34, maxZ: 34 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.5 },
+    outposts: [[-10, 0, 'A', 'p'], [10, 0, 'B'], [0, -12, 'C'], [0, 12, 'D', 'e']], garrison: ['shooter', 'armor'],
+    paths: radialPaths(4, 32, Math.PI / 4, .3),
+    ebases: [0, 1, 2, 3].map(i => ({ path: i, hp: 800, pts: 160, turret: TUR })),
+    waves: waveGen([['normal', 3, 295, 10, 5, .5], ['swarm', 10, 295, 16, 16, .1], ['engineer', 30, 295, 14, 2, 1], ['shooter', 30, 295, 24, 2, 1.2], ['healer', 60, 295, 40, 1, 0]]),
+  });
+  // 5：2分で⭐を貯める。倒して稼ぐ速さの勝負。高い機体を待っていると間に合わない
+  STAGES.push({
+    id: 'u5', name: 'SP-17', sub: '速攻稼ぎ', goal: 'points', goalPts: 1600, time: 120, startPoints: 150, wide: true,
+    brief: ['2分で、資源を集めきれ。', '倒して稼ぐ速さが、すべて。'], win: '目標到達。速攻、成功。',
+    intro: '2分以内に⭐1600を貯めれば勝ち（使ったポイントは戻らない）。最初は⭐150。群れが次々来るので、早く倒して早く稼ぎ、その稼ぎでさらに機体を増やそう。',
+    map: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.3 },
+    outposts: [[-9, 0, 'A', 'p'], [9, 0, 'B', 'p']],
+    paths: radialPaths(4, 28, Math.PI / 4, .3),
+    waves: waveGen([['swarm', 3, 118, 4, 14, .06], ['normal', 5, 118, 6, 5, .4], ['wraith', 20, 118, 10, 4, .35]]),
+  });
+  // 6：6方向の敵拠点と陣地を、7分で制圧する総力戦
+  STAGES.push({
+    id: 'u6', name: 'SP-18', sub: '全方位制圧', goal: 'conquer', time: 130, startPoints: 800, wide: true, dark: 7,
+    brief: ['六方向すべてに、敵拠点と陣地。', '2分10秒で、すべてを押さえよ。'], win: '全方位制圧、完了。',
+    intro: '2分10秒以内に、6方向の敵拠点6つを壊し、陣地6つをすべて確保すれば勝ち。暗い戦場。陣地は取り返されることがある。',
+    map: { minX: -40, maxX: 40, minZ: -40, maxZ: 40 }, base: { x: 0, z: 0 }, factory: { x: 2.5, z: -2.5 }, view: { zoom: 2.7 },
+    outposts: [0, 1, 2, 3, 4, 5].map(i => { const a = i / 6 * Math.PI * 2 + Math.PI / 6; return [Math.round(Math.sin(a) * 20), Math.round(Math.cos(a) * 20), 'ABCDEF'[i], i % 2 ? 'e' : undefined]; }), garrison: ['shooter', 'armor', 'mimic'],
+    paths: radialPaths(6, 38, 0, .28),
+    ebases: [0, 1, 2, 3, 4, 5].map(i => ({ path: i, hp: 1000, pts: 200, turret: TUR })),
+    waves: waveGen([['normal', 3, 410, 10, 6, .5], ['swarm', 10, 410, 16, 20, .1], ['wraith', 20, 410, 20, 5, .4], ['shooter', 30, 410, 26, 2, 1.2], ['armor', 50, 410, 30, 2, 1.4], ['mimic', 80, 410, 40, 1, 0], ['engineer', 120, 410, 50, 1, 0]]),
+  });
   // ---------- 第5章（エクストラ）：4-4クリアで解放。全作戦クリア（高難度・ノヴァの解禁）の判定には含めない ----------
   STAGES.push({
     id: 'x1', name: '5-1', sub: '追撃路', goal: 'escort', time: 320, startPoints: 600, wide: true,
@@ -5732,6 +5803,9 @@ const CHAPTERS = [
   // スペシャルⅡ：決まった戦い方が通じにくく、ふだん出番の少ない武器や工事が活きる作戦。第8章すべてクリアで解放
   { id: 'c10', no: 'スペシャルⅡ', title: '一点突破', extra: true, unlockBy: ['q1', 'q2', 'q3', 'q4'], stages: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'],
     intro: ['特殊作戦データ、第二弾。', 'いつもの戦い方は、通じないかもしれない。', '図鑑を読み、作戦を立てよ。'], outro: ['第二弾、すべて完了。', '……どんな戦場でも、あなたは答えを見つけた。'] },
+  // スペシャルⅢ：時間内に制圧する・短時間で稼ぐ作戦。高い機体がそろうのを待っていると間に合わない。第8章すべてクリアで解放
+  { id: 'c11', no: 'スペシャルⅢ', title: '速攻', extra: true, unlockBy: ['q1', 'q2', 'q3', 'q4'], stages: ['u1', 'u2', 'u3', 'u4', 'u5', 'u6'],
+    intro: ['特殊作戦データ、第三弾。', '求められるのは、速さ。', '強い機体がそろうのを、待っている時間はない。'], outro: ['第三弾、すべて完了。', '……速さでも、あなたは負けなかった。'] },
 ];
 
 // 敵は時間がたっても硬くならない（図鑑のHPのまま）。代わりに後半ほど軽い敵の数が増える（作戦の終わりで最大1.5倍）
@@ -6667,16 +6741,18 @@ function step(S, dt) {
   if (S.baseHP <= 0) { S.baseHP = 0; S.over = 'lose'; }
   else if (g === 'points' && S.pts >= S.st.goalPts) S.over = 'win';
   else if (g === 'bases' && S.ebases.every(b => b.dead)) S.over = 'win';
+  else if (g === 'conquer' && S.ebases.every(b => b.dead) && S.outposts.every(o => o.owner === 'p')) S.over = 'win'; // 制圧戦：敵拠点が全滅し、陣地がすべて自軍になった瞬間に勝ち
   else if (g === 'boss' && (S.bossKills || 0) >= (S.st.bossCount || 1)) S.over = 'win';
   else if (g === 'escort' && S.convoy && S.convoy.done) S.over = 'win';
   else if (S.convoy && S.convoy.hp <= 0) { S.convoy.hp = 0; S.over = 'lose'; S.loseWhy = '補給車が破壊された'; }
   else if (g === 'clear' && S.waveIdx >= W.length && !S.spawners.length && !S.enemies.some(e => e.state !== 'guard')) S.over = 'win';
-  else if (S.t >= S.st.time) { S.t = S.st.time; S.over = g === 'time' ? 'win' : 'lose'; }
+  else if (S.t >= S.st.time) { S.t = S.st.time; S.over = g === 'time' ? 'win' : 'lose'; if (g === 'conquer') S.loseWhy = '時間内に制圧しきれなかった'; }
 }
 function waveTotal(st) { return st.waves.reduce((a, w) => a + w[2], 0); }
 function goalText(st) {
   if (st.goal === 'endless') return '拠点が落ちるまで、どこまで持ちこたえられるか';
   if (st.goal === 'points') return '所持ポイントを ⭐' + st.goalPts + ' まで貯める（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
+  if (st.goal === 'conquer') return '敵拠点 ' + st.ebases.length + ' つを壊し、陣地 ' + st.outposts.length + ' つをすべて確保する（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '。陣地は取り返されることがある）';
   if (st.goal === 'bases') return '敵拠点 ' + st.ebases.length + ' つをすべて破壊（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   const lim = '（制限 ' + Math.floor(st.time / 60) + ':' + String(st.time % 60).padStart(2, '0') + '）';
   if (st.goal === 'boss') return (st.bossName || '模倣機') + (st.hideCount ? 'をすべて' : st.bossCount > 1 ? 'を' + st.bossCount + '機すべて' : 'を') + '撃破する' + lim;
@@ -7688,7 +7764,7 @@ function updHud() {
   const g = S.st.goal;
   const ebLeft = S.ebases.filter(b => !b.dead).length;
   const leftE = g === 'clear' ? S.spawners.reduce((a, x) => a + x.n, 0) + S.waves.slice(S.waveIdx).reduce((a, w) => a + w[2], 0) + S.enemies.filter(e => e.state !== 'guard').length : 0;
-  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
+  setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : '') + (g === 'conquer' ? ' 🚩' + S.outposts.filter(o => o.owner === 'p').length + '/' + S.outposts.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
   setText('hBots', S.robots.length + '/' + RD.capOf(S) + (S.queue.length ? '+' + S.queue.length : ''));
@@ -7835,7 +7911,7 @@ const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
 const chOpen = c => !c.unlockBy || [].concat(c.unlockBy).every(cleared) || !!SAVE.allOpen;
 // エンドレス・ステージ作成：第5章をすべてクリアすると解放
 const C5 = (CH.find(c => c.id === 'c5') || { stages: [] }).stages;
-const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9', 'c10']); // 深淵（第6〜8章）・スペシャル（Ⅰ・Ⅱ）
+const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9', 'c10', 'c11']); // 深淵（第6〜8章）・スペシャル（Ⅰ〜Ⅲ）
 const exDone = () => (C5.length && C5.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
@@ -7995,8 +8071,8 @@ function endGame() {
   const allNow = !wasAll && allClear();
   const exNow = !wasEx && exDone();
   saveNow();
-  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
-  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
+  const head = win ? (g === 'points' ? '資源確保' : g === 'bases' ? '敵拠点制圧' : g === 'conquer' ? '全域制圧' : g === 'boss' ? (S.st.bossName || '模倣機') + '撃破' : g === 'clear' ? '殲滅完了' : g === 'escort' ? '護衛成功' : '防衛成功') : S.loseWhy ? '作戦失敗' : (fell ? '拠点陥落' : '作戦失敗');
+  const msg = win ? (g === 'points' ? fmtT(S.t) + ' でポイント目標を達成した' : g === 'bases' ? fmtT(S.t) + ' で敵拠点をすべて破壊した' : g === 'conquer' ? fmtT(S.t) + ' で敵拠点と陣地をすべて制圧した' : g === 'boss' ? fmtT(S.t) + ' で' + (S.st.bossName || '模倣機') + 'を撃破した' : g === 'escort' ? fmtT(S.t) + ' で補給車が目的地に着いた' : g === 'clear' ? fmtT(S.t) + ' で敵をすべて倒した' : (S.st.holdWhy ? S.st.holdWhy.replace('守る', '守り抜いた') : '時間まで拠点を守り抜いた'))
     : (fell ? fmtT(S.t) + ' 経過時点で拠点が破壊された' : S.loseWhy ? fmtT(S.t) + ' ' + S.loseWhy : '時間切れ。目標を達成できなかった');
   const oi = FULL.indexOf(S.st.id), next = win && oi >= 0 && FULL[oi + 1] ? stById(FULL[oi + 1]) : null, ch = chOf(S.st.id);
   const exOpen = win && CH.find(c => c.unlockBy === S.st.id && !seen(c.id + 'u'));
