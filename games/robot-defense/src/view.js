@@ -1001,7 +1001,7 @@ function updHud() {
   setText('hGoal', (g === 'points' ? '🎯⭐' + S.st.goalPts + ' ' : g === 'boss' ? '👹' + (S.st.bossCount > 1 && !(S.st.hideCount && !S.bossKills) ? (S.bossKills || 0) + '/' + S.st.bossCount + ' ' : '') + (S.enemies.some(e => e.def.boss) ? '撃破せよ ' : '接近中 ') : g === 'escort' && S.convoy ? '🚚' + Math.floor(S.convoy.d / S.convoy.P.len * 100) + '% ❤' + Math.ceil(S.convoy.hp) + ' ' : g === 'clear' ? '👾残り' + leftE + ' ' : '') + (S.ebases.length ? '🏭' + ebLeft + '/' + S.ebases.length : ''));
   $('hGoal').style.display = $('hGoal').textContent ? '' : 'none';
   $('hPts').classList.toggle('goalok', g === 'points' && S.pts >= S.st.goalPts * .8);
-  setText('hBots', S.robots.length + '/' + CFG.deployCap + (S.queue.length ? '+' + S.queue.length : ''));
+  setText('hBots', S.robots.length + '/' + RD.capOf(S) + (S.queue.length ? '+' + S.queue.length : ''));
   setText('hBaseN', Math.ceil(S.baseHP) + (S.homeShield > 0 ? ' 🛡' + Math.ceil(S.homeShield) : ''));
   const k = S.baseHP / CFG.baseHP;
   $('hBase').style.width = (k * 100) + '%'; $('hBaseBar').classList.toggle('hurt', k < .5);
@@ -1073,8 +1073,8 @@ function renderBuild() {
   $('bStep2').style.display = step2 ? '' : 'none';
   if (!step2) {
     const minW = Math.min(...Object.keys(WEAPONS).filter(id => RD.weaponAllowed(S, id)).map(id => WEAPONS[id].cost)), full = S.queue.length >= CFG.queueMax;
-    $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= CFG.deployCap ? '<div class="note">' + (S.allow.reserve ? '出撃中が上限（' + CFG.deployCap + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します' : '出撃枠がいっぱいです（' + CFG.deployCap + '機）。誰かが倒れると作れる') + '</div>' : '';
-    const capFull = !S.allow.reserve && S.robots.length + S.queue.filter(q => !q.work).length >= CFG.deployCap;
+    $('bNote1').innerHTML = full ? '<div class="note">予約は' + CFG.queueMax + '機までです。建造か出撃が進むまで待ってください</div>' : S.robots.length >= RD.capOf(S) ? '<div class="note">' + (S.allow.reserve ? '出撃中が上限（' + RD.capOf(S) + '機）です。予約した機体は、誰かが倒れたらすぐ出撃します' : '出撃枠がいっぱいです（' + RD.capOf(S) + '機）。誰かが倒れると作れる') + '</div>' : '';
+    const capFull = !S.allow.reserve && S.robots.length + S.queue.filter(q => !q.work).length >= RD.capOf(S);
     $('bodyList').innerHTML = S.bodies.map((b, i) => bodyRow(b, 'data-b="' + i + '"', (full || capFull || S.pts < b.cost + minW) ? 'dis' : '')).join('');
     const qn = id => S.queue.filter(q => q.work === id).length;
     $('bWorks').innerHTML = '<div class="dim" style="margin:6px 0">工事を選んでから、下のボタンで頼む。建造ラインの時間を使うが、出撃数には数えない</div>' +
@@ -1104,7 +1104,7 @@ function renderBuild() {
     '<div class="wst">' + wStats(w) + '</div>' +
     '<div class="wd">' + esc(w.desc) + '</div></button>').join('');
   const wids = [...uiW], c = buildCost(uiBody, wids), err = buildCheck(S, uiBody, wids);
-  $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + S.robots.length + '/' + CFG.deployCap + ' ・ 予約 ' + S.queue.length + '/' + CFG.queueMax +
+  $('bSum').innerHTML = '合計 <b style="color:var(--gold)">⭐' + c.cost + '</b> ・ 建造 <b>' + c.time + 's</b> ・ 出撃 ' + S.robots.length + '/' + RD.capOf(S) + ' ・ 予約 ' + S.queue.length + '/' + CFG.queueMax +
     (S.queue.length ? '<div class="dim">建造ライン' + S.lines + '本で順番に建造（予約 ' + S.queue.length + '機）</div>' : '') +
     (err ? '<div class="err">' + esc(err) + '</div>' : '');
   $('bGo').disabled = !!err;
@@ -1145,7 +1145,7 @@ const chOf = id => CH.find(c => c.stages.includes(id)) || CH[0];
 const chOpen = c => !c.unlockBy || [].concat(c.unlockBy).every(cleared) || !!SAVE.allOpen;
 // エンドレス・ステージ作成：第5章をすべてクリアすると解放
 const C5 = (CH.find(c => c.id === 'c5') || { stages: [] }).stages;
-const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9']); // 深淵（第6〜8章）・スペシャル
+const chSt = ids => CH.filter(c => ids.includes(c.id)).flatMap(c => c.stages), DEEP = chSt(['c6', 'c7', 'c8']), SPS = chSt(['c9', 'c10']); // 深淵（第6〜8章）・スペシャル（Ⅰ・Ⅱ）
 const exDone = () => (C5.length && C5.every(cleared)) || !!SAVE.allOpen;
 const nextStage = () => ORDER.find(id => !cleared(id)) || EXO.find(id => !cleared(id) && chOpen(chOf(id))) || null;
 const stById = id => STAGES.find(s => s.id === id) || RD.SPECIAL[id];
