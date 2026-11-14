@@ -245,6 +245,22 @@
       "playtime": "約15分",
       "added": "2026-11-13",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "tsumiki-dokaan",
+      "title": "つみきドカーン！",
+      "description": "ボールで積み木をたおす、こども向けの面クリアゲーム。上をタップしてボールを落とし、下ではパチンコを引っぱって発射する。顔のある積み木がはじけ飛び、コンボや紙吹雪で盛り上がる。ステージごとのランキングつき。",
+      "path": "../games/tsumiki-dokaan/",
+      "thumbnail": "../games/tsumiki-dokaan/thumb.jpg",
+      "tags": [
+        "アクション",
+        "こども",
+        "スコアアタック"
+      ],
+      "controls": "タップ・ドラッグ / クリック・ドラッグ",
+      "playtime": "約5分",
+      "added": "2026-11-14",
+      "author": "@naoya_oosugi"
     }
   ]
 }
