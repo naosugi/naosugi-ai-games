@@ -276,6 +276,22 @@
       "controls": "タップ / クリック",
       "added": "2026-11-14",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "mangan-mahjong",
+      "title": "二人打ち 満貫麻雀",
+      "description": "31枚から13枚を選んで満貫以上の聴牌を作り、残りを交互に捨てて先に当てた方が勝つ二人麻雀。CPUは8キャラ、スマホを回す対人戦も。チュートリアルとトレーニングで初心者も遊べる。",
+      "path": "../games/mangan-mahjong/",
+      "thumbnail": "../games/mangan-mahjong/thumb.jpg",
+      "tags": [
+        "対戦",
+        "ボードゲーム",
+        "戦略"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約15分",
+      "added": "2026-11-15",
+      "author": "@naoya_oosugi"
     }
   ]
 }
