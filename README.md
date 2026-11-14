@@ -23,6 +23,7 @@
 | [朝食ファクトリー](games/breakfast-factory/) | 朝ごはん屋さんで、はたらく人・店長・経営者を順に体験。立場ごとのお金のかせぎ方のちがいが分かる |
 | [STARBOARD ─ 右舷銃座](games/starboard/) | 宇宙戦艦の右舷銃座で敵の大群を撃ち落とす一人称3Dシューティング。倒しきるか、速度を上げて逃げ切るか |
 | [しんかルーレット](games/shinka-roulette/) | 生き物の進化と5回の大量絶滅をみんなで乗りこえる協力ルーレット。系統がそろうほど食べものがつながる。図鑑・読み上げつき |
+| [つみきドカーン！](games/tsumiki-dokaan/) | ボールで積み木をたおすこども向け面クリア。上からポトン、下はパチンコで発射。ステージごとのランキングつき |
 
 ## 構成
 
@@ -92,3 +93,4 @@ QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Claus
 - **three.js**（MIT License, Copyright © 2010-2026 three.js authors）— `games/infinite-shot-3d/index.html`・`games/infinite-shot-3d-2/index.html`・`games/robot-defense/index.html`・`games/starboard/index.html` に埋め込み（いずれも r186。robot-defense は使う部品だけをまとめた版）。ライセンス全文は各ファイル内のスクリプト冒頭に記載しています。
 - **three.js**（MIT License, Copyright © 2010-2021 Three.js Authors）— `games/blue-dash/index.html` に r128 を埋め込み（ダウンロードしてオフラインでも遊べるようにするため）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
+- **Matter.js**（MIT License, Copyright © Liam Brummitt and contributors）— `games/tsumiki-dokaan/index.html` に v0.20.0 を埋め込み（物理演算。ダウンロードしてオフラインでも遊べるようにするため）。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
