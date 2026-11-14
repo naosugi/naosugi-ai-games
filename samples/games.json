@@ -261,6 +261,21 @@
       "playtime": "約5分",
       "added": "2026-11-14",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "shogi",
+      "title": "将棋ゲーム",
+      "description": "1台の端末でふたりが交互に指す将棋。駒をタップして動かし、王手・詰みや反則手は自動で判定する。美濃・矢倉などの囲いを選ぶと自動で駒組みし、組み上がると戦法名が出る。歩なし将棋も遊べる。",
+      "path": "../games/shogi/",
+      "thumbnail": "../games/shogi/thumb.jpg",
+      "tags": [
+        "対戦",
+        "戦略",
+        "ボードゲーム"
+      ],
+      "controls": "タップ / クリック",
+      "added": "2026-11-14",
+      "author": "@naoya_oosugi"
     }
   ]
 }
