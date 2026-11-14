@@ -62,11 +62,22 @@ function runOne(stId, pol) {
     w = w.filter(x => RD.weaponAllowed(S, x)); if (!w.length) w = [RD.weaponAllowed(S, 'spread') ? 'spread' : 'blaster']; return [b, w, ...rest]; };
   // 守備位置は経路から自動で作る：各経路の拠点寄り・中ほど・手前の3か所（経路の脇2.6）
   // bases ステージでは、各敵拠点の手前（経路沿い5.5）を攻撃位置にする
-  if (S.st.goal === 'bases') for (const b of S.ebases) { const q = RD.pathPos(S.paths[b.path], 5.5, 2.4); spots.push({ p: [q.x, q.z], atk: true }); }
+  // conquer（制圧戦）では、自軍でない陣地も攻撃位置にする
+  if (S.st.goal === 'conquer') for (const o of S.outposts) spots.push({ p: [o.x, o.z], atk: true, op: o });
+  if (S.st.goal === 'bases' || S.st.goal === 'conquer') for (const b of S.ebases) { const q = RD.pathPos(S.paths[b.path], 5.5, 2.4); spots.push({ p: [q.x, q.z], atk: true }); }
   for (const f of [.85, .55, .3]) for (const P of S.paths) { const q = RD.pathPos(P, P.len * f, 2.6); spots.push({ p: [q.x, q.z] }); }
   let reT = 0;
+  // 制圧戦：1機目は拠点の守り。ほかは、まだ取れていない陣地・残っている敵拠点のうち、向かっている機体が少なく近い所へ。全部片付いたら陣地を押さえる
+  const cTargets = () => { const t = spots.filter(s => s.atk && (s.op ? s.op.owner !== 'p' : S.ebases.some(b => !b.dead && Math.hypot(b.x - s.p[0], b.z - s.p[1]) < 8))); return t.length ? t : spots.filter(s => s.op); };
+  const assignC = r => {
+    if (S.robots.indexOf(r) === 0) { r.spot = spots.find(s => !s.atk); RD.moveRobot(r, r.spot.p[0], r.spot.p[1], S); return; }
+    let best = null, bc = 1e9;
+    for (const s of cTargets()) { const c = S.robots.filter(o => o !== r && o.spot === s).length * 100 + Math.hypot(s.p[0] - r.x, s.p[1] - r.z); if (c < bc) { bc = c; best = s; } }
+    r.spot = best; RD.moveRobot(r, best.p[0] + (Math.random() - .5), best.p[1] + (Math.random() - .5), S);
+  };
   const assign = r => {
-    const live = spots.filter(s => !s.atk || S.ebases.some(b => !b.dead && Math.hypot(b.x - s.p[0], b.z - s.p[1]) < 8));
+    if (S.st.goal === 'conquer') return assignC(r);
+    const live = spots.filter(s => !s.atk || (s.op ? s.op.owner !== 'p' || S.robots.filter(o => o.spot === s).length < 1 : S.ebases.some(b => !b.dead && Math.hypot(b.x - s.p[0], b.z - s.p[1]) < 8)));
     let best = live[0], bc = 1e9;
     for (const s of live) { const c = S.robots.filter(o => o !== r && o.spot === s).length; if (c < bc) { bc = c; best = s; } }
     r.spot = best; RD.moveRobot(r, best.p[0] + (Math.random() - .5), best.p[1] + (Math.random() - .5), S);
@@ -95,7 +106,7 @@ function runOne(stId, pol) {
       const q = RD.pathPos(S.convoy.P, Math.min(S.convoy.P.len, S.convoy.d + 2 + k), k % 2 ? 2.2 : -2.2);
       r.spot = { p: [q.x, q.z], escort: true }; RD.moveRobot(r, q.x, q.z, S);
     });
-    if ((reT -= 1 / 30) <= 0) { reT = 1; for (const r of S.robots) if (r.spot.atk && !S.ebases.some(b => !b.dead && Math.hypot(b.x - r.spot.p[0], b.z - r.spot.p[1]) < 8)) assign(r); }
+    if ((reT -= 1 / 30) <= 0) { reT = 1; for (const r of S.robots) if (S.st.goal === 'conquer' ? !cTargets().includes(r.spot) && S.robots.indexOf(r) > 0 : r.spot.atk && !S.ebases.some(b => !b.dead && Math.hypot(b.x - r.spot.p[0], b.z - r.spot.p[1]) < 8)) assign(r); }
   }
   return S;
 }
