@@ -12,6 +12,8 @@ const cheapest = (S, tier) => S.bodies.filter(b => b.tier === tier).sort((a, b) 
 const strategies = {
   'なにもしない': () => null,
   // いま強すぎる構成（高コスト機体＋ヘビー＋ブラスター＋スプレッド）。スペシャルⅡの調整で比べる
+  // いまの定番（高コスト機体に、パイル・ヘビー・ブラスター・マグナム・スプレッド・バスターを全部）
+  '[定番] 段階 安2→高+6つ積み': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['pile', 'heavy', 'blaster', 'magnum', 'spread', 'buster']]),
   '[支配] 段階 安2→高+ヘビ+ブラ+スプ': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['heavy', 'blaster', 'spread']]),
   '中+ホーミング+ミサ': S => [cheapest(S, 'mid'), ['homing', 'missile']],
   '量産+ホーミング+ミサ+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['homing', 'missile'], true],

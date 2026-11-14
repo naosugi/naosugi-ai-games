@@ -1106,10 +1106,11 @@ function newState(stageId, opt) {
   return S;
 }
 // 高難度（全作戦クリア後のやりこみ）：敵が多く・硬く・攻撃が重い。倒したときのポイントは少し多い。数値はおおまか
-const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1.2, goal: 1.4, ebase: 1.5, boss: 1.6, start: 1.4 };
+// 高難度：敵の数・HP・攻撃・敵拠点・ボスを強くする。開始ポイントと稼ぎは通常と同じ（増やすとかえって簡単になるため）
+const HARD = { count: 1.25, hp: 1.5, dmg: 1.3, pts: 1, goal: 1.4, ebase: 1.5, boss: 1.6, start: 1 };
 function hardStage(st) {
   return Object.assign({}, st, {
-    hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: HARD.pts, startPoints: Math.round(st.startPoints * HARD.start),
+    hard: true, hpMul: HARD.hp, dmgMul: HARD.dmg, ptsMul: (st.ptsMul || 1) * HARD.pts, startPoints: Math.round(st.startPoints * HARD.start), // 作戦ごとの稼ぎの倍率（ptsMul）は残す
     waves: st.waves.map(w => [w[0], w[1], ENEMIES[w[1]].boss ? w[2] : Math.ceil(w[2] * HARD.count), w[3] / HARD.count, w[4]]),
     goalPts: st.goalPts ? Math.round(st.goalPts * HARD.goal / 10) * 10 : st.goalPts,
     bossMul: HARD.boss / HARD.hp, // ボス（模倣機・OMEGA）は hpMul も掛かるので、合わせて HARD.boss 倍
