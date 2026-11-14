@@ -11,6 +11,17 @@ if (process.env.MISSILE_COST) RD.WEAPONS.missile.cost = +process.env.MISSILE_COS
 const cheapest = (S, tier) => S.bodies.filter(b => b.tier === tier).sort((a, b) => a.cost - b.cost)[0] || S.bodies.filter(b => b.tier !== 'high').slice(-1)[0] || S.bodies[0];
 const strategies = {
   'なにもしない': () => null,
+  // いま強すぎる構成（高コスト機体＋ヘビー＋ブラスター＋スプレッド）。スペシャルⅡの調整で比べる
+  '[支配] 段階 安2→高+ヘビ+ブラ+スプ': S => (S.robots.length + S.queue.length < 2 ? [cheapest(S, 'low'), ['blaster', 'spread']] : [cheapest(S, 'high'), ['heavy', 'blaster', 'spread']]),
+  '中+ホーミング+ミサ': S => [cheapest(S, 'mid'), ['homing', 'missile']],
+  '量産+ホーミング+ミサ+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['homing', 'missile'], true],
+  '安+ブレイカー+ホーミング': S => [cheapest(S, 'low'), ['breaker', 'homing']],
+  '安+自爆': S => [cheapest(S, 'low'), ['bomb']],
+  '中+レーザー+ホーミング': S => [cheapest(S, 'mid'), ['laser', 'homing']],
+  '[進化] 中+パリィ+ブルワーク': S => [cheapest(S, 'mid'), ['parry', 'bulwark']],
+  '[進化] 中+ハンター+スプ': S => [cheapest(S, 'mid'), ['hunter', 'spread']],
+  '[進化] 量産+ドリル+ライン2': S => [S.bodies.find(b => b.id === 'mass') || cheapest(S, 'mid'), ['drill'], true],
+  '中+ホーミング+砲台盾': S => [cheapest(S, 'mid'), ['homing', 'spread'], false, 'fort'],
   '安+ブラスター': S => [cheapest(S, 'low'), ['blaster']],
   '安+スプレッド': S => [cheapest(S, 'low'), ['spread']],
   '安+ミサイル': S => [cheapest(S, 'low'), ['missile']],
@@ -67,6 +78,7 @@ function runOne(stId, pol) {
     // 拠点工事：修理はHPが半分を切ったら、砲台・盾は余裕があるとき
     if (c && c[3] === 'repair' && S.baseHP < RD.CFG.baseHP * .5 && !S.queue.some(q => q.work)) RD.orderWork(S, 'repair');
     if (c && c[3] === 'fort' && S.pts >= 200 && !S.queue.some(q => q.work)) { if ((S.works.turret || 0) < 2) RD.orderWork(S, 'turret'); else if (S.homeShield <= 0) RD.orderWork(S, 'shield'); else if (S.baseHP < 75) RD.orderWork(S, 'repair'); }
+    if (c && S.st.maxWeapons) c[1] = c[1].slice(0, S.st.maxWeapons); // 武器の数に上限がある作戦では、先頭から上限まで積む
     if (c && c[0] && !RD.buildCheck(S, c[0], c[1])) RD.orderBuild(S, c[0], c[1]);
     RD.step(S, 1 / 30);
     for (const r of S.robots) if (!r.spot) assign(r);
