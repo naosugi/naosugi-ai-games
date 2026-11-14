@@ -286,6 +286,8 @@ function evalPlacement(melds,pair,pl,c,kan,kanRev,rev,opts,chuuren){
   if(tiles.every(t=>GREEN.has(t)))ym.push(['緑一色',1]);
   if(tiles.every(isTerm))ym.push(['清老頭',1]);
   if(chuuren)ym.push([chuuren===2?'純正九蓮宝燈':'九蓮宝燈',chuuren]);
+  // 四暗刻：ロンのみなので、ロンした刻子は明刻扱い。成立するのは単騎待ちだけ
+  if(pons.length-(pl.type==='shanpon'?1:0)===4)ym.push(['四暗刻',1]);
   if(ym.length)return mkYakuman(ym);
   const y=[];const add=(n,h)=>y.push({name:n,han:h});
   extraYaku(c,kan,opts).forEach(x=>y.push(x));
@@ -303,7 +305,7 @@ function evalPlacement(melds,pair,pl,c,kan,kanRev,rev,opts,chuuren){
   if(allYaoSets&&chis.length>0){if(hasHonor)add('混全帯么九',2);else add('純全帯么九',3);}
   if(pons.length===4)add('対々和',2);
   const anko=pons.length-(pl.type==='shanpon'?1:0);
-  if(anko===4)add('四暗刻(特別ルール)',3);else if(anko===3)add('三暗刻',2);
+  if(anko===3)add('三暗刻',2);
   for(let r=0;r<9;r++)if(ponT.has(r)&&ponT.has(9+r)&&ponT.has(18+r)){add('三色同刻',2);break;}
   const dp=DRAGONS.filter(t=>ponT.has(t)).length;
   if(dp===2&&DRAGONS.includes(pair))add('小三元',2);
@@ -790,7 +792,7 @@ function passRon(){
 }
 function win(b,t,r){
   G.busy=true;
-  ronFx(r,()=>{G.busy=false;G.modal=null;G.ronOffer=null;say(b,'ron','happy');say(1-b,'dealin','sad');G.scores[b]+=r.pts;G.result={type:'ron',winner:b,t,r};G.phase='result';G.cover=null;render();});
+  ronFx(r,()=>{G.busy=false;G.modal=null;G.ronOffer=null;say(b,'ron','happy');say(1-b,'dealin','sad');G.scores[b]+=r.pts;G.result={type:'ron',winner:b,t,r,newYM:recordYM(b,t,r)};G.phase='result';G.cover=null;render();});
 }
 function ryuukyoku(){toast('流局');say(0,'ryu');say(1,'ryu');G.result={type:'ryu'};G.phase='result';G.cover=null;render();}
 function nextKyoku(){
@@ -958,7 +960,7 @@ function toggleGuide(){S.guide=!S.guide;saveSet();render();}
 function toggleSet(k){S[k]=!S[k];saveSet();if(k==='sound'&&S.sound)sfx('ok');if(k==='vib')vib(30);render();}
 function showHelp(){S.sheet=null;S.help=true;render();}
 function closeHelp(){S.help=false;render();}
-function toTitle(){S.sheet=null;S.screen=null;if(T&&T.timer)clearInterval(T.timer);T=null;G=null;render();}
+function toTitle(){clearFx();S.sheet=null;S.screen=null;if(T&&T.timer)clearInterval(T.timer);T=null;G=null;render();}
 function menuHTML(){
   const sw=(k,label)=>`<div class="tog"><span>${label}</span><button class="sw ${S[k]?'on':''}" onclick="toggleSet('${k}')"></button></div>`;
   return `<div class="sheet"><h3>メニュー</h3>${sw('guide','ガイド（待ち・危険度など）')}${sw('sound','効果音')}${sw('vib','振動（対応端末のみ）')}
@@ -1039,7 +1041,7 @@ function viewTitle(){
   ${S.mode==='pvp'?`<h2 style="margin-top:12px">プレイヤー1</h2><input type="text" value="${S.names[0]}" oninput="S.names[0]=this.value" placeholder="プレイヤー1">${avPicker(0)}<h2 style="margin-top:10px">プレイヤー2</h2><input type="text" value="${S.names[1]}" oninput="S.names[1]=this.value" placeholder="プレイヤー2">${avPicker(1)}<div class="mini">隠しボスの見た目は、CPU戦でそのボスに勝つと選べます</div>`:''}
   <div class="tog" style="margin-top:8px;border:none"><span>ガイド（待ち・危険度など）</span><button class="sw ${S.guide?'on':''}" onclick="toggleGuide()"></button></div></div>
   <div class="panel st"><details><summary>ルールを見る</summary>${rulesHTML()}</details></div>
-  ${bar(`<div class="btns"><button class="btn sec" onclick="openLearn()">学ぶ</button><button class="btn glow" style="flex:2" onclick="startGame()">ゲーム開始</button></div>`)}`;
+  ${bar(`<div class="btns"><button class="btn sec" onclick="openLearn()">学ぶ</button><button class="btn sec" onclick="openZukan()">図鑑</button><button class="btn glow" style="flex:2" onclick="startGame()">ゲーム開始</button></div>`)}`;
 }
 function startGame(){sfx('ok');vib(20);newGame();}
 function rulesHTML(){
@@ -1054,7 +1056,7 @@ function rulesHTML(){
   <li>全員リーチ中なので、ロンできる牌を見逃すとその局はフリテン。つまり<b>一度通った牌は安全</b>（満貫未満でロンできない待ちが出た場合はフリテンにならないが、その牌は以後もロンできない。最後の1打だけは河底+1翻で満貫に届くことがある）。</li>
   <li>30000点差がつくか、4局終了で終了（同点なら延長）。ただし<b>諦め・満貫聴牌なしで終わった局では4局終了にならず</b>、最終局なら延長戦に進みます（30000点差がついたら終了）。</li>
   </ol>
-  <div class="mini" style="margin-top:6px">表ドラ1枚のみ（裏ドラ・カンドラなし）／親・ツモなし／符計算あり（4翻30符=7700は満貫にならない）／四暗刻は単騎のみ+3翻（三暗刻とは重ねない）／河底・数え役満・ダブル役満あり／点数は子の点数。風牌は役牌になりません。字牌を公開しても門前扱いです。</div>`;
+  <div class="mini" style="margin-top:6px">表ドラ1枚のみ（裏ドラ・カンドラなし）／親・ツモなし／符計算あり（4翻30符=7700は満貫にならない）／四暗刻は役満（ロンのみなので単騎待ちだけ成立）／河底・数え役満・ダブル役満あり／点数は子の点数。風牌は役牌になりません。字牌を公開しても門前扱いです。</div>`;
 }
 function viewCalc(){
   return header()+`<div style="text-align:center;margin-top:70px"><div class="logo"><div class="tiles">${backHTML().repeat(5)}</div></div><div class="think" style="font-weight:800;color:#ffe08a">配牌中</div><div class="mini" style="margin-top:6px">手の候補を計算しています</div></div>`;
@@ -1167,7 +1169,7 @@ function viewResult(){
     h=`<div class="panel st"><h2 style="text-align:center;font-size:16px;margin-bottom:6px">${G.names[R.winner]} のロン！</h2>
       <div class="row" style="gap:5px;align-items:center;justify-content:center">${handGroups(p,true,true)}${tileHTML(R.t,{sm:1,last:1})}</div>
       <div class="ygrid" style="margin-top:8px">${r.yaku.map((y,k)=>`<div class="yrow" style="animation-delay:${.15+k*.1}s"><span>${y.name}</span><b>${typeof y.han==='number'?y.han:y.han}</b></div>`).join('')}</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px"><div style="text-align:center"><span class="rank ${r.yakuman||r.pts>=32000?'ym':''}">${r.name}</span><div class="mini">${r.yakuman?'':`${r.han}翻 ${r.fu}符`}</div></div><div class="res-pts" id="cnt" style="margin:0">+${R.counted?r.pts:0}</div></div></div>`+resultHands();
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px"><div style="text-align:center"><span class="rank ${r.yakuman||r.pts>=32000?'ym':''}">${r.name}</span><div class="mini">${r.yakuman?'':`${r.han}翻 ${r.fu}符`}</div></div><div class="res-pts" id="cnt" style="margin:0">+${R.counted?r.pts:0}</div></div>${R.newYM&&R.newYM.length?`<div class="ok" style="text-align:center;margin-top:6px">★ 役満図鑑に新登録：${R.newYM.join('・')}</div>`:(R.newYM?'<div class="mini" style="text-align:center;margin-top:6px">役満図鑑に記録しました</div>':'')}</div>`+resultHands();
   }
   return header()+(R.type==='redeal'?'':duoSmall())+h+bar(`<button class="btn glow" onclick="sfx('tap');nextKyoku()">${G.tut?'チュートリアル完了':(R.type==='redeal'?'配り直す':'次へ')}</button>`);
 }
@@ -1205,7 +1207,7 @@ function coverHTML(){
 let T=null; // トレーニングの状態
 function loadStat(){try{return JSON.parse(localStorage.getItem('manganMJ_train')||'{}')||{};}catch(e){return{};}}
 function saveStat(o){try{localStorage.setItem('manganMJ_train',JSON.stringify(o));}catch(e){}}
-function openLearn(){sfx('tap');if(T&&T.timer)clearInterval(T.timer);T=null;G=null;S.screen='learn';render();}
+function openLearn(){sfx('tap');clearFx();if(T&&T.timer)clearInterval(T.timer);T=null;G=null;S.screen='learn';render();}
 function backTitle(){sfx('tap');if(T&&T.timer)clearInterval(T.timer);T=null;S.screen=null;render();}
 function trHeader(title,right){
   return `<div class="hdr"><button class="menu" onclick="openLearn()">←</button><b style="flex:1;text-align:center;font-size:15px">${title}</b>${right?`<span class="kyoku">${right}</span>`:'<span style="width:36px"></span>'}</div>`;
@@ -1219,6 +1221,7 @@ function viewLearn(){
   const card=(fn,icon,title,desc,badge)=>`<button class="cc" style="width:100%;margin-bottom:8px" onclick="${fn}"><div class="av" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px">${icon}</div><div style="flex:1">${title}${badge?` <span class="tag" style="background:#2c6e55">${badge}</span>`:''}<div class="mini" style="font-weight:400">${desc}</div></div></button>`;
   return `<div class="hdr"><button class="menu" onclick="backTitle()">←</button><b style="flex:1;text-align:center;font-size:15px">学ぶ</b><span style="width:36px"></span></div>
   <div class="panel"><h2>はじめて遊ぶ人へ</h2>
+  ${card('openZukan()','🏆','役満図鑑','和了った役満の記録（日時・相手・牌）')}
   ${card('startTutorial()','🎓','チュートリアル','メガネ先生と1局打ちながら流れを覚える',c.tutDone?'完了':'')}
   ${card("S.screen='guide';render()",'📖','このゲームの面白さ','勝つための考え方と駆け引きのツボ')}</div>
   <div class="panel"><h2>トレーニング</h2>
@@ -1494,12 +1497,72 @@ function viewGuide(){
   </div>`;
 }
 
+// ================= 役満図鑑 =================
+const YM_LIST=[
+  {n:'国士無双',d:'1・9・字牌の13種を1枚ずつ＋どれか1枚'},
+  {n:'国士無双十三面',d:'13種がそろった状態からの13面待ち（ダブル役満）'},
+  {n:'四暗刻',d:'暗刻4つ。ロンのみなので単騎待ちだけ成立'},
+  {n:'大三元',d:'白・發・中の3つを刻子に'},
+  {n:'小四喜',d:'風牌3種の刻子＋残る風牌の雀頭'},
+  {n:'大四喜',d:'東南西北すべて刻子（ダブル役満）'},
+  {n:'字一色',d:'字牌だけで作る'},
+  {n:'緑一色',d:'2・3・4・6・8索と發だけで作る'},
+  {n:'清老頭',d:'1と9の牌だけで作る'},
+  {n:'九蓮宝燈',d:'1112345678999＋1枚の清一色'},
+  {n:'純正九蓮宝燈',d:'九蓮宝燈の9面待ち（ダブル役満）'},
+  {n:'数え役満',d:'役やドラを重ねて13翻以上'},
+];
+function loadYM(){try{const a=JSON.parse(localStorage.getItem('manganMJ_ym')||'[]');return Array.isArray(a)?a:[];}catch(e){return[];}}
+function saveYM(a){try{localStorage.setItem('manganMJ_ym',JSON.stringify(a.slice(-300)));}catch(e){}}
+// 役満で和了ったら記録（CPU戦はあなたの和了のみ、対人戦はどちらも）。新しく登録された役満名を返す
+function recordYM(b,t,r){
+  if(!G||G.tut)return null;
+  if(G.mode==='cpu'&&b!==0)return null;
+  const names=r.yakuman?r.yaku.filter(y=>typeof y.han!=='number').map(y=>y.name):(r.name==='数え役満'?['数え役満']:[]);
+  if(!names.length)return null;
+  const p=G.P[b];const list=loadYM();const had=new Set(list.map(e=>e.y));
+  const base={at:Date.now(),mode:G.mode,who:G.names[b],whoChar:G.chars[b]||null,opp:G.names[1-b],oppChar:G.chars[1-b]||null,
+    h:tilesFromCounts(p.h),kan:p.kan,rev:[...p.rev],kanRev:p.kanRev,win:t,pts:r.pts,yaku:r.yaku.map(y=>y.name),kyoku:kyokuLabel(),dora:G.dora};
+  names.forEach(n=>list.push(Object.assign({y:n},base)));
+  saveYM(list);
+  const fresh=names.filter(n=>!had.has(n));
+  if(fresh.length)setTimeout(()=>{banner('役満図鑑','新登録：'+fresh.join('・'));confetti();},600);
+  return fresh;
+}
+function clearFx(){const L=document.getElementById('fx');if(L)L.innerHTML='';}
+function fmtTime(ms){const d=new Date(ms);const z=n=>String(n).padStart(2,'0');return `${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;}
+function openZukan(){sfx('tap');clearFx();if(T&&T.timer)clearInterval(T.timer);T=null;G=null;S.screen='zukan';S.zkSel=null;render();}
+function viewZukan(){
+  const list=loadYM();
+  const by={};list.forEach(e=>{(by[e.y]=by[e.y]||[]).push(e);});
+  const got=YM_LIST.filter(x=>by[x.n]).length;
+  const cards=YM_LIST.map(x=>{
+    const es=by[x.n]||[];const has=es.length>0;
+    return `<button class="cc" style="flex-direction:column;align-items:stretch;gap:3px;${has?'':'opacity:.55'}" onclick="${has?`sfx('tap');S.zkSel='${x.n}';render()`:`toast('まだ和了っていません')`}">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px">${x.n}</span>${has?`<span class="rank" style="margin:0;padding:1px 8px;font-size:11px">×${es.length}</span>`:'<span class="mini">未達成</span>'}</div>
+      <div class="mini" style="font-weight:400">${has?`初：${fmtTime(es[0].at)}`:x.d}</div></button>`;}).join('');
+  return `<div class="hdr"><button class="menu" onclick="backTitle()">←</button><b style="flex:1;text-align:center;font-size:15px">役満図鑑</b><span class="kyoku">${got}/${YM_LIST.length}</span></div>
+  <div class="panel"><div class="prog" style="margin:0 0 4px"><i style="width:${got/YM_LIST.length*100}%"></i></div><div class="mini">あなたが役満で和了ると、日時・相手・牌が記録されます（このブラウザに保存）。対人戦ではどちらの和了も記録します。</div></div>
+  <div class="cgrid">${cards}</div>`;
+}
+function zukanSheet(){
+  const n=S.zkSel;const x=YM_LIST.find(v=>v.n===n);
+  const es=loadYM().filter(e=>e.y===n).slice().reverse();
+  const row=e=>{
+    const p={h:countOf(e.h),kan:e.kan,kanRev:e.kanRev,rev:new Set(e.rev||[]),forced:-1};
+    const av=e.oppChar&&CHARS[e.oppChar]?`<img class="av" src="${sprite(e.oppChar,'sad')}" width="32" height="32">`:'';
+    return `<div class="panel" style="margin:6px 0">
+      <div style="display:flex;align-items:center;gap:8px">${av}<div style="flex:1;min-width:0"><b style="font-size:13px">${e.mode==='pvp'?`${e.who} vs ${e.opp}`:`vs ${e.opp}`}</b><div class="mini">${fmtTime(e.at)}・${e.kyoku||''}</div></div><b style="color:#ffe08a">${e.pts}点</b></div>
+      <div class="row" style="gap:4px;align-items:center;margin-top:6px">${handGroups(p,true,'xs')}<span class="mini">＋</span>${tileHTML(e.win,{size:'xs',last:1,dora:false})}</div>
+      <div class="mini" style="margin-top:3px">${(e.yaku||[]).join('・')}</div></div>`;};
+  return `<div class="sheet"><h3>${n}</h3><div class="mini">${x?x.d:''}</div>${es.map(row).join('')}<div class="btns" style="margin-top:8px"><button class="btn" onclick="S.zkSel=null;render()">閉じる</button></div></div>`;
+}
 function render(){
   const app=$('#app');
   let h;
   if(!G){
     const sc=S.screen;
-    h=sc==='learn'?viewLearn():sc==='guide'?viewGuide():sc==='tr_wait'?viewTrWait():sc==='tr_build'?viewTrBuild():sc==='tr_safe'?viewTrSafe():sc==='tr_score'?viewTrScore():viewTitle();
+    h=sc==='zukan'?viewZukan():sc==='learn'?viewLearn():sc==='guide'?viewGuide():sc==='tr_wait'?viewTrWait():sc==='tr_build'?viewTrBuild():sc==='tr_safe'?viewTrSafe():sc==='tr_score'?viewTrScore():viewTitle();
   }
   else switch(G.phase){
     case 'calc':h=viewCalc();break;
@@ -1514,6 +1577,7 @@ function render(){
   app.className=(G&&G.phase==='select'&&G.P[G.cur].ana&&G.P[G.cur].ana.can)?'pb2':'';
   const ov=$('#ov');let oh='';
   if(S.help)oh=helpHTML();
+  else if(!G&&S.screen==='zukan'&&S.zkSel)oh=zukanSheet();
   else if(S.sheet==='menu')oh=menuHTML();
   else if(G&&G.cover)oh=coverHTML();
   else if(G&&S.sheet==='waits'&&G.phase==='select'){
@@ -1529,7 +1593,7 @@ function render(){
     <div class="btns" style="margin-top:14px">${G.tut?'':'<button class="btn ghost" onclick="passRon()">見逃す</button>'}<button class="btn red glow" style="flex:2;font-size:20px" onclick="acceptRon()">ロン！</button></div></div>`;
   }
   ov.innerHTML=oh;ov.className=oh?'on':'';
-  ov.onclick=e=>{if(e.target===ov&&(S.sheet||S.help)){closeSheet();}};
+  ov.onclick=e=>{if(e.target===ov&&(S.sheet||S.help)){closeSheet();}else if(e.target===ov&&S.zkSel){S.zkSel=null;render();}};
   // 一度きりの演出の後処理
   if(G){
     G.discShown=G.discSeq;G.sayShown=(G.sayV||[0,0]).slice();G.popIdx=null;
