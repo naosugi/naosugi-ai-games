@@ -8199,7 +8199,9 @@ $('viewBtn').addEventListener('click', toggleView);
 const muteLabel = () => { $('muteBtn').textContent = AU.muted ? '🔇' : '🔊'; };
 $('muteBtn').addEventListener('click', () => { AU.init(); AU.setMute(!AU.muted); muteLabel(); }); muteLabel();
 document.addEventListener('click', e => { if (e.target.closest('button')) { AU.init(); AU.S.ui(); } }, true);
-$('spdBtn').addEventListener('click', () => { speed = speed === 1 ? 2 : 1; $('spdBtn').textContent = '×' + speed; });
+// 速さ：押すたびに ×1 → ×2 → ×3 → ×4 → ×1。1フレームに speed 回だけ同じ刻みで進めるので、速くしても動きは変わらない
+const SPEED_MAX = 4;
+$('spdBtn').addEventListener('click', () => { speed = speed >= SPEED_MAX ? 1 : speed + 1; $('spdBtn').textContent = '×' + speed; });
 addEventListener('keydown', e => {
   if (pilot && (e.key === 'ArrowLeft' || e.key === 'a')) turnTo(pYawT + .4); if (pilot && (e.key === 'ArrowRight' || e.key === 'd')) turnTo(pYawT - .4); if (pilot && e.key === 's') turnTo(pYawT + Math.PI);
   if (e.key === 'Escape' && sel && mode === 'play' && !building) { sel = null; updInfo(); return; }
