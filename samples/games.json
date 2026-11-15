@@ -292,6 +292,22 @@
       "playtime": "約15分",
       "added": "2026-11-15",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "kami-wombat",
+      "title": "神に愛されたヒメウォンバット",
+      "description": "ウォンバットの神となり、祈るヒメウォンバットに動物たちの奇跡の形質を授けて繁栄へ導く育成ゲーム。なでて祈りを集め、授けた形質が世代を重ねて群れに広がると、タスマニアから大陸、深海、火星へと生息地が広がる。元ネタ生物のトリビア図鑑つき。",
+      "path": "../games/kami-wombat/",
+      "thumbnail": "../games/kami-wombat/thumb.jpg",
+      "tags": [
+        "育成",
+        "シミュレーション",
+        "知育"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約25分",
+      "added": "2026-11-16",
+      "author": "@naoya_oosugi"
     }
   ]
 }
