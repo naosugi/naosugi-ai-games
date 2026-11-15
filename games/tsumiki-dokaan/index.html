@@ -202,7 +202,7 @@ const ctx = canvas.getContext('2d');
 let blocks = [], balls = [], plats = [], particles = [], texts = [];
 let stageIdx = 0, used = 0, par = 3, cleared = false, clearTimer = 0;
 let combo = 0, comboTimer = 0, comboText = null, shake = 0, lastDrop = -99, lastHit = -99, steps = 0, bandVib = 0;
-let pull = null, playing = false, stageScore = 0, stageT = 0;
+let pull = null, playing = false, stageScore = 0, stageT = 0, loadId = 0;
 const kicks = [];
 let hintDrop = true, hintSling = true;
 const clouds = Array.from({length: 4}, (_, i) => ({ x: Math.random() * W, y: 60 + i * 45 + Math.random() * 20, s: 0.7 + Math.random() * 0.6, v: 0.08 + Math.random() * 0.12 }));
@@ -443,7 +443,7 @@ function loadStage(i) {
   Composite.clear(world, false);
   blocks = []; balls = []; plats = []; particles = []; texts = []; comboText = null; pull = null;
   chooseH();
-  stageIdx = i;
+  stageIdx = i; loadId++;
   const def = LEVELS[i % LEVELS.length](H);
   const wallOpt = { isStatic: true, restitution: 0.6, collisionFilter: { category: CAT_WALL, mask: CAT_BALL } };
   const wl = Bodies.rectangle(-15, H / 2 - 700, 30, H + 1400, wallOpt), wr = Bodies.rectangle(W + 15, H / 2 - 700, 30, H + 1400, wallOpt);
@@ -461,7 +461,7 @@ function loadStage(i) {
     if (d.shape === 'circle') b = Bodies.circle(d.x, d.y, d.r, opt);
     else if (d.shape === 'tri') b = Body.create(Object.assign({ position: { x: d.x, y: d.y }, vertices: Matter.Vertices.clockwiseSort([{ x: -d.w / 2, y: 0 }, { x: d.w / 2, y: 0 }, { x: 0, y: -d.h }]) }, opt));
     else b = Bodies.rectangle(d.x, d.y, d.w, d.h, opt);
-    b.shape = d.shape || 'rect'; b.r = d.r; b.homeY = d.y; b.phase = Math.random() * 6; b.fuse = 0; b.trigger = false;
+    b.shape = d.shape || 'rect'; b.r = d.r; b.homeX = d.x; b.homeY = d.y; b.out = 0; b.phase = Math.random() * 6; b.fuse = 0; b.trigger = false;
     b.kind = d.kind; b.bw = d.w; b.bh = d.h; b.alive = true; b.hitFlash = 0; b.isBlock = true;
     b.color = KCOLOR[d.kind] || PALETTE[(Math.random() * PALETTE.length) | 0];
     blocks.push(b);
@@ -477,7 +477,7 @@ function loadStage(i) {
 function makeBall(x, y, r, den) {
   const b = Bodies.circle(x, y, r, { density: den, restitution: 0.45, friction: 0.05, frictionAir: 0,
     collisionFilter: { category: CAT_BALL, mask: CAT_BLOCK | CAT_WALL } });
-  b.isBall = true; b.r = r; b.age = 0; b.trail = [];
+  b.isBall = true; b.r = r; b.age = 0; b.trail = []; b.loadId = loadId;
   Composite.add(world, b); balls.push(b);
   if (balls.length > 14) { const o = balls.shift(); Composite.remove(world, o); }
   return b;
@@ -614,7 +614,7 @@ function stepGame() {
   steps++; stageT++;
   for (const p of plats) if (p.move) Body.setPosition(p, { x: p.baseX + Math.sin(stageT * p.move.sp + (p.move.ph || 0)) * p.move.ax, y: p.position.y }, true);
   for (const b of blocks) if (b.alive && b.kind === 'balloon') // ふうせんは ふわふわ うかぶ
-    Body.applyForce(b, b.position, { x: Math.sin(stageT * 0.03 + b.phase) * b.mass * 0.00004, y: -b.mass * 0.001 + (b.homeY - b.position.y) * b.mass * 0.000004 });
+    Body.applyForce(b, b.position, { x: Math.sin(stageT * 0.03 + b.phase) * b.mass * 0.00004 + (b.homeX - b.position.x) * b.mass * 0.000004, y: -b.mass * 0.001 + (b.homeY - b.position.y) * b.mass * 0.000004 });
   Engine.update(engine, STEP);
   // ボールが当たった周りの積み木をはじき飛ばす(ドカーン効果)
   for (const k of kicks) {
@@ -646,10 +646,13 @@ function stepGame() {
     if (b.trigger) { popBlock(b); continue; }
     if (b.hitFlash > 0) b.hitFlash--;
     const p = b.position;
-    if (p.y > KILLY || p.y < -80 || p.x < -60 || p.x > W + 60) popBlock(b);
+    // 画面の外に出たまま戻らない積み木(ふうせんなど)は、少し待って消す
+    b.out = (p.x < -10 || p.x > W + 10 || p.y < -10) ? b.out + 1 : 0;
+    if (p.y > KILLY || b.out > (b.kind === 'balloon' ? 20 : 90)) popBlock(b);
   }
   for (let i = balls.length - 1; i >= 0; i--) {
     const b = balls[i]; b.age++;
+    if (b.loadId !== loadId) { Composite.remove(world, b); balls.splice(i, 1); continue; }
     b.still = b.speed < 0.6 ? (b.still || 0) + 1 : 0;
     if (b.still > 45 && b.age < 660) b.age = 660; // 止まったボールはすぐ消す
     b.trail.push({ x: b.position.x, y: b.position.y }); if (b.trail.length > 10) b.trail.shift();
@@ -661,6 +664,8 @@ function stepGame() {
   if (comboTimer > 0 && --comboTimer === 0) combo = 0;
   if (!cleared && blocks.length && blocks.every(b => !b.alive)) {
     cleared = true; clearTimer = 70; pull = null;
+    for (const bl of balls) { burst(bl.position.x, bl.position.y, '#ffffff', 10); Composite.remove(world, bl); } // のこりの ボールは けす
+    balls.length = 0;
     texts.push({ x: W / 2, y: H * 0.3, s: 'やったー！', life: 80, max: 80, color: '#ff5f7e', size: 46, big: true });
     confetti(140); sfx.fanfare(); vib([40, 30, 90]); shake = 10;
   }
