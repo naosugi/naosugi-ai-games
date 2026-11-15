@@ -152,9 +152,9 @@ const STAGES = {
   ani: {icon:'🐾', name:'どうぶつの なかま', desc:'うごいて たべて ふえる', color:'#f8ecd8', animal:true,
         ad:'動物のなかま。動き回って、ほかの生き物を食べて栄養をとります。'},
   art: {icon:'🦐', name:'むしや えびの なかま', desc:'からだが かたい からで おおわれた どうぶつ', color:'#fbe7d4', animal:true,
-        ad:'節足動物(昆虫・エビ・カニ・クモなど)。体がかたい殻(外骨格)でおおわれ、あしに節があります。'},
+        ad:'節足動物(昆虫・エビ・カニ・クモなど)。体がかたい殻(外骨格)でおおわれ、あしに節があります。体が小さく、一度にたくさん生まれるものが多いので、数がとても多くなります。いまの地球でも、種類も数も、もっとも多い動物のなかまです。'},
   ver: {icon:'🐟', name:'せぼねの ある なかま', desc:'からだの なかに せぼねが ある どうぶつ', color:'#dceaf7', animal:true,
-        ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。'},
+        ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。体が大きく長生きなものが多く、生まれる数は少なめですが、病気や寒さなどで、へりにくいとされます(このゲームでは、できごとで1ぴきへりにくくしています)。'},
 };
 // 時代ごとの姿(0〜4:ゲーム中、5:いま)。「その時代の、同じ系統の代表」で、直接の祖先とはかぎらない
 const FORMS = {
@@ -271,9 +271,20 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} },
 };
 let soundOn = store.get('shinka_sound', true);
+// 読み上げでは、絵文字を ことばに おきかえ、のこりの 絵文字や記号は 読まない
+const SAY_WORDS = {'🦠':'ちいさな いきもの','🌿':'しょくぶつ','🍽️':'たべる なかま','🍄':'きのこ','🐾':'どうぶつ','🦐':'むしや えび','🐟':'せぼねの なかま',
+  '⭐':'ほし','🌙':'つき','☀️':'たいよう','💎':'ダイヤ','❤️':'ハート','🔶':'オレンジ','🤖':'コンピューター',
+  '💤':'じっと まつ','🔹':'ちいさい からだ','🧥':'さむさに つよい','🫁':'くうきを すう','👁️':'め','🌱':'しょくぶつを たべる','🦷':'どうぶつを たべる','🎨':'かくれいろ','🛡️':'かたい からだ',
+  '❄️':'こおり','🫧':'さんそ','🌋':'ふんか','🔥':'ひ','☄️':'いんせき','➕':''};
+function sayText(t){
+  let s = String(t).replace(/<[^>]+>/g, '、');
+  Object.keys(SAY_WORDS).sort((a, b) => b.length - a.length).forEach(k => { s = s.split(k).join(SAY_WORDS[k] ? ' ' + SAY_WORDS[k] + ' ' : ' '); });
+  s = s.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}○●・→➡️⬆️⬇️]/gu, ' ');
+  return s.replace(/\s+/g, ' ').replace(/(、\s*)+/g, '、').trim();
+}
 function speak(t){
   if(!soundOn || !t) return;
-  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g, ' ')); u.lang = 'ja-JP'; u.rate = 0.9; speechSynthesis.speak(u); }catch(e){}
+  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(sayText(t)); u.lang = 'ja-JP'; u.rate = 0.9; speechSynthesis.speak(u); }catch(e){}
 }
 let actx = null;
 function beep(f = 600, d = 0.08, type = 'sine'){
@@ -322,7 +333,7 @@ function capOf(p){
     case 'pla': c = 4 + Math.floor(sumN('fun') / 2); break;
     case 'fun': c = 3 + Math.floor(others / 3) + Math.floor((S.dead || 0) / 4); break;   // しがいが多いと ふえられる
     case 'ani': case 'art': case 'ver':
-      c = 2 + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
+      c = (p.st === 'art' ? 4 : 2) + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
       break;
   }
   return Math.max(1, Math.min(MAXN, c));
@@ -331,7 +342,7 @@ const CAP_AD = {
   pla:'植物は光で栄養をつくりますが、土の栄養には限りがあります。菌類が分解して栄養を土に戻すほど、たくさんふえられます。',
   fun:'菌類の食べものは、落ち葉や死がいです。ほかの生き物が多いほど、また、危機やできごとで死がいがふえたあとほど、たくさんふえられます(死がいは分解されて、だんだんへっていきます)。',
   ani:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。',
-  art:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
+  art:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。節足動物は体が小さいので、同じ食べものでもたくさんいられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
   ver:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
 };
 // ルーレットの ➕ の目盛りの数
@@ -342,7 +353,8 @@ function needOf(k){
     case 'pla':  return 2 + Math.floor(sumN('fun') / 3);
     case 'opi':  return 1 + Math.floor(sumN('pla') / 3);
     case 'fun':  return 1 + Math.floor(others / 8);
-    case 'ani': case 'art': case 'ver': return Math.max(1, Math.floor(sumN('pla') / 3));
+    case 'art': return 1 + Math.floor(sumN('pla') / 3);              // 節足動物は 落ち葉なども食べ、小さいので すきまにも すめる
+    case 'ani': case 'ver': return Math.max(1, Math.floor(sumN('pla') / 3));
   }
   return 1;
 }
@@ -475,6 +487,7 @@ function growBonus(p){
 }
 // k ひき へらす(できごとでは 1ぴきは のこす)。へった数は しがいとして 菌類の食べものになる
 function subN(p, k, keepOne = true){
+  if(keepOne && p.st === 'ver') k = Math.max(0, k - 1);   // 体が大きく長生きなので、できごとでは へりにくい
   const lost = Math.max(0, Math.min(k, p.n - (keepOne ? 1 : 0)));
   p.n -= lost;
   if(p.st !== 'fun') S.dead = (S.dead || 0) + lost;
@@ -497,9 +510,9 @@ function resultOf(p, k){
       ad:`「${T.name}」をもつものが、${formName(p)}の中に現れて広がりました。${T.ad}${dropped ? `(とくちょうは${MAX_TRAITS}つまで。${TRAITS[dropped].name}はなくなりました)` : ''}`, after, fan:true};
   }
   if(k === p.st){
-    const bt = growBonus(p), got = addN(p, 2 + (bt ? 1 : 0)), cap = capOf(p);
+    const bt = growBonus(p), got = addN(p, (p.st === 'art' ? 3 : 2) + (bt ? 1 : 0)), cap = capOf(p);
     return got ? {big:'➕' + form(p), kid:`${form(p)} が ${got}ひき ふえた！`, short:`➕ ${got}ひき ふえた`, html:pRow(p), fan:true,
-                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
+                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${p.st === 'art' ? '節足動物は体が小さく、一度にたくさん生まれるので、ふえる数が多めです。' : p.st === 'ver' ? '脊椎動物は体が大きく、生まれる数は少なめです。' : ''}${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
                : {big:'➕' + form(p), kid:'たべものが たりなくて ふえられない', short:'➕ たべものが たりない', html:pRow(p),
                   ad:`食べものが足りないので、これ以上ふえられません(いまは${cap}ひきまで)。${CAP_AD[p.st] || ''}`};
   }
@@ -823,7 +836,7 @@ async function loop(){
   }
   await ending();
 }
-let STAR3 = 24, STAR2 = 18;
+let STAR3 = 26, STAR2 = 20;
 async function ending(){
   store.del('shinka_game');
   S.cur = -1; render(); fanfare(); setTimeout(fanfare, 500);
