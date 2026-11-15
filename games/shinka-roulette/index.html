@@ -77,6 +77,7 @@ button{font-family:inherit;border:none;cursor:pointer}
 .row .rn small{font-size:12px;color:#666}
 .row .rm{font-size:22px}
 .lost{opacity:.3}
+.spr{width:1em;height:1em;image-rendering:pixelated;image-rendering:crisp-edges;vertical-align:-0.12em}
 .sec{font-size:15px;font-weight:bold;text-align:left;margin:8px 0 4px}
 .pies{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;font-size:22px}
 .pies div{font-size:11px;color:#666}
@@ -157,19 +158,43 @@ const STAGES = {
         ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。体が大きく長生きなものが多く、生まれる数は少なめですが、病気や寒さなどで、へりにくいとされます(このゲームでは、できごとで1ぴきへりにくくしています)。'},
 };
 // 時代ごとの姿(0〜4:ゲーム中、5:いま)。「その時代の、同じ系統の代表」で、直接の祖先とはかぎらない
-const FORMS = {
-  cell:['🦠'], opi:['🦠'], ani:['🪼'],
-  pla:['🟢','🌱','🌴','🌲','🌸','🌾'],
-  fun:['🦠','🍄','🍄','🍄','🍄','🍄'],
-  art:['🪲','🦂','🪰','🦗','🐝','🦋'],
-  ver:['🐟','🦈','🦎','🦕','🦖','🦣'],
-};
-const FORM_NAMES = {
-  cell:['単細胞生物'], opi:['のちに菌類と動物になるなかま(単細胞)'], ani:['初期の動物'],
-  pla:['藻類','陸に上がった初期の植物','シダ植物の森','イチョウなどの裸子植物','花をさかせる植物','草原の草'],
-  fun:['水の中の小さな菌類','植物の根とくらす菌類','落ち葉や倒木を分解する菌類','キノコのなかま','キノコのなかま','キノコのなかま'],
-  art:['三葉虫','ウミサソリ','メガネウラなどの昆虫','三畳紀の昆虫','ハチなどの昆虫','チョウなどの昆虫'],
-  ver:['あごのない初期の魚','ダンクルオステウスなどの魚','ディメトロドンなど','初期の恐竜','ティラノサウルスなどの恐竜','マンモスなどのほにゅうるい'],
+// 同じ時代でも、もっている とくちょう(need)で 姿が かわる。上から順に 当てはまるものを使う。's:' はドット絵
+const FORM_TABLE = {
+  cell:[[{e:'🦠', n:'単細胞生物'}]],
+  opi: [[{e:'🦠', n:'のちに菌類と動物になるなかま(単細胞)'}]],
+  ani: [[{e:'🪼', n:'初期の動物'}]],
+  pla: [
+    [{e:'🟢', n:'藻類'}],
+    [{e:'s:cookso', n:'クックソニア(初期の陸上植物)'}],
+    [{e:'s:lepido', n:'リンボク(シダ植物のなかま)'}],
+    [{need:'sleep', e:'s:ginkgo', n:'イチョウのなかま'}, {e:'🌴', n:'ソテツのなかま'}],
+    [{need:'sleep', e:'🌲', n:'マツなどの針葉樹'}, {e:'🌸', n:'花をさかせる植物'}],
+    [{need:'coat', e:'🌲', n:'寒さに強い針葉樹の森'}, {e:'🌾', n:'草原の草'}],
+  ],
+  fun: [
+    [{e:'s:chytrid', n:'ツボカビのなかま(水の中の菌類)'}],
+    [{e:'s:myco', n:'植物の根とくらす菌類'}],
+    [{e:'s:bracket', n:'倒木を分解する菌類(サルノコシカケのなかまなど)'}],
+    [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
+    [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
+    [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
+  ],
+  art: [
+    [{need:'fang', e:'s:anoma', n:'アノマロカリス'}, {need:'eye', e:'s:anoma', n:'アノマロカリス'}, {e:'s:trilo', n:'三葉虫'}],
+    [{need:'fang', e:'s:eurypt', n:'ウミサソリ'}, {need:'lung', e:'🦂', n:'サソリのなかま'}, {e:'s:trilo', n:'三葉虫'}],
+    [{need:'eye', e:'s:meganeura', n:'メガネウラ'}, {need:'herb', e:'s:arthro', n:'アースロプレウラ'}, {need:'fang', e:'s:meganeura', n:'メガネウラ'}, {e:'🪳', n:'ゴキブリに近いなかま'}],
+    [{need:'herb', e:'🪲', n:'甲虫のなかま'}, {e:'🦗', n:'バッタのなかま'}],
+    [{need:'fang', e:'🕷️', n:'クモのなかま'}, {need:'herb', e:'🐝', n:'ハチのなかま'}, {e:'🐜', n:'アリやシロアリのなかま'}],
+    [{need:'fang', e:'🕷️', n:'クモのなかま'}, {need:'herb', e:'🦋', n:'チョウのなかま'}, {e:'🐜', n:'アリのなかま'}],
+  ],
+  ver: [
+    [{e:'s:myllo', n:'ミロクンミンギア(あごのない魚)'}],
+    [{need:'lung', e:'s:ichthyo', n:'イクチオステガ'}, {need:'fang', e:'s:dunkle', n:'ダンクルオステウス'}, {e:'🐟', n:'デボン紀の魚'}],
+    [{need:'fang', e:'s:dimet', n:'ディメトロドン'}, {need:'herb', e:'s:edapho', n:'エダフォサウルス'}, {need:'lung', e:'🐸', n:'両生類のなかま'}, {e:'🦎', n:'初期の爬虫類のなかま'}],
+    [{need:'small', e:'🐭', n:'初期のほにゅうるい'}, {need:'fang', e:'🐊', n:'ワニに近いなかま'}, {need:'herb', e:'🦕', n:'プラテオサウルス'}, {e:'🦎', n:'初期の恐竜のなかま'}],
+    [{need:'small', e:'🐭', n:'恐竜時代のほにゅうるい'}, {need:'fang', e:'🦖', n:'ティラノサウルス'}, {need:'shell', e:'s:trice', n:'トリケラトプス'}, {need:'eye', e:'🐦', n:'鳥のなかま'}, {e:'🦕', n:'ブラキオサウルスなどの恐竜'}],
+    [{need:'coat', e:'🦣', n:'マンモス'}, {need:'fang', e:'s:smilo', n:'スミロドン'}, {need:'herb', e:'🐎', n:'ウマのなかま'}, {need:'small', e:'🐁', n:'ネズミのなかま'}, {e:'🐒', n:'サルのなかま'}],
+  ],
 };
 const SMALL = {cell:'🦠', opi:'🦠', ani:'🪱', pla:'🌱', fun:'🦠', art:'🐜', ver:'🐭'};
 const SMALL_NAME = '生き残った小さななかま';
@@ -229,30 +254,39 @@ const CRISES = [
 const ZUKAN = [
   {id:'cyano', e:'🦠', name:'シアノバクテリア', era:0, st:null, tr:null, t:'光合成で酸素をつくる小さな生き物。とても長い時間をかけて、地球の空気に酸素がふえたのは、この生き物のはたらきが大きいと考えられています。'},
   {id:'alga', e:'🟢', name:'藻類(そうるい)', era:0, st:'pla', tr:null, t:'海の中で光合成をする生き物。海の食べものの流れの、はじまりになります。'},
-  {id:'trilo', e:'🪲', name:'三葉虫(さんようちゅう)', era:0, st:'art', tr:null, t:'かたい殻をもつ海の節足動物。海底の泥の中の有機物を食べるもの、死がいを食べるもの、ほかの生き物を捕まえるものなど、くらし方はさまざまでした。古生代の終わりまで、とても長く栄えました。'},
-  {id:'anoma', e:'🦐', name:'アノマロカリス', era:0, st:'art', tr:'eye', t:'カンブリア紀の海の大きな捕食者だったと考えられている、節足動物に近いなかま。大きな複眼をもっていたことが化石からわかっています。'},
-  {id:'myllo', e:'🐟', name:'ミロクンミンギア', era:0, st:'ver', tr:null, t:'カンブリア紀の、とても古い魚のなかま。あごはまだありませんでした。脊椎動物の初期の例のひとつと考えられています。'},
-  {id:'cookso', e:'🌱', name:'クックソニア', era:1, st:'pla', tr:null, t:'陸に上がった初期の植物のひとつ。高さ数cmほどの、小さな植物でした。'},
-  {id:'myco', e:'🍄', name:'植物の根とくらす菌類', era:1, st:'fun', tr:null, t:'初期の陸上植物の化石の中から、菌類がすみついたあとが見つかっています。植物と菌類の両方に利益がある関係(共生)だったと考えられています。'},
-  {id:'eurypt', e:'🦂', name:'ウミサソリ', era:1, st:'art', tr:'fang', t:'シルル紀などの海や川にいた節足動物の捕食者。大きなものは2mをこえたとされます。'},
-  {id:'dunkle', e:'🦈', name:'ダンクルオステウス', era:1, st:'ver', tr:'fang', t:'デボン紀の海にいた大型の魚。頭がかたい骨の板でおおわれ、強いあごをもつ捕食者でした。'},
-  {id:'linbo', e:'🌴', name:'リンボク', era:2, st:'pla', tr:null, t:'石炭紀の森に生えていた、木のように大きくなるシダ植物のなかま。のちに石炭のもとになりました。'},
-  {id:'megan', e:'🪰', name:'メガネウラ', era:2, st:'art', tr:'eye', t:'石炭紀にいた、とても大きなトンボのなかま。はねを広げると70cmほどあったとされます。'},
-  {id:'arthro', e:'🐛', name:'アースロプレウラ', era:2, st:'art', tr:'herb', t:'石炭紀にいた、とても大きなヤスデのなかま。植物などを食べていたと考えられています。'},
-  {id:'dimet', e:'🦎', name:'ディメトロドン', era:2, st:'ver', tr:'fang', t:'ペルム紀の、背中に大きな帆をもつ捕食者。恐竜ではなく、ほにゅうるいに近いなかまです。'},
-  {id:'ginkgo', e:'🍂', name:'イチョウのなかま', era:3, st:'pla', tr:'sleep', t:'恐竜の時代に栄えた植物のなかま。タネでふえます。いまも生き残っているので「生きた化石」とよばれます。'},
+  {id:'trilo', e:'s:trilo', name:'三葉虫(さんようちゅう)', era:0, st:'art', tr:null, t:'かたい殻をもつ海の節足動物。海底の泥の中の有機物を食べるもの、死がいを食べるもの、ほかの生き物を捕まえるものなど、くらし方はさまざまでした。古生代の終わりまで、とても長く栄えました。'},
+  {id:'anoma', e:'s:anoma', name:'アノマロカリス', era:0, st:'art', tr:'eye', t:'カンブリア紀の海の大きな捕食者だったと考えられている、節足動物に近いなかま。大きな複眼をもっていたことが化石からわかっています。'},
+  {id:'myllo', e:'s:myllo', name:'ミロクンミンギア', era:0, st:'ver', tr:null, t:'カンブリア紀の、とても古い魚のなかま。あごはまだありませんでした。脊椎動物の初期の例のひとつと考えられています。'},
+  {id:'cookso', e:'s:cookso', name:'クックソニア', era:1, st:'pla', tr:null, t:'陸に上がった初期の植物のひとつ。高さ数cmほどの、小さな植物でした。'},
+  {id:'myco', e:'s:myco', name:'植物の根とくらす菌類', era:1, st:'fun', tr:null, t:'初期の陸上植物の化石の中から、菌類がすみついたあとが見つかっています。植物と菌類の両方に利益がある関係(共生)だったと考えられています。'},
+  {id:'eurypt', e:'s:eurypt', name:'ウミサソリ', era:1, st:'art', tr:'fang', t:'シルル紀などの海や川にいた節足動物の捕食者。大きなものは2mをこえたとされます。'},
+  {id:'dunkle', e:'s:dunkle', name:'ダンクルオステウス', era:1, st:'ver', tr:'fang', t:'デボン紀の海にいた大型の魚。頭がかたい骨の板でおおわれ、強いあごをもつ捕食者でした。'},
+  {id:'chytrid', e:'s:chytrid', name:'ツボカビのなかま', era:0, st:'fun', tr:null, t:'水の中でくらす菌類のなかま。しっぽ(べん毛)で泳ぐ胞子をつくります。菌類の中でも古いタイプのなかまと考えられています。'},
+  {id:'ichthyo', e:'s:ichthyo', name:'イクチオステガ', era:1, st:'ver', tr:'lung', t:'デボン紀の終わりごろにいた、あしをもつ脊椎動物。魚のなかまから、陸を歩く動物へとつながる途中のすがたを示す化石として知られています。陸をどのくらい歩けたかは議論があります。'},
+  {id:'bracket', e:'s:bracket', name:'サルノコシカケのなかま', era:2, st:'fun', tr:null, t:'倒れた木や枯れ木を分解する菌類。木のかたい成分を分解できる菌類がいつ現れたかは研究が続いていて、石炭紀に石炭が多くできたこととの関係も議論されています。'},
+  {id:'roach', e:'🪳', name:'ゴキブリに近いなかま', era:2, st:'art', tr:null, t:'石炭紀の地層から、ゴキブリに近いなかまの化石がたくさん見つかっています。落ち葉などを食べて、分解を助けます。'},
+  {id:'edapho', e:'s:edapho', name:'エダフォサウルス', era:2, st:'ver', tr:'herb', t:'ディメトロドンに似た、背中に帆をもつ動物。こちらは植物を食べていたと考えられています。'},
+  {id:'linbo', e:'s:lepido', name:'リンボク', era:2, st:'pla', tr:null, t:'石炭紀の森に生えていた、木のように大きくなるシダ植物のなかま。のちに石炭のもとになりました。'},
+  {id:'megan', e:'s:meganeura', name:'メガネウラ', era:2, st:'art', tr:'eye', t:'石炭紀にいた、とても大きなトンボのなかま。はねを広げると70cmほどあったとされます。'},
+  {id:'arthro', e:'s:arthro', name:'アースロプレウラ', era:2, st:'art', tr:'herb', t:'石炭紀にいた、とても大きなヤスデのなかま。植物などを食べていたと考えられています。'},
+  {id:'dimet', e:'s:dimet', name:'ディメトロドン', era:2, st:'ver', tr:'fang', t:'ペルム紀の、背中に大きな帆をもつ捕食者。恐竜ではなく、ほにゅうるいに近いなかまです。'},
+  {id:'ginkgo', e:'s:ginkgo', name:'イチョウのなかま', era:3, st:'pla', tr:'sleep', t:'恐竜の時代に栄えた植物のなかま。タネでふえます。いまも生き残っているので「生きた化石」とよばれます。'},
   {id:'plateo', e:'🦕', name:'プラテオサウルス', era:3, st:'ver', tr:'herb', t:'三畳紀の後期にいた、首の長い植物食の恐竜。'},
   {id:'mammal0', e:'🐭', name:'さいしょの ほにゅうるい', era:3, st:'ver', tr:'small', t:'三畳紀の終わりごろに、小さなほにゅうるいのなかまが現れたと考えられています。虫などを食べていたようです。'},
   {id:'flower', e:'🌸', name:'花をさかせる植物', era:4, st:'pla', tr:null, t:'恐竜の時代の後半に広がった植物。虫が花の蜜や花粉を食べるときに、花粉が別の花に運ばれます。花と虫の両方に利益がある関係(相利共生)です。'},
   {id:'termi', e:'🐜', name:'シロアリのなかま', era:4, st:'art', tr:null, t:'恐竜の時代にはもういたことが化石からわかっている昆虫。木を食べて分解します。'},
   {id:'brachi', e:'🦕', name:'ブラキオサウルス', era:4, st:'ver', tr:'herb', t:'首の長い、とても大きな植物食の恐竜。高いところの葉を食べていたと考えられています。'},
-  {id:'trice', e:'🦏', name:'トリケラトプス', era:4, st:'ver', tr:'shell', t:'3本の角と大きなえりをもつ植物食の恐竜。白亜紀の終わりごろに生きていました。'},
+  {id:'trice', e:'s:trice', name:'トリケラトプス', era:4, st:'ver', tr:'shell', t:'3本の角と大きなえりをもつ植物食の恐竜。白亜紀の終わりごろに生きていました。'},
   {id:'trex', e:'🦖', name:'ティラノサウルス', era:4, st:'ver', tr:'fang', t:'白亜紀の終わりにいた大型の肉食恐竜。とても強い、かむ力をもっていたと考えられています。'},
+  {id:'mold', e:'s:mold', name:'カビのなかま', era:4, st:'fun', tr:'sleep', t:'たくさんの胞子をつくってふえる菌類。胞子は乾燥などに強いものが多く、悪い時期をのりこえやすいとされます。'},
+  {id:'spider', e:'🕷️', name:'クモのなかま', era:4, st:'art', tr:'fang', t:'ほかの虫を食べる節足動物。クモのなかまはとても古く、恐竜の時代にはもう多くの種類がいました。'},
+  {id:'bird', e:'🐦', name:'鳥のなかま', era:4, st:'ver', tr:'eye', t:'鳥は恐竜のなかまから現れました。ジュラ紀の始祖鳥などが知られています。'},
   {id:'grass', e:'🌾', name:'イネ科の草', era:5, st:'pla', tr:null, t:'新生代に草原が大きく広がりました。草原では、草を食べる動物がふえました。'},
   {id:'mush', e:'🍄', name:'キノコのなかま', era:5, st:'fun', tr:null, t:'落ち葉や倒れた木を分解して、土に栄養を戻す分解者。菌類はとても古くからいます。'},
   {id:'butter', e:'🦋', name:'チョウのなかま', era:5, st:'art', tr:null, t:'花の蜜を吸う昆虫。チョウのなかまは、恐竜の時代にはもう現れていたと考えられています。'},
   {id:'mammoth', e:'🦣', name:'マンモス', era:5, st:'ver', tr:'coat', t:'氷河期の寒い土地でくらしたゾウのなかま。長い毛で寒さにたえました。'},
-  {id:'smilo', e:'🐅', name:'スミロドン', era:5, st:'ver', tr:'fang', t:'長いキバをもつネコのなかま。「サーベルタイガー」ともよばれます。'},
+  {id:'horse', e:'🐎', name:'ウマのなかま', era:5, st:'ver', tr:'herb', t:'草原が広がった新生代に、草を食べるウマのなかまがふえました。'},
+  {id:'smilo', e:'s:smilo', name:'スミロドン', era:5, st:'ver', tr:'fang', t:'長いキバをもつネコのなかま。「サーベルタイガー」ともよばれます。'},
 ];
 
 
@@ -260,6 +294,21 @@ const COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12'];
 const MARKS = ['⭐','🌙','☀️','💎','❤️','🔶'];
 const WHEEL_COLORS = {cell:'#bcd8f0', pla:'#a8dca0', opi:'#cfc2ea', fun:'#d9c0a3', ani:'#f2d29b', art:'#f5c49b', ver:'#a9cbee', shinka:'#ffe680', none:'#e2e2e2'};
 
+const SPRITES = {"trilo":{"say":"さんようちゅう","half":true,"pal":{"a":"#5b4636","b":"#b08d63","c":"#8a6a48","e":"#222222","d":"#6e5440"},"rows":["........",".....aaa","...aabbb","..abebbb","..abbbbc",".aabbbbc","a.aaaaac","...abbbc","...adddc","...abbbc","....addc","....abbc","....addc",".....abc","......ac","........"]},"anoma":{"say":"アノマロカリス","half":true,"pal":{"a":"#7a3b2e","b":"#d77a5a","f":"#eba584","e":"#222222","g":"#b55a40"},"rows":["........","..g.....",".g.g....",".g..g...","..gg.aaa",".ea.abbb","..aaabbb",".ff.abbb","fff.abbb",".ff.abbb","fff.abbb",".ff..abb","..f..abb","......ab","....f.ab","...ff..a"]},"eurypt":{"say":"ウミサソリ","half":true,"pal":{"a":"#4a5a3a","b":"#86a062","p":"#b4c98a","e":"#222222"},"rows":["......aa",".....abb","....aebb","..a.abbb",".a..abbb","a..aabbb","pp.abbbb","ppp.abbb","....abbb",".....abb",".....abb","......ab","......ab","......ab",".....aab","......aa"]},"meganeura":{"say":"メガネウラ","half":true,"pal":{"v":"#7fb3d0","w":"#d6eef8","b":"#3f7f5f","e":"#2a4a8a"},"rows":["......ee","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","......bb","......bb","......bb","......bb","......bb","......bb",".......b"]},"arthro":{"say":"アースロプレウラ","half":true,"pal":{"a":"#3d2f22","b":"#a06a36","d":"#6b4421","l":"#4a3018"},"rows":["........","......aa",".....abb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb",".....abb","......aa","........"]},"myllo":{"say":"ミロクンミンギア","pal":{"a":"#2f4f6f","b":"#8fb8d8","w":"#d6e8f5","e":"#111111","f":"#6f98bb"},"rows":["................","................","................","................","......fff.......","....aaaaaaaa....","..aabbbbbbbbaa.f",".aebbbbbbbbbbbaf","abbbbbbbbbbbbbff",".awwwwwwwwwwwaaf","..aawwwwwwwaa..f","....aaaaaaa.....","................","................","................","................"]},"dunkle":{"say":"ダンクルオステウス","pal":{"a":"#2b2b2b","p":"#7d7d7d","q":"#a8a8a8","b":"#6f8796","w":"#c7d3da","e":"#ffcc33","t":"#ffffff","f":"#556b78"},"rows":["................","................","................","....aaaaa.......","..aaqqqqqaa....f",".aqqqepqqpaaa.ff","aqqqqqpppbbbbaff","apppppppbbbbbbbf","attttpppbbbbbbbf","a....tpwwwwwwbaf","aatttppwwwwwwa.f",".aaaaaaaaaaaa...","................","................","................","................"]},"ichthyo":{"say":"イクチオステガ","pal":{"a":"#2f4a26","b":"#6f9a4f","w":"#b8d39a","e":"#111111"},"rows":["................","................","................","................","................","................","...aaaa.........",".aabbbbaaaaaaa..","aebbbbbbbbbbbbaa","abbbbbbbbbbbbbba",".awwwwwwwwwwwa..","..aa.aa..aa.aa..","..a...a..a...a..",".aa..aa.aa..aa..","................","................"]},"dimet":{"say":"ディメトロドン","pal":{"a":"#3d2412","b":"#a0663a","w":"#d9a77a","s":"#e08a50","r":"#7a3d18","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]},"trice":{"say":"トリケラトプス","pal":{"a":"#3a3a2a","b":"#8a9a5a","w":"#c2cc96","f":"#c0a050","h":"#f2ead0","e":"#111111"},"rows":["................","....ff..........","...ffff.........","hh.ffffaaaaaa...",".hhaffabbbbbbaa.","..abbabbbbbbbbba","haebbbbbbbbbbbba",".abbbbbbbbbbbbba","..awwbbbbbbbbbb.","...aawwwwwwwbba.","....aa.aaaa.aa..","....aa.aa...aa..","...aaa.aaa.aaa..","................","................","................"]},"smilo":{"say":"スミロドン","pal":{"a":"#3a2a1a","b":"#c99a5a","w":"#ead2a8","e":"#111111","t":"#ffffff"},"rows":["................","................","................",".aaa...........a","abeba.........a.","abbbbaaaaaaaaaa.","abbbbbbbbbbbbbaa","atbbbbbbbbbbbbba",".twwbbbbbbbbbba.",".t.awwwwwwwwba..","...aa.aa.aa.aa..","...aa.aa.aa.aa..","..aaa.aa.aa.aa..","................","................","................"]},"cookso":{"say":"クックソニア","pal":{"g":"#4f8f3a","s":"#d98b2a","d":"#8a6a4a"},"rows":["................","................","...s.....s......","...s..s..s..s...","...g..s..g..s...","....g.g.g...g...","....g.g.g..g....",".....gg.g..g....",".....g..gg.g....",".....g...gg.....",".....g...g......","......g..g......","......g.g.......",".......g........","dddddddddddddddd","dddddddddddddddd"]},"lepido":{"say":"リンボク","pal":{"l":"#6fae4f","t":"#6a8a44","p":"#3f5a2a","d":"#8a6a4a"},"rows":[".l.l.l..l.l.l...","lllllll.lllllll.",".lllllllllllll..","..l..llttll..l..",".......tt.......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......",".....ttttt......","dddddddddddddddd","dddddddddddddddd"]},"ginkgo":{"say":"イチョウ","half":true,"pal":{"o":"#5a7f2a","l":"#a6cf4f","s":"#6a5a2a"},"rows":["........","........","........",".oooooo.","olllllo.","ollllllo","olllllll",".ollllll","..olllll","...ollll","....olll",".....oll","......ol",".......s",".......s",".......s"]},"chytrid":{"say":"ツボカビ","pal":{"o":"#6a5a8a","b":"#c9bce6","r":"#9a8a7a","z":"#6a5a8a"},"rows":["............z...","...........zz.z.","..............z.",".....oooo.......","....obbbbo......","...obbbbbbo.....","...obbbbbbo.....","...obbbbbbo.....","....obbbbo......",".....oooo.......","......rr........",".....r..r.......","....r.rr.r......","...r..r...r.....","..r..r.....r....","................"]},"myco":{"say":"きんこんきん","pal":{"r":"#8a6a40","h":"#b9a77a"},"rows":["rr..............",".rr.............","..rr..h.....h...","...rrh.h...h....","....rr..h.h.....","...h.rr..h..h...","..h...rr.h.h....",".h..h..rr..h....","h..h....rr.h.h..","..h..h...rr..h..",".h....h...rr....","h...h..h...rr.h.","...h....h...rr..","..h...h......rr.",".h...h..h.....rr","h..............r"]},"bracket":{"say":"サルノコシカケ","pal":{"l":"#7a5230","k":"#5a3a20","b":"#d9a050","c":"#f0d8a0","o":"#8a5a20"},"rows":["lll.............","lkl.............","lll.oooo........","lllobbbbo.......","lklbbbbbbo......","lllcccccccc.....","lll.............","lkl..oooooo.....","llloobbbbbbo....","lllbbbbbbbbbo...","lklccccccccccc..","lll.............","lll.............","lkl.............","lll.............","lll............."]},"mold":{"say":"カビ","pal":{"s":"#8a8a8a","h":"#3a3a3a","g":"#6fa88f","m":"#bfe0d0"},"rows":["................","..h......h......",".hhh..h..hhh..h.","..s..hhh..s..hhh","..s...s...s...s.","..s...s..s....s.","...s..s..s...s..","...s..s.s...s...","....s.s.s..s....","....s.sss.s.....",".....sssss......","..mmmmmmmmmmmm..",".mgmmgmmgmmgmmm.","mmmmmmmmmmmmmmmm","................","................"]},"edapho":{"say":"エダフォサウルス","pal":{"a":"#2f3a1a","b":"#7f945a","w":"#c3cf9a","s":"#b9c46a","r":"#5a6a2a","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]}};
+const SPR_URL = {};
+function sprURL(k){
+  if(SPR_URL[k] !== undefined) return SPR_URL[k];
+  let url = '';
+  try{
+    const sp = SPRITES[k], c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    const g = c.getContext('2d');
+    sp.rows.forEach((r, y) => { const row = sp.half ? r + [...r].reverse().join('') : r; [...row].forEach((ch, x) => { if(ch !== '.'){ g.fillStyle = sp.pal[ch]; g.fillRect(x, y, 1, 1); } }); });
+    const u = c.toDataURL(); if(typeof u === 'string') url = u;
+  }catch(e){}
+  return SPR_URL[k] = url;
+}
+// 絵文字 または ドット絵('s:名前')を 表示用の HTML に
+const icon = x => typeof x === 'string' && x.startsWith('s:') ? `<img class="spr" src="${sprURL(x.slice(2))}" alt="${SPRITES[x.slice(2)].say}">` : x;
 /* ============ 小道具 ============ */
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -277,7 +326,7 @@ const SAY_WORDS = {'🦠':'ちいさな いきもの','🌿':'しょくぶつ','
   '💤':'じっと まつ','🔹':'ちいさい からだ','🧥':'さむさに つよい','🫁':'くうきを すう','👁️':'め','🌱':'しょくぶつを たべる','🦷':'どうぶつを たべる','🎨':'かくれいろ','🛡️':'かたい からだ',
   '❄️':'こおり','🫧':'さんそ','🌋':'ふんか','🔥':'ひ','☄️':'いんせき','➕':''};
 function sayText(t){
-  let s = String(t).replace(/<[^>]+>/g, '、');
+  let s = String(t).replace(/<img[^>]*alt="([^"]*)"[^>]*>/g, ' $1 ').replace(/<[^>]+>/g, '、');
   Object.keys(SAY_WORDS).sort((a, b) => b.length - a.length).forEach(k => { s = s.split(k).join(SAY_WORDS[k] ? ' ' + SAY_WORDS[k] + ' ' : ' '); });
   s = s.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}○●・→➡️⬆️⬇️]/gu, ' ');
   return s.replace(/\s+/g, ' ').replace(/(、\s*)+/g, '、').trim();
@@ -306,8 +355,13 @@ const saveGame = () => store.set('shinka_game', S);
 const saveZukan = () => store.set('shinka_zukan', [...zukan]);
 const humanCount = () => S.pieces.filter(p => p.human).length;
 const eraNow = () => S.crisis;
-const form = (p, era = eraNow()) => { if(p.small) return SMALL[p.st]; const a = FORMS[p.st]; return a[Math.min(era, a.length - 1)]; };
-const formName = (p, era = eraNow()) => { if(p.small) return SMALL_NAME; const a = FORM_NAMES[p.st]; return a[Math.min(era, a.length - 1)]; };
+function formInfo(p, era = eraNow()){
+  if(p.small) return {e:SMALL[p.st], n:SMALL_NAME};
+  const t = FORM_TABLE[p.st], list = t[Math.min(era, t.length - 1)];
+  return list.find(v => !v.need || p.traits.includes(v.need)) || list[list.length - 1];
+}
+const form = (p, era = eraNow()) => icon(formInfo(p, era).e);
+const formName = (p, era = eraNow()) => formInfo(p, era).n;
 const stIcon = k => STAGES[k].icon;
 const colorOf = p => COLORS[p.id];
 const markOf = p => p.human ? (p.mark || MARKS[p.id]) : '🤖';
@@ -803,19 +857,19 @@ async function checkZukan(p, era = eraNow()){
     if(z.st && z.st !== p.st) continue;
     if(z.tr && !p.traits.includes(z.tr)) continue;
     zukan.add(z.id); saveZukan(); fanfare();
-    await popup(z.e, `📖 ずかんに<br>${z.name}`, {say:'ずかんに あたらしい いきものが のった！', sub:z.t});
+    await popup(icon(z.e), `📖 ずかんに<br>${z.name}`, {say:'ずかんに あたらしい いきものが のった！', sub:z.t});
   }
 }
 function openZukan(){
   const cards = ZUKAN.map(z => {
     const got = zukan.has(z.id), hint = `${z.st ? stIcon(z.st) : '🦠'}${ERAS[z.era].icon}${z.tr ? TRAITS[z.tr].icon : ''}`;
-    return `<div class="zc${got ? '' : ' lock'}" data-id="${z.id}"><span class="ze">${z.e}</span>${got ? z.name : `<span class="zh">${hint}</span>`}</div>`;
+    return `<div class="zc${got ? '' : ' lock'}" data-id="${z.id}"><span class="ze">${icon(z.e)}</span>${got ? z.name : `<span class="zh">${hint}</span>`}</div>`;
   }).join('');
   const ov = overlay(`<div class="msg">📖 ずかん ${zukan.size} / ${ZUKAN.length}</div><div class="zg">${cards}</div><button class="ok">とじる</button>`);
   ov.querySelector('.ok').onclick = () => ov.remove();
   ov.querySelectorAll('.zc').forEach(c => c.onclick = () => {
     const z = ZUKAN.find(q => q.id === c.dataset.id);
-    if(zukan.has(z.id)) popup(z.e, z.name, {sub:`${ERAS[z.era].sub}<br>${z.t}`, btn:'もどる', say:z.name});
+    if(zukan.has(z.id)) popup(icon(z.e), z.name, {sub:`${ERAS[z.era].sub}<br>${z.t}`, btn:'もどる', say:z.name});
     else popup('❓', 'まだ みつけて いないよ', {sub:`ヒント：${z.st ? stIcon(z.st) + STAGES[z.st].name + 'で、' : ''}${ERAS[z.era].icon}${ERAS[z.era].name}${z.tr ? 'に、' + TRAITS[z.tr].icon + TRAITS[z.tr].name + 'をもっていく' : 'に いく'}`, btn:'もどる'});
   });
 }
