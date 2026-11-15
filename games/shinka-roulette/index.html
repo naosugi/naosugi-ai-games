@@ -77,6 +77,19 @@ button{font-family:inherit;border:none;cursor:pointer}
 .row .rn small{font-size:12px;color:#666}
 .row .rm{font-size:22px}
 .lost{opacity:.3}
+.stars{display:flex;justify-content:center;gap:6px;font-size:52px;margin:4px 0 8px}
+.stars .off{filter:grayscale(1);opacity:.25}
+.srow{display:flex;align-items:center;gap:8px;text-align:left;padding:6px 8px;border-radius:12px;margin-bottom:6px;font-size:15px;line-height:1.4}
+.srow.on{background:#fff4c2}
+.srow.off{background:#f2f2f2;color:#888}
+.srow .si{font-size:24px}
+.path{display:flex;align-items:center;flex-wrap:wrap;gap:2px;font-size:30px}
+.path i{font-style:normal;font-size:14px;color:#aaa}
+.sil{filter:brightness(0);opacity:.25}
+.stamps{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:10px}
+.stamp{width:31%;box-sizing:border-box;border:3px solid #e0672b;border-radius:14px;padding:4px 4px;font-size:11px;color:#e0672b;background:#fff;line-height:1.3;position:relative}
+.stamp b{display:block;font-size:24px}
+.stamp .nw{position:absolute;top:-8px;right:-6px;background:#e74c3c;color:#fff;border-radius:8px;font-size:10px;padding:0 4px}
 .spr{width:1em;height:1em;image-rendering:pixelated;image-rendering:crisp-edges;vertical-align:-0.12em}
 .sec{font-size:15px;font-weight:bold;text-align:left;margin:8px 0 4px}
 .pies{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;font-size:22px}
@@ -126,9 +139,10 @@ const UNITS = 12;          // ルーレットの目盛り(1目盛り30度)
 const SHINKA_UNITS = 4;    // ✨しんか の目盛り。のこり8目盛りは ➕(または なにもない)
 const GROW_SLOTS = 8;
 const MAXN = 10, START_N = 2, MAX_TRAITS = 3;
-const ROUNDS = 12;
+const ROUNDS = 14;          // 12ラウンドで5回の危機。そのあと新生代を2ラウンド
 const CRISIS_END = [4, 6, 8, 10, 12];   // このラウンドの終わりに大量絶滅
-const EVENT_END  = [5, 7, 9, 11];       // このラウンドの終わりにできごと
+const EVENT_END  = [5, 7, 9, 11, 13];   // このラウンドの終わりにできごと(13は新生代のできごと)
+const CENO_BONUS = 3;                   // 新生代(ひろがる じだい)の上限の上のせ
 const FORKS = {   // このラウンドの終わりに枝分かれ。数字はCPUが多様になるように選ぶ目安
   1: {from:'cell', opts:{pla:1, opi:3},
       kid:'しょくぶつの えだ？ たべる なかまの えだ？',
@@ -235,7 +249,7 @@ const ERAS = [
   {icon:'🌴', name:'おおきな もりの じだい', sub:'石炭紀〜ペルム紀'},
   {icon:'🦕', name:'きょうりゅうの はじまり', sub:'三畳紀'},
   {icon:'🦖', name:'きょうりゅうの じだい',  sub:'ジュラ紀〜白亜紀'},
-  {icon:'🌍', name:'いま',                   sub:'新生代'},
+  {icon:'🐘', name:'ほにゅうるいの じだい',  sub:'新生代'},
 ];
 const CRISES = [
   {icon:'❄️', name:'こおりの じだい',        era:'オルドビス紀の終わり', save:['coat','sleep'],
@@ -374,7 +388,7 @@ const traitOK = (t, st) => TRAITS[t].ok.includes(st);
 function newGame(nh, marks = []){
   S = {round:1, idx:0, crisis:0, done:{}, cur:-1, lastCur:0, coevo:{}, rot:0,
        pieces:[0,1,2,3].map(i => ({id:i, human:i < nh, mark:marks[i] || null, st:'cell', n:START_N, traits:[], small:false})),
-       alloc:{}};
+       alloc:{}, hist:{}, found:[], log:{}};
   applyAlloc();
 }
 
@@ -390,6 +404,7 @@ function capOf(p){
       c = (p.st === 'art' ? 4 : 2) + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
       break;
   }
+  if(S.crisis >= 5) c += CENO_BONUS;   // 空いた場所に ひろがる
   return Math.max(1, Math.min(MAXN, c));
 }
 const CAP_AD = {
@@ -463,7 +478,7 @@ function pieSVG(alloc, size, id){
 /* ============ 描画 ============ */
 function render(){
   if(!S) return;
-  $('#track').innerHTML = CRISES.map((c, i) => i < S.crisis ? '<div class="ci done">✅</div>' : i === S.crisis ? `<div class="ci now">${c.icon}</div>` : '<div class="ci">❔</div>').join('');
+  $('#track').innerHTML = CRISES.map((c, i) => i < S.crisis ? '<div class="ci done">✅</div>' : i === S.crisis ? `<div class="ci now">${c.icon}</div>` : '<div class="ci">❔</div>').join('') + `<div class="ci${S.crisis >= 5 ? ' now' : ''}">🐘</div>`;
   $('#wheelG').innerHTML = pieSVG(S.alloc, 0, true);
   $('#wheelG').style.transform = `rotate(${S.rot}deg)`;
   const er = ERAS[Math.min(S.crisis, 5)];
@@ -471,7 +486,7 @@ function render(){
   if(S.crisis < 5){
     const c = CRISES[S.crisis], left = CRISIS_END[S.crisis] - S.round + 1;
     $('#nextC').innerHTML = `つぎの ききは ${c.icon} あと${'●'.repeat(Math.max(0, left))}　つよい とくちょう ${c.save.map(t => TRAITS[t].icon).join('')}`;
-  } else $('#nextC').innerHTML = '';
+  } else $('#nextC').innerHTML = `🌱 ひろがる じだい！ のこり${'●'.repeat(Math.max(0, ROUNDS - S.round + 1))}`;
   const me = S.pieces[S.cur >= 0 ? S.cur : S.lastCur], f = form(me);
   let tag = '';
   if(S.crisis < 5){
@@ -559,14 +574,14 @@ function resultOf(p, k){
     const t = pick(pool), T = TRAITS[t];
     p.traits.push(t); const dropped = p.traits.length > MAX_TRAITS ? p.traits.shift() : null;
     let after = null;
-    if(COEVO[t] && !S.coevo[t]){ S.coevo[t] = true; after = COEVO[t]; }
+    if(COEVO[t] && !S.coevo[t]){ S.coevo[t] = true; after = COEVO[t]; (S.log = S.log || {}).coevo = 1; }
     return {big:'✨' + T.icon, kid:`しんか！ ${T.name} が あらわれた`, short:`✨${T.icon} あらわれた`,
       ad:`「${T.name}」をもつものが、${formName(p)}の中に現れて広がりました。${T.ad}${dropped ? `(とくちょうは${MAX_TRAITS}つまで。${TRAITS[dropped].name}はなくなりました)` : ''}`, after, fan:true};
   }
   if(k === p.st){
-    const bt = growBonus(p), got = addN(p, (p.st === 'art' ? 3 : 2) + (bt ? 1 : 0)), cap = capOf(p);
+    const bt = growBonus(p), ceno = S.crisis >= 5 ? 1 : 0, got = addN(p, (p.st === 'art' ? 3 : 2) + (bt ? 1 : 0) + ceno), cap = capOf(p);
     return got ? {big:'➕' + form(p), kid:`${form(p)} が ${got}ひき ふえた！`, short:`➕ ${got}ひき ふえた`, html:pRow(p), fan:true,
-                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${p.st === 'art' ? '節足動物は体が小さく、一度にたくさん生まれるので、ふえる数が多めです。' : p.st === 'ver' ? '脊椎動物は体が大きく、生まれる数は少なめです。' : ''}${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
+                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${ceno ? '新生代は、恐竜がいなくなって空いた場所に広がる時代なので、1ぴき多くふえます。' : ''}${p.st === 'art' ? '節足動物は体が小さく、一度にたくさん生まれるので、ふえる数が多めです。' : p.st === 'ver' ? '脊椎動物は体が大きく、生まれる数は少なめです。' : ''}${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
                : {big:'➕' + form(p), kid:'たべものが たりなくて ふえられない', short:'➕ たべものが たりない', html:pRow(p),
                   ad:`食べものが足りないので、これ以上ふえられません(いまは${cap}ひきまで)。${CAP_AD[p.st] || ''}`};
   }
@@ -808,32 +823,51 @@ function unusedPairs(){
   }));
   return out;
 }
+const CENO_EVENTS = [
+  {id:'grassland', w:1, icon:'🌾', can:() => true,
+   run(){
+     const ps = S.pieces.filter(p => p.st === 'pla' || (isAnimal(p) && p.traits.includes('herb')));
+     ps.forEach(p => addN(p, 2));
+     return {kid:'そうげんが ひろがった！', html:ps.length ? ps.map(p => pRow(p)).join('') : '<div class="row"><span class="rn">でも ふえた なかまは いなかった</span></div>',
+       ad:'新生代のなかごろから、イネ科の草が広がり、大きな草原ができました。植物と、植物を食べる動物(「しょくぶつを たべる」をもつ動物)がふえました。'};
+   }},
+  {id:'iceage', w:1, icon:'🧊', can:() => true,
+   run(){
+     const rows = S.pieces.map(p => p.traits.includes('coat') ? safeRow(p, '🧥 さむさに つよかった') : lostRow(p, subN(p, Math.ceil(p.n / 3))));
+     const hurt = S.pieces.some(p => !p.traits.includes('coat') && p.n > 1);
+     return {kid: hurt ? 'ひょうがき！ 🧥が ない なかまが へった' : 'ひょうがき！ でも みんな だいじょうぶ', html:rows.join(''),
+       ad:'新生代の後半には、地球がとても寒くなる氷期と、少しあたたかい時期が、何度もくり返されました。マンモスのように、寒さに強い生き物がくらしていました。大量絶滅ほど大きな出来事ではありません。'};
+   }},
+];
 async function doEvent(){
-  const cand = EVENTS.filter(e => e.can());
+  const cand = (S.crisis >= 5 ? CENO_EVENTS : EVENTS).filter(e => e.can());
   const tot = cand.reduce((a, e) => a + e.w, 0);
   let r = Math.random() * tot, ev = cand[0];
   for(const e of cand){ if((r -= e.w) < 0){ ev = e; break; } }
   S.cur = -1; render(); beep(520, 0.2, 'triangle');
   const res = ev.run(); render();
+  (S.log = S.log || {})[ev.id] = 1;
   await popup(ev.icon, `できごと<br>${res.kid}`, {html:res.html, sub:res.ad, say:'できごと！ ' + res.kid});
 }
 
 /* ============ 大量絶滅 ============ */
 async function doCrisis(){
   const c = CRISES[S.crisis];
+  S.hist = S.hist || {};
+  S.pieces.forEach(p => (S.hist[p.id] = S.hist[p.id] || [])[S.crisis] = formInfo(p));   // その時代の すがたを きろく
   S.cur = -1; render(); beep(150, 0.6, 'sawtooth');
   const rows = [], revived = [];
   S.pieces.forEach(p => {
     const prot = p.traits.filter(t => c.save.includes(t)), f = form(p);
     let lost = 0;
     if(!prot.length){ lost = subN(p, Math.floor(p.n / 2), false); }
-    if(p.n === 0){ p.n = 1; p.small = true; revived.push(p); }
+    if(p.n === 0){ p.n = 1; p.small = true; revived.push(p); (S.log = S.log || {}).revived = 1; }
     rows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(f, p.small ? 0 : p.n, lost)}</span><span class="rm">${prot.length ? prot.map(t => TRAITS[t].icon).join('') + '✨' : '💨'}</span></div>`);
   });
   // 死がいがふえて、菌類がふえる
   const funs = S.pieces.filter(p => p.st === 'fun'), funRows = [];
   if(funs.length && (S.dead || 0) > 0){
-    funs.forEach(p => { const g = addN(p, Math.floor(S.dead / 6)); if(g) funRows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, 0, capOf(p))}<br><small>🍄 しがいが ふえて、きのこの なかまが ${g}ひき ふえた</small></span></div>`); });
+    funs.forEach(p => { const g = addN(p, Math.floor(S.dead / 6)); if(g) (S.log = S.log || {}).funboom = 1; if(g) funRows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, 0, capOf(p))}<br><small>🍄 しがいが ふえて、きのこの なかまが ${g}ひき ふえた</small></span></div>`); });
   }
   render();
   await popup(c.icon, `${c.name}！`, {html:rows.join('') + funRows.join('') + revived.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">ちいさな なかまが いきのこっていた</span></div>`).join(''),
@@ -847,6 +881,12 @@ async function doCrisis(){
       html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${formName(p)}</span></div>`).join(''),
       sub:`${er.sub}になりました。絵は、その時代の同じ系統の代表です(直接の祖先とはかぎりません)。`});
     for(const p of S.pieces.filter(q => q.human)) await checkZukan(p);
+  } else {
+    await popup('🐘🌸🐒', '5かいの ききを<br>のりこえた！', {
+      html:'<div class="msg" style="font-size:18px">さいごに ほにゅうるいの じだいを<br>2ラウンド あそぼう</div>' + S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${formName(p)}</span></div>`).join(''),
+      sub:'新生代になりました。鳥をのぞく恐竜がいなくなり、空いた場所に、生き残ったほにゅうるいや鳥などが広がりました(適応放散)。このゲームでも、新生代はふえられる上限が高く、➕で1ぴき多くふえます。新生代には、ビッグファイブのような大量絶滅はありません。',
+      say:'5かいの ききを のりこえた！ さいごに ほにゅうるいの じだいを 2ラウンド あそぼう'});
+    for(const p of S.pieces.filter(q => q.human)) await checkZukan(p);
   }
 }
 
@@ -856,7 +896,7 @@ async function checkZukan(p, era = eraNow()){
     if(zukan.has(z.id) || z.era !== era) continue;
     if(z.st && z.st !== p.st) continue;
     if(z.tr && !p.traits.includes(z.tr)) continue;
-    zukan.add(z.id); saveZukan(); fanfare();
+    zukan.add(z.id); saveZukan(); (S.found = S.found || []).push(z.id); fanfare();
     await popup(icon(z.e), `📖 ずかんに<br>${z.name}`, {say:'ずかんに あたらしい いきものが のった！', sub:z.t});
   }
 }
@@ -890,20 +930,100 @@ async function loop(){
   }
   await ending();
 }
-let STAR3 = 26, STAR2 = 20;
+/* ============ エンディング ============ */
+let STAR_N = 34;   // ⭐3つめ:なかまの合計
+const FOUR = ['pla','fun','art','ver'];
+const STAMPS = [
+  {id:'clear',  e:'🌍', name:'5かいの ききを のりこえた', test:c => true},
+  {id:'four',   e:'🌿🍄🦐🐟', name:'4つの けいとうが そろった', test:c => c.four},
+  {id:'star3',  e:'⭐⭐⭐', name:'ほし 3つ', test:c => c.stars === 3},
+  {id:'nosmall',e:'💪', name:'ちいさく ならずに のりこえた', test:c => !S.log.revived},
+  {id:'p_pla',  e:'🌿', name:'しょくぶつで あそんだ', test:c => c.mine.includes('pla')},
+  {id:'p_fun',  e:'🍄', name:'きのこで あそんだ', test:c => c.mine.includes('fun')},
+  {id:'p_art',  e:'🦐', name:'むしや えびで あそんだ', test:c => c.mine.includes('art')},
+  {id:'p_ver',  e:'🐟', name:'せぼねで あそんだ', test:c => c.mine.includes('ver')},
+  {id:'f_anoma',e:'s:anoma', name:'アノマロカリスに なった', test:c => c.seen.has('s:anoma')},
+  {id:'f_megan',e:'s:meganeura', name:'メガネウラに なった', test:c => c.seen.has('s:meganeura')},
+  {id:'f_ichth',e:'s:ichthyo', name:'イクチオステガに なった', test:c => c.seen.has('s:ichthyo')},
+  {id:'f_trice',e:'s:trice', name:'トリケラトプスに なった', test:c => c.seen.has('s:trice')},
+  {id:'f_trex', e:'🦖', name:'ティラノサウルスに なった', test:c => c.seen.has('🦖')},
+  {id:'f_bird', e:'🐦', name:'とりに なった', test:c => c.seen.has('🐦')},
+  {id:'f_mammo',e:'🦣', name:'マンモスに なった', test:c => c.seen.has('🦣')},
+  {id:'f_smilo',e:'s:smilo', name:'スミロドンに なった', test:c => c.seen.has('s:smilo')},
+  {id:'f_mold', e:'s:mold', name:'カビに なった', test:c => c.seen.has('s:mold')},
+  {id:'zk20',   e:'📖', name:'ずかん 20しゅるい', test:c => zukan.size >= 20},
+  {id:'zkall',  e:'📚', name:'ずかん コンプリート', test:c => zukan.size >= ZUKAN.length},
+];
+// おとな向けの「きょうの おはなし」(そのゲームで起きたことから選ぶ)
+const TALK = [
+  ['funboom', '危機で死がいがふえると、きのこのなかま(菌類)がふえました。菌類は死がいや落ち葉を分解して、栄養を土に戻します。'],
+  ['revived', '大量絶滅で少なくなっても、生き残った小さななかまから、また広がりました。実際の地球でも、大量絶滅のあとに生き残った生き物が広がってきました。'],
+  ['coevo', '目をもつ動物が現れると、かくれいろの動物が生き残りやすくなりました。食べる側と食べられる側がおたがいに影響しあう進化を「共進化」といいます。'],
+  ['drought', 'ひでりで植物がへると、植物を食べる動物もへりました。食べもののつながりは、悪いほうにも伝わります。'],
+  ['compete', '同じ系統の生き物どうしは、同じ食べものをうばいあいます。いろいろな系統がいると、食べものを分けあえます。'],
+  ['eaten', '肉を食べる動物に食べられにくい「かくれいろ」や「かたい からだ」は、生き残るのに役立ちます。'],
+  ['disease', '同じ生き物がたくさん集まると、病気が広がりやすくなります。'],
+  ['drift', '数が少ないと、役に立つかどうかに関係なく、たまたま特徴が失われることがあります(遺伝的浮動)。'],
+  ['plantdisease', '菌類には、植物と助けあうもの(菌根)も、植物に病気を起こすものもいます。'],
+  ['myco', '植物の根と菌類は、栄養をやりとりする関係(菌根共生)をもつことがあります。'],
+  ['iceage', '新生代の後半には、とても寒い氷期が何度もくり返されました。'],
+  ['grassland', '新生代には草原が広がり、草を食べる動物がふえました。'],
+  ['oxygen', '石炭紀は酸素が多く、大きな昆虫がいました(酸素との関係は議論があります)。'],
+  ['fire', '山火事のあと、タネから広がる植物があります。'],
+  ['cold', '寒さに強い特徴をもつ生き物は、寒い年をのりこえやすくなります。'],
+  ['unused', '暗い洞窟の魚の目のように、いまの環境で使わない特徴は失われることがあります。'],
+];
 async function ending(){
   store.del('shinka_game');
   S.cur = -1; render(); fanfare(); setTimeout(fanfare, 500);
-  const total = S.pieces.reduce((a, p) => a + p.n, 0);
-  const kinds = new Set(S.pieces.map(p => p.st)).size;
-  const stars = total >= STAR3 ? 3 : total >= STAR2 ? 2 : 1;
-  await popup('🌍🎉', 'みんなで 5かいの<br>ききを のりこえた！', {
-    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p, 5)}</span><span class="rn">${formName(p, 5)}</span></div>`).join(''),
-    sub:'そして新生代、「いま」の生き物たちへ。'});
+  S.log = S.log || {}; S.hist = S.hist || {}; S.found = S.found || [];
+  S.pieces.forEach(p => (S.hist[p.id] = S.hist[p.id] || [])[5] = formInfo(p, 5));
   for(const p of S.pieces.filter(q => q.human)) await checkZukan(p, 5);
-  await popup('⭐'.repeat(stars), stars === 3 ? 'とても ゆたかな<br>せいたいけい！' : stars === 2 ? 'ゆたかな せいたいけい！' : 'みんなで いきのこった！', {
-    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${form(p, 5).repeat(p.n)}</span></div>`).join(''),
-    sub:`なかまの ごうけい ${total}ひき ／ 系統 ${kinds}しゅるい ／ ずかん ${zukan.size} / ${ZUKAN.length}`, btn:'もういちど'});
+  const total = S.pieces.reduce((a, p) => a + p.n, 0);
+  const sts = new Set(S.pieces.map(p => p.st));
+  const four = FOUR.every(k => sts.has(k));
+  const stars = 1 + (four ? 1 : 0) + (total >= STAR_N ? 1 : 0);
+  const humans = S.pieces.filter(p => p.human);
+  // 1まいめ:ほしと じぶんの しんかの みち
+  const starRows = [
+    {on:true, e:'🌍', t:'5かいの ききを のりこえた'},
+    {on:four, e:'🌿🍄🦐🐟', t: four ? '4つの けいとうが ぜんぶ いた' : `つぎは 🌿🍄🦐🐟 を ぜんぶ そろえてみよう(いまは ${[...sts].filter(k => FOUR.includes(k)).map(stIcon).join('') || 'なし'})`},
+    {on:total >= STAR_N, e:'➕', t: total >= STAR_N ? `なかまが ${total}ひき ふえた` : `なかまを ${STAR_N}ひき いじょうに しよう(いまは ${total}ひき)`},
+  ];
+  const paths = humans.map(p => {
+    const h = S.hist[p.id] || [];
+    const cells = h.map((v, i) => v ? icon(v.e) : null).filter(Boolean);
+    return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><div class="path">${cells.join('<i>▶</i>')}</div></div>`;
+  }).join('');
+  const pathNames = humans.map(p => (S.hist[p.id] || []).filter(Boolean).map(v => v.n).join(' → ')).join('<br>');
+  await popup(`<div class="stars">${[0,1,2].map(i => `<span class="${i < stars ? '' : 'off'}">⭐</span>`).join('')}</div>`,
+    stars === 3 ? 'とても ゆたかな<br>せいたいけい！' : stars === 2 ? 'ゆたかな せいたいけい！' : 'みんなで いきのこった！', {
+    html: starRows.map(r => `<div class="srow ${r.on ? 'on' : 'off'}"><span class="si">${r.on ? '⭐' : '☆'}</span><span>${r.e} ${r.t}</span></div>`).join('')
+      + '<div class="sec">じぶんの しんかの みち</div>' + paths,
+    sub:`${pathNames}<br>絵は、それぞれの時代の同じ系統の代表です。もっているとくちょうがちがえば、ちがうすがたになっていたかもしれません。つぎは別のとくちょうや系統で、ちがう道をためしてみましょう。`,
+    say: (stars === 3 ? 'とても ゆたかな せいたいけい！' : stars === 2 ? 'ゆたかな せいたいけい！' : 'みんなで いきのこった！') + ' ほしは ' + stars + 'つ'});
+  // 2まいめ:みつけた いきもの・つぎの もくひょう・スタンプ・きょうの おはなし
+  const mine = humans.map(p => p.st);
+  const seen = new Set(); humans.forEach(p => (S.hist[p.id] || []).forEach(v => v && seen.add(v.e)));
+  const ctx = {four, stars, mine, seen};
+  const had = new Set(store.get('shinka_stamps', []));
+  const got = STAMPS.filter(st => st.test(ctx));
+  got.forEach(st => had.add(st.id)); store.set('shinka_stamps', [...had]);
+  const prevHad = new Set(store.get('shinka_stamps_prev', [])); store.set('shinka_stamps_prev', [...had]);
+  const found = S.found.map(id => ZUKAN.find(z => z.id === id)).filter(Boolean);
+  const locked = ZUKAN.filter(z => !zukan.has(z.id));
+  const prefer = locked.filter(z => !z.st || mine.includes(z.st));
+  const target = (prefer.length ? prefer : locked)[rnd(Math.max(1, (prefer.length ? prefer : locked).length))];
+  const talk = TALK.filter(([k]) => S.log[k]).slice(0, 3).map(([, t]) => '・' + t);
+  if(four) talk.unshift('・植物・菌類・節足動物・脊椎動物がそろうと、食べもののつながり(植物→動物、生き物→菌類→土の栄養→植物)がまわって、みんながふえやすくなりました。');
+  else talk.unshift('・このゲームでは、いろいろな系統がそろうほど食べものがつながって、ふえやすくなります。同じ系統ばかりだと、食べものをうばいあいます。');
+  await popup('📖🏅', 'きょうの きろく', {
+    html: `<div class="sec">あたらしく みつけた いきもの ${found.length ? found.length + 'しゅるい' : ''}</div>`
+      + (found.length ? `<div class="path" style="justify-content:center">${found.map(z => icon(z.e)).join(' ')}</div>` : '<div class="srow off">こんかいは なし</div>')
+      + (target ? `<div class="sec">つぎは これを さがそう</div><div class="row"><span class="rf sil">${icon(target.e)}</span><span class="rn">？？？<br><small>ヒント：${target.st ? stIcon(target.st) + ' ' : ''}${ERAS[target.era].icon}${ERAS[target.era].name}${target.tr ? ' ＋ ' + TRAITS[target.tr].icon : ''}</small></span></div>` : '<div class="srow on">ずかん コンプリート！</div>')
+      + `<div class="sec">スタンプ ${had.size} / ${STAMPS.length}</div><div class="stamps">${got.map(st => `<div class="stamp"><b>${icon(st.e)}</b>${st.name}${prevHad.has(st.id) ? '' : '<span class="nw">NEW</span>'}</div>`).join('')}</div>`,
+    sub:'きょうの おはなし(おとなの方へ)<br>' + talk.join('<br>') + `<br><br>ずかん ${zukan.size} / ${ZUKAN.length}`,
+    say:'きょうの きろく', btn:'もういちど'});
   title();
 }
 
@@ -970,6 +1090,8 @@ $('#bHelp').onclick = () => {
     ${L('🔄', 'ラウンドの終わりに、生き物の数に合わせてルーレットの広さが変わります。')}
     ${L('🔀', '1〜3ラウンドの終わりに、系統が枝分かれします。')}
     ${L('❄️🫧🌋🔥☄️', '5回の大量絶滅(4・6・8・10・12ラウンドの終わり)。')}
+    ${L('🐘', '5回をのりこえたら、さいごに新生代(ほにゅうるいの じだい)を2ラウンド。生き物が広がりやすい時代です。')}
+    ${L('⭐', 'ほしは3つ。のりこえた・4つの系統がそろった・なかまがたくさんふえた、で1つずつ。')}
     ${L('🤒🏜️🦷', 'そのあいだのラウンドの終わりには、病気・ひでり・食べられるなどの「できごと」が起こります。形質や、系統のバランスで防げるものもあります。')}
     ${L('👆', 'パネルをタップすると説明が出ます。')}
     <button class="ok">とじる</button>`);
