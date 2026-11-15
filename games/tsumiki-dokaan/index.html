@@ -64,6 +64,15 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
 #chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px}
 .chip{border:none;border-radius:999px;padding:7px 14px;font-family:inherit;font-weight:800;font-size:16px;background:#fff0c2;color:#7a5a00;box-shadow:0 3px 0 #e6c96a;touch-action:manipulation}
 .nameRow{display:flex;gap:6px}
+#pad{margin-top:8px;user-select:none;-webkit-user-select:none}
+#pad .kg{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;direction:rtl}
+#pad .kx{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-top:5px}
+#pad button{border:none;border-radius:8px;padding:0;height:30px;font-family:inherit;font-weight:900;font-size:16px;color:#3b3b72;background:#eef2ff;box-shadow:0 2px 0 #c9d1ee;touch-action:manipulation;direction:ltr}
+#pad button:active{transform:translateY(2px);box-shadow:none;background:#dfe6ff}
+#pad .kx button{background:#fff0c2;box-shadow:0 2px 0 #e6c96a}
+#pad .kx .del{background:#ffd9e0;box-shadow:0 2px 0 #f0a8b8}
+#pad i{display:block}
+#noscript{position:fixed;inset:0;z-index:99;background:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-weight:800;color:#3b3b72;font-size:18px;line-height:1.7}
 .nameRow input{flex:1;min-width:0;font-size:18px;font-weight:800;font-family:inherit;padding:10px 12px;border-radius:14px;border:3px solid #ffd0da;outline:none;-webkit-user-select:text;user-select:text;color:#3b3b72}
 .nameRow button{border:none;border-radius:14px;padding:0 14px;font-family:inherit;font-weight:900;font-size:16px;color:#fff;background:#ff6b8b;box-shadow:0 4px 0 #d94a6c;touch-action:manipulation}
 .rank{list-style:none;padding:0;margin:10px 0 4px;text-align:left}
@@ -85,6 +94,7 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
 </style>
 </head>
 <body>
+<noscript><div id="noscript">このアプリでは ゲームが うごきません。<br>Chrome などの ブラウザで ひらいてください。</div></noscript>
 <canvas id="c"></canvas>
 
 <div id="hud">
@@ -136,7 +146,8 @@ h2{margin:0 0 10px;font-size:30px;color:#ff7a3d;text-shadow:0 3px 0 #ffe0c8}
     <div id="rankIn" style="display:none">
       <div class="rankin">🎉 ランクイン！ <span id="rankPos"></span></div>
       <div id="chips"></div>
-      <div class="nameRow"><input id="nameIn" maxlength="8" placeholder="なまえを いれてね" autocomplete="off"><button id="btnReg">とうろく</button></div>
+      <div class="nameRow"><input id="nameIn" placeholder="なまえを いれてね" autocomplete="off" enterkeyhint="done"><button id="btnReg">とうろく</button></div>
+      <div id="pad"></div>
     </div>
     <ol class="rank" id="clearRank"></ol>
     <button class="big" id="btnNext">つぎへ ▶</button>
@@ -1015,15 +1026,54 @@ function renderRank(el, i, hiT) {
     li.append(no, nm, sc); el.appendChild(li);
   });
 }
+// ---- ひらがな ボタン(スマホの キーボードを つかわずに なまえを いれる)
+const NAME_MAX = 8;
+const KANA = ['あいうえお', 'かきくけこ', 'さしすせそ', 'たちつてと', 'なにぬねの', 'はひふへほ', 'まみむめも', 'や ゆ よ', 'らりるれろ', 'わ を ん'];
+const DAK = { 'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご','さ':'ざ','し':'じ','す':'ず','せ':'ぜ','そ':'ぞ','た':'だ','ち':'ぢ','つ':'づ','て':'で','と':'ど','は':'ば','ひ':'び','ふ':'ぶ','へ':'べ','ほ':'ぼ','う':'ゔ' };
+const HAN = { 'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ','ば':'ぱ','び':'ぴ','ぶ':'ぷ','べ':'ぺ','ぼ':'ぽ' };
+const UNDAK = {}; for (const k in DAK) UNDAK[DAK[k]] = k; const UNHAN = { 'ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ' };
+const SMALL = { 'や':'ゃ','ゆ':'ゅ','よ':'ょ','つ':'っ','あ':'ぁ','い':'ぃ','う':'ぅ','え':'ぇ','お':'ぉ' };
+const UNSMALL = {}; for (const k in SMALL) UNSMALL[SMALL[k]] = k;
+function nameChars() { return Array.from($('nameIn').value); }
+function setName(a) { $('nameIn').value = a.slice(0, NAME_MAX).join(''); tone(1200, 0.05, 'sine', 0.06); }
+function padKey(k) {
+  const a = nameChars(), last = a[a.length - 1];
+  if (k === 'del') a.pop();
+  else if (k === 'clr') a.length = 0;
+  else if (k === '゛') { if (last && DAK[last]) a[a.length - 1] = DAK[last]; else if (last && UNDAK[last]) a[a.length - 1] = UNDAK[last]; }
+  else if (k === '゜') { if (last && HAN[last]) a[a.length - 1] = HAN[last]; else if (last && UNHAN[last]) a[a.length - 1] = UNHAN[last]; }
+  else if (k === 'small') { if (last && SMALL[last]) a[a.length - 1] = SMALL[last]; else if (last && UNSMALL[last]) a[a.length - 1] = UNSMALL[last]; }
+  else a.push(k);
+  setName(a);
+}
+(function buildPad() {
+  const pad = $('pad'), g = document.createElement('div'); g.className = 'kg';
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 10; c++) {
+    const ch = KANA[c][r];
+    if (!ch || ch === ' ') { g.appendChild(document.createElement('i')); continue; }
+    const b = document.createElement('button'); b.textContent = ch; b.onclick = () => padKey(ch); g.appendChild(b);
+  }
+  const x = document.createElement('div'); x.className = 'kx';
+  [['゛', '゛'], ['゜', '゜'], ['small', 'ちいさく'], ['ー', 'ー'], ['clr', 'けす'], ['del', '⌫']].forEach(([k, label], i) => {
+    const b = document.createElement('button'); b.textContent = label; b.onclick = () => padKey(k);
+    if (k === 'small' || k === 'clr') b.style.gridColumn = 'span 2';
+    if (k === 'del') b.className = 'del';
+    x.appendChild(b);
+  });
+  pad.append(g, x);
+  // タッチの きかいでは キーボードを ださない(ボタンで いれる)
+  let touch = false; try { touch = matchMedia('(pointer: coarse)').matches; } catch (e) {}
+  if (touch) { $('nameIn').readOnly = true; $('nameIn').setAttribute('inputmode', 'none'); }
+})();
 function register() {
   if (!pendingScore) return;
-  const name = ($('nameIn').value || '').trim().slice(0, 8) || 'なまえなし';
+  const name = Array.from(($('nameIn').value || '').trim()).slice(0, NAME_MAX).join('') || 'なまえなし';
   const e = { n: name, s: pendingScore.s, t: Date.now() };
   const list = rankOf(pendingScore.i).concat(e).sort((a, b) => b.s - a.s || a.t - b.t).slice(0, 5);
   save.rank[pendingScore.i] = list;
   if (name !== 'なまえなし') save.names = [name].concat(save.names.filter(n => n !== name)).slice(0, 4);
   persist();
-  $('rankIn').style.display = 'none';
+  $('rankIn').style.display = 'none'; $('clearRank').style.display = '';
   renderRank($('clearRank'), pendingScore.i, e.t);
   pendingScore = null;
   sfx.gold();
@@ -1047,7 +1097,7 @@ function showClear() {
   const list = rankOf(stageIdx);
   const pos = list.filter(e => e.s >= total).length;
   pendingScore = pos < 5 ? { i: stageIdx, s: total } : null;
-  $('rankIn').style.display = 'none';
+  $('rankIn').style.display = 'none'; $('clearRank').style.display = '';
   renderRank($('clearRank'), stageIdx);
   $('nameIn').value = save.names[0] || '';
   const chips = $('chips'); chips.innerHTML = '';
@@ -1059,7 +1109,7 @@ function showClear() {
     const k = Math.min(1, (now - t0) / dur), v = Math.round(total * (1 - Math.pow(1 - k, 3)));
     el.innerHTML = v.toLocaleString() + '<small> てん</small>';
     if (k < 1) { if (Math.random() < 0.5) tone(900 + k * 900, 0.04, 'square', 0.03); requestAnimationFrame(tick); }
-    else if (pendingScore) { $('rankPos').textContent = (pos + 1) + 'い'; $('rankIn').style.display = 'block'; sfx.fanfare(); }
+    else if (pendingScore) { $('rankPos').textContent = (pos + 1) + 'い'; $('rankIn').style.display = 'block'; $('clearRank').style.display = 'none'; sfx.fanfare(); }
   })(t0);
   for (let i = 0; i < st; i++) setTimeout(() => { stars[i].classList.add('on'); sfx.star(i); vib(20); }, 350 + i * 380);
 }
@@ -1087,7 +1137,7 @@ $('btnBack').onclick = () => show(playing ? null : 'title');
 $('btnMenu').onclick = () => { initAudio(); buildGrid(); show('select'); };
 $('btnReset').onclick = () => { initAudio(); if (playing) loadStage(stageIdx); };
 $('btnReg').onclick = register;
-$('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') register(); });
+$('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) register(); }); // 変換の 確定の Enter では とうろく しない
 $('btnRankT').onclick = () => { initAudio(); openRanking('title', typeof save.lastStage === 'number' ? save.lastStage : 0); };
 $('btnRankS').onclick = () => openRanking('select', stageIdx);
 $('rkPrev').onclick = () => openRanking(rankBack, (rkStage + LEVELS.length - 1) % LEVELS.length);
