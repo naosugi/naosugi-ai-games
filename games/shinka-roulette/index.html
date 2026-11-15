@@ -152,9 +152,9 @@ const STAGES = {
   ani: {icon:'🐾', name:'どうぶつの なかま', desc:'うごいて たべて ふえる', color:'#f8ecd8', animal:true,
         ad:'動物のなかま。動き回って、ほかの生き物を食べて栄養をとります。'},
   art: {icon:'🦐', name:'むしや えびの なかま', desc:'からだが かたい からで おおわれた どうぶつ', color:'#fbe7d4', animal:true,
-        ad:'節足動物(昆虫・エビ・カニ・クモなど)。体がかたい殻(外骨格)でおおわれ、あしに節があります。'},
+        ad:'節足動物(昆虫・エビ・カニ・クモなど)。体がかたい殻(外骨格)でおおわれ、あしに節があります。体が小さく、一度にたくさん生まれるものが多いので、数がとても多くなります。いまの地球でも、種類も数も、もっとも多い動物のなかまです。'},
   ver: {icon:'🐟', name:'せぼねの ある なかま', desc:'からだの なかに せぼねが ある どうぶつ', color:'#dceaf7', animal:true,
-        ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。'},
+        ad:'脊椎動物(魚・両生類・爬虫類・鳥・哺乳類)。体の中に背骨があります。ヒトもこのなかまです。体が大きく長生きなものが多く、生まれる数は少なめですが、病気や寒さなどで、へりにくいとされます(このゲームでは、できごとで1ぴきへりにくくしています)。'},
 };
 // 時代ごとの姿(0〜4:ゲーム中、5:いま)。「その時代の、同じ系統の代表」で、直接の祖先とはかぎらない
 const FORMS = {
@@ -271,9 +271,20 @@ const store = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} },
 };
 let soundOn = store.get('shinka_sound', true);
+// 読み上げでは、絵文字を ことばに おきかえ、のこりの 絵文字や記号は 読まない
+const SAY_WORDS = {'🦠':'ちいさな いきもの','🌿':'しょくぶつ','🍽️':'たべる なかま','🍄':'きのこ','🐾':'どうぶつ','🦐':'むしや えび','🐟':'せぼねの なかま',
+  '⭐':'ほし','🌙':'つき','☀️':'たいよう','💎':'ダイヤ','❤️':'ハート','🔶':'オレンジ','🤖':'コンピューター',
+  '💤':'じっと まつ','🔹':'ちいさい からだ','🧥':'さむさに つよい','🫁':'くうきを すう','👁️':'め','🌱':'しょくぶつを たべる','🦷':'どうぶつを たべる','🎨':'かくれいろ','🛡️':'かたい からだ',
+  '❄️':'こおり','🫧':'さんそ','🌋':'ふんか','🔥':'ひ','☄️':'いんせき','➕':''};
+function sayText(t){
+  let s = String(t).replace(/<[^>]+>/g, '、');
+  Object.keys(SAY_WORDS).sort((a, b) => b.length - a.length).forEach(k => { s = s.split(k).join(SAY_WORDS[k] ? ' ' + SAY_WORDS[k] + ' ' : ' '); });
+  s = s.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}○●・→➡️⬆️⬇️]/gu, ' ');
+  return s.replace(/\s+/g, ' ').replace(/(、\s*)+/g, '、').trim();
+}
 function speak(t){
   if(!soundOn || !t) return;
-  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g, ' ')); u.lang = 'ja-JP'; u.rate = 0.9; speechSynthesis.speak(u); }catch(e){}
+  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(sayText(t)); u.lang = 'ja-JP'; u.rate = 0.9; speechSynthesis.speak(u); }catch(e){}
 }
 let actx = null;
 function beep(f = 600, d = 0.08, type = 'sine'){
@@ -320,18 +331,18 @@ function capOf(p){
   let c = MAXN;
   switch(p.st){
     case 'pla': c = 4 + Math.floor(sumN('fun') / 2); break;
-    case 'fun': c = 3 + Math.floor(others / 3); break;
+    case 'fun': c = 3 + Math.floor(others / 3) + Math.floor((S.dead || 0) / 4); break;   // しがいが多いと ふえられる
     case 'ani': case 'art': case 'ver':
-      c = 2 + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
+      c = (p.st === 'art' ? 4 : 2) + Math.floor(sumN('pla') * 2 / 3) + (p.traits.includes('fang') ? Math.floor(S.pieces.filter(q => q !== p && isAnimal(q)).reduce((a, q) => a + q.n, 0) / 4) : 0);
       break;
   }
   return Math.max(1, Math.min(MAXN, c));
 }
 const CAP_AD = {
   pla:'植物は光で栄養をつくりますが、土の栄養には限りがあります。菌類が分解して栄養を土に戻すほど、たくさんふえられます。',
-  fun:'菌類の食べものは、落ち葉や死がいです。ほかの生き物が多いほど、たくさんふえられます。',
+  fun:'菌類の食べものは、落ち葉や死がいです。ほかの生き物が多いほど、また、危機やできごとで死がいがふえたあとほど、たくさんふえられます(死がいは分解されて、だんだんへっていきます)。',
   ani:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。',
-  art:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
+  art:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。節足動物は体が小さいので、同じ食べものでもたくさんいられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
   ver:'動物は植物などを食べて生きています。植物が多いほど、たくさんふえられます。「どうぶつを たべる」があると、ほかの動物も食べものになります。',
 };
 // ルーレットの ➕ の目盛りの数
@@ -342,7 +353,8 @@ function needOf(k){
     case 'pla':  return 2 + Math.floor(sumN('fun') / 3);
     case 'opi':  return 1 + Math.floor(sumN('pla') / 3);
     case 'fun':  return 1 + Math.floor(others / 8);
-    case 'ani': case 'art': case 'ver': return Math.max(1, Math.floor(sumN('pla') / 3));
+    case 'art': return 1 + Math.floor(sumN('pla') / 3);              // 節足動物は 落ち葉なども食べ、小さいので すきまにも すめる
+    case 'ani': case 'ver': return Math.max(1, Math.floor(sumN('pla') / 3));
   }
   return 1;
 }
@@ -473,6 +485,16 @@ function growBonus(p){
   }
   return null;
 }
+// k ひき へらす(できごとでは 1ぴきは のこす)。へった数は しがいとして 菌類の食べものになる
+function subN(p, k, keepOne = true){
+  if(keepOne && p.st === 'ver') k = Math.max(0, k - 1);   // 体が大きく長生きなので、できごとでは へりにくい
+  const lost = Math.max(0, Math.min(k, p.n - (keepOne ? 1 : 0)));
+  p.n -= lost;
+  if(p.st !== 'fun') S.dead = (S.dead || 0) + lost;
+  return lost;
+}
+const lostRow = (p, lost, note = '') => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, lost)}${note ? `<br><small>${note}</small>` : ''}</span></div>`;
+const safeRow = (p, note) => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n)}<br><small>${note}</small></span></div>`;
 const addN = (p, k) => { const b = p.n; p.n = Math.max(p.n, Math.min(capOf(p), p.n + k)); if(p.n > b) p.small = false; return p.n - b; };
 // 結果を {big, kid, ad, html, after} で返す(表示は呼び出し側)
 function resultOf(p, k){
@@ -488,9 +510,9 @@ function resultOf(p, k){
       ad:`「${T.name}」をもつものが、${formName(p)}の中に現れて広がりました。${T.ad}${dropped ? `(とくちょうは${MAX_TRAITS}つまで。${TRAITS[dropped].name}はなくなりました)` : ''}`, after, fan:true};
   }
   if(k === p.st){
-    const bt = growBonus(p), got = addN(p, 2 + (bt ? 1 : 0)), cap = capOf(p);
+    const bt = growBonus(p), got = addN(p, (p.st === 'art' ? 3 : 2) + (bt ? 1 : 0)), cap = capOf(p);
     return got ? {big:'➕' + form(p), kid:`${form(p)} が ${got}ひき ふえた！`, short:`➕ ${got}ひき ふえた`, html:pRow(p), fan:true,
-                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
+                  ad:`${STAGES[p.st].name}の➕なので、なかまがふえました。${p.st === 'art' ? '節足動物は体が小さく、一度にたくさん生まれるので、ふえる数が多めです。' : p.st === 'ver' ? '脊椎動物は体が大きく、生まれる数は少なめです。' : ''}${bt ? `「${TRAITS[bt].name}」があるので、ふえる数が1つ多くなりました。` : ''}いまの食べもので、ふえられるのは${cap}ひきまで(○)。${CAP_AD[p.st] || ''}`}
                : {big:'➕' + form(p), kid:'たべものが たりなくて ふえられない', short:'➕ たべものが たりない', html:pRow(p),
                   ad:`食べものが足りないので、これ以上ふえられません(いまは${cap}ひきまで)。${CAP_AD[p.st] || ''}`};
   }
@@ -550,6 +572,7 @@ const WHY_AD = {
   fun:'生き物がふえると、落ち葉や死がいなど、分解者の食べものもふえます。',
 };
 async function roundChanges(){
+  S.dead = Math.floor((S.dead || 0) / 2);   // 死がいは分解されて へっていく
   const trims = [];
   S.pieces.forEach(p => { const c = capOf(p); if(p.n > c){ trims.push({p, from:p.n, to:c}); p.n = c; } });
   const before = applyAlloc(), after = S.alloc;
@@ -618,7 +641,7 @@ const EVENTS = [
    run(){
      const mx = Math.max(...S.pieces.map(p => p.n));
      const hit = S.pieces.filter(p => p.n === mx);
-     const rows = hit.map(p => { const lost = Math.ceil(p.n / 3); p.n -= lost; return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, lost)}</span></div>`; });
+     const rows = hit.map(p => { const lost = subN(p, Math.ceil(p.n / 3)); return lostRow(p, lost); });
      return {kid:'びょうきが ひろがった', html:rows.join(''),
        ad:'なかまの数がいちばん多い生き物で、病気が広がりました。同じ生き物がたくさん集まっていると、病気はうつりやすくなります。数がふえすぎると、こうしたことで数がへり、ほかの生き物とのバランスがとれていきます。'};
    }},
@@ -630,7 +653,7 @@ const EVENTS = [
      return {kid:`かずが すくなくて ${TRAITS[t].icon} が たまたま きえた`, html:`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn"><span class="lost">${TRAITS[t].icon}</span> ${TRAITS[t].name} が きえた</span></div>`,
        ad:`なかまの数が少ないと、たまたまある特徴をもつものがいなくなり、その特徴が失われることがあります。これを「遺伝的浮動」といいます。役に立つかどうかに関係なく、偶然で起こります。`};
    }},
-  {id:'unused', w:2, icon:'🕳️',
+  {id:'unused', w:1, icon:'🕳️',
    can:() => unusedPairs().length > 0,
    run(){
      const [p, t] = pick(unusedPairs());
@@ -639,7 +662,7 @@ const EVENTS = [
      return {kid:`つかわない ${TRAITS[t].icon} が なくなって、${form(p)} が ふえた`, html:`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn"><span class="lost">${TRAITS[t].icon}</span> ➡️ ${got ? `➕${got}ひき` : '(たべものが たりなくて ふえなかった)'}</span></div>`,
        ad:`いまの環境では役に立たない特徴は、失われることがあります。たとえば暗い洞窟でくらす魚には、目が退化したものがいます。目をつくったり使ったりするためのエネルギーが節約になるため、と考えられています(ほかの説もあります)。このゲームでは、つぎの大量絶滅にも、ふえやすさにも関係しない特徴を「使わない特徴」としています。`};
    }},
-  {id:'myco', w:2, icon:'🤝',
+  {id:'myco', w:1, icon:'🤝',
    can:() => S.crisis >= 1 && S.crisis <= 3 && S.pieces.some(p => p.st === 'pla') && S.pieces.some(p => p.st === 'fun'),
    run(){
      const ps = S.pieces.filter(p => p.st === 'pla' || p.st === 'fun');
@@ -647,7 +670,7 @@ const EVENTS = [
      return {kid:'🌿の ねと 🍄が いっしょに くらして、どちらも ふえた', html:ps.map(p => pRow(p)).join(''),
        ad:'植物の根に菌類がすみつき、菌類は土の中の水や栄養を植物にわたし、植物は光合成でつくった栄養を菌類にわたす関係があります(菌根共生)。初期の陸上植物の化石にも、そのあとが見つかっています。'};
    }},
-  {id:'oxygen', w:3, icon:'💨',
+  {id:'oxygen', w:2, icon:'💨',
    can:() => S.crisis === 2 && S.pieces.some(p => p.st === 'art'),
    run(){
      const ps = S.pieces.filter(p => p.st === 'art');
@@ -660,13 +683,59 @@ const EVENTS = [
    run(){
      const rows = S.pieces.filter(p => p.st === 'pla').map(p => {
        if(p.traits.includes('sleep')) return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n)}<br><small>💤 タネから また ひろがった</small></span></div>`;
-       const lost = Math.floor(p.n / 2); p.n -= lost;
-       return `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, lost)}</span></div>`;
+       const lost = subN(p, Math.floor(p.n / 2));
+       return lostRow(p, lost);
      });
      return {kid:'やまかじ！', html:rows.join(''),
        ad:'山火事で植物がへりました。「じっと まつ」(タネなど)をもつ植物は、焼けたあとに残ったタネから、また広がりました。植物には、火事のあとに芽を出しやすいものもあります。'};
    }},
-  {id:'calm', w:1, icon:'☀️',
+  {id:'drought', w:3, icon:'🏜️',
+   can:() => S.crisis >= 1 && S.pieces.some(p => p.st === 'pla' && p.n >= 2),
+   run(){
+     const rows = S.pieces.filter(p => p.st === 'pla').map(p => p.traits.includes('sleep') ? safeRow(p, '💤 タネで のりこえた') : lostRow(p, subN(p, Math.ceil(p.n / 2))));
+     // 植物がへると、植物を食べる動物の上限も下がる
+     const chain = S.pieces.filter(p => isAnimal(p) && p.n > capOf(p)).map(p => lostRow(p, subN(p, p.n - capOf(p)), '🌿が へって、たべものが たりなくなった'));
+     const hurt = S.pieces.some(p => p.st === 'pla' && !p.traits.includes('sleep'));
+     return {kid: hurt ? 'ひでり！ 🌿が へった' : 'ひでり！ でも 🌿は タネで のりこえた', html:rows.join('') + (chain.length ? '<div class="sec">そのせいで…</div>' + chain.join('') : ''),
+       ad:`雨がふらず、植物がへりました。「じっと まつ」(タネなど)をもつ植物は、タネのまま乾燥をのりこえました。${chain.length ? '植物がへると、植物を食べる動物の食べものもへり、動物もへりました。食べもののつながりは、悪いほうにも伝わります。' : ''}`};
+   }},
+  {id:'eaten', w:3, icon:'🦷',
+   can:() => S.pieces.some(p => isAnimal(p) && p.traits.includes('fang') && S.pieces.some(q => q !== p && isAnimal(q))),
+   run(){
+     const hunter = pick(S.pieces.filter(p => isAnimal(p) && p.traits.includes('fang') && S.pieces.some(q => q !== p && isAnimal(q))));
+     const rows = S.pieces.filter(q => q !== hunter && isAnimal(q)).map(q => {
+       const guard = q.traits.filter(t => t === 'camo' || t === 'shell');
+       return guard.length ? safeRow(q, `${guard.map(t => TRAITS[t].icon).join('')} で たべられにくかった`) : lostRow(q, subN(q, Math.ceil(q.n / 3)));
+     });
+     const hurt = S.pieces.some(q => q !== hunter && isAnimal(q) && !q.traits.some(t => t === 'camo' || t === 'shell'));
+     return {kid: hurt ? `${form(hunter)} が ほかの どうぶつを たべた` : `${form(hunter)} が ねらったけど、みんな たべられにくかった`, html:`<div class="row"><span class="rf">${markHtml(hunter, 34)}</span><span class="rf">${form(hunter)}🦷</span><span class="rn">どうぶつを たべる なかま</span></div>` + rows.join(''),
+       ad:'「どうぶつを たべる」をもつ動物に、ほかの動物が食べられてへりました。「かくれいろ」や「かたい からだ」をもつ動物は、食べられにくく、へりませんでした。'};
+   }},
+  {id:'compete', w:3, icon:'🍽️',
+   can:() => S.crisis >= 1 && S.pieces.some(p => S.pieces.filter(q => q.st === p.st).length >= 2),
+   run(){
+     const ps = S.pieces.filter(p => S.pieces.filter(q => q.st === p.st).length >= 2);
+     const rows = ps.map(p => lostRow(p, subN(p, 2)));
+     return {kid:`おなじ たべものの とりあい！ ${[...new Set(ps.map(p => stIcon(p.st)))].join('')} が へった`, html:rows.join(''),
+       ad:'同じ系統の生き物は、同じような食べものや場所を必要とします。同じ系統がたくさんいると、食べものをうばいあって、へりやすくなります(競争)。いろいろな系統がいると、食べものを分けあえるので、こうしたことが起こりにくくなります。'};
+   }},
+  {id:'plantdisease', w:2, icon:'🍄',
+   can:() => S.crisis >= 1 && S.pieces.some(p => p.st === 'pla' && p.n >= 2) && S.pieces.some(p => p.st === 'fun'),
+   run(){
+     const rows = S.pieces.filter(p => p.st === 'pla').map(p => lostRow(p, subN(p, Math.ceil(p.n / 3))));
+     const frows = S.pieces.filter(p => p.st === 'fun').map(p => { addN(p, 2); return pRow(p); });
+     return {kid:'しょくぶつの びょうき！ 🌿が へって 🍄が ふえた', html:rows.join('') + frows.join(''),
+       ad:'菌類の中には、植物にとりついて病気を起こすものがいます(さび病・うどんこ病など)。植物がへり、そのぶん菌類がふえました。菌類には、植物と助け合う関係(菌根)のものも、植物に病気を起こすものもいます。'};
+   }},
+  {id:'cold', w:2, icon:'❄️',
+   can:() => S.crisis >= 1,
+   run(){
+     const rows = S.pieces.map(p => p.traits.includes('coat') ? safeRow(p, '🧥 さむさに つよかった') : lostRow(p, subN(p, 1)));
+     const hurt = S.pieces.some(p => !p.traits.includes('coat') && p.n > 1);
+     return {kid: hurt ? 'さむい なつ！ 🧥が ない なかまが へった' : 'さむい なつ！ でも みんな だいじょうぶ', html:rows.join(''),
+       ad:'夏なのに気温が低い年がありました。「さむさに つよい」をもつ生き物はへりませんでした。大量絶滅ほどではない、小さな環境の変化です。'};
+   }},
+  {id:'calm', w:2, icon:'☀️',
    can:() => true,
    run(){
      S.pieces.forEach(p => addN(p, 1));
@@ -703,13 +772,18 @@ async function doCrisis(){
   S.pieces.forEach(p => {
     const prot = p.traits.filter(t => c.save.includes(t)), f = form(p);
     let lost = 0;
-    if(!prot.length){ lost = Math.floor(p.n / 2); p.n -= lost; }
+    if(!prot.length){ lost = subN(p, Math.floor(p.n / 2), false); }
     if(p.n === 0){ p.n = 1; p.small = true; revived.push(p); }
     rows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(f, p.small ? 0 : p.n, lost)}</span><span class="rm">${prot.length ? prot.map(t => TRAITS[t].icon).join('') + '✨' : '💨'}</span></div>`);
   });
+  // 死がいがふえて、菌類がふえる
+  const funs = S.pieces.filter(p => p.st === 'fun'), funRows = [];
+  if(funs.length && (S.dead || 0) > 0){
+    funs.forEach(p => { const g = addN(p, Math.floor(S.dead / 6)); if(g) funRows.push(`<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rn">${nRow(form(p), p.n, 0, capOf(p))}<br><small>🍄 しがいが ふえて、きのこの なかまが ${g}ひき ふえた</small></span></div>`); });
+  }
   render();
-  await popup(c.icon, `${c.name}！`, {html:rows.join('') + revived.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">ちいさな なかまが いきのこっていた</span></div>`).join(''),
-    sub:`${c.era}。${c.t}<br>${c.save.map(t => TRAITS[t].icon + TRAITS[t].name).join('か')}をもつ生き物は生き残りました(✨)。もたない生き物は、なかまが半分にへりました(💨)。${revived.length ? '<br>全部いなくなったように見えても、小さななかまが少しだけ生き残っていました。実際の大量絶滅のあとも、生き残った小さな生き物が、空いた場所に広がっていったことが知られています。' : ''}`,
+  await popup(c.icon, `${c.name}！`, {html:rows.join('') + funRows.join('') + revived.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">ちいさな なかまが いきのこっていた</span></div>`).join(''),
+    sub:`${c.era}。${c.t}<br>${c.save.map(t => TRAITS[t].icon + TRAITS[t].name).join('か')}をもつ生き物は生き残りました(✨)。もたない生き物は、なかまが半分にへりました(💨)。${funRows.length ? '<br>たくさんの死がいは、分解者である菌類の食べものになります。白亜紀の終わりなどの地層からは、菌類の胞子が一時的にふえたあとが報告されていますが、どこまで一般的なことかは議論があります。' : ''}${revived.length ? '<br>全部いなくなったように見えても、小さななかまが少しだけ生き残っていました。実際の大量絶滅のあとも、生き残った小さな生き物が、空いた場所に広がっていったことが知られています。' : ''}`,
     say:c.name + '！'});
   S.crisis++;
   render();
@@ -762,7 +836,7 @@ async function loop(){
   }
   await ending();
 }
-let STAR3 = 24, STAR2 = 18;
+let STAR3 = 26, STAR2 = 20;
 async function ending(){
   store.del('shinka_game');
   S.cur = -1; render(); fanfare(); setTimeout(fanfare, 500);
@@ -842,7 +916,7 @@ $('#bHelp').onclick = () => {
     ${L('🔄', 'ラウンドの終わりに、生き物の数に合わせてルーレットの広さが変わります。')}
     ${L('🔀', '1〜3ラウンドの終わりに、系統が枝分かれします。')}
     ${L('❄️🫧🌋🔥☄️', '5回の大量絶滅(4・6・8・10・12ラウンドの終わり)。')}
-    ${L('🤒🎲', 'そのあいだのラウンドの終わりには、病気などの「できごと」が起こります。')}
+    ${L('🤒🏜️🦷', 'そのあいだのラウンドの終わりには、病気・ひでり・食べられるなどの「できごと」が起こります。形質や、系統のバランスで防げるものもあります。')}
     ${L('👆', 'パネルをタップすると説明が出ます。')}
     <button class="ok">とじる</button>`);
   ov.querySelector('.ok').onclick = () => ov.remove();
