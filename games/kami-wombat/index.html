@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="神に愛されたヒメウォンバット">
+<meta property="og:description" content="ウォンバットの神となり、祈るヒメウォンバットに動物たちの奇跡の形質を授けて繁栄へ導く育成ゲーム。なでて祈りを集め、授けた形質が世代を重ねて群れに広がると、タスマニアから大陸、深海、火星へと生息地が広がる。元ネタ生物のトリビア図鑑つき。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/kami-wombat/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/kami-wombat/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<title>神に愛されたヒメウォンバット</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#1e1a17;color:#f3e9dc;font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;display:flex;justify-content:center;-webkit-tap-highlight-color:transparent}
+#wrap{width:min(100vw,560px);min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:flex-end;padding:8px 12px 6px;background:#2b241f;border-bottom:2px solid #3a2f28;font-size:12px;color:#c9b8a6}
+header b{display:block;font-size:17px;color:#f6e7cf;font-variant-numeric:tabular-nums}
+header .won b{color:#ffd77a}
+header small{color:#a8968a}
+#stage{position:relative;user-select:none}
+canvas{width:100%;image-rendering:pixelated;image-rendering:crisp-edges;display:block;touch-action:manipulation;cursor:pointer}
+.float{position:absolute;pointer-events:none;color:#ffe08a;font-weight:700;font-size:15px;text-shadow:0 1px 0 #3a2a22,0 0 3px #3a2a22;animation:fl .9s ease-out forwards;transform:translateX(-50%)}
+@keyframes fl{to{transform:translate(-50%,-34px);opacity:0}}
+#msg{min-height:3.4em;padding:8px 12px;font-size:13px;line-height:1.55;background:#2b241f;color:#e8dccb;border-top:2px solid #3a2f28}
+.tabs{display:flex;background:#241e1a;border-bottom:2px solid #3a2f28;position:sticky;top:0;z-index:2}
+.tabs button{flex:1;padding:10px 2px;font-size:13px;background:none;border:none;color:#a8968a;font-family:inherit;border-bottom:3px solid transparent}
+.tabs button.on{color:#f6e7cf;border-bottom-color:#c99a5b}
+.panel{display:none;padding:8px 10px 24px}
+.panel.on{display:block}
+.item{display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 11px;background:#33291f;border:2px solid #5e4128;border-radius:8px;color:#f3e9dc;font-family:inherit;font-size:13px}
+.item:disabled{opacity:.5}
+.item:not(:disabled):active{background:#4a3a2c}
+.item.sel{border-color:#c99a5b}
+.item.locked{opacity:.4;border-style:dashed}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.row b{font-size:14px}
+.cost{color:#ffd77a;white-space:nowrap;font-size:12px}
+.src{color:#c9b8a6;font-size:12px;margin-top:2px}
+.eff{color:#e0d2bf;font-size:12px;margin-top:3px;line-height:1.5}
+.tag{display:inline-block;margin-top:4px;font-size:11px;padding:1px 6px;border-radius:4px;background:#5e4128;color:#f6e7cf}
+.hint{color:#a8968a;font-size:12px}
+.bar{height:5px;background:#241e1a;border-radius:3px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:#8fbf6a}
+.statbox{font-size:12px;color:#c9b8a6;line-height:1.7;padding:6px 2px}
+.dex{background:#2b241f;border:1px solid #4a3a2c;border-radius:8px;margin-bottom:6px;padding:8px 10px;font-size:13px}
+.dex summary{cursor:pointer}.dex p{line-height:1.65;color:#e8dccb;margin:8px 0 0}
+.dex.locked{color:#6e5f52}
+.flavor{color:#d9b98a !important;font-style:italic}
+.log{font-size:12px;line-height:1.55;padding:5px 0;border-bottom:1px solid #33291f;color:#e0d2bf}
+.log .yr{color:#a8968a;margin-right:6px;font-variant-numeric:tabular-nums}
+.log.bad{color:#e8a08a}.log.miracle{color:#d9b98a}.log.story{color:#f6e7cf}
+.reset{margin-top:16px;padding:8px 12px;background:none;border:1px solid #6e5241;color:#a8968a;border-radius:6px;font-family:inherit}
+#modal{position:fixed;inset:0;background:rgba(10,8,6,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+#modal.on{display:flex}
+#modal .card{width:min(100%,460px);max-height:86vh;overflow:auto;background:#2b241f;border:2px solid #c99a5b;border-radius:12px;padding:16px 16px 12px}
+#modal h2{margin:2px 0 4px;font-size:19px;color:#f6e7cf}
+#modal p{font-size:14px;line-height:1.7;color:#e8dccb}
+#modal .mk{font-size:11px;letter-spacing:.2em;color:#c99a5b}
+#modal .score{font-size:16px;color:#ffd77a;text-align:center;line-height:1.8}
+#card-btn{width:100%;margin-top:6px;padding:12px;font-size:15px;background:#6e5241;color:#fff;border:none;border-radius:8px;font-family:inherit}
+
+.pz{display:none;font-size:11px;color:#1e1a17;background:#ffd77a;border-radius:4px;padding:1px 5px;vertical-align:middle}
+.tabs{gap:0}
+.tabs .grp{display:flex}
+.tabs .act{flex:3}
+.tabs .read{flex:2;background:#1b2230;border-left:2px solid #3a2f28}
+.tabs .read button{color:#8fa0b8}
+.tabs .read button.on{color:#e3ecf8;border-bottom-color:#7fa6d8}
+#p-log,#p-dex{background:#171c26;min-height:50vh}
+#p-log .log{border-bottom-color:#232b38}
+#p-dex .dex{background:#1f2633;border-color:#2e3a4c}
+h3{font-size:13px;color:#c9b8a6;margin:16px 0 8px;font-weight:600}
+.own{font-size:12px;margin-bottom:8px}.own small{color:#a8968a}.own .p{color:#9fd08a;font-variant-numeric:tabular-nums}
+.need{display:flex;align-items:center;gap:8px;font-size:11px;color:#c9b8a6;margin-top:4px}.need span{flex:0 0 46%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.need .bar{flex:1;margin:0}
+.bar.g i{background:#c99a5b}
+.item.pending{border-style:dashed;opacity:.85}
+.ok{color:#9fd08a}
+#card-art{width:100%;image-rendering:pixelated;border-radius:6px;margin:6px 0 4px;display:block}
+.card.bad{border-color:#d0705a !important}.card.bad .mk{color:#e8907a !important}
+
+header{position:relative}
+.snd{position:absolute;right:8px;top:6px;font-size:10px;padding:2px 6px;border-radius:10px;border:1px solid #6e5241;background:#33291f;color:#d9c6a8;font-family:inherit}
+.snd.off{color:#7a6a5c;border-color:#4a3a2c}
+header .won{margin-top:10px}
+#chips{display:flex;gap:6px;overflow-x:auto;padding:6px 10px;background:#241e1a;scrollbar-width:none}
+#chips::-webkit-scrollbar{display:none}
+#chips button{flex:0 0 auto;font-size:11px;padding:4px 9px;border-radius:12px;border:1px solid #5e4128;background:#2b241f;color:#c9b8a6;font-family:inherit}
+#chips button.on{background:#6e5241;color:#fff;border-color:#c99a5b}
+#chips:empty{display:none}
+#goal{font-size:12px;padding:6px 12px;background:#33291f;color:#ffd77a;border-top:1px solid #3a2f28;line-height:1.5}
+#goal::before{content:'◆ ';color:#c99a5b}
+.tabs button{position:relative}
+.tabs button.dot::after{content:'';position:absolute;top:7px;right:calc(50% - 22px);width:7px;height:7px;border-radius:50%;background:#ff8a5a;box-shadow:0 0 6px #ff8a5a}
+.item.ready{border-color:#c99a5b;box-shadow:0 0 0 1px rgba(201,154,91,.35),0 0 12px rgba(255,200,110,.18);animation:rd 2.4s ease-in-out infinite}
+@keyframes rd{50%{box-shadow:0 0 0 1px rgba(201,154,91,.6),0 0 16px rgba(255,200,110,.32)}}
+#modal.on .card{animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{transform:scale(.88) translateY(12px);opacity:0}to{transform:none;opacity:1}}
+#modal.on #card-art{animation:rev .7s ease-out}
+@keyframes rev{from{filter:brightness(2.2) saturate(0)}to{filter:none}}
+#card-btn:disabled{opacity:.45}
+#card-restart{display:none;width:100%;margin-top:8px;padding:10px;font-size:13px;background:none;border:1px solid #6e5241;color:#c9b8a6;border-radius:8px;font-family:inherit}
+.float.gold{color:#fff3a0;font-size:16px;text-shadow:0 0 6px #e8b53a,0 1px 0 #5a3a10}
+table.sum{width:100%;font-size:13px;color:#e8dccb;border-collapse:collapse;margin:4px 0 8px}table.sum td{padding:4px 2px;border-bottom:1px solid #3a2f28}table.sum td:last-child{text-align:right;color:#ffd77a}
+
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#241e1a;border-bottom:1px solid #3a2f28}
+.topbar .back{color:#c9b8a6;font-size:12px;text-decoration:none}
+.topbar .snd{position:static}
+header .won{margin-top:0}
+#modal{padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+</style>
+</head>
+<body>
+<div id="wrap">
+<div class="topbar"><a class="back" href="../../samples/">← ゲーム一覧</a><button id="snd" class="snd">♪ ON</button></div>
+<header>
+ <div>祈りの年<b><span id="yr">0</span>年 <span id="paused" class="pz">停止中</span></b></div>
+ <div>生息数<b><span id="pop">0</span>頭</b></div>
+ <div class="won">祈り<b><span id="won">0</span> ウォン</b><small>＋<span id="wps">0</span>/年</small></div>
+</header>
+<div id="stage"><canvas id="c" width="112" height="72"></canvas></div>
+<div id="chips"></div>
+<div id="goal"></div>
+<div id="msg"></div>
+<nav class="tabs">
+ <div class="grp act"><button data-t="miracle" class="on">奇跡</button><button data-t="bless">加護</button><button data-t="hab">生息地</button></div>
+ <div class="grp read"><button data-t="log">年代記</button><button data-t="dex">図鑑</button></div>
+</nav>
+<section class="panel on" id="p-miracle"></section>
+<section class="panel" id="p-bless"></section>
+<section class="panel" id="p-hab"></section>
+<section class="panel" id="p-dex"></section>
+<section class="panel" id="p-log"></section>
+</div>
+<div id="modal"><div class="card" id="card"><div class="mk" id="card-mk"></div><h2 id="card-title"></h2><canvas id="card-art" width="112" height="72"></canvas><div id="card-body"></div><button id="card-btn">確認した</button><button id="card-restart">もう一度、最初から</button></div></div>
+<script>
+'use strict';
+// ===== 神に愛されたヒメウォンバット: core (data + simulation) =====
+
+const BASE_PIETY = 1 / 710000; // 最初は「一頭だけが祈っている」
+const P0 = 0.02;               // 奇跡を授かった直後の保有率
+const SEL = 0.6;               // 奇跡の形質の選択有利（1世代あたり）
+
+// need: 適合度の内訳（形質id: 重み）。prev: 先に住んでいる必要のある生息地
+const HABITATS = [
+  {id:'tas',   name:'タスマニア島',     area:64500,     dens:11,  bg:'meadow', food:'grass', need:{}, prev:null},
+  {id:'aus',   name:'オーストラリア本土', area:7690000,   dens:3,   bg:'desert', food:'termite', sea:true,
+   need:{numbat:.25, landiguana:.25, thorny:.25, hopping:.25}, prev:'tas'},
+  {id:'coast', name:'近海',             area:3000000,   dens:2,   bg:'coast',  food:'kelp',
+   need:{marine:.6, seaotter:.4}, prev:'aus'},
+  {id:'micro', name:'ミクロネシア諸島',   area:3200,      dens:40,  bg:'island', food:'coconut', sea:true,
+   need:{coconutcrab:.6, elephant:.4}, prev:'coast'},
+  {id:'seasia',name:'東南アジア',        area:4500000,   dens:4,   bg:'jungle', food:'fig', sea:true,
+   need:{elephant:.6, armadillo:.4}, prev:'micro'},
+  {id:'easia', name:'東アジア',          area:5000000,   dens:4,   bg:'forest', food:'bamboo',
+   need:{vole:.6, armadillo:.4}, prev:'seasia'},
+  {id:'tibet', name:'ヒマラヤ・チベット高原', area:2500000, dens:1.5, bg:'mountain', food:'grass',
+   need:{bargoose:.7, muskox:.3}, prev:'easia'},
+  {id:'casia', name:'中央アジア',        area:4000000,   dens:2,   bg:'steppe', food:'grass',
+   need:{hopping:.35, thorny:.35, muskox:.3}, prev:'easia'},
+  {id:'siberia',name:'シベリア',         area:13100000,  dens:1.5, bg:'taiga',  food:'lichen',
+   need:{muskox:.5, woodfrog:.5}, prev:'casia'},
+  {id:'europe',name:'ヨーロッパ',        area:10000000,  dens:4,   bg:'europe', food:'grass',
+   need:{vole:.6, armadillo:.4}, prev:'casia'},
+  {id:'polar', name:'極地',             area:14000000,  dens:1,   bg:'ice',    food:'lichen',
+   need:{woodfrog:.4, muskox:.3, reindeer:.3}, prev:'siberia'},
+  {id:'ocean', name:'遠海',             area:300000000, dens:0.4, bg:'ocean',  food:'krill',
+   need:{baleen:.4, seaotter:.3, marine:.3}, prev:'coast'},
+  {id:'deep',  name:'深海',             area:300000000, dens:0.4, bg:'deep',   food:'snow',
+   need:{snailfish:.6, riftia:.4}, prev:'ocean'},
+  {id:'mars',  name:'火星',             area:144800000, dens:0.8, bg:'mars',   food:'moss',
+   need:{tardigrade:.5, deinococcus:.3, human:.2}, prev:'tas', gate:'human'},
+];
+const HAB = Object.fromEntries(HABITATS.map(h=>[h.id,h]));
+
+// show: この生息地に住んでいれば奇跡の候補に出る（'*'は最初から）
+const TRAITS = [
+  {id:'devil', name:'急速進化の奇跡', src:'タスマニアデビル', cost:45, show:'*', v:'',
+   eff:'病気に強くなる（全生息地の密度＋40%、疥癬の流行を抑える）', fx:{dens:.4, mange:true},
+   trivia:'タスマニアデビルは、かみ合いでうつる「がん」の流行で8割以上も数を減らした。ところが2016年の研究で、わずか4〜8世代のうちに、免疫やがんに関わる遺伝子の領域に変化が起きていることがわかった。ウォンバットの最大の病気は、ダニが起こす皮膚病「疥癬」だ。',
+   flavor:'ダニに噛まれても、かゆがらない子が生まれた。'},
+  {id:'armadillo', name:'装甲の奇跡', src:'アルマジロ', cost:230, show:'*', v:'armor',
+   eff:'毛皮の下の皮膚が鎧になる（全生息地の密度＋25%。トラやオオカミのいる大陸で有利）', fx:{dens:.25},
+   trivia:'アルマジロの甲羅は、皮膚の中にできた骨の板でできている。ウォンバットはもともとお尻に硬い軟骨の板を持ち、巣穴に逃げこむとお尻で入口をふさいで身を守る。',
+   flavor:'毛皮の下が、こつこつと硬い子が生まれた。'},
+  {id:'kangaroo', name:'胚休眠の奇跡', src:'アカカンガルー', cost:690, show:'*', v:'joey',
+   eff:'出産の間隔が2年→約1.3年。干ばつからの回復が速くなる', fx:{interval:2/1.5, drought:true},
+   trivia:'アカカンガルーのメスは、足元に1頭、袋に1頭、子宮に休眠中の胚を1つと、同時に3頭の子を抱えられる。胚は100個ほどの細胞の段階で成長を止め、袋が空くのを待つ。干ばつの後に数をすばやく戻すための仕組みと考えられている。',
+   flavor:'袋の奥で、次の子が順番を待つ母が生まれた。'},
+  {id:'numbat', name:'シロアリ食の奇跡', src:'フクロアリクイ（ナンバット）', cost:3600, show:'tas', v:'tongue',
+   eff:'シロアリを食べ、水も食べ物からとる（乾いた大地への適合）', fx:{},
+   trivia:'フクロアリクイはシロアリだけを食べる有袋類で、1日に最大2万匹を長い舌でなめとる。水分もシロアリからとるので、水を飲む必要がない。',
+   flavor:'舌の長い子が、蟻塚に顔をうずめていた。'},
+  {id:'landiguana', name:'サボテン食の奇跡', src:'ガラパゴスリクイグアナ', cost:5000, show:'tas', v:'cactus',
+   eff:'サボテンをトゲごと食べ、水分もそこからとる（乾いた大地への適合）', fx:{},
+   trivia:'ガラパゴスリクイグアナは、食べ物の8割がウチワサボテン。実も花もトゲまで食べ、水分もほとんどそこからとる。オーストラリアにサボテンは自生しないが、持ちこまれたウチワサボテンが4万km²の農地を覆い、1925年に導入されたガの幼虫がほぼ食べ尽くした。クイーンズランドには、そのガの記念碑が建っている。',
+   flavor:'トゲを前菜のように食べる子が生まれた。'},
+  {id:'thorny', name:'吸水皮膚の奇跡', src:'モロクトカゲ', cost:6900, show:'tas', v:'spikes',
+   eff:'皮膚の溝で水を集めて口まで運ぶ（乾いた大地への適合）', fx:{},
+   trivia:'モロクトカゲは、うろこの間の細い溝で露や湿った砂の水を集め、毛細管現象で口まで運んで飲む。主な水源は、湿った砂から吸い上げる水だという。',
+   flavor:'湿った砂に座るだけで喉をうるおす子が生まれた。お尻で。'},
+  {id:'hopping', name:'濃縮腎臓の奇跡', src:'スピニフェックスホッピングマウス', cost:9700, show:'tas', v:'',
+   eff:'水をほとんど捨てない腎臓（乾いた大地への適合）', fx:{},
+   trivia:'スピニフェックスホッピングマウスは、哺乳類で最も濃い尿を出すと報告されている。水を一滴も飲まずに暮らせる。',
+   flavor:'一滴の水も無駄にしない子が生まれた。四角いフンは、さらに乾いた。'},
+  {id:'tenrec', name:'多産の奇跡', src:'テンレック（タイリクテンレック）', cost:550000, show:'aus', v:'joeys',
+   eff:'一度に産む子が1頭→平均18頭', fx:{litter:18},
+   trivia:'タイリクテンレックは、乳首の数も、一度に産む子の数の平均（約18頭）も最大（32頭）も、哺乳類でいちばん。ウォンバットの乳首は2つしかない。',
+   flavor:'後ろ向きの袋から、子どもたちがあふれ出した。袋の容積について、考えてはいけない。'},
+  {id:'marine', name:'海藻食の奇跡', src:'ウミイグアナ', cost:19000, show:'aus', v:'salt',
+   eff:'海に潜って海藻を食べ、塩をくしゃみで捨てる（近海・遠海への適合）', fx:{},
+   trivia:'ウミイグアナは、海に潜って海藻を食べる唯一のトカゲ。海藻と一緒にとりこんだ余分な塩分は、頭の塩類腺に集めて、鼻からくしゃみで吹き飛ばす。',
+   flavor:'波打ち際で、くしゃみをする子が生まれた。塩の結晶が、朝日にきらめいた。'},
+  {id:'seaotter', name:'密毛の奇跡', src:'ラッコ', cost:81000, show:'aus', v:'plush',
+   eff:'世界一密な毛で冷たい海でも冷えない（近海・遠海への適合）', fx:{},
+   trivia:'ラッコの毛は動物でいちばん密で、1cm²に10万〜16万本も生えている。ほかの海の哺乳類と違って皮下脂肪の層がないので、毛の間に空気をため込んで体温を守る。',
+   flavor:'ぬいぐるみのように毛の詰まった子が生まれた。水をはじいて、ぷかりと浮いた。'},
+  {id:'polarbear', name:'遠泳の奇跡', src:'ホッキョクグマ', cost:1600, show:'*', v:'swim',
+   eff:'何日も泳ぎ続けられる（嵐で沖へ流されても、生きて岸にたどり着きやすくなる）', fx:{},
+   trivia:'2008年、首輪をつけたメスのホッキョクグマが、水温2〜6℃の海を9日間で687km泳ぎ続けた。その後も海氷の上を歩いたり泳いだりしながら1,800km進み、体重の22%を失った。ちなみにウォンバットも泳げるが、水を求めはせず、ふだんは小川を渡るときに「ウォンバットかき」をする程度。',
+   flavor:'波に揉まれても、短い脚でいつまでも水をかき続ける子が生まれた。'},
+  {id:'greeniguana', name:'漂流の奇跡', src:'グリーンイグアナ', cost:2100, show:'*', v:'raft',
+   eff:'流木にしがみつき、食べずに何週間も耐える（漂流で生き残りやすくなる）', fx:{},
+   trivia:'1995年、ハリケーンで流された木の筏にしがみついた15頭以上のグリーンイグアナが、約320km離れたアンギラ島に流れ着いた。航海は約1か月。爬虫類は長く食べずにいられるので向いているが、哺乳類ならほとんど生き残れなかっただろうとされる。',
+   flavor:'流木を見ると、しがみつかずにいられない子が生まれた。'},
+  {id:'coconutcrab', name:'剛力の奇跡', src:'ヤシガニ', cost:3800000, show:'coast', v:'claw',
+   eff:'ヤシの実を割る力（島への適合）', fx:{},
+   trivia:'ヤシガニは陸で暮らす最大の甲殻類。はさむ力はライオンのかむ力に匹敵し、最大級の個体では約3,300ニュートンと推定されている。それでもヤシの実を割るのには何時間もかかる。',
+   flavor:'前足の爪が、妙に頼もしい子が生まれた。'},
+  {id:'elephant', name:'放熱の奇跡', src:'ゾウ', cost:15000000, show:'coast', v:'bigears',
+   eff:'大きく薄い耳で体の熱を逃がす（熱帯への適合）', fx:{},
+   trivia:'ゾウは汗をほとんどかけない。かわりに、血管が網の目のように走る薄い大きな耳に、全身の血液の約2割を同時に流して熱を逃がし、耳をあおいで風を当てる。暑く開けた土地に暮らすアフリカゾウのほうが、森に暮らすアジアゾウより耳が大きい。',
+   flavor:'耳だけが、やけに大きい子が生まれた。暑い日には、ぱたぱたとあおいでいる。'},
+  {id:'vole', name:'早熟の奇跡', src:'ハタネズミ', cost:37000000, show:'seasia', v:'',
+   eff:'性成熟まで2年→38日（東アジア・ヨーロッパへの適合。形質の広がりも速くなる）', fx:{maturity:38/365},
+   trivia:'ヨーロッパハタネズミは、スペインからモンゴルまで広く暮らす。メスは生後38日、オスは56日で成熟する。ウォンバットは約2年かかる。',
+   flavor:'生まれてひと月あまりで親になる子が生まれた。'},
+  {id:'bargoose', name:'高空の奇跡', src:'インドガン', cost:67000000, show:'easia', v:'bars',
+   eff:'薄い空気でも酸素をつかまえる血（高地への適合）', fx:{},
+   trivia:'インドガンは毎年ヒマラヤを越えて渡る。標高7,270mまで飛んだ記録があり、そこでは酸素が平地の3〜5割しかない。肺が大きく、赤血球のヘモグロビンが酸素をとても強く結びつける。',
+   flavor:'頭に二本の黒い帯がある子が生まれた。山の上でも、息が切れない。'},
+  {id:'muskox', name:'極上の下毛の奇跡', src:'ジャコウウシ', cost:97000000, show:'easia', v:'shaggy',
+   eff:'羊毛より暖かい下毛（高原・中央アジア・シベリア・極地への適合）', fx:{},
+   trivia:'ジャコウウシの下毛「キヴィアック」は、羊毛より暖かく、カシミヤより柔らかい。春になると自然に抜け落ちる。',
+   flavor:'冬になると、毛皮の下にもう一枚、雲のような毛をまとう子が生まれた。'},
+  {id:'woodfrog', name:'凍結の奇跡', src:'アメリカアカガエル', cost:180000000, show:'casia', v:'frozen',
+   eff:'体が凍っても春に生き返る（極地への適合）', fx:{},
+   trivia:'アメリカアカガエルは冬に体の最大6割ほどが凍り、呼吸も心臓も止まる。体中にブドウ糖をためて細胞を守り、春に溶けると心臓がまた動き出す。凍ったまま7か月ほど過ごすこともある。',
+   flavor:'氷の中で心臓を止め、春に目を覚ます子が生まれた。'},
+  {id:'reindeer', name:'地衣類食の奇跡', src:'トナカイ', cost:240000000, show:'siberia', v:'antlers',
+   eff:'雪の下の地衣類を食べる（極地への適合）', fx:{},
+   trivia:'トナカイは、ほかの反芻動物がほとんど食べない地衣類を、冬の主食にできる。胃の中にいる専門の微生物が、その消化を助けていると考えられている。',
+   flavor:'雪を掘って、苔のようなものをおいしそうに食べる子が生まれた。頭に何か生えている。'},
+  {id:'baleen', name:'ろ過食の奇跡', src:'ヒゲクジラ', cost:420000000, show:'coast', v:'baleen',
+   eff:'海水ごと小さな生き物をこしとって食べる（遠海への適合）', fx:{},
+   trivia:'ヒゲクジラは歯のかわりに口の中の「ひげ板」で海水をこし、オキアミなどの小さな生き物をまとめて食べる。',
+   flavor:'海水を口いっぱいに含み、もぐもぐとこす子が生まれた。'},
+  {id:'snailfish', name:'深淵の奇跡', src:'シンカイクサウオ（スネイルフィッシュ）', cost:860000000, show:'ocean', v:'abyss',
+   eff:'TMAOでタンパク質を守り、水圧に耐える（深海への適合）', fx:{},
+   trivia:'スネイルフィッシュは、TMAOという物質でタンパク質の形を水圧から守っている。2022年に水深8,336mで撮影されたのが魚の最深記録。8,200〜8,400mより深いと、魚はTMAOを十分ためられないと考えられている。',
+   flavor:'水圧を気にしない子が生まれた。体が、少し透けている。'},
+  {id:'riftia', name:'共生の奇跡', src:'ジャイアントチューブワーム（ハオリムシ）', cost:1300000000, show:'ocean', v:'plume',
+   eff:'体内の細菌が化学合成で栄養をつくる（深海への適合）', fx:{},
+   trivia:'ジャイアントチューブワームには口も消化管も肛門もない。体の中の「栄養体」に共生細菌をすまわせ、熱水噴出孔の硫化水素から細菌がつくる栄養で生きている。栄養体は体重の半分ほどを占める。',
+   flavor:'何も食べないのに、肥えている子が生まれた。頭から赤い羽毛のようなものが伸びている。'},
+  {id:'human', name:'知性の奇跡', src:'ヒト', cost:2200000000, show:'deep', v:'halo',
+   eff:'言葉と道具を手に入れる（祈り×4、宇宙へ出る準備）', fx:{piety:4},
+   trivia:'ヒトの脳は体重の約2%しかないが、体が使うエネルギーの約2割を消費する。',
+   flavor:'空を見上げて、言葉で祈る子が生まれた。「草を、もっと」。'},
+  {id:'tardigrade', name:'乾眠の奇跡', src:'クマムシ', cost:7000000000, show:'deep', v:'legs',
+   eff:'干からびて真空と放射線に耐える（火星への適合）', fx:{},
+   trivia:'2007年、乾燥させたクマムシが人工衛星で10日間、宇宙の真空にさらされた。地球に戻って水を与えると多くが生き返り、強い紫外線を浴びた一部も生き残って卵を産んだ。',
+   flavor:'干からびても、水をかければ戻る子が生まれた。脚が、少し多い。'},
+  {id:'deinococcus', name:'放射線耐性の奇跡', src:'デイノコッカス・ラジオデュランス', cost:14000000000, show:'deep', v:'aura',
+   eff:'壊れたDNAを直す力（火星・深宇宙への適合）', fx:{},
+   trivia:'デイノコッカス・ラジオデュランスは放射線にとても強い細菌。日本の「たんぽぽ計画」では、乾燥させた細胞の塊が国際宇宙ステーションの外で3年間生き延び、地上に戻って傷ついたDNAを修復した。',
+   flavor:'淡く光をまとう子が生まれた。その光が何なのか、誰も知らない。'},
+  {id:'spore', name:'芽胞の奇跡', src:'枯草菌の芽胞', cost:40000000000, show:'mars', v:'spore',
+   eff:'胞子のような休眠体になる（深宇宙への旅立ち）', fx:{},
+   trivia:'NASAの長期曝露実験装置（LDEF）で、枯草菌の芽胞が約6年間宇宙にさらされた。紫外線を遮った条件では、最大8割が生き残った。',
+   flavor:'眠ると、四角く固まる子が生まれた。'},
+];
+const TR = Object.fromEntries(TRAITS.map(t=>[t.id,t]));
+
+const BLESSINGS = [
+  {id:'pray',  name:'祈りの伝播', desc:'祈るウォンバットが増える（祈り＋100%）', base:15, grow:1.32},
+  {id:'grass', name:'草の恵み',   desc:'表示中の生息地だけ、食べ物が増える（密度＋6%）', base:60, grow:1.4, perHab:true},
+  {id:'hand',  name:'神の手',     desc:'なでた時の祈り（基本分）＋2ウォン', base:25, grow:1.45},
+];
+
+function newState(){
+  return {v:3, year:0, won:0, totalWon:0, pop:{tas:710000}, owned:{}, prev:{}, bl:{pray:0,hand:0}, grass:{},
+          col:{tas:true}, adapted:{tas:true}, log:[], done:false, taps:0, events:{}, queue:[], seen:{}};
+}
+const pv=(S,id)=>S.prev[id]||0;
+const driftSurv=S=>0.08+0.92*(0.55*pv(S,'polarbear')+0.45*pv(S,'greeniguana'));
+function suit(S,h){if(h.id==='tas')return 1;let s=0;for(const k in h.need)s+=h.need[k]*pv(S,k);return s;}
+function stats(S){
+  const pT=pv(S,'tenrec'),pV=pv(S,'vole'),pK=pv(S,'kangaroo');
+  const litter=1+17*pT, interval=2-(2-2/1.5)*pK, maturity=2-(2-38/365)*pV;
+  const dens=(1+.4*pv(S,'devil'))*(1+.25*pv(S,'armadillo'));
+  let n=0;for(const t of TRAITS)if(S.owned[t.id])n++;
+  const piety=(1+S.bl.pray)*Math.pow(1.3,n)*(1+3*pv(S,'human'));
+  const b=0.5*litter/interval, T=maturity+1;
+  const r=Math.min(1.6,Math.log(1+b)/T);
+  return {litter,interval,maturity,dens,piety,r,T,click:1+S.bl.hand};
+}
+function capOf(S,id,st){const h=HAB[id];const s=suit(S,h);return h.area*h.dens*st.dens*(1+.06*(S.grass[id]||0))*s*(S.adapted[id]&&id!=='tas'?1.3:1);}
+function totalPop(S){let s=0;for(const k in S.pop)s+=S.pop[k];return s;}
+function wonPerYear(S,st){return totalPop(S)*BASE_PIETY*st.piety;}
+function tapValue(S,st){return 2*st.click+0.01*wonPerYear(S,st);}
+function blCost(b,lv){return Math.ceil(b.base*Math.pow(b.grow,lv));}
+function traitAvailable(S,t){if(S.owned[t.id])return false;return t.show==='*'||!!S.col[t.show];}
+function canColonize(S,h){
+  if(S.col[h.id]||h.sea)return false;if(h.prev&&!S.col[h.prev])return false;
+  if(h.gate&&pv(S,h.gate)<.5)return false;
+  if(h.prev&&h.prev!=='tas'&&(S.pop[h.prev]||0)<0.3*capOf(S,h.prev,stats(S)))return false; // 送り出す側が定着している
+  return suit(S,h)>=.2;
+}
+function readyToAdapt(S,h){if(!S.col[h.id]||S.adapted[h.id])return false;for(const k in h.need)if(pv(S,k)<.95)return false;return true;}
+function readyToDepart(S){return !S.done&&S.col.mars&&pv(S,'spore')>=.95&&pv(S,'human')>=.95&&pv(S,'deinococcus')>=.9;}
+
+// one year. ev(kind, data) を呼ぶ。カード化するかどうかはUI側で判断
+function stepYear(S,rng,ev){
+  const st=stats(S);
+  S.year++;
+  // 形質の保有率：世代ごとに広がる
+  const k=SEL/st.T;
+  for(const id in S.owned){let p=S.prev[id];p=p+k*p*(1-p);S.prev[id]=Math.min(1,p>0.999?1:p);}
+  // 生息数
+  for(const h of HABITATS){
+    if(!S.col[h.id])continue;
+    const K=Math.max(1,capOf(S,h.id,st));let N=S.pop[h.id]||0;
+    N=K/(1+((K-N)/Math.max(N,1e-9))*Math.exp(-st.r));
+    S.pop[h.id]=N;
+  }
+  // 漂流：嵐で流された一群が、海の向こうに流れ着くか
+  for(const h of HABITATS){
+    if(!h.sea||S.col[h.id]||!S.col[h.prev]||S.year<40)continue;
+    if((S.pop[h.prev]||0)<0.3*capOf(S,h.prev,st))continue;
+    if(rng()<0.08){
+      const surv=driftSurv(S);
+      if(rng()<surv){ if(suit(S,h)>=.2){S.col[h.id]=true;S.pop[h.id]=200;ev&&ev('drift_ok',h);} else ev&&ev('drift_noroot',h); }
+      else ev&&ev('drift_lost',h);
+    }
+  }
+  // 進出・適応
+  for(const h of HABITATS){
+    if(canColonize(S,h)){S.col[h.id]=true;S.pop[h.id]=200;ev&&ev('colonize',h);}
+    else if(readyToAdapt(S,h)){S.adapted[h.id]=true;ev&&ev('adapt',h);}
+  }
+  // 災い
+  const pd=pv(S,'devil');
+  if(S.year>25&&rng()<0.03*(1-pd)){S.pop.tas*=0.6;ev&&ev('mange',{});}
+  if(S.col.aus&&rng()<0.06){const kk=.45+.4*pv(S,'kangaroo');S.pop.aus*=kk;ev&&ev('drought',{resist:pv(S,'kangaroo')>.5});}
+  if(readyToDepart(S)){S.done=true;ev&&ev('ending',{});}
+  const w=wonPerYear(S,st);S.won+=w;S.totalWon+=w;
+  return st;
+}
+function buyTrait(S,id){const t=TR[id];if(!traitAvailable(S,t)||S.won<t.cost)return false;S.won-=t.cost;S.owned[id]=true;S.prev[id]=P0;return true;}
+function buyBlessing(S,id,hab){
+  const b=BLESSINGS.find(x=>x.id===id);const lv=b.perHab?(S.grass[hab]||0):S.bl[id];const c=blCost(b,lv);
+  if(S.won<c)return false;S.won-=c;if(b.perHab)S.grass[hab]=lv+1;else S.bl[id]++;return true;
+}
+function blLevel(S,b,hab){return b.perHab?(S.grass[hab]||0):S.bl[b.id];}
+
+if(typeof module!=='undefined')module.exports={driftSurv,HABITATS,HAB,TRAITS,TR,BLESSINGS,newState,pv,suit,stats,capOf,totalPop,wonPerYear,tapValue,blCost,traitAvailable,canColonize,stepYear,buyTrait,buyBlessing,blLevel};
+
+const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
+
+// ---------- shared pixel helpers ----------
+function mkGrid(W,H){
+  const g=new Array(W*H).fill(0),pt=new Uint8Array(W*H);
+  const S=(x,y,c,p=9)=>{x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=W||y>=H)return;g[y*W+x]=c;pt[y*W+x]=p;};
+  const SE=(cx,cy,rx,ry,n,p,fn)=>{
+    for(let y=Math.floor(cy-ry-1);y<=cy+ry+1;y++)for(let x=Math.floor(cx-rx-1);x<=cx+rx+1;x++){
+      const dx=Math.abs((x+.5-cx)/rx),dy=(y+.5-cy)/ry;if(Math.pow(dx,n)+Math.pow(Math.abs(dy),n)<=1)S(x,y,fn(x,y,dy),p);}
+  };
+  const E=(cx,cy,rx,ry,p,fn)=>SE(cx,cy,rx,ry,2,p,fn);
+  return {W,H,g,pt,S,SE,E};
+}
+// fluffy silhouette: little tufts on upper edges of fur parts
+function fuzz(G,pids,maxY){
+  const {W,H,g,pt}=G,add=[];
+  for(let y=1;y<Math.min(H,maxY);y++)for(let x=1;x<W-1;x++){
+    const i=y*W+x;if(!pids.includes(pt[i]))continue;
+    if(!g[i-W]&&((x*5+y*3)%7===0))add.push([i-W,g[i]==='f'?'l':g[i],pt[i]]);
+    else if(!g[i-1]&&((y*5+x)%6===0))add.push([i-1,g[i],pt[i]]);
+    else if(!g[i+1]&&((y*7+x)%6===0))add.push([i+1,g[i],pt[i]]);
+  }
+  for(const [i,c,p] of add){g[i]=c;pt[i]=p;}
+}
+function outline(G){
+  const {W,H}=G,out=G.g,fin=out.slice();
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=y*W+x;if(out[i])continue;
+    if((x>0&&out[i-1])||(x<W-1&&out[i+1])||(y>0&&out[i-W])||(y<H-1&&out[i+W]))fin[i]='o';
+  }
+  return fin;
+}
+// grizzled frosting on fur: light tips scattered on the upper part
+const hash=(x,y)=>{let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296;};
+const frost=(x,y,r)=>r<.6&&hash(x,y)<(r<.3?.11:.05);
+
+// ---------- side view ----------
+const WW=48,WH=32,AX=20;
+function renderWombat(o){
+  const G=mkGrid(WW,WH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,low=o.low||0,bob=o.bob||0;
+  const bcx=19,bcy=18+bob+low,brx=14.5*(1+sq),bry=7.6+(o.br||0)-sq*6;
+  const hcx=29.5+(o.hx||0),hcy=bcy-.5+(o.hy||0);
+  const claws=[];
+  if(!o.noLegs){
+    const legs=[[7,'d',0,0],[23,'d',1,1],[11,'b',1,0],[27,'b',0,1]];
+    for(const [lx,c,ph,fr] of legs){
+      let lift=0,sx=0;
+      if(o.walk&&(!o.dig||fr)){ if(ph===o.wp){lift=1;sx=1;} }
+      for(let y=Math.floor(bcy+5);y<=27-lift;y++)for(let x=lx+sx;x<lx+sx+3;x++)S(x,y,y>=26-lift?'d':c,1);
+      if(fr)claws.push([lx+sx+3,27-lift],[lx+sx+3,26-lift]); else claws.push([lx+sx+3,27-lift]);
+    }
+  }
+  const bsh=(x,y)=>{const r=(y+.5-(bcy-8))/16;return r<.22?(frost(x,y,r)?'f':'l'):r>.78?'d':(frost(x,y,r)?'f':'b');};
+  const rearX=bcx-brx+1.2;
+  E(bcx,bcy,brx,bry,2,(x,y)=>bsh(x,y));
+  SE(bcx-6.5,bcy-.8,8.6,bry+1.1,2.25,2,(x,y)=>bsh(x,y));
+  for(let y=0;y<WH;y++)for(let x=0;x<Math.floor(rearX);x++)if(pt[y*WW+x]===2){g[y*WW+x]=0;pt[y*WW+x]=0;}
+  const K=1.28;
+  // far ear
+  E(hcx-5.6*K,hcy-5.6*K+(o.ear||0)*.6,1.5*K,2*K,4,()=>'d');
+  // head
+  const hsh=(x,y)=>{const r=(y+.5-(hcy-6*K))/(12*K);return r<.25?(frost(x,y,r)?'f':'l'):r>.8?'d':(frost(x,y,r)&&x<hcx+2?'f':'b');};
+  E(hcx-1.5*K,hcy,6.3*K,5.7*K,3,hsh);
+  SE(hcx+3.6*K,hcy+1.3*K,4.4*K,4*K,3.2,3,hsh);
+  fuzz(G,[2,3],bcy+2);
+  // near ear: small, pale rim
+  const ey0=hcy-5.7*K-(o.ear>0?1:0)+(o.ear<0?1.4:0);
+  E(hcx-3.4*K,ey0,1.6*K,2.1*K,4,(x,y,dy)=>dy<-.3?'p':'d');S(hcx-3.4*K-.6,ey0-2.1*K,'p',4);
+  // nose: big bare matte nose
+  const ncx=hcx+6.6*K,ncy=hcy+.4*K;
+  SE(ncx,ncy,2.4*K,2.8*K,3,5,()=>'n');
+  S(ncx-1.6,ncy-2.4,'nh',5);S(ncx-.6,ncy-2.4,'nh',5);S(ncx-1.6,ncy-1.4,'nh',5);
+  S(ncx+1.5,ncy+.8,'e',5);S(ncx+.5,ncy+.8,'e',5);
+  // eye: small round beady
+  const ex=Math.floor(hcx+.8*K),ey=Math.floor(hcy-2.6*K);
+  if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='half'){S(ex-1,ey,'e');S(ex,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='happy'){S(ex-1,ey+1,'e');S(ex,ey,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='strain'){S(ex-1,ey,'e');S(ex,ey+1,'e');S(ex-1,ey+2,'e');}
+  else {S(ex,ey,'w');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  if(o.blush){S(hcx+1.4*K,hcy+2*K,'c');S(hcx+1.4*K+1,hcy+2*K,'c');}
+  // mouth
+  S(ncx-2.5,ncy+3.8,'o');S(ncx-1.5,ncy+3.8,'o');if(o.chew){S(ncx-2.5,ncy+4.8,'o');S(ncx-1.5,ncy+4.8,'o');}
+  // joey
+  if(o.joey>0){
+    const jx=bcx+.5,jy=bcy+bry+2.5-o.joey;
+    E(jx,jy,3.4,2.9,6,(x,y,dy)=>dy>.6?'b':'l');
+    S(jx-2,jy-3,'p',6);S(jx-1,jy-3,'l',6);
+    S(jx+1,jy-1,'e',6);S(jx+3,jy+.2,'n',6);S(jx+2,jy+.2,'n',6);
+  }
+  // inner edges
+  const out=g.slice();
+  for(let y=0;y<WH;y++)for(let x=0;x<WW;x++){
+    const i=y*WW+x,p=pt[i];if(!p)continue;
+    for(const [qx,qy] of [[x-1,y],[x+1,y],[x,y+1],[x,y-1]]){
+      if(qx<0||qy<0||qx>=WW||qy>=WH)continue;const q=pt[qy*WW+qx];
+      if(p===3&&q===2&&(qx<x||qy>y)){out[i]='d';break;}
+      if(p===6&&(q===2||q===1)){out[i]='o';break;}
+      if(p===2&&q===1&&qy>y){out[i]='d';break;}
+    }
+  }
+  G.g=out;
+  const fin=outline(G);
+  // claws & whiskers drawn over the outline
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<WW&&y<WH)fin[y*WW+x]=c;};
+  for(const [x,y] of claws)P(x,y,'k');
+  P(ncx-2.5,ncy+2.4,'v');P(ncx-1.5,ncy+3,'v');
+  P(ncx-3,ncy+1.6,'v');P(ncx-4,ncy+1.8,'v');
+  return {W:WW,H:WH,ax:AX,img:fin};
+}
+
+// ---------- front view ----------
+const FW=40,FH=32,FAX=20;
+function renderFront(o){
+  const G=mkGrid(FW,FH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,cx=20,ty=o.bob||0;
+  const bry=10.6+(o.br||0)-sq*8,brx=14*(1+sq);
+  const bcy=27.5-bry;
+  // paws (behind body first)
+  const pawY=26;
+  // body
+  const fsh=(x,y)=>{const r=(y+.5-(bcy-bry))/(2*bry);return r<.18?(frost(x,y,r)?'f':'l'):r>.82?'d':(frost(x,y,r)?'f':'b');};
+  E(cx,bcy,brx,bry,2,fsh);
+  // head merges with body (no neck)
+  const hcy=bcy-3.2+ty+(o.hy||0),hrx=10.4*(1+sq*.5),hry=8.6;
+  E(cx,hcy,hrx,hry,3,(x,y,dy)=>dy<-.55?(frost(x,y,0)?'f':'l'):'b');
+  // ears: small, wide-set, pale rims
+  const eo=o.ear>0?1:0;
+  for(const s of [-1,1]){
+    const ex=cx+s*7.6,ey=hcy-7.4-eo;
+    E(ex,ey,2.2,2.6,4,(x,y,dy)=>dy<-.25||Math.abs(x+.5-ex)>1.4?'p':'d');
+  }
+  fuzz(G,[2,3],bcy);
+  // face: slightly lighter muzzle
+  E(cx,hcy+3.8,6,3.6,5,()=>'l');
+  // eyes: small, round, beady, wide-set
+  for(const s of [-1,1]){
+    const ex=Math.floor(cx+s*4.6-(s<0?1:0)),ey=Math.floor(hcy-1);
+    if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+    else if(o.eye==='half'){S(ex,ey,'d');S(ex+1,ey,'d');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:1),ey+1,'e');}
+    else if(o.eye==='happy'){S(ex,ey+1,'e');S(ex+1,ey,'e');S(ex+2,ey+1,'e');}
+    else {S(ex,ey,'e');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:0),ey,'w');}
+  }
+  if(o.blush){S(cx-7,hcy+2,'c');S(cx-6,hcy+2,'c');S(cx+6,hcy+2,'c');S(cx+7,hcy+2,'c');}
+  // big bare nose
+  // big bare nose: wide top, rounded bottom (shield shape), nostrils at the lower sides
+  const ny=hcy+3.4+(o.nw||0);
+  for(let y=Math.floor(ny-2.9);y<=ny+2.9;y++){const t=(y+.5-(ny-2.9))/5.8;let hw=4.7-2.4*t*t;if(t<.22)hw-=(.22-t)*6;
+    for(let x=Math.floor(cx-hw);x<cx+hw;x++)S(x,y,t<.25?'nh':'n',6);}
+  S(cx-3,ny+.6,'e',6);S(cx-2,ny+1.4,'e',6);S(cx+2,ny+.6,'e',6);S(cx+1,ny+1.4,'e',6);
+  S(cx-.5,ny+2.2,'o',6);
+  // mouth
+  S(cx-.5,ny+3.3,'o');S(cx-1.5,ny+4,'o');S(cx+.5,ny+4,'o');
+  if(o.chew){S(cx-.5,ny+4.2,'o');}
+  G.g=g;
+  const fin=outline(G);
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<FW&&y<FH)fin[y*FW+x]=c;};
+  // front paws with long pale claws, turned slightly inward
+  for(const s of [-1,1]){
+    const px=cx+s*5.5;
+    for(let y=pawY;y<=27;y++)for(let x=Math.floor(px-2);x<=Math.floor(px+1);x++)P(x,y,'d');
+    P(px-2,28,'o');P(px+1,28,'o');
+    const c0=s<0?px:px-2;P(c0-1,28,'k');P(c0,28,'k');P(c0+1,28,'k');
+    P(px-3,pawY,'o');P(px+2,pawY,'o');P(px-3,27,'o');P(px+2,27,'o');
+  }
+  // whiskers
+  for(const s of [-1,1]){
+    const b=s<0?-1:0;
+    P(cx+s*6.5+b,hcy+3.6,'v');P(cx+s*7.5+b,hcy+3.1,'v');P(cx+s*8.5+b,hcy+2.8,'v');
+    P(cx+s*6.5+b,hcy+5,'v');P(cx+s*7.5+b,hcy+5.4,'v');P(cx+s*8.5+b,hcy+6,'v');
+  }
+  return {W:FW,H:FH,ax:FAX,img:fin};
+}
+function blitWombat(R,X,flip){
+  const {W,H,ax,img}=R,left=flip?X-(W-1-ax):X-ax,top=GY-28;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const c=img[y*W+x];if(!c)continue;
+    ctx.fillStyle=PAL[c];ctx.fillRect(left+(flip?W-1-x:x),top+y,1,1);
+  }
+}
+
+
+// ===== 神に愛されたヒメウォンバット: app (state, cards, UI, loop) =====
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const SW=112,SH=72,GY=58;
+const SAVE_KEY='kamiwombat_save_v3';
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const R=rng(Date.now()&0xffff);
+function fmt(n){n=Math.floor(n);if(n<10000)return n.toLocaleString('ja-JP');
+  for(const [v,s] of [[1e16,'京'],[1e12,'兆'],[1e8,'億'],[1e4,'万']])if(n>=v){const x=n/v;return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x).toLocaleString('ja-JP'))+s;}}
+const pct=p=>(p*100<10?(p*100).toFixed(1):Math.round(p*100))+'%';
+const $=id=>document.getElementById(id);
+let S=load()||newState();
+function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);return s&&s.v===3?s:null;}catch(e){return null;}}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+function addLog(text,kind){S.log.unshift({y:S.year,t:text,k:kind||''});if(S.log.length>300)S.log.length=300;$('msg').textContent=text;if(tab==='log')renderLog();}
+
+// ---------- backgrounds ----------
+const BG={};
+function bgCanvas(kind){
+  if(BG[kind])return BG[kind];
+  const c=document.createElement('canvas');c.width=SW;c.height=SH;const b=c.getContext('2d'),r=rng(kind.length*977+3);
+  const px=(x,y,col)=>{b.fillStyle=col;b.fillRect(x,y,1,1);};
+  const bands=(cols,h)=>cols.forEach((col,i)=>{b.fillStyle=col;b.fillRect(0,i*h,SW,h);});
+  const hills=(base,a1,f1,a2,f2,ph,col,to)=>{for(let x=0;x<SW;x++){const h=Math.round(base+a1*Math.sin(x*f1+ph)+a2*Math.sin(x*f2));b.fillStyle=col;b.fillRect(x,h,1,(to||GY)-h);}};
+  const ground=(col,dots)=>{b.fillStyle=col;b.fillRect(0,GY,SW,SH-GY);for(let i=0;i<260;i++){const d=dots[Math.floor(r()*dots.length)];px(Math.floor(r()*SW),GY+Math.floor(r()*(SH-GY)),d);}};
+  const sun=(x,y,col,rad)=>{b.fillStyle=col;for(let j=-rad;j<=rad;j++)for(let i=-rad;i<=rad;i++)if(i*i+j*j<=rad*rad+1)b.fillRect(x+i,y+j,1,1);};
+  const tree=(tx,th,tr,c1,c2)=>{b.fillStyle=tr;b.fillRect(tx,GY-th,2,th);const bl=[[0,-th,6,4],[-4,-th+3,4,3],[4,-th+2,5,3],[1,-th-3,4,3]];
+    for(const [bx,by,rx,ry] of bl)for(let y=-ry;y<=ry;y++)for(let x=-rx;x<=rx;x++)if(x*x/(rx*rx)+y*y/(ry*ry)<=1)px(tx+bx+x,GY+by+y,y<0?c1:c2);};
+  switch(kind){
+    case 'meadow':
+      bands(['#9fd2e6','#acd8ea','#bbdfed','#c9e6ef','#d6ecef','#d6ecef','#d6ecef','#d6ecef'],8);sun(96,9,'#fff4c2',4);
+      hills(40,3,.07,2,.15,1,'#9cc08d');hills(47,2,.05,1.5,.19,2,'#82ad6c');tree(12,20,'#e2d8c6','#8fae96','#6f8f78');tree(86,15,'#e2d8c6','#8fae96','#6f8f78');
+      ground('#6c9a4a',['#86b35a','#587f3b']);for(let i=0;i<40;i++){const x=Math.floor(r()*SW);px(x,GY-1,'#5e8a40');}break;
+    case 'desert':
+      bands(['#f2c98f','#f3d29c','#f4dbab','#f5e2b8','#f6e8c4','#f6e8c4','#f6e8c4','#f6e8c4'],8);sun(20,10,'#fff6d8',5);
+      hills(44,2,.04,1,.2,0,'#c4673f');hills(50,1.5,.08,1,.13,3,'#b4552f');
+      ground('#c8743f',['#d98a52','#a85d2e']);
+      for(let i=0;i<9;i++){const x=Math.floor(r()*SW);for(let k=-2;k<=2;k++)px(x+k,GY-1-(Math.abs(k)<2?1:0),'#a9a046');px(x,GY-3,'#a9a046');}break;
+    case 'coast':
+      bands(['#8ccbe8','#9ad2eb','#a9d9ee','#b8e0f0','#c6e6f1'],8);sun(94,9,'#fffbe0',4);
+      b.fillStyle='#3f8fc0';b.fillRect(0,40,SW,GY-40);for(let i=0;i<50;i++)px(Math.floor(r()*SW),41+Math.floor(r()*(GY-42)),'#7fbfe0');
+      ground('#e6d29a',['#d8c283','#f0e0b0']);for(let x=0;x<SW;x++)if(x%3)px(x,GY,'#f7f1dc');break;
+    case 'island':
+      bands(['#7fc6ea','#8dcdeb','#9fd5ee','#b0dcf0','#c2e3f1'],8);
+      b.fillStyle='#2f86c4';b.fillRect(0,38,SW,SH-38);for(let i=0;i<70;i++)px(Math.floor(r()*SW),39+Math.floor(r()*(SH-40)),'#6db4e0');
+      b.fillStyle='#e8d59c';for(let x=8;x<104;x++){const h=Math.round(2+1.5*Math.sin(x*.12));b.fillRect(x,GY-h+2,1,SH-GY+h);}
+      b.fillStyle='#4a9a4a';for(let x=14;x<98;x++)if(r()<.6)b.fillRect(x,GY,1,1);
+      b.fillStyle='#8a6a40';for(let y=0;y<22;y++)b.fillRect(90+Math.round(Math.sin(y*.12)*2),GY-y,2,1);
+      for(const [dx,dy] of [[-5,1],[-3,0],[3,0],[5,1],[-4,2],[4,2],[0,-1]])for(let k=0;k<4;k++)px(91+dx*k/2,GY-22+dy*k/2+k*.6,'#3e8a3a');break;
+    case 'steppe':
+      bands(['#b9d6e3','#c3dce6','#cde2e9','#d7e7ec','#e0ecee'],8);
+      hills(34,4,.05,2,.17,0,'#8b98aa');for(let x=0;x<SW;x++){const h=Math.round(34+4*Math.sin(x*.05)+2*Math.sin(x*.17));if(h<33)px(x,h,'#f2f4f7');}
+      hills(48,1.5,.06,1,.21,2,'#a8aa5e');ground('#b8b25a',['#c9c46e','#99923f']);
+      for(let i=0;i<60;i++){const x=Math.floor(r()*SW);px(x,GY-1,'#a39c48');}break;
+    case 'ice':
+      bands(['#2a3f66','#33507a','#3f6290','#5b7fa8','#7f9fc0','#a9c1d6','#c9d8e4','#dfe8ef'],7);
+      for(let x=0;x<SW;x++){const y=Math.round(12+4*Math.sin(x*.09)+2*Math.sin(x*.21));px(x,y,'#7ee0a8');px(x,y+1,'#5cc690');if(x%2)px(x,y+2,'#4aa87c');}
+      hills(46,3,.09,2,.23,1,'#e8f0f5');for(let x=0;x<SW;x++){const h=Math.round(46+3*Math.sin(x*.09+1)+2*Math.sin(x*.23));px(x,h,'#ffffff');if(Math.sin(x*.09+1)<-.6)px(x,h+2,'#c7d8e4');}
+      ground('#eef4f7',['#d6e4ec','#ffffff']);break;
+    case 'ocean':
+      bands(['#7db8de','#8cc1e2','#9bc9e6','#acd2ea'],8);
+      b.fillStyle='#24609a';b.fillRect(0,32,SW,SH-32);for(let i=0;i<90;i++)px(Math.floor(r()*SW),33+Math.floor(r()*(SH-34)),'#4f8fc4');
+      b.fillStyle='#5e6a2a';b.fillRect(0,GY,SW,4);for(let i=0;i<90;i++)px(Math.floor(r()*SW),GY+Math.floor(r()*4),r()<.5?'#77843a':'#4a5520');
+      b.fillStyle='#24609a';b.fillRect(0,GY+4,SW,SH-GY-4);break;
+    case 'deep':
+      for(let y=0;y<SH;y++){const t=y/SH;b.fillStyle=`rgb(${4+t*6|0},${14+t*10|0},${30+t*14|0})`;b.fillRect(0,y,SW,1);}
+      ground('#2b2f3a',['#383d4a','#22252e']);for(let i=0;i<8;i++){const x=Math.floor(r()*SW);px(x,GY-1,'#3a3f4c');px(x+1,GY-1,'#3a3f4c');}break;
+    case 'mars':
+      bands(['#c98a62','#d1956c','#d9a077','#e0ab83','#e6b48e','#e6b48e','#e6b48e','#e6b48e'],8);sun(84,10,'#f6efe0',2);
+      hills(44,3,.06,2,.15,0,'#a2482a');hills(51,1.5,.1,1,.18,2,'#93401f');
+      ground('#b5532e',['#c8643a','#8f3e20']);for(let i=0;i<10;i++){const x=Math.floor(r()*SW);px(x,GY-1,'#7d3418');px(x+1,GY-1,'#7d3418');}break;
+    case 'jungle':
+      bands(['#a9d4c4','#b5dacb','#c1e0d2','#cde6d9','#d9ecdf','#d9ecdf','#d9ecdf','#d9ecdf'],8);
+      for(let i=0;i<9;i++){const tx=4+i*13+Math.floor(r()*5);b.fillStyle='#4a3a2a';b.fillRect(tx,22,2,GY-22);for(let y=-6;y<=5;y++)for(let x=-8;x<=8;x++)if(x*x/64+y*y/30<=1&&r()<.92)px(tx+x,18+y+Math.floor(r()*2),y<-1?'#3f8a4a':'#2d6a38');}
+      for(let i=0;i<18;i++){const x=Math.floor(r()*SW);for(let k=0;k<6;k++)px(x,24+k*3+Math.floor(r()*2),'#3a7a3a');}
+      ground('#3f6a2e',['#4f7f38','#2f5422']);for(let i=0;i<30;i++){const x=Math.floor(r()*SW);px(x,GY-1,'#2f6a2a');px(x+1,GY-2,'#4f9a40');}break;
+    case 'forest':
+      bands(['#b9d8e6','#c2dde8','#cbe2ea','#d4e7ec','#dcebee','#dcebee','#dcebee','#dcebee'],8);
+      hills(38,4,.06,2,.15,1,'#9fb8a0');
+      for(let i=0;i<12;i++){const tx=Math.floor(r()*SW);const th=10+Math.floor(r()*8);b.fillStyle='#6a5a40';b.fillRect(tx,GY-th,1,th);for(let y=0;y<th;y++){const w=Math.floor((th-y)/3);for(let x=-w;x<=w;x++)px(tx+x,GY-th-6+y,y%3?'#3e7a4a':'#4f8f58');}}
+      for(let i=0;i<8;i++){const x=Math.floor(r()*SW);for(let y=GY-14;y<GY;y++){px(x,y,'#7fa84a');if(y%3===0){px(x-1,y,'#6a9a3a');px(x+1,y-1,'#6a9a3a');}}}
+      ground('#5f8f42',['#6fa04e','#4a7534']);break;
+    case 'mountain':
+      bands(['#6f9fd0','#83add6','#97badc','#abc7e2','#bfd4e8','#bfd4e8','#bfd4e8','#bfd4e8'],8);
+      for(let x=0;x<SW;x++){const h=Math.round(20+10*Math.abs(Math.sin(x*.05+1))+4*Math.sin(x*.17));b.fillStyle='#8a90a0';b.fillRect(x,h,1,GY-h);px(x,h,'#ffffff');px(x,h+1,'#f2f4f8');if(Math.sin(x*.05+1)>.5){px(x,h+2,'#e8ecf2');px(x,h+3,'#e8ecf2');}}
+      hills(46,2,.08,1.5,.19,2,'#9a9a6a');ground('#a8a06a',['#b8b07a','#8a8450']);
+      for(let i=0;i<6;i++){let x=Math.floor(r()*SW);for(const c of ['#c8282a','#f2d048','#2a7ac8','#ffffff','#2a9a4a'])px(x++,30+Math.floor(r()*3),c);}break;
+    case 'taiga':
+      bands(['#9db6c8','#a9c0d0','#b5c9d6','#c1d2dc','#ccdae2','#ccdae2','#ccdae2','#ccdae2'],8);
+      for(let i=0;i<16;i++){const tx=Math.floor(r()*SW),th=12+Math.floor(r()*10);for(let y=0;y<th;y++){const w=Math.floor(y/3);for(let x=-w;x<=w;x++)px(tx+x,GY-th-2+y,(y+x)%4?'#2f5a46':'#3d6e56');}px(tx,GY-th-3,'#ffffff');}
+      ground('#dfe8ec',['#c8d6de','#ffffff']);break;
+    case 'europe':
+      bands(['#a8cfe8','#b4d5ea','#c0dbec','#cce1ee','#d8e7f0','#d8e7f0','#d8e7f0','#d8e7f0'],8);sun(90,10,'#fff6d0',3);
+      hills(42,3,.05,1.5,.16,0,'#9cc07a');for(let x=0;x<SW;x+=10)for(let y=44;y<GY;y++)if((x+y)%2)px(x,y,'#b8c86a');
+      tree(24,14,'#6a5a40','#5f8f4a','#4a7a3a');b.fillStyle='#c8b8a0';b.fillRect(72,36,10,8);b.fillStyle='#a04a3a';for(let k=0;k<6;k++)b.fillRect(71+k,35-k,12-2*k,1);
+      ground('#6fa04a',['#82b35a','#5a8a3a']);break;
+    case 'space':
+      b.fillStyle='#05060c';b.fillRect(0,0,SW,SH);for(let i=0;i<120;i++)px(Math.floor(r()*SW),Math.floor(r()*SH),r()<.2?'#ffe9b0':'#cfd8ff');break;
+  }
+  BG[kind]=c;return c;
+}
+
+// ---------- foods ----------
+const FOODS={
+  grass:{pal:{g:'#4f8f2e',G:'#7cb84a'},pat:['..G...G..G..','.Gg..Gg.Gg..','.gg.Ggg.gg.G','Ggg.ggg.ggGg','gggGgggGgggg','gggggggggggg','.gggggggggg.']},
+  termite:{pal:{m:'#9a6a3e',M:'#b8865a',w:'#f2e6c8'},pat:['....MM....','...MmmM...','..MmwmmM..','.MmmmwmmM.','MmwmmmmwmM','mmmmwmmmmm']},
+  cactus:{pal:{c:'#5f9a3a',C:'#86c05a',y:'#f4eccc'},pat:['..y.y.y..','.yCCCCCy.','.CccCccC.','yCccccccy','.CcccCcC.','.yccccc y'.replace(' ','.'),'..ccccc..']},
+  kelp:{pal:{k:'#6b6a2a',K:'#8f8c3c'},pat:['.K....K...K.','Kk...Kk..kK.','.kK..k..Kk..','..k.Kk..k.K.','.Kk.kK.kk.k.','.kkKkkKkkkk.','kkkkkkkkkkkk']},
+  lichen:{pal:{l:'#9fae8a',L:'#c6d2b0',o:'#d8a04a'},pat:['..L.LL.L..','.LllLllLo.','LlllllllLl','llolllllll']},
+  krill:{pal:{r:'#f08a7a',R:'#ffb3a3'},pat:['.R...R..R.','Rr..Rr.Rr.','.r.R.r..rR','R.r..Rr.r.','.Rr.r..Rr.']},
+  snow:{pal:{s:'#d8e4ec',S:'#ffffff'},pat:['.S..s..S.','..s..S..s','S..s...s.','.s..S.s..','sSsssSsss']},
+  moss:{pal:{g:'#5a8a3a',G:'#7fb05a'},pat:['..G.G.G..','.GgGgGgG.','GgggggggG','ggggggggg']},
+  fig:{pal:{p:'#8a3a6a',P:'#b45a8a',g:'#5a8a3a'},pat:['...g....g..','..PP...PP..','.PppP.PppP.','.PpppPpppP.','..pp...pp..']},
+  bamboo:{pal:{g:'#7fa84a',G:'#a8c86a',l:'#4f8a3a'},pat:['.l..G..l.','.lG.g.Gl.','..gGgGg..','.Gg.g.gG.','..g.g.g..','..g.g.g..']},
+  coconut:{pal:{h:'#7a5a2e',H:'#a07a44',w:'#f4efe0'},pat:['..HHHH..','.HhhhhH.','HhhwwhhH','Hhwwwwhh','.hhwwhh.','..hhhh..']},
+};
+
+// ---------- scene state ----------
+let view='tas'; // displayed habitat
+function latestHab(){let l='tas';for(const h of HABITATS)if(S.col[h.id])l=h.id;return l;}
+function curFood(h){if(h==='aus')return S.owned.numbat?'termite':S.owned.landiguana?'cactus':'grass';return HAB[h].food;}
+const W={x:56,dir:1,state:'idle',t:0,dur:3,target:56,blink:0,blinkCD:2,ear:0,earCD:3,emit:0,pooped:false,food:null};
+let parts=[],poops=[],food=null,crowd=[],gold=null,goldCD=40;
+function addP(o){parts.push(Object.assign({t:0},o));}
+function setState(s){
+  W.state=s;W.t=0;W.pooped=false;W.emit=0;
+  if(s==='idle')W.dur=2.5+R()*2.5;
+  else if(s==='walk'){W.target=24+R()*(SW-48);if(Math.abs(W.target-W.x)<8)W.target=W.x<SW/2?W.x+25:W.x-25;W.dir=W.target>W.x?1:-1;W.dur=99;}
+  else if(s==='zoom'){W.target=W.x<SW/2?SW-24:24;W.dir=W.target>W.x?1:-1;W.dur=99;}
+  else if(s==='eat'){food={type:curFood(view),x:W.x,left:1};W.dur=5;}
+  else if(s==='dig')W.dur=3;else if(s==='poop')W.dur=2;else if(s==='joey')W.dur=3.6;else if(s==='sleep')W.dur=7;else if(s==='pet')W.dur=1.2;
+  if(s!=='eat')food=null;
+}
+function nextAuto(){const r=R();setState(r<.22?'walk':r<.45?'eat':r<.56?'idle':r<.65?'dig':r<.73?'poop':r<.81?'joey':r<.88?'zoom':'sleep');}
+function pose(){
+  const o={eye:W.blink>0?'closed':'open',ear:W.ear>0?1:0},t=W.t;
+  switch(W.state){
+    case 'idle':o.br=.5*Math.sin(t*2.6);if(t%5>3.4&&o.eye==='open')o.eye='half';o.nw=(Math.floor(t*4)%7===0)?-1:0;break;
+    case 'walk':o.walk=1;o.wp=Math.floor(t*7)%2;o.bob=o.wp?-1:0;break;
+    case 'zoom':o.walk=1;o.wp=Math.floor(t*14)%2;o.bob=o.wp?-1:0;o.ear=-1;o.hx=1;break;
+    case 'eat':o.hy=3.5;o.chew=Math.floor(t*5)%2;o.hy+=o.chew;o.nw=o.chew?1:0;o.eye=W.blink>0?'closed':t%2>1?'half':'open';o.br=.3*Math.sin(t*2);break;
+    case 'dig':o.hx=1;o.hy=3;o.walk=1;o.dig=1;o.wp=Math.floor(t*12)%2;o.eye='closed';break;
+    case 'poop':if(t>.4&&t<.9){o.eye='strain';o.sq=-.03;}else if(t>=.9)o.eye='half';break;
+    case 'joey':{const k=t<.5?t/.5:t>3?Math.max(0,(3.6-t)/.5):1;o.joey=Math.round(k*2+(k>.99?Math.floor(t*2)%2:0));o.eye=t%2.4>1.6?'half':'open';o.br=.4*Math.sin(t*2.6);break;}
+    case 'sleep':o.low=2;o.noLegs=1;o.eye='closed';o.br=.7*Math.sin(t*1.3);o.hy=1;break;
+    case 'pet':o.eye='half';o.blush=1;o.sq=.06*Math.sin(t*16)*Math.max(0,1-t/1.2);o.ear=Math.floor(t*6)%2;break;
+  }
+  return o;
+}
+function updateScene(dt){
+  W.t+=dt;
+  W.blinkCD-=dt;if(W.blinkCD<=0){W.blink=.14;W.blinkCD=2+R()*3;}if(W.blink>0)W.blink-=dt;
+  W.earCD-=dt;if(W.earCD<=0){W.ear=.25;W.earCD=2+R()*4;}if(W.ear>0)W.ear-=dt;
+  const s=W.state;
+  if(s==='walk'||s==='zoom'){const sp=s==='zoom'?42:9;W.x+=W.dir*sp*dt;
+    if(s==='zoom'){W.emit+=dt;if(W.emit>.05){W.emit=0;addP({k:'dust',x:W.x-W.dir*12,y:GY-1,vx:-W.dir*8,vy:-6,life:.5});}}
+    if((W.dir>0&&W.x>=W.target)||(W.dir<0&&W.x<=W.target)){W.x=W.target;nextAuto();}}
+  if(s==='eat'&&food){food.left=Math.max(0,1-W.t/4.4);W.emit+=dt;if(W.emit>.2&&food.left>0){W.emit=0;const F=FOODS[food.type],cs=Object.keys(F.pal);addP({k:'crumb',c:F.pal[cs[Math.floor(R()*cs.length)]],x:W.x+(R()-.5)*4,y:GY-6,vx:(R()-.5)*14,vy:-10,life:.6});}}
+  if(s==='dig'){W.emit+=dt;if(W.emit>.07){W.emit=0;addP({k:'dirt',x:W.x+W.dir*8,y:GY-2,vx:-W.dir*(18+R()*20),vy:-18-R()*14,life:.9});}}
+  if(s==='poop'&&!W.pooped&&W.t>=.9){W.pooped=true;poops.push({x:W.x-W.dir*19,y:GY-14,vy:0,t:0});}
+  if(s==='sleep'){W.emit+=dt;if(W.emit>1.1){W.emit=0;addP({k:'z',x:W.x+W.dir*12,y:GY-26,vx:3*W.dir,vy:-5,life:2});}}
+  if(s==='pet'){W.emit+=dt;if(W.emit>.3){W.emit=0;addP({k:'heart',x:W.x+(R()-.5)*20-2,y:GY-28,vx:(R()-.5)*6,vy:-12,life:1.1});}}
+  if(W.t>=W.dur)nextAuto();
+  for(const p of parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.k==='dirt'||p.k==='crumb')p.vy+=70*dt;}
+  parts=parts.filter(p=>p.t<p.life&&!((p.k==='dirt'||p.k==='crumb')&&p.y>GY+1));
+  for(const q of poops){q.t+=dt;if(q.y<GY-3){q.vy+=60*dt;q.y=Math.min(GY-3,q.y+q.vy*dt);}}
+  poops=poops.filter(q=>q.t<10);
+  if(!S.done)for(const c of crowd){c.t+=dt;if(c.wait>0){c.wait-=dt;}else{c.x+=c.v*dt;if(R()<dt*.15){c.wait=1+R()*3;}}if(c.x<-6)c.x=SW+5;if(c.x>SW+6)c.x=-5;}
+  if(gold){gold.t+=dt;if(R()<dt*6)addP({k:'spark',x:gold.x+(R()-.5)*6,y:gold.y-2+(R()-.5)*6,vx:0,vy:-6,life:.5});if(gold.t>12)gold=null;}
+  else if(!S.done&&typeof paused==='function'&&!paused()&&S.year>5){goldCD-=dt;if(goldCD<=0){goldCD=45+R()*45;gold={x:10+R()*(SW-20),y:GY+5+R()*6,t:0};}}
+  ambT+=dt;
+}
+let ambT=0;
+const MINI=['......o..','.oooooboo','obllllbbn','obbbbbbbo','.obbbbbo.','..d...d..'];
+const MINI_PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',n:'#3f3230',d:'#5e4128'};
+const PAT={heart:['.x.x.','xxxxx','xxxxx','.xxx.','..x..'],z:['xxxx','..x.','.x..','xxxx']};
+function pat(p,x,y,col,hl){x=Math.round(x);y=Math.round(y);ctx.fillStyle=col;p.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]==='x')ctx.fillRect(x+i,y+j,1,1);});if(hl){ctx.fillStyle=hl;ctx.fillRect(x+1,y+1,1,1);}}
+function drawFood(f){const F=FOODS[f.type],P=F.pat,h=P.length,w=Math.max(...P.map(r=>r.length));const cols=Math.ceil(w*f.left),x0=Math.round(f.x-w/2),y0=GY-h+3;
+  for(let j=0;j<h;j++)for(let i=0;i<cols;i++){const c=P[j][i];if(c&&c!=='.'){ctx.fillStyle=F.pal[c];ctx.fillRect(x0+i,y0+j,1,1);}}}
+function rebuildCrowd(){
+  const n=Math.min(14,Math.max(0,Math.round(Math.log10(Math.max(1,S.pop[view]||0))*2-8)));
+  crowd=[];for(let i=0;i<n;i++){const v=(R()<.5?-1:1)*(1.5+R()*2);crowd.push({x:R()*SW,y:GY+3+Math.floor(R()*8),v,t:R()*9,wait:R()*2});}crowd.sort((a,b)=>a.y-b.y);
+}
+function draw(){
+  const bgk=S.done?'space':HAB[view].bg;
+  ctx.drawImage(bgCanvas(bgk),0,0);
+  // ambient
+  if(bgk==='coast'||bgk==='island'||bgk==='ocean'){ctx.fillStyle='#bfe2f2';for(let i=0;i<6;i++){const x=Math.floor((i*23+ambT*6)%SW);ctx.fillRect(x,(bgk==='ocean'?36:42)+(i%3)*4,3,1);}}
+  if(bgk==='deep'){for(let i=0;i<24;i++){const x=(i*37)%SW,y=Math.floor((i*13+ambT*3)%GY);ctx.fillStyle='rgba(220,235,245,.55)';ctx.fillRect(x,y,1,1);}
+    if(S.owned.snailfish){for(let i=0;i<5;i++){const a=.5+.5*Math.sin(ambT*2+i);ctx.fillStyle=`rgba(120,255,230,${a})`;ctx.fillRect((i*29+7)%SW,20+(i*11)%25,1,1);}}}
+  // crowd (distant wombats): tiny side-view wombats
+  if(!S.done)for(const c of crowd){const x0=Math.round(c.x)-4,bob=c.wait>0?0:(Math.floor(c.t*6)%2),y0=c.y-6-bob,d=c.v>0;
+    MINI.forEach((row,j)=>{for(let i=0;i<9;i++){const ch=row[d?i:8-i];if(ch==='.')continue;if(j===5&&bob&&ch==='d')continue;ctx.fillStyle=MINI_PAL[ch];ctx.fillRect(x0+i,y0+j+(j===5?bob:0),1,1);}});}
+  for(const q of poops){const x=Math.round(q.x)-1,y=Math.round(q.y);ctx.fillStyle=PAL.o;ctx.fillRect(x-1,y-2,6,6);ctx.fillStyle='#6a4d36';ctx.fillRect(x,y-1,4,4);ctx.fillStyle='#8a684d';ctx.fillRect(x,y-1,3,1);ctx.fillRect(x,y,1,1);}
+  if(!S.done){ctx.fillStyle='rgba(30,30,20,.3)';const sw=W.state==='sleep'?30:26;ctx.fillRect(Math.round(W.x-sw/2+W.dir*2),GY,sw,2);
+  const o=pose();const front=W.state==='idle'||W.state==='pet'||W.state==='eat';
+  blitWombat(front?renderFront(o):renderWombat(o),Math.round(W.x),!front&&W.dir<0);
+  if(food&&food.left>0)drawFood(food);}
+  if(S.done){for(let i=0;i<22;i++){const sp=3+i%3,x=Math.floor((i*31+ambT*(2+i%4))%(SW+10))-5,y=Math.floor((i*17+Math.sin(ambT*.7+i)*4+ambT*(1+i%2))%(SH+8))-4,s=2+(i%3);
+    ctx.fillStyle='#2a1a12';ctx.fillRect(x-1,y-1,s+2,s+2);ctx.fillStyle='#a17a53';ctx.fillRect(x,y,s,s);ctx.fillStyle='#c9a46a';ctx.fillRect(x,y,s,1);if(s>3){ctx.fillStyle='#0d0806';ctx.fillRect(x+1,y+2,1,1);ctx.fillRect(x+s-2,y+2,1,1);}}}
+  // day/night (wombats are nocturnal): outdoor scenes only
+  if(!S.done&&bgk!=='deep'){const k=Math.max(0,Math.sin(ambT*Math.PI*2/60-1));if(k>0){ctx.globalCompositeOperation='multiply';ctx.fillStyle=`rgb(${255-k*150|0},${255-k*135|0},${255-k*70|0})`;ctx.fillRect(0,0,SW,SH);ctx.globalCompositeOperation='source-over';
+    if(bgk!=='ocean'&&bgk!=='coast'&&bgk!=='island'||true){for(let i=0;i<14;i++){const tw=.5+.5*Math.sin(ambT*3+i*2);ctx.fillStyle=`rgba(255,250,220,${(k*tw*.9).toFixed(3)})`;ctx.fillRect((i*37+11)%SW,(i*13)%26,1,1);}}}}
+  if(gold){const x=Math.round(gold.x)-2,y=Math.round(gold.y)-4+Math.round(Math.sin(gold.t*4));const fl=gold.t>9&&Math.floor(gold.t*8)%2;
+    if(!fl){ctx.fillStyle='#5a3a10';ctx.fillRect(x-1,y-1,7,7);ctx.fillStyle='#e8b53a';ctx.fillRect(x,y,5,5);ctx.fillStyle='#ffe58a';ctx.fillRect(x,y,4,1);ctx.fillRect(x,y,1,3);ctx.fillStyle='#fff8d0';ctx.fillRect(x+1,y+1,1,1);}}
+  for(const p of parts){
+    if(p.k==='heart')pat(PAT.heart,p.x,p.y,'#ff7f9b','#ffd0da');
+    else if(p.k==='z')pat(PAT.z,p.x,p.y,'#ffffff');
+    else if(p.k==='dust'){ctx.fillStyle='rgba(200,185,160,'+(1-p.t/p.life)+')';ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2);}
+    else if(p.k==='crumb'){ctx.fillStyle=p.c;ctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}
+    else if(p.k==='spark'){ctx.fillStyle=`rgba(255,240,170,${1-p.t/p.life})`;ctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}
+    else if(p.k==='dirt'){ctx.fillStyle='#6b4b30';ctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}
+  }
+}
+
+
+// ===== event card art: habitat + (mutant) wombat =====
+const TINTS={
+  frozen:{b:'#8fa9bd',l:'#b9cfdd',d:'#5f7a90',f:'#e6f4ff',m:'#7a93a8',n:'#4a5a6a',nh:'#8aa0b4',o:'#1e2a36',c:'#a9c4d8'},
+  abyss:{b:'#c9a3a8',l:'#e4c6c8',d:'#9a7880',f:'#f4e0e2',m:'#b48e94',n:'#6a4a56',nh:'#a07a86',o:'#3a2430',c:'#f0b0c0',e:'#2af0d0'},
+  mange:{b:'#9a7458',l:'#b48a6a',f:'#d9a0a0',m:'#c08870'},
+};
+function blitTo(c,R,left,top,tint){
+  const {W,H,img}=R;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=img[y*W+x];if(!k)continue;c.fillStyle=(tint&&tint[k])||PAL[k];c.fillRect(left+x,top+y,1,1);}
+}
+function maskOf(R){const {W,H,img}=R;return (x,y)=>x>=0&&y>=0&&x<W&&y<H&&!!img[y*W+x];}
+// variant overlays, drawn in sprite-local coordinates of the FRONT view
+function drawVariants(c,R,left,top,vs,t){
+  const M=maskOf(R),P=(x,y,col)=>{c.fillStyle=col;c.fillRect(left+Math.round(x),top+Math.round(y),1,1);};
+  const topY=x=>{for(let y=0;y<R.H;y++)if(M(x,y))return y;return null;};
+  const has=v=>vs.includes(v);
+  if(has('aura')){for(let y=0;y<R.H;y++)for(let x=-2;x<R.W+2;x++){if(M(x,y))continue;let n=false;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[2,0],[-2,0],[0,-2]])if(M(x+dx,y+dy)){n=true;break;}if(n){c.fillStyle='rgba(150,255,220,.45)';c.fillRect(left+x,top+y,1,1);}}}
+  if(has('plush')){for(let y=0;y<R.H-3;y++)for(let x=-1;x<R.W+1;x++){if(M(x,y))continue;if((M(x+1,y)||M(x-1,y)||M(x,y+1))&&hash(x,y)<.55){P(x,y,'#7a5838');}}}
+  if(has('shaggy')){for(let x=5;x<=35;x++){const len=2+Math.floor(hash(x,9)*4);for(let y=14;y<27+len;y++){if(M(x,y)&&y<26)continue;if(y<14)continue;if(!M(x,y)&&y<26&&!(M(x+1,y)||M(x-1,y)))continue;P(x,y,(x+y)%3?'#4e3420':'#6a4a30');}}}
+  if(has('armor')){for(const y of [17,20,23])for(let x=0;x<R.W;x++){if(!M(x,y)||!M(x,y-1))continue;const side=x<12||x>28;if(!side)continue;P(x,y,'#4a3424');P(x,y-1,'#c9aa86');}
+    for(let x=12;x<=28;x+=4){const y=topY(x);if(y!=null){P(x,y+1,'#c9aa86');P(x+1,y+1,'#c9aa86');}}}
+  if(has('spikes')){for(let x=5;x<=35;x+=3){const y=topY(x);if(y==null)continue;P(x,y-1,'#d9b77a');P(x,y-2,'#d9b77a');P(x,y-3,'#6a4a2a');}
+    for(const [x,y] of [[5,14],[4,18],[35,14],[36,18]]){P(x,y,'#d9b77a');P(x+(x<20?-1:1),y,'#6a4a2a');}}
+  if(has('frost')){for(let i=0;i<14;i++){const x=Math.floor(hash(i,7)*40),y=Math.floor(hash(i,3)*30);if(M(x,y))P(x,y,'#ffffff');}
+    for(const x of [17,19,22,24])for(let k=0;k<2+(x%3);k++)P(x,21+k,'#dff4ff');}
+  if(has('salt')){for(let x=13;x<=27;x++){const y=topY(x);if(y!=null&&hash(x,1)<.6){P(x,y,'#ffffff');if(hash(x,2)<.4)P(x,y-1,'#f2f2f2');}}
+    for(let i=0;i<6;i++)P(28+i*1.5,15-i*.8+(i%2),'#ffffff');}
+  if(has('antlers')){const A=(sx)=>{const b=sx<0?11:29;for(let k=0;k<7;k++){P(b+sx*k*.6,4-k,'#e2cfa6');}P(b+sx*2,1,'#e2cfa6');P(b+sx*3,0,'#e2cfa6');P(b+sx*4,-1,'#e2cfa6');P(b+sx*4.2,-3,'#e2cfa6');P(b+sx*5,-2,'#e2cfa6');P(b+sx*1,-1,'#e2cfa6');P(b+sx*1,-2,'#e2cfa6');P(b+sx*2.4,-4,'#e2cfa6');};A(-1);A(1);}
+  if(has('plume')){for(let k=0;k<9;k++){const sp=k*.7;for(const s of [-1,0,1]){P(20+s*sp*.9,4-k,k%2?'#e0263a':'#ff5a5a');}}P(20,-5,'#ffd0d0');}
+  if(has('baleen')){for(let x=16;x<=24;x++){P(x,20,'#2a1a12');for(let y=21;y<=23;y++)P(x,y,x%2?'#efe2c4':'#7a5a3e');}P(16,24,'#2a1a12');P(24,24,'#2a1a12');}
+  if(has('tongue')){for(let k=0;k<9;k++)P(20+k*.9,21+k*.45,k<8?'#e87a8a':'#c85a6a');P(21,21,'#e87a8a');}
+  if(has('cactus')){for(let y=19;y<=23;y++)for(let x=17;x<=23;x++){if((x-20)**2/9+(y-21)**2/5<=1)P(x,y,x===17||y===19?'#86c05a':'#5f9a3a');}for(const [x,y] of [[16,20],[24,21],[19,18],[22,24],[24,19]])P(x,y,'#f4eccc');}
+  if(has('claw')){const cx=33,cy=23;for(let y=-4;y<=3;y++)for(let x=-3;x<=4;x++){const d=x*x/16+y*y/12;if(d<=1&&!(y<-1&&x>0&&x<3))P(cx+x,cy+y,y<0?'#e2683a':'#c24a26');}P(cx+3,cy-4,'#7a2a10');P(cx+4,cy-3,'#7a2a10');for(let x=27;x<31;x++)P(x,24,'#c24a26');}
+  if(has('legs')){for(const [x,y] of [[2,15],[1,20],[36,15],[37,20],[3,25],[35,25]]){const dir=x<20?-1:1;for(let k=0;k<3;k++){P(x+dir*k,y,'#5e4128');P(x+dir*k,y+1,'#5e4128');P(x+dir*k,y-1,'#2a1a12');P(x+dir*k,y+2,'#2a1a12');}P(x+dir*3,y,'#e2d9ca');P(x+dir*3,y+1,'#e2d9ca');}}
+  if(has('joey')){const jx=31,jy=25;for(let y=-2;y<=2;y++)for(let x=-3;x<=3;x++)if(x*x/9+y*y/5<=1)P(jx+x,jy+y,y<0?'#a17a53':'#86613f');P(jx+1,jy-1,'#0d0806');P(jx+3,jy,'#3f3230');P(jx-2,jy-3,'#d1b796');}
+  if(has('joeys')){for(const [jx,jy] of [[3,22],[37,22],[1,27],[39,27],[9,29],[31,29],[20,30],[14,31],[26,31]]){for(let y=-3;y<=2;y++)for(let x=-3;x<=3;x++){const d=x*x/9+y*y/6;if(d<=1)P(jx+x,jy+y,d>.75?'#2a1a12':y<0?'#b08a62':'#8f6a46');}P(jx+1,jy-1,'#0d0806');P(jx-1,jy-1,'#0d0806');P(jx,jy+1,'#3f3230');P(jx-2,jy-3,'#d1b796');P(jx+2,jy-3,'#d1b796');}}
+  if(has('eyes')){for(const [x,y] of [[16,8],[23,8],[19.5,6],[12,11],[27,11]]){P(x,y,'#0d0806');P(x+1,y,'#0d0806');P(x,y-1,'#ffffff');}}
+  if(has('halo')){for(let x=13;x<=27;x++){P(x,-3,'#ffe58a');}for(let x=14;x<=26;x++)P(x,-4,'#fff6c8');P(12,-2,'#ffe58a');P(28,-2,'#ffe58a');}
+  if(has('bigears')){for(const sx of [-1,1]){const ex=sx<0?5:35,ey=10;for(let y=-6;y<=6;y++)for(let x=-6;x<=6;x++){const d=x*x/36+y*y/40;if(d<=1){const edge=d>.78;P(ex+x,ey+y,edge?'#2a1a12':((x*3+y*7)%11===0?'#9a5a4a':(x*sx<0?'#c89a7a':'#b88a6a')));}}}}
+  if(has('bars')){for(let y=4;y<=11;y++)for(let x=8;x<=32;x++){if(!M(x,y)||R.img[y*R.W+x]==='o'||R.img[y*R.W+x]==='e'||R.img[y*R.W+x]==='w')continue;P(x,y,(y===7||y===10)?'#1a1614':'#f2efe6');}}
+  if(has('swim')){for(let y=21;y<=31;y++)for(let x=-6;x<=46;x++){c.fillStyle=y===21?'rgba(220,240,255,.85)':'rgba(40,110,170,.72)';if(y!==21||(x+Math.floor(y/2))%4)c.fillRect(left+x,top+y,1,1);}}
+  if(has('raft')){for(let x=-4;x<=44;x++){P(x,29,'#8a6a40');P(x,30,'#6a4a2a');if(x%7===0)P(x,29,'#a07a44');}}
+}
+const VAR_TINT={frozen:'frozen',abyss:'abyss',mange:'mange'};
+let ART_OFF=null;
+function cardArt(cv2,o){
+  if(!ART_OFF){ART_OFF=document.createElement('canvas');ART_OFF.width=SW;ART_OFF.height=SH;}
+  const c=ART_OFF.getContext('2d');c.clearRect(0,0,SW,SH);
+  c.drawImage(bgCanvas(o.bg),0,0);
+  if(o.cracks){c.fillStyle='#7a3e1c';const r=rng(9);for(let i=0;i<14;i++){let x=Math.floor(r()*SW),y=GY+1+Math.floor(r()*12);for(let k=0;k<6;k++){c.fillRect(x,y,1,1);x+=r()<.5?1:-1;y+=r()<.6?0:(r()<.5?1:-1);}}}
+  if(o.crowd){const r=rng(o.crowd);for(let i=0;i<o.crowd;i++){const x=Math.floor(r()*SW),y=GY+2+Math.floor(r()*9);c.fillStyle='#5e4128';c.fillRect(x,y,3,2);c.fillStyle='#86613f';c.fillRect(x,y,2,1);}}
+  if(o.spores){const r=rng(5);for(let i=0;i<o.spores;i++){const x=Math.floor(r()*(SW-6)),y=Math.floor(r()*(SH-6)),s=2+Math.floor(r()*3);c.fillStyle='#3a2a22';c.fillRect(x-1,y-1,s+2,s+2);c.fillStyle='#a17a53';c.fillRect(x,y,s,s);c.fillStyle='#c9a46a';c.fillRect(x,y,s,1);if(s>3){c.fillStyle='#0d0806';c.fillRect(x+1,y+2,1,1);c.fillRect(x+s-2,y+2,1,1);}}}
+  if(o.noWombat){finishArt(cv2,o);return;}
+  const vs=o.v||[];let tint=null;for(const k in VAR_TINT)if(vs.includes(k))tint=TINTS[VAR_TINT[k]];
+  const R2=renderFront(Object.assign({eye:'open'},o.pose||{}));
+  const left=56-FAX,top=GY-28+(o.dy||0);
+  // behind-layer variants
+  drawVariants(c,R2,left,top,vs.filter(v=>v==='aura'||v==='plush'||v==='shaggy'||v==='raft'));
+  blitTo(c,R2,left,top,tint);
+  drawVariants(c,R2,left,top,vs.filter(v=>!['aura','plush','shaggy','raft'].includes(v)));
+  if(vs.includes('mange')){for(let i=0;i<10;i++){const x=Math.floor(hash(i,11)*30)+5,y=Math.floor(hash(i,5)*18)+8;if(R2.img[y*R2.W+x]&&R2.img[y*R2.W+x]!=='o'){c.fillStyle='#d99a9a';c.fillRect(left+x,top+y,2,1);}}}
+  finishArt(cv2,o);
+}
+
+function finishArt(cv2,o){
+  const d=cv2.getContext('2d');d.imageSmoothingEnabled=false;d.clearRect(0,0,cv2.width,cv2.height);
+  if(o.noWombat||o.wide)d.drawImage(ART_OFF,0,0,SW,SH,0,0,cv2.width,cv2.height);
+  else d.drawImage(ART_OFF,28,26,56,36,0,0,cv2.width,cv2.height);
+}
+
+// ---------- sound (tiny synth, optional) ----------
+const SND={on:(()=>{try{return localStorage.getItem('kamiwombat_snd')!=='0';}catch(e){return true;}})(),a:null};
+function tone(f0,f1,dur,type,vol,delay){const a=SND.a,t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||.06,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02);}
+function snd(k){if(!SND.on)return;try{if(!SND.a)SND.a=new (window.AudioContext||window.webkitAudioContext)();if(SND.a.state==='suspended')SND.a.resume();
+  if(k==='tap')tone(480+Math.random()*160,240,.12,'sine',.05);
+  else if(k==='buy'){tone(523,0,.18,'triangle',.06);tone(659,0,.18,'triangle',.06,.09);tone(784,0,.3,'triangle',.06,.18);}
+  else if(k==='card')tone(392,523,.25,'sine',.04);
+  else if(k==='good'){[523,659,784,1047].forEach((f,i)=>tone(f,0,.25,'triangle',.05,i*.08));}
+  else if(k==='bad'){tone(220,110,.5,'triangle',.06);tone(233,116,.5,'sine',.03,.05);}
+  else if(k==='gold'){[784,988,1175,1568].forEach((f,i)=>tone(f,0,.18,'square',.025,i*.06));}
+}catch(e){}}
+function setSnd(on){SND.on=on;try{localStorage.setItem('kamiwombat_snd',on?'1':'0');}catch(e){}$('snd').textContent=on?'♪ ON':'♪ OFF';$('snd').classList.toggle('off',!on);if(on)snd('tap');}
+
+// ---------- story texts ----------
+const COL_TEXT={
+  aus:'奇跡を授かった子たちのうち何頭かが、バス海峡の向こう、赤い大地のふちに巣穴を掘った。生き残ったのは、乾きに強い子だけだった。',
+  coast:'海藻をくわえた数頭が、波打ち際に住みついた。くしゃみのたびに、白い塩が舞った。',
+  micro:'流木にしがみついた数頭が、珊瑚礁の島に流れ着いた。ひと月、草のことだけを考えていたという。',
+  seasia:'流木ごと打ち上げられた数頭が、蒸し暑い密林の縁に巣穴を掘った。',
+  easia:'密林を抜けた数頭が、竹のそよぐ温帯の森へ入っていった。',
+  tibet:'息の切れない数頭が、世界の屋根へ登っていった。祈りの旗が、風にはためいている。',
+  casia:'乾きに強い数頭が、果てしない草原と砂漠へ歩み出た。',
+  siberia:'雲のような下毛をまとった数頭が、針葉樹の森の奥へ消えていった。',
+  europe:'草原を西へ西へと進んだ数頭が、石造りの家の並ぶ土地にたどり着いた。',
+  polar:'凍える風にも平気な数頭が、氷の大地に足を踏み入れた。',
+  ocean:'浮島のような群れが、岸を離れて外洋へ流れ出した。',
+  deep:'水圧を気にしない数頭が、光の届かない底へ沈んでいった。',
+  mars:'干からびた数頭を乗せて、何かが赤い惑星へ降りた。水をかけると、彼らは目を覚ました。',
+};
+const ADAPT_TEXT={
+  aus:'世代を重ね、赤い大地の群れはすっかり乾きに慣れた。舌は長く、皮膚には溝が走り、トゲを噛む音が夜通し響く。',
+  coast:'浜の群れは、もう陸に戻らない。潮が引くと、塩をかぶった茶色い背中が岩場に並ぶ。漁師たちはそれを「浜の牛」と呼んだ。',
+  micro:'島のウォンバットは、ヤシの実を前足で割る。島の人々は、袋から子を出す茶色い漂着神を祀りはじめた。',
+  seasia:'密林の群れは、大きな耳をぱたぱたとあおぎながら、落ちたイチジクを食べている。鎧の毛皮に、トラの爪はもう通らない。',
+  easia:'竹林の奥に、無数の巣穴が開いた。生まれてひと月で親になる群れに、古い書物は新しい獣の名を書き加えた。',
+  tibet:'高原の群れの頭には、二本の黒い帯が走る。巡礼者たちは、山の上で祈るその姿に手を合わせた。',
+  casia:'草原の群れは、水を飲まない。隊商の人々は、オアシスより先にウォンバットの巣穴を探すようになった。',
+  siberia:'凍てつく森で、群れは凍ったまま冬を越す。春、雪どけとともに、森じゅうの巣穴から一斉に鼻先がのぞく。',
+  europe:'ヨーロッパの草原は、四角いフンで埋まった。鎧の毛皮のウォンバットは、古い紋章に描かれるようになった。',
+  polar:'極夜の氷原。凍りついたまま春を待つ群れの頭には、枝分かれした何かが生えている。オーロラの下、その数は数えきれない。',
+  ocean:'外洋に、茶色い浮島がいくつも漂う。近づくと、それは口を開け、海ごと何かをこしとった。船乗りたちは、あれに近づくなと言い伝えた。',
+  deep:'深淵の底。光なき世界で、それは静かに草を噛んでいる。草は、もうない。頭の赤い羽毛が揺れ、目が、ひとつ、またひとつ開く。',
+  mars:'オリンポス山のふもとに、四角いフンが積み上がっていく。淡い光をまとう群れが、薄い空を見上げて祈っている。',
+};
+const DRIFT_NOTE={
+  aus:'<p class="hint">タスマニアと本土を隔てるバス海峡は、幅およそ250km。嵐が多く、潮の流れも強い。現実のヒメウォンバットは、氷期に海面が下がって陸続きだったころに歩いて渡ったと考えられている。</p>',
+};
+const POP_MILESTONES=[
+  [2e6,'ウォンバットは200万頭になった。草原のあちこちで、誰かが空を見上げている。'],
+  [1e7,'1000万頭。祈りは、いまや群れの習慣になった。'],
+  [1e8,'1億頭。地図の上で、茶色の点が大陸を塗りつぶしていく。'],
+  [1e9,'10億頭。人類は、ウォンバットの数を数えるのをやめた。'],
+  [3e9,'30億頭。星の数ほど、とは、もはや比喩ではない。'],
+];
+
+// ---------- cards ----------
+function vOf(ids){const out=[];for(const id of ids){const v=TR[id]&&TR[id].v;if(!v)continue;out.push(v);if(v==='frozen')out.push('frost');if(v==='abyss')out.push('eyes');}return out;}
+function needOwned(h){return Object.keys(h.need).filter(k=>S.owned[k]).sort((a,b)=>pv(S,b)-pv(S,a));}
+function buildCard(q){
+  if(q.type==='intro')return {mk:'はじまり',title:'神に愛されたヒメウォンバット',art:{bg:'meadow',pose:{eye:'half'}},
+    body:'<p>タスマニアの草原で、一頭のヒメウォンバットが、草を食みながら空を見上げた。</p><p>祈っている……のかもしれない。</p><p>あなたは、その祈りを聞いた。ウォンバットの神として奇跡のアニマルパワーを授け、彼らの繁栄を見守ろう。授けた形質は、はじめは一部の子が持つだけ。世代を重ね、生き残った子たちを通して群れに広がっていく。</p><p class="hint">ウォンバットをなでると祈り（ウォン）が集まります。1秒で1年が過ぎます。</p>',btn:'祈りに応える'};
+  if(q.type==='trait'){const t=TR[q.id];return {mk:'奇跡',title:t.name,art:{bg:t.v==='swim'?'coast':t.v==='raft'?'ocean':HAB[view].bg,v:vOf([t.id]),crowd:t.v==='swim'||t.v==='raft'?0:4},
+    body:`<div class="src">元ネタ：${t.src}</div><p class="eff">${t.eff}</p><p class="flavor">${t.flavor}</p><p>${t.trivia}</p><p class="hint">この形質を持つのは、まだ群れの${Math.round(P0*100)}%だけ。世代を重ねて広がっていく。</p>`};}
+  if(q.type==='colonize'){const h=HAB[q.id];return {mk:'進出',title:h.name+'へ',art:{bg:h.bg,v:vOf(needOwned(h).slice(0,2)),crowd:2},
+    body:`<p>${COL_TEXT[h.id]}</p><p class="hint">いまの適合度 ${pct(suit(S,h))}。関係する形質が群れに広がるほど、住める数が増えていく。</p>`};}
+  if(q.type==='adapt'){const h=HAB[q.id];const extra=(h.id==='deep'||h.id==='mars')?['eyes']:[];return {mk:'適応',title:h.name+'に適応した',art:{bg:h.bg,v:vOf(Object.keys(h.need)).concat(extra),crowd:10},
+    body:`<p>${ADAPT_TEXT[h.id]}</p><p class="hint">${h.name}の上限が30%増えた。</p>`};}
+  if(q.type==='drift_ok'){const h=HAB[q.id];return {mk:'漂流',title:h.name+'に流れ着いた',art:{bg:'ocean',v:['raft','swim']},
+    body:`<p>嵐の夜、海辺の巣穴ごと沖へ流された一群がいた。彼らは泳ぎ、流木にしがみつき、何日も耐えた。</p><p>そしてある朝、${h.name}の浜に、ずぶぬれのウォンバットが打ち上げられた。</p>${DRIFT_NOTE[h.id]||''}<p class="hint">いまの適合度 ${pct(suit(S,h))}。関係する形質が群れに広がるほど、住める数が増えていく。</p>`};}
+  if(q.type==='drift_lost')return {mk:'漂流',title:'戻らなかった者たち',bad:true,art:{bg:'ocean',noWombat:true,wide:true},
+    body:'<p>嵐の夜、海辺のウォンバットたちが巣穴ごと沖へ流された。誰も、どこにも、たどり着かなかった。</p><p class="hint">何日も泳ぎ続ける力や、流木にしがみついて耐える力が群れに広がれば、いつか誰かが海の向こうにたどり着くかもしれない。</p>'};
+  if(q.type==='drift_noroot'){const h=HAB[q.id];return {mk:'漂流',title:'根付かなかった者たち',bad:true,art:{bg:h.bg,pose:{eye:'closed'}},
+    body:`<p>流された数頭が、${h.name}の浜にたどり着いた。けれど彼らは、その土地で生きる術を持たなかった。</p><p class="hint">${h.name}の適合度が20%に届いていない。その土地に合う形質を授けよう。</p>`};}
+  if(q.type==='mange')return {mk:'災い',title:'疥癬の流行',bad:true,art:{bg:'meadow',v:['mange'],pose:{eye:'closed'}},
+    body:'<p>タスマニア中部で疥癬が流行した。ダニがもたらす皮膚病で、毛が抜け、多くのウォンバットが倒れた。</p><p class="hint">実際に、この病気である地域の個体群が8割以上減った例がある。病気に強い形質が広まれば、流行は起きにくくなる。</p>'};
+  if(q.type==='drought')return {mk:'災い',title:'大干ばつ',bad:true,art:{bg:'desert',cracks:true,pose:{eye:'closed',br:-.6}},
+    body:'<p>オーストラリアを干ばつが襲い、本土の群れが大きく数を減らした。</p>'+(S.owned.kangaroo?'<p class="hint">袋の奥で待つ胚が、群れの回復を早めるだろう。</p>':'<p class="hint">干ばつのあとに数をすばやく戻せる仕組みがあれば……。</p>')};
+  if(q.type==='ending')return {mk:'エンディング',title:'深宇宙へ',art:{bg:'space',spores:28,noWombat:true},
+    body:`<p>知性と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table>`,btn:'見届けた'};
+}
+let cardOpen=false;
+function pushCard(q){S.queue.push(q);}
+function showNextCard(){
+  if(cardOpen||!S.queue.length)return;
+  const q=S.queue[0],c=buildCard(q);cardOpen=true;
+  $('card-mk').textContent=c.mk;$('card-title').textContent=c.title;$('card-body').innerHTML=c.body;
+  $('card').classList.toggle('bad',!!c.bad);
+  cardArt($('card-art'),c.art);
+  $('card-btn').textContent=c.btn||'確認した';
+  const btn=$('card-btn');btn.disabled=true;setTimeout(()=>{btn.disabled=false;},650);
+  $('card-restart').style.display=q.type==='ending'?'block':'none';
+  $('modal').classList.remove('on');void $('modal').offsetWidth;$('modal').classList.add('on');$('modal').scrollTop=0;
+  snd(c.bad?'bad':(q.type==='adapt'||q.type==='drift_ok'||q.type==='colonize'||q.type==='ending')?'good':q.type==='trait'?'buy':'card');
+  $('card-btn').onclick=()=>{if($('card-btn').disabled)return;S.queue.shift();$('modal').classList.remove('on');cardOpen=false;save();renderPanels();setTimeout(showNextCard,120);};
+}
+const paused=()=>cardOpen||S.queue.length>0;
+
+// ---------- events from simulation ----------
+function onEvent(k,a){
+  if(k==='colonize'){addLog(COL_TEXT[a.id],'story');pushCard({type:'colonize',id:a.id});view=a.id;rebuildCrowd();renderChips();}
+  else if(k==='drift_ok'){addLog(a.name+'の浜に、ずぶぬれのウォンバットが流れ着いた。','story');pushCard({type:'drift_ok',id:a.id});view=a.id;rebuildCrowd();renderChips();}
+  else if(k==='drift_lost'){S.events.lost=(S.events.lost||0)+1;if(S.events.lost===1)pushCard({type:'drift_lost'});if(S.events.lost<=3||S.events.lost%5===0)addLog('嵐の夜、沖へ流されたウォンバットたちがいた。誰も戻らなかった。','bad');}
+  else if(k==='drift_noroot'){S.events.noroot=(S.events.noroot||0)+1;if(S.events.noroot===1)pushCard({type:'drift_noroot',id:a.id});if(S.events.noroot<=3||S.events.noroot%5===0)addLog(a.name+'に流れ着いた数頭は、根付けなかった。','bad');}
+  else if(k==='adapt'){addLog(ADAPT_TEXT[a.id],'story');pushCard({type:'adapt',id:a.id});}
+  else if(k==='mange'){S.events.mange=(S.events.mange||0)+1;if(S.events.mange===1)pushCard({type:'mange'});addLog('タスマニアで疥癬が流行し、多くのウォンバットが倒れた。','bad');}
+  else if(k==='drought'){S.events.drought=(S.events.drought||0)+1;if(S.events.drought===1)pushCard({type:'drought'});
+    if(S.events.drought<=3||S.events.drought%10===0)addLog(a.resist?'干ばつ。だが袋の奥の胚が待っていた。群れはすぐに数を取り戻すだろう。':'オーストラリアを干ばつが襲い、本土の群れが大きく減った。','bad');}
+  else if(k==='ending'){addLog(`祈りの年${S.year}、ウォンバットは深宇宙へ旅立った。`,'story');pushCard({type:'ending',year:S.year,pop:totalPop(S)});}
+}
+
+// ---------- goal guidance ----------
+function goalText(){
+  if(S.done)return '旅は終わった。星々のどこかで、四角い芽胞が目覚めを待っている。';
+  if(!Object.keys(S.owned).length)return 'ウォンバットをなでて祈りを集め、最初の奇跡を授けよう。';
+  const front=HABITATS.filter(h=>!S.col[h.id]&&(!h.prev||S.col[h.prev]));
+  if(S.col.mars)return `深宇宙へ：芽胞 ${pct(pv(S,'spore'))}・知性 ${pct(pv(S,'human'))}・放射線耐性 ${pct(pv(S,'deinococcus'))} を群れに広げる`;
+  if(front.length){front.sort((a,b)=>suit(S,b)-suit(S,a));const h=front.find(x=>!x.gate||pv(S,x.gate)>=.5)||front[0];
+    if(h.sea)return `次の目標：${h.name}へ（海の向こう）　漂流で生き残る力 ${pct(driftSurv(S))}・適合度 ${pct(suit(S,h))}`;
+    if(h.gate&&pv(S,h.gate)<.5)return `次の目標：${h.name}へ　まず「${TR[h.gate].name}」を群れの半数に広げる`;
+    return `次の目標：${h.name}へ　適合度 ${pct(suit(S,h))} / 20%`;}
+  const ad=HABITATS.find(h=>S.col[h.id]&&!S.adapted[h.id]);
+  if(ad)return `次の目標：${ad.name}への適応　関係する形質をすべて群れに広げる`;
+  return '群れは繁栄している。';
+}
+// ---------- UI ----------
+let tab='miracle';
+function setTab(t){tab=t;window.scrollTo&&0;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));renderPanels();}
+function renderPanels(){({miracle:renderMiracles,bless:renderBlessings,hab:renderHabitats,dex:renderDex,log:renderLog})[tab]();updateButtons();}
+const bar=(p,cls)=>`<div class="bar ${cls||''}"><i style="width:${Math.min(100,p*100).toFixed(1)}%"></i></div>`;
+function traitHabs(id){return HABITATS.filter(h=>h.need[id]).map(h=>h.name).join('・');}
+function renderMiracles(){
+  const el=$('p-miracle');let h='';
+  const avail=TRAITS.filter(t=>traitAvailable(S,t)).sort((a,b)=>a.cost-b.cost);
+  if(!avail.length)h+='<p class="hint">いまは授けられる奇跡がありません。</p>';
+  for(const t of avail){const hb=traitHabs(t.id);
+    h+=`<button class="item" data-buy="${t.id}"><div class="row"><b>${t.name}</b><span class="cost">${fmt(t.cost)} ウォン</span></div><div class="src">元ネタ：${t.src}</div><div class="eff">${t.eff}</div>${hb?`<span class="tag">適合：${hb}</span>`:''}</button>`;}
+  const owned=TRAITS.filter(t=>S.owned[t.id]);
+  if(owned.length){h+=`<h3>授けた形質（群れでの保有率）</h3>`;
+    for(const t of owned)h+=`<div class="own"><div class="row"><span>${t.name}<small>（${t.src}）</small></span><span class="p">${pct(pv(S,t.id))}</span></div>${bar(pv(S,t.id),'g')}</div>`;}
+  el.innerHTML=h;el.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>doBuyTrait(b.dataset.buy));
+}
+function renderBlessings(){
+  const el=$('p-bless');let h='';
+  for(const b of BLESSINGS){const lv=blLevel(S,b,view);
+    h+=`<button class="item" data-bl="${b.id}"><div class="row"><b>${b.name} <small>Lv.${lv}${b.perHab?'（'+HAB[view].name+'）':''}</small></b><span class="cost">${fmt(blCost(b,lv))} ウォン</span></div><div class="eff">${b.desc}</div></button>`;}
+  h+='<p class="hint">草の恵みは、いま表示している生息地にだけ効きます。表示は「生息地」タブで切り替えられます。</p>';
+  el.innerHTML=h;el.querySelectorAll('[data-bl]').forEach(b=>b.onclick=()=>{if(buyBlessing(S,b.dataset.bl,view)){renderBlessings();updateHeader();save();}});
+}
+function renderHabitats(){
+  const el=$('p-hab');const st=stats(S);let h='';let shownLocked=false;
+  for(const hb of HABITATS){
+    const known=S.col[hb.id]||(hb.prev&&S.col[hb.prev]);
+    if(!known){if(!shownLocked){h+=`<div class="item locked"><b>？？？</b><div class="eff">まだ誰も知らない土地</div></div>`;shownLocked=true;}continue;}
+    const s=suit(S,hb);
+    const needs=Object.keys(hb.need).map(k=>`<div class="need"><span>${S.owned[k]?TR[k].src:'？？？'}</span>${bar(pv(S,k),'g')}</div>`).join('');
+    if(S.col[hb.id]){const N=S.pop[hb.id]||0,K=capOf(S,hb.id,st);
+      h+=`<button class="item ${view===hb.id?'sel':''}" data-view="${hb.id}"><div class="row"><b>${hb.name}${view===hb.id?' <small>表示中</small>':''}</b><span class="cost">${fmt(N)} 頭</span></div>${bar(N/Math.max(1,K))}<div class="eff">${S.adapted[hb.id]?'<span class="ok">適応済み</span>':'進出中'} ／ 適合度 ${pct(s)} ／ 上限 ${fmt(K)} 頭 ／ 面積のめやす 約${fmt(hb.area)} km²</div>${needs}</button>`;}
+    else h+=`<div class="item pending"><div class="row"><b>${hb.name}</b><span class="cost">未進出${hb.sea?'・海の向こう':''}</span></div><div class="eff">${hb.sea?`嵐で流された群れが生きてたどり着き、適合度が20%以上あれば住みつく。<br>漂流で生き残る力 ${pct(driftSurv(S))} ／ 適合度 ${pct(s)}`:`適合度 ${pct(s)}（20%で数頭が歩いて渡りはじめる${hb.gate?'。ヒトの知性が群れの半数に広がることも必要':''}）`}</div>${needs}</div>`;
+  }
+  h+=`<div class="statbox">一度に産む子 ${st.litter.toFixed(1)}頭 ／ 出産間隔 ${st.interval.toFixed(2)}年 ／ 成熟 ${st.maturity<1?Math.round(st.maturity*365)+'日':st.maturity.toFixed(2)+'年'}<br>世代の長さ 約${st.T.toFixed(1)}年 ／ 年あたり増加率 ${(st.r*100).toFixed(1)}%</div>`;
+  el.innerHTML=h;el.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;rebuildCrowd();renderHabitats();renderChips();});
+}
+function renderDex(){
+  const el=$('p-dex');const n=TRAITS.filter(t=>S.owned[t.id]).length;let h=`<p class="hint">奇跡形質図鑑 ${n} / ${TRAITS.length}</p>`;
+  for(const t of TRAITS){
+    if(S.owned[t.id])h+=`<details class="dex"><summary><b>${t.name}</b> <span class="src">${t.src}</span></summary><p>${t.trivia}</p><p class="flavor">${t.flavor}</p></details>`;
+    else h+=`<div class="dex locked">？？？</div>`;}
+  el.innerHTML=h;
+}
+function renderLog(){
+  const el=$('p-log');
+  let h=S.log.slice(0,80).map(l=>`<div class="log ${l.k}"><span class="yr">${l.y}年</span>${l.t}</div>`).join('');
+  h+=`<button class="reset" id="reset">最初からやり直す</button>`;
+  el.innerHTML=h;$('reset').onclick=()=>{if(confirmReset()){S=newState();view='tas';dispWon=null;rebuildCrowd();renderChips();pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');updateHeader();save();showNextCard();}};
+}
+let resetArm=0;function confirmReset(){const now=Date.now();if(now-resetArm<3000)return true;resetArm=now;$('reset').textContent='もう一度押すとリセット';return false;}
+let dispWon=null,dispPop=null;
+function updateHeader(){const st=stats(S);$('yr').textContent=S.year;if(dispWon===null){dispWon=S.won;dispPop=totalPop(S);}
+  const w=wonPerYear(S,st);$('wps').textContent=w<10?w.toFixed(1):fmt(w);$('paused').style.display=paused()?'inline':'none';}
+function renderChips(){
+  const el=$('chips');let h='';for(const hb of HABITATS)if(S.col[hb.id])h+=`<button class="${view===hb.id?'on':''}" data-chip="${hb.id}">${hb.name}</button>`;
+  el.innerHTML=h;el.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{view=b.dataset.chip;rebuildCrowd();setState('idle');renderChips();if(tab==='bless'||tab==='hab')renderPanels();});
+  const on=el.querySelector('.on');if(on)on.scrollIntoView({block:'nearest',inline:'center'});
+}
+let seenLog=0,seenDex=0;
+function updateBadges(){
+  const afford=TRAITS.some(t=>traitAvailable(S,t)&&S.won>=t.cost);
+  document.querySelector('[data-t="miracle"]').classList.toggle('dot',afford&&tab!=='miracle');
+  if(tab==='log')seenLog=S.log.length?S.log[0].y+':'+S.log[0].t:0;
+  document.querySelector('[data-t="log"]').classList.toggle('dot',tab!=='log'&&S.log.length&&(S.log[0].y+':'+S.log[0].t)!==seenLog);
+  const nd=TRAITS.filter(t=>S.owned[t.id]).length;if(tab==='dex')seenDex=nd;
+  document.querySelector('[data-t="dex"]').classList.toggle('dot',tab!=='dex'&&nd>seenDex);
+  $('goal').textContent=goalText();
+}
+function updateButtons(){
+  document.querySelectorAll('[data-buy]').forEach(b=>{const ok=S.won>=TR[b.dataset.buy].cost;b.disabled=!ok;b.classList.toggle('ready',ok);});
+  document.querySelectorAll('[data-bl]').forEach(b=>{const bl=BLESSINGS.find(x=>x.id===b.dataset.bl);b.disabled=S.won<blCost(bl,blLevel(S,bl,view));});
+}
+function doBuyTrait(id){if(!buyTrait(S,id))return;addLog(TR[id].flavor,'miracle');pushCard({type:'trait',id});renderPanels();updateHeader();save();showNextCard();}
+
+// ---------- tap / pray ----------
+function floatText(e,txt,cls){const f=document.createElement('div');f.className='float '+(cls||'');f.textContent=txt;
+  const wr=$('stage').getBoundingClientRect();f.style.left=(e.clientX-wr.left)+'px';f.style.top=(e.clientY-wr.top-10)+'px';$('stage').appendChild(f);setTimeout(()=>f.remove(),1200);}
+const GOLD_LINES=['空から、金色に輝く四角いフンが降ってきた。','黄金のフン。神の御業か、ただの光の加減か。','草むらで、四角いものが金色に光っている。拾うと、祈りが満ちた。'];
+function tap(e){
+  if(S.done||paused())return;
+  const r=cv.getBoundingClientRect(),lx=(e.clientX-r.left)/r.width*SW,ly=(e.clientY-r.top)/r.height*SH;
+  if(gold&&Math.abs(lx-gold.x)<8&&Math.abs(ly-gold.y+3)<9){const st=stats(S);const v=Math.max(80,wonPerYear(S,st)*6+tapValue(S,st)*20);S.won+=v;S.totalWon+=v;gold=null;
+    for(let i=0;i<14;i++)addP({k:'spark',x:lx+(R()-.5)*10,y:ly+(R()-.5)*8,vx:(R()-.5)*20,vy:-10-R()*10,life:.8});
+    floatText(e,'黄金のフン！ +'+fmt(v),'gold');snd('gold');S.events.gold=(S.events.gold||0)+1;if(S.events.gold<=3||S.events.gold%5===0)addLog(GOLD_LINES[Math.floor(R()*GOLD_LINES.length)],'miracle');updateHeader();updateButtons();return;}
+  const st=stats(S);const v=tapValue(S,st);snd('tap');S.won+=v;S.totalWon+=v;S.taps++;
+  if(W.state!=='pet')setState('pet');else W.t=Math.min(W.t,.3);
+  floatText(e,'+'+fmt(v));updateHeader();updateButtons();
+}
+cv.addEventListener('pointerdown',tap);
+
+// ---------- main loop ----------
+let acc=0,last=performance.now(),uiAcc=0;
+function yearTick(){
+  const before=totalPop(S);const pb={...S.prev};
+  stepYear(S,R,onEvent);
+  for(const id in S.prev){const t=TR[id];if(pb[id]<.5&&S.prev[id]>=.5)addLog(`「${t.name}」の子が、群れの半数を超えた。`,'miracle');else if(pb[id]<.95&&S.prev[id]>=.95)addLog(`「${t.name}」は、ほぼすべてのウォンバットに受け継がれた。`,'miracle');}
+  const after=totalPop(S);
+  for(const [m,t] of POP_MILESTONES)if(before<m&&after>=m)addLog(t,'story');
+  if(S.year%5===0)save();
+  updateHeader();
+  if(tab==='hab'||tab==='miracle')renderPanels();
+  showNextCard();
+}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(!paused()&&!S.done&&!document.hidden){acc+=dt;while(acc>=1&&!paused()){acc-=1;yearTick();}}else acc=0;
+  updateScene(dt);draw();
+  if(dispWon!==null){dispWon+=(S.won-dispWon)*Math.min(1,dt*8);if(Math.abs(S.won-dispWon)<1)dispWon=S.won;dispPop+=(totalPop(S)-dispPop)*Math.min(1,dt*5);$('won').textContent=fmt(dispWon);$('pop').textContent=fmt(dispPop);}
+  uiAcc+=dt;if(uiAcc>.25){uiAcc=0;updateButtons();updateHeader();updateBadges();}
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();last=performance.now();});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+
+// boot
+view=latestHab();rebuildCrowd();setState('idle');
+if(S.year===0&&!S.log.length){addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');pushCard({type:'intro'});}
+else if(S.log.length)$('msg').textContent=S.log[0].t;
+setTab('miracle');updateHeader();renderChips();updateBadges();showNextCard();
+$('snd').onclick=()=>setSnd(!SND.on);setSnd(SND.on);
+$('card-restart').onclick=()=>{S=newState();view='tas';dispWon=null;rebuildCrowd();$('modal').classList.remove('on');cardOpen=false;pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');renderChips();updateHeader();save();setTimeout(showNextCard,150);};
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
