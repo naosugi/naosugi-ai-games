@@ -119,11 +119,12 @@ header .won{margin-top:0}
 #goal-restart{display:none;flex:0 0 auto;margin-right:10px;font-size:11px;padding:5px 9px;border-radius:12px;border:1px solid #c99a5b;background:#6e5241;color:#fff;font-family:inherit}
 body.done #goal-restart{display:block}
 body.done .tabs .act button[data-t="miracle"],body.done .tabs .act button[data-t="bless"]{display:none}
+.tb-r{display:flex;gap:6px}#top-restart.arm{background:#8a3a2a;color:#fff;border-color:#e8907a}
 </style>
 </head>
 <body>
 <div id="wrap">
-<div class="topbar"><a class="back" href="../../samples/">← ゲーム一覧</a><button id="snd" class="snd">♪ ON</button></div>
+<div class="topbar"><a class="back" href="../../samples/">← ゲーム一覧</a><span class="tb-r"><button id="top-restart" class="snd">最初から</button><button id="snd" class="snd">♪ ON</button></span></div>
 <header>
  <div>祈りの年<b><span id="yr">0</span>年 <span id="paused" class="pz">停止中</span></b></div>
  <div>生息数<b><span id="pop">0</span>頭</b></div>
@@ -1207,7 +1208,11 @@ if(S.year===0&&!S.log.length){addLog('タスマニアの草原で、一頭のヒ
 else if(S.log.length)$('msg').textContent=S.log[0].t;
 setTab('miracle');updateHeader();renderChips();updateBadges();showNextCard();
 $('snd').onclick=()=>setSnd(!SND.on);setSnd(SND.on);
-$('card-restart').onclick=restartGame;$('goal-restart').onclick=restartGame;updateDoneUI();if(S.done&&!S.queue.length&&tab!=='dex'&&tab!=='log'){setTab('dex');}
+$('card-restart').onclick=restartGame;
+let topArm=0;$('top-restart').onclick=()=>{const b=$('top-restart'),now=Date.now();
+  if(S.year===0&&!Object.keys(S.owned).length)return;
+  if(now-topArm<3000){topArm=0;b.classList.remove('arm');b.textContent='最初から';restartGame();return;}
+  topArm=now;b.classList.add('arm');b.textContent='もう一度押すと最初から';setTimeout(()=>{if(Date.now()-topArm>=2900){b.classList.remove('arm');b.textContent='最初から';}},3000);};$('goal-restart').onclick=restartGame;updateDoneUI();if(S.done&&!S.queue.length&&tab!=='dex'&&tab!=='log'){setTab('dex');}
 requestAnimationFrame(loop);
 
 </script>
