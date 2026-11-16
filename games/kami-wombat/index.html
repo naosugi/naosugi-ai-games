@@ -316,16 +316,23 @@ function stats(S){
   const litter=1+17*pT, interval=2-(2-2/1.5)*pK, maturity=2-(2-38/365)*pV;
   const dens=(1+.4*pv(S,'devil'))*(1+.25*pv(S,'armadillo'));
   let n=0;for(const t of TRAITS)if(S.owned[t.id])n++;
-  const piety=(1+S.bl.pray)*Math.pow(1.3,n)*(1+3*pv(S,'human'));
+  const piety=(1+S.bl.pray)*Math.pow(1.3,n)*(1+3*pv(S,'human'))*(S.ended?Math.pow(EX_EFF,exLv(S,'pray')):1);
   const b=0.5*litter/interval, T=maturity+1;
   const r=Math.min(1.6,Math.log(1+b)/T);
   return {litter,interval,maturity,dens,piety,r,T,click:1+S.bl.hand};
 }
-function capOf(S,id,st){const h=HAB[id];const s=suit(S,h);return h.area*h.dens*st.dens*(1+.06*(S.grass[id]||0))*s*(S.adapted[id]&&id!=='tas'?1.3:1);}
+function capOf(S,id,st){const h=HAB[id];const s=suit(S,h);return h.area*h.dens*st.dens*(1+.06*Math.min(S.grass[id]||0,endLv(S,'grass',id)))*(S.ended?Math.pow(EX_EFF,exLv(S,'grass',id)):1)*s*(S.adapted[id]&&id!=='tas'?1.3:1);}
 function totalPop(S){let s=0;for(const k in S.pop)s+=S.pop[k];return s;}
 function wonPerYear(S,st){return totalPop(S)*BASE_PIETY*st.piety;}
 function tapValue(S,st){return 2*st.click+0.01*wonPerYear(S,st);}
 function blCost(b,lv){return Math.ceil(b.base*Math.pow(b.grow,lv));}
+let EX_EFF=1.04,EX_GROW=1.15;
+// ----- エンドレス：クリア後の加護は上限なし（効果は掛け算、値段の伸びはゆるやか）-----
+function rawLv(S,id,hab){return id==='grass'?(S.grass[hab]||0):S.bl[id];}
+function endLv(S,id,hab){if(!S.ended||!S.blEnd)return Infinity;return id==='grass'?((S.blEnd.grass||{})[hab]||0):S.blEnd[id];}
+function exLv(S,id,hab){return S.ended?Math.max(0,rawLv(S,id,hab)-endLv(S,id,hab)):0;}
+function startEndless(S){S.ended=true;S.done=false;S.blEnd={pray:S.bl.pray,hand:S.bl.hand,grass:Object.assign({},S.grass)};}
+function blCostS(S,b,hab){const lv=rawLv(S,b.id,hab);if(S.ended&&b.id!=='hand'){const e=endLv(S,b.id,hab);return Math.ceil(blCost(b,e)*Math.pow(EX_GROW,lv-e));}return blCost(b,lv);}
 function traitAvailable(S,t){if(S.owned[t.id])return false;if(t.show==='*')return true;if(t.show[0]==='#')return !!S.owned[t.show.slice(1)];return !!S.col[t.show];}
 function canColonize(S,h){
   if(S.col[h.id]||h.sea||h.space)return false;if(h.prev&&!S.col[h.prev])return false;
@@ -344,7 +351,7 @@ function devRate(S,which){return which==='rk'?pv(S,'human')/60:(0.5+0.5*pv(S,'de
 function investCost(S,st){return Math.max(1e6,Math.ceil(wonPerYear(S,st)*3));}
 function canInvest(S,which){prog(S);const P=S[which];return P.phase==='dev';}
 function invest(S,which){prog(S);const st=stats(S),c=investCost(S,st),P=S[which];if(P.phase!=='dev'||S.won<c)return false;S.won-=c;P.p=Math.min(1,P.p+0.06);return true;}
-function readyToDepart(S){prog(S);return !S.done&&S.sp.phase==='out'&&pv(S,'spore')>=.9&&pv(S,'human')>=.9&&pv(S,'deinococcus')>=.9;}
+function readyToDepart(S){prog(S);return !S.done&&!S.ended&&S.sp.phase==='out'&&pv(S,'spore')>=.9&&pv(S,'human')>=.9&&pv(S,'deinococcus')>=.9;}
 function stepPrograms(S,rng,ev){
   prog(S);const R=S.rk,P=S.sp;
   // ロケット
@@ -406,12 +413,12 @@ function stepYear(S,rng,ev){
 }
 function buyTrait(S,id){const t=TR[id];if(!traitAvailable(S,t)||S.won<t.cost)return false;S.won-=t.cost;S.owned[id]=true;S.prev[id]=P0;return true;}
 function buyBlessing(S,id,hab){
-  const b=BLESSINGS.find(x=>x.id===id);const lv=b.perHab?(S.grass[hab]||0):S.bl[id];const c=blCost(b,lv);
+  const b=BLESSINGS.find(x=>x.id===id);const lv=b.perHab?(S.grass[hab]||0):S.bl[id];const c=blCostS(S,b,hab);if(!isFinite(c))return false;
   if(S.won<c)return false;S.won-=c;if(b.perHab)S.grass[hab]=lv+1;else S.bl[id]++;return true;
 }
 function blLevel(S,b,hab){return b.perHab?(S.grass[hab]||0):S.bl[b.id];}
 
-if(typeof module!=='undefined')module.exports={prog,invest,investCost,isWindow,driftSurv,HABITATS,HAB,TRAITS,TR,BLESSINGS,newState,pv,suit,stats,capOf,totalPop,wonPerYear,tapValue,blCost,traitAvailable,canColonize,stepYear,buyTrait,buyBlessing,blLevel};
+if(typeof module!=='undefined')module.exports={setEx:(a,b)=>{EX_EFF=a;EX_GROW=b;},startEndless,blCostS,exLv,prog,invest,investCost,isWindow,driftSurv,HABITATS,HAB,TRAITS,TR,BLESSINGS,newState,pv,suit,stats,capOf,totalPop,wonPerYear,tapValue,blCost,traitAvailable,canColonize,stepYear,buyTrait,buyBlessing,blLevel};
 
 const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
 
@@ -602,8 +609,10 @@ const SW=112,SH=72,GY=58;
 const SAVE_KEY='kamiwombat_save_v3';
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 const R=rng(Date.now()&0xffff);
-function fmt(n){n=Math.floor(n);if(n<10000)return n.toLocaleString('ja-JP');
-  for(const [v,s] of [[1e16,'京'],[1e12,'兆'],[1e8,'億'],[1e4,'万']])if(n>=v){const x=n/v;return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x).toLocaleString('ja-JP'))+s;}}
+const UNITS=[[1e68,'無量大数'],[1e64,'不可思議'],[1e60,'那由他'],[1e56,'阿僧祇'],[1e52,'恒河沙'],[1e48,'極'],[1e44,'載'],[1e40,'正'],[1e36,'澗'],[1e32,'溝'],[1e28,'穣'],[1e24,'𥝱'],[1e20,'垓'],[1e16,'京'],[1e12,'兆'],[1e8,'億'],[1e4,'万']];
+function fmt(n){if(!isFinite(n))return '∞';n=Math.floor(n);if(n<10000)return n.toLocaleString('ja-JP');
+  if(n>=1e72){const e=Math.floor(Math.log10(n));return (n/Math.pow(10,e)).toFixed(2)+'×10^'+e;}
+  for(const [v,s] of UNITS)if(n>=v){const x=n/v;return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x).toLocaleString('ja-JP'))+s;}}
 const pct=p=>(p*100<10?(p*100).toFixed(1):Math.round(p*100))+'%';
 const $=id=>document.getElementById(id);
 let S=load()||newState();
@@ -960,6 +969,16 @@ const POP_MILESTONES=[
   [1e8,'1億頭。地図の上で、茶色の点が大陸を塗りつぶしていく。'],
   [1e9,'10億頭。人類は、ウォンバットの数を数えるのをやめた。'],
   [3e9,'30億頭。星の数ほど、とは、もはや比喩ではない。'],
+  [1e10,'100億頭。夜になると、地球のどこにいても草を噛む音が聞こえる。'],
+  [3e10,'300億頭。宇宙から見た夜の地球は、茶色くうごめいている。'],
+  [1.17e11,'1170億頭。これまで地球に生まれたヒトの総数（推定約1170億人）を超えた。'],
+  [4e11,'4000億頭。天の川銀河の星の数（推定1000億〜4000億個）をも超えた。'],
+  [1e12,'1兆頭。数えるのをやめたのではない。数という考えが、追いつかなくなった。'],
+  [1e13,'10兆頭。月の模様が、ウォンバットの横顔に見えるという者が増えた。'],
+  [1e14,'100兆頭。四角いフンが、新しい地層をつくりはじめた。'],
+  [1e16,'1京頭。祈りの声は、もはや一つの音として聞こえる。低く、やさしく、終わりなく。'],
+  [1e20,'1垓頭。神であるあなたにも、すべての顔は見えなくなった。それでも、一頭一頭が草を噛んでいる。'],
+  [1e24,'1𥝱頭。観測できる宇宙の星の数（推定）に並んだ。'],
 ];
 
 // ---------- cards ----------
@@ -1003,7 +1022,7 @@ function buildCard(q){
   if(q.type==='drought')return {mk:'災い',title:'大干ばつ',bad:true,art:{bg:'desert',cracks:true,pose:{eye:'closed',br:-.6}},
     body:'<p>オーストラリアを干ばつが襲い、本土の群れが大きく数を減らした。</p>'+(S.owned.kangaroo?'<p class="hint">袋の奥で待つ胚が、群れの回復を早めるだろう。</p>':'<p class="hint">干ばつのあとに数をすばやく戻せる仕組みがあれば……。</p>')};
   if(q.type==='ending')return {mk:'エンディング',title:'深宇宙へ',art:{bg:'space',spores:28,noWombat:true},
-    body:`<p>知性と好奇心と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table><p class="hint">「図鑑モード」では、ウォンバットたちが暮らした土地を眺めたり、図鑑や年代記を読み返したりできます。</p>`,btn:'図鑑モードで見る'};
+    body:`<p>知性と好奇心と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table><p class="hint">「このまま続ける」を選ぶと、エンドレスモードになります。群れはそのまま暮らし続け、加護は上限なく授けられます。図鑑や各地の様子もいつでも見られます。</p>`,btn:'このまま続ける'};
 }
 let cardOpen=false;
 function pushCard(q){S.queue.push(q);}
@@ -1018,7 +1037,7 @@ function showNextCard(){
   $('card-restart').style.display=q.type==='ending'?'block':'none';
   $('modal').classList.remove('on');void $('modal').offsetWidth;$('modal').classList.add('on');$('modal').scrollTop=0;
   snd(c.bad?'bad':(q.type==='adapt'||q.type==='drift_ok'||q.type==='colonize'||q.type==='ending')?'good':q.type==='trait'?'buy':'card');
-  $('card-btn').onclick=()=>{if($('card-btn').disabled)return;const wasEnd=S.queue[0]&&S.queue[0].type==='ending';S.queue.shift();if(wasEnd)setTimeout(enterDexMode,0);$('modal').classList.remove('on');cardOpen=false;save();renderPanels();setTimeout(showNextCard,120);};
+  $('card-btn').onclick=()=>{if($('card-btn').disabled)return;const wasEnd=S.queue[0]&&S.queue[0].type==='ending';S.queue.shift();if(wasEnd)setTimeout(enterEndless,0);$('modal').classList.remove('on');cardOpen=false;save();renderPanels();setTimeout(showNextCard,120);};
 }
 const paused=()=>cardOpen||S.queue.length>0;
 
@@ -1048,7 +1067,8 @@ function onEvent(k,a){
 // ---------- goal guidance ----------
 function nextWin(){for(let k=1;k<5;k++){const y=S.year+k;if(Math.floor(y*12/26)!==Math.floor((y-1)*12/26))return k;}return 3;}
 function goalText(){
-  if(S.done)return '図鑑モード：土地を選んで、ウォンバットたちの暮らしを眺められます。';
+  if(S.done)return '旅立ちを見届けよう。';
+  if(S.ended){const tp=totalPop(S),m=POP_MILESTONES.find(x=>x[0]>tp);return 'エンドレス：加護を授けて群れを増やそう'+(m?`（次の節目 ${fmt(m[0])}頭）`:'');}
   if(!Object.keys(S.owned).length)return 'ウォンバットをなでて祈りを集め、最初の奇跡を授けよう。';
   const front=HABITATS.filter(h=>!S.col[h.id]&&!h.space&&(!h.prev||S.col[h.prev]));
   prog(S);const rk=S.rk,sp=S.sp;
@@ -1097,8 +1117,9 @@ function renderMiracles(){
 }
 function renderBlessings(){
   const el=$('p-bless');let h='';
-  for(const b of BLESSINGS){const lv=blLevel(S,b,view);
-    h+=`<button class="item" data-bl="${b.id}"><div class="row"><b>${b.name} <small>Lv.${lv}${b.perHab?'（'+HAB[view].name+'）':''}</small></b><span class="cost">${fmt(blCost(b,lv))} ウォン</span></div><div class="eff">${b.desc}</div></button>`;}
+  if(view==='space'){h+='<p class="hint">草の恵みは土地ごとに授けます。下の土地のボタンで、地上の生息地を選んでください。</p>';}
+  for(const b of BLESSINGS){if(b.perHab&&view==='space')continue;const lv=blLevel(S,b,view);const exd=S.ended&&b.id!=='hand'?(b.id==='pray'?'祈り×1.04（エンドレス・上限なし）':'表示中の生息地だけ、密度×1.04（エンドレス・上限なし）'):b.desc;
+    h+=`<button class="item" data-bl="${b.id}"><div class="row"><b>${b.name} <small>Lv.${lv}${b.perHab?'（'+HAB[view].name+'）':''}</small></b><span class="cost">${fmt(blCostS(S,b,view))} ウォン</span></div><div class="eff">${exd}</div></button>`;}
   h+='<p class="hint">草の恵みは、いま表示している生息地にだけ効きます。表示は「生息地」タブで切り替えられます。</p>';
   el.innerHTML=h;el.querySelectorAll('[data-bl]').forEach(b=>b.onclick=()=>{if(buyBlessing(S,b.dataset.bl,view)){renderBlessings();updateHeader();save();}});
 }
@@ -1134,7 +1155,7 @@ let dispWon=null,dispPop=null;
 function updateHeader(){const st=stats(S);$('yr').textContent=S.year;if(dispWon===null){dispWon=S.won;dispPop=totalPop(S);}
   const w=wonPerYear(S,st);$('wps').textContent=w<10?w.toFixed(1):fmt(w);$('paused').style.display=paused()?'inline':'none';}
 function renderChips(){
-  const el=$('chips');let h=S.done?`<button class="${view==='space'?'on':''}" data-chip="space">旅立ち（深宇宙）</button>`:'';for(const hb of HABITATS)if(S.col[hb.id])h+=`<button class="${view===hb.id?'on':''}" data-chip="${hb.id}">${hb.name}</button>`;
+  const el=$('chips');let h=(S.done||S.ended)?`<button class="${view==='space'?'on':''}" data-chip="space">旅立ち（深宇宙）</button>`:'';for(const hb of HABITATS)if(S.col[hb.id])h+=`<button class="${view===hb.id?'on':''}" data-chip="${hb.id}">${hb.name}</button>`;
   el.innerHTML=h;el.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{view=b.dataset.chip;rebuildCrowd();setState('idle');renderChips();if(tab==='bless'||tab==='hab')renderPanels();});
   const on=el.querySelector('.on');if(on)on.scrollIntoView({block:'nearest',inline:'center'});
 }
@@ -1142,7 +1163,7 @@ let seenLog=0,seenDex=0;
 function updateBadges(){
   const afford=TRAITS.some(t=>traitAvailable(S,t)&&S.won>=t.cost);
   document.querySelector('[data-t="miracle"]').classList.toggle('dot',afford&&tab!=='miracle');
-  const affordBl=BLESSINGS.some(b=>S.won>=blCost(b,blLevel(S,b,view)));
+  const affordBl=BLESSINGS.some(b=>!(b.perHab&&view==='space')&&S.won>=blCostS(S,b,view));
   document.querySelector('[data-t="bless"]').classList.toggle('dot',affordBl&&tab!=='bless');
   if(tab==='log')seenLog=S.log.length?S.log[0].y+':'+S.log[0].t:0;
   document.querySelector('[data-t="log"]').classList.toggle('dot',tab!=='log'&&S.log.length&&(S.log[0].y+':'+S.log[0].t)!==seenLog);
@@ -1153,13 +1174,13 @@ function updateBadges(){
 function updateButtons(){
   document.querySelectorAll('[data-buy]').forEach(b=>{const ok=S.won>=TR[b.dataset.buy].cost;b.disabled=!ok;b.classList.toggle('ready',ok);});
   document.querySelectorAll('[data-inv]').forEach(b=>{b.disabled=S.won<investCost(S,stats(S));});
-  document.querySelectorAll('[data-bl]').forEach(b=>{const bl=BLESSINGS.find(x=>x.id===b.dataset.bl);b.disabled=S.won<blCost(bl,blLevel(S,bl,view));});
+  document.querySelectorAll('[data-bl]').forEach(b=>{const bl=BLESSINGS.find(x=>x.id===b.dataset.bl);b.disabled=S.won<blCostS(S,bl,view);});
 }
 function doBuyTrait(id){if(!buyTrait(S,id))return;addLog(TR[id].flavor,'miracle');pushCard({type:'trait',id});renderPanels();updateHeader();save();showNextCard();}
 
 // ---------- ending: dex mode / restart ----------
 function updateDoneUI(){document.body.classList.toggle('done',!!S.done);}
-function enterDexMode(){view='space';rebuildCrowd();setState('idle');updateDoneUI();setTab('dex');renderChips();updateBadges();}
+function enterEndless(){startEndless(S);view='space';rebuildCrowd();setState('idle');updateDoneUI();addLog('群れは、そのまま暮らし続ける。エンドレスモード。','story');setTab('bless');renderChips();updateBadges();save();}
 function restartGame(){S=newState();view='tas';dispWon=null;rebuildCrowd();$('modal').classList.remove('on');cardOpen=false;updateDoneUI();pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');renderChips();updateHeader();save();setTimeout(showNextCard,150);}
 // ---------- tap / pray ----------
 function floatText(e,txt,cls){const f=document.createElement('div');f.className='float '+(cls||'');f.textContent=txt;
@@ -1203,6 +1224,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)save();last
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 
 // boot
+if(S.done&&!S.ended&&!(S.queue||[]).some(q=>q.type==='ending')){startEndless(S);}
 view=latestHab();rebuildCrowd();setState('idle');
 if(S.year===0&&!S.log.length){addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');pushCard({type:'intro'});}
 else if(S.log.length)$('msg').textContent=S.log[0].t;
