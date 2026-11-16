@@ -115,6 +115,10 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 header .won{margin-top:0}
 #modal{padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
 .prog{background:#2b241f;border:1px solid #5e4128;border-radius:8px;padding:6px 10px 2px;margin-bottom:10px}.prog h3{margin:4px 0 6px}.prog .row{font-size:12px}.prog .p{color:#9fd08a}.item.invest{margin-top:8px}
+#goalbar{display:flex;align-items:center;gap:8px;background:#33291f;border-top:1px solid #3a2f28}#goalbar #goal{flex:1;border:none}
+#goal-restart{display:none;flex:0 0 auto;margin-right:10px;font-size:11px;padding:5px 9px;border-radius:12px;border:1px solid #c99a5b;background:#6e5241;color:#fff;font-family:inherit}
+body.done #goal-restart{display:block}
+body.done .tabs .act button[data-t="miracle"],body.done .tabs .act button[data-t="bless"]{display:none}
 </style>
 </head>
 <body>
@@ -127,7 +131,7 @@ header .won{margin-top:0}
 </header>
 <div id="stage"><canvas id="c" width="112" height="72"></canvas></div>
 <div id="chips"></div>
-<div id="goal"></div>
+<div id="goalbar"><div id="goal"></div><button id="goal-restart">もう一度、最初から</button></div>
 <div id="msg"></div>
 <nav class="tabs">
  <div class="grp act"><button data-t="miracle" class="on">奇跡</button><button data-t="bless">加護</button><button data-t="hab">生息地</button></div>
@@ -710,7 +714,7 @@ const FOODS={
 // ---------- scene state ----------
 let view='tas'; // displayed habitat
 function latestHab(){let l='tas';for(const h of HABITATS)if(S.col[h.id])l=h.id;return l;}
-function curFood(h){if(h==='aus')return S.owned.numbat?'termite':S.owned.landiguana?'cactus':'grass';return HAB[h].food;}
+function curFood(h){if(!HAB[h])return 'grass';if(h==='aus')return S.owned.numbat?'termite':S.owned.landiguana?'cactus':'grass';return HAB[h].food;}
 const W={x:56,dir:1,state:'idle',t:0,dur:3,target:56,blink:0,blinkCD:2,ear:0,earCD:3,emit:0,pooped:false,food:null};
 let parts=[],poops=[],food=null,crowd=[],gold=null,goldCD=40;
 function addP(o){parts.push(Object.assign({t:0},o));}
@@ -757,7 +761,7 @@ function updateScene(dt){
   parts=parts.filter(p=>p.t<p.life&&!((p.k==='dirt'||p.k==='crumb')&&p.y>GY+1));
   for(const q of poops){q.t+=dt;if(q.y<GY-3){q.vy+=60*dt;q.y=Math.min(GY-3,q.y+q.vy*dt);}}
   poops=poops.filter(q=>q.t<10);
-  if(!S.done)for(const c of crowd){c.t+=dt;if(c.wait>0){c.wait-=dt;}else{c.x+=c.v*dt;if(R()<dt*.15){c.wait=1+R()*3;}}if(c.x<-6)c.x=SW+5;if(c.x>SW+6)c.x=-5;}
+  for(const c of crowd){c.t+=dt;if(c.wait>0){c.wait-=dt;}else{c.x+=c.v*dt;if(R()<dt*.15){c.wait=1+R()*3;}}if(c.x<-6)c.x=SW+5;if(c.x>SW+6)c.x=-5;}
   if(gold){gold.t+=dt;if(R()<dt*6)addP({k:'spark',x:gold.x+(R()-.5)*6,y:gold.y-2+(R()-.5)*6,vx:0,vy:-6,life:.5});if(gold.t>12)gold=null;}
   else if(!S.done&&typeof paused==='function'&&!paused()&&S.year>5){goldCD-=dt;if(goldCD<=0){goldCD=45+R()*45;gold={x:10+R()*(SW-20),y:GY+5+R()*6,t:0};}}
   ambT+=dt;
@@ -774,24 +778,24 @@ function rebuildCrowd(){
   crowd=[];for(let i=0;i<n;i++){const v=(R()<.5?-1:1)*(1.5+R()*2);crowd.push({x:R()*SW,y:GY+3+Math.floor(R()*8),v,t:R()*9,wait:R()*2});}crowd.sort((a,b)=>a.y-b.y);
 }
 function draw(){
-  const bgk=S.done?'space':HAB[view].bg;
+  const SP=view==='space';const bgk=SP?'space':HAB[view].bg;
   ctx.drawImage(bgCanvas(bgk),0,0);
   // ambient
   if(bgk==='coast'||bgk==='island'||bgk==='ocean'){ctx.fillStyle='#bfe2f2';for(let i=0;i<6;i++){const x=Math.floor((i*23+ambT*6)%SW);ctx.fillRect(x,(bgk==='ocean'?36:42)+(i%3)*4,3,1);}}
   if(bgk==='deep'){for(let i=0;i<24;i++){const x=(i*37)%SW,y=Math.floor((i*13+ambT*3)%GY);ctx.fillStyle='rgba(220,235,245,.55)';ctx.fillRect(x,y,1,1);}
     if(S.owned.snailfish){for(let i=0;i<5;i++){const a=.5+.5*Math.sin(ambT*2+i);ctx.fillStyle=`rgba(120,255,230,${a})`;ctx.fillRect((i*29+7)%SW,20+(i*11)%25,1,1);}}}
   // crowd (distant wombats): tiny side-view wombats
-  if(!S.done)for(const c of crowd){const x0=Math.round(c.x)-4,bob=c.wait>0?0:(Math.floor(c.t*6)%2),y0=c.y-6-bob,d=c.v>0;
+  if(!SP)for(const c of crowd){const x0=Math.round(c.x)-4,bob=c.wait>0?0:(Math.floor(c.t*6)%2),y0=c.y-6-bob,d=c.v>0;
     MINI.forEach((row,j)=>{for(let i=0;i<9;i++){const ch=row[d?i:8-i];if(ch==='.')continue;if(j===5&&bob&&ch==='d')continue;ctx.fillStyle=MINI_PAL[ch];ctx.fillRect(x0+i,y0+j+(j===5?bob:0),1,1);}});}
   for(const q of poops){const x=Math.round(q.x)-1,y=Math.round(q.y);ctx.fillStyle=PAL.o;ctx.fillRect(x-1,y-2,6,6);ctx.fillStyle='#6a4d36';ctx.fillRect(x,y-1,4,4);ctx.fillStyle='#8a684d';ctx.fillRect(x,y-1,3,1);ctx.fillRect(x,y,1,1);}
-  if(!S.done){ctx.fillStyle='rgba(30,30,20,.3)';const sw=W.state==='sleep'?30:26;ctx.fillRect(Math.round(W.x-sw/2+W.dir*2),GY,sw,2);
+  if(!SP){ctx.fillStyle='rgba(30,30,20,.3)';const sw=W.state==='sleep'?30:26;ctx.fillRect(Math.round(W.x-sw/2+W.dir*2),GY,sw,2);
   const o=pose();const front=W.state==='idle'||W.state==='pet'||W.state==='eat';
   blitWombat(front?renderFront(o):renderWombat(o),Math.round(W.x),!front&&W.dir<0);
   if(food&&food.left>0)drawFood(food);}
-  if(S.done){for(let i=0;i<22;i++){const sp=3+i%3,x=Math.floor((i*31+ambT*(2+i%4))%(SW+10))-5,y=Math.floor((i*17+Math.sin(ambT*.7+i)*4+ambT*(1+i%2))%(SH+8))-4,s=2+(i%3);
+  if(SP){for(let i=0;i<22;i++){const sp=3+i%3,x=Math.floor((i*31+ambT*(2+i%4))%(SW+10))-5,y=Math.floor((i*17+Math.sin(ambT*.7+i)*4+ambT*(1+i%2))%(SH+8))-4,s=2+(i%3);
     ctx.fillStyle='#2a1a12';ctx.fillRect(x-1,y-1,s+2,s+2);ctx.fillStyle='#a17a53';ctx.fillRect(x,y,s,s);ctx.fillStyle='#c9a46a';ctx.fillRect(x,y,s,1);if(s>3){ctx.fillStyle='#0d0806';ctx.fillRect(x+1,y+2,1,1);ctx.fillRect(x+s-2,y+2,1,1);}}}
   // day/night (wombats are nocturnal): outdoor scenes only
-  if(!S.done&&bgk!=='deep'){const k=Math.max(0,Math.sin(ambT*Math.PI*2/60-1));if(k>0){ctx.globalCompositeOperation='multiply';ctx.fillStyle=`rgb(${255-k*150|0},${255-k*135|0},${255-k*70|0})`;ctx.fillRect(0,0,SW,SH);ctx.globalCompositeOperation='source-over';
+  if(!SP&&bgk!=='deep'){const k=Math.max(0,Math.sin(ambT*Math.PI*2/60-1));if(k>0){ctx.globalCompositeOperation='multiply';ctx.fillStyle=`rgb(${255-k*150|0},${255-k*135|0},${255-k*70|0})`;ctx.fillRect(0,0,SW,SH);ctx.globalCompositeOperation='source-over';
     if(bgk!=='ocean'&&bgk!=='coast'&&bgk!=='island'||true){for(let i=0;i<14;i++){const tw=.5+.5*Math.sin(ambT*3+i*2);ctx.fillStyle=`rgba(255,250,220,${(k*tw*.9).toFixed(3)})`;ctx.fillRect((i*37+11)%SW,(i*13)%26,1,1);}}}}
   if(gold){const x=Math.round(gold.x)-2,y=Math.round(gold.y)-4+Math.round(Math.sin(gold.t*4));const fl=gold.t>9&&Math.floor(gold.t*8)%2;
     if(!fl){ctx.fillStyle='#5a3a10';ctx.fillRect(x-1,y-1,7,7);ctx.fillStyle='#e8b53a';ctx.fillRect(x,y,5,5);ctx.fillStyle='#ffe58a';ctx.fillRect(x,y,4,1);ctx.fillRect(x,y,1,3);ctx.fillStyle='#fff8d0';ctx.fillRect(x+1,y+1,1,1);}}
@@ -998,7 +1002,7 @@ function buildCard(q){
   if(q.type==='drought')return {mk:'災い',title:'大干ばつ',bad:true,art:{bg:'desert',cracks:true,pose:{eye:'closed',br:-.6}},
     body:'<p>オーストラリアを干ばつが襲い、本土の群れが大きく数を減らした。</p>'+(S.owned.kangaroo?'<p class="hint">袋の奥で待つ胚が、群れの回復を早めるだろう。</p>':'<p class="hint">干ばつのあとに数をすばやく戻せる仕組みがあれば……。</p>')};
   if(q.type==='ending')return {mk:'エンディング',title:'深宇宙へ',art:{bg:'space',spores:28,noWombat:true},
-    body:`<p>知性と好奇心と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table>`,btn:'見届けた'};
+    body:`<p>知性と好奇心と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table><p class="hint">「図鑑モード」では、ウォンバットたちが暮らした土地を眺めたり、図鑑や年代記を読み返したりできます。</p>`,btn:'図鑑モードで見る'};
 }
 let cardOpen=false;
 function pushCard(q){S.queue.push(q);}
@@ -1013,7 +1017,7 @@ function showNextCard(){
   $('card-restart').style.display=q.type==='ending'?'block':'none';
   $('modal').classList.remove('on');void $('modal').offsetWidth;$('modal').classList.add('on');$('modal').scrollTop=0;
   snd(c.bad?'bad':(q.type==='adapt'||q.type==='drift_ok'||q.type==='colonize'||q.type==='ending')?'good':q.type==='trait'?'buy':'card');
-  $('card-btn').onclick=()=>{if($('card-btn').disabled)return;S.queue.shift();$('modal').classList.remove('on');cardOpen=false;save();renderPanels();setTimeout(showNextCard,120);};
+  $('card-btn').onclick=()=>{if($('card-btn').disabled)return;const wasEnd=S.queue[0]&&S.queue[0].type==='ending';S.queue.shift();if(wasEnd)setTimeout(enterDexMode,0);$('modal').classList.remove('on');cardOpen=false;save();renderPanels();setTimeout(showNextCard,120);};
 }
 const paused=()=>cardOpen||S.queue.length>0;
 
@@ -1043,7 +1047,7 @@ function onEvent(k,a){
 // ---------- goal guidance ----------
 function nextWin(){for(let k=1;k<5;k++){const y=S.year+k;if(Math.floor(y*12/26)!==Math.floor((y-1)*12/26))return k;}return 3;}
 function goalText(){
-  if(S.done)return '旅は終わった。星々のどこかで、四角い芽胞が目覚めを待っている。';
+  if(S.done)return '図鑑モード：土地を選んで、ウォンバットたちの暮らしを眺められます。';
   if(!Object.keys(S.owned).length)return 'ウォンバットをなでて祈りを集め、最初の奇跡を授けよう。';
   const front=HABITATS.filter(h=>!S.col[h.id]&&!h.space&&(!h.prev||S.col[h.prev]));
   prog(S);const rk=S.rk,sp=S.sp;
@@ -1066,7 +1070,7 @@ function goalText(){
 }
 // ---------- UI ----------
 let tab='miracle';
-function setTab(t){tab=t;window.scrollTo&&0;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));renderPanels();}
+function setTab(t){if(S.done&&(t==='miracle'||t==='bless'))t='dex';tab=t;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));renderPanels();}
 function renderPanels(){({miracle:renderMiracles,bless:renderBlessings,hab:renderHabitats,dex:renderDex,log:renderLog})[tab]();updateButtons();}
 const bar=(p,cls)=>`<div class="bar ${cls||''}"><i style="width:${Math.min(100,p*100).toFixed(1)}%"></i></div>`;
 function traitHabs(id){return HABITATS.filter(h=>h.need[id]).map(h=>h.name).join('・');}
@@ -1122,14 +1126,14 @@ function renderLog(){
   const el=$('p-log');
   let h=S.log.slice(0,80).map(l=>`<div class="log ${l.k}"><span class="yr">${l.y}年</span>${l.t}</div>`).join('');
   h+=`<button class="reset" id="reset">最初からやり直す</button>`;
-  el.innerHTML=h;$('reset').onclick=()=>{if(confirmReset()){S=newState();view='tas';dispWon=null;rebuildCrowd();renderChips();pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');updateHeader();save();showNextCard();}};
+  el.innerHTML=h;$('reset').onclick=()=>{if(confirmReset())restartGame();};
 }
 let resetArm=0;function confirmReset(){const now=Date.now();if(now-resetArm<3000)return true;resetArm=now;$('reset').textContent='もう一度押すとリセット';return false;}
 let dispWon=null,dispPop=null;
 function updateHeader(){const st=stats(S);$('yr').textContent=S.year;if(dispWon===null){dispWon=S.won;dispPop=totalPop(S);}
   const w=wonPerYear(S,st);$('wps').textContent=w<10?w.toFixed(1):fmt(w);$('paused').style.display=paused()?'inline':'none';}
 function renderChips(){
-  const el=$('chips');let h='';for(const hb of HABITATS)if(S.col[hb.id])h+=`<button class="${view===hb.id?'on':''}" data-chip="${hb.id}">${hb.name}</button>`;
+  const el=$('chips');let h=S.done?`<button class="${view==='space'?'on':''}" data-chip="space">旅立ち（深宇宙）</button>`:'';for(const hb of HABITATS)if(S.col[hb.id])h+=`<button class="${view===hb.id?'on':''}" data-chip="${hb.id}">${hb.name}</button>`;
   el.innerHTML=h;el.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{view=b.dataset.chip;rebuildCrowd();setState('idle');renderChips();if(tab==='bless'||tab==='hab')renderPanels();});
   const on=el.querySelector('.on');if(on)on.scrollIntoView({block:'nearest',inline:'center'});
 }
@@ -1152,12 +1156,17 @@ function updateButtons(){
 }
 function doBuyTrait(id){if(!buyTrait(S,id))return;addLog(TR[id].flavor,'miracle');pushCard({type:'trait',id});renderPanels();updateHeader();save();showNextCard();}
 
+// ---------- ending: dex mode / restart ----------
+function updateDoneUI(){document.body.classList.toggle('done',!!S.done);}
+function enterDexMode(){view='space';rebuildCrowd();setState('idle');updateDoneUI();setTab('dex');renderChips();updateBadges();}
+function restartGame(){S=newState();view='tas';dispWon=null;rebuildCrowd();$('modal').classList.remove('on');cardOpen=false;updateDoneUI();pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');renderChips();updateHeader();save();setTimeout(showNextCard,150);}
 // ---------- tap / pray ----------
 function floatText(e,txt,cls){const f=document.createElement('div');f.className='float '+(cls||'');f.textContent=txt;
   const wr=$('stage').getBoundingClientRect();f.style.left=(e.clientX-wr.left)+'px';f.style.top=(e.clientY-wr.top-10)+'px';$('stage').appendChild(f);setTimeout(()=>f.remove(),1200);}
 const GOLD_LINES=['空から、金色に輝く四角いフンが降ってきた。','黄金のフン。神の御業か、ただの光の加減か。','草むらで、四角いものが金色に光っている。拾うと、祈りが満ちた。'];
 function tap(e){
-  if(S.done||paused())return;
+  if(paused())return;
+  if(S.done){if(view!=='space'){if(W.state!=='pet')setState('pet');else W.t=Math.min(W.t,.3);snd('tap');}return;}
   const r=cv.getBoundingClientRect(),lx=(e.clientX-r.left)/r.width*SW,ly=(e.clientY-r.top)/r.height*SH;
   if(gold&&Math.abs(lx-gold.x)<8&&Math.abs(ly-gold.y+3)<9){const st=stats(S);const v=Math.max(80,wonPerYear(S,st)*6+tapValue(S,st)*20);S.won+=v;S.totalWon+=v;gold=null;
     for(let i=0;i<14;i++)addP({k:'spark',x:lx+(R()-.5)*10,y:ly+(R()-.5)*8,vx:(R()-.5)*20,vy:-10-R()*10,life:.8});
@@ -1198,7 +1207,7 @@ if(S.year===0&&!S.log.length){addLog('タスマニアの草原で、一頭のヒ
 else if(S.log.length)$('msg').textContent=S.log[0].t;
 setTab('miracle');updateHeader();renderChips();updateBadges();showNextCard();
 $('snd').onclick=()=>setSnd(!SND.on);setSnd(SND.on);
-$('card-restart').onclick=()=>{S=newState();view='tas';dispWon=null;rebuildCrowd();$('modal').classList.remove('on');cardOpen=false;pushCard({type:'intro'});addLog('タスマニアの草原で、一頭のヒメウォンバットが草を食みながら空を見上げた。','story');setTab('miracle');renderChips();updateHeader();save();setTimeout(showNextCard,150);};
+$('card-restart').onclick=restartGame;$('goal-restart').onclick=restartGame;updateDoneUI();if(S.done&&!S.queue.length&&tab!=='dex'&&tab!=='log'){setTab('dex');}
 requestAnimationFrame(loop);
 
 </script>
