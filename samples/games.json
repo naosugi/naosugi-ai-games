@@ -308,6 +308,22 @@
       "playtime": "約25分",
       "added": "2026-11-16",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "tokei-wombat",
+      "title": "ウォンバットのかみさま あとなんぷん？",
+      "description": "ウォンバットの神さまになって、こわいものが来るまで「あと何分」かを伝える時計読みゲーム。ボタンで分を足し引きして、ギリギリまで草を食べさせよう。アナログ・デジタル・文字の時刻に、休み時間や駅などの場面で慣れられる。",
+      "path": "../games/tokei-wombat/",
+      "thumbnail": "../games/tokei-wombat/thumb.jpg",
+      "tags": [
+        "知育",
+        "こども",
+        "スコアアタック"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約10分",
+      "added": "2026-11-17",
+      "author": "@naoya_oosugi"
     }
   ]
 }
