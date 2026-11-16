@@ -114,6 +114,7 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
 .topbar .snd{position:static}
 header .won{margin-top:0}
 #modal{padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+.prog{background:#2b241f;border:1px solid #5e4128;border-radius:8px;padding:6px 10px 2px;margin-bottom:10px}.prog h3{margin:4px 0 6px}.prog .row{font-size:12px}.prog .p{color:#9fd08a}.item.invest{margin-top:8px}
 </style>
 </head>
 <body>
@@ -175,7 +176,7 @@ const HABITATS = [
   {id:'deep',  name:'深海',             area:300000000, dens:0.4, bg:'deep',   food:'snow',
    need:{snailfish:.6, riftia:.4}, prev:'ocean'},
   {id:'mars',  name:'火星',             area:144800000, dens:0.8, bg:'mars',   food:'moss',
-   need:{tardigrade:.5, deinococcus:.3, human:.2}, prev:'tas', gate:'human'},
+   need:{tardigrade:.5, deinococcus:.3, human:.2}, prev:'tas', space:true},
 ];
 const HAB = Object.fromEntries(HABITATS.map(h=>[h.id,h]));
 
@@ -209,7 +210,7 @@ const TRAITS = [
    eff:'水をほとんど捨てない腎臓（乾いた大地への適合）', fx:{},
    trivia:'スピニフェックスホッピングマウスは、哺乳類で最も濃い尿を出すと報告されている。水を一滴も飲まずに暮らせる。',
    flavor:'一滴の水も無駄にしない子が生まれた。四角いフンは、さらに乾いた。'},
-  {id:'tenrec', name:'多産の奇跡', src:'テンレック（タイリクテンレック）', cost:550000, show:'aus', v:'joeys',
+  {id:'tenrec', name:'多産の奇跡', src:'テンレック（タイリクテンレック）', cost:460000, show:'aus', v:'joeys',
    eff:'一度に産む子が1頭→平均18頭', fx:{litter:18},
    trivia:'タイリクテンレックは、乳首の数も、一度に産む子の数の平均（約18頭）も最大（32頭）も、哺乳類でいちばん。ウォンバットの乳首は2つしかない。',
    flavor:'後ろ向きの袋から、子どもたちがあふれ出した。袋の容積について、考えてはいけない。'},
@@ -217,7 +218,7 @@ const TRAITS = [
    eff:'海に潜って海藻を食べ、塩をくしゃみで捨てる（近海・遠海への適合）', fx:{},
    trivia:'ウミイグアナは、海に潜って海藻を食べる唯一のトカゲ。海藻と一緒にとりこんだ余分な塩分は、頭の塩類腺に集めて、鼻からくしゃみで吹き飛ばす。',
    flavor:'波打ち際で、くしゃみをする子が生まれた。塩の結晶が、朝日にきらめいた。'},
-  {id:'seaotter', name:'密毛の奇跡', src:'ラッコ', cost:81000, show:'aus', v:'plush',
+  {id:'seaotter', name:'密毛の奇跡', src:'ラッコ', cost:57000, show:'aus', v:'plush',
    eff:'世界一密な毛で冷たい海でも冷えない（近海・遠海への適合）', fx:{},
    trivia:'ラッコの毛は動物でいちばん密で、1cm²に10万〜16万本も生えている。ほかの海の哺乳類と違って皮下脂肪の層がないので、毛の間に空気をため込んで体温を守る。',
    flavor:'ぬいぐるみのように毛の詰まった子が生まれた。水をはじいて、ぷかりと浮いた。'},
@@ -229,15 +230,15 @@ const TRAITS = [
    eff:'流木にしがみつき、食べずに何週間も耐える（漂流で生き残りやすくなる）', fx:{},
    trivia:'1995年、ハリケーンで流された木の筏にしがみついた15頭以上のグリーンイグアナが、約320km離れたアンギラ島に流れ着いた。航海は約1か月。爬虫類は長く食べずにいられるので向いているが、哺乳類ならほとんど生き残れなかっただろうとされる。',
    flavor:'流木を見ると、しがみつかずにいられない子が生まれた。'},
-  {id:'coconutcrab', name:'剛力の奇跡', src:'ヤシガニ', cost:3800000, show:'coast', v:'claw',
+  {id:'coconutcrab', name:'剛力の奇跡', src:'ヤシガニ', cost:3400000, show:'coast', v:'claw',
    eff:'ヤシの実を割る力（島への適合）', fx:{},
    trivia:'ヤシガニは陸で暮らす最大の甲殻類。はさむ力はライオンのかむ力に匹敵し、最大級の個体では約3,300ニュートンと推定されている。それでもヤシの実を割るのには何時間もかかる。',
    flavor:'前足の爪が、妙に頼もしい子が生まれた。'},
-  {id:'elephant', name:'放熱の奇跡', src:'ゾウ', cost:15000000, show:'coast', v:'bigears',
+  {id:'elephant', name:'放熱の奇跡', src:'ゾウ', cost:14000000, show:'coast', v:'bigears',
    eff:'大きく薄い耳で体の熱を逃がす（熱帯への適合）', fx:{},
    trivia:'ゾウは汗をほとんどかけない。かわりに、血管が網の目のように走る薄い大きな耳に、全身の血液の約2割を同時に流して熱を逃がし、耳をあおいで風を当てる。暑く開けた土地に暮らすアフリカゾウのほうが、森に暮らすアジアゾウより耳が大きい。',
    flavor:'耳だけが、やけに大きい子が生まれた。暑い日には、ぱたぱたとあおいでいる。'},
-  {id:'vole', name:'早熟の奇跡', src:'ハタネズミ', cost:37000000, show:'seasia', v:'',
+  {id:'vole', name:'早熟の奇跡', src:'ハタネズミ', cost:41000000, show:'seasia', v:'',
    eff:'性成熟まで2年→38日（東アジア・ヨーロッパへの適合。形質の広がりも速くなる）', fx:{maturity:38/365},
    trivia:'ヨーロッパハタネズミは、スペインからモンゴルまで広く暮らす。メスは生後38日、オスは56日で成熟する。ウォンバットは約2年かかる。',
    flavor:'生まれてひと月あまりで親になる子が生まれた。'},
@@ -269,19 +270,23 @@ const TRAITS = [
    eff:'体内の細菌が化学合成で栄養をつくる（深海への適合）', fx:{},
    trivia:'ジャイアントチューブワームには口も消化管も肛門もない。体の中の「栄養体」に共生細菌をすまわせ、熱水噴出孔の硫化水素から細菌がつくる栄養で生きている。栄養体は体重の半分ほどを占める。',
    flavor:'何も食べないのに、肥えている子が生まれた。頭から赤い羽毛のようなものが伸びている。'},
-  {id:'human', name:'知性の奇跡', src:'ヒト', cost:2200000000, show:'deep', v:'halo',
+  {id:'human', name:'知性の奇跡', src:'ヒト', cost:1800000000, show:'deep', v:'halo',
    eff:'言葉と道具を手に入れる（祈り×4、宇宙へ出る準備）', fx:{piety:4},
    trivia:'ヒトの脳は体重の約2%しかないが、体が使うエネルギーの約2割を消費する。',
    flavor:'空を見上げて、言葉で祈る子が生まれた。「草を、もっと」。'},
-  {id:'tardigrade', name:'乾眠の奇跡', src:'クマムシ', cost:7000000000, show:'deep', v:'legs',
+  {id:'curiosity', name:'好奇心の奇跡', src:'ヒト', cost:4000000000, show:'#human', v:'goggles',
+   eff:'空の向こうを知りたくなる（群れの半数に広がると、ロケット作りが始まる）', fx:{},
+   trivia:'好奇心に駆られたヒトは、1969年から1972年にかけて、12人を月面に立たせた。',
+   flavor:'夜ごと星を見上げ、前足で何かを組み立てはじめる子が生まれた。'},
+  {id:'tardigrade', name:'乾眠の奇跡', src:'クマムシ', cost:9500000000, show:'deep', v:'legs',
    eff:'干からびて真空と放射線に耐える（火星への適合）', fx:{},
    trivia:'2007年、乾燥させたクマムシが人工衛星で10日間、宇宙の真空にさらされた。地球に戻って水を与えると多くが生き返り、強い紫外線を浴びた一部も生き残って卵を産んだ。',
    flavor:'干からびても、水をかければ戻る子が生まれた。脚が、少し多い。'},
-  {id:'deinococcus', name:'放射線耐性の奇跡', src:'デイノコッカス・ラジオデュランス', cost:14000000000, show:'deep', v:'aura',
+  {id:'deinococcus', name:'放射線耐性の奇跡', src:'デイノコッカス・ラジオデュランス', cost:18000000000, show:'deep', v:'aura',
    eff:'壊れたDNAを直す力（火星・深宇宙への適合）', fx:{},
    trivia:'デイノコッカス・ラジオデュランスは放射線にとても強い細菌。日本の「たんぽぽ計画」では、乾燥させた細胞の塊が国際宇宙ステーションの外で3年間生き延び、地上に戻って傷ついたDNAを修復した。',
    flavor:'淡く光をまとう子が生まれた。その光が何なのか、誰も知らない。'},
-  {id:'spore', name:'芽胞の奇跡', src:'枯草菌の芽胞', cost:40000000000, show:'mars', v:'spore',
+  {id:'spore', name:'芽胞の奇跡', src:'枯草菌の芽胞', cost:37000000000, show:'mars', v:'spore',
    eff:'胞子のような休眠体になる（深宇宙への旅立ち）', fx:{},
    trivia:'NASAの長期曝露実験装置（LDEF）で、枯草菌の芽胞が約6年間宇宙にさらされた。紫外線を遮った条件では、最大8割が生き残った。',
    flavor:'眠ると、四角く固まる子が生まれた。'},
@@ -316,15 +321,45 @@ function totalPop(S){let s=0;for(const k in S.pop)s+=S.pop[k];return s;}
 function wonPerYear(S,st){return totalPop(S)*BASE_PIETY*st.piety;}
 function tapValue(S,st){return 2*st.click+0.01*wonPerYear(S,st);}
 function blCost(b,lv){return Math.ceil(b.base*Math.pow(b.grow,lv));}
-function traitAvailable(S,t){if(S.owned[t.id])return false;return t.show==='*'||!!S.col[t.show];}
+function traitAvailable(S,t){if(S.owned[t.id])return false;if(t.show==='*')return true;if(t.show[0]==='#')return !!S.owned[t.show.slice(1)];return !!S.col[t.show];}
 function canColonize(S,h){
-  if(S.col[h.id]||h.sea)return false;if(h.prev&&!S.col[h.prev])return false;
+  if(S.col[h.id]||h.sea||h.space)return false;if(h.prev&&!S.col[h.prev])return false;
   if(h.gate&&pv(S,h.gate)<.5)return false;
   if(h.prev&&h.prev!=='tas'&&(S.pop[h.prev]||0)<0.3*capOf(S,h.prev,stats(S)))return false; // 送り出す側が定着している
   return suit(S,h)>=.2;
 }
 function readyToAdapt(S,h){if(!S.col[h.id]||S.adapted[h.id])return false;for(const k in h.need)if(pv(S,k)<.95)return false;return true;}
-function readyToDepart(S){return !S.done&&S.col.mars&&pv(S,'spore')>=.95&&pv(S,'human')>=.95&&pv(S,'deinococcus')>=.9;}
+// ----- space programs -----
+// rk: ロケット（火星）  st: 恒星間船（深宇宙）
+const FAIL_RK=[0.45,0.27,0.12,0.06]; // 新型ロケットの打ち上げ失敗率のめやす（初号機ほど高い）
+const FAIL_ST=[0.15,0.08,0.04];
+function prog(S){if(!S.rk)S.rk={phase:'none',p:0,n:0,t:0};if(!S.sp)S.sp={phase:'none',p:0,n:0,t:0};return S;}
+function isWindow(S){return Math.floor(S.year*12/26)!==Math.floor((S.year-1)*12/26);} // 26か月ごとの打ち上げ窓
+function devRate(S,which){return which==='rk'?pv(S,'human')/60:(0.5+0.5*pv(S,'deinococcus'))/50;}
+function investCost(S,st){return Math.max(1e6,Math.ceil(wonPerYear(S,st)*3));}
+function canInvest(S,which){prog(S);const P=S[which];return P.phase==='dev';}
+function invest(S,which){prog(S);const st=stats(S),c=investCost(S,st),P=S[which];if(P.phase!=='dev'||S.won<c)return false;S.won-=c;P.p=Math.min(1,P.p+0.06);return true;}
+function readyToDepart(S){prog(S);return !S.done&&S.sp.phase==='out'&&pv(S,'spore')>=.9&&pv(S,'human')>=.9&&pv(S,'deinococcus')>=.9;}
+function stepPrograms(S,rng,ev){
+  prog(S);const R=S.rk,P=S.sp;
+  // ロケット
+  if(R.phase==='none'&&pv(S,'curiosity')>=.5){R.phase='dev';ev&&ev('rk_start',{});}
+  else if(R.phase==='dev'){R.p=Math.min(1,R.p+devRate(S,'rk'));if(R.p>=1){R.phase='ready';ev&&ev('rk_ready',{});}}
+  else if(R.phase==='ready'&&isWindow(S)){
+    const f=FAIL_RK[Math.min(R.n,FAIL_RK.length-1)];R.n++;
+    if(rng()<f){R.phase='dev';R.p=0.75;ev&&ev('rk_fail',{n:R.n});}
+    else{R.phase='cruise';R.t=0;ev&&ev('rk_launch',{n:R.n});}
+  }
+  else if(R.phase==='cruise'){R.t++;if(R.t>=1){ // 約7か月の航行
+    if(suit(S,HAB.mars)>=.2){R.phase='done';S.col.mars=true;S.pop.mars=200;ev&&ev('mars_arrive',HAB.mars);}
+    else{R.phase='ready';ev&&ev('mars_noroot',HAB.mars);}}}
+  // 恒星間船
+  if(P.phase==='none'&&S.col.mars&&pv(S,'spore')>=.5){P.phase='dev';ev&&ev('sp_start',{});}
+  else if(P.phase==='dev'){P.p=Math.min(1,P.p+devRate(S,'sp'));if(P.p>=1){P.phase='ready';}}
+  else if(P.phase==='ready'){const f=FAIL_ST[Math.min(P.n,FAIL_ST.length-1)];P.n++;
+    if(rng()<f){P.phase='dev';P.p=0.8;ev&&ev('sp_fail',{n:P.n});}else{P.phase='cruise';P.t=0;ev&&ev('sp_launch',{});}}
+  else if(P.phase==='cruise'){P.t++;if(P.t>=20){P.phase='out';ev&&ev('heliopause',{});}}
+}
 
 // one year. ev(kind, data) を呼ぶ。カード化するかどうかはUI側で判断
 function stepYear(S,rng,ev){
@@ -359,6 +394,7 @@ function stepYear(S,rng,ev){
   const pd=pv(S,'devil');
   if(S.year>25&&rng()<0.03*(1-pd)){S.pop.tas*=0.6;ev&&ev('mange',{});}
   if(S.col.aus&&rng()<0.06){const kk=.45+.4*pv(S,'kangaroo');S.pop.aus*=kk;ev&&ev('drought',{resist:pv(S,'kangaroo')>.5});}
+  stepPrograms(S,rng,ev);
   if(readyToDepart(S)){S.done=true;ev&&ev('ending',{});}
   const w=wonPerYear(S,st);S.won+=w;S.totalWon+=w;
   return st;
@@ -370,7 +406,7 @@ function buyBlessing(S,id,hab){
 }
 function blLevel(S,b,hab){return b.perHab?(S.grass[hab]||0):S.bl[b.id];}
 
-if(typeof module!=='undefined')module.exports={driftSurv,HABITATS,HAB,TRAITS,TR,BLESSINGS,newState,pv,suit,stats,capOf,totalPop,wonPerYear,tapValue,blCost,traitAvailable,canColonize,stepYear,buyTrait,buyBlessing,blLevel};
+if(typeof module!=='undefined')module.exports={prog,invest,investCost,isWindow,driftSurv,HABITATS,HAB,TRAITS,TR,BLESSINGS,newState,pv,suit,stats,capOf,totalPop,wonPerYear,tapValue,blCost,traitAvailable,canColonize,stepYear,buyTrait,buyBlessing,blLevel};
 
 const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
 
@@ -811,6 +847,7 @@ function drawVariants(c,R,left,top,vs,t){
   if(has('bigears')){for(const sx of [-1,1]){const ex=sx<0?5:35,ey=10;for(let y=-6;y<=6;y++)for(let x=-6;x<=6;x++){const d=x*x/36+y*y/40;if(d<=1){const edge=d>.78;P(ex+x,ey+y,edge?'#2a1a12':((x*3+y*7)%11===0?'#9a5a4a':(x*sx<0?'#c89a7a':'#b88a6a')));}}}}
   if(has('bars')){for(let y=4;y<=11;y++)for(let x=8;x<=32;x++){if(!M(x,y)||R.img[y*R.W+x]==='o'||R.img[y*R.W+x]==='e'||R.img[y*R.W+x]==='w')continue;P(x,y,(y===7||y===10)?'#1a1614':'#f2efe6');}}
   if(has('swim')){for(let y=21;y<=31;y++)for(let x=-6;x<=46;x++){c.fillStyle=y===21?'rgba(220,240,255,.85)':'rgba(40,110,170,.72)';if(y!==21||(x+Math.floor(y/2))%4)c.fillRect(left+x,top+y,1,1);}}
+  if(has('goggles')){for(let x=7;x<=33;x++){if(M(x,7))P(x,7,'#3a2a22');}for(const gx of [14,23]){for(let y=5;y<=9;y++)for(let x=0;x<=4;x++){const e=y===5||y===9||x===0||x===4;P(gx+x,y,e?'#8a6a30':(x+y)%3?'#9fd8e8':'#e8f8ff');}}}
   if(has('raft')){for(let x=-4;x<=44;x++){P(x,29,'#8a6a40');P(x,30,'#6a4a2a');if(x%7===0)P(x,29,'#a07a44');}}
 }
 const VAR_TINT={frozen:'frozen',abyss:'abyss',mange:'mange'};
@@ -822,6 +859,7 @@ function cardArt(cv2,o){
   if(o.cracks){c.fillStyle='#7a3e1c';const r=rng(9);for(let i=0;i<14;i++){let x=Math.floor(r()*SW),y=GY+1+Math.floor(r()*12);for(let k=0;k<6;k++){c.fillRect(x,y,1,1);x+=r()<.5?1:-1;y+=r()<.6?0:(r()<.5?1:-1);}}}
   if(o.crowd){const r=rng(o.crowd);for(let i=0;i<o.crowd;i++){const x=Math.floor(r()*SW),y=GY+2+Math.floor(r()*9);c.fillStyle='#5e4128';c.fillRect(x,y,3,2);c.fillStyle='#86613f';c.fillRect(x,y,2,1);}}
   if(o.spores){const r=rng(5);for(let i=0;i<o.spores;i++){const x=Math.floor(r()*(SW-6)),y=Math.floor(r()*(SH-6)),s=2+Math.floor(r()*3);c.fillStyle='#3a2a22';c.fillRect(x-1,y-1,s+2,s+2);c.fillStyle='#a17a53';c.fillRect(x,y,s,s);c.fillStyle='#c9a46a';c.fillRect(x,y,s,1);if(s>3){c.fillStyle='#0d0806';c.fillRect(x+1,y+2,1,1);c.fillRect(x+s-2,y+2,1,1);}}}
+  if(o.rocket)drawRocket(c,o.rocket);
   if(o.noWombat){finishArt(cv2,o);return;}
   const vs=o.v||[];let tint=null;for(const k in VAR_TINT)if(vs.includes(k))tint=TINTS[VAR_TINT[k]];
   const R2=renderFront(Object.assign({eye:'open'},o.pose||{}));
@@ -838,6 +876,30 @@ function finishArt(cv2,o){
   const d=cv2.getContext('2d');d.imageSmoothingEnabled=false;d.clearRect(0,0,cv2.width,cv2.height);
   if(o.noWombat||o.wide)d.drawImage(ART_OFF,0,0,SW,SH,0,0,cv2.width,cv2.height);
   else d.drawImage(ART_OFF,28,26,56,36,0,0,cv2.width,cv2.height);
+}
+
+// 四角いフンの形をしたロケット（窓からウォンバットがのぞく）
+function drawRocket(c,r){
+  const P=(x,y,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),1,1);};
+  const box=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
+  const cx=r.x||56,by=r.y==null?GY:r.y,sc=r.small?0.5:1;
+  if(r.state==='boom'){const R2=rng(3);for(let i=0;i<70;i++){const a=R2()*6.28,d=R2()*20;P(cx+Math.cos(a)*d,by-24+Math.sin(a)*d*.8,['#ffd25a','#ff8a3a','#e8452a','#5a4a40','#8a7a70'][Math.floor(R2()*5)]);}
+    for(let i=0;i<8;i++)box(cx-10+i*3,by-6-(i%3)*3,2,2,'#6a4d36');return;}
+  const w=Math.round(14*sc),h=Math.round(22*sc),x0=cx-Math.floor(w/2),y0=by-h-(r.state==='launch'?14:0)-(r.small?0:2);
+  // flame
+  if(r.state==='launch'||r.state==='space'){const fl=r.state==='space'?6:16;for(let k=0;k<fl;k++){const ww=Math.max(1,Math.round((w-4)*(1-k/fl)));box(cx-Math.floor(ww/2),y0+h+k,ww,1,k<3?'#fff6c8':k<7?'#ffd25a':'#ff8a3a');}
+    if(r.state==='launch'){const R2=rng(7);for(let i=0;i<40;i++){P(cx+(R2()-.5)*44,by-1-R2()*6,R2()<.5?'#e8e2d8':'#c8c0b4');}}}
+  // fins
+  for(const sx of [-1,1]){for(let k=0;k<Math.round(6*sc);k++){box(sx<0?x0-1-Math.floor(k/2):x0+w+Math.floor(k/2)-0,y0+h-Math.round(6*sc)+k,1,1,'#3a2a22');}}
+  // body (square poop)
+  box(x0-1,y0-1,w+2,h+2,'#2a1a12');box(x0,y0,w,h,'#7a5838');box(x0,y0,w,Math.round(3*sc),'#a17a53');box(x0,y0,1,h,'#a17a53');
+  for(let y=y0+4;y<y0+h;y+=5)box(x0+1,y,w-2,1,'#6a4a30');
+  // nose cone
+  const cn=Math.round(6*sc);for(let k=0;k<cn;k++){const ww=Math.max(1,Math.round(w*(k+1)/cn));box(cx-Math.floor(ww/2),y0-cn+k,ww,1,k===0?'#2a1a12':'#c99a5b');}
+  // window with wombat
+  const wx=cx,wy=y0+Math.round(8*sc),wr=Math.max(2,Math.round(4*sc));
+  for(let y=-wr;y<=wr;y++)for(let x=-wr;x<=wr;x++){const d=x*x+y*y;if(d<=wr*wr+1)P(wx+x,wy+y,d>(wr-1)*(wr-1)+1?'#d8e4ec':'#86613f');}
+  if(!r.small){P(wx-2,wy-1,'#0d0806');P(wx+1,wy-1,'#0d0806');P(wx-1,wy+1,'#3f3230');P(wx,wy+1,'#3f3230');P(wx-3,wy-4,'#a17a53');P(wx+3,wy-4,'#a17a53');}
 }
 
 // ---------- sound (tiny synth, optional) ----------
@@ -867,7 +929,7 @@ const COL_TEXT={
   polar:'凍える風にも平気な数頭が、氷の大地に足を踏み入れた。',
   ocean:'浮島のような群れが、岸を離れて外洋へ流れ出した。',
   deep:'水圧を気にしない数頭が、光の届かない底へ沈んでいった。',
-  mars:'干からびた数頭を乗せて、何かが赤い惑星へ降りた。水をかけると、彼らは目を覚ました。',
+  mars:'約7か月の旅の果て、船は赤い砂の上に降りた。干からびて眠っていたウォンバットたちに水をかけると、彼らは目を覚ました。',
 };
 const ADAPT_TEXT={
   aus:'世代を重ね、赤い大地の群れはすっかり乾きに慣れた。舌は長く、皮膚には溝が走り、トゲを噛む音が夜通し響く。',
@@ -913,12 +975,30 @@ function buildCard(q){
     body:'<p>嵐の夜、海辺のウォンバットたちが巣穴ごと沖へ流された。誰も、どこにも、たどり着かなかった。</p><p class="hint">何日も泳ぎ続ける力や、流木にしがみついて耐える力が群れに広がれば、いつか誰かが海の向こうにたどり着くかもしれない。</p>'};
   if(q.type==='drift_noroot'){const h=HAB[q.id];return {mk:'漂流',title:'根付かなかった者たち',bad:true,art:{bg:h.bg,pose:{eye:'closed'}},
     body:`<p>流された数頭が、${h.name}の浜にたどり着いた。けれど彼らは、その土地で生きる術を持たなかった。</p><p class="hint">${h.name}の適合度が20%に届いていない。その土地に合う形質を授けよう。</p>`};}
+  if(q.type==='rk_start')return {mk:'計画',title:'ロケット開発のはじまり',art:{bg:'steppe',wide:true,rocket:{x:86,state:'build'},crowd:5},
+    body:'<p>好奇心が群れの半数に広がった夜、何頭かのウォンバットが、四角いフンを積み上げて空を指した。やがてそれは、本物のロケットの設計図になった。</p><p class="hint">開発は年ごとに進みます。「奇跡」タブの計画欄から祈りを捧げると早められます。地球と火星の位置関係で、火星へ向かうのに適した打ち上げの時期は、約26か月ごとにしか巡ってきません。</p>'};
+  if(q.type==='rk_fail')return {mk:'計画',title:'打ち上げ失敗',bad:true,art:{bg:'steppe',noWombat:true,wide:true,rocket:{state:'boom'}},
+    body:'<p>轟音、そして閃光。ロケットは空へ届く前に砕け散った。乗っていたウォンバットたちは、脱出用の巣穴で無事だった。</p><p class="hint">新しく作られたロケットの初打ち上げは、現実でもおよそ半分が失敗しています。2回目、3回目と重ねるほど成功しやすくなります。</p>'};
+  if(q.type==='rk_launch')return {mk:'計画',title:'打ち上げ成功',art:{bg:'steppe',noWombat:true,wide:true,rocket:{state:'launch'}},
+    body:`<p>${q.n}度目の挑戦。四角いフンの形をした船体が、轟音とともに空へ昇っていった。小さな窓から、ウォンバットが遠ざかる草原を見下ろしている。</p><p class="hint">火星までは、およそ7か月の旅になります。</p>`};
+  if(q.type==='mars_arrive')return {mk:'到着',title:'火星へ',art:{bg:'mars',wide:true,rocket:{x:88,state:'land'},pose:{eye:'half'}},
+    body:`<p>${COL_TEXT.mars}</p><p class="hint">いまの適合度 ${pct(suit(S,HAB.mars))}。乾きや放射線に耐える形質が群れに広がるほど、住める数が増えていきます。</p>`};
+  if(q.type==='mars_noroot')return {mk:'到着',title:'赤い砂の上で',bad:true,art:{bg:'mars',wide:true,rocket:{x:88,state:'land'},pose:{eye:'closed'}},
+    body:'<p>船は火星に降りた。けれど、薄い空気と乾きと放射線の中で、ウォンバットたちは目を覚まさなかった。</p><p class="hint">火星の適合度が20%に届いていません。干からびても戻る力や、放射線に耐える力を授けましょう。船は次の打ち上げの窓で、また飛び立ちます。</p>'};
+  if(q.type==='sp_start')return {mk:'計画',title:'恒星間計画のはじまり',art:{bg:'mars',wide:true,rocket:{x:88,state:'build'},crowd:4},
+    body:'<p>眠ると四角く固まる子が群れに広がると、火星の群れは、もっと遠くへ行く船を作りはじめた。</p><p class="hint">隣の恒星までは、いまの探査機の速さでは何万年もかかります。だから、芽胞のまま眠って行くのです。開発は「奇跡」タブの計画欄から祈りを捧げると早められます。</p>'};
+  if(q.type==='sp_fail')return {mk:'計画',title:'恒星間船の打ち上げ失敗',bad:true,art:{bg:'mars',noWombat:true,wide:true,rocket:{state:'boom'}},
+    body:'<p>恒星間船は、火星の薄い空で砕けた。積み込まれていた芽胞は、赤い砂の上に降りそそいだ。眠ったままなので、たぶん無事だ。</p>'};
+  if(q.type==='sp_launch')return {mk:'計画',title:'星々へ',art:{bg:'space',noWombat:true,wide:true,rocket:{state:'space'}},
+    body:'<p>芽胞となって眠るウォンバットを満載した船が、火星の空から旅立った。目覚めるのは、ずっと先のことだ。</p>'};
+  if(q.type==='heliopause')return {mk:'航行',title:'太陽圏の外へ',art:{bg:'space',noWombat:true,wide:true,rocket:{x:84,y:30,state:'space',small:true}},
+    body:'<p>旅立ちから20年。船は、太陽から吹き出す風が届く境界を越え、星と星のあいだの空間へ出た。</p><p class="hint">現実には、1977年に打ち上げられた探査機ボイジャー1号が、35年後の2012年に初めて太陽圏の外へ出ました。ある恒星に1.6光年まで近づくのは、約4万年後とされています。</p>'};
   if(q.type==='mange')return {mk:'災い',title:'疥癬の流行',bad:true,art:{bg:'meadow',v:['mange'],pose:{eye:'closed'}},
     body:'<p>タスマニア中部で疥癬が流行した。ダニがもたらす皮膚病で、毛が抜け、多くのウォンバットが倒れた。</p><p class="hint">実際に、この病気である地域の個体群が8割以上減った例がある。病気に強い形質が広まれば、流行は起きにくくなる。</p>'};
   if(q.type==='drought')return {mk:'災い',title:'大干ばつ',bad:true,art:{bg:'desert',cracks:true,pose:{eye:'closed',br:-.6}},
     body:'<p>オーストラリアを干ばつが襲い、本土の群れが大きく数を減らした。</p>'+(S.owned.kangaroo?'<p class="hint">袋の奥で待つ胚が、群れの回復を早めるだろう。</p>':'<p class="hint">干ばつのあとに数をすばやく戻せる仕組みがあれば……。</p>')};
   if(q.type==='ending')return {mk:'エンディング',title:'深宇宙へ',art:{bg:'space',spores:28,noWombat:true},
-    body:`<p>知性と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table>`,btn:'見届けた'};
+    body:`<p>知性と好奇心と、芽胞の眠りを授かったウォンバットたちは、四角い芽胞となって、星々の海へ散っていった。</p><p>どこかの惑星に落ちたひと粒が、いつか目を覚まし、草を探すだろう。そして空を見上げ、祈るのだろう。</p><p class="score">祈りの年 ${q.year}年で星々へ</p><table class="sum"><tr><td>最終生息数</td><td>${fmt(q.pop)}頭</td></tr><tr><td>授けた奇跡</td><td>${TRAITS.filter(t=>S.owned[t.id]).length} / ${TRAITS.length}</td></tr><tr><td>住んだ土地</td><td>${HABITATS.filter(h=>S.col[h.id]).length} / ${HABITATS.length}</td></tr><tr><td>なでた回数</td><td>${fmt(S.taps)}回</td></tr><tr><td>集めた祈り</td><td>${fmt(S.totalWon)}ウォン</td></tr></table>`,btn:'見届けた'};
 }
 let cardOpen=false;
 function pushCard(q){S.queue.push(q);}
@@ -947,15 +1027,35 @@ function onEvent(k,a){
   else if(k==='mange'){S.events.mange=(S.events.mange||0)+1;if(S.events.mange===1)pushCard({type:'mange'});addLog('タスマニアで疥癬が流行し、多くのウォンバットが倒れた。','bad');}
   else if(k==='drought'){S.events.drought=(S.events.drought||0)+1;if(S.events.drought===1)pushCard({type:'drought'});
     if(S.events.drought<=3||S.events.drought%10===0)addLog(a.resist?'干ばつ。だが袋の奥の胚が待っていた。群れはすぐに数を取り戻すだろう。':'オーストラリアを干ばつが襲い、本土の群れが大きく減った。','bad');}
+  else if(k==='rk_start'){addLog('好奇心に駆られた群れが、ロケットを作りはじめた。','story');pushCard({type:'rk_start'});}
+  else if(k==='rk_ready'){addLog('ロケットが完成した。次の打ち上げの窓を待つ。','story');}
+  else if(k==='rk_fail'){S.events.rkf=(S.events.rkf||0)+1;if(S.events.rkf===1)pushCard({type:'rk_fail'});addLog(`${a.n}度目の打ち上げは失敗した。作り直しだ。`,'bad');}
+  else if(k==='rk_launch'){addLog(`${a.n}度目の打ち上げで、ロケットは空へ昇った。火星まで、約7か月。`,'story');pushCard({type:'rk_launch',n:a.n});}
+  else if(k==='mars_arrive'){addLog(COL_TEXT.mars,'story');pushCard({type:'mars_arrive'});view='mars';rebuildCrowd();renderChips();}
+  else if(k==='mars_noroot'){S.events.mnr=(S.events.mnr||0)+1;if(S.events.mnr===1)pushCard({type:'mars_noroot'});addLog('火星に降りたウォンバットたちは、目を覚まさなかった。','bad');}
+  else if(k==='sp_start'){addLog('火星の群れが、恒星間船を作りはじめた。','story');pushCard({type:'sp_start'});}
+  else if(k==='sp_fail'){S.events.spf=(S.events.spf||0)+1;if(S.events.spf===1)pushCard({type:'sp_fail'});addLog('恒星間船の打ち上げは失敗した。','bad');}
+  else if(k==='sp_launch'){addLog('芽胞を満載した恒星間船が、星々へ旅立った。','story');pushCard({type:'sp_launch'});}
+  else if(k==='heliopause'){addLog('恒星間船が、太陽圏の外へ出た。','story');pushCard({type:'heliopause'});}
   else if(k==='ending'){addLog(`祈りの年${S.year}、ウォンバットは深宇宙へ旅立った。`,'story');pushCard({type:'ending',year:S.year,pop:totalPop(S)});}
 }
 
 // ---------- goal guidance ----------
+function nextWin(){for(let k=1;k<5;k++){const y=S.year+k;if(Math.floor(y*12/26)!==Math.floor((y-1)*12/26))return k;}return 3;}
 function goalText(){
   if(S.done)return '旅は終わった。星々のどこかで、四角い芽胞が目覚めを待っている。';
   if(!Object.keys(S.owned).length)return 'ウォンバットをなでて祈りを集め、最初の奇跡を授けよう。';
-  const front=HABITATS.filter(h=>!S.col[h.id]&&(!h.prev||S.col[h.prev]));
-  if(S.col.mars)return `深宇宙へ：芽胞 ${pct(pv(S,'spore'))}・知性 ${pct(pv(S,'human'))}・放射線耐性 ${pct(pv(S,'deinococcus'))} を群れに広げる`;
+  const front=HABITATS.filter(h=>!S.col[h.id]&&!h.space&&(!h.prev||S.col[h.prev]));
+  prog(S);const rk=S.rk,sp=S.sp;
+  if(sp.phase==='out')return `深宇宙へ：芽胞 ${pct(pv(S,'spore'))}・知性 ${pct(pv(S,'human'))}・放射線耐性 ${pct(pv(S,'deinococcus'))} を群れに広げる（90%）`;
+  if(sp.phase==='cruise')return `恒星間船、航行中（太陽圏の外まで あと${20-sp.t}年）`;
+  if(sp.phase==='ready')return '恒星間船が完成した。まもなく打ち上げ';
+  if(sp.phase==='dev')return `恒星間船を開発中 ${pct(sp.p)}（祈りを捧げると早まる）`;
+  if(S.col.mars)return S.owned.spore?`芽胞を群れの半数に広げて恒星間計画を始める（今 ${pct(pv(S,'spore'))}）`:'次の目標：深宇宙へ　芽胞の奇跡を授けよう';
+  if(rk.phase==='cruise')return 'ロケット、火星へ航行中';
+  if(rk.phase==='ready'){const w=nextWin();return `ロケット完成。次の打ち上げの窓まで あと${w}年`;}
+  if(rk.phase==='dev')return `ロケットを開発中 ${pct(rk.p)}（祈りを捧げると早まる）`;
+  if(S.owned.curiosity)return `好奇心を群れの半数に広げてロケット作りを始める（今 ${pct(pv(S,'curiosity'))}）`;
   if(front.length){front.sort((a,b)=>suit(S,b)-suit(S,a));const h=front.find(x=>!x.gate||pv(S,x.gate)>=.5)||front[0];
     if(h.sea)return `次の目標：${h.name}へ（海の向こう）　漂流で生き残る力 ${pct(driftSurv(S))}・適合度 ${pct(suit(S,h))}`;
     if(h.gate&&pv(S,h.gate)<.5)return `次の目標：${h.name}へ　まず「${TR[h.gate].name}」を群れの半数に広げる`;
@@ -972,6 +1072,14 @@ const bar=(p,cls)=>`<div class="bar ${cls||''}"><i style="width:${Math.min(100,p
 function traitHabs(id){return HABITATS.filter(h=>h.need[id]).map(h=>h.name).join('・');}
 function renderMiracles(){
   const el=$('p-miracle');let h='';
+  prog(S);const st0=stats(S);
+  const progBox=(which,label)=>{const P=S[which];if(P.phase==='none'||P.phase==='done'||P.phase==='out')return '';
+    let inner='';const ic=investCost(S,st0);
+    if(P.phase==='dev')inner=`<div class="row"><span>開発度</span><span class="p">${pct(P.p)}</span></div>${bar(P.p,'g')}<button class="item invest" data-inv="${which}"><div class="row"><b>祈りを捧げる</b><span class="cost">${fmt(ic)} ウォン</span></div><div class="eff">開発を6%進める</div></button>`;
+    else if(P.phase==='ready')inner=which==='rk'?`<div class="eff">完成。次の打ち上げの窓まで あと${nextWin()}年（約26か月ごと）</div>`:'<div class="eff">完成。まもなく打ち上げ</div>';
+    else if(P.phase==='cruise')inner=which==='rk'?'<div class="eff">火星へ航行中（約7か月）</div>':`<div class="eff">航行中。太陽圏の外まで あと${20-P.t}年</div>`;
+    return `<div class="prog"><h3>${label}</h3>${inner}</div>`;};
+  h+=progBox('rk','ロケット計画（火星）')+progBox('sp','恒星間計画（深宇宙）');
   const avail=TRAITS.filter(t=>traitAvailable(S,t)).sort((a,b)=>a.cost-b.cost);
   if(!avail.length)h+='<p class="hint">いまは授けられる奇跡がありません。</p>';
   for(const t of avail){const hb=traitHabs(t.id);
@@ -980,6 +1088,7 @@ function renderMiracles(){
   if(owned.length){h+=`<h3>授けた形質（群れでの保有率）</h3>`;
     for(const t of owned)h+=`<div class="own"><div class="row"><span>${t.name}<small>（${t.src}）</small></span><span class="p">${pct(pv(S,t.id))}</span></div>${bar(pv(S,t.id),'g')}</div>`;}
   el.innerHTML=h;el.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>doBuyTrait(b.dataset.buy));
+  el.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>{if(invest(S,b.dataset.inv)){snd('buy');renderMiracles();updateHeader();save();}});
 }
 function renderBlessings(){
   const el=$('p-bless');let h='';
@@ -997,7 +1106,7 @@ function renderHabitats(){
     const needs=Object.keys(hb.need).map(k=>`<div class="need"><span>${S.owned[k]?TR[k].src:'？？？'}</span>${bar(pv(S,k),'g')}</div>`).join('');
     if(S.col[hb.id]){const N=S.pop[hb.id]||0,K=capOf(S,hb.id,st);
       h+=`<button class="item ${view===hb.id?'sel':''}" data-view="${hb.id}"><div class="row"><b>${hb.name}${view===hb.id?' <small>表示中</small>':''}</b><span class="cost">${fmt(N)} 頭</span></div>${bar(N/Math.max(1,K))}<div class="eff">${S.adapted[hb.id]?'<span class="ok">適応済み</span>':'進出中'} ／ 適合度 ${pct(s)} ／ 上限 ${fmt(K)} 頭 ／ 面積のめやす 約${fmt(hb.area)} km²</div>${needs}</button>`;}
-    else h+=`<div class="item pending"><div class="row"><b>${hb.name}</b><span class="cost">未進出${hb.sea?'・海の向こう':''}</span></div><div class="eff">${hb.sea?`嵐で流された群れが生きてたどり着き、適合度が20%以上あれば住みつく。<br>漂流で生き残る力 ${pct(driftSurv(S))} ／ 適合度 ${pct(s)}`:`適合度 ${pct(s)}（20%で数頭が歩いて渡りはじめる${hb.gate?'。ヒトの知性が群れの半数に広がることも必要':''}）`}</div>${needs}</div>`;
+    else h+=`<div class="item pending"><div class="row"><b>${hb.name}</b><span class="cost">未進出${hb.sea?'・海の向こう':''}</span></div><div class="eff">${hb.space?'ロケットで渡る。ヒトの知性と好奇心が群れに広がると、ロケット作りが始まる。<br>適合度 '+pct(s):hb.sea?`嵐で流された群れが生きてたどり着き、適合度が20%以上あれば住みつく。<br>漂流で生き残る力 ${pct(driftSurv(S))} ／ 適合度 ${pct(s)}`:`適合度 ${pct(s)}（20%で数頭が歩いて渡りはじめる${hb.gate?'。ヒトの知性が群れの半数に広がることも必要':''}）`}</div>${needs}</div>`;
   }
   h+=`<div class="statbox">一度に産む子 ${st.litter.toFixed(1)}頭 ／ 出産間隔 ${st.interval.toFixed(2)}年 ／ 成熟 ${st.maturity<1?Math.round(st.maturity*365)+'日':st.maturity.toFixed(2)+'年'}<br>世代の長さ 約${st.T.toFixed(1)}年 ／ 年あたり増加率 ${(st.r*100).toFixed(1)}%</div>`;
   el.innerHTML=h;el.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;rebuildCrowd();renderHabitats();renderChips();});
@@ -1038,6 +1147,7 @@ function updateBadges(){
 }
 function updateButtons(){
   document.querySelectorAll('[data-buy]').forEach(b=>{const ok=S.won>=TR[b.dataset.buy].cost;b.disabled=!ok;b.classList.toggle('ready',ok);});
+  document.querySelectorAll('[data-inv]').forEach(b=>{b.disabled=S.won<investCost(S,stats(S));});
   document.querySelectorAll('[data-bl]').forEach(b=>{const bl=BLESSINGS.find(x=>x.id===b.dataset.bl);b.disabled=S.won<blCost(bl,blLevel(S,bl,view));});
 }
 function doBuyTrait(id){if(!buyTrait(S,id))return;addLog(TR[id].flavor,'miracle');pushCard({type:'trait',id});renderPanels();updateHeader();save();showNextCard();}
