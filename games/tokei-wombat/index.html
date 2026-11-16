@@ -417,8 +417,10 @@ const DP={
 const MARKS={'!':{p:['r','r','r','.','r'],c:{r:'#d84a4a'}},'?':{p:['bbb','..b','.b.','...','.b.'],c:{b:'#5e4128'}},
  heart:{p:['.x.x.','xxxxx','xxxxx','.xxx.','..x..'],c:{x:'#ff7f9b'}},sweat:{p:['.b','bb','bb'],c:{b:'#7ec8f0'}}};
 function blitPat(c,P,x0,y0,flip){const w=P.p[0].length;P.p.forEach((r,j)=>{for(let i=0;i<r.length;i++){const k=r[flip?w-1-i:i];if(k&&k!=='.'){c.fillStyle=P.c[k];c.fillRect(Math.round(x0)+i,Math.round(y0)+j,1,1);}}});}
+// ドット絵が もともと どちらを むいているか → 左（ウォンバットの ほう）を むくように そろえる
+const FACE={eagle:true,devil:false,dingo:false,snake:true,storm:true};
 const ICON={};
-for(const d of DANGERS){const P=DP[d.id],w=Math.max(...P.p.map(r=>r.length)),c=document.createElement('canvas');c.width=w;c.height=P.p.length;blitPat(c.getContext('2d'),P,0,0,true);ICON[d.id]=c.toDataURL();}
+for(const d of DANGERS){const P=DP[d.id],w=Math.max(...P.p.map(r=>r.length)),c=document.createElement('canvas');c.width=w;c.height=P.p.length;blitPat(c.getContext('2d'),P,0,0,FACE[d.id]);ICON[d.id]=c.toDataURL();}
 
 // ---------- もんだい ----------
 function Q(now,d,fn,fd,o){return Object.assign({now,d,target:now+d,fn,fd,preview:false,labels:false,tip:'',title:''},o||{});}
@@ -545,7 +547,7 @@ function draw(now){
   ctx.save();if(s.shk)ctx.translate(Math.round((R()-.5)*3),0);
   drawBG(ctx,SW,s.grassLeft,gt,EX-70);drawBurrow(ctx);
   const D=DP[ST.danger.id],fly=ST.danger.fly,dy=fly?6+Math.round(Math.sin(t*3)):GY-D.p.length+1;
-  blitPat(ctx,D,s.dx,dy,true);
+  blitPat(ctx,D,s.dx,dy,FACE[ST.danger.id]);
   if(s.showW){
     const st=s.wstate;let o;
     if(st==='eat'){o={hy:3.5,chew:Math.floor(t*5)%2,eye:t%2.4>1.6?'half':'open'};o.hy+=o.chew;o.nw=o.chew?1:0;blit(ctx,renderFront(o),Math.round(s.wx),GY,false);
