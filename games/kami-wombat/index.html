@@ -1028,6 +1028,8 @@ let seenLog=0,seenDex=0;
 function updateBadges(){
   const afford=TRAITS.some(t=>traitAvailable(S,t)&&S.won>=t.cost);
   document.querySelector('[data-t="miracle"]').classList.toggle('dot',afford&&tab!=='miracle');
+  const affordBl=BLESSINGS.some(b=>S.won>=blCost(b,blLevel(S,b,view)));
+  document.querySelector('[data-t="bless"]').classList.toggle('dot',affordBl&&tab!=='bless');
   if(tab==='log')seenLog=S.log.length?S.log[0].y+':'+S.log[0].t:0;
   document.querySelector('[data-t="log"]').classList.toggle('dot',tab!=='log'&&S.log.length&&(S.log[0].y+':'+S.log[0].t)!==seenLog);
   const nd=TRAITS.filter(t=>S.owned[t.id]).length;if(tab==='dex')seenDex=nd;
