@@ -183,15 +183,17 @@ const FORM_TABLE = {
     [{e:'s:lepido', n:'リンボク(シダ植物のなかま)'}],
     [{need:'sleep', e:'s:ginkgo', n:'イチョウのなかま'}, {e:'🌴', n:'ソテツのなかま'}],
     [{need:'sleep', e:'🌲', n:'マツなどの針葉樹'}, {e:'🌸', n:'花をさかせる植物'}],
+    [{need:'sleep', e:'🌰', n:'ドングリのなる木(ブナのなかま)'}, {e:'🌳', n:'あたたかい広葉樹の森'}],
     [{need:'coat', e:'🌲', n:'寒さに強い針葉樹の森'}, {e:'🌾', n:'草原の草'}],
   ],
   fun: [
     [{e:'s:chytrid', n:'ツボカビのなかま(水の中の菌類)'}],
     [{e:'s:myco', n:'植物の根とくらす菌類'}],
-    [{e:'s:bracket', n:'倒木を分解する菌類(サルノコシカケのなかまなど)'}],
+    [{need:'coat', e:'s:lichen', n:'地衣類(菌類と藻類がいっしょにくらすもの)'}, {e:'s:bracket', n:'倒木を分解する菌類(サルノコシカケのなかまなど)'}],
     [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
-    [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
-    [{need:'sleep', e:'s:mold', n:'カビのなかま'}, {e:'🍄', n:'キノコのなかま'}],
+    [{need:'coat', e:'s:lichen', n:'地衣類(菌類と藻類がいっしょにくらすもの)'}, {e:'s:cordy', n:'虫につくキノコ(冬虫夏草のなかま)'}],
+    [{need:'small', e:'s:yeast', n:'酵母のなかま(1つの細胞の菌類)'}, {e:'🍄', n:'キノコのなかま'}],
+    [{need:'coat', e:'s:lichen', n:'地衣類(トナカイなどの食べものにもなる)'}, {need:'small', e:'s:yeast', n:'酵母のなかま(1つの細胞の菌類)'}, {e:'🍄', n:'キノコのなかま'}],
   ],
   art: [
     [{need:'fang', e:'s:anoma', n:'アノマロカリス'}, {need:'eye', e:'s:anoma', n:'アノマロカリス'}, {e:'s:trilo', n:'三葉虫'}],
@@ -207,6 +209,7 @@ const FORM_TABLE = {
     [{need:'fang', e:'s:dimet', n:'ディメトロドン'}, {need:'herb', e:'s:edapho', n:'エダフォサウルス'}, {need:'lung', e:'🐸', n:'両生類のなかま'}, {e:'🦎', n:'初期の爬虫類のなかま'}],
     [{need:'small', e:'🐭', n:'初期のほにゅうるい'}, {need:'fang', e:'🐊', n:'ワニに近いなかま'}, {need:'herb', e:'🦕', n:'プラテオサウルス'}, {e:'🦎', n:'初期の恐竜のなかま'}],
     [{need:'small', e:'🐭', n:'恐竜時代のほにゅうるい'}, {need:'fang', e:'🦖', n:'ティラノサウルス'}, {need:'shell', e:'s:trice', n:'トリケラトプス'}, {need:'eye', e:'🐦', n:'鳥のなかま'}, {e:'🦕', n:'ブラキオサウルスなどの恐竜'}],
+    [{need:'small', e:'🐁', n:'ネズミのなかま'}, {need:'fang', e:'🐺', n:'肉食のほにゅうるいのなかま'}, {need:'herb', e:'s:eohip', n:'エオヒップス(ウマの祖先)'}, {need:'eye', e:'🐦', n:'鳥のなかま'}, {e:'🦇', n:'コウモリのなかま'}],
     [{need:'coat', e:'🦣', n:'マンモス'}, {need:'fang', e:'s:smilo', n:'スミロドン'}, {need:'herb', e:'🐎', n:'ウマのなかま'}, {need:'small', e:'🐁', n:'ネズミのなかま'}, {e:'🐒', n:'サルのなかま'}],
   ],
 };
@@ -249,7 +252,8 @@ const ERAS = [
   {icon:'🌴', name:'おおきな もりの じだい', sub:'石炭紀〜ペルム紀'},
   {icon:'🦕', name:'きょうりゅうの はじまり', sub:'三畳紀'},
   {icon:'🦖', name:'きょうりゅうの じだい',  sub:'ジュラ紀〜白亜紀'},
-  {icon:'🐘', name:'ほにゅうるいの じだい',  sub:'新生代'},
+  {icon:'🐁', name:'ほにゅうるいが ひろがる じだい', sub:'新生代のはじめ(古第三紀)'},
+  {icon:'🦣', name:'そうげんと ひょうがの じだい',   sub:'新生代のおわりごろ(新第三紀〜第四紀)'},
 ];
 const CRISES = [
   {icon:'❄️', name:'こおりの じだい',        era:'オルドビス紀の終わり', save:['coat','sleep'],
@@ -280,6 +284,7 @@ const ZUKAN = [
   {id:'bracket', e:'s:bracket', name:'サルノコシカケのなかま', era:2, st:'fun', tr:null, t:'倒れた木や枯れ木を分解する菌類。木のかたい成分を分解できる菌類がいつ現れたかは研究が続いていて、石炭紀に石炭が多くできたこととの関係も議論されています。'},
   {id:'roach', e:'🪳', name:'ゴキブリに近いなかま', era:2, st:'art', tr:null, t:'石炭紀の地層から、ゴキブリに近いなかまの化石がたくさん見つかっています。落ち葉などを食べて、分解を助けます。'},
   {id:'edapho', e:'s:edapho', name:'エダフォサウルス', era:2, st:'ver', tr:'herb', t:'ディメトロドンに似た、背中に帆をもつ動物。こちらは植物を食べていたと考えられています。'},
+  {id:'lichen', e:'s:lichen', name:'地衣類(ちいるい)', era:2, st:'fun', tr:'coat', t:'菌類と藻類がいっしょにくらしている生き物。岩や木の表面に生え、寒さや乾燥にとても強いものが多くいます。'},
   {id:'linbo', e:'s:lepido', name:'リンボク', era:2, st:'pla', tr:null, t:'石炭紀の森に生えていた、木のように大きくなるシダ植物のなかま。のちに石炭のもとになりました。'},
   {id:'megan', e:'s:meganeura', name:'メガネウラ', era:2, st:'art', tr:'eye', t:'石炭紀にいた、とても大きなトンボのなかま。はねを広げると70cmほどあったとされます。'},
   {id:'arthro', e:'s:arthro', name:'アースロプレウラ', era:2, st:'art', tr:'herb', t:'石炭紀にいた、とても大きなヤスデのなかま。植物などを食べていたと考えられています。'},
@@ -292,15 +297,20 @@ const ZUKAN = [
   {id:'brachi', e:'🦕', name:'ブラキオサウルス', era:4, st:'ver', tr:'herb', t:'首の長い、とても大きな植物食の恐竜。高いところの葉を食べていたと考えられています。'},
   {id:'trice', e:'s:trice', name:'トリケラトプス', era:4, st:'ver', tr:'shell', t:'3本の角と大きなえりをもつ植物食の恐竜。白亜紀の終わりごろに生きていました。'},
   {id:'trex', e:'🦖', name:'ティラノサウルス', era:4, st:'ver', tr:'fang', t:'白亜紀の終わりにいた大型の肉食恐竜。とても強い、かむ力をもっていたと考えられています。'},
-  {id:'mold', e:'s:mold', name:'カビのなかま', era:4, st:'fun', tr:'sleep', t:'たくさんの胞子をつくってふえる菌類。胞子は乾燥などに強いものが多く、悪い時期をのりこえやすいとされます。'},
+  {id:'mold', e:'s:mold', name:'カビのなかま', era:3, st:'fun', tr:'sleep', t:'たくさんの胞子をつくってふえる菌類。胞子は乾燥などに強いものが多く、悪い時期をのりこえやすいとされます。'},
+  {id:'cordy', e:'s:cordy', name:'虫につくキノコ', era:4, st:'fun', tr:null, t:'白亜紀の琥珀の中から、虫にとりついた菌類の化石が見つかっています。いまも、冬虫夏草とよばれる、虫にとりつくキノコのなかまがいます。'},
   {id:'spider', e:'🕷️', name:'クモのなかま', era:4, st:'art', tr:'fang', t:'ほかの虫を食べる節足動物。クモのなかまはとても古く、恐竜の時代にはもう多くの種類がいました。'},
   {id:'bird', e:'🐦', name:'鳥のなかま', era:4, st:'ver', tr:'eye', t:'鳥は恐竜のなかまから現れました。ジュラ紀の始祖鳥などが知られています。'},
-  {id:'grass', e:'🌾', name:'イネ科の草', era:5, st:'pla', tr:null, t:'新生代に草原が大きく広がりました。草原では、草を食べる動物がふえました。'},
+  {id:'rodent', e:'🐁', name:'ネズミのなかま', era:5, st:'ver', tr:'small', t:'新生代のはじめに、ネズミのような小さなほにゅうるい(げっ歯類)が広がりました。いまも、ほにゅうるいの中でいちばん種類が多いなかまです。'},
+  {id:'eohip', e:'s:eohip', name:'エオヒップス', era:5, st:'ver', tr:'herb', t:'新生代のはじめにいた、キツネくらいの大きさのウマの祖先。森で木の葉などを食べていたと考えられています。'},
+  {id:'bat', e:'🦇', name:'コウモリのなかま', era:5, st:'ver', tr:null, t:'新生代のはじめごろの地層から、コウモリの化石が見つかっています。空を飛ぶほにゅうるいです。'},
+  {id:'yeast', e:'s:yeast', name:'酵母のなかま', era:5, st:'fun', tr:'small', t:'1つの細胞でくらす菌類。パンやお酒づくりに使われるなかまもいます。'},
+  {id:'grass', e:'🌾', name:'イネ科の草', era:6, st:'pla', tr:null, t:'新生代に草原が大きく広がりました。草原では、草を食べる動物がふえました。'},
   {id:'mush', e:'🍄', name:'キノコのなかま', era:5, st:'fun', tr:null, t:'落ち葉や倒れた木を分解して、土に栄養を戻す分解者。菌類はとても古くからいます。'},
   {id:'butter', e:'🦋', name:'チョウのなかま', era:5, st:'art', tr:null, t:'花の蜜を吸う昆虫。チョウのなかまは、恐竜の時代にはもう現れていたと考えられています。'},
-  {id:'mammoth', e:'🦣', name:'マンモス', era:5, st:'ver', tr:'coat', t:'氷河期の寒い土地でくらしたゾウのなかま。長い毛で寒さにたえました。'},
-  {id:'horse', e:'🐎', name:'ウマのなかま', era:5, st:'ver', tr:'herb', t:'草原が広がった新生代に、草を食べるウマのなかまがふえました。'},
-  {id:'smilo', e:'s:smilo', name:'スミロドン', era:5, st:'ver', tr:'fang', t:'長いキバをもつネコのなかま。「サーベルタイガー」ともよばれます。'},
+  {id:'mammoth', e:'🦣', name:'マンモス', era:6, st:'ver', tr:'coat', t:'氷河期の寒い土地でくらしたゾウのなかま。長い毛で寒さにたえました。'},
+  {id:'horse', e:'🐎', name:'ウマのなかま', era:6, st:'ver', tr:'herb', t:'草原が広がった新生代に、草を食べるウマのなかまがふえました。'},
+  {id:'smilo', e:'s:smilo', name:'スミロドン', era:6, st:'ver', tr:'fang', t:'長いキバをもつネコのなかま。「サーベルタイガー」ともよばれます。'},
 ];
 
 
@@ -308,7 +318,7 @@ const COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12'];
 const MARKS = ['⭐','🌙','☀️','💎','❤️','🔶'];
 const WHEEL_COLORS = {cell:'#bcd8f0', pla:'#a8dca0', opi:'#cfc2ea', fun:'#d9c0a3', ani:'#f2d29b', art:'#f5c49b', ver:'#a9cbee', shinka:'#ffe680', none:'#e2e2e2'};
 
-const SPRITES = {"trilo":{"say":"さんようちゅう","half":true,"pal":{"a":"#5b4636","b":"#b08d63","c":"#8a6a48","e":"#222222","d":"#6e5440"},"rows":["........",".....aaa","...aabbb","..abebbb","..abbbbc",".aabbbbc","a.aaaaac","...abbbc","...adddc","...abbbc","....addc","....abbc","....addc",".....abc","......ac","........"]},"anoma":{"say":"アノマロカリス","half":true,"pal":{"a":"#7a3b2e","b":"#d77a5a","f":"#eba584","e":"#222222","g":"#b55a40"},"rows":["........","..g.....",".g.g....",".g..g...","..gg.aaa",".ea.abbb","..aaabbb",".ff.abbb","fff.abbb",".ff.abbb","fff.abbb",".ff..abb","..f..abb","......ab","....f.ab","...ff..a"]},"eurypt":{"say":"ウミサソリ","half":true,"pal":{"a":"#4a5a3a","b":"#86a062","p":"#b4c98a","e":"#222222"},"rows":["......aa",".....abb","....aebb","..a.abbb",".a..abbb","a..aabbb","pp.abbbb","ppp.abbb","....abbb",".....abb",".....abb","......ab","......ab","......ab",".....aab","......aa"]},"meganeura":{"say":"メガネウラ","half":true,"pal":{"v":"#7fb3d0","w":"#d6eef8","b":"#3f7f5f","e":"#2a4a8a"},"rows":["......ee","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","......bb","......bb","......bb","......bb","......bb","......bb",".......b"]},"arthro":{"say":"アースロプレウラ","half":true,"pal":{"a":"#3d2f22","b":"#a06a36","d":"#6b4421","l":"#4a3018"},"rows":["........","......aa",".....abb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb",".....abb","......aa","........"]},"myllo":{"say":"ミロクンミンギア","pal":{"a":"#2f4f6f","b":"#8fb8d8","w":"#d6e8f5","e":"#111111","f":"#6f98bb"},"rows":["................","................","................","................","......fff.......","....aaaaaaaa....","..aabbbbbbbbaa.f",".aebbbbbbbbbbbaf","abbbbbbbbbbbbbff",".awwwwwwwwwwwaaf","..aawwwwwwwaa..f","....aaaaaaa.....","................","................","................","................"]},"dunkle":{"say":"ダンクルオステウス","pal":{"a":"#2b2b2b","p":"#7d7d7d","q":"#a8a8a8","b":"#6f8796","w":"#c7d3da","e":"#ffcc33","t":"#ffffff","f":"#556b78"},"rows":["................","................","................","....aaaaa.......","..aaqqqqqaa....f",".aqqqepqqpaaa.ff","aqqqqqpppbbbbaff","apppppppbbbbbbbf","attttpppbbbbbbbf","a....tpwwwwwwbaf","aatttppwwwwwwa.f",".aaaaaaaaaaaa...","................","................","................","................"]},"ichthyo":{"say":"イクチオステガ","pal":{"a":"#2f4a26","b":"#6f9a4f","w":"#b8d39a","e":"#111111"},"rows":["................","................","................","................","................","................","...aaaa.........",".aabbbbaaaaaaa..","aebbbbbbbbbbbbaa","abbbbbbbbbbbbbba",".awwwwwwwwwwwa..","..aa.aa..aa.aa..","..a...a..a...a..",".aa..aa.aa..aa..","................","................"]},"dimet":{"say":"ディメトロドン","pal":{"a":"#3d2412","b":"#a0663a","w":"#d9a77a","s":"#e08a50","r":"#7a3d18","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]},"trice":{"say":"トリケラトプス","pal":{"a":"#3a3a2a","b":"#8a9a5a","w":"#c2cc96","f":"#c0a050","h":"#f2ead0","e":"#111111"},"rows":["................","....ff..........","...ffff.........","hh.ffffaaaaaa...",".hhaffabbbbbbaa.","..abbabbbbbbbbba","haebbbbbbbbbbbba",".abbbbbbbbbbbbba","..awwbbbbbbbbbb.","...aawwwwwwwbba.","....aa.aaaa.aa..","....aa.aa...aa..","...aaa.aaa.aaa..","................","................","................"]},"smilo":{"say":"スミロドン","pal":{"a":"#3a2a1a","b":"#c99a5a","w":"#ead2a8","e":"#111111","t":"#ffffff"},"rows":["................","................","................",".aaa...........a","abeba.........a.","abbbbaaaaaaaaaa.","abbbbbbbbbbbbbaa","atbbbbbbbbbbbbba",".twwbbbbbbbbbba.",".t.awwwwwwwwba..","...aa.aa.aa.aa..","...aa.aa.aa.aa..","..aaa.aa.aa.aa..","................","................","................"]},"cookso":{"say":"クックソニア","pal":{"g":"#4f8f3a","s":"#d98b2a","d":"#8a6a4a"},"rows":["................","................","...s.....s......","...s..s..s..s...","...g..s..g..s...","....g.g.g...g...","....g.g.g..g....",".....gg.g..g....",".....g..gg.g....",".....g...gg.....",".....g...g......","......g..g......","......g.g.......",".......g........","dddddddddddddddd","dddddddddddddddd"]},"lepido":{"say":"リンボク","pal":{"l":"#6fae4f","t":"#6a8a44","p":"#3f5a2a","d":"#8a6a4a"},"rows":[".l.l.l..l.l.l...","lllllll.lllllll.",".lllllllllllll..","..l..llttll..l..",".......tt.......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......",".....ttttt......","dddddddddddddddd","dddddddddddddddd"]},"ginkgo":{"say":"イチョウ","half":true,"pal":{"o":"#5a7f2a","l":"#a6cf4f","s":"#6a5a2a"},"rows":["........","........","........",".oooooo.","olllllo.","ollllllo","olllllll",".ollllll","..olllll","...ollll","....olll",".....oll","......ol",".......s",".......s",".......s"]},"chytrid":{"say":"ツボカビ","pal":{"o":"#6a5a8a","b":"#c9bce6","r":"#9a8a7a","z":"#6a5a8a"},"rows":["............z...","...........zz.z.","..............z.",".....oooo.......","....obbbbo......","...obbbbbbo.....","...obbbbbbo.....","...obbbbbbo.....","....obbbbo......",".....oooo.......","......rr........",".....r..r.......","....r.rr.r......","...r..r...r.....","..r..r.....r....","................"]},"myco":{"say":"きんこんきん","pal":{"r":"#8a6a40","h":"#b9a77a"},"rows":["rr..............",".rr.............","..rr..h.....h...","...rrh.h...h....","....rr..h.h.....","...h.rr..h..h...","..h...rr.h.h....",".h..h..rr..h....","h..h....rr.h.h..","..h..h...rr..h..",".h....h...rr....","h...h..h...rr.h.","...h....h...rr..","..h...h......rr.",".h...h..h.....rr","h..............r"]},"bracket":{"say":"サルノコシカケ","pal":{"l":"#7a5230","k":"#5a3a20","b":"#d9a050","c":"#f0d8a0","o":"#8a5a20"},"rows":["lll.............","lkl.............","lll.oooo........","lllobbbbo.......","lklbbbbbbo......","lllcccccccc.....","lll.............","lkl..oooooo.....","llloobbbbbbo....","lllbbbbbbbbbo...","lklccccccccccc..","lll.............","lll.............","lkl.............","lll.............","lll............."]},"mold":{"say":"カビ","pal":{"s":"#8a8a8a","h":"#3a3a3a","g":"#6fa88f","m":"#bfe0d0"},"rows":["................","..h......h......",".hhh..h..hhh..h.","..s..hhh..s..hhh","..s...s...s...s.","..s...s..s....s.","...s..s..s...s..","...s..s.s...s...","....s.s.s..s....","....s.sss.s.....",".....sssss......","..mmmmmmmmmmmm..",".mgmmgmmgmmgmmm.","mmmmmmmmmmmmmmmm","................","................"]},"edapho":{"say":"エダフォサウルス","pal":{"a":"#2f3a1a","b":"#7f945a","w":"#c3cf9a","s":"#b9c46a","r":"#5a6a2a","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]}};
+const SPRITES = {"trilo":{"say":"さんようちゅう","half":true,"pal":{"a":"#5b4636","b":"#b08d63","c":"#8a6a48","e":"#222222","d":"#6e5440"},"rows":["........",".....aaa","...aabbb","..abebbb","..abbbbc",".aabbbbc","a.aaaaac","...abbbc","...adddc","...abbbc","....addc","....abbc","....addc",".....abc","......ac","........"]},"anoma":{"say":"アノマロカリス","half":true,"pal":{"a":"#7a3b2e","b":"#d77a5a","f":"#eba584","e":"#222222","g":"#b55a40"},"rows":["........","..g.....",".g.g....",".g..g...","..gg.aaa",".ea.abbb","..aaabbb",".ff.abbb","fff.abbb",".ff.abbb","fff.abbb",".ff..abb","..f..abb","......ab","....f.ab","...ff..a"]},"eurypt":{"say":"ウミサソリ","half":true,"pal":{"a":"#4a5a3a","b":"#86a062","p":"#b4c98a","e":"#222222"},"rows":["......aa",".....abb","....aebb","..a.abbb",".a..abbb","a..aabbb","pp.abbbb","ppp.abbb","....abbb",".....abb",".....abb","......ab","......ab","......ab",".....aab","......aa"]},"meganeura":{"say":"メガネウラ","half":true,"pal":{"v":"#7fb3d0","w":"#d6eef8","b":"#3f7f5f","e":"#2a4a8a"},"rows":["......ee","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","vvvv..bb","wwwwvvbb","vwwwwwbb",".vvvvvbb","......bb","......bb","......bb","......bb","......bb","......bb",".......b"]},"arthro":{"say":"アースロプレウラ","half":true,"pal":{"a":"#3d2f22","b":"#a06a36","d":"#6b4421","l":"#4a3018"},"rows":["........","......aa",".....abb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb","...l.add","....abbb",".....abb","......aa","........"]},"myllo":{"say":"ミロクンミンギア","pal":{"a":"#2f4f6f","b":"#8fb8d8","w":"#d6e8f5","e":"#111111","f":"#6f98bb"},"rows":["................","................","................","................","......fff.......","....aaaaaaaa....","..aabbbbbbbbaa.f",".aebbbbbbbbbbbaf","abbbbbbbbbbbbbff",".awwwwwwwwwwwaaf","..aawwwwwwwaa..f","....aaaaaaa.....","................","................","................","................"]},"dunkle":{"say":"ダンクルオステウス","pal":{"a":"#2b2b2b","p":"#7d7d7d","q":"#a8a8a8","b":"#6f8796","w":"#c7d3da","e":"#ffcc33","t":"#ffffff","f":"#556b78"},"rows":["................","................","................","....aaaaa.......","..aaqqqqqaa....f",".aqqqepqqpaaa.ff","aqqqqqpppbbbbaff","apppppppbbbbbbbf","attttpppbbbbbbbf","a....tpwwwwwwbaf","aatttppwwwwwwa.f",".aaaaaaaaaaaa...","................","................","................","................"]},"ichthyo":{"say":"イクチオステガ","pal":{"a":"#2f4a26","b":"#6f9a4f","w":"#b8d39a","e":"#111111"},"rows":["................","................","................","................","................","................","...aaaa.........",".aabbbbaaaaaaa..","aebbbbbbbbbbbbaa","abbbbbbbbbbbbbba",".awwwwwwwwwwwa..","..aa.aa..aa.aa..","..a...a..a...a..",".aa..aa.aa..aa..","................","................"]},"dimet":{"say":"ディメトロドン","pal":{"a":"#3d2412","b":"#a0663a","w":"#d9a77a","s":"#e08a50","r":"#7a3d18","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]},"trice":{"say":"トリケラトプス","pal":{"a":"#3a3a2a","b":"#8a9a5a","w":"#c2cc96","f":"#c0a050","h":"#f2ead0","e":"#111111"},"rows":["................","....ff..........","...ffff.........","hh.ffffaaaaaa...",".hhaffabbbbbbaa.","..abbabbbbbbbbba","haebbbbbbbbbbbba",".abbbbbbbbbbbbba","..awwbbbbbbbbbb.","...aawwwwwwwbba.","....aa.aaaa.aa..","....aa.aa...aa..","...aaa.aaa.aaa..","................","................","................"]},"smilo":{"say":"スミロドン","pal":{"a":"#3a2a1a","b":"#c99a5a","w":"#ead2a8","e":"#111111","t":"#ffffff"},"rows":["................","................","................",".aaa...........a","abeba.........a.","abbbbaaaaaaaaaa.","abbbbbbbbbbbbbaa","atbbbbbbbbbbbbba",".twwbbbbbbbbbba.",".t.awwwwwwwwba..","...aa.aa.aa.aa..","...aa.aa.aa.aa..","..aaa.aa.aa.aa..","................","................","................"]},"cookso":{"say":"クックソニア","pal":{"g":"#4f8f3a","s":"#d98b2a","d":"#8a6a4a"},"rows":["................","................","...s.....s......","...s..s..s..s...","...g..s..g..s...","....g.g.g...g...","....g.g.g..g....",".....gg.g..g....",".....g..gg.g....",".....g...gg.....",".....g...g......","......g..g......","......g.g.......",".......g........","dddddddddddddddd","dddddddddddddddd"]},"lepido":{"say":"リンボク","pal":{"l":"#6fae4f","t":"#6a8a44","p":"#3f5a2a","d":"#8a6a4a"},"rows":[".l.l.l..l.l.l...","lllllll.lllllll.",".lllllllllllll..","..l..llttll..l..",".......tt.......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......","......tptt......","......ttpt......",".....ttttt......","dddddddddddddddd","dddddddddddddddd"]},"ginkgo":{"say":"イチョウ","half":true,"pal":{"o":"#5a7f2a","l":"#a6cf4f","s":"#6a5a2a"},"rows":["........","........","........",".oooooo.","olllllo.","ollllllo","olllllll",".ollllll","..olllll","...ollll","....olll",".....oll","......ol",".......s",".......s",".......s"]},"chytrid":{"say":"ツボカビ","pal":{"o":"#6a5a8a","b":"#c9bce6","r":"#9a8a7a","z":"#6a5a8a"},"rows":["............z...","...........zz.z.","..............z.",".....oooo.......","....obbbbo......","...obbbbbbo.....","...obbbbbbo.....","...obbbbbbo.....","....obbbbo......",".....oooo.......","......rr........",".....r..r.......","....r.rr.r......","...r..r...r.....","..r..r.....r....","................"]},"myco":{"say":"きんこんきん","pal":{"r":"#8a6a40","h":"#b9a77a"},"rows":["rr..............",".rr.............","..rr..h.....h...","...rrh.h...h....","....rr..h.h.....","...h.rr..h..h...","..h...rr.h.h....",".h..h..rr..h....","h..h....rr.h.h..","..h..h...rr..h..",".h....h...rr....","h...h..h...rr.h.","...h....h...rr..","..h...h......rr.",".h...h..h.....rr","h..............r"]},"bracket":{"say":"サルノコシカケ","pal":{"l":"#7a5230","k":"#5a3a20","b":"#d9a050","c":"#f0d8a0","o":"#8a5a20"},"rows":["lll.............","lkl.............","lll.oooo........","lllobbbbo.......","lklbbbbbbo......","lllcccccccc.....","lll.............","lkl..oooooo.....","llloobbbbbbo....","lllbbbbbbbbbo...","lklccccccccccc..","lll.............","lll.............","lkl.............","lll.............","lll............."]},"mold":{"say":"カビ","pal":{"s":"#8a8a8a","h":"#3a3a3a","g":"#6fa88f","m":"#bfe0d0"},"rows":["................","..h......h......",".hhh..h..hhh..h.","..s..hhh..s..hhh","..s...s...s...s.","..s...s..s....s.","...s..s..s...s..","...s..s.s...s...","....s.s.s..s....","....s.sss.s.....",".....sssss......","..mmmmmmmmmmmm..",".mgmmgmmgmmgmmm.","mmmmmmmmmmmmmmmm","................","................"]},"lichen":{"say":"ちいるい","pal":{"r":"#9a9a9a","d":"#7a7a7a","y":"#c8d24a","o":"#e8a03a","g":"#8aa83a"},"rows":["................","................","................","................","......yyy.......","....yygyy..oo...","...yyggyyyoooo..","..rryyyyrrooorr.",".rrrryyrrrrorrrr","rrdrrrrrrdrrrrdr","rrrrrdrrrrrrdrrr","rdrrrrrrdrrrrrrr","rrrrrrdrrrrrdrrr",".rrrrrrrrrrrrrr.","................","................"]},"cordy":{"say":"とうちゅうかそう","pal":{"i":"#6b4a2a","k":"#3a2a1a","s":"#e88a2a","t":"#c0601a"},"rows":["........t.......","........ss......",".........s......","........s.......","........s.......",".........s......",".........s......","........s.......","........s.......","....kiiiisiik...","...kiiiiiiiiik..","..kiiikiiikiiik.","...k.k..k..k.k..","................","................","................"]},"yeast":{"say":"こうぼ","pal":{"o":"#b08a3a","c":"#f2deaa"},"rows":["................","................","................","....oooo........","...occcco.......","..occccccoo.....","..occccccoco....","..occccccocco...","...occccoccco...","....oooo.ooo....","........oooo....",".......occcco...",".......occcco...","........oooo....","................","................"]},"eohip":{"say":"エオヒップス","pal":{"a":"#3a2a1a","b":"#9a6a3a","w":"#d2aa7a","e":"#111111"},"rows":["................","................","................","................","................",".aa.............","abea............","abbba...........",".abbbaaaaaaaa...","..abbbbbbbbbbaa.","...awwwwwwwwba.a","....a.a...a.a...","....a.a...a.a...","...aa.a..aa.a...","................","................"]},"edapho":{"say":"エダフォサウルス","pal":{"a":"#2f3a1a","b":"#7f945a","w":"#c3cf9a","s":"#b9c46a","r":"#5a6a2a","e":"#111111","t":"#ffffff"},"rows":["................","......r..r......",".....rsrrsrr....","....rssssssrr...","....rsssssssr...","....rsssssssr...","..aaaaaaaaaaaa..",".abbbbbbbbbbbbaa","aebbbbbbbbbbbbbb","attwwwwwwwwwwba.",".aaaaaaaaaaaaa..","..aa.......aa...",".aaa......aaa...","................","................","................"]}};
 const SPR_URL = {};
 function sprURL(k){
   if(SPR_URL[k] !== undefined) return SPR_URL[k];
@@ -368,7 +378,7 @@ let zukan = new Set(store.get('shinka_zukan', []));
 const saveGame = () => store.set('shinka_game', S);
 const saveZukan = () => store.set('shinka_zukan', [...zukan]);
 const humanCount = () => S.pieces.filter(p => p.human).length;
-const eraNow = () => S.crisis;
+const eraNow = () => S.crisis + (S.crisis >= 5 && S.round >= ROUNDS ? 1 : 0);   // 新生代の2ラウンドめは「おわりごろ」
 function formInfo(p, era = eraNow()){
   if(p.small) return {e:SMALL[p.st], n:SMALL_NAME};
   const t = FORM_TABLE[p.st], list = t[Math.min(era, t.length - 1)];
@@ -481,7 +491,7 @@ function render(){
   $('#track').innerHTML = CRISES.map((c, i) => i < S.crisis ? '<div class="ci done">✅</div>' : i === S.crisis ? `<div class="ci now">${c.icon}</div>` : '<div class="ci">❔</div>').join('') + `<div class="ci${S.crisis >= 5 ? ' now' : ''}">🐘</div>`;
   $('#wheelG').innerHTML = pieSVG(S.alloc, 0, true);
   $('#wheelG').style.transform = `rotate(${S.rot}deg)`;
-  const er = ERAS[Math.min(S.crisis, 5)];
+  const er = ERAS[eraNow()];
   $('#eraBox').innerHTML = `${er.icon} ${er.name} <small>${er.sub}</small>`;
   if(S.crisis < 5){
     const c = CRISES[S.crisis], left = CRISIS_END[S.crisis] - S.round + 1;
@@ -884,7 +894,7 @@ async function doCrisis(){
   } else {
     await popup('🐘🌸🐒', '5かいの ききを<br>のりこえた！', {
       html:'<div class="msg" style="font-size:18px">さいごに ほにゅうるいの じだいを<br>2ラウンド あそぼう</div>' + S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${formName(p)}</span></div>`).join(''),
-      sub:'新生代になりました。鳥をのぞく恐竜がいなくなり、空いた場所に、生き残ったほにゅうるいや鳥などが広がりました(適応放散)。このゲームでも、新生代はふえられる上限が高く、➕で1ぴき多くふえます。新生代には、ビッグファイブのような大量絶滅はありません。',
+      sub:'新生代になりました。鳥をのぞく恐竜がいなくなり、空いた場所に、生き残ったほにゅうるいや鳥などが広がりました(適応放散)。このころのほにゅうるいは、まだ小さめのものが多くいました。このゲームでも、新生代はふえられる上限が高く、➕で1ぴき多くふえます。新生代には、ビッグファイブのような大量絶滅はありません。',
       say:'5かいの ききを のりこえた！ さいごに ほにゅうるいの じだいを 2ラウンド あそぼう'});
     for(const p of S.pieces.filter(q => q.human)) await checkZukan(p);
   }
@@ -927,8 +937,20 @@ async function loop(){
     if(CRISIS_END.includes(r) && !S.done['cr' + r]){ await doCrisis(); S.done['cr' + r] = 1; }
     if(EVENT_END.includes(r) && !S.done['ev' + r]){ await doEvent(); S.done['ev' + r] = 1; }
     S.idx = 0; S.round++; saveGame(); render();
+    if(S.round === ROUNDS && S.crisis >= 5 && !S.done.late){ await lateCeno(); S.done.late = 1; saveGame(); }
   }
   await ending();
+}
+async function lateCeno(){
+  S.hist = S.hist || {};
+  S.pieces.forEach(p => (S.hist[p.id] = S.hist[p.id] || [])[5] = formInfo(p, 5));
+  const er = ERAS[6];
+  S.cur = -1; render();
+  await popup(er.icon, `${er.name}<br>に なった！`, {
+    html:S.pieces.map(p => `<div class="row"><span class="rf">${markHtml(p, 34)}</span><span class="rf">${form(p)}</span><span class="rn">${formName(p)}</span></div>`).join(''),
+    sub:`${er.sub}になりました。草原が広がり、寒い氷期がくり返されるようになりました。マンモスやスミロドンなど、大きなほにゅうるいがいたのはこのころです。さいごのラウンドです。`,
+    say:er.name + 'に なった！ さいごの ラウンドだよ'});
+  for(const p of S.pieces.filter(q => q.human)) await checkZukan(p);
 }
 /* ============ エンディング ============ */
 let STAR_N = 34;   // ⭐3つめ:なかまの合計
@@ -951,6 +973,8 @@ const STAMPS = [
   {id:'f_mammo',e:'🦣', name:'マンモスに なった', test:c => c.seen.has('🦣')},
   {id:'f_smilo',e:'s:smilo', name:'スミロドンに なった', test:c => c.seen.has('s:smilo')},
   {id:'f_mold', e:'s:mold', name:'カビに なった', test:c => c.seen.has('s:mold')},
+  {id:'f_cordy',e:'s:cordy', name:'虫につく キノコに なった', test:c => c.seen.has('s:cordy')},
+  {id:'f_eohip',e:'s:eohip', name:'エオヒップスに なった', test:c => c.seen.has('s:eohip')},
   {id:'zk20',   e:'📖', name:'ずかん 20しゅるい', test:c => zukan.size >= 20},
   {id:'zkall',  e:'📚', name:'ずかん コンプリート', test:c => zukan.size >= ZUKAN.length},
 ];
@@ -977,8 +1001,8 @@ async function ending(){
   store.del('shinka_game');
   S.cur = -1; render(); fanfare(); setTimeout(fanfare, 500);
   S.log = S.log || {}; S.hist = S.hist || {}; S.found = S.found || [];
-  S.pieces.forEach(p => (S.hist[p.id] = S.hist[p.id] || [])[5] = formInfo(p, 5));
-  for(const p of S.pieces.filter(q => q.human)) await checkZukan(p, 5);
+  S.pieces.forEach(p => (S.hist[p.id] = S.hist[p.id] || [])[6] = formInfo(p, 6));
+  for(const p of S.pieces.filter(q => q.human)) await checkZukan(p, 6);
   const total = S.pieces.reduce((a, p) => a + p.n, 0);
   const sts = new Set(S.pieces.map(p => p.st));
   const four = FOUR.every(k => sts.has(k));
