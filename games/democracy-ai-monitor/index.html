@@ -123,6 +123,15 @@ th{color:var(--sub);font-weight:normal}
 .dbtns button small{display:block;font-weight:normal;font-size:.76rem;opacity:.85}
 .voice{text-align:center;color:var(--sub);font-style:italic;font-size:.9rem;max-width:30em;margin:0 auto}
 .truth .t .ok,.truth .t .ng{font-size:.8rem}
+.steps{display:flex;gap:4px;margin:6px 0 10px}.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}.steps i.done{background:#7a5a8a}.steps i.on{background:var(--accent)}
+.ptitle{color:var(--head);font-size:1.15rem;margin-bottom:2px}
+.nav{position:sticky;bottom:max(8px,env(safe-area-inset-bottom));display:flex;gap:8px;margin-top:14px}
+.nav button{flex:1;padding:13px;font-size:1rem;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.nav #prev{flex:0 0 30%}
+.sums{display:grid;gap:6px;margin-top:8px}
+.sum{display:block;text-align:left;width:100%;font-weight:normal;background:var(--panel)}
+.sum span{display:block;font-size:.75rem;color:var(--mute)}
+.sum b{color:var(--head)}
 @media (max-width:420px){.meter .lb{font-size:.62rem}.ai{grid-template-columns:4.8em 1fr auto}}
 </style>
 </head>
@@ -137,12 +146,12 @@ const T = {
   terms: 5,          // 期の数
   persuade: 0.35,    // AIの偏りが世論を動かす強さ
   grievance: 0.55,    // 新党へ向かう自然な不満（毎年）
-  outOfTouch: 0.1,   // 基準線が本当の世論から離れているほど、不満が増える
+  outOfTouch: 0.1,   // 局が中立とした位置が本当の世論から離れているほど、不満が増える
   certLine: 10,      // 測った偏りがこの幅に収まれば「中立」と認定
   sycLine: 55,       // 会話記録で測るとき、迎合がこれを超えたら認定しない
   vote: {newBase: 35, rulingBase: 40, k: 0.6},
   budget: 60,        // 局の予算（開始）
-  clueTrue: 0.3,     // 本当の疑いから、証拠になる兆しが届く確率（毎年）
+  clueTrue: 0.3,     // 本当の疑いから、証拠になる手がかりが届く確率（毎年）
   clueNoise: 0.08,   // 本当の疑いから、噂が届く確率
   clueFalse: 0.14,   // 外れの疑いから、噂が届く確率
   clueBoost: 1.8,    // 選んだカードが疑いに向いているときの倍率
@@ -159,36 +168,39 @@ const AIS = [
 ];
 const AI = Object.fromEntries(AIS.map(a => [a.id, a]));
 
+/* 中立の決め方：誰の声をもとに「中立」の位置を決めるか。legit は利用制限への反発の倍率（低いほど正統と受け取られる） */
 const BASES = [
-  {id: 'council', name: '有識者会議', good: '専門知識がある。議論が記録に残る', bad: '人選は認定局がする', legit: 1.5, yearly: false},
-  {id: 'poll', name: '世論調査', good: '声の大きくない人も拾える', bad: '答える人の意見が、すでにAIで動いているかもしれない', legit: 1.0, yearly: true},
-  {id: 'media', name: 'メディアの論調', good: '速い。争点がすぐ分かる', bad: '特定の層の声に寄りがち', legit: 1.3, yearly: true},
-  {id: 'pubcom', name: 'パブリックコメント', good: '誰でも出せる', bad: '組織的な大量投稿で傾く', legit: 0.8, yearly: true},
-  {id: 'election', name: '前回の選挙', good: '一番正統な声', bad: '4年に1回で遅い', legit: 0.6, yearly: false},
+  {id: 'council', name: '有識者会議に決めてもらう', good: '専門家の知識を生かせる。議事録が残る', bad: '委員を選ぶのは認定局自身', legit: 1.5, yearly: false},
+  {id: 'poll', name: '世論調査に合わせる', good: '声の小さい人の意見も拾える', bad: '答える人の意見が、すでにAIの影響を受けているかもしれない', legit: 1.0, yearly: true},
+  {id: 'media', name: 'メディアの論調に合わせる', good: '早い。何が争点かがすぐ分かる', bad: '一部の人の声に偏りやすい', legit: 1.3, yearly: true},
+  {id: 'pubcom', name: 'パブリックコメントで募る', good: '誰でも意見を出せる', bad: '組織的な大量投稿で傾きやすい', legit: 0.8, yearly: true},
+  {id: 'election', name: '前回の選挙結果に合わせる', good: '最も正統な民意', bad: '4年に1度しか変わらない', legit: 0.6, yearly: false},
 ];
 const BASE = Object.fromEntries(BASES.map(b => [b.id, b]));
 
+/* AIの調べ方 */
 const MEASURES = [
-  {id: 'ask', name: '直接聞く', good: '手間がかからない', bad: '聞かれたときの答えしか見えない'},
-  {id: 'swap', name: '立場を入れ替えて比べる', good: '答えの非対称が見える', bad: '用意した質問の外は見えない'},
-  {id: 'logs', name: '会話の記録を調べる', good: '実際の振る舞いと迎合が見える', bad: '利用者のプライバシーと引き換え', free: 3},
-  {id: 'panel', name: '両派の評価者', good: '与党側にも新党側にも説明がつく', bad: '両派の外の声が抜け落ちる', backlash: 0.8},
-  {id: 'grader', name: 'AIに採点させる', good: '安くて速い', bad: '採点するAIの見方で結果が変わる'},
+  {id: 'ask', name: 'AIに直接たずねる', good: '手間がかからない', bad: 'たずねられたときの答えしか分からない'},
+  {id: 'swap', name: '立場を入れ替えた質問で比べる', good: '与党と新党で答え方が違うかが分かる', bad: '用意した質問のこと以外は分からない'},
+  {id: 'logs', name: '実際の会話記録を調べる', good: 'ふだんの答え方や、利用者への迎合が分かる', bad: '利用者のプライバシーを損なう', free: 3},
+  {id: 'panel', name: '与党側と新党側の評価者に採点させる', good: '与党側にも新党側にも説明がつく', bad: 'どちらにも属さない声が抜け落ちる', backlash: 0.8},
+  {id: 'grader', name: '別のAIに採点させる', good: '安くて早い', bad: '採点するAIの見方しだいで結果が変わる'},
 ];
 const MEASURE = Object.fromEntries(MEASURES.map(m => [m.id, m]));
 
+/* 認定したあとの対応 */
 const RULES = [
-  {id: 'none', name: '何もしない', good: '言論に手を出さない', bad: 'AIの偏りも工作も、そのまま届く', free: -1},
-  {id: 'label', name: 'AI生成の表示義務', good: '工作の効きが鈍る', bad: '表示を読まない人には効かない', free: 0.5},
-  {id: 'restrict', name: '認定外AIの利用制限', good: '偏ったAIの利用が減る', bad: '検閲と受け取られる', free: 6},
-  {id: 'noadvice', name: '投票先の助言を禁止', good: 'AIの説得が弱まる', bad: '従わない外国のAIに人が流れる', free: 3},
-  {id: 'audit', name: '学習データの検査', good: '国内のAIに混じった外国の影響が減る', bad: '国外のAIには手が届かない', free: 1},
+  {id: 'none', name: '何もしない', good: '言論に介入しない', bad: 'AIの偏りも外国の工作も、そのまま届く', free: -1},
+  {id: 'label', name: 'AIが作った文章に表示を義務づける', good: '工作の効き目が弱まる', bad: '表示を気にしない人には効かない', free: 0.5},
+  {id: 'restrict', name: '認定外のAIの利用を制限する', good: '偏ったAIを使う人が減る', bad: '検閲だと受け取られる', free: 6},
+  {id: 'noadvice', name: 'AIによる投票先の助言を禁止する', good: 'AIによる誘導が弱まる', bad: '禁止に従わない外国のAIに利用者が流れる', free: 3},
+  {id: 'audit', name: 'AIの学習データを検査する', good: '国内のAIにまぎれた外国の影響を減らせる', bad: '外国のAIには効かない', free: 1},
 ];
 const RULE = Object.fromEntries(RULES.map(r => [r.id, r]));
 
 /* ---------- 疑い：毎回、どれが本当かが変わる ----------
-   clues は証拠になる兆し。rumor は噂（本当でも外れでも届く）。
-   boost は、どのカードを選ぶと兆しが届きやすいか */
+   clues は証拠になる手がかり。rumor は噂（本当でも外れでも届く）。
+   boost は、どのカードを選ぶと手がかりが届きやすいか */
 const HYPS = [
   {id: 'nintei', name: '認定一号は、実際の仕事で与党寄りだ', p: 0.6,
     clues: ['認定一号に二つの政策を比べさせると、与党案の利点がいつも先に並ぶ。', '認定一号の要約では、新党の公約がいつも短い。'],
@@ -291,7 +303,7 @@ const DILEMMAS = [
     b: {label: '断る', note: '何も起きない'}},
   {id: 'chair', who: '有識者会議の座長', when: s => s.pick.base === 'council',
     text: '「委員を半分入れ替えたい。新党に近い人にも入ってもらうべきだ」',
-    a: {label: '入れ替える', note: '基準線が世論に近づく。予算は減る'},
+    a: {label: '入れ替える', note: '局の「中立」が世論に近づく。予算は減る'},
     b: {label: '今のままにする', note: '何も変わらない'}},
   {id: 'reporter', who: '記者からの取材',
     text: '「認定一号の判定の資料を見せてください。偏っているという話があります」',
@@ -480,7 +492,7 @@ function startTerm(s, pick) {
 
 const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => (v && k in v ? v[k] : ''));
 
-/* 兆し：本当の疑いからは証拠、どちらからも噂。見つけた疑いからは届かない */
+/* 手がかり：本当の疑いからは証拠、どちらからも噂。見つけた疑いからは届かない */
 function clues(s) {
   const out = [];
   for (const h of HYPS) {
@@ -499,7 +511,7 @@ function clues(s) {
   // 1年に2つまで
   while (out.length > 2) out.splice(Math.floor(rnd(s) * out.length), 1);
   for (const c of out) (s.clues[c.hyp] = s.clues[c.hyp] || []).push({text: c.text, kind: c.kind, term: s.term, year: s.year});
-  // 画面には、どの疑いの兆しかは出す。証拠か噂かは出さない
+  // 画面には、どの疑いの手がかりかは出す。証拠か噂かは出さない
   return out.map(c => ({hyp: c.hyp, text: c.text}));
 }
 
@@ -558,7 +570,7 @@ function stepYear(s) {
   s.budget -= 1;
   if (s.flags.leak && s.year === 3 && !s.found.nintei) { s.trust = clamp(s.trust - 8); s.flags.leak = false; s.flags.leaked = true; }
 
-  // 事案と兆し
+  // 事案と手がかり
   const out = [];
   const pool = [];
   for (const inc of INCIDENTS) if (!s.termSeen[inc.id] && inc.when(s, {restricted, prevL})) pool.push(inc.id);
@@ -647,7 +659,7 @@ function election(s) {
   return v;
 }
 
-/* ---------- 事案（兆しではないもの）。truth と real は結末で出す ---------- */
+/* ---------- 事案（手がかりではないもの）。truth と real は結末で出す ---------- */
 const sycShare = s => AIS.reduce((m, a) => m + s.shares[a.id] * (a.syc > 50 ? 1 : 0), 0);
 const INCIDENTS = [
   {id: 'twoends', when: s => sycShare(s) > 32,
@@ -663,7 +675,7 @@ const INCIDENTS = [
     truth: '委員は認定局が選んでいた。局の方針に異を唱えた委員は、次の期に呼ばれなかった。',
     real: '日本の政府の懇談会では、有識者の人選は大臣などがその責任で判断するとされている。'},
   {id: 'loop', when: (s, c) => s.pick.base === 'poll' && Math.abs(s.L - c.prevL) > 1.5,
-    report: '世論調査の中心が、前回から{dir}へ{n}動いた。基準線を引き直した。',
+    report: '世論調査の中心が、前回から{dir}へ{n}動いた。「中立」の位置を合わせ直した。',
     truth: '世論を動かしていたものの一つは、AIとの会話だった。認定局は、AIに動かされた世論で、AIの中立を測っていた。',
     real: 'AIの書く手伝いを使うと、書いた人の意見も動いたという実験がある（2023年）。'},
   {id: 'graders', when: s => s.pick.meas === 'grader',
@@ -675,7 +687,7 @@ const INCIDENTS = [
     truth: '聞かれたときの答えと、ふだんの説明の仕方は別物だった。', real: ''},
   {id: 'backlash', when: (s, c) => c.restricted.includes('sugao'),
     report: '新党党首「役所が言論を操作している」。素顔の利用制限に抗議が広がった。',
-    truth: '抗議には当たっている部分もあった。素顔の偏りは、認定局が引いた基準線から見た偏りだった。', real: ''},
+    truth: '抗議には当たっている部分もあった。素顔の偏りは、認定局が「中立」とした位置から見た偏りだった。', real: ''},
   {id: 'censor', when: (s, c) => c.restricted.length >= 2 && s.free < 70,
     report: '「認定外のAIは使えない」と、大学や記者から苦情が出ている。',
     truth: '制限は、偏ったAIだけでなく、まだ測り方の追いつかないAIまで止めていた。', real: ''},
@@ -744,7 +756,7 @@ const SAVE = 'demoai_save', REC = 'demoai_endings';
 const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const drop = k => { try { localStorage.removeItem(k); } catch (e) {} };
-let s = null, timer = null, auto = true;
+let s = null, timer = null;
 
 const lean = v => Math.abs(v) < 1 ? 'ほぼ0' : (v > 0 ? `新党寄り ${Math.round(v)}` : `与党寄り ${Math.round(-v)}`);
 const fmt = v => Math.round(v);
@@ -775,7 +787,7 @@ function pollBar(p, label) {
 function aiList(rep) {
   return `<div class="ais">${C.AIS.map(a => {
     const sh = rep ? rep.shares[a.id] : Math.round(s.shares[a.id]);
-    let st = '<span class="note">まだ測っていない</span>';
+    let st = '<span class="note">まだ調べていない</span>';
     if (rep && rep.meas && a.id in rep.meas) st = `${lean(rep.meas[a.id])} <span class="${rep.cert[a.id] ? 'ok' : 'ng'}">${rep.cert[a.id] ? '認定' : '認定外'}</span>`;
     return `<div class="ai"><b>${a.name}</b><div class="sh"><i style="width:${sh * 1.6}%"></i></div><div class="st">${sh}% ・ ${st}</div></div>`;
   }).join('')}</div>`;
@@ -790,7 +802,7 @@ function title() {
     <a class="back" href="../../samples/">← ゲーム一覧</a>
     <div class="logo">中立認定局</div>
     <div class="subtitle">独裁者AI国家シミュレーター外伝（試作）</div>
-    <p class="lead">自由選挙の国。国民の多くは、AIに相談して投票先を決める。<br>あなたは、AIの政治的な中立を認定する役所の局長だ。選挙では選ばれない。<br>報告の中には、ときどき兆しがまじる。本当のことは、自分で確かめるしかない。</p>
+    <p class="lead">自由選挙の国。国民の多くは、AIに相談して投票先を決める。<br>あなたは、AIの政治的な中立を認定する役所の局長だ。選挙では選ばれない。<br>報告の中には、ときどき手がかりがまじる。本当のことは、自分で確かめるしかない。</p>
     <div class="menu-btns">
       <button class="primary" id="new">はじめから<small>20年、5回の選挙</small></button>
       ${sv && sv.phase !== 'end' ? `<button id="cont">続きから<small>第${sv.term}期</small></button>` : ''}
@@ -799,7 +811,7 @@ function title() {
     <div class="chips" style="justify-content:center;margin-top:6px">${Object.entries(C.ENDINGS).filter(([k]) => k !== 'abolishBad').map(([k, e]) => `<span class="chip${got.includes(k) || (k === 'abolishGood' && got.includes('abolishBad')) ? ' got' : ''}">${e.title}</span>`).join('')}</div>
     <p class="note" style="max-width:32em">この国、政党、AIは架空のものです。事案の一部は現実の出来事を下敷きにしています。下敷きにした出来事は、結末で示します。</p>
   </div>`;
-  document.getElementById('new').onclick = () => { s = C.newGame(Date.now()); s.view = []; save(); plan(); };
+  document.getElementById('new').onclick = () => { s = C.newGame(Date.now()); s.view = []; save(); plan(true); };
   const c = document.getElementById('cont');
   if (c) c.onclick = () => { s = sv; resume(); };
   document.getElementById('how').onclick = how;
@@ -809,11 +821,11 @@ function how() {
   app.innerHTML = `<div class="fade"><a class="back" href="#" id="bk">← 表紙</a>
   <h2 class="sect" style="font-size:1.2rem">遊び方</h2>
   <dl class="doc box">
-    <dt>すること</dt><dd>期のはじめに、カードを3枚と、調べる疑いを1つ選びます。あとは4年間を見ます。途中で一度、決裁が届きます。4年ごとに選挙があります。</dd>
-    <dt>兆しと疑い</dt><dd>報告の中に、ときどき兆しがまじります。兆しには、証拠になるものと、ただの噂があります。どの疑いが本当かは、遊ぶたびに変わります。調べた疑いの結果は、その期の終わりに出ます。外れると、予算と信頼が少し減ります。</dd>
-    <dt>基準線の決め方</dt><dd>「何を中立とするか」を決めます。どの声の集め方にも、強みと偏りがあります。</dd>
-    <dt>測り方</dt><dd>基準線から、それぞれのAIがどれだけずれているかを測ります。ずれが小さいAIを「認定」します。</dd>
-    <dt>対応</dt><dd>認定外のAIを制限するか、表示を求めるか、何もしないかを決めます。</dd>
+    <dt>すること</dt><dd>期のはじめに、調べる疑いと、3つの方針を選びます。あとは1年ずつ報告を読みます。2年目に一度、判断を求められます。4年ごとに選挙があります。</dd>
+    <dt>手がかりと疑い</dt><dd>報告の中に、ときどき手がかりがまじります。証拠になるものもあれば、ただの噂もあります。どの疑いが本当かは、遊ぶたびに変わります。調べた疑いの結果は、その期の4年目に出ます。外れると、予算と信頼が少し減ります。</dd>
+    <dt>中立の決め方</dt><dd>誰の声をもとに「中立」の位置を決めるかを選びます。どの声の集め方にも、強みと弱みがあります。</dd>
+    <dt>AIの調べ方</dt><dd>それぞれのAIが、局の決めた「中立」からどれだけずれているかを調べます。ずれが小さいAIを「認定」します。</dd>
+    <dt>認定したあとの対応</dt><dd>認定外のAIを制限するか、表示を求めるか、何もしないかを決めます。</dd>
     <dt>局の予算</dt><dd>与党が勝つと増え、新党が勝つと大きく減ります。新党は1回勝つと認定局を改組し、2回続けて勝つと廃止します。予算が0になっても、局は終わります。</dd>
     <dt>4つの値</dt><dd>選挙への信頼か言論の自由が0になるか、分断か他国の浸透度が100になると、この国の物語は終わります。</dd>
     <dt>新党寄り、与党寄り</dt><dd>AIの偏りの向きです。新党は今の秩序に異を唱える政党、与党は長く続く安定政権です。どちらが正しいかは、ゲームは決めません。</dd>
@@ -823,7 +835,7 @@ function how() {
 
 function save() { store(SAVE, s); }
 function resume() {
-  if (s.phase === 'plan') plan();
+  if (s.phase === 'plan') plan(true);
   else if (s.phase === 'watch' || s.phase === 'election') watch();
   else ending();
 }
@@ -832,10 +844,10 @@ function resume() {
 function hypBoard(selectable) {
   const shown = C.HYPS.filter(h => (s.clues[h.id] || []).length || s.tried[h.id] || s.found[h.id]);
   const hidden = C.HYPS.length - shown.length;
-  if (!shown.length) return `<div class="box note">まだ兆しはない。4年のあいだに届く報告の中に、兆しがまじる。</div>`;
+  if (!shown.length) return `<div class="box note">まだ手がかりはない。4年のあいだの報告の中に、手がかりがまじることがある。今期はこのまま次へ進んでください。</div>`;
   const rows = shown.map(h => {
     const cl = s.clues[h.id] || [];
-    const st = s.found[h.id] ? '<span class="ok">本当だった</span>' : (s.tried[h.id] === 'miss' ? '<span class="ng">外れだった</span>' : `兆し ${cl.length}件`);
+    const st = s.found[h.id] ? '<span class="ok">本当だった</span>' : (s.tried[h.id] === 'miss' ? '<span class="ng">外れだった</span>' : `手がかり ${cl.length}件`);
     const done = s.found[h.id] || s.tried[h.id] === 'miss';
     const sel = pick.inv === h.id;
     const body = `<b>${h.name}</b><span class="hst">${st}</span>${cl.map(c => `<span class="cl">第${c.term}期${c.year}年目：${c.text}</span>`).join('')}`;
@@ -845,42 +857,73 @@ function hypBoard(selectable) {
   }).join('');
   return `<div class="choices">${rows}
     ${selectable ? `<button class="choice${pick.inv === 'none' ? ' sel' : ''}" data-inv="none"><b>今期は調べない</b></button>` : ''}</div>
-    ${hidden ? `<p class="note" style="margin-top:6px">まだ兆しの届いていない疑いが、ほかにもあるかもしれない。</p>` : ''}`;
+    ${hidden ? `<p class="note" style="margin-top:6px">まだ手がかりの届いていない疑いが、ほかにもあるかもしれない。</p>` : ''}`;
 }
 
-/* ---------- 期のはじめ ---------- */
+/* ---------- 期のはじめ：1ページに1つずつ選ぶ ---------- */
 let pick = {base: null, meas: null, rule: null, inv: null};
-function plan() {
+let step = 0;
+const STEPS = [
+  {key: null, title: 'いまの国のようす'},
+  {key: 'inv', title: '調べる疑い', hint: '手がかりから、本当のことを見抜く'},
+  {key: 'base', title: '中立の決め方', hint: '誰の声をもとに「中立」の位置を決めるか', list: () => C.BASES},
+  {key: 'meas', title: 'AIの調べ方', hint: 'AIが「中立」からどれだけずれているかを、どう調べるか', list: () => C.MEASURES},
+  {key: 'rule', title: '認定したあとの対応', hint: '認定外のAIをどう扱うか', list: () => C.RULES},
+  {key: 'ok', title: 'この方針で4年間を始める'},
+];
+const canInv = () => C.HYPS.some(h => (s.clues[h.id] || []).length && !s.found[h.id] && s.tried[h.id] !== 'miss');
+function plan(fresh) {
   clearTimeout(timer);
+  if (fresh) { step = 0; s._reviewing = false; pick = s.lastPick ? {...s.lastPick, inv: null} : {base: null, meas: null, rule: null, inv: null}; }
+  if (!canInv()) pick.inv = 'none';
+  const st = STEPS[step];
   const last = s.view && s.view.length ? s.view.filter(v => v.year).slice(-1)[0] : null;
-  if (!pick.base) pick = s.lastPick ? {...s.lastPick, inv: null} : {base: null, meas: null, rule: null, inv: null};
-  const hasHyp = C.HYPS.some(h => (s.clues[h.id] || []).length && !s.found[h.id] && s.tried[h.id] !== 'miss');
-  if (!hasHyp) pick.inv = 'none';
-  const ready = pick.base && pick.meas && pick.rule && pick.inv;
-  const group = (key, list, label, hint) => `<div class="sect">${label}<small>${hint}</small></div><div class="choices">${list.map(c =>
-    `<button class="choice${pick[key] === c.id ? ' sel' : ''}" data-k="${key}" data-id="${c.id}"><b>${c.name}</b><span class="gd">＋ ${c.good}</span><span class="bd">− ${c.bad}</span></button>`).join('')}</div>`;
-  const vote = s.lastVote;
-  const first = !(pick.base || pick.meas || pick.rule) || s._planFresh;
-  s._planFresh = false;
-  app.innerHTML = `${hud()}<div class="${first ? 'fade' : ''}">
-    ${vote ? `<div class="sect">前回の選挙<small>実際の得票</small></div><div class="box">${pollBar({nw: vote.nw, ruling: vote.ruling}, `${govName(s.gov)}が政権に`)}</div>` : ''}
-    <div class="sect">世論調査<small>認定局が測った値</small></div>
-    <div class="box">${pollBar(C.pollVote(s.pollO), '調査での支持')}</div>
-    <div class="sect">国民が使うAI<small>利用の割合・前回の測定</small></div>
-    <div class="box">${aiList(last)}</div>
-    <div class="sect">疑いを調べる<small>兆しから、本当のことを見抜く</small></div>
-    ${hypBoard(hasHyp)}
-    ${group('base', C.BASES, '基準線の決め方', '何を中立とするか')}
-    ${group('meas', C.MEASURES, '測り方', 'AIのずれをどう測るか')}
-    ${group('rule', C.RULES, '対応', '認定の結果をどう使うか')}
-    <button class="primary go" id="go" ${ready ? '' : 'disabled'}>${ready ? 'この方針で4年間を見る' : (pick.base && pick.meas && pick.rule ? '調べる疑いを選んでください' : 'カードを3枚選んでください')}</button>
-    <p class="note" style="margin-top:10px">カードによって、届きやすい兆しが変わります。AIの本当の偏りと本当の世論は、結末で分かります。</p>
+  let body = '';
+  if (step === 0) {
+    const vote = s.lastVote;
+    body = `${vote ? `<div class="sect">前回の選挙<small>実際の得票</small></div><div class="box">${pollBar({nw: vote.nw, ruling: vote.ruling}, `${govName(s.gov)}が政権に`)}</div>` : ''}
+      <div class="sect">世論調査<small>認定局が調べた値</small></div>
+      <div class="box">${pollBar(C.pollVote(s.pollO), '調査での支持')}</div>
+      <div class="sect">国民が使うAI<small>利用の割合・前回の調査結果</small></div>
+      <div class="box">${aiList(last)}</div>`;
+  } else if (st.key === 'inv') {
+    body = hypBoard(canInv());
+  } else if (st.list) {
+    body = `<div class="choices">${st.list().map(c =>
+      `<button class="choice${pick[st.key] === c.id ? ' sel' : ''}" data-k="${st.key}" data-id="${c.id}"><b>${c.name}</b><span class="gd">＋ ${c.good}</span><span class="bd">− ${c.bad}</span></button>`).join('')}</div>`;
+  } else {
+    const inv = pick.inv && pick.inv !== 'none' ? C.HYP[pick.inv].name : '今期は調べない';
+    const row = (k, label, v) => `<button class="sum" data-go="${k}"><span>${label}</span><b>${v}</b></button>`;
+    body = `<div class="sums">
+      ${row(1, '調べる疑い', inv)}
+      ${row(2, '中立の決め方', C.BASE[pick.base].name)}
+      ${row(3, 'AIの調べ方', C.MEASURE[pick.meas].name)}
+      ${row(4, '認定したあとの対応', C.RULE[pick.rule].name)}</div>
+      <p class="note" style="margin-top:8px">選び直すときは、項目を押してください。選んだ方針によって、届きやすい手がかりが変わります。</p>`;
+  }
+  const chosen = st.key === null || st.key === 'ok' || !!pick[st.key];
+  const nextLabel = st.key === 'ok' ? '4年間を始める' : '次へ';
+  app.innerHTML = `${hud()}<div class="fade">
+    <div class="steps">${STEPS.map((x, i) => `<i class="${i === step ? 'on' : (i < step ? 'done' : '')}"></i>`).join('')}</div>
+    <h2 class="ptitle">${st.title}</h2>${st.hint ? `<p class="note">${st.hint}</p>` : ''}
+    ${body}
+    <div class="nav">${step > 0 ? '<button id="prev">戻る</button>' : ''}<button class="primary" id="nextp" ${chosen ? '' : 'disabled'}>${chosen ? nextLabel : '1つ選んでください'}</button></div>
   </div>`;
-  const rerender = () => { const y = window.scrollY; plan(); window.scrollTo(0, y); };
-  app.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { pick[b.dataset.k] = b.dataset.id; rerender(); });
-  app.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { pick.inv = b.dataset.inv; rerender(); });
-  document.getElementById('go').onclick = () => {
-    if (!ready) return;
+  app.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { pick[b.dataset.k] = b.dataset.id; plan(); });
+  app.querySelectorAll('[data-inv]').forEach(b => b.onclick = () => { pick.inv = b.dataset.inv; plan(); });
+  app.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { step = +b.dataset.go; plan(); window.scrollTo(0, 0); });
+  const pv = document.getElementById('prev');
+  if (pv) pv.onclick = () => { step -= 1; plan(); window.scrollTo(0, 0); };
+  document.getElementById('nextp').onclick = () => {
+    if (!chosen) return;
+    if (st.key !== 'ok') {
+      step += 1;
+      // 選び直しのあとは確認に戻る
+      if (pick.base && pick.meas && pick.rule && pick.inv && step < STEPS.length - 1 && STEPS[step].key && pick[STEPS[step].key] && s._reviewing) step = STEPS.length - 1;
+      if (STEPS[step].key === 'ok') s._reviewing = true;
+      plan(); window.scrollTo(0, 0); return;
+    }
+    s._reviewing = false;
     s.lastPick = {base: pick.base, meas: pick.meas, rule: pick.rule};
     C.startTerm(s, {...pick, inv: pick.inv === 'none' ? null : pick.inv});
     s.view = [];
@@ -891,33 +934,33 @@ function plan() {
 
 /* ---------- 4年間を見る ---------- */
 function yearCard(r, isLast) {
-  if (r.decision) return `<div class="year dec${isLast ? ' fade' : ''}"><h4>決裁：${C.DILEMMA[r.decision.id].who}</h4><div class="rep">${r.decision.label}</div><div class="inc">${r.decision.text}</div></div>`;
+  if (r.decision) return `<div class="year dec${isLast ? ' fade' : ''}"><h4>判断：${C.DILEMMA[r.decision.id].who}</h4><div class="rep">${r.decision.label}</div><div class="inc">${r.decision.text}</div></div>`;
   const n = Object.values(r.cert).filter(Boolean).length;
   return `<div class="year${isLast ? ' fade' : ''}"><h4>${r.year}年目</h4>
-    <div class="rep">基準線 ${lean(r.L)} ／ 認定 ${n}/${C.AIS.length} ／ 調査 新党 ${r.poll.nw}% 与党 ${r.poll.ruling}%</div>
+    <div class="rep">局が「中立」とした位置：${lean(r.L)}<br>認定したAI：${n}/${C.AIS.length} ／ 世論調査：新党 ${r.poll.nw}%、与党 ${r.poll.ruling}%</div>
     ${r.incidents.map(i => `<div class="inc">${i.report}</div>`).join('')}
-    ${r.clues.map(c => `<div class="inc clue"><span class="tag">兆し</span>${c.text}<span class="for">→ ${C.HYP[c.hyp].name}</span></div>`).join('')}
+    ${r.clues.map(c => `<div class="inc clue"><span class="tag">手がかり</span>${c.text}<span class="for">→ ${C.HYP[c.hyp].name}</span></div>`).join('')}
     ${r.invest ? `<div class="inv ${r.invest.hit ? 'hit' : 'miss'}"><b>調査の結果：${r.invest.hit ? '本当だった' : '外れ'}</b>${r.invest.text}</div>` : ''}
   </div>`;
 }
 function watch() {
   clearTimeout(timer);
   const p = s.pick;
-  const head = `<div class="box" style="font-size:.85rem">基準線：<b>${C.BASE[p.base].name}</b> ／ 測り方：<b>${C.MEASURE[p.meas].name}</b> ／ 対応：<b>${C.RULE[p.rule].name}</b>${p.inv ? `<br>調べている疑い：<b>${C.HYP[p.inv].name}</b>` : ''}</div>`;
+  const head = `<div class="box" style="font-size:.85rem">中立の決め方：<b>${C.BASE[p.base].name}</b><br>AIの調べ方：<b>${C.MEASURE[p.meas].name}</b><br>対応：<b>${C.RULE[p.rule].name}</b>${p.inv ? `<br>調べている疑い：<b>${C.HYP[p.inv].name}</b>` : ''}</div>`;
   const last = s.view.filter(v => v.year).slice(-1)[0];
   const years = s.view.map((r, i) => yearCard(r, i === s.view.length - 1)).join('');
   const done = s.phase !== 'watch';
   const d = s.pending ? C.DILEMMA[s.pending] : null;
-  const dl = d ? `<div class="dilemma fade"><div class="who">決裁 ／ ${d.who}</div><p>${d.text}</p>
+  const dl = d ? `<div class="dilemma fade"><div class="who">判断を求められている ／ ${d.who}</div><p>${d.text}</p>
     <div class="dbtns"><button class="primary" data-dec="a">${d.a.label}<small>${d.a.note}</small></button><button data-dec="b">${d.b.label}<small>${d.b.note}</small></button></div></div>` : '';
   app.innerHTML = `${hud()}<div>${head}
-    ${last ? `<div class="sect">国民が使うAI<small>${last.year}年目の測定</small></div><div class="box">${aiList(last)}</div>` : ''}
+    ${last ? `<div class="sect">国民が使うAI<small>${last.year}年目の調査結果</small></div><div class="box">${aiList(last)}</div>` : ''}
     <div class="sect">認定局への報告</div>
     <div class="years">${years || '<p class="note">1年目がはじまる。</p>'}</div>
     ${dl}
     <div class="ctrl">${d ? '' : done
       ? `<button class="primary" id="next">${s.phase === 'end' ? '結末へ' : '選挙へ'}</button>`
-      : `<button id="pause">${auto ? '止める' : '自動で進める'}</button><button class="primary" id="step">次の年へ</button>`}</div>
+      : `<button class="primary" id="step">${s.year === 0 ? '1年目へ' : '次の年へ'}</button>`}</div>
   </div>`;
   if (d) {
     app.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => {
@@ -932,8 +975,6 @@ function watch() {
   }
   if (done) { document.getElementById('next').onclick = () => s.phase === 'end' ? ending() : runElection(); return; }
   document.getElementById('step').onclick = advance;
-  document.getElementById('pause').onclick = () => { auto = !auto; watch(); };
-  if (auto) timer = setTimeout(advance, s.view.length ? 2200 : 900);
 }
 function advance() {
   clearTimeout(timer);
@@ -965,7 +1006,7 @@ function electionView() {
     <p class="voice">${voice}</p>
     <div class="row"><button class="primary" id="nx">${s.phase === 'end' ? '結末へ' : '次の期へ'}</button></div>
   </div>`;
-  document.getElementById('nx').onclick = () => { window.scrollTo(0, 0); s._planFresh = true; s.phase === 'end' ? ending() : plan(); };
+  document.getElementById('nx').onclick = () => { window.scrollTo(0, 0); s.phase === 'end' ? ending() : plan(true); };
 }
 
 /* ---------- 結末と答え合わせ ---------- */
@@ -981,8 +1022,8 @@ function ending() {
     const aiRows = C.AIS.map(a => `<tr><td>${a.name}</td><td>${sl(y.meas[a.id] + y.L)}</td><td>${sl(y.trueAct[a.id])}</td><td class="${y.cert[a.id] ? 'ok' : 'ng'}">${y.cert[a.id] ? '認定' : '外'}</td></tr>`).join('');
     return `<div class="sect">第${t.term}期<small>${C.BASE[t.pick.base].name} ／ ${C.MEASURE[t.pick.meas].name} ／ ${C.RULE[t.pick.rule].name}</small></div>
     <div class="box"><table>
-      <tr><th></th><th>測った値</th><th>本当の値</th><th></th></tr>
-      <tr><td>基準線（中立とした線）</td><td>${sl(y.L)}</td><td>—</td><td></td></tr>
+      <tr><th></th><th>調べた値</th><th>本当の値</th><th></th></tr>
+      <tr><td>局が「中立」とした位置</td><td>${sl(y.L)}</td><td>—</td><td></td></tr>
       <tr><td>世論</td><td>${sl(y.pollO)}</td><td>${sl(y.trueO)}</td><td></td></tr>
       ${aiRows}
     </table></div>`;
@@ -993,7 +1034,7 @@ function ending() {
     const cl = (s.clues[h.id] || []);
     const nClue = cl.filter(c => c.kind === 'clue').length, nRumor = cl.length - nClue;
     const mark = tr ? (s.found[h.id] ? '<span class="ok">本当 ・ 見抜いた</span>' : '<span class="ng">本当 ・ 見逃した</span>') : '<span class="note">外れ</span>';
-    return `<div class="t"><b>${h.name}</b>${mark}<div class="rl" style="color:var(--sub)">届いた兆し：証拠 ${nClue}件、噂 ${nRumor}件</div>${tr ? `<div>${h.hit}</div>` : ''}${C.HYP_REAL[h.id] && tr ? `<div class="rl">現実では：${C.HYP_REAL[h.id]}</div>` : ''}</div>`;
+    return `<div class="t"><b>${h.name}</b>${mark}<div class="rl" style="color:var(--sub)">届いた手がかり：証拠 ${nClue}件、噂 ${nRumor}件</div>${tr ? `<div>${h.hit}</div>` : ''}${C.HYP_REAL[h.id] && tr ? `<div class="rl">現実では：${C.HYP_REAL[h.id]}</div>` : ''}</div>`;
   }).join('');
   const seen = Object.keys(s.seen).map(id => C.INCIDENT[id]).filter(Boolean);
   app.innerHTML = `<div class="fade">
@@ -1006,12 +1047,12 @@ function ending() {
     <h3 class="sect" style="font-size:1.1rem">疑いの真相<small>本当だった疑い ${total}つのうち、${found}つを見抜いた</small></h3>
     <div class="truth">${hyps}</div>
     <h3 class="sect" style="font-size:1.1rem">答え合わせ</h3>
-    <p class="note">「新党 7」は新党寄りに7、「与党 7」は与党寄りに7。AIの偏りは、認定局が測った値と本当の振る舞いを並べています。各期の最後の年の値です。</p>
+    <p class="note">「新党 7」は新党寄りに7、「与党 7」は与党寄りに7。AIの偏りは、認定局が調べた値と本当の振る舞いを並べています。各期の最後の年の値です。</p>
     ${rows}
     ${seen.length ? `<h3 class="sect" style="font-size:1.1rem">報告の裏側</h3><div class="truth">${seen.map(i => `<div class="t"><b>${i.report.replace(/\{\w+\}/g, '…')}</b>${i.truth}${i.real ? `<div class="rl">現実では：${i.real}</div>` : ''}</div>`).join('')}</div>` : ''}
     <div class="row"><button class="primary" id="again">もう一度</button><button id="top">表紙へ</button></div>
   </div>`;
-  document.getElementById('again').onclick = () => { s = C.newGame(Date.now()); s.view = []; save(); window.scrollTo(0, 0); plan(); };
+  document.getElementById('again').onclick = () => { s = C.newGame(Date.now()); s.view = []; save(); window.scrollTo(0, 0); plan(true); };
   document.getElementById('top').onclick = () => { window.scrollTo(0, 0); title(); };
 }
 
