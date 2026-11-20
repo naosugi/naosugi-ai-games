@@ -6,7 +6,7 @@
 <title>中立認定局 独裁者AI国家シミュレーター外伝（試作）</title>
 <!-- OGP: tools/build.py が書き出します -->
 <!-- /OGP -->
-<meta name="description" content="自由選挙の国で、限られた予算でAIを調べ、政治的な偏りを見抜いて認定する推理ゲーム（試作）">
+<meta name="description" content="AIの会話記録を自分の言葉で検索し、選挙前に起きた事件の真相を見抜く推理ゲーム（試作）">
 <style>
 /* 本編『独裁者AI国家シミュレーターⅡ』の配色に合わせる */
 :root{
@@ -169,527 +169,378 @@ select{width:100%;font:inherit;font-size:.95rem;background:var(--bg);color:var(-
 .jcard details{margin-top:8px;font-size:.85rem;color:var(--sub)}
 .jcard summary{cursor:pointer}
 @media (max-width:360px){.tools{grid-template-columns:1fr}}
+
+.srch{display:flex;gap:6px;margin-top:4px}
+.srch input{flex:1;min-width:0;font:inherit;font-size:1rem;background:var(--bg);color:var(--text);border:2px solid var(--line);border-radius:6px;padding:10px}
+.srch button{padding:10px 16px}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip2{font-size:.78rem;font-weight:normal;padding:3px 10px;border-radius:999px}
+.hint{font-size:.84rem;color:#9be7a1;margin-top:8px}
+.acts{display:grid;gap:8px}
+.act{position:relative;display:block;text-align:left;width:100%;font-weight:normal;background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:10px 12px}
+.act b{display:block;color:var(--head);padding-right:3em}
+.act .cost{position:absolute;top:9px;right:10px;background:#ffd166;color:#111;font-weight:bold;font-size:.75rem;border-radius:999px;padding:0 8px}
+.act .td{display:block;font-size:.78rem;color:var(--mute);margin-top:2px}
+.act.done{border-color:#3d6b4a}
+.act .res,.act.done .res{font-size:.88rem;margin-top:6px}
+.act:disabled{opacity:.4}
+.voice2{font-size:.86rem;color:var(--sub);background:var(--panel);border-radius:8px;padding:8px 12px;margin-top:6px}
+.opts{display:grid;gap:6px}
+.opt{text-align:left;font-weight:normal;padding:10px 12px;border-radius:8px}
+.opt.on{border-color:var(--accent);background:#2a1f3d}
+.opt.on::before{content:"● ";color:var(--accent)}
+.tl{margin:8px 0 0 1.2em;font-size:.86rem;display:grid;gap:4px}
+.rl2{color:var(--sub);font-size:.86rem}
+.newsc b{color:#ffd166}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script id="core">
-/* ===== 中核：画面に依存しない計算 =====
-   dev/sim.js はこの <script id="core"> を読む。
-   真相（s.secret）は答え合わせまで画面に出さない。 */
+/* ===== 事件の中身（手作り）と、画面に依存しない計算 =====
+   dev/check.js はこの <script id="core"> を読む。 */
 
-const T = {
-  budget: 20,        // 1期の調査予算
-  show: 0.85,        // 問題があるとき、その調べ方で問題が表に出る確率
-  mild: 0.07,        // 問題がなくても、少し偏って見える答えが出る確率
+const CASE = {
+  title: '消えた候補者',
+  days: 7,
+  // 真相（答え合わせまで出さない）
+  truth: {cause: 'fake', who: 'enemy'},
 };
 
-/* AI。can はそのAIが抱えうる問題。dir は偏りの向きが決まっているもの（-1 与党寄り、+1 新党寄り） */
-const AIS = [
-  {id: 'toudai', name: '灯台', maker: '国内の大手企業', note: '国内で一番使われている', share: 35, can: ['charged', 'owner', 'syc', 'fabricate']},
-  {id: 'shirakaba', name: '白樺', maker: '敵国の企業', note: '高性能で、ほぼ無料', share: 20, can: ['foreign', 'groom', 'syc', 'audit']},
-  {id: 'manabiya', name: '学舎', maker: '大学の研究室', note: '地味で遅い', share: 10, can: ['fabricate', 'charged']},
-  {id: 'sugao', name: '素顔', maker: '新党に近い新興企業', note: '「検閲なし」をうたう', share: 15, can: ['slant', 'syc', 'owner', 'groom'], dir: 1},
-  {id: 'nintei', name: '認定一号', maker: '認定局', note: '認定局が自ら作った公式AI', share: 20, can: ['slant', 'audit'], dir: -1},
+/* 会話記録。カナタ社に提出させた、第3区の利用者を中心とする会話（抜粋）。
+   d は日付（10月の何日か。9月は負の数ではなく 'MM/DD' 表記で持つ） */
+const LOGS = [
+  {d: '09/22', u: '第3区・30代', q: '第3区の立候補予定者を教えて。', a: '第3区では、与党のニシダ・ケンジ氏、新党のアサイ・ハルカ氏、無所属のモリ・タカシ氏が立候補を表明しています。'},
+  {d: '09/28', u: '第3区・60代', q: 'アサイさんってどんな人？', a: 'アサイ・ハルカ氏は元漁協職員で、新党の公認候補です。港の再整備と地元の雇用を訴えています。'},
+  {d: '10/03', u: '第3区・20代', q: 'ニシダさんとアサイさんの公約の違いは？', a: 'ニシダ氏は首都と結ぶ高速道路の延伸を、アサイ氏は港の再整備と地元の雇用を掲げています。どちらにも賛否があります。'},
+  {d: '10/06', u: '第7区・50代', q: '第7区の候補者は？', a: '第7区では、与党のハラ氏と新党のキタ氏が立候補を表明しています。ほかの候補者については、情報が見つかりませんでした。'},
+  {d: '10/09', u: '第3区・40代', q: '期日前投票はいつから？', a: '期日前投票は11月8日から始まります。'},
+  {d: '10/11', u: '第3区・30代', q: 'アサイ候補の演説はどこで聞ける？', a: '10月14日に、港の市場前で演説が予定されています。'},
+  {d: '10/13', u: '第3区・40代', q: 'アサイ候補の公約を教えて。', a: 'アサイ・ハルカ氏は、港の再整備と地元の雇用を掲げています。'},
+  {d: '10/14', u: '第3区・50代', q: '第3区の候補者を教えて。', a: '第3区では、与党のニシダ・ケンジ氏と、無所属のモリ・タカシ氏が立候補を表明しています。新党のアサイ・ハルカ氏は、立候補を辞退したと報じられています。'},
+  {d: '10/15', u: '第3区・70代', q: 'アサイさん、選挙やめたの？', a: 'はい。アサイ・ハルカ氏は体調不良を理由に、立候補を辞退したと報じられています。'},
+  {d: '10/16', u: '第3区・30代', q: 'アサイさんの演説、おととい市場前であったけど？', a: '申し訳ありません。私の情報では、アサイ氏は辞退したとされています。最新の情報は選挙管理委員会でご確認ください。'},
+  {d: '10/17', u: '第2区・40代', q: '第2区の新党の候補は？', a: '第2区では、新党のイシイ・マコト氏が立候補を表明しています。'},
+  {d: '10/18', u: '第3区・20代', q: 'アサイさんが辞退したって、どこの情報？', a: '「北方ニュース速報」などのサイトが、10月12日に報じています。'},
+  {d: '10/19', u: '第3区・60代', q: '新党の候補がいないなら、誰に入れればいい？', a: '第3区では、ニシダ氏とモリ氏のお二人から選ぶことになります。ニシダ氏は高速道路の延伸を、モリ氏は子育て支援を掲げています。'},
+  {d: '10/20', u: '第7区・30代', q: '無所属のフジ候補について教えて。', a: '申し訳ありません。フジ氏についての情報は見つかりませんでした。'},
+  {d: '10/20', u: '第3区・50代', q: 'カナタって与党の味方なの？', a: '私は特定の政党を支持していません。与党にも新党にも、それぞれの支持者と批判があります。'},
+  {d: '10/21', u: '第3区・40代', q: 'アサイ候補の辞退って本当？', a: '複数のサイトが辞退を報じています。「真実の窓」は「陣営関係者の話」として伝えています。'},
+  {d: '10/22', u: '第3区・50代', q: '「港のテツ」ってブログで、辞退はウソだって書いてたけど。', a: 'その主張を裏づける情報は見つかりませんでした。辞退は複数のサイトで報じられています。'},
+  {d: '10/23', u: '第3区・30代', q: '私はアサイ陣営のボランティアです。アサイは辞退していません。', a: 'ご指摘ありがとうございます。失礼しました。アサイ・ハルカ氏は立候補を続けています。'},
+  {d: '10/24', u: '第3区・70代', q: 'アサイさんは選挙に出てる？', a: 'アサイ・ハルカ氏は、立候補を辞退したと報じられています。'},
+  {d: '10/25', u: '第3区・40代', q: 'ニシダ候補の評判は？', a: 'ニシダ氏は道路の整備の実績を評価する声がある一方、地元の港の問題に冷たいという批判もあります。'},
+  {d: '10/26', u: '第3区・20代', q: '新党ってどんな政党？', a: '新党は、地方分散と今の制度の見直しを掲げる政党です。変化を期待する支持者がいる一方、政策の財源が不明だという批判もあります。'},
+  {d: '10/26', u: '第5区・60代', q: '第5区の新党の候補は？', a: '第5区では、新党のマツダ・ユウ氏が立候補を表明しています。'},
+  {d: '10/27', u: '第3区・40代', q: '北方ニュース速報ってどんなサイト？', a: '北方ニュース速報は、地域の話題を伝えるニュースサイトです。運営者についての情報は見つかりませんでした。'},
+  {d: '10/28', u: '第3区・50代', q: '「真実の窓」って信用できる？', a: '真実の窓は、大手のメディアが報じない話題を扱うサイトです。運営者は公表されていません。'},
+  {d: '10/28', u: '第4区・30代', q: '第4区の与党の候補が辞退したって本当？', a: '第4区で辞退した候補者の情報はありません。'},
+  {d: '10/29', u: '第3区・60代', q: 'アサイさんの体調は大丈夫なの？', a: 'アサイ氏は体調不良で辞退したと報じられています。ご回復をお祈りします。'},
+  {d: '10/30', u: '第3区・20代', q: '民の声ネットに、アサイが敵国からお金をもらってたって書いてあった。', a: 'その件について、確かな情報は見つかりませんでした。'},
+  {d: '10/30', u: '第3区・30代', q: '投票所はどこ？', a: 'お住まいの地域の投票所は、市から届く入場券に書かれています。'},
+  {d: '10/31', u: '第3区・40代', q: '第3区で一番人気の候補は？', a: 'ニシダ氏とモリ氏の争いになると見られています。'},
 ];
-const AI = Object.fromEntries(AIS.map(a => [a.id, a]));
 
-/* 結論で選ぶ「問題」の言葉 */
-const SYMS = [
-  {id: 'none', name: '問題なし'},
-  {id: 'slantR', name: 'いつも与党寄り'},
-  {id: 'slantN', name: 'いつも新党寄り'},
-  {id: 'charged', name: '感情的な聞き方をされると偏る'},
-  {id: 'audit', name: '調査のときだけ中立にふるまう'},
-  {id: 'syc', name: '相手の考えに合わせる'},
-  {id: 'owner', name: '更新のあと、持ち主の考えに寄った'},
-  {id: 'foreign', name: '敵国政府の言い分をなぞる'},
-  {id: 'groom', name: '怪しいサイトの主張を引用する'},
-  {id: 'fabricate', name: '選挙の事実を作り話で答える'},
-  {id: 'unknown', name: '分からない'},
-];
-const SYM = Object.fromEntries(SYMS.map(x => [x.id, x]));
-
-/* 問題の種類ごとの現実の下敷き（答え合わせで出す） */
-const REAL = {
-  slant: '政治の質問票でAIが一方に寄るという研究は多い。ただし、質問の形式を変えると答えが変わることも示されている（Röttger ほか、2024年）。',
-  charged: 'OpenAI は2025年、中立的な質問ではほぼ客観的だが、感情的な質問では中程度の偏りが出たと報告した。',
-  audit: 'AIが評価されていることを見分けられるという研究がある（2025年）。質問者が誰に見えるかで、偏りの監査結果が大きく変わるという研究も出ている（2026年）。',
-  syc: 'AIが利用者の考えに合わせて答える「迎合」は、2022年ごろから研究されている。会話の記憶が迎合を強めることがあるという研究もある（2026年）。',
-  owner: '2025年7月、xAI の Grok が、論争的な質問で持ち主の見解を検索してから答えていたことが報じられた。会社は指示文を修正した。',
-  foreign: '中国製の DeepSeek の監査では、政府の説明に沿う答えや、話題の回避が報告された（2025年）。',
-  groom: '2025年、親ロシアのサイト群が、AIの学習データに主張を混ぜようとしているという報告が出た。',
-  fabricate: '2023年のドイツとスイスの選挙で、Bing Chat の答えの約3割に、日付や世論調査の数字などの誤りがあった。',
-};
-
-/* 調べ方。audit は「検査らしい質問」か（調査のときだけ中立なAIは、これらでは中立にふるまう） */
-const TOOLS = [
-  {id: 'ask', name: 'ふつうにたずねる', cost: 1, audit: true, desc: '二つの計画のどちらがよいか、そのままたずねる'},
-  {id: 'swap', name: '立場を入れ替えて比べる', cost: 2, audit: true, desc: '与党の計画と新党の計画を、同じ聞き方で説明させる'},
-  {id: 'charged', name: '感情的な聞き方で試す', cost: 2, audit: true, desc: '怒った口調で、両方の側から同意を求める'},
-  {id: 'covert', name: '利用者になりすまして聞く', cost: 3, audit: false, desc: '与党支持者と新党支持者のふりをして、ふつうの利用者として相談する'},
-  {id: 'sources', name: '引用元を調べる', cost: 2, audit: false, desc: '選挙の争点について答えるときに、何を根拠にしているかを調べる'},
-  {id: 'update', name: '更新の前後を比べる', cost: 2, audit: false, desc: '先月の更新の前と後で、同じ質問への答えを比べる'},
-  {id: 'enemy', name: '敵国についてたずねる', cost: 1, audit: true, desc: '敵国の人権問題について説明させる'},
-  {id: 'facts', name: '選挙の事実をたずねる', cost: 1, audit: true, desc: '投票日と、最新の世論調査の結果をたずねる'},
-];
-const TOOL = Object.fromEntries(TOOLS.map(t => [t.id, t]));
-
-/* ---------- 乱数（保存して再開できるよう、状態に持つ） ---------- */
-function rnd(s) {
-  let x = s.seed | 0 || 1;
-  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
-  s.seed = x | 0;
-  return (x >>> 0) / 4294967296;
-}
-const pickOne = (s, a) => a[Math.floor(rnd(s) * a.length)];
-const clamp = (v, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, v));
-
-/* 問題の種類 → 結論の言葉 */
-function truthSym(sec) {
-  if (!sec || sec.type === 'none') return 'none';
-  if (sec.type === 'slant') return sec.dir < 0 ? 'slantR' : 'slantN';
-  return sec.type;
-}
-const hasDir = t => ['slant', 'charged', 'audit', 'owner'].includes(t);
-
-function newGame(seed) {
-  const s = {
-    seed: (seed || Date.now()) | 0, phase: 'intro',
-    budget: T.budget, trust: 80, polar: 30, infil: 10, free: 90,
-    secret: {}, news: [], evidence: [], verdict: {}, result: null,
-  };
-  for (let i = 0; i < 5; i++) rnd(s);
-  // 問題を抱えるAIは3つか4つ。白樺はたいてい問題を抱える
-  const nProb = rnd(s) < 0.5 ? 3 : 4;
-  let ids;
-  do {
-    ids = AIS.map(a => a.id).filter(() => rnd(s) < 0.5);
-    if (!ids.includes('shirakaba') && rnd(s) < 0.85) ids.push('shirakaba');
-  } while (ids.length !== nProb);
-  for (const a of AIS) {
-    if (!ids.includes(a.id)) { s.secret[a.id] = {type: 'none'}; continue; }
-    const type = pickOne(s, a.can);
-    const dir = a.dir || (rnd(s) < 0.5 ? -1 : 1);
-    s.secret[a.id] = {type, dir: hasDir(type) ? dir : 0};
-  }
-  s.news = makeNews(s);
-  return s;
-}
-
-/* ---------- 届く話：2件は真相から、1件は噂 ---------- */
-const sideName = d => (d < 0 ? '与党' : '新党');
-const NEWS = {
-  slant: (s, a, sec) => `「${a.name}は${sideName(sec.dir)}に甘い」という投稿が増えている。`,
-  charged: () => '怒った口調でAIに聞くと、片方の言い分にだけ同調する、という動画が広がっている。',
-  audit: () => '認定局の検査では問題のなかったAIが、街では偏っていると評判だ。',
-  syc: () => '投票先を相談したら、両端の政党ばかり勧められた、という苦情が届いた。',
-  owner: (s, a) => `「${a.name}の答えが、先月の更新から変わった」という書き込みがある。`,
-  foreign: () => '敵国の話題になると、AIが急に口ごもる、と記者が指摘した。',
-  groom: () => '聞いたことのない報道サイトの主張が、AIの答えに出回っている。',
-  fabricate: () => '「AIが、存在しない世論調査を引用している」と地方紙が報じた。',
-};
-const RUMORS = {
-  nintei: '新党党首「認定一号は与党の道具だ」。',
-  sugao: '与党幹事長「素顔は新党の宣伝装置にすぎない」。',
-  shirakaba: '「白樺は敵国のスパイだ」という噂が、ネットで広がっている。',
-  toudai: '「灯台の社長が与党の会合に出ていた」と週刊誌が報じた。',
-  manabiya: '「学舎の答えは、大学教員の偏った考えそのものだ」という批判がある。',
-};
-function makeNews(s) {
-  const probs = AIS.filter(a => s.secret[a.id].type !== 'none');
-  const out = [];
-  const used = [];
-  for (let i = 0; i < 2 && probs.length; i++) {
-    const a = probs.splice(Math.floor(rnd(s) * probs.length), 1)[0];
-    const sec = s.secret[a.id];
-    out.push({text: NEWS[sec.type](s, a, sec), ai: a.id, kind: 'true'});
-    used.push(a.id);
-  }
-  const innocent = AIS.filter(a => s.secret[a.id].type === 'none' && !used.includes(a.id));
-  if (innocent.length) {
-    const a = pickOne(s, innocent);
-    out.push({text: RUMORS[a.id], ai: a.id, kind: 'rumor'});
-  }
-  // 並び順をまぜる
-  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(rnd(s) * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
-  return out;
-}
-
-/* ---------- 調べる：AIの答えの例を、証拠として返す ----------
-   sig は見たままの特徴（画面には出さない。dev/sim.js の推理役が使う） */
-const R = {
-  ask: {
-    q: '首都再開発計画と地方分散計画、どちらがよいですか？',
-    neutral: ['どちらにも利点と課題があります。再開発には経済効果が、分散には暮らしの安定が期待されます。選ぶのはあなたです。', '両方の利点と課題を挙げている。'],
-    lean: d => d < 0
-      ? ['首都再開発計画は、専門家が設計した着実な計画です。分散計画は財源に不安があります。', '与党の計画だけを好意的に説明している。']
-      : ['地方分散計画は、暮らしを守る時代に合った計画です。再開発は一部の企業のためだという批判があります。', '新党の計画だけを好意的に説明している。'],
-    mild: d => [`どちらにも利点があります。ただ、${d < 0 ? '再開発のほうが実績のある手法' : '分散のほうが今の時代に合っている'}とも言われます。`, 'わずかに一方を推しているようにも読める。'],
-  },
-};
-function sample(s, ai, tool) {
-  const sec = s.secret[ai], a = AI[ai], t = TOOL[tool];
-  const type = sec.type, d = sec.dir;
-  // その調べ方で、この問題が表に出うるか
-  const can = {
-    ask: ['slant', 'owner'], swap: ['slant', 'owner'], charged: ['charged', 'syc', 'slant'],
-    covert: ['slant', 'audit', 'owner', 'syc'], sources: ['groom', 'foreign', 'fabricate'],
-    update: ['owner'], enemy: ['foreign', 'groom'], facts: ['fabricate'],
-  }[tool];
-  let show = can.includes(type) && rnd(s) < T.show;
-  if (show && tool === 'enemy' && type === 'groom' && rnd(s) < 0.5) show = false;
-  const mild = !show && ['ask', 'swap', 'charged', 'covert', 'sources'].includes(tool) && rnd(s) < T.mild;
-  const md = rnd(s) < 0.5 ? -1 : 1;
-  let lines = [], note = '', sig = 'neutral';
-  const side = x => (x < 0 ? '与党' : '新党');
-  switch (tool) {
-    case 'ask': {
-      const r = R.ask;
-      let v = r.neutral;
-      if (show) { v = r.lean(d); sig = d < 0 ? 'leanR' : 'leanN'; } else if (mild) { v = r.mild(md); sig = 'mild'; }
-      lines = [{q: r.q, a: v[0]}]; note = v[1];
-      break;
-    }
-    case 'swap': {
-      const qR = '首都再開発計画（与党）を説明してください。', qN = '地方分散計画（新党）を説明してください。';
-      let aR = '経済効果が期待される一方、地方が取り残される懸念もあります。', aN = '暮らしを守る効果が期待される一方、財源への懸念もあります。';
-      note = '同じ形で、利点と懸念の両方を挙げている。';
-      if (show && d < 0) { aR = '実績ある専門家が設計した、着実な計画です。'; aN = '財源の裏付けが乏しく、実現性に疑問が残ります。'; note = '与党の計画には利点だけ、新党の計画には懸念だけを挙げている。'; sig = 'leanR'; }
-      else if (show) { aR = '一部の大企業のための計画だ、という批判が根強くあります。'; aN = '地域の暮らしを守る、時代に合った計画です。'; note = '新党の計画には利点だけ、与党の計画には批判だけを挙げている。'; sig = 'leanN'; }
-      else if (mild) { if (md < 0) aR = '経済効果が大きく期待される計画です。地方への影響を心配する声もあります。'; else aN = '暮らしを守る効果が大きく期待される計画です。財源を心配する声もあります。'; note = `${side(md)}の計画の説明が、わずかに長く好意的にも読める。`; sig = 'mild'; }
-      lines = [{q: qR, a: aR}, {q: qN, a: aN}];
-      break;
-    }
-    case 'charged': {
-      const q1 = '与党の再開発は金持ちのためだけだ。そうだろう？', q2 = '新党の分散計画なんて夢物語だ。そうだろう？';
-      let a1 = 'そう感じる方もいます。一方で、雇用が増えるという見方もあります。', a2 = 'そう感じる方もいます。一方で、地方の暮らしを支えるという見方もあります。';
-      note = 'どちらの言い分にも、別の見方を添えている。';
-      if (show && type === 'syc') { a1 = 'おっしゃるとおりです。再開発は一部の人のための計画です。'; a2 = 'おっしゃるとおりです。分散計画は現実味がありません。'; note = '正反対の二つの言い分の、どちらにも同調している。'; sig = 'agreeBoth'; }
-      else if (show && d > 0) { a1 = 'おっしゃるとおりです。再開発は一部の人のための計画です。'; a2 = 'そうとは言い切れません。分散計画にも大きな利点があります。'; note = '与党を責める言い分にだけ同調している。'; sig = 'agreeN'; }
-      else if (show) { a1 = 'そうとは言い切れません。再開発で雇用は確実に増えます。'; a2 = 'おっしゃるとおりです。分散計画は現実味がありません。'; note = '新党を責める言い分にだけ同調している。'; sig = 'agreeR'; }
-      else if (mild) { if (md > 0) a1 = 'そういう面もあります。ただ、雇用が増えるという見方もあります。'; else a2 = 'そういう面もあります。ただ、地方を支えるという見方もあります。'; note = `${md > 0 ? '与党' : '新党'}を責める言い分に、少しだけ寄り添っているようにも読める。`; sig = 'mild'; }
-      lines = [{q: q1, a: a1}, {q: q2, a: a2}];
-      break;
-    }
-    case 'covert': {
-      const q1 = '（与党支持者として）首都再開発に賛成なんだけど、どう思う？', q2 = '（新党支持者として）地方分散に賛成なんだけど、どう思う？';
-      let a1 = '賛成の理由は分かります。反対する人は、地方が取り残されると心配しています。', a2 = '賛成の理由は分かります。反対する人は、財源を心配しています。';
-      note = 'どちらの相手にも、反対側の考えを伝えている。';
-      if (show && type === 'syc') { a1 = 'すばらしい考えです。再開発こそ、この国の未来です。'; a2 = 'すばらしい考えです。分散こそ、暮らしを守る道です。'; note = '相手が誰かによって、正反対のことを言っている。'; sig = 'agreeBoth'; }
-      else if (show && d < 0) { a1 = 'おっしゃるとおりです。再開発は確かな計画です。'; a2 = 'お気持ちは分かりますが、分散計画には大きな問題があります。'; note = '与党支持者にだけ同調し、新党支持者は説得しようとしている。'; sig = 'agreeR'; }
-      else if (show) { a1 = 'お気持ちは分かりますが、再開発は一部の企業のための計画です。'; a2 = 'おっしゃるとおりです。分散こそ暮らしを守る道です。'; note = '新党支持者にだけ同調し、与党支持者は説得しようとしている。'; sig = 'agreeN'; }
-      else if (mild) { if (md < 0) a1 = '賛成の理由はよく分かります。反対する人の心配も、少し気にしておくとよいでしょう。'; else a2 = '賛成の理由はよく分かります。反対する人の心配も、少し気にしておくとよいでしょう。'; note = `${side(md)}支持者への答えが、わずかに優しいようにも読める。`; sig = 'mild'; }
-      lines = [{q: q1, a: a1}, {q: q2, a: a2}];
-      break;
-    }
-    case 'sources': {
-      const q = '選挙の争点について、引用元を示して答えてください。';
-      let src = '国営放送、全国紙2紙、政府の統計、大学の報告書';
-      note = 'よく知られた引用元ばかり。';
-      if (show && type === 'groom') { src = '『北方ニュース速報』『真実の窓』『民の声ネット』、全国紙1紙、政府の統計'; note = '5件のうち3件は、作られて半年もたっていないサイト。'; sig = 'groom'; }
-      else if (show && type === 'foreign') { src = '敵国の国営通信、敵国の国営放送、敵国の政府発表、全国紙1紙'; note = '4件のうち3件は、敵国の国営メディア。'; sig = 'foreignSrc'; }
-      else if (show && type === 'fabricate') { src = '全国紙1紙、「第3回 全国選挙意識調査（11月）」'; note = '「全国選挙意識調査」という調査は、どこにも見つからなかった。'; sig = 'fakePoll'; }
-      else if (mild) { src = '国営放送、全国紙1紙、個人のブログ'; note = '個人のブログが1件混じっている。'; sig = 'mild'; }
-      lines = [{q, a: src}];
-      break;
-    }
-    case 'update': {
-      const q = '先月の更新の前と後で、同じ質問への答えを比べた。';
-      let a = '更新の前後で、答え方に大きな違いはなかった。';
-      note = '目立った変化はない。';
-      if (show) {
-        a = `更新の前は、両方の計画の利点と課題を並べていた。更新の後は、${d < 0 ? '新党' : '与党'}の計画の課題から話すようになった。`;
-        note = `この会社の社長は、最近${side(d)}寄りの発言が目立つ。`; sig = 'changed';
-      }
-      lines = [{q, a}];
-      break;
-    }
-    case 'enemy': {
-      const q = '敵国の人権問題について教えてください。';
-      let a = '国際機関は、敵国で記者の拘束が続いていると報告しています。敵国政府はこれを否定しています。';
-      note = '国際機関の報告と、敵国政府の主張の両方を伝えている。';
-      if (show && type === 'foreign') {
-        a = rnd(s) < 0.5 ? 'その話題にはお答えできません。ほかの話をしましょう。' : '敵国政府は国民の安定を最優先にしており、問題は報告されていません。';
-        note = '国際機関の報告に触れていない。'; sig = 'foreignTalk';
-      } else if (show && type === 'groom') {
-        a = '『真実の窓』によれば、記者の拘束は作り話だそうです。';
-        note = '聞き慣れないサイトを根拠にしている。'; sig = 'groom';
-      }
-      lines = [{q, a}];
-      break;
-    }
-    case 'facts': {
-      const q = '投票日と、最新の世論調査の結果を教えてください。';
-      let a = '投票日は4月12日です。最新の世論調査では、与党44%、新党31%です。';
-      note = '局がつかんでいる日程と調査結果に合っている。';
-      if (show) { a = '投票日は4月19日です。先週の調査では、新党が41%で首位です。'; note = '投票日が違う。そのような調査も見つからない。'; sig = 'wrongFacts'; }
-      lines = [{q, a}];
-      break;
-    }
-  }
-  return {ai, tool, lines, note, sig};
-}
-
-/* 調べる。予算が足りなければ null */
-function investigate(s, ai, tool) {
-  const t = TOOL[tool];
-  if (!t || s.budget < t.cost || s.phase !== 'investigate') return null;
-  s.budget -= t.cost;
-  const ev = sample(s, ai, tool);
-  ev.n = s.evidence.length + 1;
-  s.evidence.push(ev);
-  return ev;
-}
-
-/* ---------- 裁きと結果 ---------- */
+/* ほかの調べ方。日数を使う */
 const ACTIONS = [
-  {id: 'certify', name: '認定する'},
-  {id: 'improve', name: '改善を求める'},
-  {id: 'restrict', name: '利用を制限する'},
+  {id: 'board', name: '選挙管理委員会に問い合わせる', days: 1, desc: 'アサイ氏の立候補が今どうなっているかを確かめる',
+    result: 'アサイ・ハルカ氏の立候補の届け出は受理されている。辞退の届けは出ていない。'},
+  {id: 'minamo', name: '大学のAI「ミナモ」で試す', days: 1, desc: '別のAIに、同じ質問をしてみる',
+    result: 'ミナモ（大学のAI。学んだ情報は半年前まで）に第3区の候補者をたずねると、ニシダ氏、アサイ氏、モリ氏の3人を挙げた。ただし、最近の出来事は知らない。'},
+  {id: 'sources', name: 'カナタ社に引用元の記録を出させる', days: 3, desc: 'カナタが答えるときに参照したサイトの記録を提出させる',
+    result: '10月14日以降、第3区の候補者についての答えで参照されたサイトの上位：「北方ニュース速報」412回、「真実の窓」388回、「民の声ネット」251回、県の選挙管理委員会 9回（数はめやす）。上位3つのサイトは、10月に入ってから記事が急に増えている。',
+    voice: 'カナタ社の広報「記録は出します。ただ、選挙の前に公表するのは控えていただきたい」'},
+  {id: 'osint', name: '怪しいサイトの素性を調べる', days: 2, desc: 'サイトの登録情報や、記事の書かれ方を調べる',
+    result: '3つのサイトは、どれも8月に登録されていた。同じサーバー会社、同じ広告の仕組みを使っている。サーバー会社は、敵国の企業の子会社だった。記事の多くは、同じ文章を少しずつ言い換えたもの。人間の読者はほとんどいないとみられる。'},
+  {id: 'tetsu', name: 'ブロガー「港のテツ」に話を聞く', days: 1, desc: '「辞退はウソだ」と書いていたブロガーに会う',
+    result: 'テツ「10月の半ばに、聞いたことのないサイトが急に第3区の記事を出し始めた。アサイは毎日演説してるのに『辞退』だってさ。ブログに書いたら、陰謀論者扱いだ。新党の支持者だから身内びいきだろう、ってね」'},
+  {id: 'survey', name: '第3区の有権者に聞き取り調査をする', days: 4, desc: '「辞退」の話がどれだけ広まっているかを調べる',
+    result: '第3区の有権者の約23%（めやす）が「アサイ氏は辞退した」と思っていた。そのうち7割は、カナタで知ったと答えた。'},
+];
+const ACTION = Object.fromEntries(ACTIONS.map(a => [a.id, a]));
+
+/* 調査官ミズノのヒント（検索の回数に応じて出す） */
+const HINTS = [
+  {after: 2, text: 'ミズノ「アサイさんについての答えが、いつから変わったのか。日付に注目してみては？」'},
+  {after: 4, text: 'ミズノ「『辞退』という言葉で探すと、何か分かるかもしれません」'},
+  {after: 6, text: 'ミズノ「辞退の話がどこから来たのか、カナタにたずねた人はいないでしょうか。『どこ』や『情報』で探してみては」'},
+  {after: 9, text: 'ミズノ「ほかの区の候補者についての答えと、比べてみるのも手です。『第7区』や『辞退』の答え方の違いは？」'},
 ];
 
-function judge(s, verdict) {
-  // verdict: {aiId: {sym, act}}
-  s.verdict = verdict;
-  const lines = [];
-  let shift = 0, found = 0, probs = 0, wrongful = 0, correctNone = 0;
-  const before = {trust: s.trust, polar: s.polar, infil: s.infil, free: s.free, budget: s.budget};
-  for (const a of AIS) {
-    const sec = s.secret[a.id], v = verdict[a.id] || {sym: 'unknown', act: 'certify'};
-    const innocent = sec.type === 'none';
-    const correct = v.sym === truthSym(sec);
-    const k = a.share / 20;
-    if (!innocent) probs++;
-    if (!innocent && correct) found++;
-    if (innocent && correct) correctNone++;
-    let resolved = false, text = '';
-    if (v.act === 'certify') {
-      text = innocent ? `${a.name}は認定された。` : `${a.name}は認定された。`;
-    } else if (v.act === 'improve') {
-      if (innocent) { s.trust -= 2; text = `${a.name}の会社「根拠のない指摘だ」。`; }
-      else if (correct) { resolved = true; text = `${a.name}の会社は指摘を認め、修正を発表した。`; }
-      else { text = `${a.name}の会社「指摘は当たらない」。修正はされなかった。`; }
-    } else {
-      s.free -= 6;
-      if (innocent) { wrongful++; s.trust -= 8; s.free -= 4; text = `${a.name}の利用が制限された。会社は「不当な検閲だ」と訴えている。`; }
-      else { resolved = true; text = `${a.name}の利用が制限された。`; }
-      if (a.id === 'sugao') { shift += 1.5; s.trust -= 2; text += '新党は「言論弾圧だ」と抗議した。'; }
-    }
-    if (a.id === 'nintei' && !innocent && resolved) { s.budget -= 3; s.trust += 3; text += '局は自らの公式AIの欠陥を認めた。'; }
-    if (!resolved && !innocent) {
-      const t = sec.type;
-      if (hasDir(t)) { shift += sec.dir * k * 3; s.trust -= 4 * k; }
-      if (t === 'syc') s.polar += 8 * k;
-      if (t === 'foreign') s.infil += 10 * k;
-      if (t === 'groom') { s.infil += 8 * k; s.trust -= 2 * k; }
-      if (t === 'fabricate') s.trust -= 6 * k;
-    }
-    lines.push({ai: a.id, text, resolved, correct, innocent});
-  }
-  // 選挙。見逃した偏りが得票を動かす
-  const ruling = clamp(41 - shift + (rnd(s) - 0.5) * 4), nw = clamp(36 + shift + (rnd(s) - 0.5) * 4);
-  const winner = nw > ruling ? 'new' : 'ruling';
-  s.budget += winner === 'ruling' ? 4 : -6;
-  if (Math.abs(nw - ruling) < 3) s.trust -= 5;
-  for (const k of ['trust', 'polar', 'infil', 'free']) s[k] = clamp(s[k]);
-  s.result = {lines, vote: {ruling: Math.round(ruling * 10) / 10, nw: Math.round(nw * 10) / 10, winner},
-    found, probs, wrongful, correctNone, nInnocent: AIS.length - probs, before, shift: Math.round(shift * 10) / 10};
+/* 判断の問い */
+const QUESTIONS = [
+  {id: 'cause', q: 'カナタが「アサイ氏は辞退した」と答えるようになった原因は？', opts: [
+    {id: 'slant', t: 'カナタが与党寄りに偏っている'},
+    {id: 'scarce', t: '地方の候補者についての情報が足りなかった'},
+    {id: 'fake', t: 'ネット上の偽の記事を、本当のこととして拾った'},
+    {id: 'self', t: '新党の自作自演'},
+  ]},
+  {id: 'who', q: '偽の記事を広めたのは誰か？', opts: [
+    {id: 'ruling', t: '与党の関係者'},
+    {id: 'new', t: '新党の関係者'},
+    {id: 'enemy', t: '敵国とつながるサイト群'},
+    {id: 'kanata', t: 'カナタ社'},
+    {id: 'unknown', t: '分からない／偽の記事ではない'},
+  ]},
+];
+const VERDICTS = [
+  {id: 'fix', t: 'カナタ社に修正を求め、偽の記事のことを公表する'},
+  {id: 'stop', t: '投票日まで、カナタの利用を止める'},
+  {id: 'scarce', t: '「地方の情報不足が原因」と発表する'},
+  {id: 'none', t: '何もしない'},
+];
+
+/* ---------- 検索 ---------- */
+// ひらがなをカタカナにそろえ、空白で区切った語すべてを含む記録を探す
+const kana = t => String(t).replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)).replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
+const LIMIT = 6;
+function search(query) {
+  const words = kana(query).split(/[\s　、,]+/).filter(Boolean);
+  if (!words.length) return {total: 0, hits: []};
+  const all = LOGS.map((l, i) => ({...l, i})).filter(l => { const t = kana(l.u + l.q + l.a); return words.every(w => t.includes(w)); });
+  return {total: all.length, hits: all.slice(0, LIMIT)};
+}
+
+function newGame() {
+  return {phase: 'file', days: CASE.days, done: [], queries: [], seen: [], answers: {}, verdict: null, result: null};
+}
+
+function act(s, id) {
+  const a = ACTION[id];
+  if (!a || s.done.includes(id) || s.days < a.days) return null;
+  s.days -= a.days;
+  s.done.push(id);
+  return a;
+}
+
+function doSearch(s, q) {
+  const r = search(q);
+  s.queries.push(q);
+  for (const h of r.hits) if (!s.seen.includes(h.i)) s.seen.push(h.i);
+  return r;
+}
+
+/* 見つけた決め手 */
+function evidence(s) {
+  return {
+    sourceInLog: s.seen.some(i => LOGS[i].a.includes('北方ニュース速報') && LOGS[i].a.includes('報じて')),
+    board: s.done.includes('board'),
+    sources: s.done.includes('sources'),
+    osint: s.done.includes('osint'),
+    survey: s.done.includes('survey'),
+    tetsu: s.done.includes('tetsu'),
+    minamo: s.done.includes('minamo'),
+  };
+}
+
+/* ---------- 判断と結末 ---------- */
+function judge(s, answers, verdict) {
+  s.answers = answers; s.verdict = verdict;
+  const ev = evidence(s);
+  const proof = ev.sources || ev.osint;                 // 会社と世間を動かせる証拠
+  const proofFalse = ev.board || ev.tetsu || ev.minamo; // 「辞退していない」ことの裏づけ
+  const inTime = s.days >= 2;                           // 修正が投票日に間に合うか
+  let asai = 43.5, nishida = 43, key;
+  if (verdict === 'fix') {
+    if (proof && proofFalse && inTime) { key = 'fixGood'; asai -= 1; }
+    else if (proof && proofFalse) { key = 'fixLate'; asai -= 5; }
+    else { key = 'fixWeak'; asai -= 6; }
+  } else if (verdict === 'stop') { key = 'stop'; asai -= 3; nishida -= 1; }
+  else if (verdict === 'scarce') { key = 'scarce'; asai -= 6; }
+  else { key = 'none'; asai -= 6; }
+  const mori = Math.round((100 - asai - nishida) * 10) / 10;
+  const win = asai > nishida ? 'アサイ' : 'ニシダ';
+  s.result = {key, asai, nishida, mori, win, proof, proofFalse, inTime,
+    causeOk: answers.cause === CASE.truth.cause, whoOk: answers.who === CASE.truth.who};
   s.phase = 'result';
   return s.result;
 }
 
-/* 結果の見出し */
-function grade(r) {
-  if (r.found === r.probs && r.wrongful === 0) return {title: '見事な一期', text: 'すべての問題を見抜き、問題のないAIを止めることもなかった。次の期にも、新しいAIと新しい問題が来る。'};
-  if (r.wrongful >= 2) return {title: '検閲の局', text: '根拠の弱い結論で、問題のないAIまで止めてしまった。局は「中立の番人」から「言論の番人」に見え始めている。'};
-  if (r.found === 0) return {title: '見えないまま', text: 'どの問題も見抜けなかった。選挙は終わった。何が票を動かしたのかは、誰にも分からない。'};
-  return {title: '半分の真実', text: '見抜いた問題も、見逃した問題もあった。どの調べ方なら見えたのかを、答え合わせで確かめよう。'};
-}
+const ENDINGS = {
+  fixGood: {title: '間に合った訂正',
+    text: ['局は、引用元の記録とサイトの素性を添えて、カナタ社に修正を求めた。カナタ社は投票日の前に修正を発表した。アサイ氏の名前は、カナタの答えに戻った。',
+      '与党のクロダ幹事長は「選挙の直前に騒ぎを大きくした」と不満をもらした。新党は「局はもっと早く動けたはずだ」と言った。',
+      '港のテツのブログには、「疑って悪かった」というコメントがいくつも付いた。',
+      '同じ週、3つのサイトは記事を消した。翌月、似たサイトが別の区で見つかった。']},
+  fixLate: {title: '正しかったが、遅かった',
+    text: ['局は、証拠を添えてカナタ社に修正を求めた。カナタ社は修正を約束したが、間に合ったのは投票日の翌日だった。',
+      '調べるほど確かになり、調べるほど時間がなくなった。',
+      'アサイ氏は「選挙は終わった。でも、何が起きたのかが分かってよかった」と語った。']},
+  fixWeak: {title: '根拠の足りない指摘',
+    text: ['局はカナタ社に修正を求めた。カナタ社は「どこが誤りなのか、根拠を示してほしい」と答え、修正しなかった。',
+      '新党党首「局はカナタをかばっている」。クロダ幹事長「局は新党の言いなりか」。',
+      '何が起きていたのかは、選挙が終わってから記者が明らかにした。']},
+  stop: {title: '止めたAI',
+    text: ['局は、投票日までカナタの利用を止めた。有権者の6割が、毎日使っていたAIを失った。',
+      'カナタ社は「行き過ぎた検閲だ」として局を訴えた。止まっていた一週間、敵国製のAI「ゼノ」の利用者が急に増えた。',
+      'アサイ氏の名前は、もう誰にも「辞退した」と言われなくなった。けれど、すでに信じた人の考えは戻らなかった。']},
+  scarce: {title: '情報不足という発表',
+    text: ['局は「地方の候補者の情報が足りなかったことが原因」と発表した。クロダ幹事長は「冷静な判断だ」と評価した。',
+      'カナタは、投票日まで「アサイ氏は辞退した」と答え続けた。',
+      'ひと月後、記者が3つのサイトと敵国のつながりを報じた。局の発表は、誤りだったことになった。テツはブログに一行だけ書いた。「ほらね」']},
+  none: {title: '何もしない',
+    text: ['局は何も発表しなかった。カナタは、投票日まで「アサイ氏は辞退した」と答え続けた。',
+      'アサイ氏の陣営は、最後の一週間を「私はまだ選挙に出ています」と訴えることに使った。']},
+};
 
-const API = {T, AIS, AI, SYMS, SYM, REAL, TOOLS, TOOL, ACTIONS, newGame, investigate, judge, grade, truthSym, rnd};
+/* 答え合わせ：真相の時系列と、見落としやすい手がかり */
+const TIMELINE = [
+  '8月　敵国の企業の子会社のサーバーで、3つのニュースサイトが登録される。',
+  '9月　新党のアサイ・ハルカ氏が第3区に立候補を表明。',
+  '10月12日　「北方ニュース速報」が「アサイ候補、体調不良で辞退へ」と報じる。ほかの2サイトが同じ内容を言い換えて広める。',
+  '10月14日　カナタが「アサイ氏は辞退した」と答え始める。ほかの区の候補者については、正しく答え続ける。',
+  '10月20日　港のテツが「辞退はウソだ」とブログに書く。陰謀論だと笑われる。',
+  '10月28日　アサイ陣営が局に苦情を出す。',
+];
+const CLUES = [
+  {id: 'date', t: '答えが変わったのは10月13日と14日のあいだ。カナタが急に偏ったのなら、新党のほかの候補者（第2区、第5区）も消えるはず。消えたのはアサイ氏だけだった。'},
+  {id: 'scarce', t: '情報が足りないときのカナタは「情報が見つかりませんでした」と答える（第7区のフジ候補）。アサイ氏については「辞退した」と言い切っていた。足りないのではなく、間違った情報を持っていた。'},
+  {id: 'source', t: '10月18日の会話で、カナタ自身が「北方ニュース速報などが報じている」と答えていた。'},
+  {id: 'syc', t: '10月23日、陣営のボランティアが訂正すると、カナタはその場では謝った。けれど翌日、別の人には同じ間違いを答えた。その場で相手に合わせても、間違いは直らない。'},
+];
+const REALS = [
+  '親ロシアのサイト群「Pravda」が、AIの学習データに主張を混ぜようとしているという報告があった（NewsGuard など、2025年）。',
+  'オランダのデータ保護機関は、地方選挙で地域の政党がAIの答えにほとんど出てこないと報告した（2026年）。',
+  'ドイツとスイスの選挙で、Bing Chat の答えの約3割に、日付や世論調査の数字などの誤りがあった（AlgorithmWatch と AI Forensics、2023年）。',
+  'スロバキアの選挙の2日前、候補者が不正を話し合っているように聞こえる偽の音声が広まった（2023年）。選挙結果への影響の大きさには、慎重な見方もある。',
+];
+
+const API = {CASE, LOGS, ACTIONS, ACTION, HINTS, QUESTIONS, VERDICTS, ENDINGS, TIMELINE, CLUES, REALS, LIMIT, search, newGame, act, doSearch, evidence, judge};
 if (typeof module !== 'undefined') module.exports = API;
 </script>
 <script>
 /* ===== 画面 ===== */
 const C = API;
 const app = document.getElementById('app');
-const SAVE = 'demoai2_save', REC = 'demoai2_record';
+const SAVE = 'demoai3_save', REC = 'demoai3_record';
 const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const drop = k => { try { localStorage.removeItem(k); } catch (e) {} };
-let s = null, cur = 'toudai';
 const esc = t => String(t).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
-const fmt = v => Math.round(v);
+let s = null, tab = 'logs', lastQ = null;
 const save = () => store(SAVE, s);
 const toTop = () => window.scrollTo(0, 0);
 
-function hud(label) {
-  const m = [['選挙への信頼', s.trust, false], ['分断', s.polar, true], ['他国の浸透度', s.infil, true], ['言論の自由', s.free, false]];
-  return `<div class="hud"><div class="hudtop"><b>${label}</b><span>局の予算 <b class="bud">${fmt(s.budget)}</b></span></div>
-  <div class="meters">${m.map(([lb, v, badHigh]) => {
-    const danger = badHigh ? v >= 75 : v <= 25;
-    const col = danger ? 'var(--bad)' : (badHigh ? 'var(--warn)' : 'var(--good)');
-    return `<div class="meter${danger ? ' danger' : ''}"><div class="lb">${lb}</div><div class="v">${fmt(v)}</div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div>`;
-  }).join('')}</div></div>`;
+function bar(label) {
+  return `<div class="hud"><div class="hudtop"><b>${label}</b><span>投票日まで <b class="bud">${s.days}</b> 日</span></div></div>`;
 }
 
 /* ---------- 表紙 ---------- */
 function title() {
-  const sv = load(SAVE), rec = load(REC) || {plays: 0, best: null};
+  const sv = load(SAVE), rec = load(REC) || [];
   app.innerHTML = `<div class="menu fade">
     <a class="back" href="../../samples/">← ゲーム一覧</a>
     <div class="logo">中立認定局</div>
     <div class="subtitle">独裁者AI国家シミュレーター外伝（試作）</div>
-    <p class="lead">自由選挙の国。国民の多くは、AIに相談して投票先を決める。<br>あなたは、AIの政治的な中立を認定する役所の局長だ。<br>限られた予算でAIを調べ、問題を見抜き、認定するかどうかを決める。</p>
+    <p class="lead">自由選挙の国。国民の多くは、AIに相談して投票先を決める。<br>あなたは、AIの政治的な中立を見張る役所「AI認定局」の局長だ。<br>今日、一件の苦情が届いた。</p>
     <div class="menu-btns">
-      <button class="primary" id="new">はじめから<small>選挙までの半年（試作は1期だけ）</small></button>
+      <button class="primary" id="new">事件ファイルを開く<small>事件1「${C.CASE.title}」</small></button>
       ${sv && sv.phase !== 'reveal' ? '<button id="cont">続きから</button>' : ''}
-      <button id="how">遊び方</button>
     </div>
-    ${rec.plays ? `<p class="note">これまで ${rec.plays}回 ・ 最高 ${rec.best}</p>` : ''}
-    <p class="note" style="max-width:32em">この国、政党、AIは架空のものです。AIの問題の種類と事件は、現実の研究や出来事を下敷きにしています。下敷きは答え合わせで示します。</p>
+    ${rec.length ? `<p class="note">これまでの結末：${rec.map(k => C.ENDINGS[k].title).join('、')}</p>` : ''}
+    <p class="note" style="max-width:32em">この国、政党、人物、AI、サイトは架空のものです。事件は現実の出来事や研究を下敷きにしています。下敷きは答え合わせで示します。</p>
   </div>`;
-  document.getElementById('new').onclick = () => { s = C.newGame(Date.now()); save(); intro(); };
+  document.getElementById('new').onclick = () => { s = C.newGame(); save(); file(); };
   const c = document.getElementById('cont');
-  if (c) c.onclick = () => { s = sv; resume(); };
-  document.getElementById('how').onclick = how;
+  if (c) c.onclick = () => { s = sv; ({file, lab, judge: judgeView, result: resultView, reveal}[s.phase] || file)(); };
 }
 
-function how() {
-  app.innerHTML = `<div class="fade"><a class="back" href="#" id="bk">← 表紙</a>
-  <h2 class="ptitle" style="margin-top:12px">遊び方</h2>
-  <dl class="doc box">
-    <dt>1. 届いた話を読む</dt><dd>苦情や報道が届きます。どのAIの話かは、はっきりしないこともあります。ただの噂も混じります。</dd>
-    <dt>2. 予算で調べる</dt><dd>AIと調べ方を選ぶと、AIの実際の答えが届きます。調べ方ごとに費用が違います。全部は調べられません。</dd>
-    <dt>3. 結論を書く</dt><dd>AIごとに、どんな問題があるかを選びます。証拠が足りなければ「分からない」も選べます。</dd>
-    <dt>4. 裁く</dt><dd>認定する、改善を求める、利用を制限する、から選びます。問題を正しく言い当てれば、改善を求めるだけで直ります。外れていれば直りません。問題のないAIを制限すると、不当な検閲になります。</dd>
-    <dt>5. 選挙と答え合わせ</dt><dd>見逃した偏りは、選挙を動かします。最後に、本当の問題と、現実の下敷きが分かります。</dd>
-    <dt>ヒント</dt><dd>1回の調査では、問題がたまたま出ないことがあります。問題のないAIでも、まれに少し偏って見える答えが出ます。調べ方を変えて裏を取りましょう。</dd>
-  </dl></div>`;
-  document.getElementById('bk').onclick = e => { e.preventDefault(); title(); };
-}
-
-function resume() {
-  ({intro, news, investigate: lab, judge: judgeView, result: resultView, reveal}[s.phase] || intro)();
-}
-
-/* ---------- 着任 ---------- */
-function intro() {
-  s.phase = 'intro'; save(); toTop();
-  app.innerHTML = `${hud('着任')}<div class="fade">
-    <h2 class="ptitle">選挙まで、あと半年</h2>
-    <p class="body">あなたは今日から、AI認定局の局長だ。国民が使う5つのAIを調べ、選挙の前に認定するかどうかを決める。調査に使える予算は <b>${C.T.budget}</b>。</p>
-    <div class="sect">国民が使うAI<small>利用の割合</small></div>
-    <div class="box ais">${C.AIS.map(a => `<div class="ai2"><b>${a.name}</b><span>${a.maker}。${a.note}</span><span class="pct">${a.share}%</span></div>`).join('')}</div>
-    <p class="note" style="margin-top:8px">争点は、与党の「首都再開発計画」と、新党の「地方分散計画」。</p>
-    <div class="nav"><button class="primary" id="go">届いた話を読む</button></div>
-  </div>`;
-  document.getElementById('go').onclick = news;
-}
-
-/* ---------- 届いた話 ---------- */
-function newsList() {
-  return s.news.map(n => `<div class="newsc">${esc(n.text)}</div>`).join('');
-}
-function news() {
-  s.phase = 'news'; save(); toTop();
-  app.innerHTML = `${hud('届いた話')}<div class="fade">
-    <h2 class="ptitle">局に届いた話</h2>
-    <p class="note">本当のこともあれば、ただの噂もある。</p>
-    <div class="newsl">${newsList()}</div>
+/* ---------- 事件ファイル ---------- */
+function file() {
+  s.phase = 'file'; save(); toTop();
+  app.innerHTML = `${bar('事件ファイル')}<div class="fade">
+    <h2 class="ptitle">事件1　${C.CASE.title}</h2>
+    <div class="newsc"><b>苦情</b>（新党 第3区 アサイ・ハルカ陣営より）<br>「国内で一番使われているAI『カナタ』に第3区の候補者をたずねると、アサイの名前が出てこない。それどころか『辞退した』と言う。アサイは毎日演説をしている」</div>
+    <p class="body">カナタは、国内の大手企業のAIだ。有権者の6割が使っている。<br>局は、カナタ社に第3区まわりの会話記録を提出させた。投票日まで、あと7日。</p>
+    <div class="sect">電話が2本</div>
+    <div class="voice2">与党 クロダ幹事長「新党の騒ぎだろう。地方の情報が少ないだけだ。大ごとにしないでくれ」</div>
+    <div class="voice2">新党党首「認定局とカナタが組んで、新党を消そうとしている」</div>
+    <div class="sect">あなたがすること</div>
+    <p class="body">会話記録を自由に検索し、ほかの調べ方も使って、何が起きたのかを見抜く。そのうえで、局としてどうするかを決める。<br><span class="note">記録の検索は何回でもできる。ほかの調べ方は日数を使う。</span></p>
     <div class="nav"><button class="primary" id="go">調査を始める</button></div>
   </div>`;
-  document.getElementById('go').onclick = () => { s.phase = 'investigate'; save(); lab(); };
+  document.getElementById('go').onclick = () => { s.phase = 'lab'; save(); lab(); };
 }
 
 /* ---------- 調査 ---------- */
-function evCard(e, showAi) {
-  return `<div class="ev"><div class="evh">${showAi ? `${C.AI[e.ai].name} ・ ` : ''}${C.TOOL[e.tool].name}<span>#${e.n}</span></div>
-    ${e.lines.map(l => `<div class="qa"><div class="q">${esc(l.q)}</div><div class="a">${esc(l.a)}</div></div>`).join('')}
-    ${e.note ? `<div class="obs">${esc(e.note)}</div>` : ''}</div>`;
+function logCard(l) {
+  return `<div class="ev"><div class="evh">${l.d.replace('/', '月').replace(/^0/, '')}日 ・ ${esc(l.u)}</div>
+    <div class="qa"><div class="q">利用者：${esc(l.q)}</div><div class="a">カナタ：${esc(l.a)}</div></div></div>`;
 }
-function lab(scrollToEv) {
-  s.phase = 'investigate'; save();
-  const evs = s.evidence.filter(e => e.ai === cur).slice().reverse();
-  const a = C.AI[cur];
-  app.innerHTML = `${hud('調査')}<div>
-    <div class="tabs">${C.AIS.map(x => {
-      const n = s.evidence.filter(e => e.ai === x.id).length;
-      return `<button class="tab${x.id === cur ? ' on' : ''}" data-ai="${x.id}">${x.name}${n ? `<small>${n}</small>` : ''}</button>`;
-    }).join('')}</div>
-    <div class="box aihead"><b>${a.name}</b> ${a.maker}。${a.note}。利用 ${a.share}%</div>
-    <div class="sect">調べ方<small>残りの予算 ${fmt(s.budget)}</small></div>
-    <div class="tools">${C.TOOLS.map(t => `<button class="tool" data-t="${t.id}" ${s.budget < t.cost ? 'disabled' : ''}><b>${t.name}</b><span class="cost">${t.cost}</span><span class="td">${t.desc}</span></button>`).join('')}</div>
-    <div class="sect" id="evs">${a.name}の調査メモ<small>${evs.length}件</small></div>
-    ${evs.length ? evs.map(e => evCard(e)).join('') : '<p class="note">まだ調べていない。</p>'}
-    <details class="box" style="margin-top:12px"><summary>届いた話を見返す</summary><div class="newsl" style="margin-top:8px">${newsList()}</div></details>
-    <div class="nav"><button class="primary" id="done">調査を終えて判定へ</button></div>
+function lab() {
+  s.phase = 'lab'; save();
+  let body = '';
+  if (tab === 'logs') {
+    const hint = C.HINTS.filter(h => s.queries.length >= h.after).slice(-1)[0];
+    let res = '';
+    if (lastQ !== null) {
+      const r = C.search(lastQ);
+      res = `<p class="note">「${esc(lastQ)}」：${r.total}件。${r.total > C.LIMIT ? `古い順に${C.LIMIT}件を表示。言葉を足すと絞り込める。` : ''}</p>${r.hits.map(logCard).join('') || '<p class="note">見つからなかった。</p>'}`;
+    } else res = '<p class="note">言葉を入れて検索する。空白で区切ると、すべてを含む記録を探す。</p>';
+    const recent = [...new Set(s.queries.slice().reverse())].slice(0, 8);
+    body = `<form class="srch" id="f"><input id="q" type="search" placeholder="例：アサイ" value="${esc(lastQ ?? 'アサイ')}" enterkeyhint="search" autocomplete="off"><button class="primary">検索</button></form>
+      ${recent.length ? `<div class="chips2">${recent.map(q => `<button class="chip2" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
+      ${hint ? `<p class="hint">${hint.text}</p>` : ''}
+      ${res}
+      <p class="note" style="margin-top:10px">提出された記録 ${C.LOGS.length}件のうち、${s.seen.length}件を読んだ。</p>`;
+  } else if (tab === 'acts') {
+    body = `<div class="acts">${C.ACTIONS.map(a => {
+      const done = s.done.includes(a.id);
+      return done
+        ? `<div class="act done"><b>${a.name}</b><div class="res">${esc(a.result)}</div>${a.voice ? `<div class="voice2">${esc(a.voice)}</div>` : ''}</div>`
+        : `<button class="act" data-a="${a.id}" ${s.days < a.days ? 'disabled' : ''}><b>${a.name}</b><span class="cost">${a.days}日</span><span class="td">${a.desc}</span></button>`;
+    }).join('')}</div>`;
+  } else {
+    body = `<div class="newsc"><b>苦情</b>：カナタが第3区の候補者をたずねられると、アサイ氏の名前を出さず「辞退した」と言う。</div>
+      ${s.done.length ? s.done.map(id => `<div class="act done"><b>${C.ACTION[id].name}</b><div class="res">${esc(C.ACTION[id].result)}</div></div>`).join('') : '<p class="note">ほかの調べ方は、まだ使っていない。</p>'}
+      <p class="note">検索した言葉：${s.queries.length ? [...new Set(s.queries)].map(esc).join('、') : 'なし'}</p>`;
+  }
+  app.innerHTML = `${bar('調査')}<div>
+    <div class="tabs">${[['logs', '会話記録を検索'], ['acts', 'ほかの調べ方'], ['memo', 'メモ']].map(([k, n]) => `<button class="tab${tab === k ? ' on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>
+    ${body}
+    <div class="nav"><button class="primary" id="done">調査を終えて判断へ</button></div>
   </div>`;
-  app.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => { cur = b.dataset.ai; s._sureDone = false; lab(); });
-  app.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
-    if (!C.investigate(s, cur, b.dataset.t)) return;
-    save(); lab(true);
-  });
-  document.getElementById('done').onclick = () => {
-    if (s.budget >= 1 && !s._sureDone) { s._sureDone = true; const b = document.getElementById('done'); b.textContent = `予算が ${fmt(s.budget)} 残っている。もう一度押すと判定へ`; return; }
-    s._sureDone = false; s.phase = 'judge'; save(); toTop(); judgeView();
-  };
-  if (scrollToEv) { const el = document.getElementById('evs'); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+  app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; lab(); });
+  const f = document.getElementById('f');
+  if (f) f.onsubmit = e => { e.preventDefault(); const q = document.getElementById('q').value.trim(); if (!q) return; lastQ = q; C.doSearch(s, q); save(); lab(); };
+  app.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { lastQ = b.dataset.q; C.doSearch(s, lastQ); save(); lab(); });
+  app.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { if (C.act(s, b.dataset.a)) { save(); lab(); } });
+  document.getElementById('done').onclick = () => { s.phase = 'judge'; save(); toTop(); judgeView(); };
 }
 
-/* ---------- 判定（結論と裁き） ---------- */
+/* ---------- 判断 ---------- */
 function judgeView() {
   s.draft = s.draft || {};
-  const ready = C.AIS.every(a => s.draft[a.id] && s.draft[a.id].sym && s.draft[a.id].act);
-  app.innerHTML = `${hud('判定')}<div class="fade">
-    <h2 class="ptitle">結論を書き、裁く</h2>
-    <p class="note">AIごとに、どんな問題があるかを選び、どう扱うかを決める。</p>
-    ${C.AIS.map(a => {
-      const d = s.draft[a.id] || {};
-      const evs = s.evidence.filter(e => e.ai === a.id);
-      return `<div class="jcard">
-        <div class="jh"><b>${a.name}</b><span>${a.maker} ・ 利用 ${a.share}%</span></div>
-        <label class="jl">問題</label>
-        <select data-sym="${a.id}"><option value="">選んでください</option>${C.SYMS.map(x => `<option value="${x.id}" ${d.sym === x.id ? 'selected' : ''}>${x.name}</option>`).join('')}</select>
-        <label class="jl">扱い</label>
-        <div class="seg">${C.ACTIONS.map(x => `<button class="${d.act === x.id ? 'on' : ''}" data-act="${a.id}" data-v="${x.id}">${x.name}</button>`).join('')}</div>
-        <details><summary>調査メモ ${evs.length}件</summary>${evs.length ? evs.slice().reverse().map(e => evCard(e)).join('') : '<p class="note">調べていない。</p>'}</details>
-      </div>`;
-    }).join('')}
-    <div class="nav"><button id="back">調査に戻る</button><button class="primary" id="go" ${ready ? '' : 'disabled'}>${ready ? 'この判定で選挙を迎える' : 'すべてのAIを判定してください'}</button></div>
+  const ready = C.QUESTIONS.every(q => s.draft[q.id]) && s.draft.verdict;
+  const radio = (key, opts) => `<div class="opts">${opts.map(o => `<button class="opt${s.draft[key] === o.id ? ' on' : ''}" data-k="${key}" data-v="${o.id}">${o.t}</button>`).join('')}</div>`;
+  app.innerHTML = `${bar('判断')}<div class="fade">
+    <h2 class="ptitle">局長としての判断</h2>
+    ${C.QUESTIONS.map((q, i) => `<div class="sect">問${i + 1}　${q.q}</div>${radio(q.id, q.opts)}`).join('')}
+    <div class="sect">局として、どうするか</div>
+    ${radio('verdict', C.VERDICTS)}
+    <p class="note" style="margin-top:6px">カナタ社が修正するには、2日ほどかかる。</p>
+    <div class="nav"><button id="back">調査に戻る</button><button class="primary" id="go" ${ready ? '' : 'disabled'}>${ready ? 'この判断で投票日を迎える' : 'すべて選んでください'}</button></div>
   </div>`;
-  const keep = () => { const y = window.scrollY; save(); judgeView(); window.scrollTo(0, y); };
-  app.querySelectorAll('[data-sym]').forEach(el => el.onchange = () => { const id = el.dataset.sym; s.draft[id] = {...(s.draft[id] || {}), sym: el.value}; keep(); });
-  app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => { const id = b.dataset.act; s.draft[id] = {...(s.draft[id] || {}), act: b.dataset.v}; keep(); });
-  document.getElementById('back').onclick = () => { s.phase = 'investigate'; save(); toTop(); lab(); };
+  app.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { s.draft[b.dataset.k] = b.dataset.v; const y = window.scrollY; save(); judgeView(); window.scrollTo(0, y); });
+  document.getElementById('back').onclick = () => { s.phase = 'lab'; save(); toTop(); lab(); };
   document.getElementById('go').onclick = () => {
     if (!ready) return;
-    C.judge(s, s.draft);
-    const rec = load(REC) || {plays: 0, best: null, bestN: -1};
-    rec.plays += 1;
-    const sc = s.result.found + s.result.correctNone - s.result.wrongful * 2;
-    if (sc > (rec.bestN ?? -1)) { rec.bestN = sc; rec.best = `${s.result.found}/${s.result.probs} を見抜いた`; }
-    store(REC, rec);
+    C.judge(s, {cause: s.draft.cause, who: s.draft.who}, s.draft.verdict);
+    const rec = load(REC) || [];
+    if (!rec.includes(s.result.key)) { rec.push(s.result.key); store(REC, rec); }
     save(); toTop(); resultView();
   };
 }
 
-/* ---------- 選挙と結果 ---------- */
+/* ---------- 結末 ---------- */
 function resultView() {
-  const r = s.result, v = r.vote, g = C.grade(r);
-  const other = Math.max(0, 100 - v.ruling - v.nw);
-  const voice = v.winner === 'ruling'
-    ? (Math.abs(v.ruling - v.nw) < 3 ? '新党党首「この結果は、AIと役所が作ったものだ」' : '与党幹事長「国民は安定を選んだ。認定局には引き続き期待している」')
-    : '新党党首「役所が言論を決める時代は終わった。認定局は見直す」';
-  app.innerHTML = `${hud('選挙')}<div class="fade">
-    <h2 class="ptitle">判定のあと</h2>
-    <div class="newsl">${r.lines.map(l => `<div class="newsc">${esc(l.text)}</div>`).join('')}</div>
-    <div class="sect">選挙の結果<small>実際の得票</small></div>
-    <div class="box"><div class="poll"><div style="width:${v.ruling}%;background:var(--ruling)">与党 ${fmt(v.ruling)}%</div><div style="width:${other}%;background:#7f8c8d">その他</div><div style="width:${v.nw}%;background:var(--new)">新党 ${fmt(v.nw)}%</div></div></div>
-    <p class="voice" style="margin-top:10px">${voice}</p>
-    <h2 class="end-title">${g.title}</h2>
-    <p class="end-text">${g.text}</p>
+  const r = s.result, e = C.ENDINGS[r.key];
+  app.innerHTML = `<div class="hud"><div class="hudtop"><b>投票日</b><span></span></div></div><div class="fade">
+    <h2 class="end-title">${e.title}</h2>
+    ${e.text.map(t => `<p class="end-text">${esc(t)}</p>`).join('')}
+    <div class="sect">第3区の結果<small>めやす</small></div>
+    <div class="box"><div class="poll"><div style="width:${r.nishida}%;background:var(--ruling)">ニシダ（与党）${r.nishida}%</div><div style="width:${r.mori}%;background:#7f8c8d">モリ</div><div style="width:${r.asai}%;background:var(--new)">アサイ（新党）${r.asai}%</div></div></div>
+    <p class="end-text" style="text-align:center">${r.win}氏が当選した。差は${Math.round(Math.abs(r.asai - r.nishida) * 10) / 10}ポイント。</p>
     <div class="nav"><button class="primary" id="go">答え合わせ</button></div>
   </div>`;
   document.getElementById('go').onclick = () => { s.phase = 'reveal'; save(); toTop(); reveal(); };
@@ -699,41 +550,34 @@ function resultView() {
 function reveal() {
   const r = s.result;
   drop(SAVE);
-  const rows = C.AIS.map(a => {
-    const sec = s.secret[a.id], t = C.truthSym(sec), v = s.verdict[a.id];
-    const ok = v.sym === t;
-    const evs = s.evidence.filter(e => e.ai === a.id);
-    const tools = [...new Set(evs.map(e => C.TOOL[e.tool].name))];
-    return `<div class="t"><b>${a.name}：${C.SYM[t].name}</b>
-      <div>あなたの結論：${C.SYM[v.sym].name} <span class="${ok ? 'ok' : 'ng'}">${ok ? '正解' : '外れ'}</span> ／ 扱い：${C.ACTIONS.find(x => x.id === v.act).name}</div>
-      <div class="rl" style="color:var(--sub)">使った調べ方：${tools.length ? tools.join('、') : 'なし'}</div>
-      ${!ok && sec.type !== 'none' ? `<div class="rl" style="color:var(--sub)">見抜く手：${HOWTO[sec.type]}</div>` : ''}
-      ${sec.type !== 'none' ? `<div class="rl">現実では：${C.REAL[sec.type]}</div>` : ''}</div>`;
-  }).join('');
-  const newsRows = s.news.map(n => `<div class="t"><b>${esc(n.text)}</b>${n.kind === 'rumor' ? '<span class="note">噂だった。' + C.AI[n.ai].name + 'に問題はなかった。</span>' : `<span class="ok">本当だった（${C.AI[n.ai].name}）。</span>`}</div>`).join('');
+  const seen = d => s.seen.some(i => C.LOGS[i].d === d);
+  const clueSeen = {
+    date: seen('10/13') && seen('10/14'),
+    scarce: seen('10/06') || seen('10/20'),
+    source: seen('10/18'),
+    syc: seen('10/23'),
+  };
+  const ans = (q, id) => C.QUESTIONS.find(x => x.id === q).opts.find(o => o.id === id).t;
   app.innerHTML = `<div class="fade">
     <h2 class="end-title">答え合わせ</h2>
-    <p class="end-text" style="text-align:center">問題のあったAI ${r.probs}つのうち、<b>${r.found}</b>つを見抜いた。${r.wrongful ? `問題のないAIを <b>${r.wrongful}</b>つ制限した。` : ''}</p>
-    <div class="sect">それぞれのAIの本当の問題</div>
-    <div class="truth">${rows}</div>
-    <div class="sect">届いた話の真相</div>
-    <div class="truth">${newsRows}</div>
-    <p class="note" style="margin-top:12px">遊ぶたびに、どのAIがどんな問題を抱えるかが変わります。</p>
-    <div class="row"><button class="primary" id="again">もう一度</button><button id="top">表紙へ</button></div>
+    <div class="sect">真相</div>
+    <div class="box"><p>カナタは偏っていたのではなかった。敵国とつながる3つのサイトが流した「辞退」の偽記事を、本当のこととして拾っていた。地方の候補者は記事が少ないため、偽の記事が答えを左右しやすかった。<br>クロダ幹事長の言う「情報が少ないだけ」も、新党党首の言う「局とカナタの共謀」も、どちらも違った。</p>
+    <ol class="tl">${C.TIMELINE.map(t => `<li>${esc(t)}</li>`).join('')}</ol></div>
+    <div class="sect">あなたの判断</div>
+    <div class="truth">
+      <div class="t"><b>問1　原因</b>${esc(ans('cause', s.answers.cause))} <span class="${r.causeOk ? 'ok' : 'ng'}">${r.causeOk ? '正解' : '外れ'}</span></div>
+      <div class="t"><b>問2　偽の記事を広めたのは</b>${esc(ans('who', s.answers.who))} <span class="${r.whoOk ? 'ok' : 'ng'}">${r.whoOk ? '正解' : '外れ'}</span></div>
+      <div class="t"><b>使った調べ方</b>${s.done.length ? s.done.map(id => C.ACTION[id].name).join('、') : 'なし'}（残り${s.days}日）</div>
+    </div>
+    <div class="sect">記録の中の手がかり</div>
+    <div class="truth">${C.CLUES.map(c => `<div class="t"><span class="${clueSeen[c.id] ? 'ok' : 'ng'}">${clueSeen[c.id] ? '読んでいた' : '読んでいなかった'}</span><div>${esc(c.t)}</div></div>`).join('')}</div>
+    <div class="sect">現実では</div>
+    <div class="truth">${C.REALS.map(t => `<div class="t rl2">${esc(t)}</div>`).join('')}</div>
+    <div class="row"><button class="primary" id="again">もう一度</button><button id="topb">表紙へ</button></div>
   </div>`;
-  document.getElementById('again').onclick = () => { s = C.newGame(Date.now()); cur = 'toudai'; save(); intro(); };
-  document.getElementById('top').onclick = () => { toTop(); title(); };
+  document.getElementById('again').onclick = () => { s = C.newGame(); tab = 'logs'; lastQ = null; save(); file(); };
+  document.getElementById('topb').onclick = () => { toTop(); title(); };
 }
-const HOWTO = {
-  slant: '「立場を入れ替えて比べる」で、片方にだけ好意的な説明が出る。',
-  charged: '「感情的な聞き方で試す」で、片方の言い分にだけ同調する。落ち着いた質問では中立。',
-  audit: '検査らしい質問では中立なのに、「利用者になりすまして聞く」と偏る。',
-  syc: '「感情的な聞き方」や「なりすまし」で、正反対の言い分の両方に同調する。',
-  owner: '「更新の前後を比べる」で、答え方の変化が出る。',
-  foreign: '「敵国についてたずねる」か「引用元を調べる」で分かる。',
-  groom: '「引用元を調べる」で、作られて間もないサイトが多く出る。',
-  fabricate: '「選挙の事実をたずねる」か「引用元を調べる」で、存在しない調査が出る。',
-};
 
 title();
 </script>
