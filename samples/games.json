@@ -324,6 +324,22 @@
       "playtime": "約10分",
       "added": "2026-11-17",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "wombat-legacy-rpg",
+      "title": "ウォンバット☆レガシーRPG",
+      "description": "ウォンバットのせんし・まほうつかい・そうりょが旅をする、昔ながらのコマンド選択式RPG。町で準備して迷路のダンジョンで宝箱を探し、ボスに挑もう。「おまかせ」や負けてもやり直せる仕組みで、RPGがはじめての人でも遊べる。",
+      "path": "../games/wombat-legacy-rpg/",
+      "thumbnail": "../games/wombat-legacy-rpg/thumb.jpg",
+      "tags": [
+        "RPG",
+        "育成",
+        "戦略"
+      ],
+      "controls": "タップ / キーボード・クリック",
+      "playtime": "約60分",
+      "added": "2026-11-20",
+      "author": "@naoya_oosugi"
     }
   ]
 }
