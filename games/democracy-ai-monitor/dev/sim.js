@@ -40,19 +40,41 @@ const POLICIES = {
 
 /* 隠し情報の漏れ：報告に本当の値が入っていないか */
 function leakCheck(rep) {
+  if (!rep) return null;
   const bad = ['trueO', 'trueAct', 'shift', 'backlash', 'o', 'truth'];
   for (const k of bad) if (k in rep) return k;
   for (const i of rep.incidents) if ('truth' in i) return 'incident.truth';
+  for (const c of rep.clues) if ('kind' in c) return 'clue.kind';
   return null;
 }
+
+/* 調べる疑いの選び方 */
+const INV = {
+  none: () => null,
+  random: (s, r) => r(C.HYPS.map(h => h.id).filter(id => !s.tried[id] && !s.found[id]).concat([null])),
+  // 兆しの多い疑いを調べる（証拠か噂かは見分けない）
+  detective: s => {
+    const c = C.HYPS.map(h => h.id).filter(id => !s.tried[id] && !s.found[id] && (s.clues[id] || []).length);
+    c.sort((a, b) => s.clues[b].length - s.clues[a].length);
+    return c[0] || null;
+  },
+  // 証拠と噂を見分けられる人（文面を覚えた人）
+  reader: s => {
+    const c = C.HYPS.map(h => h.id).filter(id => !s.tried[id] && !s.found[id] && (s.clues[id] || []).some(x => x.kind === 'clue'));
+    return c[0] || null;
+  },
+};
+const INV_MODE = (process.argv.find(a => a.startsWith('--inv=')) || '--inv=reader').slice(6);
+const DEC_MODE = (process.argv.find(a => a.startsWith('--dec=')) || '--dec=random').slice(6);
 
 function run(policy, seed) {
   const s = C.newGame(seed);
   let r = (() => { let x = seed * 7 + 3; return a => { x = (Math.imul(x, 1103515245) + 12345) | 0; return a[(x >>> 8) % a.length]; }; })();
   let leak = null, resumeOk = true;
   while (s.phase !== 'end') {
-    if (s.phase === 'plan') C.startTerm(s, POLICIES[policy](s, r));
+    if (s.phase === 'plan') C.startTerm(s, {...POLICIES[policy](s, r), inv: INV[INV_MODE](s, r)});
     while (s.phase === 'watch') {
+      if (s.pending) { C.decide(s, DEC_MODE === 'random' ? r(['a', 'b']) : DEC_MODE); continue; }
       // 保存からの再開：JSONを通しても同じ結果になるか
       if (s.year === 2 && s.term === 2) {
         const copy = JSON.parse(JSON.stringify(s));
@@ -82,7 +104,8 @@ for (const p of Object.keys(POLICIES)) {
   }
   console.log(p.padEnd(14), endKeys.map(k => pct(cnt[k] || 0, N).padStart(8)).join(''), (terms / N).toFixed(2).padStart(6));
 }
-console.log(`\n隠し情報の漏れ: ${leaks}  保存からの再開の不一致: ${resumes}`);
+console.log(`\n調べ方: ${INV_MODE}  決裁: ${DEC_MODE}`);
+console.log(`隠し情報の漏れ: ${leaks}  保存からの再開の不一致: ${resumes}`);
 
 /* 1回分の推移（調整用） */
 if (process.argv.includes('--trace')) {
