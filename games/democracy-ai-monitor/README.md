@@ -206,6 +206,10 @@
 - それへの反論（2026年）：https://retractionwatch.com/2026/04/30/are-ai-chatbots-infiltrating-online-survey-data-not-yet-says-new-study/
 - ルーマニア大統領選の無効（2024年）：https://www.idea.int/democracytracker/report/romania/november-2024
 
+## 次の台本
+
+現実の攻撃の手口（AIでの記事の書き換え、AIが演じるアカウント、何も知らない運び手、データの空白、AI音声のなりすまし）から逆算した台本：[シナリオA「港の汚職疑惑」](scenario-a.md)
+
 ## 試作の状態
 
 `index.html` は、手作りの事件1件だけを遊べる試作です。仕組みを作り込む前に、推理として「あっ」と思う瞬間があるかを確かめるためのものです。
