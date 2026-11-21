@@ -396,67 +396,125 @@ function mkEnemy(f,arch,opt){
   return e;
 }
 // その階に出る敵の組み合わせ（仮）
+// ---------- 動物（敵）：STAGE2.md の表 ----------
+// arch: 種類（ARCH）。関数なら階で変わる / spr・pal・s: ドット絵 / weak: 弱点 / moves: 技の名前を動物らしく
+// from: その階から出る / fic: 空想の生き物（図鑑にそう書く）
+const ANIMALS={
+  ant:   {name:'ブルドッグアリ',arch:'normal',spr:'ant',pal:'antR',weak:['fire'],moves:[{n:'かみつく',k:'atk',w:1}]},
+  fox:   {name:'アカギツネ',arch:'fast',spr:'fox',pal:'fox',weak:['ice']},
+  spider:{name:'ハンツマン',arch:'fast',spr:'spider',pal:'spid',weak:['fire']},
+  goanna:{name:'ゴアナ',arch:'wide',spr:'croc',pal:'goanna',s:.8,weak:['ice'],moves:[{n:'かみつく',k:'atk',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.6,w:1}]},
+  tiger: {name:'タイガースネーク',arch:'poison',spr:'snake',pal:'tiger',weak:['ice'],moves:[{n:'かみつく',k:'atk',w:2},{n:'どくのキバ',k:'atk',poison:.5,w:2}]},
+  toad:  {name:'オオヒキガエル',arch:'heavy',spr:'toad',pal:'toad',weak:['thunder'],moves:[{n:'たいあたり',k:'atk',w:3},{n:'どくのしるを とばす',k:'all',pow:.5,poison:.35,w:1}]},
+  koala: {name:'コアラ',arch:'koala',spr:'koala',pal:'koalaN',weak:['fire']},
+  wantr: {name:'ツムギアリ',arch:'caller',spr:'ant',pal:'antG',weak:['fire'],moves:[{n:'かみつく',k:'atk',w:4},{n:'なかまを よぶ',k:'call',w:1}]},
+  eagle: {name:'オナガイヌワシ',arch:'sniper',spr:'eagle',pal:'eagle',weak:['thunder'],moves:[{n:'ねらいうち',k:'snipe',pow:1.3,w:2},{n:'つめで ひっかく',k:'atk',w:1}]},
+  kooka: {name:'ワライカワセミ',arch:'hexer',spr:'eagle',pal:'kooka',s:.75,weak:['ice']},
+  crab:  {name:'ノコギリガザミ',arch:f=>f<11?'tank':'counter',spr:'crab',pal:'crab',weak:['thunder'],moves:[{n:'はさむ',k:'atk',w:3},{n:'おおばさみ',k:'atk',pow:1.4,w:1}]},
+  honey: {name:'ミツツボアリ',arch:'medic',spr:'ant',pal:'honey',weak:['fire'],moves:[{n:'かみつく',k:'atk',w:2},{n:'ミツを わける',k:'healAlly',w:2}]},
+  dingo: {name:'ディンゴ',arch:'twice',spr:'dingo',pal:'dingo',weak:['fire'],moves:[{n:'かみつく',k:'atk',w:1}]},
+  frill: {name:'エリマキトカゲ',arch:'frill',spr:'croc',pal:'frill',s:.7,weak:['ice']},
+  echidna:{name:'ハリモグラ',arch:'metal',spr:'echidna',pal:'echidna'},
+  devil: {name:'タスマニアデビル',arch:'jammer',spr:'devil',pal:'devil',weak:['light'],moves:[{n:'かみつく',k:'atk',w:2},{n:'さけびごえ',k:'dispel',w:1},{n:'MPを すいとる',k:'drain',w:1}]},
+  octo:  {name:'ヒョウモンダコ',arch:'stunner',spr:'octo',pal:'octo',weak:['thunder'],moves:[{n:'からみつく',k:'atk',w:2},{n:'かみついて まひさせる',k:'atk',pow:.9,stun:.45,w:2}]},
+  lyre:  {name:'コトドリ',arch:'silencer',spr:'eagle',pal:'lyre',s:.75,weak:['thunder']},
+  ssnake:{name:'ウミヘビ',arch:'poison',spr:'snake',pal:'sea',weak:['thunder'],moves:[{n:'かみつく',k:'atk',w:2},{n:'どくのキバ',k:'atk',poison:.6,w:2}]},
+  ray:   {name:'シビレエイ',arch:'mage',spr:'ray',pal:'ray',weak:['ice']},
+  perentie:{name:'ペレンティ',arch:'wide',spr:'croc',pal:'perentie',weak:['ice'],moves:[{n:'かみつく',k:'atk',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.6,w:1},{n:'どくのよだれ',k:'atk',poison:.5,w:1}]},
+  ffox:  {name:'オオコウモリ',arch:'evasive',spr:'bat',pal:'bat',weak:['ice']},
+  croc:  {name:'イリエワニ',arch:'charger',spr:'croc',pal:'croc',weak:['thunder'],moves:[{n:'ちからを ためる',k:'charge',w:2},{n:'かみつく',k:'atk',w:1}]},
+  kMage: {name:'まほうつかいコアラ',arch:'kMage',spr:'koala',pal:'kMage',weak:['light']},
+  kPriest:{name:'そうりょコアラ',arch:'kPriest',spr:'koala',pal:'kPriest',weak:['thunder']},
+  kSinger:{name:'うたいてコアラ',arch:'kSinger',spr:'koala',pal:'kSinger',weak:['ice']},
+  kPoison:{name:'どくつかいコアラ',arch:'kPoison',spr:'koala',pal:'kPoison',weak:['fire']},
+  kWarrior:{name:'せんしコアラ',arch:'kWarrior',spr:'koala',pal:'kWarrior',weak:['thunder']},
+  kKarate:{name:'からてかコアラ',arch:'kKarate',spr:'koala',pal:'kKarate',weak:['ice']},
+};
+// B1〜20 の出かた [この階から, この階まで, 組み合わせ]
+const POOL20=[
+  [1,6,['ant','ant']],[1,7,['fox']],[1,8,['ant','fox']],
+  [2,9,['spider']],[2,9,['ant','spider']],
+  [3,12,['goanna']],[3,12,['tiger']],[3,8,['ant','ant','ant']],
+  [4,14,['toad']],[4,20,['koala']],[4,12,['tiger','ant']],
+  [5,15,['wantr']],[5,14,['wantr','fox']],
+  [6,18,['eagle','ant']],[6,18,['kooka','fox']],
+  [7,20,['crab']],[7,14,['crab','spider']],
+  [8,20,['honey','crab']],[8,20,['dingo']],
+  [9,20,['frill','dingo']],[9,18,['frill','goanna']],
+  [11,20,['devil']],[11,20,['devil','dingo']],[11,20,['kMage']],
+  [12,20,['octo','wantr']],[12,20,['lyre','dingo']],
+  [13,20,['ssnake']],[13,20,['kPriest','dingo']],
+  [14,20,['ray','ray']],[14,20,['perentie']],[14,20,['perentie','ssnake']],
+  [15,20,['ffox','ffox']],[15,20,['kSinger','toad']],
+  [16,20,['croc']],[16,20,['croc','goanna']],
+  [17,20,['kPoison','dingo']],[17,20,['eagle','eagle']],
+  [19,20,['kWarrior','dingo']],[19,20,['kKarate']],
+];
+// B21〜：種類から、色違いの動物を当てる（名前と色は仮）
+const ARCH_ANIMAL={normal:'dingo',tank:'crab',fast:'fox',heavy:'toad',poison:'tiger',caller:'wantr',wide:'goanna',twice:'dingo',sleeper:'koala',
+  stunner:'octo',jammer:'devil',bomber:'toad',medic:'honey',sniper:'eagle',counter:'crab',mirror:'lyre',charger:'croc',evasive:'ffox',mage:'ray',
+  hexer:'kooka',frill:'frill',silencer:'lyre',koala:'koala',kMage:'kMage',kPriest:'kPriest',kSinger:'kSinger',kPoison:'kPoison',kWarrior:'kWarrior',kKarate:'kKarate'};
+const AREA_COLOR=['','あお','あか','くろ','きん'];
 function floorGroups(f){
   const area=Math.floor((f-1)/10);
-  const pool=[['normal','normal'],['tank'],['fast','normal'],['poison'],['normal','normal','normal'],['wide','normal'],['caller'],['heavy']];
-  if(f>=4)pool.push(['koala']);
-  if(f>=6)pool.push(['hexer','normal']);
-  if(f>=9)pool.push(['frill','normal']);
-  if(f>=6)pool.push(['sniper','normal']);
-  if(f>=8)pool.push(['twice'],['medic','tank']);
-  if(f>=11)pool.push(['stunner','normal'],['jammer','heavy'],['counter'],['kMage']);
-  if(f>=12)pool.push(['silencer','normal']);
-  if(f>=13)pool.push(['kPriest','normal']);
-  if(f>=14)pool.push(['mage','mage']);
-  if(f>=15)pool.push(['evasive','evasive'],['kSinger','heavy']);
-  if(f>=16)pool.push(['charger','wide']);
-  if(f>=17)pool.push(['kPoison','normal']);
-  if(f>=19)pool.push(['kWarrior','normal'],['kKarate']);
-  if(f>=25)pool.push(['kWarrior','kMage']);
-  if(f>=15)pool.push(['tank','poison'],['heavy','fast'],['sniper','sniper']);
-  if(f>=21)pool.push(['mirror','normal'],['bomber','bomber'],['sleeper','normal'],['hexer','frill']);
-  if(f>=25)pool.push(['twice','wide'],['caller','poison','normal'],['medic','counter'],['jammer','sniper']);
-  if(f>=31)pool.push(['mirror','counter'],['charger','sleeper'],['bomber','medic','sniper']);
+  if(f<=20)return {pool:POOL20.filter(([a,b])=>f>=a&&f<=b).map(x=>x[2]),metalRate:.04};
+  const pool=[['normal','normal'],['tank'],['fast','normal'],['poison'],['normal','normal','normal'],['wide','normal'],['caller'],['heavy'],
+    ['koala'],['hexer','normal'],['frill','normal'],['sniper','normal'],['twice'],['medic','tank'],['stunner','normal'],['jammer','heavy'],['counter'],['kMage'],
+    ['silencer','normal'],['kPriest','normal'],['mage','mage'],['evasive','evasive'],['kSinger','heavy'],['charger','wide'],['kPoison','normal'],
+    ['kWarrior','normal'],['kKarate'],['tank','poison'],['heavy','fast'],['sniper','sniper']];
+  pool.push(['mirror','normal'],['bomber','bomber'],['sleeper','normal'],['hexer','frill']);
+  if(f>=25)pool.push(['twice','wide'],['caller','poison','normal'],['medic','counter'],['jammer','sniper'],['kWarrior','kMage']);  if(f>=31)pool.push(['mirror','counter'],['charger','sleeper'],['bomber','medic','sniper']);
   if(f>=31)pool.push(['kPriest','kWarrior','kMage'],['kSinger','kKarate']);
   if(f>=41)pool.push(['stunner','charger','jammer'],['evasive','mirror','medic'],['kMage','kMage'],['kPoison','silencer','kPriest']);
-  return {pool,weak:[['fire'],['ice'],['thunder'],['light'],['fire','light']][area%5],metalRate:.04};
+  return {pool,metalRate:.04};
+}
+// 動物か種類から、敵を1体つくる
+function mkMob(f,key){
+  let id=key,arch,A=ANIMALS[key],color='';
+  if(A)arch=typeof A.arch==='function'?A.arch(f):A.arch;
+  else{arch=key;id=ARCH_ANIMAL[key]||'dingo';A=ANIMALS[id];color=AREA_COLOR[Math.min(4,Math.floor((f-1)/10))];}
+  const e=mkEnemy(f,arch,{name:color+A.name,weak:A.weak||[]});
+  e.id=id;e.color=color;e.look={spr:A.spr,pal:A.pal,s:A.s||1,tint:color};
+  if(A.moves&&ANIMALS[key]&&!ARCH[arch].metal)e.moves=A.moves;
+  return e;
 }
 function rollGroup(f,r){
   const G=floorGroups(f);
-  if(r()<G.metalRate)return [mkEnemy(f,'metal',{name:'ハリモグラ'})];
+  if(r()<G.metalRate)return [mkMob(f,'echidna')];
   const g=G.pool[Math.floor(r()*G.pool.length)];
-  return g.map(a=>mkEnemy(f,a,{weak:G.weak}));
+  return g.map(a=>mkMob(f,a));
 }
 // 名前と技を決めたボス（STAGE2.md）。ほかの階は、ふつうのボスの技
 const BOSS_DEF={
-  5: {name:'ツムギアリの女王',arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
-  10:{name:'ディンゴのおやぶん',arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
-  15:{name:'コアラのだいまどうし',arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
-  20:{name:'イリエワニのぬし',arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
+  5: {name:'ツムギアリの女王',look:{spr:'ant',pal:'antQ',s:1.6},weak:['fire'],arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
+  10:{name:'ディンゴのおやぶん',look:{spr:'dingo',pal:'dboss',s:1.45},weak:['fire'],arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
+  15:{name:'コアラのだいまどうし',look:{spr:'koala',pal:'kMageB',s:1.5},weak:['light'],arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
+  20:{name:'イリエワニのぬし',look:{spr:'croc',pal:'crocB',s:1.3},weak:['thunder'],arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
 };
 // 光る宝箱の番人（前作と同じく、ボスより強いことがある）。エリアに1体。倒すと店より1段上の装備
 // めやす：その段階の上限レベル・満タンで勝率4〜6割（hp・atk はそのエリアの大ボスに対する倍率）
 // 何度でも使える回復の道具（前作の「いやしの石」のようなもの）は出さない
 const GUARDIANS={
-  8: {name:'ゴアナの番人',     hp:1.3,atk:1.15,acts:2,reward:{line:'claw'},
+  8: {name:'ゴアナの番人',     hp:1.3,atk:1.15,acts:2,look:{spr:'croc',pal:'goanna',s:1.1},reward:{line:'claw'},
       moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
-  18:{name:'ペレンティの番人', hp:1.0,atk:.85,acts:2,reward:{line:'staff'},
+  18:{name:'ペレンティの番人', hp:1.0,atk:.85,acts:2,look:{spr:'croc',pal:'perentie',s:1.2},reward:{line:'staff'},
       moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'どくのよだれ',k:'all',pow:.6,poison:.5,w:2},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:1}]},
-  28:{name:'しおだまりのぬし', hp:1.3,atk:1.15,acts:2,reward:{line:'flute'},fic:true,
+  28:{name:'しおだまりのぬし', hp:1.3,atk:1.15,acts:2,look:{spr:'crab',pal:'tide',s:1.4},reward:{line:'flute'},fic:true,
       moves:[{n:'おおばさみ',k:'atk',pow:1.5,w:3},{n:'あわを ふきかける',k:'magicAll',pow:.7,w:2},{n:'かたく なる',k:'eguard',w:1}]},
-  38:{name:'コアラの大けんじゃ',hp:1.0,atk:1.0,acts:2,mag:1.15,reward:{armor:true},
+  38:{name:'コアラの大けんじゃ',hp:1.0,atk:1.0,acts:2,look:{spr:'koala',pal:'koalaG',s:1.5},mag:1.15,reward:{armor:true},
       moves:[{n:'だいばくはつ',k:'magicAll',pow:.9,w:3},{n:'ふういんの歌',k:'silence',rate:.6,w:1},{n:'まりょくを たかめる',k:'ebuff',w:1},{n:'ねむけを さそう',k:'sleepAll',rate:.35,w:1}]},
-  48:{name:'いにしえの番人',   hp:1.0,atk:.95,acts:2,reward:{line:'best'},fic:true,
+  48:{name:'いにしえの番人',   hp:1.0,atk:.95,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
       moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
 };
 function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
-  const big=10*Math.ceil(f/10);const e=mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak,name:D.name});
+  const big=10*Math.ceil(f/10);const e=mkEnemy(f,'normal',{boss:'big',name:D.name});
   const B=bossFor(big)[0];e.hp=e.max=Math.round(B.max*D.hp);e.atk=Math.round(B.atk*D.atk);e.def=B.def;e.spd=B.spd;
-  e.mag=Math.round((D.mag?curve('atk',f)*.55*D.mag:B.mag||curve('atk',f)*.55*1.2));e.acts=D.acts;e.moves=D.moves;e.guardian=true;
+  e.mag=Math.round((D.mag?curve('atk',f)*.55*D.mag:B.mag||curve('atk',f)*.55*1.2));e.acts=D.acts;e.moves=D.moves;e.guardian=true;e.look=D.look;e.id='guard'+f;e.weak=[];
   e.exp=Math.round(B.exp*1.2);e.gold=Math.round(B.gold*1.2);return [e];}
 function bossFor(f){
   const D=BOSS_DEF[f];
-  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:floorGroups(f).weak,name:D.name});e.moves=D.moves;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);return [e];}if(f%10===0)return [mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak})];if(f%5===0)return [mkEnemy(f,'normal',{boss:'mid',weak:floorGroups(f).weak})];return null;}
+  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:D.weak||[],name:D.name});e.moves=D.moves;e.look=D.look;e.id='boss'+f;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);return [e];}const look=[{spr:'crab',pal:'tide',s:1.4},{spr:'croc',pal:'perentie',s:1.3},{spr:'devil',pal:'devil',s:1.5},{spr:'eagle',pal:'eagle',s:1.4},{spr:'dingo',pal:'ancient',s:1.45}][Math.floor((f-1)/10)];
+  const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid'});e.look=look;e.id='boss'+f;return f%5===0?[e]:null;}
 
 // ---------- 戦闘 ----------
 function aliveParty(B){return B.party.map((m,i)=>i).filter(i=>B.party[i].hp>0);}
@@ -800,7 +858,7 @@ function battleTurn(B,cmds,r){
         if(dead.length){const j=dead[0];EN[j].hp=Math.ceil(EN[j].max/2);EN[j].revivedOnce=true;EN[j].st={};ev.push({t:'add',i:j,text:`${e.name}は ${EN[j].name}を よみがえらせた！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='charge'){e.charged=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ちからを ためている！`});}
-      else if(mv.k==='call'){const ne=mkEnemy(e.f,'normal',{weak:e.weak});ne.name=e.name.replace(/ [A-E]$/,'')+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
+      else if(mv.k==='call'){const ne=e.id&&!e.boss?mkMob(e.f,e.color?ANIMALS[e.id].arch:e.id):mkEnemy(e.f,'normal',{weak:e.weak});if(!ne.look&&e.look)ne.look=Object.assign({},e.look,{s:1});ne.name=(e.boss?e.name.replace(/の.*$/,'').replace(/ [A-E]$/,''):e.name.replace(/ [A-E]$/,''))+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
     }
     if(checkEnd())break;
   }
@@ -833,7 +891,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={ANIMALS,POOL20,mkMob,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
