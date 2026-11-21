@@ -172,6 +172,7 @@ function stageMd(rows){
 // ---------- 自動プレイ ----------
 const TARGETS=['kAll','kMag','kNin'];
 function campaign(opt){
+  if(opt.startDeepest===undefined)opt.startDeepest=true; // 決定：行ったことのあるいちばん深い階から始められる
   const r=C.rng(opt.seed),G=C.newGame(),log=[],mile={};
   G.checkpoints=[0];let bossRetreat=0,t=0,startIdx=0,wipesHere=0,runs=0,wipes=0,goodRuns=0;
   const stats={battles:0,turns:0,wipes:0,byArea:{}};
@@ -276,8 +277,9 @@ function main(){
     md+='\n';
   }
   if(mode==='all'||mode==='campaign'){
-    md+=`## 2. 自動プレイ\n\n「おまかせ」で戦い、弱ったら町に戻り、全滅が続いたら浅い階に戻って育てる、戦闘のあいだやボスの前に薬草を使う、B5で「掘る」が使えるようになったら近道で1階あたりの戦闘が1回へる、という仮のルールで${hours}時間ぶん遊ばせた結果（${seeds}回の中央値）。目標の超上級職は 1匹目=万能王、2匹目=魔道王、3匹目=忍者王。\n\n`;
-    const res=[];for(let s=1;s<=seeds;s++)res.push(campaign({seed:s*101,hours}));
+    md+=`## 2. 自動プレイ\n\n「おまかせ」で戦い、弱ったら町に戻り、行ったことのあるいちばん深い階から始め、全滅が2回続いたら5階浅いところから育て直す、戦闘のあいだやボスの前に薬草を使う、B5で「掘る」が使えるようになったら近道で1階あたりの戦闘が1回へる、という仮のルールで${hours}時間ぶん遊ばせた結果（${seeds}回の中央値）。B50のボスを倒した時点で止める（「そのほか」の数字はクリアまで）。目標の超上級職は 1匹目=万能王、2匹目=魔道王、3匹目=忍者王。\n\n`;
+    const clear=G=>G.bossDown[50];
+    const res=[];for(let s=1;s<=seeds;s++)res.push(campaign({seed:s*101,hours,stopWhen:clear}));
     const keys=[];for(const f of [5,10,15,20,25,30,35,40,45,50])keys.push([`B${f}のボスを倒す`,`boss${f}`]);
     md+=`### ボスを倒した時間\n\n| 出来事 | 時間（中央値） | 届いた回数 |\n|---|---|---|\n`;
     for(const [l,k] of keys){const v=res.map(x=>x.mile[k]);md+=`| ${l} | ${hm(median(v))} | ${v.filter(x=>x!=null).length}/${seeds} |\n`;}
@@ -285,11 +287,11 @@ function main(){
     for(const j of Object.keys(C.JOBS).filter(j=>C.JOBS[j].tier>1)){const v=res.map(x=>x.mile['first:'+j]);if(v.every(x=>x==null))continue;md+=`| ${C.JOBS[j].name} | ${hm(median(v))} | ${v.filter(x=>x!=null).length}/${seeds} |\n`;}
     md+=`\n### そのほか\n\n| 項目 | 中央値 |\n|---|---|\n`;
     md+=`| 戦闘の回数 | ${median(res.map(x=>x.stats.battles))} |\n| 1戦の平均ターン | ${median(res.map(x=>x.stats.turns/x.stats.battles)).toFixed(1)} |\n| 全滅した回数 | ${median(res.map(x=>x.wipes))} |\n| いちばん深く行った階 | B${median(res.map(x=>x.G.reached))} |\n`;
-    md+=`\n### 比較：ボスの階の入り口に回復ポイントがある場合\n\n設計では回復ポイントは置かない（決定）。参考として、置いた場合とくらべる。\n\n| 出来事 | 回復なし | 回復あり |\n|---|---|---|\n`;
-    const res2=[];for(let s=1;s<=seeds;s++)res2.push(campaign({seed:s*101,hours,bossRest:true}));
+    md+=`\n### 比較：中継地点（5階ごと）からしか始められない場合\n\n設計では、行ったことのあるいちばん深い階から始められる（決定）。参考として、前の案とくらべる。\n\n| 出来事 | 最深階から | 中継地点から |\n|---|---|---|\n`;
+    const res2=[];for(let s=1;s<=seeds;s++)res2.push(campaign({seed:s*101,hours,startDeepest:false,stopWhen:clear}));
     for(const f of [20,30,35,40,45,50]){const a=res.map(x=>x.mile['boss'+f]),b=res2.map(x=>x.mile['boss'+f]);
       md+=`| B${f}のボスを倒す | ${hm(median(a))}（${a.filter(x=>x!=null).length}/${seeds}） | ${hm(median(b))}（${b.filter(x=>x!=null).length}/${seeds}） |\n`;}
-    md+=`| 全滅した回数 | ${median(res.map(x=>x.wipes))} | ${median(res2.map(x=>x.wipes))} |\n`;
+    md+=`| 戦闘の回数 | ${median(res.map(x=>x.stats.battles))} | ${median(res2.map(x=>x.stats.battles))} |\n| 全滅した回数 | ${median(res.map(x=>x.wipes))} | ${median(res2.map(x=>x.wipes))} |\n`;
     const last=res[0];
     md+=`\n### 1回目の自動プレイの最後の状態\n\n| 仲間 | 職業 | Lv | 極めた職業 |\n|---|---|---|---|\n`;
     for(const m of last.G.party)md+=`| ${m.name} | ${C.JOBS[m.job].name} | ${m.lv} | ${Object.keys(m.mastered).map(j=>C.JOBS[j].name).join('・')||'—'} |\n`;
