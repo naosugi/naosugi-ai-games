@@ -299,7 +299,7 @@ function derived(m){
   d.p=p;return d;
 }
 function newMember(job,name){
-  const m={name,job,lv:1,exp:0,wl:bestLine(job),w:0,a:0,own:{claw:0,staff:0,flute:0},hp:1,mp:0,poison:false,mastered:{},learned:{},slots:[],totalExp:0};
+  const m={name,job,lv:1,exp:0,wl:bestLine(job),w:0,a:0,own:{claw:0,staff:0,flute:0},hp:1,mp:0,poison:false,mastered:{},jobLv:{},learned:{},slots:[],totalExp:0};
   learnUpTo(m);const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;return m;
 }
 function learnUpTo(m){const got=[];for(const k of jobSkills(m))if(!m.learned[k]){m.learned[k]=1;got.push(k);}return got;}
@@ -309,10 +309,19 @@ function jobUnlocked(m,job,G){
   return J.req.every(r=>m.mastered[r]);
 }
 function canChangeJob(G){return !!(G&&G.flags&&G.flags.jobChange);}
+// 転職したとき、その職業で何レベルから始まるか
+function jobStartLv(m,job){if(m.mastered[job])return JOBS[job].cap;const p=(m.jobLv||{})[job];return p?Math.min(p.lv,JOBS[job].cap):1;}
 function changeJob(m,job){
   if(!jobUnlocked(m,job))return false;
-  // 極めた職業に戻ったときは、レベル上限のまま
-  m.job=job;m.lv=m.mastered[job]?JOBS[job].cap:1;m.exp=0;learnUpTo(m);
+  // 職業ごとのレベルを覚えておく。戻ったときは前回のレベルから（極めた職業はレベル上限のまま）
+  m.jobLv=m.jobLv||{};
+  if(m.job)m.jobLv[m.job]={lv:m.lv,exp:m.exp};
+  const prev=m.jobLv[job];
+  m.job=job;
+  if(m.mastered[job]){m.lv=JOBS[job].cap;m.exp=0;}
+  else if(prev){m.lv=Math.min(prev.lv,JOBS[job].cap);m.exp=prev.exp||0;}
+  else{m.lv=1;m.exp=0;}
+  learnUpTo(m);
   // 今の職業のスキルが枠にあったら外す
   m.slots=m.slots.filter(k=>SKILLS[k].job!==job);
   const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;return true;
@@ -892,6 +901,6 @@ function newGame(){
 }
 
 const CORE={ANIMALS,POOL20,mkMob,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
-  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
+  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

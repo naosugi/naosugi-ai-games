@@ -243,3 +243,16 @@ test('光る宝箱の番人はエリアに1体ずつ。2回行動で、ごほう
 test('何度でも使える回復の道具はない（前作の「いやしの石」のようなもの）',()=>{
   for(const k in C.ITEMS)assert.ok(!C.ITEMS[k].reusable,k);
 });
+
+test('極める前の職業に戻ると、前回のレベルと経験値から続く',()=>{
+  const m=C.newMember('war','a');m.lv=7;m.exp=5;
+  assert.strictEqual(C.jobStartLv(m,'kar'),1);
+  C.changeJob(m,'kar');assert.strictEqual(m.lv,1);
+  m.lv=3;
+  assert.strictEqual(C.jobStartLv(m,'war'),7);
+  C.changeJob(m,'war');assert.strictEqual(m.lv,7);assert.strictEqual(m.exp,5);
+  C.changeJob(m,'kar');assert.strictEqual(m.lv,3);
+  const d=C.derived(m);assert.strictEqual(m.hp,d.maxhp);
+  // 古いセーブ（jobLv がない）でも動く
+  delete m.jobLv;C.changeJob(m,'war');assert.strictEqual(m.lv,1);
+});

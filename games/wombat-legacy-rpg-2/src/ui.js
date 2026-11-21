@@ -415,14 +415,14 @@ async function jobChangeMenu(){
     const opts=[],keys=[];
     for(const j of Object.keys(JOBS)){const J=JOBS[j],un=jobUnlocked(m,j),cur=m.job===j;
       let label,sub;
-      if(J.tier===1){label=`${J.name}${m.mastered[j]?'★':''}`;sub=cur?'いまの職業':m.mastered[j]?'極めた（Lv上限のまま もどれる）':`Lv上限 ${J.cap}`;}
-      else if(J.tier===2){label=un?`${J.name}${m.mastered[j]?'★':''}`:`🔒 ${J.name}`;sub=cur?'いまの職業':un?(m.mastered[j]?'極めた':`上級職・Lv上限 ${J.cap}`):`条件：${J.req.map(r=>JOBS[r].name+(m.mastered[r]?'★':'')).join('＋')}を 極める`;}
-      else{label=un?`${J.name}`:'🔒 ？？？王';sub=un?(cur?'いまの職業':`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`;}
+      if(J.tier===1){label=`${J.name}${m.mastered[j]?'★':''}`;sub=cur?'いまの職業':m.mastered[j]?'極めた（Lv上限のまま もどれる）':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`Lv上限 ${J.cap}`;}
+      else if(J.tier===2){label=un?`${J.name}${m.mastered[j]?'★':''}`:`🔒 ${J.name}`;sub=cur?'いまの職業':un?(m.mastered[j]?'極めた':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`上級職・Lv上限 ${J.cap}`):`条件：${J.req.map(r=>JOBS[r].name+(m.mastered[r]?'★':'')).join('＋')}を 極める`;}
+      else{label=un?`${J.name}`:'🔒 ？？？王';sub=un?(cur?'いまの職業':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`;}
       opts.push({label,sub,dis:!un||cur,cls:J.tier===3?'wide':''});keys.push(j);}
     const c=await ask(`${m.name}（いま ${jobName(m.job)} Lv${m.lv}）\nどの職業に 転職する？`,[...opts,{label:'← もどる',cls:'wide sub'}]);
     if(c>=keys.length)return;
     const j=keys[c],J=JOBS[j];
-    const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:'Lv1から になる（ステータスも その職業の Lv1に もどる）。')+'\nいまの職業の わざは、引き継ぎ枠に 入れられる。',[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
+    const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:jobStartLv(m,j)>1?`前に きたえた Lv${jobStartLv(m,j)}から つづきになる。`:'Lv1から になる（ステータスも その職業の Lv1に もどる）。')+`\n（いまの ${jobName(m.job)} Lv${m.lv}は おぼえておく）`+'\nいまの職業の わざは、引き継ぎ枠に 入れられる。',[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
     if(k!==0)continue;
     changeJob(m,j);
     const bl=bestLine(j);if((m.own[bl]||0)>0||m.w===0){m.wl=bl;m.w=m.own[bl]||0;}
