@@ -16,7 +16,7 @@ Node.js 18 以上が必要。
 ```
 cd games/wombat-legacy-rpg-2/sim
 node sim.js                    # ぜんぶ実行して report.md を書き出す（30秒くらい）
-node sim.js check              # 目標との比較だけ（調整するときに使う）
+node sim.js check              # 目標との比較だけ（調整するときに使う）。1ダメージになった攻撃の割合も出る
 node sim.js matrix             # 階×レベルの勝率表だけ
 node sim.js campaign --hours 40 --seeds 5
 node --test test.js

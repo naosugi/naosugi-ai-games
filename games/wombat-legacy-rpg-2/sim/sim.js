@@ -16,23 +16,34 @@ const battlesPerFloor=(f,dig)=>Math.max(2,3+Math.floor(f/20)-(dig?1:0));
 const shopMax=tier=>Math.min(C.WEAPONS.length-1,tier*2-1); // 店の段階 → 買える装備の番号の上限
 
 // ---------- 引き継ぎ枠の選び方（おまかせ用の仮ルール） ----------
+// スキルごとの点数。書いていないものは種類と効果から決める
 const SLOT_SCORE={
-  hpup1:10,defup1:8,spdup1:6,mpup1:4,magup1:0,awaken:0,ironbutt:9,ironfist:0,
-  heal:0,healall:0,revive:0,cure:3,autorev:14,healup:0,
-  kiai:0,counter:8,dodge:6,finish:0,seiken:2,rush:3,
-  thunder:1,ice:2,fire:3,bolt:3,boom:5,sleep:3,light:2,
-  venom:6,weaken:5,mist:4,crack:6,stun:5,fang:5,strongp:3,plague:8,
-  sAtk:6,sDef:6,sSpd:3,sHeal:3,sSleep:3,longv:3,sAll:9,echo:6,
-  guard:2,dig:2,roll:3,quake:4,
+  autorev:12,eternal:16,plague:8,echo:6,ironbutt:9,counter:8,dodge:6,hpup1:10,defup1:8,spdup1:6,mpup1:4,
+  venom:6,weaken:5,mist:4,crack:6,stun:5,fang:5,strongp:3,sAtk:6,sDef:6,sSpd:3,sSleep:3,sAll:10,longv:4,
+  noroi:7,boom:6,bigMagic:8,kagebunshin:6,bunshin:5,cleanSong:5,panacea:5,magCure:5,startCure:3,
+  pinch:7,pinchRegen:6,extraAct:9,killAtk:6,statusMagPow:4,jiwajiwa:4,curseMax:5,songHeal:5,kokoro:5,guardHeal:4,guardCounter:5,
 };
+const PASSIVE_W={hp:80,def:55,mp:25,spd:40,evade:50,healPow:15,statusRate:25,buffTurns:2,buffPow:8,itemPow:4,poisonPow:6,atkPoison:20,statusResist:8};
 function slotScore(m,k,partyHasHeal){
-  const S=C.SKILLS[k],J=C.JOBS[m.job];let s=SLOT_SCORE[k]||0;
+  const S=C.SKILLS[k],J=C.JOBS[m.job];
   const magJob=J.mult.mag>=1,physJob=J.mult.atk>=1;
-  if(['magup1','awaken'].includes(k))s=magJob?10:1;
-  if(S.kind==='mag')s*=magJob?2.2:.4;
-  if(['kiai','finish','ironfist'].includes(k))s=physJob?(k==='finish'?(m.learned.kiai?8:0):9):1;
-  if(S.kind==='phys')s*=physJob?1.6:.4;
-  if(['heal','healall','revive','healup'].includes(k))s=partyHasHeal?({heal:3,healall:5,revive:7,healup:1}[k]):({heal:12,healall:15,revive:14,healup:4}[k]);
+  const kiaiJob=physJob&&(m.learned.kiai||C.jobSkills(m).includes('kiai'));
+  let s;
+  if(k in SLOT_SCORE)s=SLOT_SCORE[k];
+  else if(S.kind==='passive'){s=0;for(const x in S.eff){const v=S.eff[x];
+      if(x in PASSIVE_W)s+=PASSIVE_W[x]*v;
+      else if(x==='mag')s+=(magJob?100:10)*v;
+      else if(['kiai','kiaiMax','kiaiDef','kiaiMag','hurtKiai','singKiai','danceKiai','startKiai'].includes(x))s+=kiaiJob?8:1;
+      else if(['poisonAtk','poisonRegen'].includes(x))s+=physJob?5:1;
+      else s+=2;}}
+  else if(S.kind==='mag')s=(magJob?5:1)*(S.tgt==='enemies'?1.3:1);
+  else if(S.kind==='phys'||S.kind==='finisher')s=(physJob?4:1)*(S.tgt==='enemies'?1.3:1)*(S.kiaiCost||S.kind==='finisher'?(kiaiJob?1.2:.3):1);
+  else if(S.kind==='heal')s=partyHasHeal?(S.tgt==='allies'?5:3):(S.tgt==='allies'?15:12);
+  else if(S.kind==='revive')s=partyHasHeal?7:14;
+  else if(S.kind==='status')s=4;
+  else if(S.kind==='buff')s=5;
+  else if(S.kind==='guard')s=physJob?3:1;
+  else s=2;
   return s;
 }
 function chooseSlots(G){
@@ -147,8 +158,10 @@ function stageCheck(n){
     const row={name:st.name,floor:st.floor};
     for(const [k,f] of [['at',st.floor],['deep',st.floor+10],['shallow',st.floor-10]]){
       if(f>50||f<1)continue;const r=C.rng(f*7+1);let win=0,turns=0;
+      for(const x of ['p','e'])C.DMG_STATS[x]=[0,0];
       for(let i=0;i<n;i++){const G=makeParty(st.jobs,st.lv,gearAt(f));const o=fightTrack(G,C.rollGroup(f,r),r);if(o.win)win++;turns+=o.turns;}
-      row[k]={f,win:win/n,turns:turns/n};}
+      const ms=x=>C.DMG_STATS[x][1]?C.DMG_STATS[x][0]/C.DMG_STATS[x][1]:0;
+      row[k]={f,win:win/n,turns:turns/n,minP:ms('p'),minE:ms('e')};}
     if(st.next){for(const [k,f] of [['fresh',st.floor],['freshShallow',st.floor-10]]){const r=C.rng(f*13+5);let win=0,down=0;
       for(let i=0;i<n;i++){const G=makeParty(st.jobs,st.lv,gearAt(f));const nm=makeParty([st.next[2]],1,gearAt(f)).party[0];G.party[2]=nm;chooseSlots(G);
         const o=fightTrack(G,C.rollGroup(f,r),r,2);if(o.win)win++;if(o.down)down++;}
@@ -163,7 +176,7 @@ function stageCheck(n){
 function stageMd(rows){
   let s=`| 段階 | 適正な階での雑魚戦 | 10階深いとき | 10階浅いとき | 8連戦（適正な階） | 8連戦（10階深い） | 転職直後（適正な階） | 転職直後（10階浅い） | 適正な階のボス（満タンから） |\n|---|---|---|---|---|---|---|---|---|\n`;
   const sk=x=>x?`B${x.f} 生き残る${pct(x.ok)}・残りHP${pct(x.hp)}`:'—';
-  const w=x=>x?`B${x.f} 勝率${pct(x.win)}・${x.turns.toFixed(1)}ターン`:'—';
+  const w=x=>x?`B${x.f} 勝率${pct(x.win)}・${x.turns.toFixed(1)}ターン・1ダメージ 受${pct(x.minP)}/与${pct(x.minE)}`:'—';
   const fr=x=>x?`B${x.f} 勝率${pct(x.win)}・倒れる${pct(x.down)}`:'—';
   for(const r of rows)s+=`| ${r.name} | ${w(r.at)} | ${w(r.deep)} | ${w(r.shallow)} | ${sk(r.streakAt)} | ${sk(r.streakDeep)} | ${fr(r.fresh)} | ${fr(r.freshShallow)} | B${r.floor} 勝率${pct(r.boss.win)}・${r.boss.turns.toFixed(1)}ターン |\n`;
   return s;

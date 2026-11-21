@@ -157,3 +157,48 @@ test('ねらいうちは、いちばんHPが少ない仲間を狙う',()=>{
   const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(5));
   const hit=ev.find(x=>x.t==='hit'&&x.side==='p');assert.strictEqual(hit.i,2);
 });
+
+test('スキルは 基本職6・上級職6・超上級職5（上限スキルは1つずつ）',()=>{
+  for(const j in C.JOBS){const L=Object.values(C.SKILLS).filter(S=>S.job===j);
+    assert.strictEqual(L.length,C.JOBS[j].tier===3?5:6,j);assert.strictEqual(L.filter(S=>S.master).length,1,j);}
+});
+test('強いスキルは上の段階：かっさいの歌はアイドル王、ドカーンは呪術師、自動で起きるパッシブは魔道王',()=>{
+  assert.strictEqual(C.SKILLS.sAll.job,'kIdl');
+  assert.strictEqual(C.SKILLS.boom.job,'cur');
+  assert.strictEqual(C.SKILLS.eternal.job,'kMag');assert.ok(C.SKILLS.eternal.eff.autoRevive);
+  for(const k in C.SKILLS){const S=C.SKILLS[k];if(C.JOBS[S.job].tier===1&&S.kind==='mag')assert.ok(S.el,k+' 基本職に無属性魔法');}
+});
+test('ふっかつのいのりは、えらんだ仲間が倒れたとき1度だけHP半分で起きる',()=>{
+  const G=C.newGame();const pri=C.newMember('pri','p');for(let i=0;i<50&&!pri.mastered.pri;i++)C.gainExp(pri,100000);
+  pri.hp=99999;const t=C.newMember('mag','m');G.party=[pri,t];
+  const e=C.mkEnemy(30,'normal');e.hp=e.max=99999;e.atk=99999;e.moves=[{n:'ねらいうち',k:'snipe',w:1}];
+  const B=C.newBattle(G,[e]);
+  e.st.sleep=1; // 1ターン目は敵がねむっている
+  C.battleTurn(B,[{k:'skill',s:'autorev',t:1},{k:'defend'}],C.rng(1));
+  assert.strictEqual(B.marks[1],1);
+  C.battleTurn(B,[{k:'defend'},{k:'defend'}],C.rng(2)); // いちばんHPが少ない t がねらわれて倒れ、起きる
+  assert.strictEqual(t.hp,Math.ceil(C.derived(t).maxhp/2));
+  assert.strictEqual(B.marks[1],undefined);
+  t.hp=1;C.battleTurn(B,[{k:'defend'},{k:'defend'}],C.rng(3)); // 2回目は起きない
+  assert.strictEqual(t.hp,0);
+});
+test('ぼうぎょは職業で変わらず、HPで差がつく',()=>{
+  const a=C.newMember('war','a'),b=C.newMember('mag','b');a.lv=b.lv=10;
+  assert.strictEqual(C.derived(a).def,C.derived(b).def);
+  assert.ok(C.derived(a).maxhp>C.derived(b).maxhp*1.8);
+});
+test('物理ダメージは前作の式（こうげき − ぼうぎょ÷2）。足りなければ1〜2',()=>{
+  const G=C.newGame();const m=C.newMember('war','w');m.hp=99999;m.a=10;G.party=[m];
+  const e=C.mkEnemy(1,'normal');e.atk=10;e.hp=e.max=99999;
+  let max=0;for(let k=0;k<30;k++){const hp=m.hp;const B=C.newBattle(G,[e]);C.battleTurn(B,[{k:'defend'}],C.rng(k));max=Math.max(max,hp-m.hp);}
+  assert.ok(max<=3,String(max));
+});
+test('上級職でも きあいを使える：魔拳士は きあいで魔法が強くなり、上級戦士は きあいを使って全体攻撃',()=>{
+  assert.ok(C.SKILLS.kiaiMag.job==='mfi'&&C.SKILLS.kiaiMag.eff.kiaiMag>0);
+  assert.ok(C.SKILLS.fumikomi.job==='hwar'&&C.SKILLS.fumikomi.kiaiCost===1);
+  const G=C.newGame();const m=C.newMember('war','w');m.job='hwar';m.lv=12;m.learned.kiai=1;C.learnUpTo(m);m.slots=['kiai'];m.hp=9999;m.mp=99;G.party=[m];
+  const e=C.mkEnemy(5,'normal');e.hp=e.max=99999;const B=C.newBattle(G,[e,C.mkEnemy(5,'normal')]);
+  const ev=C.battleTurn(B,[{k:'skill',s:'fumikomi'}],C.rng(4));
+  assert.ok(ev.some(x=>x.text&&x.text.includes('きあいが たりない')));
+  m.kiai=2;C.battleTurn(B,[{k:'skill',s:'fumikomi'}],C.rng(5));assert.ok(m.kiai<=2);
+});
