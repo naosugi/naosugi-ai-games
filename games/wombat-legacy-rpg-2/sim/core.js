@@ -326,7 +326,7 @@ function gainExp(m,amt){
   while(m.lv<J.cap&&m.exp>=expNext(m.job,m.lv)){
     m.exp-=expNext(m.job,m.lv);const before=derived(m);m.lv++;const after=derived(m);
     out.push(`${m.name}は レベル${m.lv}に あがった！`);
-    m.hp=Math.min(after.maxhp,m.hp+(after.maxhp-before.maxhp));m.mp=Math.min(after.maxmp,m.mp+(after.maxmp-before.maxmp));
+    m.hp=after.maxhp;m.mp=after.maxmp; // 前作と同じく、レベルアップで全回復（テンポのため）
     if(m.lv>=J.cap){m.mastered[m.job]=true;m.exp=0;out.push(`${m.name}は ${J.name}を きわめた！`);}
     for(const k of learnUpTo(m))out.push(`${m.name}は「${SKILLS[k].name}」を おぼえた！`);
   }
