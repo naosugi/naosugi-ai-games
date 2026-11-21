@@ -355,6 +355,19 @@ const ARCH={
   mirror: {hp:1, atk:.9, def:1.2,spd:1,  reflect:true},
   charger:{hp:1.2,atk:1.1,def:1, spd:.8, moves:[{n:'ちからをためる',k:'charge',w:2},{n:'こうげき',k:'atk',w:1}]},
   evasive:{hp:.7,atk:.9, def:.7, spd:1.6,evade:.4},
+  // 魔法系・デバフ系（魔法とブレスは、ぼうぎょに関係なくダメージ）
+  mage:   {hp:.8,atk:.6, def:.8, spd:1.1,mag:1.0,moves:[{n:'こうげき',k:'atk',w:1},{n:'でんげき',k:'magic',pow:1.0,w:2},{n:'ほうでん',k:'magicAll',pow:.6,w:1}]},
+  hexer:  {hp:.9,atk:.8, def:.9, spd:1.2,moves:[{n:'こうげき',k:'atk',w:2},{n:'わらいごえ',k:'debuffAll',st:'atk',w:1}]},
+  frill:  {hp:1, atk:.9, def:1,  spd:1,  moves:[{n:'こうげき',k:'atk',w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
+  silencer:{hp:.9,atk:.8,def:.9, spd:1.3,moves:[{n:'こうげき',k:'atk',w:2},{n:'ものまね',k:'silence',rate:.5,w:1}]},
+  // コアラ（強敵。強力な魔法。職業別コアラもいる）
+  koala:  {hp:5,atk:.7,def:1.2,spd:1.4,mag:2.6,moves:[{n:'ひっかく',k:'atk',w:1},{n:'こおりのまほう',k:'magic',pow:1.2,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.35,w:1}]},
+  kMage:  {hp:3.6,atk:.6,def:1.2,spd:1.5,mag:2.4,moves:[{n:'ほのおのまほう',k:'magic',pow:1.3,w:2},{n:'だいばくはつ',k:'magicAll',pow:.9,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1}]},
+  kPriest:{hp:3.2,atk:.6,def:1.3,spd:1.4,mag:1.3,prio:true,moves:[{n:'なかまを なおす',k:'healAlly',w:2},{n:'なかまを よみがえらせる',k:'reviveAlly',w:2},{n:'ひかりのまほう',k:'magic',pow:1.0,w:1}]},
+  kSinger:{hp:3.2,atk:.9,def:1.2,spd:1.5,mag:1.2,prio:true,moves:[{n:'はげましの歌',k:'ebuff',w:2},{n:'ねむりの歌',k:'sleepAll',rate:.35,w:1},{n:'ひっかく',k:'atk',w:1}]},
+  kPoison:{hp:3.2,atk:.8,def:1.2,spd:1.5,mag:1.4,moves:[{n:'どくのきり',k:'magicAll',pow:.5,poison:.6,w:2},{n:'ふういんの歌',k:'silence',rate:.6,w:1},{n:'のろい',k:'debuffAll',st:'def',w:1}]},
+  kWarrior:{hp:4.5,atk:1.2,def:1.6,spd:1.2,moves:[{n:'なかまを かばう',k:'eguard',w:2},{n:'つよいこうげき',k:'atk',pow:1.4,w:2}]},
+  kKarate:{hp:3.0,atk:1.1,def:1.2,spd:1.5,counter:.35,acts:2,moves:[{n:'せいけんづき',k:'atk',pow:1.2,w:3},{n:'きあいを ためる',k:'charge',w:1}]},
 };
 function mkEnemy(f,arch,opt){
   opt=opt||{};const A=ARCH[arch];
@@ -363,7 +376,7 @@ function mkEnemy(f,arch,opt){
   if(A.metal){e={hp:5,max:5,atk:Math.round(v('atk')*1.2),def:0,spd:Math.round(v('spd')*3),exp:Math.round(v('exp')*12),gold:Math.round(v('gold')*3),metal:true,flee:.35};}
   else e={hp:Math.round(v('hp')*A.hp),atk:Math.round(v('atk')*A.atk),def:Math.round(v('def')*A.def),spd:Math.round(v('spd')*A.spd),
     exp:Math.round(v('exp')*Math.max(1,A.hp)),gold:Math.round(v('gold')*Math.max(1,A.hp)),acts:A.acts||1,moves:A.moves,
-    counter:A.counter,reflect:A.reflect,evade:A.evade,prio:A.prio};
+    counter:A.counter,reflect:A.reflect,evade:A.evade,prio:A.prio,mag:Math.round(v('atk')*.55*(A.mag||0))};
   if(opt.boss){const B=CONFIG.boss[opt.boss];e.hp=Math.round(v('hp')*B.hp);e.atk=Math.round(v('atk')*B.atk);e.def=Math.round(v('def')*B.def);e.spd=Math.round(v('spd')*1.1);
     e.exp=Math.round(v('exp')*B.exp);e.gold=Math.round(v('gold')*B.gold);e.boss=true;e.acts=opt.boss==='big'&&f>=20?2:1;
     e.moves=[{n:'こうげき',k:'atk',w:3},{n:'つよいこうげき',k:'atk',pow:1.6,w:2},{n:'あばれまわる',k:'all',pow:.7,w:2},{n:'どくのいき',k:'all',pow:.4,poison:.35,w:f>=10?1:0}];
@@ -371,7 +384,12 @@ function mkEnemy(f,arch,opt){
     if(f>=15)e.moves.push({n:'ねむりのうた',k:'sleepAll',rate:.25,w:1});
     if(f>=25)e.moves.push({n:'かきけす',k:'dispel',w:1});
     if(f>=30)e.moves.push({n:'ちからをためる',k:'charge',w:1});
-    if(f>=40)e.moves.push({n:'ねらいうち',k:'snipe',pow:1.5,w:1});}
+    if(f>=40)e.moves.push({n:'ねらいうち',k:'snipe',pow:1.5,w:1});
+    // 魔法とデバフも深いほど増える
+    e.mag=Math.round(v('atk')*.55*1.2);
+    if(f>=25)e.moves.push({n:'まほうの あらし',k:'magicAll',pow:.7,w:1});
+    if(f>=30)e.moves.push({n:'よわらせる',k:'debuffAll',st:'atk',w:1});
+    if(f>=35)e.moves.push({n:'ふういん',k:'silence',rate:.4,w:1});}
   if(opt.boss&&CONFIG.bossOverride[f])Object.assign(e,CONFIG.bossOverride[f]);
   e.max=e.hp;e.arch=arch;e.f=f;e.name=opt.name||(opt.boss?`B${f}のボス`:`${arch}(B${f})`);e.st={};e.res={};e.weak=opt.weak||[];
   return e;
@@ -380,15 +398,26 @@ function mkEnemy(f,arch,opt){
 function floorGroups(f){
   const area=Math.floor((f-1)/10);
   const pool=[['normal','normal'],['tank'],['fast','normal'],['poison'],['normal','normal','normal'],['wide','normal'],['caller'],['heavy']];
-  if(f>=4)pool.push(['sleeper','normal']);
+  if(f>=4)pool.push(['koala']);
+  if(f>=6)pool.push(['hexer','normal']);
+  if(f>=9)pool.push(['frill','normal']);
   if(f>=6)pool.push(['sniper','normal']);
   if(f>=8)pool.push(['twice'],['medic','tank']);
-  if(f>=11)pool.push(['stunner','normal'],['jammer','heavy'],['counter']);
+  if(f>=11)pool.push(['stunner','normal'],['jammer','heavy'],['counter'],['kMage']);
+  if(f>=12)pool.push(['silencer','normal']);
+  if(f>=13)pool.push(['kPriest','normal']);
+  if(f>=14)pool.push(['mage','mage']);
+  if(f>=15)pool.push(['evasive','evasive'],['kSinger','heavy']);
+  if(f>=16)pool.push(['charger','wide']);
+  if(f>=17)pool.push(['kPoison','normal']);
+  if(f>=19)pool.push(['kWarrior','normal'],['kKarate']);
+  if(f>=25)pool.push(['kWarrior','kMage']);
   if(f>=15)pool.push(['tank','poison'],['heavy','fast'],['sniper','sniper']);
-  if(f>=21)pool.push(['mirror','normal'],['bomber','bomber'],['charger','wide'],['evasive','evasive']);
+  if(f>=21)pool.push(['mirror','normal'],['bomber','bomber'],['sleeper','normal'],['hexer','frill']);
   if(f>=25)pool.push(['twice','wide'],['caller','poison','normal'],['medic','counter'],['jammer','sniper']);
   if(f>=31)pool.push(['mirror','counter'],['charger','sleeper'],['bomber','medic','sniper']);
-  if(f>=41)pool.push(['stunner','charger','jammer'],['evasive','mirror','medic']);
+  if(f>=31)pool.push(['kPriest','kWarrior','kMage'],['kSinger','kKarate']);
+  if(f>=41)pool.push(['stunner','charger','jammer'],['evasive','mirror','medic'],['kMage','kMage'],['kPoison','silencer','kPriest']);
   return {pool,weak:[['fire'],['ice'],['thunder'],['light'],['fire','light']][area%5],metalRate:.04};
 }
 function rollGroup(f,r){
@@ -397,7 +426,16 @@ function rollGroup(f,r){
   const g=G.pool[Math.floor(r()*G.pool.length)];
   return g.map(a=>mkEnemy(f,a,{weak:G.weak}));
 }
-function bossFor(f){if(f%10===0)return [mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak})];if(f%5===0)return [mkEnemy(f,'normal',{boss:'mid',weak:floorGroups(f).weak})];return null;}
+// 名前と技を決めたボス（STAGE2.md）。ほかの階は、ふつうのボスの技
+const BOSS_DEF={
+  5: {name:'ツムギアリの女王',arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
+  10:{name:'ディンゴのおやぶん',arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
+  15:{name:'コアラのだいまどうし',arch:'kMage',mag:1.6,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
+  20:{name:'イリエワニのぬし',arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
+};
+function bossFor(f){
+  const D=BOSS_DEF[f];
+  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:floorGroups(f).weak,name:D.name});e.moves=D.moves;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);return [e];}if(f%10===0)return [mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak})];if(f%5===0)return [mkEnemy(f,'normal',{boss:'mid',weak:floorGroups(f).weak})];return null;}
 
 // ---------- 戦闘 ----------
 function aliveParty(B){return B.party.map((m,i)=>i).filter(i=>B.party[i].hp>0);}
@@ -406,7 +444,7 @@ function newBattle(G,enemies){
   const cnt={};enemies.forEach(e=>cnt[e.name]=(cnt[e.name]||0)+1);const used={};
   enemies.forEach(e=>{if(cnt[e.name]>1){used[e.name]=(used[e.name]||0)+1;e.name+=' '+'ABCD'[used[e.name]-1];}});
   G.party.forEach(m=>{m.kiai=0;m.bst={};m.cheer=0;});
-  const B={party:G.party,inv:G.inv,enemies,buff:{},over:null,turn:0,boss:enemies.some(e=>e.boss),revived:{},marks:{},stance:{},taunt:null};
+  const B={party:G.party,inv:G.inv,enemies,buff:{},pdebuff:{},over:null,turn:0,boss:enemies.some(e=>e.boss),revived:{},marks:{},stance:{},taunt:null,eguard:null};
   const ps=G.party.filter(m=>m.hp>0).map(m=>derived(m).p);
   G.party.forEach(m=>{if(derived(m).p.startKiai)m.kiai=kiaiCap(m);});
   if(ps.some(p=>p.startCure))G.party.forEach(m=>{m.poison=false;});
@@ -423,16 +461,17 @@ function buffEva(B){const t=B.buff.eva;return t&&t.turns>0?.25*(1+t.pow):0;}
 function bstOf(m){return m.bst||(m.bst={});}
 function pinchMul(m,d){return d.p.pinch&&m.hp>0&&m.hp<d.maxhp*.3?1+d.p.pinch:1;}
 function memberAtk(B,m){const d=derived(m),b=bstOf(m);
-  return d.atk*buffPow(B,'atk')*(1+CONFIG.kiaiPow*(m.kiai||0))*(b.rage>0?1.4:1)*(b.berserk>0?1.6:1)*(m.poison&&d.p.poisonAtk?1+d.p.poisonAtk:1)*(1+(d.p.killAtk||0)*(b.kills||0))*pinchMul(m,d);}
+  return d.atk*buffPow(B,'atk')*(B.pdebuff&&B.pdebuff.atk>0?CONFIG.debuff.atk:1)*(1+CONFIG.kiaiPow*(m.kiai||0))*(b.rage>0?1.4:1)*(b.berserk>0?1.6:1)*(m.poison&&d.p.poisonAtk?1+d.p.poisonAtk:1)*(1+(d.p.killAtk||0)*(b.kills||0))*pinchMul(m,d);}
 function memberDef(B,m){const d=derived(m),b=bstOf(m);
-  return d.def*buffPow(B,'def')*(m.poison?CONFIG.poisonDefDown:1)*(1+(d.p.kiaiDef||0)*(m.kiai||0))*(b.berserk>0?.5:1)*pinchMul(m,d);}
+  return d.def*buffPow(B,'def')*(B.pdebuff&&B.pdebuff.def>0?CONFIG.debuff.def:1)*(m.poison?CONFIG.poisonDefDown:1)*(1+(d.p.kiaiDef||0)*(m.kiai||0))*(b.berserk>0?.5:1)*pinchMul(m,d);}
 function memberSpd(B,m){const d=derived(m);return d.spd*buffPow(B,'spd')*pinchMul(m,d);}
 function memberMag(B,m,e){const d=derived(m);
   return d.mag*(1+(d.p.kiaiMag||0)*(m.kiai||0))*pinchMul(m,d)*(e&&d.p.statusMagPow&&Object.keys(e.st).some(k=>e.st[k]>0)?1+d.p.statusMagPow:1);}
 function kiaiCap(m){return CONFIG.kiaiMax+(derived(m).p.kiaiMax||0);}
 function bestEl(e){return e.weak[0]||null;}
 function enemyDef(e){return e.def*(e.st.defdn>0?CONFIG.debuff.def:1)*(e.st.poison>0?CONFIG.poisonDefDown:1);}
-function enemyAtk(e){return e.atk*(e.st.atkdn>0?CONFIG.debuff.atk:1);}
+function enemyAtk(e){return e.atk*(e.st.atkdn>0?CONFIG.debuff.atk:1)*(e.ebuff>0?1.3:1);}
+function enemyMag(e){return (e.mag||0)*(e.st.atkdn>0?CONFIG.debuff.atk:1)*(e.ebuff>0?1.3:1);}
 // 状態異常がかかる確率（画面にも出す予定）
 function statusChance(B,m,S,e){
   if(e.metal)return 0;
@@ -456,7 +495,8 @@ function autoCmd(B,i){
   const m=B.party[i],d=derived(m),en=aliveEnemies(B),sk=skillsOf(m);
   const P=B.party;
   const low=j=>P[j].hp/derived(P[j]).maxhp;
-  const can=k=>sk.includes(k)&&m.mp>=(SKILLS[k].mp||0)&&SKILLS[k].kind!=='passive';
+  const silenced=m.bst&&m.bst.silence>0;
+  const can=k=>sk.includes(k)&&m.mp>=(SKILLS[k].mp||0)&&SKILLS[k].kind!=='passive'&&!(silenced&&(SKILLS[k].mp||0)>0);
   const ofKind=(kind,f)=>sk.filter(k=>SKILLS[k].kind===kind&&can(k)&&(!f||f(SKILLS[k])));
   const E=j=>B.enemies[j];
   const metal=en.find(j=>E(j).metal);
@@ -476,7 +516,7 @@ function autoCmd(B,i){
     if(low(hurt[0])<.3){for(const it of ['herb3','herb2','herb'])if(B.inv[it]>0&&(hurt[0]===i||!heals.length))return {k:'item',item:it,t:hurt[0]};}}
   // 3. ねむり・まひ・毒をなおす
   const bs=j=>P[j].bst||{};
-  const stuck=aliveParty(B).filter(j=>j!==i&&(bs(j).sleep>0||bs(j).stun>0));
+  const stuck=aliveParty(B).filter(j=>j!==i&&(bs(j).sleep>0||bs(j).stun>0||(bs(j).silence>0&&skillsOf(P[j]).some(k=>SKILLS[k].kind==='heal'))));
   const cures=ofKind('cure'),cureAlls=ofKind('cureAll');
   const poi=aliveParty(B).filter(j=>P[j].poison&&!(bs(j).rage>0)&&!derived(P[j]).p.poisonAtk);
   if(cureAlls.length&&stuck.length+poi.length>=2)return {k:'skill',s:cureAlls[0]};
@@ -608,7 +648,9 @@ function battleTurn(B,cmds,r){
   const counter=(pi,ei)=>{const m=P[pi],e=EN[ei];if(!e||e.hp<=0||m.hp<=0)return;
     ev.push({t:'act',side:'p',i:pi,text:`${m.name}の カウンター！`});
     const dmg=metalDmg(e,physDmg(memberAtk(B,m),enemyDef(e),1,r,'e'));hitEnemy(ei,dmg,{by:m,text:`${e.name}に ${dmg}の ダメージ！`});addKiai(m);};
-  const pickEnemy=t=>{const al=aliveEnemies(B);if(al.includes(t))return t;return al[Math.floor(r()*al.length)];};
+  const pickEnemy=t=>{const al=aliveEnemies(B);
+    if(B.eguard!=null&&EN[B.eguard]&&EN[B.eguard].hp>0&&B.eguard!==t&&al.includes(t)){ev.push({t:'msg',text:`${EN[B.eguard].name}が なかまを かばった！`});return B.eguard;}
+    if(al.includes(t))return t;return al[Math.floor(r()*al.length)];};
   const physHit=(m,t,pow,o)=>{const e=EN[t];o=o||{};if(!e||e.hp<=0)return;
     if(e.evade&&r()<e.evade){ev.push({t:'msg',text:`${e.name}は すばやく よけた！`});return;}
     const crit=r()<1/20;const atk=memberAtk(B,m)*(m.cheer?1.6:1);pow*=elemMult(e,o.el);
@@ -644,6 +686,7 @@ function battleTurn(B,cmds,r){
       } else if(c.k==='skill'){
         const S=SKILLS[c.s];
         if(!skillsOf(m).includes(c.s)||S.kind==='passive')continue;
+        if(m.bst.silence>0&&(S.mp||0)>0){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は ふういんされていて ${S.name}を つかえない！`});continue;}
         if(m.mp<(S.mp||0)){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は ${S.name}を つかおうとしたが MPが たりない！`});continue;}
         if(S.kiaiCost&&(m.kiai||0)<S.kiaiCost){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は きあいが たりない！`});continue;}
         if(S.kind==='extend'&&S.kiai&&!(m.kiai>0)){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は きあいが たりない！`});continue;}
@@ -673,10 +716,10 @@ function battleTurn(B,cmds,r){
         else if(S.kind==='heal'){let ts=S.tgt==='allies'?aliveParty(B):[c.t];
           if(S.tgt==='ally'&&(ts[0]===undefined||P[ts[0]].hp<=0)){ts=[aliveParty(B).sort((x,y)=>P[x].hp/derived(P[x]).maxhp-P[y].hp/derived(P[y]).maxhp)[0]];}
           for(const t of ts){const tm=P[t],td=derived(tm);const amt=Math.min(Math.round((S.base+memberMag(B,m)*S.k)*(1+(d.p.healPow||0))*(.9+r()*.2)),td.maxhp-tm.hp);tm.hp+=amt;ev.push({t:'heal',side:'p',i:t,amt,hp:tm.hp});}}
-        else if(S.kind==='cure'||S.kind==='cureAll'){const bad=j=>P[j]&&P[j].hp>0&&(P[j].poison||(P[j].bst&&(P[j].bst.sleep>0||P[j].bst.stun>0)));
+        else if(S.kind==='cure'||S.kind==='cureAll'){const bad=j=>P[j]&&P[j].hp>0&&(P[j].poison||(P[j].bst&&(P[j].bst.sleep>0||P[j].bst.stun>0||P[j].bst.silence>0)));
           let ts=S.kind==='cureAll'?aliveParty(B).filter(bad):[c.t];
           if(S.kind==='cure'&&!bad(ts[0])){const pp=aliveParty(B).find(bad);if(pp===undefined)continue;ts=[pp];}
-          for(const t of ts){P[t].poison=false;const b=bstOf(P[t]);b.sleep=0;b.stun=0;}}
+          for(const t of ts){P[t].poison=false;const b=bstOf(P[t]);b.sleep=0;b.stun=0;b.silence=0;}}
         else if(S.kind==='mpheal'){for(const t of aliveParty(B)){if(t===a.i)continue;const x=P[t];x.mp=Math.min(derived(x).maxmp,x.mp+S.amt);}}
         else if(S.kind==='buff'){const turns=CONFIG.buff.turns+(d.p.buffTurns||0)+1,pow=d.p.buffPow||0;
           for(const b of S.buff==='all'?['atk','def','spd']:[S.buff])B.buff[b]={turns,pow};ev.push({t:'buff',buff:S.buff});
@@ -725,6 +768,16 @@ function battleTurn(B,cmds,r){
       else if(mv.k==='healAlly'){const hurt=aliveEnemies(B).filter(j=>EN[j].hp<EN[j].max).sort((x,y)=>EN[x].hp/EN[x].max-EN[y].hp/EN[y].max);
         if(hurt.length){const j=hurt[0];const amt=Math.min(EN[j].max-EN[j].hp,Math.round(EN[j].max*.4));EN[j].hp+=amt;ev.push({t:'heal',side:'e',i:j,amt,text:`${e.name}は ${EN[j].name}の きずを なおした！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
+      else if(mv.k==='magic'||mv.k==='magicAll'){const ts=mv.k==='magic'?[pick()]:al;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+        for(const t of ts){if(P[t].hp<=0)continue;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
+      else if(mv.k==='debuffAll'){B.pdebuff[mv.st]=CONFIG.debuff.turns+1;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${mv.st==='atk'?'こうげき':'ぼうぎょ'}が さがった！`});}
+      else if(mv.k==='silence'){const t=pick();const m=P[t];const c=mv.rate*(partyP().some(p=>p.statusResist)?.5:1);ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+        if(r()<c){bstOf(m).silence=2;ev.push({t:'status',side:'p',i:t,st:'silence',text:`${m.name}は ふういんされた！`});}else ev.push({t:'msg',text:`${m.name}は ふういんされなかった。`});}
+      else if(mv.k==='ebuff'){for(const j of aliveEnemies(B))EN[j].ebuff=3;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ 敵が ちからを ました！`});}
+      else if(mv.k==='eguard'){B.eguard=a.i;B.eguardT=2;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は なかまを まもっている。`});}
+      else if(mv.k==='reviveAlly'){const dead=EN.map((x,j)=>j).filter(j=>EN[j].hp<=0&&!EN[j].fled&&!EN[j].revivedOnce&&j!==a.i);
+        if(dead.length){const j=dead[0];EN[j].hp=Math.ceil(EN[j].max/2);EN[j].revivedOnce=true;EN[j].st={};ev.push({t:'add',i:j,text:`${e.name}は ${EN[j].name}を よみがえらせた！`});}
+        else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='charge'){e.charged=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ちからを ためている！`});}
       else if(mv.k==='call'){const ne=mkEnemy(e.f,'normal',{weak:e.weak});ne.name=e.name.replace(/ [A-E]$/,'')+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
     }
@@ -738,6 +791,10 @@ function battleTurn(B,cmds,r){
     const forever=partyP().some(p=>p.buffForever);
     if(!forever)for(const k in B.buff)if(B.buff[k].turns>0)B.buff[k].turns--;
     if(B.taunt&&B.taunt.turns>0)B.taunt.turns--;
+    for(const k in B.pdebuff)if(B.pdebuff[k]>0)B.pdebuff[k]--;
+    for(const e of EN)if(e.ebuff>0)e.ebuff--;
+    if(B.eguard!=null&&--B.eguardT<=0)B.eguard=null;
+    for(const x of P)if(x.bst&&x.bst.silence>0)x.bst.silence--;
     for(const i of aliveParty(B)){const m=P[i],b=bstOf(m),dd=derived(m);
       for(const k of ['rage','berserk'])if(b[k]>0)b[k]--;
       if(m.poison&&dd.p.poisonRegen)m.hp=Math.min(dd.maxhp,m.hp+Math.ceil(dd.maxhp*(dd.p.poisonRegen+CONFIG.poisonDot)));
@@ -755,7 +812,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

@@ -202,3 +202,35 @@ test('上級職でも きあいを使える：魔拳士は きあいで魔法が
   assert.ok(ev.some(x=>x.text&&x.text.includes('きあいが たりない')));
   m.kiai=2;C.battleTurn(B,[{k:'skill',s:'fumikomi'}],C.rng(5));assert.ok(m.kiai<=2);
 });
+
+test('敵の魔法は、ぼうぎょに関係なくダメージを与える',()=>{
+  const hit=a=>{const G=C.newGame();const m=C.newMember('war','w');m.hp=99999;m.a=a;G.party=[m];
+    const e=C.mkEnemy(20,'kMage');e.moves=[{n:'ほのおのまほう',k:'magic',pow:1,w:1}];e.hp=e.max=99999;
+    const B=C.newBattle(G,[e]);C.battleTurn(B,[{k:'attack',t:0}],C.rng(7));return 99999-m.hp;};
+  const a=hit(0),b=hit(10);assert.ok(a>0&&Math.abs(a-b)<=Math.ceil(a*.25),a+' '+b);
+});
+test('ふういんされると、MPを使うとくぎが使えない。きよめで治る',()=>{
+  const G=C.newGame();const mg=G.party[1];mg.bst={};
+  const e=C.mkEnemy(1,'normal');e.hp=e.max=99999;e.st.sleep=9;
+  const B=C.newBattle(G,[e]);mg.bst.silence=2;
+  const ev=C.battleTurn(B,[{k:'defend'},{k:'skill',s:'thunder',t:0},{k:'defend'}],C.rng(8));
+  assert.ok(ev.some(x=>x.text&&x.text.includes('ふういんされていて')));
+  assert.strictEqual(C.autoCmd(B,1).k==='skill'&&(C.SKILLS[C.autoCmd(B,1).s].mp||0)>0,false,'おまかせは ふういん中にMPのとくぎを選ばない');
+});
+test('「いかく」で仲間全員のぼうぎょが下がる',()=>{
+  const G=C.newGame();const e=C.mkEnemy(10,'frill');e.moves=[{n:'いかく',k:'debuffAll',st:'def',w:1}];e.hp=e.max=99999;
+  const B=C.newBattle(G,[e]);C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(9));
+  assert.ok(B.pdebuff.def>0);
+});
+test('そうりょコアラは倒れた仲間を1度だけよみがえらせる',()=>{
+  const G=C.newGame();G.party.forEach(m=>m.hp=9999);
+  const p=C.mkEnemy(15,'kPriest');p.moves=[{n:'よみがえらせる',k:'reviveAlly',w:1}];p.hp=p.max=99999;
+  const o=C.mkEnemy(15,'normal');o.hp=0;
+  const B=C.newBattle(G,[p,o]);C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(10));
+  assert.ok(o.hp>0);o.hp=0;C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(11));assert.strictEqual(o.hp,0);
+});
+test('名前つきのボス（B5・10・15・20）',()=>{
+  assert.strictEqual(C.bossFor(15)[0].name,'コアラのだいまどうし');
+  assert.ok(C.bossFor(15)[0].mag>0);
+  for(const f of [5,10,15,20])assert.strictEqual(C.bossFor(f)[0].name,C.BOSS_DEF[f].name);
+});

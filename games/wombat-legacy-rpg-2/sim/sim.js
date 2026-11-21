@@ -229,7 +229,7 @@ function campaign(opt){
     if(opt.trainShallow&&G.party.some(m=>m.lv<C.JOBS[m.job].cap/2))f=Math.max(1,Math.min(f,G.reached-10));
     outer:
     while(f<=50){
-      t+=TIME.floorWalk(f);G.reached=Math.max(G.reached,f);note(`reach${f}`);deepest=f;
+      t+=TIME.floorWalk(f);if(f>G.reached&&opt.lvlog)opt.lvlog[f]=G.party.map(m=>C.JOBS[m.job].name+m.lv);G.reached=Math.max(G.reached,f);note(`reach${f}`);deepest=f;
       for(let k=0;k<battlesPerFloor(f,G.flags.dig);k++){
         const res=fight(G,C.rollGroup(f,r),r);stats.battles++;stats.turns+=res.turns;t+=TIME.battleBase+TIME.perTurn*res.turns;
         if(res.over==='lose'){wiped=true;break outer;}
