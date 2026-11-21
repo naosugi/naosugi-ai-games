@@ -456,7 +456,7 @@ function battleTurn(B,cmds,r){
     else if(defend[i])dmg=Math.max(1,Math.round(dmg*.5));
     const m=P[tgt];m.hp=Math.max(0,m.hp-dmg);ev.push(Object.assign({t:'hit',side:'p',i:tgt,dmg,hp:m.hp},extra||{}));
     if(m.hp<=0){m.poison=false;ev.push({t:'die',side:'p',i:tgt});ev.push({t:'msg',text:`${m.name}は たおれてしまった…`});}
-    else if(poison&&!m.poison&&r()<poison){if(noPoison(m))ev.push({t:'msg',text:`${m.name}は どくを はねかえした！`});else{m.poison=true;ev.push({t:'status',i:tgt,text:`${m.name}は どくに おかされた！`});}}};
+    else if(poison&&!m.poison&&r()<poison){if(noPoison(m))ev.push({t:'msg',text:`${m.name}は どくを はねかえした！`});else{m.poison=true;ev.push({t:'status',i:tgt,poison:true,text:`${m.name}は どくに おかされた！`});}}};
   const pickEnemy=t=>{const al=aliveEnemies(B);if(al.includes(t))return t;return al[Math.floor(r()*al.length)];};
   const castMag=(S,d,tt)=>{
     const ts=S.tgt==='enemies'?aliveEnemies(B):[pickEnemy(tt)];
@@ -497,7 +497,7 @@ function battleTurn(B,cmds,r){
         if(it.revive){tm.hp=Math.ceil(td.maxhp/2);ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'revive',i:t,hp:tm.hp,text:`${tm.name}は 生きかえった！`});}
         if(it.heal){const amt=Math.min(it.heal,td.maxhp-tm.hp);tm.hp+=amt;ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'heal',side:'p',i:t,amt,hp:tm.hp,text:`${tm.name}の HPが ${amt} かいふくした！`});}
         if(it.mp){const amt=Math.min(it.mp,td.maxmp-tm.mp);tm.mp+=amt;ev.push({t:'mp',i:t,mp:tm.mp,text:`${tm.name}の MPが ${amt} かいふくした！`});}
-        if(it.cure){tm.poison=false;ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'status',i:t,text:`${tm.name}の どくが きえた！`});}
+        if(it.cure){tm.poison=false;ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'status',i:t,poison:false,text:`${tm.name}の どくが きえた！`});}
       } else if(c.k==='skill'){
         const S=SKILLS[c.s];
         if(m.mp<S.mp){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は ${S.name}を つかおうとしたが MPが たりない！`});continue;}
@@ -518,7 +518,7 @@ function battleTurn(B,cmds,r){
           for(const t of ts){const tm=P[t],td=derived(tm);const amt=Math.min(Math.round((S.base+d.mag*S.k)*(.9+r()*.2)),td.maxhp-tm.hp);tm.hp+=amt;ev.push({t:'heal',side:'p',i:t,amt,hp:tm.hp,text:`${tm.name}の HPが ${amt} かいふくした！`});}
         } else if(S.kind==='cure'){
           let t=c.t;if(!P[t]||P[t].hp<=0||!P[t].poison){const pp=aliveParty(B).find(j=>P[j].poison);if(pp===undefined){ev.push({t:'msg',text:'しかし どくの 仲間は いなかった。'});continue;}t=pp;}
-          P[t].poison=false;ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'status',i:t,text:`${P[t].name}の どくが きえた！`});
+          P[t].poison=false;ev.push({t:'fx',kind:'heal',side:'p',ts:[t]});ev.push({t:'status',i:t,poison:false,text:`${P[t].name}の どくが きえた！`});
         } else if(S.kind==='buff'){
           const had=B.buffDef>1;B.buffDef=4;ev.push({t:'fx',kind:'buff',side:'p',ts:aliveParty(B)});ev.push({t:'buff'});ev.push({t:'msg',text:had?'まもりの効果が のびた！（のこり3ターン）':'みんなの まもりが あがった！（3ターン）'});if(had)ev.push({t:'msg',text:'（重ねがけは できない。のこりターンが もどった）'});
         } else if(S.kind==='revive'){
@@ -1188,7 +1188,7 @@ $('party').addEventListener('click',e=>{const c=e.target.closest('.pc');if(!c||!
 function renderParty(act,hurt){
   if(!G){$('party').innerHTML='';return;}
   $('party').innerHTML=G.party.map((m,i)=>{const d=derived(m),hp=disp?disp[i].hp:m.hp,mp=disp?disp[i].mp:m.mp,hr=hp/d.maxhp;
-    const st=[];if(m.poison&&hp>0)st.push('<i class="s-poi">どく</i>');
+    const poi=disp&&disp[i].poison!=null?disp[i].poison:m.poison;const st=[];if(poi&&hp>0)st.push('<i class="s-poi">どく</i>');
     if(mode==='battle'&&B&&BA&&hp>0){if(BA.buffShow&&B.buffDef>0)st.push(`<i class="s-buf">まもり↑${B.buffDef}</i>`);const ts=BA.tstat&&BA.tstat[i];if(ts)st.push(`<i class="s-tmp">${ts}</i>`);}
     const sel=partyPick?(partyPick.ok(i)?'sel':'nosel'):'';
     return `<div data-i="${i}" class="pc ${hp<=0?'dead':hr<.3?'low':''} ${act===i?'act':''} ${hurt===i?'hurt':''} ${sel}"><div class="nm"><b>${esc(m.name)}</b><span class="cl">${CLASSES[m.cls].name.replace('まほうつかい','まほう')} Lv${m.lv}</span></div>
@@ -1639,7 +1639,7 @@ async function startBattle(ids,opt){
   snd('enc');stopMusic();flashT=performance.now();await sleep(110);flashT=performance.now();await sleep(90);wipeT=performance.now();await sleep(520);
   B=newBattle(G,ids);B.ids=ids.slice();B.snap=snap;B.opt=opt||{};B.ret=ret;B.ts=DUNGEONS[opt&&opt.d!=null?opt.d:F.d].ts;B.keys=G.keys;
   BA={e:B.enemies.map(e=>({flash:-1e9,lunge:-1e9,dead:0,hp:e.hp})),p:G.party.map(()=>({step:0,shake:-1e9})),fx:[],pops:[],enter:performance.now()+150,win:0};
-  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp}));renderParty();updateTop('せんとう');
+  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   ids.forEach(id=>G.seen[id]=1);
   const names=[...new Set(B.enemies.map(e=>ENEMIES[e.id].name))];
   if(B.boss||B.opt.guard){setTimeout(()=>{banner(B.boss?'BOSS':'番人',names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
@@ -1651,7 +1651,7 @@ async function startBattle(ids,opt){
 }
 async function battleLoop(){
   while(true){
-    disp=G.party.map(m=>({hp:m.hp,mp:m.mp}));BA.tstat={};BA.buffShow=B.buffDef>0;renderParty();
+    disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));BA.tstat={};BA.buffShow=B.buffDef>0;renderParty();
     const cmds=await inputPhase();BA.cmds=cmds;enemyMark=null;partyPick=null;BA.pickE=null;
     renderParty();setCmds([]);
     const ev=battleTurn(B,cmds,R);
@@ -1737,12 +1737,12 @@ async function playEvents(ev){
       case 'heal':
         if(e.side==='p'){disp[e.i].hp=e.hp;renderParty();pop(partyCenter(e.i),e.amt,'#8aff9a');}else{BA.e[e.i].hp=e.hp;pop(enemyCenter(e.i),e.amt,'#8aff9a');}
         if(e.text)say(e.text);await bwait(450);break;
-      case 'status':say(e.text);renderParty();await bwait(450);
-        if(!G.flags.tipPoison&&G.party[e.i].poison){G.flags.tipPoison=1;say('（どくは「どくけし草」、そうりょの「どくけし」、宿屋で なおるよ）');await bwait(1400);}break;
+      case 'status':if(e.poison!=null)disp[e.i].poison=e.poison;say(e.text);renderParty();await bwait(450);
+        if(!G.flags.tipPoison&&e.poison){G.flags.tipPoison=1;say('（どくは「どくけし草」、そうりょの「どくけし」、宿屋で なおるよ）');await bwait(1400);}break;
       case 'buff':BA.buffShow=true;renderParty();break;
       case 'mp':disp[e.i].mp=e.mp;renderParty();if(e.text){say(e.text);await bwait(450);}break;
-      case 'die':if(e.side==='e'){BA.e[e.i].dead=now;scatter(e.i);snd('die');}await bwait(250);break;
-      case 'revive':disp[e.i].hp=e.hp;partySparkle(e.i,'#8aff9a');renderParty();say(e.text);await bwait(450);break;
+      case 'die':if(e.side==='e'){BA.e[e.i].dead=now;scatter(e.i);snd('die');}else disp[e.i].poison=false;await bwait(250);break;
+      case 'revive':disp[e.i].hp=e.hp;disp[e.i].poison=false;partySparkle(e.i,'#8aff9a');renderParty();say(e.text);await bwait(450);break;
       case 'add':BA.e.push({flash:-1e9,lunge:-1e9,dead:0,hp:B.enemies[e.i].hp});layoutEnemies();G.seen[B.enemies[e.i].id]=1;say(e.text);await bwait(500);break;
     }
   }
