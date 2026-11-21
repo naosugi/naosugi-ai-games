@@ -129,7 +129,7 @@ const SKILLS={
   autorev:{name:'ふっかつのいのり',job:'pri',master:true,tgt:'self',kind:'passive',eff:{autoRevive:1}}, // 1回の戦闘で1度、倒れた仲間がHP半分で起きる
   // 毒使い（状態異常とデバフ）
   venom:  {name:'どくばり',job:'poi',lv:1,mp:2,tgt:'enemy',kind:'status',st:'poison',rate:.75,pow:.6},
-  weaken: {name:'しびれごな',job:'poi',lv:3,mp:3,tgt:'enemy',kind:'status',st:'atkdn',rate:.8},
+  weaken: {name:'よわりごな',job:'poi',lv:3,mp:3,tgt:'enemy',kind:'status',st:'atkdn',rate:.8},
   mist:   {name:'どくのきり',job:'poi',lv:5,mp:5,tgt:'enemies',kind:'status',st:'poison',rate:.5},
   crack:  {name:'よろいくだき',job:'poi',lv:7,mp:4,tgt:'enemy',kind:'status',st:'defdn',rate:.8,pow:.6},
   stun:   {name:'まひのきば',job:'poi',lv:10,mp:5,tgt:'enemy',kind:'status',st:'stun',rate:.5,pow:.8},
