@@ -25,13 +25,16 @@ const CONFIG={
   // 敵の強さ：この階での値を決め、あいだはなめらかにつなぐ（ふつうの敵の値）
   enemyCurve:{
     floor:[1, 10, 20, 30, 40, 50],
-    hp:   [16,55, 150,380,650,1250],
-    atk:  [10,29, 64, 110,140,185],
-    def:  [3, 8,  18, 36, 50, 66],
+    // B40〜50は、ほかの区間より急に伸ばす（決定）
+    hp:   [16,55, 150,380,650,1800],
+    atk:  [10,29, 64, 110,140,250],
+    def:  [3, 8,  18, 36, 50, 80],
     spd:  [6, 9,  13, 17, 21, 25],
-    exp:  [8, 29, 78, 168,311,521],
-    gold: [5, 14, 31, 60, 95, 145],
+    exp:  [8, 29, 78, 168,311,930],
+    gold: [5, 14, 31, 60, 95, 230],
   },
+  // 表から計算せず、個別に決めるボス。B50は、B41〜49の雑魚の急な伸びに合わせると超上級職Lv40でも勝てないため
+  bossOverride:{50:{hp:8750,atk:222,def:86}},
   boss:{mid:{hp:5,atk:1.3,def:1.2,exp:12,gold:15},big:{hp:7,atk:1.2,def:1.3,exp:25,gold:30}},
 };
 function floorScale(f){return 1+.11*(f-1)+.0035*(f-1)*(f-1);}
@@ -275,6 +278,7 @@ function mkEnemy(f,arch,opt){
     if(f>=25)e.moves.push({n:'かきけす',k:'dispel',w:1});
     if(f>=30)e.moves.push({n:'ちからをためる',k:'charge',w:1});
     if(f>=40)e.moves.push({n:'ねらいうち',k:'snipe',pow:1.5,w:1});}
+  if(opt.boss&&CONFIG.bossOverride[f])Object.assign(e,CONFIG.bossOverride[f]);
   e.max=e.hp;e.arch=arch;e.f=f;e.name=opt.name||(opt.boss?`B${f}のボス`:`${arch}(B${f})`);e.st={};e.res={};e.weak=opt.weak||[];
   return e;
 }
