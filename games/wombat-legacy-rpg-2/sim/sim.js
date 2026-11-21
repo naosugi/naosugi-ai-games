@@ -173,6 +173,7 @@ function stageMd(rows){
 const TARGETS=['kAll','kMag','kNin'];
 function campaign(opt){
   if(opt.startDeepest===undefined)opt.startDeepest=true; // 決定：行ったことのあるいちばん深い階から始められる
+  if(opt.trainShallow===undefined)opt.trainShallow=true; // 育成中の仲間がいるときは10階浅いところで稼ぐ（実際の遊び方に近づける）
   const r=C.rng(opt.seed),G=C.newGame(),log=[],mile={};
   G.checkpoints=[0];let bossRetreat=0,t=0,startIdx=0,wipesHere=0,runs=0,wipes=0,goodRuns=0;
   const stats={battles:0,turns:0,wipes:0,byArea:{}};
@@ -211,6 +212,8 @@ function campaign(opt){
     runs++;
     const list=cps();startIdx=Math.min(startIdx,list.length-1);
     let f=list[startIdx]+1,wiped=false,deepest=f;t+=5;
+    // 育成中の仲間がいるときは、10階浅いところで稼ぐ
+    if(opt.trainShallow&&G.party.some(m=>m.lv<C.JOBS[m.job].cap/2))f=Math.max(1,Math.min(f,G.reached-10));
     outer:
     while(f<=50){
       t+=TIME.floorWalk(f);G.reached=Math.max(G.reached,f);note(`reach${f}`);deepest=f;
