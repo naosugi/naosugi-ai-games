@@ -22,22 +22,33 @@ const CONFIG={
   kiaiMax:3, kiaiPow:.2,    // きあい1段ごとに物理ダメージ+20%
   counterRate:.25, evadeBase:.03,
   guardCut:.5,
-  // 敵の強さ：floorScale(f) をもとに決める
-  enemy:{hp:[16,1.45],atk:[9,1.0],def:[3,1.0],spd:[6,.35],exp:[8,1.55],gold:[5,1.25]},
-  boss:{mid:{hp:14,atk:1.3,def:1.2,exp:12,gold:15},big:{hp:26,atk:1.4,def:1.3,exp:25,gold:30}},
+  // 敵の強さ：この階での値を決め、あいだはなめらかにつなぐ（ふつうの敵の値）
+  enemyCurve:{
+    floor:[1, 10, 20, 30, 40, 50],
+    hp:   [16,55, 150,380,650,1250],
+    atk:  [10,29, 64, 110,140,185],
+    def:  [3, 8,  18, 36, 50, 66],
+    spd:  [6, 9,  13, 17, 21, 25],
+    exp:  [8, 29, 78, 168,311,521],
+    gold: [5, 14, 31, 60, 95, 145],
+  },
+  boss:{mid:{hp:5,atk:1.3,def:1.2,exp:12,gold:15},big:{hp:7,atk:1.2,def:1.3,exp:25,gold:30}},
 };
 function floorScale(f){return 1+.11*(f-1)+.0035*(f-1)*(f-1);}
+// 階 f での敵の値（決めた点のあいだを、比で補間する）
+function curve(k,f){const F=CONFIG.enemyCurve.floor,V=CONFIG.enemyCurve[k];
+  if(f<=F[0])return V[0];for(let i=1;i<F.length;i++)if(f<=F[i]){const t=(f-F[i-1])/(F[i]-F[i-1]);return V[i-1]*Math.pow(V[i]/V[i-1],t);}
+  return V[V.length-1]*Math.pow(V[V.length-1]/V[V.length-2],(f-F[F.length-1])/(F[F.length-1]-F[F.length-2]));}
 
 // ---------- 職業 ----------
 // mult: ステータスの倍率 / expK: 必要経験値の係数 / cap: レベル上限 / req: 解放条件（1匹ずつ数える）
-// wmode: 武器の強さがどこに入るか（phys=こうげき, mag=まりょく, mix=こうげき＋まりょく半分）
 const JOBS={
-  war:{name:'戦士',     tier:1,cap:20,expK:1.0,wmode:'phys',mult:{hp:1.2, mp:.4, atk:1.15,def:1.2, mag:.3, spd:.8}},
-  kar:{name:'空手家',   tier:1,cap:20,expK:1.0,wmode:'phys',mult:{hp:1.0, mp:.4, atk:1.1, def:.8,  mag:.3, spd:1.2}},
-  mag:{name:'魔法使い', tier:1,cap:20,expK:1.1,wmode:'mag', mult:{hp:.7,  mp:1.4,atk:.5,  def:.6,  mag:1.3,spd:1.0}},
-  pri:{name:'僧侶',     tier:1,cap:20,expK:1.1,wmode:'mix', mult:{hp:.85, mp:1.2,atk:.7,  def:.8,  mag:1.1,spd:.9}},
-  poi:{name:'毒使い',   tier:1,cap:20,expK:1.0,wmode:'mix', mult:{hp:.85, mp:1.0,atk:.85, def:.75, mag:1.0,spd:1.1}},
-  sin:{name:'歌い手',   tier:1,cap:20,expK:1.0,wmode:'mix', mult:{hp:.85, mp:1.1,atk:.7,  def:.8,  mag:1.0,spd:1.05}},
+  war:{name:'戦士',     tier:1,cap:20,expK:1.0,mult:{hp:1.2, mp:.4, atk:1.15,def:1.2, mag:.3, spd:.8}},
+  kar:{name:'空手家',   tier:1,cap:20,expK:1.0,mult:{hp:1.0, mp:.4, atk:1.1, def:.8,  mag:.3, spd:1.2}},
+  mag:{name:'魔法使い', tier:1,cap:20,expK:1.1, mult:{hp:.7,  mp:1.4,atk:.5,  def:.6,  mag:1.3,spd:1.0}},
+  pri:{name:'僧侶',     tier:1,cap:20,expK:1.1, mult:{hp:.85, mp:1.2,atk:.7,  def:.8,  mag:1.1,spd:.9}},
+  poi:{name:'毒使い',   tier:1,cap:20,expK:1.0, mult:{hp:.85, mp:1.0,atk:.85, def:.75, mag:1.0,spd:1.1}},
+  sin:{name:'歌い手',   tier:1,cap:20,expK:1.0, mult:{hp:.85, mp:1.1,atk:.7,  def:.8,  mag:1.0,spd:1.05}},
   // 上級職（基本職2つを極めると解放）
   hwar:{name:'上級戦士',tier:2,cap:30,expK:2.0,req:['war','kar']},
   ber: {name:'狂戦士',  tier:2,cap:30,expK:2.0,req:['war','poi']},
@@ -62,8 +73,7 @@ const JOBS={
   const mk=(id,k)=>{const J=JOBS[id];if(J.mult)return;
     J.req.forEach(r=>mk(r,k));
     J.mult={};for(const s of keys){let sum=0,mx=0;for(const r of J.req){sum+=JOBS[r].mult[s];mx=Math.max(mx,JOBS[r].mult[s]);}
-      J.mult[s]=+((sum/J.req.length*.5+mx*.5)*(J.tier===2?1.12:1.12)).toFixed(3);}
-    const w=J.req.map(r=>JOBS[r].wmode);J.wmode=w.every(x=>x==='phys')?'phys':w.every(x=>x==='mag')?'mag':'mix';};
+      J.mult[s]=+((sum/J.req.length*.5+mx*.5)*(J.tier===2?1.12:1.12)).toFixed(3);}};
   for(const id in JOBS)mk(id);
 })();
 const BASIC_JOBS=Object.keys(JOBS).filter(k=>JOBS[k].tier===1);
@@ -154,12 +164,24 @@ function passives(m){
   return e;
 }
 
-// ---------- 装備（仮：店の段階ごとに1つ） ----------
-// 職業が変わっても持ちかえなくてすむよう、武器と防具は1種類ずつ。強さは段階で決まる
-const WEAPONS=[[ '木のぼう',3,0],['石のツメ',8,90],['鉄のツメ',15,320],['ユーカリの大剣',24,900],['オパールのツメ',36,2400],
-  ['水晶のツメ',50,5200],['化石のツメ',66,9800],['いにしえのツメ',84,16000],['ほろびの大ツメ',104,26000],['レガシーのツメ',126,40000],['レガシーのツメ+',150,60000]];
+// ---------- 装備 ----------
+// 武器は3系統。どの職業でも装備できる。防具は1系統。強さは段階（番号）で決まる
+//   ツメ：こうげき / つえ：まりょく（＋こうげき少し） / ふえ：こうげきとまりょくの両方に7割ずつ
+// 名前は仮。素材から並ぶ装備（あなほり王）はまだ入れていない
+const WEAPON_POW=[3,8,15,24,36,50,66,84,104,126,150];
+const WEAPON_PRICE=[0,90,320,900,2400,5200,9800,16000,26000,40000,60000];
+const WEAPON_LINES={
+  claw: {name:'ツメ',names:['木のツメ','石のツメ','鉄のツメ','ユーカリのツメ','オパールのツメ','水晶のツメ','化石のツメ','いにしえのツメ','ほろびのツメ','レガシーのツメ','レガシーのツメ+'],atk:1,mag:0},
+  staff:{name:'つえ',names:['木のつえ','石のつえ','鉄のつえ','ユーカリのつえ','オパールのつえ','水晶のつえ','化石のつえ','いにしえのつえ','ほろびのつえ','レガシーのつえ','レガシーのつえ+'],atk:.25,mag:1},
+  flute:{name:'ふえ',names:['木のふえ','石のふえ','鉄のふえ','ユーカリのふえ','オパールのふえ','水晶のふえ','化石のふえ','いにしえのふえ','ほろびのふえ','レガシーのふえ','レガシーのふえ+'],atk:.7,mag:.7},
+};
 const ARMORS=[['草のふく',2,0],['かわのよろい',6,80],['いわのよろい',12,300],['こうらのよろい',19,850],['オパールのよろい',28,2200],
   ['水晶のよろい',38,4800],['化石のよろい',50,9000],['いにしえのよろい',63,15000],['ほろびのよろい',78,24000],['レガシーのよろい',94,38000],['レガシーのよろい+',112,56000]];
+const WEAPONS=WEAPON_POW.map((p,i)=>[WEAPON_LINES.claw.names[i],p,WEAPON_PRICE[i]]); // 旧形式（段階の数を数えるのに使う）
+function weaponName(m){return WEAPON_LINES[m.wl].names[m.w];}
+// 職業に合う系統（おまかせで装備を選ぶときに使う）
+function bestLine(job){const M=JOBS[job].mult;let best='claw',bs=-1;
+  for(const l in WEAPON_LINES){const L=WEAPON_LINES[l];const sc=L.atk*M.atk+L.mag*M.mag;if(sc>bs){bs=sc;best=l;}}return best;}
 const ITEMS={
   herb: {name:'やくそう',price:8,heal:30},
   herb2:{name:'上やくそう',price:30,heal:90},
@@ -172,14 +194,13 @@ const ITEMS={
 // ---------- 仲間 ----------
 function baseStat(m,k){const b=CONFIG.base[k];return (b[0]+b[1]*(m.lv-1))*JOBS[m.job].mult[k];}
 function derived(m){
-  const p=passives(m),J=JOBS[m.job],w=WEAPONS[m.w][1],a=ARMORS[m.a][1];
+  const p=passives(m),w=WEAPON_POW[m.w],L=WEAPON_LINES[m.wl||'claw'],a=ARMORS[m.a][1];
   const st=k=>Math.floor(baseStat(m,k)*(1+(p[k]||0)));
-  const d={maxhp:st('hp'),maxmp:st('mp'),atk:st('atk'),def:st('def')+a,mag:st('mag'),spd:st('spd')};
-  if(J.wmode==='phys')d.atk+=w;else if(J.wmode==='mag'){d.mag+=w;d.atk+=Math.floor(w/2);}else{d.atk+=w;d.mag+=Math.floor(w/2);}
+  const d={maxhp:st('hp'),maxmp:st('mp'),atk:st('atk')+Math.floor(w*L.atk),def:st('def')+a,mag:st('mag')+Math.floor(w*L.mag),spd:st('spd')};
   d.p=p;return d;
 }
 function newMember(job,name){
-  const m={name,job,lv:1,exp:0,w:0,a:0,hp:1,mp:0,poison:false,mastered:{},learned:{},slots:[],totalExp:0};
+  const m={name,job,lv:1,exp:0,wl:bestLine(job),w:0,a:0,own:{claw:0,staff:0,flute:0},hp:1,mp:0,poison:false,mastered:{},learned:{},slots:[],totalExp:0};
   learnUpTo(m);const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;return m;
 }
 function learnUpTo(m){const got=[];for(const k of jobSkills(m))if(!m.learned[k]){m.learned[k]=1;got.push(k);}return got;}
@@ -191,7 +212,8 @@ function jobUnlocked(m,job,G){
 function canChangeJob(G){return !!(G&&G.flags&&G.flags.jobChange);}
 function changeJob(m,job){
   if(!jobUnlocked(m,job))return false;
-  m.job=job;m.lv=1;m.exp=0;learnUpTo(m);
+  // 極めた職業に戻ったときは、レベル上限のまま
+  m.job=job;m.lv=m.mastered[job]?JOBS[job].cap:1;m.exp=0;learnUpTo(m);
   // 今の職業のスキルが枠にあったら外す
   m.slots=m.slots.filter(k=>SKILLS[k].job!==job);
   const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;return true;
@@ -224,17 +246,34 @@ const ARCH={
   wide:  {hp:.9, atk:.9, def:.9, spd:1,  moves:[{n:'こうげき',k:'atk',w:2},{n:'なぎはらう',k:'all',pow:.6,w:1}]},
   twice: {hp:.8, atk:.8, def:.8, spd:1.4,acts:2},
   metal: {metal:true},
+  // 特徴的な攻撃をする敵（名前は仮。エリアごとに実在の動物を当てはめる）
+  sleeper:{hp:.9,atk:.8, def:.9, spd:1.1,moves:[{n:'こうげき',k:'atk',w:2},{n:'ねむりのこな',k:'sleepAll',rate:.35,w:1}]},
+  stunner:{hp:1, atk:.9, def:1,  spd:1,  moves:[{n:'こうげき',k:'atk',w:2},{n:'しびれのしっぽ',k:'atk',pow:.9,stun:.45,w:2}]},
+  jammer: {hp:.9,atk:.8, def:.9, spd:1.3,moves:[{n:'こうげき',k:'atk',w:2},{n:'いやなおと',k:'dispel',w:1},{n:'MPをすいとる',k:'drain',w:1}]},
+  bomber: {hp:.8,atk:1,  def:.8, spd:.9, moves:[{n:'こうげき',k:'atk',w:3},{n:'じばく',k:'boom',pow:1.8,w:1}]},
+  medic:  {hp:.9,atk:.7, def:.9, spd:1.2,prio:true,moves:[{n:'こうげき',k:'atk',w:2},{n:'なかまをなおす',k:'healAlly',w:2}]},
+  sniper: {hp:.8,atk:1.1,def:.8, spd:1.3,moves:[{n:'ねらいうち',k:'snipe',pow:1.3,w:2},{n:'こうげき',k:'atk',w:1}]},
+  counter:{hp:1.1,atk:1, def:1.1,spd:.9, counter:.35},
+  mirror: {hp:1, atk:.9, def:1.2,spd:1,  reflect:true},
+  charger:{hp:1.2,atk:1.1,def:1, spd:.8, moves:[{n:'ちからをためる',k:'charge',w:2},{n:'こうげき',k:'atk',w:1}]},
+  evasive:{hp:.7,atk:.9, def:.7, spd:1.6,evade:.4},
 };
 function mkEnemy(f,arch,opt){
-  opt=opt||{};const A=ARCH[arch],s=floorScale(f),C=CONFIG.enemy;
-  const v=(k)=>C[k][0]*Math.pow(s,C[k][1]);
+  opt=opt||{};const A=ARCH[arch];
+  const v=(k)=>curve(k,f);
   let e;
   if(A.metal){e={hp:5,max:5,atk:Math.round(v('atk')*1.2),def:0,spd:Math.round(v('spd')*3),exp:Math.round(v('exp')*12),gold:Math.round(v('gold')*3),metal:true,flee:.35};}
   else e={hp:Math.round(v('hp')*A.hp),atk:Math.round(v('atk')*A.atk),def:Math.round(v('def')*A.def),spd:Math.round(v('spd')*A.spd),
-    exp:Math.round(v('exp')*A.hp),gold:Math.round(v('gold')*A.hp),acts:A.acts||1,moves:A.moves};
+    exp:Math.round(v('exp')*Math.max(1,A.hp)),gold:Math.round(v('gold')*Math.max(1,A.hp)),acts:A.acts||1,moves:A.moves,
+    counter:A.counter,reflect:A.reflect,evade:A.evade,prio:A.prio};
   if(opt.boss){const B=CONFIG.boss[opt.boss];e.hp=Math.round(v('hp')*B.hp);e.atk=Math.round(v('atk')*B.atk);e.def=Math.round(v('def')*B.def);e.spd=Math.round(v('spd')*1.1);
     e.exp=Math.round(v('exp')*B.exp);e.gold=Math.round(v('gold')*B.gold);e.boss=true;e.acts=opt.boss==='big'&&f>=20?2:1;
-    e.moves=[{n:'こうげき',k:'atk',w:3},{n:'つよいこうげき',k:'atk',pow:1.6,w:2},{n:'あばれまわる',k:'all',pow:.7,w:2},{n:'どくのいき',k:'all',pow:.4,poison:.35,w:f>=10?1:0}];}
+    e.moves=[{n:'こうげき',k:'atk',w:3},{n:'つよいこうげき',k:'atk',pow:1.6,w:2},{n:'あばれまわる',k:'all',pow:.7,w:2},{n:'どくのいき',k:'all',pow:.4,poison:.35,w:f>=10?1:0}];
+    // エリアが深いほど、ボスの技が増える
+    if(f>=15)e.moves.push({n:'ねむりのうた',k:'sleepAll',rate:.25,w:1});
+    if(f>=25)e.moves.push({n:'かきけす',k:'dispel',w:1});
+    if(f>=30)e.moves.push({n:'ちからをためる',k:'charge',w:1});
+    if(f>=40)e.moves.push({n:'ねらいうち',k:'snipe',pow:1.5,w:1});}
   e.max=e.hp;e.arch=arch;e.f=f;e.name=opt.name||(opt.boss?`B${f}のボス`:`${arch}(B${f})`);e.st={};e.res={};e.weak=opt.weak||[];
   return e;
 }
@@ -242,9 +281,15 @@ function mkEnemy(f,arch,opt){
 function floorGroups(f){
   const area=Math.floor((f-1)/10);
   const pool=[['normal','normal'],['tank'],['fast','normal'],['poison'],['normal','normal','normal'],['wide','normal'],['caller'],['heavy']];
-  if(f>=8)pool.push(['twice']);
-  if(f>=15)pool.push(['tank','poison'],['heavy','fast']);
-  if(f>=25)pool.push(['twice','wide'],['caller','poison','normal']);
+  if(f>=4)pool.push(['sleeper','normal']);
+  if(f>=6)pool.push(['sniper','normal']);
+  if(f>=8)pool.push(['twice'],['medic','tank']);
+  if(f>=11)pool.push(['stunner','normal'],['jammer','heavy'],['counter']);
+  if(f>=15)pool.push(['tank','poison'],['heavy','fast'],['sniper','sniper']);
+  if(f>=21)pool.push(['mirror','normal'],['bomber','bomber'],['charger','wide'],['evasive','evasive']);
+  if(f>=25)pool.push(['twice','wide'],['caller','poison','normal'],['medic','counter'],['jammer','sniper']);
+  if(f>=31)pool.push(['mirror','counter'],['charger','sleeper'],['bomber','medic','sniper']);
+  if(f>=41)pool.push(['stunner','charger','jammer'],['evasive','mirror','medic']);
   return {pool,weak:[['fire'],['ice'],['thunder'],['light'],['fire','light']][area%5],metalRate:.04};
 }
 function rollGroup(f,r){
@@ -261,11 +306,12 @@ function aliveEnemies(B){return B.enemies.map((e,i)=>i).filter(i=>B.enemies[i].h
 function newBattle(G,enemies){
   const cnt={};enemies.forEach(e=>cnt[e.name]=(cnt[e.name]||0)+1);const used={};
   enemies.forEach(e=>{if(cnt[e.name]>1){used[e.name]=(used[e.name]||0)+1;e.name+=' '+'ABCD'[used[e.name]-1];}});
-  G.party.forEach(m=>{m.kiai=0;});
+  G.party.forEach(m=>{m.kiai=0;m.bst={};});
   return {party:G.party,inv:G.inv,enemies,buff:{},over:null,turn:0,boss:enemies.some(e=>e.boss),revived:{}};
 }
 function elemMult(e,el){if(!el)return 1;return e.weak.includes(el)?1.5:1;}
-function physDmg(atk,def,pow,r){let b=atk-def/2;if(b<2)b=1+r()*1.5;return Math.max(1,Math.round(b*(.85+r()*.3)*(pow||1)));}
+// 物理ダメージ：こうげき² ÷（こうげき＋ぼうぎょ）。こうげき＝ぼうぎょなら半分。50階ぶん数字が伸びても効き方が変わりにくい
+function physDmg(atk,def,pow,r){atk=Math.max(1,atk);const b=atk*atk/(atk+Math.max(0,def));return Math.max(1,Math.round(b*(.85+r()*.3)*(pow||1)));}
 function buffPow(B,k,party){const t=B.buff[k];if(!t||t.turns<=0)return 1;return 1+(CONFIG.buff[k]-1)*(1+t.pow);}
 function memberAtk(B,m){const d=derived(m);return d.atk*buffPow(B,'atk')*(1+CONFIG.kiaiPow*(m.kiai||0));}
 function memberDef(B,m){const d=derived(m);return d.def*buffPow(B,'def')*(m.poison?CONFIG.poisonDefDown:1);}
@@ -282,8 +328,8 @@ function statusChance(B,m,S,e){
 }
 function skillDmgEstimate(B,m,S,e){
   const d=derived(m);
-  if(S.kind==='mag'){if(e.metal)return 0;return (S.base+d.mag*S.k)*elemMult(e,S.el)*(1+(d.p.magPow||0));}
-  if(S.kind==='phys'||S.kind==='finisher'){if(e.metal)return 1;const pow=S.kind==='finisher'?S.pow+S.perKiai*(m.kiai||0):S.pow*(S.hits||1);return Math.max(1,memberAtk(B,m)-enemyDef(e)/2)*pow;}
+  if(S.kind==='mag'){if(e.metal||e.reflect)return 0;return (S.base+d.mag*S.k)*elemMult(e,S.el)*(1+(d.p.magPow||0));}
+  if(S.kind==='phys'||S.kind==='finisher'){if(e.metal)return 1;const pow=S.kind==='finisher'?S.pow+S.perKiai*(m.kiai||0):S.pow*(S.hits||1);const a=memberAtk(B,m);return a*a/(a+enemyDef(e))*pow*(1-(e.evade||0))*(e.counter?.7:1);}
   return 0;
 }
 
@@ -297,7 +343,8 @@ function autoCmd(B,i){
   const E=j=>B.enemies[j];
   const metal=en.find(j=>E(j).metal);
   const saveMp=!B.boss&&m.mp<d.maxmp*.3;
-  const weakest=()=>en.slice().sort((a,b)=>E(a).hp-E(b).hp)[0];
+  // ふつうの攻撃の相手：回復役などを先に。反撃・よける敵は後回し
+  const weakest=()=>en.slice().sort((a,b)=>{const pa=(E(a).prio?-1e6:0)+(E(a).counter||E(a).evade?1e6:0),pb=(E(b).prio?-1e6:0)+(E(b).counter||E(b).evade?1e6:0);return pa+E(a).hp-(pb+E(b).hp);})[0];
   const strongest=()=>en.slice().sort((a,b)=>E(b).hp-E(a).hp)[0];
   // 1. たおれた仲間
   const dead=P.map((x,j)=>j).filter(j=>P[j].hp<=0);
@@ -309,7 +356,10 @@ function autoCmd(B,i){
   if(hurt.length){const h=heals.filter(k=>SKILLS[k].tgt==='ally');if(h.length)return {k:'skill',s:h[0],t:hurt[0]};
     const ha=heals.filter(k=>SKILLS[k].tgt==='allies');if(ha.length)return {k:'skill',s:ha[0]};
     if(low(hurt[0])<.3){for(const it of ['herb3','herb2','herb'])if(B.inv[it]>0&&(hurt[0]===i||!heals.length))return {k:'item',item:it,t:hurt[0]};}}
-  // 3. 毒をなおす
+  // 3. ねむり・まひ・毒をなおす
+  const bs=j=>P[j].bst||{};
+  const stuck=aliveParty(B).filter(j=>j!==i&&(bs(j).sleep>0||bs(j).stun>0));
+  if(stuck.length&&ofKind('cure').length)return {k:'skill',s:ofKind('cure')[0],t:stuck[0]};
   const poi=aliveParty(B).filter(j=>P[j].poison);
   if(poi.length&&ofKind('cure').length&&(B.boss||poi.length>=2||low(poi[0])<.6))return {k:'skill',s:ofKind('cure')[0],t:poi[0]};
   // 4. メタル
@@ -321,8 +371,10 @@ function autoCmd(B,i){
     if(songs.includes('sAll')&&['atk','def','spd'].filter(need).length>=2)return {k:'skill',s:'sAll'};
     for(const b of ['atk','def','spd']){const s=songs.find(k=>SKILLS[k].buff===b);if(s&&need(b)&&(!saveMp||B.boss))return {k:'skill',s};}
   }
-  // 6. かばう
-  if(sk.includes('guard')&&low(i)>.5&&aliveParty(B).some(j=>j!==i&&low(j)<.35)&&(en.length>=2||B.boss))return {k:'skill',s:'guard'};
+  // 6. かばう・みをまもる（力をためた敵がいるときも）
+  const charged=en.some(j=>E(j).charged);
+  if(sk.includes('guard')&&low(i)>.5&&(charged||(aliveParty(B).some(j=>j!==i&&low(j)<.35)&&(en.length>=2||B.boss))))return {k:'skill',s:'guard'};
+  if(charged&&!sk.includes('guard')&&low(i)<.6&&!aliveParty(B).some(j=>j!==i&&skillsOf(P[j]).includes('guard')))return {k:'defend'};
   // 7. 状態異常・デバフ（ボスや強い敵に）
   const sts=ofKind('status');
   if(sts.length&&!saveMp){
@@ -340,7 +392,7 @@ function autoCmd(B,i){
   if(!saveMp||B.boss){
     let best=null,bs=0,bt=null;
     const atkLike=sk.filter(k=>['phys','mag','finisher'].includes(SKILLS[k].kind)&&can(k));
-    const plain=en.reduce((s,j)=>Math.max(s,Math.max(1,memberAtk(B,m)-enemyDef(E(j))/2)),0);
+    const plain=en.reduce((s,j)=>{const a=memberAtk(B,m);return Math.max(s,a*a/(a+enemyDef(E(j))));},0);
     for(const k of atkLike){const S=SKILLS[k];
       if(S.kind==='finisher'&&(m.kiai||0)<Math.min(3,(CONFIG.kiaiMax+(d.p.kiaiMax||0))))continue;
       if(S.tgt==='enemies'){let sc=0;for(const j of en)sc+=Math.min(E(j).hp,skillDmgEstimate(B,m,S,E(j)));if(sc>bs){bs=sc;best=k;bt=null;}}
@@ -378,7 +430,7 @@ function battleTurn(B,cmds,r){
     for(let j=0;j<P.length;j++){const x=P[j];if(x.hp>0||B.revived[j])continue;
       const holder=P.find(y=>y.hp>0&&derived(y).p.autoRevive);if(!holder)return;
       B.revived[j]=1;x.hp=Math.ceil(derived(x).maxhp/2);ev.push({t:'revive',i:j,hp:x.hp,text:`いのりが とどき、${x.name}は おきあがった！`});}};
-  const hitParty=(i,dmg,extra,poison,phys,ei)=>{
+  const hitParty=(i,dmg,extra,poison,phys,ei,stun)=>{
     let tgt=i;
     if(guard.who!==undefined&&guard.who!==i&&P[guard.who].hp>0){tgt=guard.who;const cut=derived(P[tgt]).p.guardCut??CONFIG.guardCut;dmg=Math.max(1,Math.round(dmg*cut));ev.push({t:'msg',text:`${P[tgt].name}が おしりで かばった！`});}
     else if(defend[i])dmg=Math.max(1,Math.round(dmg*.5));
@@ -388,19 +440,28 @@ function battleTurn(B,cmds,r){
     m.hp=Math.max(0,m.hp-dmg);ev.push(Object.assign({t:'hit',side:'p',i:tgt,dmg,hp:m.hp},extra||{}));
     if(m.hp<=0){m.poison=false;m.kiai=0;ev.push({t:'die',side:'p',i:tgt});autoRevive();return;}
     if(poison&&!m.poison&&r()<poison){m.poison=true;ev.push({t:'status',side:'p',i:tgt,st:'poison',text:`${m.name}は どくに おかされた！`});}
+    m.bst=m.bst||{};
+    if(m.bst.sleep>0&&r()<.5){m.bst.sleep=0;ev.push({t:'msg',text:`${m.name}は めをさました！`});}
+    if(stun&&r()<stun){m.bst.stun=1;ev.push({t:'status',side:'p',i:tgt,st:'stun',text:`${m.name}は しびれた！`});}
     if(phys&&dp.counter&&ei!==undefined&&r()<dp.counter)counter(tgt,ei);};
   const counter=(pi,ei)=>{const m=P[pi],e=EN[ei];if(!e||e.hp<=0||m.hp<=0)return;
     ev.push({t:'act',side:'p',i:pi,text:`${m.name}の カウンター！`});
     const dmg=metalDmg(e,physDmg(memberAtk(B,m),enemyDef(e),1,r));hitEnemy(ei,dmg,{text:`${e.name}に ${dmg}の ダメージ！`});addKiai(m);};
   const pickEnemy=t=>{const al=aliveEnemies(B);if(al.includes(t))return t;return al[Math.floor(r()*al.length)];};
-  const physHit=(m,t,pow)=>{const e=EN[t];const crit=r()<1/20;const atk=memberAtk(B,m);
+  const physHit=(m,t,pow)=>{const e=EN[t];
+    if(e.evade&&r()<e.evade){ev.push({t:'msg',text:`${e.name}は すばやく よけた！`});return;}
+    const crit=r()<1/20;const atk=memberAtk(B,m);
     const dmg=metalDmg(e,crit?Math.round(atk*(1.4+r()*.2)*pow):physDmg(atk,enemyDef(e),pow,r),crit);
     hitEnemy(t,dmg,{crit,text:`${e.name}に ${dmg}の ダメージ！`});
-    const p=derived(m).p;if(p.atkPoison&&e.hp>0&&!e.st.poison&&r()<statusChance(B,m,{rate:p.atkPoison,st:'poison'},e)){e.st.poison=99;if(e.boss)e.res.poison=(e.res.poison||0)+1;e.poisonPow=1+(p.poisonPow||0);ev.push({t:'status',side:'e',i:t,st:'poison',text:`${e.name}は どくに なった！`});}};
+    const p=derived(m).p;if(p.atkPoison&&e.hp>0&&!e.st.poison&&r()<statusChance(B,m,{rate:p.atkPoison,st:'poison'},e)){e.st.poison=99;if(e.boss)e.res.poison=(e.res.poison||0)+1;e.poisonPow=1+(p.poisonPow||0);ev.push({t:'status',side:'e',i:t,st:'poison',text:`${e.name}は どくに なった！`});}
+    if(e.counter&&e.hp>0&&!(e.st.sleep>0)&&!(e.st.stun>0)&&r()<e.counter){ev.push({t:'act',side:'e',i:t,text:`${e.name}の はんげき！`});
+      const pi=P.indexOf(m);hitParty(pi,physDmg(enemyAtk(e),memberDef(B,m),1,r),null,0,false);}};
   for(const a of acts){
     if(B.over)break;
     if(a.side==='p'){
-      const m=P[a.i];if(m.hp<=0)continue;const d=derived(m),c=a.c;
+      const m=P[a.i];if(m.hp<=0)continue;const d=derived(m),c=a.c;m.bst=m.bst||{};
+      if(m.bst.sleep>0){m.bst.sleep--;ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は ねむっている。`});continue;}
+      if(m.bst.stun>0){m.bst.stun--;ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は しびれて うごけない！`});continue;}
       if(c.k==='attack'){const t=pickEnemy(c.t);ev.push({t:'act',side:'p',i:a.i,text:`${m.name}の こうげき！`});physHit(m,t,1);addKiai(m);}
       else if(c.k==='defend'){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は みをまもっている。`});}
       else if(c.k==='run'){
@@ -429,13 +490,17 @@ function battleTurn(B,cmds,r){
         else if(S.kind==='finisher'){const t=pickEnemy(c.t);const pow=S.pow+S.perKiai*(m.kiai||0);m.kiai=0;physHit(m,t,pow);}
         else if(S.kind==='mag'){const ts=S.tgt==='enemies'?aliveEnemies(B):[pickEnemy(c.t)];
           for(const t of ts){const e=EN[t];if(e.hp<=0)continue;if(e.metal){ev.push({t:'msg',text:`${e.name}は まほうを はじいた！`});continue;}
-            const mu=elemMult(e,S.el);const dmg=Math.max(1,Math.round((S.base+d.mag*S.k)*(.9+r()*.2)*mu));hitEnemy(t,dmg,{weak:mu>1,text:`${e.name}に ${dmg}の ダメージ！`});}}
+            const mu=elemMult(e,S.el);const dmg=Math.max(1,Math.round((S.base+d.mag*S.k)*(.9+r()*.2)*mu));
+            if(e.reflect){const back=Math.max(1,Math.round(dmg*.5));m.hp=Math.max(0,m.hp-back);ev.push({t:'hit',side:'p',i:a.i,dmg:back,hp:m.hp,text:`${e.name}は まほうを はねかえした！`});
+              if(m.hp<=0){m.poison=false;m.kiai=0;ev.push({t:'die',side:'p',i:a.i});autoRevive();break;}continue;}
+            hitEnemy(t,dmg,{weak:mu>1,text:`${e.name}に ${dmg}の ダメージ！`});}}
         else if(S.kind==='status'){const ts=S.tgt==='enemies'?aliveEnemies(B):[pickEnemy(c.t)];
           for(const t of ts){if(S.pow){const e=EN[t];physHit(m,t,S.pow);if(e.hp<=0)continue;}applyStatus(m,S,t);}}
         else if(S.kind==='heal'){let ts=S.tgt==='allies'?aliveParty(B):[c.t];
           if(S.tgt==='ally'&&(ts[0]===undefined||P[ts[0]].hp<=0)){ts=[aliveParty(B).sort((x,y)=>P[x].hp/derived(P[x]).maxhp-P[y].hp/derived(P[y]).maxhp)[0]];}
           for(const t of ts){const tm=P[t],td=derived(tm);const amt=Math.min(Math.round((S.base+d.mag*S.k)*(1+(d.p.healPow||0))*(.9+r()*.2)),td.maxhp-tm.hp);tm.hp+=amt;ev.push({t:'heal',side:'p',i:t,amt,hp:tm.hp});}}
-        else if(S.kind==='cure'){let t=c.t;if(!P[t]||P[t].hp<=0||!P[t].poison){const pp=aliveParty(B).find(j=>P[j].poison);if(pp===undefined)continue;t=pp;}P[t].poison=false;}
+        else if(S.kind==='cure'){const bad=j=>P[j]&&P[j].hp>0&&(P[j].poison||(P[j].bst&&(P[j].bst.sleep>0||P[j].bst.stun>0)));
+          let t=c.t;if(!bad(t)){const pp=aliveParty(B).find(bad);if(pp===undefined)continue;t=pp;}P[t].poison=false;P[t].bst={};}
         else if(S.kind==='buff'){const turns=CONFIG.buff.turns+(d.p.buffTurns||0)+1,pow=d.p.buffPow||0;
           for(const b of S.buff==='all'?['atk','def','spd']:[S.buff])B.buff[b]={turns,pow};ev.push({t:'buff',buff:S.buff});}
         else if(S.kind==='revive'){let t=c.t;if(P[t].hp>0){const dd=P.findIndex(x=>x.hp<=0);if(dd<0)continue;t=dd;}
@@ -446,6 +511,8 @@ function battleTurn(B,cmds,r){
       if(e.st.sleep>0){e.st.sleep--;continue;}
       if(e.st.stun>0){e.st.stun--;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は しびれて うごけない！`});continue;}
       const moves=(e.moves||[{n:'こうげき',k:'atk',w:1}]).filter(x=>x.w>0);
+      if(e.charged){e.charged=false;const al0=aliveParty(B);const t=al0[Math.floor(r()*al0.length)];
+        ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ためた いちげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),2.4,r),null,0,true,a.i);if(checkEnd())break;continue;}
       if(e.flee&&r()<e.flee){e.hp=0;e.fled=true;ev.push({t:'die',side:'e',i:a.i,fled:true});if(checkEnd())break;continue;}
       let tw=moves.reduce((s,x)=>s+x.w,0),x=r()*tw,mv=moves[0];for(const mm of moves){x-=mm.w;if(x<0){mv=mm;break;}}
       if(mv.k==='call'&&EN.filter(z=>z.hp>0).length>=3)mv=moves[0];
@@ -453,9 +520,22 @@ function battleTurn(B,cmds,r){
       // 狙い：戦士系（かばう持ち）を少し狙いやすい。HPの割合は見ない（弱った仲間ばかり狙わない）
       const pick=()=>{const w=al.map(j=>skillsOf(P[j]).includes('guard')?4:3);let s=w.reduce((p,q)=>p+q,0)*r();for(let k=0;k<al.length;k++){s-=w[k];if(s<0)return al[k];}return al[0];};
       if(mv.k==='atk'){const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
-        hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r),null,mv.poison,true,a.i);}
+        hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r),null,mv.poison,true,a.i,mv.stun);}
       else if(mv.k==='all'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！`});
         for(const t of al){if(P[t].hp<=0)continue;hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow,r),null,mv.poison,false);if(checkEnd())break;}}
+      else if(mv.k==='snipe'){const t=al.slice().sort((x,y)=>P[x].hp-P[y].hp)[0];ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ ${P[t].name}を ねらっている！`});
+        hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r),null,0,true,a.i);}
+      else if(mv.k==='sleepAll'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}を まいた！`});
+        for(const t of al){const m=P[t];m.bst=m.bst||{};if(r()<mv.rate){m.bst.sleep=1+Math.floor(r()*2);ev.push({t:'status',side:'p',i:t,st:'sleep',text:`${m.name}は ねむってしまった！`});}}}
+      else if(mv.k==='dispel'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ バフと きあいが きえた！`});B.buff={};P.forEach(m=>m.kiai=0);}
+      else if(mv.k==='drain'){const t=al.slice().sort((x,y)=>P[y].mp-P[x].mp)[0];const amt=Math.min(P[t].mp,6+Math.floor(e.f*.6));P[t].mp-=amt;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${P[t].name}の MPを ${amt} すいとった！`});}
+      else if(mv.k==='boom'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は じばくした！`});
+        for(const t of al){if(P[t].hp<=0)continue;hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow,r),null,0,false);}
+        e.hp=0;ev.push({t:'die',side:'e',i:a.i});}
+      else if(mv.k==='healAlly'){const hurt=aliveEnemies(B).filter(j=>EN[j].hp<EN[j].max).sort((x,y)=>EN[x].hp/EN[x].max-EN[y].hp/EN[y].max);
+        if(hurt.length){const j=hurt[0];const amt=Math.min(EN[j].max-EN[j].hp,Math.round(EN[j].max*.4));EN[j].hp+=amt;ev.push({t:'heal',side:'e',i:j,amt,text:`${e.name}は ${EN[j].name}の きずを なおした！`});}
+        else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r),null,0,true,a.i);}}
+      else if(mv.k==='charge'){e.charged=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ちからを ためている！`});}
       else if(mv.k==='call'){const ne=mkEnemy(e.f,'normal',{weak:e.weak});ne.name=e.name.replace(/ [A-E]$/,'')+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
     }
     if(checkEnd())break;
@@ -479,7 +559,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={CONFIG,floorScale,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

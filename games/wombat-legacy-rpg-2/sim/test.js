@@ -110,3 +110,50 @@ test('おまかせは、どの職業でもエラーなく最後まで戦える',
   const r=C.rng(11);
   for(const j of Object.keys(C.JOBS)){const G=S.makeParty([j,j,j],10,3);const B=runBattle(G,C.rollGroup(20,r),r);assert.ok(B.over,j);}
 });
+
+test('極めた職業に戻ると、レベル上限のまま',()=>{
+  const m=C.newMember('war','a');master(m,'war');C.changeJob(m,'kar');
+  assert.strictEqual(m.lv,1);
+  C.changeJob(m,'war');assert.strictEqual(m.lv,20);
+});
+test('武器は3系統で、どの職業でも装備できる',()=>{
+  assert.deepStrictEqual(Object.keys(C.WEAPON_LINES).sort(),['claw','flute','staff']);
+  const m=C.newMember('mag','a');m.w=5;
+  m.wl='claw';const a=C.derived(m);m.wl='staff';const b=C.derived(m);
+  assert.ok(a.atk>b.atk&&b.mag>a.mag);
+  assert.strictEqual(C.bestLine('war'),'claw');assert.strictEqual(C.bestLine('mag'),'staff');
+});
+test('物理ダメージは、ぼうぎょがとても高くても0にならない',()=>{
+  const G=C.newGame();const m=C.newMember('war','w');m.a=10;m.hp=99999;G.party=[m];
+  const e=C.mkEnemy(1,'normal');e.atk=1;const B=C.newBattle(G,[e]);
+  C.battleTurn(B,[{k:'defend'}],C.rng(1));
+  assert.ok(m.hp<99999);
+});
+test('はね返す敵には、魔法のダメージの半分が返ってくる',()=>{
+  const G=C.newGame();const m=C.newMember('mag','m');m.hp=m.mp=999;G.party=[m];
+  const e=C.mkEnemy(10,'mirror');const B=C.newBattle(G,[e]);const hp0=e.hp;
+  C.battleTurn(B,[{k:'skill',s:'thunder',t:0}],C.rng(2));
+  assert.strictEqual(e.hp,hp0);assert.ok(m.hp<999);
+});
+test('「いやなおと」で歌のバフときあいが消える',()=>{
+  const G=C.newGame();G.party=[C.newMember('kar','k')];G.party[0].hp=9999;
+  const e=C.mkEnemy(15,'jammer');e.moves=[{n:'いやなおと',k:'dispel',w:1}];e.hp=e.max=99999;
+  const B=C.newBattle(G,[e]);B.buff.atk={turns:3,pow:0};G.party[0].kiai=2;
+  C.battleTurn(B,[{k:'defend'}],C.rng(3));
+  assert.deepStrictEqual(B.buff,{});assert.strictEqual(G.party[0].kiai,0);
+});
+test('ねむっている仲間は行動できず、ダメージで起きることがある。戦闘が終われば治る',()=>{
+  const G=C.newGame();const m=G.party[0];
+  const e=C.mkEnemy(1,'normal');e.hp=e.max=99999;e.st.sleep=9; // 敵は動かない（起こされないように）
+  const B=C.newBattle(G,[e]);m.bst.sleep=2;
+  const ev=C.battleTurn(B,[{k:'attack',t:0},null,null],C.rng(4));
+  assert.ok(ev.some(x=>x.text&&x.text.includes('ねむっている')));
+  assert.strictEqual(e.hp,99999);
+  C.newBattle(G,[C.mkEnemy(1,'normal')]);assert.deepStrictEqual(m.bst,{});
+});
+test('ねらいうちは、いちばんHPが少ない仲間を狙う',()=>{
+  const G=C.newGame();G.party.forEach(m=>m.hp=500);G.party[2].hp=50;
+  const e=C.mkEnemy(5,'sniper');e.moves=[{n:'ねらいうち',k:'snipe',pow:1,w:1}];e.hp=e.max=99999;
+  const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(5));
+  const hit=ev.find(x=>x.t==='hit'&&x.side==='p');assert.strictEqual(hit.i,2);
+});
