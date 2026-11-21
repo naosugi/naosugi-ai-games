@@ -34,8 +34,9 @@ const CONFIG={
     gold: [5, 14, 31, 60, 95, 230],
   },
   // 表から計算せず、個別に決めるボス。B50は、表どおりだと超上級職Lv40でも勝てないため。上級職Lv30では勝ちにくい強さにする
-  bossOverride:{50:{hp:6000,atk:270,def:86}},
-  boss:{mid:{hp:5,atk:1.3,def:1.2,exp:12,gold:15},big:{hp:7,atk:1.2,def:1.3,exp:25,gold:30}},
+  bossOverride:{50:{hp:7500,atk:320,def:90}},
+  // ボスは強め（人間は自動プレイより上手に戦うため）。めやす：上限レベル・満タンで勝率6〜8割
+  boss:{mid:{hp:10,atk:2.2,def:1.2,exp:12,gold:15},big:{hp:9,atk:1.55,def:1.3,exp:25,gold:30}},
 };
 function floorScale(f){return 1+.11*(f-1)+.0035*(f-1)*(f-1);}
 // 階 f での敵の値（決めた点のあいだを、比で補間する）
@@ -430,9 +431,29 @@ function rollGroup(f,r){
 const BOSS_DEF={
   5: {name:'ツムギアリの女王',arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
   10:{name:'ディンゴのおやぶん',arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
-  15:{name:'コアラのだいまどうし',arch:'kMage',mag:1.6,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
+  15:{name:'コアラのだいまどうし',arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
   20:{name:'イリエワニのぬし',arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
 };
+// 光る宝箱の番人（前作と同じく、ボスより強いことがある）。エリアに1体。倒すと店より1段上の装備
+// めやす：その段階の上限レベル・満タンで勝率4〜6割（hp・atk はそのエリアの大ボスに対する倍率）
+// 何度でも使える回復の道具（前作の「いやしの石」のようなもの）は出さない
+const GUARDIANS={
+  8: {name:'ゴアナの番人',     hp:1.3,atk:1.15,acts:2,reward:{line:'claw'},
+      moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
+  18:{name:'ペレンティの番人', hp:1.0,atk:.85,acts:2,reward:{line:'staff'},
+      moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'どくのよだれ',k:'all',pow:.6,poison:.5,w:2},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:1}]},
+  28:{name:'しおだまりのぬし', hp:1.3,atk:1.15,acts:2,reward:{line:'flute'},fic:true,
+      moves:[{n:'おおばさみ',k:'atk',pow:1.5,w:3},{n:'あわを ふきかける',k:'magicAll',pow:.7,w:2},{n:'かたく なる',k:'eguard',w:1}]},
+  38:{name:'コアラの大けんじゃ',hp:1.0,atk:1.0,acts:2,mag:1.15,reward:{armor:true},
+      moves:[{n:'だいばくはつ',k:'magicAll',pow:.9,w:3},{n:'ふういんの歌',k:'silence',rate:.6,w:1},{n:'まりょくを たかめる',k:'ebuff',w:1},{n:'ねむけを さそう',k:'sleepAll',rate:.35,w:1}]},
+  48:{name:'いにしえの番人',   hp:1.0,atk:.95,acts:2,reward:{line:'best'},fic:true,
+      moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
+};
+function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
+  const big=10*Math.ceil(f/10);const e=mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak,name:D.name});
+  const B=bossFor(big)[0];e.hp=e.max=Math.round(B.max*D.hp);e.atk=Math.round(B.atk*D.atk);e.def=B.def;e.spd=B.spd;
+  e.mag=Math.round((D.mag?curve('atk',f)*.55*D.mag:B.mag||curve('atk',f)*.55*1.2));e.acts=D.acts;e.moves=D.moves;e.guardian=true;
+  e.exp=Math.round(B.exp*1.2);e.gold=Math.round(B.gold*1.2);return [e];}
 function bossFor(f){
   const D=BOSS_DEF[f];
   if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:floorGroups(f).weak,name:D.name});e.moves=D.moves;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);return [e];}if(f%10===0)return [mkEnemy(f,'normal',{boss:'big',weak:floorGroups(f).weak})];if(f%5===0)return [mkEnemy(f,'normal',{boss:'mid',weak:floorGroups(f).weak})];return null;}
@@ -812,7 +833,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

@@ -234,3 +234,12 @@ test('名前つきのボス（B5・10・15・20）',()=>{
   assert.ok(C.bossFor(15)[0].mag>0);
   for(const f of [5,10,15,20])assert.strictEqual(C.bossFor(f)[0].name,C.BOSS_DEF[f].name);
 });
+
+test('光る宝箱の番人はエリアに1体ずつ。2回行動で、ごほうびが決まっている',()=>{
+  assert.deepStrictEqual(Object.keys(C.GUARDIANS).map(Number),[8,18,28,38,48]);
+  for(const f of [8,18,28,38,48]){const e=C.guardianFor(f)[0];assert.strictEqual(e.acts,2);assert.ok(e.guardian);assert.ok(C.GUARDIANS[f].reward);}
+  assert.strictEqual(C.guardianFor(9),null);
+});
+test('何度でも使える回復の道具はない（前作の「いやしの石」のようなもの）',()=>{
+  for(const k in C.ITEMS)assert.ok(!C.ITEMS[k].reusable,k);
+});

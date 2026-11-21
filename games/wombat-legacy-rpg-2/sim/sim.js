@@ -98,6 +98,13 @@ function useItemsOutside(G,to=.7){
     for(const it of ['herb3','herb2','herb'])while(m.hp<d.maxhp*to&&(G.inv[it]||0)>0){G.inv[it]--;m.hp=Math.min(d.maxhp,m.hp+C.ITEMS[it].heal);}
     if(C.skillsOf(m).some(k=>C.SKILLS[k].kind==='heal'))while(m.mp<d.maxmp*.5&&(G.inv.water||0)>0){G.inv.water--;m.mp=Math.min(d.maxmp,m.mp+C.ITEMS.water.mp);}}
 }
+// 番人のごほうび：店で買えるより1段上の装備
+function giveGuardReward(G,rw){
+  const tier=Math.min(C.WEAPON_POW.length-1,shopMax(G.shopTier)+2);
+  if(rw.armor){const m=G.party.slice().sort((a,b)=>a.a-b.a)[0];m.a=Math.max(m.a,tier);return;}
+  const targets=rw.line==='best'?G.party:[G.party.find(m=>C.bestLine(m.job)===rw.line)||G.party[0]];
+  for(const m of targets){const l=rw.line==='best'?C.bestLine(m.job):rw.line;m.own[l]=Math.max(m.own[l],tier);if(C.bestLine(m.job)===l){m.wl=l;m.w=m.own[l];}}
+}
 function healAll(G){for(const m of G.party){const d=C.derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;}}
 
 // ---------- 勝率表 ----------
@@ -225,6 +232,9 @@ function campaign(opt){
     runs++;
     const list=cps();startIdx=Math.min(startIdx,list.length-1);
     let f=list[startIdx]+1,wiped=false,deepest=f;t+=5;
+    // 取り残した番人がいて、育成中の仲間がいなければ、4回に1回は取りに戻る
+    if(!G.party.some(m=>m.lv<C.JOBS[m.job].cap/2)&&runs%4===0){G.guardDown=G.guardDown||{};
+      const gf=Object.keys(C.GUARDIANS).map(Number).find(x=>x<f&&x<=G.reached&&!G.guardDown[x]);if(gf)f=gf;}
     // 育成中の仲間がいるときは、10階浅いところで稼ぐ
     if(opt.trainShallow&&G.party.some(m=>m.lv<C.JOBS[m.job].cap/2))f=Math.max(1,Math.min(f,G.reached-10));
     outer:
@@ -235,6 +245,14 @@ function campaign(opt){
         if(res.over==='lose'){wiped=true;break outer;}
         if(hpRate(G)<.55)useItemsOutside(G,.6); // 戦闘のあいだにも薬草を使う
         if(hpRate(G)<.4||(mpRate(G)<.2&&hpRate(G)<.7)||G.party.some(m=>m.hp<=0))break outer;
+      }
+      // 光る宝箱の番人：元気なときだけ挑む（負けても何も失わないが、続けて挑みすぎない）
+      const gd=C.GUARDIANS[f];G.guardDown=G.guardDown||{};G.guardTry=G.guardTry||{};
+      if(gd&&!G.guardDown[f]&&hpRate(G)>.8&&runs-(G.guardTry[f]??-9)>=3){
+        G.guardTry[f]=runs;useItemsOutside(G,.9);
+        const res=fight(G,C.guardianFor(f),r);stats.battles++;stats.turns+=res.turns;t+=TIME.battleBase+TIME.perTurn*res.turns;
+        if(res.over!=='win'){wiped=true;note(`guardFail${f}`);break;}
+        G.guardDown[f]=true;note(`guard${f}`);giveGuardReward(G,gd.reward);break;
       }
       const boss=C.bossFor(f);
       if(boss&&!G.bossDown[f]){
@@ -282,6 +300,14 @@ function main(){
   let md=`# シミュレーション結果\n\n\`node sim.js\` で作った結果。数字はすべて仮の設定（core.js の CONFIG、sim.js の TIME）にもとづく。時間は「おまかせで遊んだときのめやす」。\n\n`;
   if(mode==='check'){process.stdout.write(stageMd(stageCheck(n))+'\n');return;}
   if(mode==='all'){
+    md+=`## 0a. ボスと番人の強さ\n\nその段階の上限レベル・満タンから挑んだときの勝率（各80戦）。めやす：ボス・番人とも勝率4〜8割。人間は自動プレイより上手なので、ボスは強めにしている。\n\n| 相手 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n`;
+    const cap=f=>f<=20?[['war','mag','pri'],20]:f<=40?[['hwar','hym','ill'],30]:[['kAll','kMag','kNin'],40];
+    const gf=f=>Math.min(C.WEAPON_POW.length-1,shopMax(1+Math.floor((f-1)/10)));
+    for(const f of [10,20,30,40,50]){const [j,l]=cap(f);const b=bossCheck(j,l,f,80);md+=`| B${f} ${C.bossFor(f)[0].name} | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(b.win)} | ${b.turns.toFixed(1)} |\n`;}
+    for(const f of Object.keys(C.GUARDIANS).map(Number)){const [j,l]=f===8?[['war','mag','pri'],12]:cap(f);const rr=C.rng(f);let w=0,tt=0;
+      for(let i=0;i<80;i++){const G=makeParty(j,l,gf(f));G.inv={herb2:4,leaf:1};const o=fight(G,C.guardianFor(f),rr);if(o.over==='win')w++;tt+=o.turns;}
+      md+=`| B${f} ${C.GUARDIANS[f].name}（番人） | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(w/80)} | ${(tt/80).toFixed(1)} |\n`;}
+    md+='\n';
     md+=`## 0. 目標との比較\n\n仮の目標：適正な階で雑魚戦は約2ターン・勝率95%以上／10階深いと勝率がはっきり下がる／転職直後は、転職したての仲間が3割以上の戦闘で倒れる（パーティは8割以上勝つ）。適正な階は 基本職Lv20=B20、上級職Lv30=B40、超上級職Lv40=B50。各${n}戦。\n\n`+stageMd(stageCheck(n))+'\n';
   }
   if(mode==='all'||mode==='matrix'){
@@ -299,6 +325,8 @@ function main(){
     const keys=[];for(const f of [5,10,15,20,25,30,35,40,45,50])keys.push([`B${f}のボスを倒す`,`boss${f}`]);
     md+=`### ボスを倒した時間\n\n| 出来事 | 時間（中央値） | 届いた回数 |\n|---|---|---|\n`;
     for(const [l,k] of keys){const v=res.map(x=>x.mile[k]);md+=`| ${l} | ${hm(median(v))} | ${v.filter(x=>x!=null).length}/${seeds} |\n`;}
+    md+=`\n### 光る宝箱の番人を倒した時間\n\n| 番人 | 時間（中央値） | 倒した回数 |\n|---|---|---|\n`;
+    for(const f of Object.keys(C.GUARDIANS)){const v=res.map(x=>x.mile['guard'+f]);md+=`| B${f} ${C.GUARDIANS[f].name} | ${hm(median(v))} | ${v.filter(x=>x!=null).length}/${seeds} |\n`;}
     md+=`\n### 職業にはじめて就いた時間（3匹のうちだれか）\n\n| 職業 | 時間（中央値） | 届いた回数 |\n|---|---|---|\n`;
     for(const j of Object.keys(C.JOBS).filter(j=>C.JOBS[j].tier>1)){const v=res.map(x=>x.mile['first:'+j]);if(v.every(x=>x==null))continue;md+=`| ${C.JOBS[j].name} | ${hm(median(v))} | ${v.filter(x=>x!=null).length}/${seeds} |\n`;}
     md+=`\n### そのほか\n\n| 項目 | 中央値 |\n|---|---|\n`;
