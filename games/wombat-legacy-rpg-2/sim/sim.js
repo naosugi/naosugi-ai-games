@@ -202,7 +202,9 @@ function campaign(opt){
     while((G.inv.leaf||0)<2&&G.gold>=C.ITEMS.leaf.price*2){G.gold-=C.ITEMS.leaf.price;G.inv.leaf=(G.inv.leaf||0)+1;}
     chooseSlots(G);
   };
-  const cps=()=>G.checkpoints.slice().sort((a,b)=>a-b);
+  // 始められる階（の1つ上）。opt.startDeepest なら、行ったことのある階ならどこからでも
+  const cps=()=>opt.startDeepest?Array.from({length:Math.max(1,G.reached)},(_,i)=>i):G.checkpoints.slice().sort((a,b)=>a-b);
+  const stepBack=opt.startDeepest?5:1;
   town();
   while(t<opt.hours*3600){
     runs++;
@@ -237,8 +239,8 @@ function campaign(opt){
     }
     if(opt.trace)opt.trace.push({t,start:list[startIdx],deepest,wiped,hp:+hpRate(G).toFixed(2),gold:G.gold,gear:G.party.map(m=>m.w+'/'+m.a).join(' ')});
     if(wiped){wipes++;stats.wipes++;const a=Math.floor((deepest-1)/10);stats.byArea[a]=(stats.byArea[a]||0)+1;wipesHere++;goodRuns=0;
-      if(wipesHere>=2){startIdx=Math.max(0,startIdx-1);wipesHere=0;}}
-    else{goodRuns++;wipesHere=0;if(goodRuns>=2&&startIdx<cps().length-1){startIdx++;goodRuns=0;}}
+      if(wipesHere>=2){startIdx=Math.max(0,startIdx-stepBack);wipesHere=0;}}
+    else{goodRuns++;wipesHere=0;if(goodRuns>=2&&startIdx<cps().length-1){startIdx=opt.startDeepest?cps().length-1:startIdx+1;goodRuns=0;}}
     town();
     if(opt.stopWhen&&opt.stopWhen(G,mile))break;
   }
