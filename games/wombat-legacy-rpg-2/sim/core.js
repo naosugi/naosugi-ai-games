@@ -42,13 +42,14 @@ function curve(k,f){const F=CONFIG.enemyCurve.floor,V=CONFIG.enemyCurve[k];
 
 // ---------- 職業 ----------
 // mult: ステータスの倍率 / expK: 必要経験値の係数 / cap: レベル上限 / req: 解放条件（1匹ずつ数える）
+// expK は、強いスキルを持つ職業ほど重く、それ以外は軽くする（決定。値は仮）
 const JOBS={
-  war:{name:'戦士',     tier:1,cap:20,expK:1.0,mult:{hp:1.2, mp:.4, atk:1.15,def:1.2, mag:.3, spd:.8}},
-  kar:{name:'空手家',   tier:1,cap:20,expK:1.0,mult:{hp:1.0, mp:.4, atk:1.1, def:.8,  mag:.3, spd:1.2}},
-  mag:{name:'魔法使い', tier:1,cap:20,expK:1.1, mult:{hp:.7,  mp:1.4,atk:.5,  def:.6,  mag:1.3,spd:1.0}},
-  pri:{name:'僧侶',     tier:1,cap:20,expK:1.1, mult:{hp:.85, mp:1.2,atk:.7,  def:.8,  mag:1.1,spd:.9}},
-  poi:{name:'毒使い',   tier:1,cap:20,expK:1.0, mult:{hp:.85, mp:1.0,atk:.85, def:.75, mag:1.0,spd:1.1}},
-  sin:{name:'歌い手',   tier:1,cap:20,expK:1.0, mult:{hp:.85, mp:1.1,atk:.7,  def:.8,  mag:1.0,spd:1.05}},
+  war:{name:'戦士',     tier:1,cap:20,expK:0.6,mult:{hp:1.2, mp:.4, atk:1.15,def:1.2, mag:.3, spd:.8}},
+  kar:{name:'空手家',   tier:1,cap:20,expK:1.1,mult:{hp:1.0, mp:.4, atk:1.1, def:.8,  mag:.3, spd:1.2}},
+  mag:{name:'魔法使い', tier:1,cap:20,expK:1.2, mult:{hp:.7,  mp:1.4,atk:.5,  def:.6,  mag:1.3,spd:1.0}},
+  pri:{name:'僧侶',     tier:1,cap:20,expK:1.3, mult:{hp:.85, mp:1.2,atk:.7,  def:.8,  mag:1.1,spd:.9}},
+  poi:{name:'毒使い',   tier:1,cap:20,expK:0.6, mult:{hp:.85, mp:1.0,atk:.85, def:.75, mag:1.0,spd:1.1}},
+  sin:{name:'歌い手',   tier:1,cap:20,expK:0.6, mult:{hp:.85, mp:1.1,atk:.7,  def:.8,  mag:1.0,spd:1.05}},
   // 上級職（基本職2つを極めると解放）
   hwar:{name:'上級戦士',tier:2,cap:30,expK:2.0,req:['war','kar']},
   ber: {name:'狂戦士',  tier:2,cap:30,expK:2.0,req:['war','poi']},
