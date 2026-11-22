@@ -228,7 +228,7 @@ const EFF_JP={hp:v=>`最大HP+${pc(v)}%`,def:v=>`ぼうぎょ+${pc(v)}%`,mag:v=>
   debuffPow:v=>`自分が かける こうげき↓・ぼうぎょ↓が 強い（${pc(1-CONFIG.debuff.atk)}%→${pc(1-CONFIG.debuff.atk+v)}%、${pc(1-CONFIG.debuff.def)}%→${pc(1-CONFIG.debuff.def+v)}%）`,
   buffTurns:v=>`自分の 歌が ${v}ターン 長く つづく`,buffPow:v=>`自分の 歌の 上がりかた+${pc(v)}%（こうげき↑なら ${pc(CONFIG.buff.atk-1)}%→${pc((CONFIG.buff.atk-1)*(1+v))}%）`,kiaiMax:v=>`きあいの 上限+${v}`,
   kiaiDef:v=>`きあい1段ごとに ぼうぎょ+${pc(v)}%`,kiaiMag:v=>`きあい1段ごとに まりょく+${pc(v)}%`,hurtKiai:()=>'ダメージを うけると きあいが たまる',singKiai:()=>'歌うと きあいが たまる',
-  poisonAtk:v=>`どくの あいだ こうげき+${pc(v)}%`,poisonRegen:v=>`どくの あいだ、どくダメージの かわりに 毎ターン 最大HPの${pc(v)}% 回復`,guardCounter:()=>'かばったとき 必ず はんげき',guardHeal:v=>`かばった仲間の HPを 最大HPの${pc(v)}% 回復`,
+  poisonAtk:v=>`どくの あいだ こうげき+${pc(v)}%`,poisonRegen:v=>`どくの あいだ、どくダメージの かわりに 毎ターン 最大HPの${pc(v)}% 回復`,guardCounter:()=>'かばって 物理こうげきを うけると 必ず はんげき（全体こうげき・かわしたときも。ねむり・まひの あいだは しない）',guardHeal:v=>`かばった仲間の HPを 最大HPの${pc(v)}% 回復`,
   fistAll:()=>'属性の こぶしが 敵ぜんたいに',danceKiai:()=>'行動すると、仲間みんなに きあいが1段',magEcho:v=>`まほうが ${pc(v)}%で もう1回`,statusMagPow:v=>`状態異常・デバフの 敵に まほう+${pc(v)}%`,
   statusResist:()=>'仲間みんな 状態異常に かかりにくい（確率半分。何人 持っていても 同じ）',songHeal:v=>`歌うと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,itemPow:v=>`戦闘中の どうぐの 回復量+${pc(v)}%`,
   poisonKillHeal:v=>`どくの敵を たおすと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,startCure:()=>'戦闘の はじめに 仲間みんなの どくを なおす',
@@ -248,7 +248,7 @@ function skillDesc(S){
     case 'revive':return 'たおれた仲間を おこす（HP半分）';
     case 'mark':return 'えらんだ仲間が この戦闘で たおれたとき、1度だけ HP半分で おきる';
     case 'guard':return `仲間を かばう（うけるダメージ ${Math.round((S.cut||.5)*100)}%）`;
-    case 'stance':return S.stance==='counter'?(S.turns?`${S.turns}ターン、うけた こうげきに 必ず 1.5倍の はんげき`:'このターン、うけた こうげきに 必ず はんげき'):'このターン、こうげきを うけない';
+    case 'stance':return S.stance==='counter'?(S.turns?`${S.turns}ターン、うける 物理ダメージ${Math.round((1-KAMAE.cut)*100)}%カット。物理こうげきを うけると 必ず ${KAMAE.pow}倍の はんげき（全体こうげき・かわしたときも）`:'このターン、うけた こうげきに 必ず はんげき'):'このターン、こうげきを うけない';
     case 'status':return `${T}を ${ST_JP[S.st]}に（${Math.round(S.rate*100)}%）`+(S.pow?'＋こうげき':'')+(S.st2?`・${ST_JP[S.st2]}も`:'');
     case 'buff':return `3ターン、仲間みんなの ${BUFF_JP[S.buff]}↑`;
     case 'extend':return S.kiai?'きあいを ぜんぶ使って、その段数だけ 歌の効果を のばす':`歌の効果を ${S.turns}ターン のばす`;

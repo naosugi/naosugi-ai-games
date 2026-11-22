@@ -339,3 +339,14 @@ test('かまえは 5ターン つづく',()=>{
   C.battleTurn(B,[{k:'skill',s:'kamae'},{k:'defend'},{k:'defend'}],C.rng(2));assert.strictEqual(B.kamae[0],4);
   for(let t=0;t<4;t++)C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(3+t));assert.strictEqual(B.kamae[0],0);
 });
+test('ふどうのかまえ・かまえ：全体こうげきでも かわしても 必ず はんげき、ねむりの あいだは しない',()=>{
+  const setup=(mv)=>{const G=C.newGame();const m=G.party[0];m.mastered={hwar:true,war:true,kar:true};m.slots=['kamae'];m.mp=99;
+    const e=C.mkEnemy(10,'tank');e.hp=e.max=99999;e.moves=[mv];e.spd=1;const B=C.newBattle(G,[e]);return {G,B,e};};
+  const cnt=ev=>ev.filter(x=>x.t==='act'&&/カウンター/.test(x.text)).length;
+  // 全体こうげき：かまえで 1回 はんげき
+  let {B}=setup({n:'ぜんたい',k:'all',pow:.5,w:1});let ev=C.battleTurn(B,[{k:'skill',s:'kamae'},{k:'defend'},{k:'defend'}],C.rng(1));
+  assert.strictEqual(cnt(ev),1);
+  // ねむっていると しない
+  ({B}=setup({n:'こうげき',k:'atk',w:1}));B.kamae[0]=3;B.party[0].bst={sleep:9};B.party[1].hp=0;B.party[2].hp=0;
+  ev=C.battleTurn(B,[null,null,null],C.rng(2));assert.strictEqual(cnt(ev),0);
+});
