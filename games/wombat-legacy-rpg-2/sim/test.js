@@ -76,13 +76,21 @@ test('毒はスリップダメージに加えて、ぼうぎょが下がる',()=
     C.battleTurn(BB,[{k:'defend'},null,null],C.rng(k));s+=9999-m.hp;}return s;};
   assert.ok(hits(true)>hits(false));
 });
-test('ボスには状態異常がかかりにくく、かけるたびにさらにかかりにくくなる',()=>{
-  const m=C.newMember('poi','a');const S=C.SKILLS.venom;
+test('ボスに デバフは そのまま効き、ねむり・まひは かかりにくく、かけるたびに さらに かかりにくい',()=>{
+  const m=C.newMember('poi','a');
   const n=C.mkEnemy(10,'normal'),b=C.mkEnemy(10,'normal',{boss:'mid'});
   const B={};
-  const cn=C.statusChance(B,m,S,n),cb=C.statusChance(B,m,S,b);
-  assert.ok(cb<cn&&cb>0,'ボスにもまったく効かないわけではない');
-  b.res.poison=1;assert.ok(C.statusChance(B,m,S,b)<cb);
+  assert.strictEqual(C.statusChance(B,m,C.SKILLS.weaken,b),C.statusChance(B,m,C.SKILLS.weaken,n),'デバフは ボスにも 同じ確率');
+  b.res.atkdn=3;assert.strictEqual(C.statusChance(B,m,C.SKILLS.weaken,b),C.statusChance(B,m,C.SKILLS.weaken,n),'かけ直しても 下がらない');
+  const S=C.SKILLS.stun,cn=C.statusChance(B,m,S,n),cb=C.statusChance(B,m,S,b);
+  assert.ok(cb<cn&&cb>0);b.res.stun=1;assert.ok(C.statusChance(B,m,S,b)<cb);
+  const g=C.bossFor(50)[0];if(g)assert.ok(C.statusChance(B,m,C.SKILLS.weaken,g)<C.statusChance(B,m,C.SKILLS.weaken,n),'B50は デバフが 効きにくい');
+});
+test('のろいのきわみ・しのびよる毒：デバフが 強く・長く なる',()=>{
+  const G=C.newGame();const m=G.party[0];m.mastered={cur:true,poi:true};m.slots=['curseMax','plague','weaken'];m.mp=99;
+  const e=C.mkEnemy(10,'tank');e.hp=e.max=99999;const a0=C.enemyAtk(e);const B=C.newBattle(G,[e]);
+  for(let k=0;k<20&&!(e.st.atkdn>0);k++)C.battleTurn(B,[{k:'skill',s:'weaken',t:0},{k:'defend'},{k:'defend'}],C.rng(k+1));
+  assert.ok(e.st.atkdn>=4,'2ターン 長い');assert.ok(Math.abs(C.enemyAtk(e)/a0-.6)<.01,'こうげき 40%ダウン');
 });
 test('きあいは攻撃でたまり、歌のバフと同時にかかる',()=>{
   const G=C.newGame();G.party=[C.newMember('kar','k'),C.newMember('sin','s')];

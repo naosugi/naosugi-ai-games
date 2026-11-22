@@ -220,16 +220,20 @@ const DEX={
 // ---------- スキルの説明 ----------
 const ST_JP={poison:'どく',sleep:'ねむり',stun:'まひ',atkdn:'こうげき↓',defdn:'ぼうぎょ↓',curse:'のろい（こうげき↓・ぼうぎょ↓）',confuse:'こんらん',blind:'めつぶし'};
 const BUFF_JP={atk:'こうげき',def:'ぼうぎょ',spd:'すばやさ',eva:'よける',all:'こうげき・ぼうぎょ・すばやさ'};
-const EFF_JP={hp:v=>`最大HP+${Math.round(v*100)}%`,def:v=>`ぼうぎょ+${Math.round(v*100)}%`,mag:v=>`まりょく+${Math.round(v*100)}%`,mp:v=>`最大MP+${Math.round(v*100)}%`,spd:v=>`すばやさ+${Math.round(v*100)}%`,
-  guardCut:v=>`かばうとき うけるダメージ${Math.round(v*100)}%`,kiai:()=>'物理で こうげきすると きあいが たまる',counter:v=>`こうげきを うけると ${Math.round(v*100)}%で はんげき`,evade:v=>`よける+${Math.round(v*100)}%`,
-  healPow:v=>`回復量+${Math.round(v*100)}%`,autoRevive:()=>'戦闘中1度だけ、たおれた仲間が 自動で おきる',atkPoison:v=>`ふつうの こうげきで ${Math.round(v*100)}% どく`,poisonPow:v=>`どくのダメージ+${Math.round(v*100)}%`,
-  statusRate:v=>`状態異常が かかりやすい+${Math.round(v*100)}%`,buffTurns:v=>`歌が ${v}ターン長く つづく`,buffPow:v=>`歌の効果+${Math.round(v*100)}%`,kiaiMax:v=>`きあいの上限+${v}`,
-  kiaiDef:v=>`きあい1段ごとに ぼうぎょ+${Math.round(v*100)}%`,kiaiMag:v=>`きあい1段ごとに まりょく+${Math.round(v*100)}%`,hurtKiai:()=>'ダメージを うけると きあいが たまる',singKiai:()=>'歌うと きあいが たまる',
-  poisonAtk:v=>`どくの あいだ こうげき+${Math.round(v*100)}%`,poisonRegen:()=>'どくの あいだ、毎ターン 少し回復',guardCounter:()=>'かばったとき 必ず はんげき',guardHeal:()=>'かばった仲間を 少し回復',fistAll:()=>'属性の こぶしが 敵ぜんたいに',
-  danceKiai:()=>'行動すると、仲間みんなに きあいが1段',magEcho:v=>`まほうが ${Math.round(v*100)}%で もう1回`,statusMagPow:v=>`状態異常の敵に まほう+${Math.round(v*100)}%`,statusResist:()=>'仲間みんな 状態異常に かかりにくい',
-  songHeal:()=>'歌うと 仲間みんなを 少し回復',itemPow:v=>`どうぐの効果+${Math.round(v*100)}%`,poisonKillHeal:()=>'どくの敵を たおすと 仲間みんなを 少し回復',startCure:()=>'戦闘のはじめに どくを なおす',
-  extraAct:v=>`${Math.round(v*100)}%で もう1回 こうげき`,pinch:v=>`HPが少ないとき 全能力+${Math.round(v*100)}%`,pinchRegen:()=>'HPが少ないとき 毎ターン回復',startKiai:()=>'戦闘のはじめから きあい最大',killAtk:v=>`敵を たおすたび こうげき+${Math.round(v*100)}%`,
-  buffForever:()=>'歌の効果が 戦闘中ずっと つづく',itemFind:()=>'掘ったときと 戦闘のあとに 道具が 見つかりやすい',digLuck:()=>'（掘ると 道具が出やすく、まれに 最強装備の素材）'};
+const pc=v=>Math.round(v*100);
+const EFF_JP={hp:v=>`最大HP+${pc(v)}%`,def:v=>`ぼうぎょ+${pc(v)}%`,mag:v=>`まりょく+${pc(v)}%`,mp:v=>`最大MP+${pc(v)}%`,spd:v=>`すばやさ+${pc(v)}%`,
+  guardCut:v=>`かばうとき うけるダメージ${pc(v)}%`,kiai:()=>'物理で こうげきすると きあいが たまる',counter:v=>`物理こうげきを うけると ${pc(v)}%で はんげき`,evade:v=>`物理こうげきを ${pc(v)}% よける`,
+  healPow:v=>`回復の とくぎ+${pc(v)}%`,autoRevive:()=>'戦闘中 1度だけ、たおれた仲間が HP半分で 自動で おきる',atkPoison:v=>`ふつうの こうげきで ${pc(v)}%の確率で どく`,poisonPow:v=>`自分が かけた どくの ダメージ+${pc(v)}%`,
+  statusRate:v=>`自分が かける 状態異常・デバフの 確率×${(1+v).toFixed(2).replace(/0$/,'')}`,debuffTurns:v=>`自分が かける デバフ（こうげき↓・ぼうぎょ↓・のろい・めつぶし）が ${v}ターン 長い`,
+  debuffPow:v=>`自分が かける こうげき↓・ぼうぎょ↓が 強い（${pc(1-CONFIG.debuff.atk)}%→${pc(1-CONFIG.debuff.atk+v)}%、${pc(1-CONFIG.debuff.def)}%→${pc(1-CONFIG.debuff.def+v)}%）`,
+  buffTurns:v=>`自分の 歌が ${v}ターン 長く つづく`,buffPow:v=>`自分の 歌の 上がりかた+${pc(v)}%（こうげき↑なら ${pc(CONFIG.buff.atk-1)}%→${pc((CONFIG.buff.atk-1)*(1+v))}%）`,kiaiMax:v=>`きあいの 上限+${v}`,
+  kiaiDef:v=>`きあい1段ごとに ぼうぎょ+${pc(v)}%`,kiaiMag:v=>`きあい1段ごとに まりょく+${pc(v)}%`,hurtKiai:()=>'ダメージを うけると きあいが たまる',singKiai:()=>'歌うと きあいが たまる',
+  poisonAtk:v=>`どくの あいだ こうげき+${pc(v)}%`,poisonRegen:v=>`どくの あいだ、どくダメージの かわりに 毎ターン 最大HPの${pc(v)}% 回復`,guardCounter:()=>'かばったとき 必ず はんげき',guardHeal:v=>`かばった仲間の HPを 最大HPの${pc(v)}% 回復`,
+  fistAll:()=>'属性の こぶしが 敵ぜんたいに',danceKiai:()=>'行動すると、仲間みんなに きあいが1段',magEcho:v=>`まほうが ${pc(v)}%で もう1回`,statusMagPow:v=>`状態異常・デバフの 敵に まほう+${pc(v)}%`,
+  statusResist:()=>'仲間みんな 状態異常に かかりにくい（確率半分。何人 持っていても 同じ）',songHeal:v=>`歌うと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,itemPow:v=>`戦闘中の どうぐの 回復量+${pc(v)}%`,
+  poisonKillHeal:v=>`どくの敵を たおすと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,startCure:()=>'戦闘の はじめに 仲間みんなの どくを なおす',
+  extraAct:v=>`${pc(v)}%で もう1回 こうげき`,pinch:v=>`HPが 3割より少ないとき こうげき・ぼうぎょ・まりょく・すばやさ+${pc(v)}%`,pinchRegen:v=>`HPが 3割より少ないとき 毎ターン 最大HPの${pc(v)}% 回復`,startKiai:()=>'戦闘の はじめから きあい最大',
+  killAtk:v=>`この戦闘で 敵を たおすたび こうげき+${pc(v)}%`,buffForever:()=>'歌の効果が 戦闘中ずっと つづく（敵に さげられると 消える）',itemFind:()=>'掘ったときと 戦闘のあとに どうぐが 見つかりやすい',digLuck:()=>'掘ると どうぐが 出やすく、まれに 最強装備の 素材が 出る'};
 function skillDesc(S){
   const T=S.tgt==='enemies'?'敵ぜんたい':S.tgt==='enemy'?'敵1体':S.tgt==='allies'?'仲間みんな':S.tgt==='ally'?'仲間1匹':S.tgt==='dead'?'たおれた仲間':'自分';
   switch(S.kind){

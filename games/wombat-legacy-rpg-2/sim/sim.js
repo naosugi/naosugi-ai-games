@@ -284,7 +284,7 @@ function campaign(opt){
 
 // ---------- 表示 ----------
 const pct=x=>Math.round(x*100)+'%';
-const hm=s=>s==null?'—':`${Math.floor(s/3600)}時間${String(Math.round(s%3600/60)).padStart(2,'0')}分`;
+const hm=s=>{if(s==null)return "—";const m=Math.round(s/60);return `${Math.floor(m/60)}時間${String(m%60).padStart(2,"0")}分`;};
 function median(a){a=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!a.length)return null;return a[Math.floor(a.length/2)];}
 function matrixMd(title,rows){
   let s=`#### ${title}\n\n勝率（かっこ内は勝ったときの残りHP）\n\n| 階 | `+rows[0].cells.map(c=>'Lv'+c.lv).join(' | ')+' |\n|---|'+rows[0].cells.map(()=>'---').join('|')+'|\n';

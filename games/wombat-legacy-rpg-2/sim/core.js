@@ -14,9 +14,13 @@ const CONFIG={
   poisonDot:.08,            // 仲間の毒：最大HPに対する毎ターンのダメージ
   poisonDefDown:.75,        // 毒のあいだ、ぼうぎょ×この値
   enemyPoisonDot:.06,       // 敵の毒：最大HPに対する毎ターンのダメージ
-  bossStatusRate:.4,        // ボスには状態異常の確率×この値
-  bossStatusRepeat:.7,      // ボスに同じ状態異常がかかるたびに、次の確率×この値
-  bossPoisonDot:.5,         // ボスへの毒ダメージ×この値
+  // ボスへの からめて（2026-11-22 見直し）
+  //  デバフ（こうげき↓・ぼうぎょ↓・のろい・めつぶし）は、ボスにも わざの確率のまま きく。どくは ×0.9。かけ直しても 下がらない
+  //  うごきを止める状態異常（ねむり・まひ・こんらん）は ボスに ×bossStatusRate、かかるたびに ×bossStatusRepeat。ボスの ねむり・まひは 1ターン
+  bossDebuffRate:1, bossPoisonRate:.9,
+  bossStatusRate:.6,
+  bossStatusRepeat:.7,
+  bossPoisonDot:.6,         // ボスへの毒ダメージ×この値
   buff:{atk:1.3,def:1.5,spd:1.3,eva:1,turns:3},
   debuff:{atk:.7,def:.6,turns:3},
   kiaiMax:3, kiaiPow:.2,    // きあい1段ごとに物理ダメージ+20%
@@ -118,7 +122,7 @@ const SKILLS={
   // 魔法使い（無属性は上級職から）
   thunder:{name:'ピリリ',job:'mag',lv:1,mp:2,tgt:'enemy',kind:'mag',el:'thunder',base:6,k:.9},
   ice:    {name:'ヒエヒエ',job:'mag',lv:4,mp:4,tgt:'enemies',kind:'mag',el:'ice',base:5,k:.6},
-  sleep:  {name:'ねむねむ',job:'mag',lv:8,mp:3,tgt:'enemies',kind:'status',st:'sleep',rate:.6},
+  sleep:  {name:'ねむねむ',job:'mag',lv:8,mp:3,tgt:'enemies',kind:'status',st:'sleep',rate:.7},
   fire:   {name:'メラメラ',job:'mag',lv:12,mp:6,tgt:'enemies',kind:'mag',el:'fire',base:14,k:.9},
   bolt:   {name:'ゴロゴロ',job:'mag',lv:16,mp:6,tgt:'enemy',kind:'mag',el:'thunder',base:30,k:1.5},
   awaken: {name:'まりょくかくせい',job:'mag',master:true,tgt:'self',kind:'passive',eff:{mag:.2,mp:.15}},
@@ -130,18 +134,18 @@ const SKILLS={
   revive: {name:'めざめ',job:'pri',lv:16,mp:8,tgt:'dead',kind:'revive'},
   autorev:{name:'ふっかつのいのり',job:'pri',master:true,mp:8,tgt:'ally',kind:'mark'},
   // 毒使い（状態異常とデバフ）
-  venom:  {name:'どくばり',job:'poi',lv:1,mp:2,tgt:'enemy',kind:'status',st:'poison',rate:.75,pow:.6},
-  weaken: {name:'よわりごな',job:'poi',lv:4,mp:3,tgt:'enemy',kind:'status',st:'atkdn',rate:.8},
-  mist:   {name:'どくのきり',job:'poi',lv:8,mp:5,tgt:'enemies',kind:'status',st:'poison',rate:.5},
-  crack:  {name:'よろいくだき',job:'poi',lv:12,mp:4,tgt:'enemy',kind:'status',st:'defdn',rate:.8,pow:.6},
-  stun:   {name:'まひのきば',job:'poi',lv:16,mp:5,tgt:'enemy',kind:'status',st:'stun',rate:.5,pow:.8},
-  plague: {name:'しのびよる毒',job:'poi',master:true,tgt:'self',kind:'passive',eff:{statusRate:.25}},
+  venom:  {name:'どくばり',job:'poi',lv:1,mp:2,tgt:'enemy',kind:'status',st:'poison',rate:.85,pow:.6},
+  weaken: {name:'よわりごな',job:'poi',lv:4,mp:3,tgt:'enemy',kind:'status',st:'atkdn',rate:.9},
+  mist:   {name:'どくのきり',job:'poi',lv:8,mp:5,tgt:'enemies',kind:'status',st:'poison',rate:.6},
+  crack:  {name:'よろいくだき',job:'poi',lv:12,mp:4,tgt:'enemy',kind:'status',st:'defdn',rate:.9,pow:.6},
+  stun:   {name:'まひのきば',job:'poi',lv:16,mp:5,tgt:'enemy',kind:'status',st:'stun',rate:.6,pow:.8},
+  plague: {name:'しのびよる毒',job:'poi',master:true,tgt:'self',kind:'passive',eff:{statusRate:.25,debuffTurns:2}},
   // 歌い手（バフ）
   sAtk:   {name:'いさましの歌',job:'sin',lv:1,mp:3,tgt:'allies',kind:'buff',buff:'atk'},
   sDef:   {name:'まもりの歌',job:'sin',lv:4,mp:3,tgt:'allies',kind:'buff',buff:'def'},
   sSpd:   {name:'はやての歌',job:'sin',lv:8,mp:3,tgt:'allies',kind:'buff',buff:'spd'},
   sHeal:  {name:'いやしの歌',job:'sin',lv:12,mp:5,tgt:'allies',kind:'heal',base:12,k:.7},
-  sSleep: {name:'ねむりの歌',job:'sin',lv:16,mp:4,tgt:'enemies',kind:'status',st:'sleep',rate:.5},
+  sSleep: {name:'ねむりの歌',job:'sin',lv:16,mp:4,tgt:'enemies',kind:'status',st:'sleep',rate:.6},
   echo:   {name:'ひびく声',job:'sin',master:true,tgt:'self',kind:'passive',eff:{buffPow:.5}},
 
   // ===== 上級職 =====
@@ -156,7 +160,7 @@ const SKILLS={
   rage:   {name:'いかり',job:'ber',lv:1,mp:3,tgt:'self',kind:'rage'},
   painPow:{name:'いたみをちからに',job:'ber',lv:6,tgt:'self',kind:'passive',eff:{hurtKiai:1}},
   bousou: {name:'ぼうそう',job:'ber',lv:12,mp:6,tgt:'enemies',kind:'phys',pow:1.5,selfDmg:.1},
-  fang:   {name:'どくのきば',job:'ber',lv:18,tgt:'self',kind:'passive',eff:{atkPoison:.25}},
+  fang:   {name:'どくのきば',job:'ber',lv:18,tgt:'self',kind:'passive',eff:{atkPoison:.3}},
   chimeguri:{name:'ちのめぐり',job:'ber',lv:24,tgt:'self',kind:'passive',eff:{poisonAtk:.3}},
   poisonHeal:{name:'どくのいやし',job:'ber',master:true,tgt:'self',kind:'passive',eff:{poisonRegen:.05}},
   // 聖騎士（戦士＋僧侶）：かばう・守り・回復
@@ -181,19 +185,19 @@ const SKILLS={
   kiaiDance:{name:'きあいのまい',job:'dan',lv:24,mp:4,tgt:'allies',kind:'extend',kiai:true},
   danceRing:{name:'おどりのわ',job:'dan',master:true,tgt:'self',kind:'passive',eff:{danceKiai:1}},
   // 幻術師（魔法使い＋歌い手）：敵をみだす
-  madowashi:{name:'まどわし',job:'ill',lv:1,mp:4,tgt:'enemies',kind:'status',st:'confuse',rate:.5},
+  madowashi:{name:'まどわし',job:'ill',lv:1,mp:4,tgt:'enemies',kind:'status',st:'confuse',rate:.6},
   bunshin:{name:'ぶんしん',job:'ill',lv:6,mp:4,tgt:'allies',kind:'buff',buff:'eva'},
-  dreamMist:{name:'ゆめのきり',job:'ill',lv:12,mp:6,tgt:'enemies',kind:'status',st:'sleep',rate:.75},
+  dreamMist:{name:'ゆめのきり',job:'ill',lv:12,mp:6,tgt:'enemies',kind:'status',st:'sleep',rate:.85},
   longv:  {name:'のびやかな声',job:'ill',lv:18,tgt:'self',kind:'passive',eff:{buffTurns:2}},
-  maboroshi:{name:'まぼろし',job:'ill',lv:24,mp:5,tgt:'enemies',kind:'status',st:'blind',rate:.5},
+  maboroshi:{name:'まぼろし',job:'ill',lv:24,mp:5,tgt:'enemies',kind:'status',st:'blind',rate:.6},
   magEcho:{name:'こだまのまほう',job:'ill',master:true,tgt:'self',kind:'passive',eff:{magEcho:.3}},
   // 呪術師（魔法使い＋毒使い）：強いデバフと無属性魔法
-  noroi:  {name:'のろい',job:'cur',lv:1,mp:4,tgt:'enemy',kind:'status',st:'curse',rate:.7},
+  noroi:  {name:'のろい',job:'cur',lv:1,mp:4,tgt:'enemy',kind:'status',st:'curse',rate:.8},
   strongp:{name:'もうどく',job:'cur',lv:6,tgt:'self',kind:'passive',eff:{poisonPow:.5}},
   boom:   {name:'ドカーン',job:'cur',lv:12,mp:12,tgt:'enemies',kind:'mag',el:null,base:40,k:1.3},
   lifeSuck:{name:'いのちすい',job:'cur',lv:18,mp:6,tgt:'enemy',kind:'mag',el:null,base:30,k:1.15,drain:.5},
   jiwajiwa:{name:'じわじわ',job:'cur',lv:24,tgt:'self',kind:'passive',eff:{statusMagPow:.3}},
-  curseMax:{name:'のろいのきわみ',job:'cur',master:true,tgt:'self',kind:'passive',eff:{statusMagPow:.5}},
+  curseMax:{name:'のろいのきわみ',job:'cur',master:true,tgt:'self',kind:'passive',eff:{debuffPow:.1,statusMagPow:.2}},
   // 聖歌士（僧侶＋歌い手）：回復とバフ
   mpup1:  {name:'めいそう',job:'hym',lv:1,tgt:'self',kind:'passive',eff:{mp:.15}},
   prayerSong:{name:'いのりの歌',job:'hym',lv:6,mp:7,tgt:'allies',kind:'heal',base:25,k:1.0},
@@ -204,16 +208,16 @@ const SKILLS={
   // 薬師（僧侶＋毒使い）：かけるのも治すのも得意
   itemPow:{name:'くすりのちしき',job:'apo',lv:1,tgt:'self',kind:'passive',eff:{itemPow:.5}},
   panacea:{name:'ばんのうやく',job:'apo',lv:6,mp:4,tgt:'allies',kind:'cureAll'},
-  poisonKill:{name:'どくのくすり',job:'apo',lv:12,tgt:'self',kind:'passive',eff:{poisonKillHeal:.05}},
-  sleepDrug:{name:'ねむりぐすり',job:'apo',lv:18,mp:3,tgt:'enemy',kind:'status',st:'sleep',rate:.9},
-  numbDrug:{name:'しびれぐすり',job:'apo',lv:24,mp:6,tgt:'enemies',kind:'status',st:'stun',rate:.35},
-  startCure:{name:'よぼうの心得',job:'apo',master:true,tgt:'self',kind:'passive',eff:{startCure:1}},
+  poisonKill:{name:'どくのくすり',job:'apo',lv:12,tgt:'self',kind:'passive',eff:{poisonKillHeal:.08}},
+  sleepDrug:{name:'ねむりぐすり',job:'apo',lv:18,mp:3,tgt:'enemy',kind:'status',st:'sleep',rate:.95},
+  numbDrug:{name:'しびれぐすり',job:'apo',lv:24,mp:6,tgt:'enemies',kind:'status',st:'stun',rate:.45},
+  startCure:{name:'よぼうの心得',job:'apo',master:true,tgt:'self',kind:'passive',eff:{startCure:1,statusResist:1}},
 
   // ===== 超上級職 =====
   kagebunshin:{name:'かげぶんしん',job:'kNin',lv:1,mp:6,tgt:'allies',kind:'buff',buff:'eva'},
   shuriken:{name:'しゅりけん',job:'kNin',lv:10,mp:6,tgt:'enemies',kind:'phys',pow:.8,hits:2},
   kiaiRen:{name:'きあいの連撃',job:'kNin',lv:20,mp:6,tgt:'enemy',kind:'finisher',pow:.9,perKiai:0,hitsPerKiai:true},
-  smoke:  {name:'どくけむり',job:'kNin',lv:30,mp:7,tgt:'enemies',kind:'status',st:'poison',rate:.6,st2:'stun',rate2:.3},
+  smoke:  {name:'どくけむり',job:'kNin',lv:30,mp:7,tgt:'enemies',kind:'status',st:'poison',rate:.7,st2:'stun',rate2:.4},
   extraAct:{name:'かげの身のこなし',job:'kNin',master:true,tgt:'self',kind:'passive',eff:{extraAct:.3}},
   allElem:{name:'ばんのうのひかり',job:'kAll',lv:1,mp:8,tgt:'enemies',kind:'mag',el:'best',base:30,k:1.0},
   allHeal:{name:'だいいやし',job:'kAll',lv:10,mp:9,tgt:'allies',kind:'heal',base:40,k:1.2},
@@ -235,7 +239,7 @@ const SKILLS={
   ouen:   {name:'おうえん',job:'kIdl',lv:20,mp:3,tgt:'ally',kind:'cheer'},
   stage:  {name:'ステージ',job:'kIdl',lv:30,mp:3,tgt:'self',kind:'taunt'},
   forever:{name:'えいえんのステージ',job:'kIdl',master:true,tgt:'self',kind:'passive',eff:{buffForever:1}},
-  sandSmoke:{name:'すなけむり',job:'kDig',lv:1,mp:4,tgt:'enemies',kind:'status',st:'blind',rate:.6},
+  sandSmoke:{name:'すなけむり',job:'kDig',lv:1,mp:4,tgt:'enemies',kind:'status',st:'blind',rate:.7},
   jihibiki:{name:'じひびき',job:'kDig',lv:10,mp:6,tgt:'enemies',kind:'phys',pow:1.3},
   hideHole:{name:'あなにかくれる',job:'kDig',lv:20,mp:4,tgt:'self',kind:'stance',stance:'hide'},
   horiate:{name:'ほりあて',job:'kDig',lv:30,tgt:'self',kind:'passive',eff:{itemFind:1}},
@@ -570,11 +574,11 @@ const BOSS_DEF={
   10:{name:'ディンゴのおやぶん',look:{spr:'dingo',pal:'dboss',s:1.45},weak:['fire'],arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
   15:{name:'コアラのだいまどうし',look:{spr:'koala',pal:'kMageB',s:1.5},weak:['light'],arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
   25:{name:'カモノハシのぬし',hpMul:1.3,atkMul:1.3,look:{spr:'platy',pal:'platyB',s:1.5},weak:['ice'],arch:'normal',moves:[{n:'けづめの どく',k:'atk',pow:1.3,poison:.6,w:3},{n:'でんきを かんじる',k:'snipe',pow:1.5,w:2},{n:'みずを はねあげる',k:'magicAll',pow:.6,w:2},{n:'もぐって ちからを ためる',k:'charge',w:1}]},
-  30:{name:'マーレーコッドのおおぬし',hpMul:1.15,atkMul:1.1,look:{spr:'fish',pal:'codB',s:1.6},weak:['thunder'],arch:'normal',moves:[{n:'まるのみ',k:'atk',pow:1.9,w:2},{n:'うずしお',k:'magicAll',pow:.8,w:2},{n:'しっぽで たたく',k:'atk',pow:1.2,w:2},{n:'なかまを よぶ',k:'call',w:1},{n:'どろを まきあげる',k:'debuffAll',st:'atk',w:1}]},
-  35:{name:'アカカンガルーのチャンピオン',look:{spr:'roo',pal:'redrooB',s:1.5},weak:['ice'],arch:'normal',counter:.35,moves:[{n:'キック',k:'atk',pow:1.5,w:3},{n:'ジャブ',k:'atk',w:2},{n:'しっぽで たつ',k:'charge',w:1},{n:'ボクシングの かまえ',k:'ebuff',w:1}]},
-  40:{name:'オパールのうみりゅう',hpMul:1.15,atkMul:1.1,look:{spr:'plesio',pal:'opal',s:1.4},weak:['thunder'],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'にじいろの ひかり',k:'magicAll',pow:.8,w:2},{n:'まぶしい ひかり',k:'debuffAll',st:'atk',w:1},{n:'ふういん',k:'silence',rate:.4,w:1},{n:'ちからを ためる',k:'charge',w:1}]},
-  45:{name:'フクロライオンのぬし',look:{spr:'lion',pal:'thyleoB',s:1.5},weak:['ice'],arch:'normal',fic:true,evade:.25,moves:[{n:'かみくだく',k:'atk',pow:1.7,w:3},{n:'おやゆびの ツメ',k:'snipe',pow:1.5,w:2},{n:'ちからを ためる',k:'charge',w:1},{n:'ほえる',k:'debuffAll',st:'atk',w:1}]},
-  50:{name:'メガラニア',atkMul:.9,look:{spr:'croc',pal:'megal',s:1.5},weak:[],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'どくの よだれ',k:'all',pow:.5,poison:.5,w:1},{n:'ちからを ためる',k:'charge',w:1},{n:'いかく',k:'debuffAll',st:'def',w:1},{n:'ふういん',k:'silence',rate:.4,w:1}]},
+  30:{name:'マーレーコッドのおおぬし',hpMul:1.46,atkMul:1.24,look:{spr:'fish',pal:'codB',s:1.6},weak:['thunder'],arch:'normal',moves:[{n:'まるのみ',k:'atk',pow:1.9,w:2},{n:'うずしお',k:'magicAll',pow:.8,w:2},{n:'しっぽで たたく',k:'atk',pow:1.2,w:2},{n:'なかまを よぶ',k:'call',w:1},{n:'どろを まきあげる',k:'debuffAll',st:'atk',w:1}]},
+  35:{name:'アカカンガルーのチャンピオン',hpMul:1.1,atkMul:1.05,look:{spr:'roo',pal:'redrooB',s:1.5},weak:['ice'],arch:'normal',counter:.35,moves:[{n:'キック',k:'atk',pow:1.5,w:3},{n:'ジャブ',k:'atk',w:2},{n:'しっぽで たつ',k:'charge',w:1},{n:'ボクシングの かまえ',k:'ebuff',w:1}]},
+  40:{name:'オパールのうみりゅう',hpMul:1.45,atkMul:1.24,look:{spr:'plesio',pal:'opal',s:1.4},weak:['thunder'],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'にじいろの ひかり',k:'magicAll',pow:.8,w:2},{n:'まぶしい ひかり',k:'debuffAll',st:'atk',w:1},{n:'ふういん',k:'silence',rate:.4,w:1},{n:'ちからを ためる',k:'charge',w:1}]},
+  45:{name:'フクロライオンのぬし',hpMul:1.85,atkMul:1.36,look:{spr:'lion',pal:'thyleoB',s:1.5},weak:['ice'],arch:'normal',fic:true,evade:.25,moves:[{n:'かみくだく',k:'atk',pow:1.7,w:3},{n:'おやゆびの ツメ',k:'snipe',pow:1.5,w:2},{n:'ちからを ためる',k:'charge',w:1},{n:'ほえる',k:'debuffAll',st:'atk',w:1}]},
+  50:{name:'メガラニア',hpMul:1.07,atkMul:.93,debuffRes:.5,look:{spr:'croc',pal:'megal',s:1.5},weak:[],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'どくの よだれ',k:'all',pow:.5,poison:.5,w:1},{n:'ちからを ためる',k:'charge',w:1},{n:'いかく',k:'debuffAll',st:'def',w:1},{n:'ふういん',k:'silence',rate:.4,w:1}]},
   20:{name:'イリエワニのぬし',look:{spr:'croc',pal:'crocB',s:1.3},weak:['thunder'],arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
 };
 // 光る宝箱の番人（前作と同じく、ボスより強いことがある）。エリアに1体。倒すと店より1段上の装備
@@ -585,11 +589,11 @@ const GUARDIANS={
       moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
   18:{name:'ペレンティの番人', hp:1.0,atk:.85,acts:2,look:{spr:'croc',pal:'perentie',s:1.2},reward:{line:'staff'},
       moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'どくのよだれ',k:'all',pow:.6,poison:.5,w:2},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:1}]},
-  28:{name:'しおだまりのぬし', hp:1.3,atk:1.15,acts:2,look:{spr:'crab',pal:'tide',s:1.4},reward:{line:'flute'},fic:true,
+  28:{name:'しおだまりのぬし', hp:1.17,atk:1.09,acts:2,look:{spr:'crab',pal:'tide',s:1.4},reward:{line:'flute'},fic:true,
       moves:[{n:'おおばさみ',k:'atk',pow:1.5,w:3},{n:'あわを ふきかける',k:'magicAll',pow:.7,w:2},{n:'かたく なる',k:'eguard',w:1}]},
-  38:{name:'コアラの大けんじゃ',hp:1.05,atk:1.06,acts:2,look:{spr:'koala',pal:'koalaG',s:1.5},mag:1.15,reward:{armor:true},
+  38:{name:'コアラの大けんじゃ',hp:1.26,atk:1.16,acts:2,look:{spr:'koala',pal:'koalaG',s:1.5},mag:1.15,reward:{armor:true},
       moves:[{n:'だいばくはつ',k:'magicAll',pow:.9,w:3},{n:'ふういんの歌',k:'silence',rate:.6,w:1},{n:'まりょくを たかめる',k:'ebuff',w:1},{n:'ねむけを さそう',k:'sleepAll',rate:.35,w:1}]},
-  48:{name:'いにしえの番人',   hp:1.03,atk:1.1,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
+  48:{name:'いにしえの番人',   hp:1.29,atk:1.23,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
       moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
 };
 // ---------- コアラ討伐（STAGE3.md の8d） ----------
@@ -629,7 +633,7 @@ const RAIDS=[
     {name:'ばんのうおうコアラ',pal:'kAllK',acc:'crown',hp:4.8,def:1.6,mag:1.4,counter:.3,plan:[{n:'みんなを まもる',k:'eguard'},M('すべての ぞくせい',1.1),{n:'いやしの ひかり',k:'healAllE',pct:.12}]}]},
 ];
 // 解放されたころのパーティ（sim.js の raid）で 勝率4〜6割に なるよう シミュレーションで決めた倍率
-const RAID_SCALE={r1:{hp:.99,atk:.97},r2:{hp:1.04,atk:1.07},r3:{hp:1.23,atk:1.51},r4:{hp:.9,atk:.8},r5:{hp:.86,atk:.74},r6:{hp:.84,atk:.7}};
+const RAID_SCALE={r1:{hp:.99,atk:.97},r2:{hp:1.04,atk:1.07},r3:{hp:1.23,atk:1.51},r4:{hp:.96,atk:.83},r5:{hp:1.08,atk:.83},r6:{hp:1.01,atk:.77}};
 function raidUnlocked(G,R){return R.unlock==='clear'?!!G.cleared:!!(G.bossDown&&G.bossDown[R.unlock]);}
 function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
   return R.members.map((o,i)=>{const e=mkEnemy(R.f,'normal',{name:o.name});const v=k=>curve(k,R.f);
@@ -639,7 +643,7 @@ function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
 function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)*expFloorMul(f)),gold:Math.round(curve('gold',f)*(first?20:6))};}
 
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
-const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:8800,atk:290,def:95,mag:230},acts:2,
+const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:10560,atk:318,def:95,mag:252},acts:2,
   moves:[{n:'ひっかく',k:'atk',w:3},{n:'木の上から とびかかる',k:'snipe',pow:1.8,w:2},{n:'だきついて はなさない',k:'atk',pow:.9,stun:.45,w:2},
     {n:'ユーカリの においで ねむくなる',k:'sleepAll',rate:.3,w:1},{n:'あばれまわる',k:'all',pow:.8,w:2},{n:'ふしぎな ちからを かきけす',k:'dispel',w:1}]};
 function secretBoss(){const D=SECRET_BOSS;const e=mkEnemy(50,'normal',{boss:'big',name:D.name,weak:D.weak});Object.assign(e,D.stats);e.max=e.hp;e.acts=D.acts;e.moves=D.moves;e.look=D.look;e.id='dropbear';e.secret=true;return [e];}
@@ -650,7 +654,7 @@ function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
   e.exp=Math.round(B.exp*1.2);e.gold=Math.round(B.gold*1.2);return [e];}
 function bossFor(f){
   const D=BOSS_DEF[f];
-  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:D.weak||[],name:D.name});e.moves=D.moves;e.look=D.look;e.id='boss'+f;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);if(D.counter)e.counter=D.counter;if(D.evade)e.evade=D.evade;if(D.hpMul){e.hp=e.max=Math.round(e.hp*D.hpMul);}if(D.atkMul){e.atk=Math.round(e.atk*D.atkMul);e.mag=Math.round(e.mag*D.atkMul);}return [e];}const look=[{spr:'crab',pal:'tide',s:1.4},{spr:'croc',pal:'perentie',s:1.3},{spr:'devil',pal:'devil',s:1.5},{spr:'eagle',pal:'eagle',s:1.4},{spr:'dingo',pal:'ancient',s:1.45}][Math.floor((f-1)/10)];
+  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:D.weak||[],name:D.name});e.moves=D.moves;e.look=D.look;e.id='boss'+f;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);if(D.debuffRes)e.debuffRes=D.debuffRes;if(D.counter)e.counter=D.counter;if(D.evade)e.evade=D.evade;if(D.hpMul){e.hp=e.max=Math.round(e.hp*D.hpMul);}if(D.atkMul){e.atk=Math.round(e.atk*D.atkMul);e.mag=Math.round(e.mag*D.atkMul);}return [e];}const look=[{spr:'crab',pal:'tide',s:1.4},{spr:'croc',pal:'perentie',s:1.3},{spr:'devil',pal:'devil',s:1.5},{spr:'eagle',pal:'eagle',s:1.4},{spr:'dingo',pal:'ancient',s:1.45}][Math.floor((f-1)/10)];
   const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid'});e.look=look;e.id='boss'+f;return f%5===0?[e]:null;}
 
 // ---------- 戦闘 ----------
@@ -685,16 +689,20 @@ function memberMag(B,m,e){const d=derived(m);
   return d.mag*(1+(d.p.kiaiMag||0)*(m.kiai||0))*pinchMul(m,d)*(e&&d.p.statusMagPow&&Object.keys(e.st).some(k=>e.st[k]>0)?1+d.p.statusMagPow:1);}
 function kiaiCap(m){return CONFIG.kiaiMax+(derived(m).p.kiaiMax||0);}
 function bestEl(e){return e.weak[0]||null;}
-function enemyDef(e){return e.def*(e.st.defdn>0?CONFIG.debuff.def:1)*(e.st.poison>0?CONFIG.poisonDefDown:1);}
-function enemyAtk(e){return e.atk*(e.st.atkdn>0?CONFIG.debuff.atk:1)*(e.ebuff>0?1.3:1);}
+function enemyDef(e){return e.def*(e.st.defdn>0?CONFIG.debuff.def-(e.dpow||0):1)*(e.st.poison>0?CONFIG.poisonDefDown:1);}
+function enemyAtk(e){return e.atk*(e.st.atkdn>0?CONFIG.debuff.atk-(e.dpow||0):1)*(e.ebuff>0?1.3:1);}
 function enemyMag(e){return (e.mag||0)*(e.st.atkdn>0?CONFIG.debuff.atk:1)*(e.ebuff>0?1.3:1);}
 // 状態異常がかかる確率（画面にも出す予定）
+const DEBUFF_ST={atkdn:1,defdn:1,curse:1,blind:1};
 function statusChance(B,m,S,e){
   if(e.metal)return 0;
   const p=m?passives(m):{};
   let c=S.rate*(1+(p.statusRate||0));
-  if(e.boss)c*=CONFIG.bossStatusRate*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
-  if(e.statusMul)c*=e.statusMul*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
+  if(e.boss||e.statusMul){
+    if(DEBUFF_ST[S.st])c*=CONFIG.bossDebuffRate*(e.debuffRes||1);
+    else if(S.st==='poison')c*=CONFIG.bossPoisonRate*(e.debuffRes||1);
+    else c*=(e.boss?CONFIG.bossStatusRate:e.statusMul)*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
+  }
   return Math.min(.95,c);
 }
 function skillDmgEstimate(B,m,S,e){
@@ -840,10 +848,11 @@ function battleTurn(B,cmds,r){
     const c=statusChance(B,m,S,e);
     // 敵の こうげきアップと こうげきダウンは 打ち消しあう
     if(S.st==='atkdn'&&e.ebuff>0){if(r()<c){e.ebuff=0;ev.push({t:'status',side:'e',i,st:'atkdn',text:`${e.name}の こうげきアップが 打ち消された！`});}else ev.push({t:'msg',text:`${e.name}には きかなかった。`});return;}
-    if(r()<c){const turns=S.st==='poison'?99:S.st==='sleep'?2+Math.floor(r()*2):S.st==='stun'?(e.boss?1:2):CONFIG.debuff.turns;
+    if(r()<c){const turns=S.st==='poison'?99:S.st==='sleep'?(e.boss?1:2+Math.floor(r()*2)):S.st==='stun'?(e.boss?1:2):CONFIG.debuff.turns+(DEBUFF_ST[S.st]&&m?passives(m).debuffTurns||0:0);
       e.st[S.st]=turns;if(e.boss||e.statusMul)e.res[S.st]=(e.res[S.st]||0)+1;
       if(S.st==='curse'){if(e.ebuff>0)e.ebuff=0;else e.st.atkdn=turns;e.st.defdn=turns;}
       if(S.st==='poison')e.poisonPow=1+(m?passives(m).poisonPow||0:0);
+      if(DEBUFF_ST[S.st]&&m)e.dpow=Math.max(e.dpow||0,passives(m).debuffPow||0);
       ev.push({t:'status',side:'e',i,st:S.st,text:`${e.name}は ${ST_NAME[S.st]}に なった！`});}
     else ev.push({t:'msg',text:`${e.name}には きかなかった。`});};
   const autoRevive=()=>{ // ふっかつのいのり（とくぎ）、えいえんのいのり（パッシブ）
@@ -999,7 +1008,7 @@ function battleTurn(B,cmds,r){
       else if(mv.k==='snipe'){const t=al.slice().sort((x,y)=>P[x].hp-P[y].hp)[0];ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ ${P[t].name}を ねらっている！`});
         hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r,'p'),null,0,true,a.i);}
       else if(mv.k==='sleepAll'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}を まいた！`});
-        for(const t of al){const m=P[t];m.bst=m.bst||{};if(tryStatus(m,'sleep',mv.rate)){m.bst.sleep=1+Math.floor(r()*2);ev.push({t:'status',side:'p',i:t,st:'sleep',text:`${m.name}は ねむってしまった！`});}}}
+        for(const t of al){const m=P[t];m.bst=m.bst||{};if(tryStatus(m,'sleep',mv.rate*resist())){m.bst.sleep=1+Math.floor(r()*2);ev.push({t:'status',side:'p',i:t,st:'sleep',text:`${m.name}は ねむってしまった！`});}}}
       else if(mv.k==='dispel'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ バフと きあいが きえた！`});B.buff={};P.forEach(m=>m.kiai=0);}
       else if(mv.k==='drain'){const t=al.slice().sort((x,y)=>P[y].mp-P[x].mp)[0];const amt=Math.min(P[t].mp,6+Math.floor(e.f*.6));P[t].mp-=amt;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${P[t].name}の MPを ${amt} すいとった！`});}
       else if(mv.k==='boom'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は じばくした！`});
@@ -1063,5 +1072,5 @@ function newGame(){
 
 const CORE={METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
-  aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
+  aliveParty,aliveEnemies,statusChance,enemyAtk,enemyDef,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
