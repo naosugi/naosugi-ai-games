@@ -94,7 +94,7 @@ function expNext(job,lv){const [a,b]=CONFIG.expBase;return Math.floor(JOBS[job].
 //  mag 魔法（base + まりょく×k。el 属性、el:'best' 弱点をつく、drain 与えたダメージの割合だけ回復）
 //  heal 回復 / cure 1匹の どく・ねむり・まひを治す / cureAll 全員 / mpheal 全員のMPを回復 / revive 起こす
 //  mark ふっかつのいのり（えらんだ仲間が倒れたとき1度だけ起きる）
-//  guard かばう（cut 受けるダメージの割合） / stance その1ターンだけの構え（counter 必ず反撃、hide 攻撃を受けない）
+//  guard かばう（cut 受けるダメージの割合） / stance 構え（counter 必ず反撃、hide 攻撃を受けない。turns があれば そのターン数つづく）
 //  status 状態異常・デバフ（st, rate, st2 もう1つ） / buff 全員にバフ（atk def spd eva all）
 //  extend バフを延ばす（turns、kiai:true なら きあいを使って その段数だけ）/ cheer 仲間1匹の次の行動を強くする / taunt 敵をひきつける
 //  rage 自分をどくにして こうげき↑ / berserk 守りをすてて こうげき↑ / passive 持っているだけで効く（eff）
@@ -149,7 +149,7 @@ const SKILLS={
   defup1: {name:'あついけがわ',job:'hwar',lv:1,tgt:'self',kind:'passive',eff:{def:.15}},
   funbari:{name:'ふんばり',job:'hwar',lv:6,tgt:'self',kind:'passive',eff:{kiaiDef:.1}},
   fumikomi:{name:'ふみこみ',job:'hwar',lv:12,mp:4,tgt:'enemies',kind:'phys',pow:1.1,kiaiCost:1},
-  kamae:  {name:'かまえ',job:'hwar',lv:18,mp:3,tgt:'self',kind:'stance',stance:'counter'},
+  kamae:  {name:'かまえ',job:'hwar',lv:18,mp:3,tgt:'self',kind:'stance',stance:'counter',turns:5},
   teppeki:{name:'てっぺき',job:'hwar',lv:24,mp:5,tgt:'self',kind:'guard',cut:.3},
   fudou:  {name:'ふどうのかまえ',job:'hwar',master:true,tgt:'self',kind:'passive',eff:{guardCounter:1}},
   // 狂戦士（戦士＋毒使い）：自分を毒にして強くなる
@@ -569,7 +569,7 @@ const BOSS_DEF={
   5: {name:'ツムギアリの女王',look:{spr:'ant',pal:'antQ',s:1.6},weak:['fire'],arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
   10:{name:'ディンゴのおやぶん',look:{spr:'dingo',pal:'dboss',s:1.45},weak:['fire'],arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
   15:{name:'コアラのだいまどうし',look:{spr:'koala',pal:'kMageB',s:1.5},weak:['light'],arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
-  25:{name:'カモノハシのぬし',hpMul:1.15,atkMul:1.3,look:{spr:'platy',pal:'platyB',s:1.5},weak:['ice'],arch:'normal',moves:[{n:'けづめの どく',k:'atk',pow:1.3,poison:.6,w:3},{n:'でんきを かんじる',k:'snipe',pow:1.5,w:2},{n:'みずを はねあげる',k:'magicAll',pow:.6,w:2},{n:'もぐって ちからを ためる',k:'charge',w:1}]},
+  25:{name:'カモノハシのぬし',hpMul:1.3,atkMul:1.3,look:{spr:'platy',pal:'platyB',s:1.5},weak:['ice'],arch:'normal',moves:[{n:'けづめの どく',k:'atk',pow:1.3,poison:.6,w:3},{n:'でんきを かんじる',k:'snipe',pow:1.5,w:2},{n:'みずを はねあげる',k:'magicAll',pow:.6,w:2},{n:'もぐって ちからを ためる',k:'charge',w:1}]},
   30:{name:'マーレーコッドのおおぬし',hpMul:1.15,atkMul:1.1,look:{spr:'fish',pal:'codB',s:1.6},weak:['thunder'],arch:'normal',moves:[{n:'まるのみ',k:'atk',pow:1.9,w:2},{n:'うずしお',k:'magicAll',pow:.8,w:2},{n:'しっぽで たたく',k:'atk',pow:1.2,w:2},{n:'なかまを よぶ',k:'call',w:1},{n:'どろを まきあげる',k:'debuffAll',st:'atk',w:1}]},
   35:{name:'アカカンガルーのチャンピオン',look:{spr:'roo',pal:'redrooB',s:1.5},weak:['ice'],arch:'normal',counter:.35,moves:[{n:'キック',k:'atk',pow:1.5,w:3},{n:'ジャブ',k:'atk',w:2},{n:'しっぽで たつ',k:'charge',w:1},{n:'ボクシングの かまえ',k:'ebuff',w:1}]},
   40:{name:'オパールのうみりゅう',hpMul:1.15,atkMul:1.1,look:{spr:'plesio',pal:'opal',s:1.4},weak:['thunder'],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'にじいろの ひかり',k:'magicAll',pow:.8,w:2},{n:'まぶしい ひかり',k:'debuffAll',st:'atk',w:1},{n:'ふういん',k:'silence',rate:.4,w:1},{n:'ちからを ためる',k:'charge',w:1}]},
@@ -660,7 +660,7 @@ function newBattle(G,enemies){
   const cnt={};enemies.forEach(e=>cnt[e.name]=(cnt[e.name]||0)+1);const used={};
   enemies.forEach(e=>{if(cnt[e.name]>1){used[e.name]=(used[e.name]||0)+1;e.name+=' '+'ABCD'[used[e.name]-1];}});
   G.party.forEach(m=>{m.kiai=0;m.bst={};m.cheer=0;});
-  const B={party:G.party,inv:G.inv,enemies,buff:{},pdebuff:{},over:null,turn:0,boss:enemies.some(e=>e.boss),revived:{},marks:{},stance:{},taunt:null,eguard:null};
+  const B={party:G.party,inv:G.inv,enemies,buff:{},pdebuff:{},over:null,turn:0,boss:enemies.some(e=>e.boss),revived:{},marks:{},stance:{},kamae:{},taunt:null,eguard:null};
   const ps=G.party.filter(m=>m.hp>0).map(m=>derived(m).p);
   G.party.forEach(m=>{if(derived(m).p.startKiai)m.kiai=kiaiCap(m);});
   if(ps.some(p=>p.startCure))G.party.forEach(m=>{m.poison=false;});
@@ -774,7 +774,7 @@ function autoCmd(B,i){
   // 構え：あなにかくれる（自分があぶない）、かまえ（ボス戦で3ターンに1回）
   const st=ofKind('stance');
   const hide=st.find(k=>SKILLS[k].stance==='hide');if(hide&&low(i)<.25&&!heals.length)return {k:'skill',s:hide};
-  const kam=st.find(k=>SKILLS[k].stance==='counter');if(kam&&B.boss&&low(i)>.6&&B.turn%3===1)return {k:'skill',s:kam};
+  const kam=st.find(k=>SKILLS[k].stance==='counter');if(kam&&!(B.kamae[i]>0)&&low(i)>.6&&B.boss&&B.turn>1)return {k:'skill',s:kam};
   // ひきつける：かたい仲間が、弱った仲間を守る
   const tn=ofKind('taunt');if(tn.length&&low(i)>.6&&!(B.taunt&&B.taunt.turns>0)&&(aliveParty(B).some(j=>j!==i&&low(j)<.35)||(charged&&B.boss)))return {k:'skill',s:tn[0]};
   // 7. 状態異常・デバフ（ボスや強い敵に）
@@ -807,7 +807,8 @@ function autoCmd(B,i){
 
 // 画面用：その時点の、仲間カードに出す状態（バフ・デバフ・ねむりなど）。B.track のときだけ記録する
 function visState(B){return {pd:{atk:B.pdebuff.atk||0,def:B.pdebuff.def||0},bf:Object.fromEntries(Object.keys(B.buff).map(k=>[k,B.buff[k].turns||0])),mk:Object.assign({},B.marks),
-  m:B.party.map(m=>({sleep:(m.bst&&m.bst.sleep)||0,stun:(m.bst&&m.bst.stun)||0,silence:(m.bst&&m.bst.silence)||0,rage:(m.bst&&m.bst.rage)||0,kiai:m.kiai||0}))};}
+  m:B.party.map((m,i)=>({kamae:(B.kamae&&B.kamae[i])||0,sleep:(m.bst&&m.bst.sleep)||0,stun:(m.bst&&m.bst.stun)||0,silence:(m.bst&&m.bst.silence)||0,rage:(m.bst&&m.bst.rage)||0,kiai:m.kiai||0}))};}
+const STAT_JP={atk:'こうげき',def:'ぼうぎょ',spd:'すばやさ'};
 function battleTurn(B,cmds,r){
   const ev=[],P=B.party,EN=B.enemies;B.turn++;
   if(B.track){const push=ev.push.bind(ev);ev.push=(...xs)=>{for(const x of xs)x.vs=visState(B);return push(...xs);};}
@@ -837,9 +838,11 @@ function battleTurn(B,cmds,r){
     if(S.st2&&!(e.st[S.st2]>0)&&r()<statusChance(B,m,{rate:S.rate2,st:S.st2},e)){e.st[S.st2]=e.boss?1:2;if(e.boss)e.res[S.st2]=(e.res[S.st2]||0)+1;ev.push({t:'status',side:'e',i,st:S.st2,text:`${e.name}は ${ST_NAME[S.st2]}に なった！`});}
     if(e.st[S.st]>0){ev.push({t:'msg',text:`${e.name}は すでに ${ST_NAME[S.st]}だ。`});return;}
     const c=statusChance(B,m,S,e);
+    // 敵の こうげきアップと こうげきダウンは 打ち消しあう
+    if(S.st==='atkdn'&&e.ebuff>0){if(r()<c){e.ebuff=0;ev.push({t:'status',side:'e',i,st:'atkdn',text:`${e.name}の こうげきアップが 打ち消された！`});}else ev.push({t:'msg',text:`${e.name}には きかなかった。`});return;}
     if(r()<c){const turns=S.st==='poison'?99:S.st==='sleep'?2+Math.floor(r()*2):S.st==='stun'?(e.boss?1:2):CONFIG.debuff.turns;
       e.st[S.st]=turns;if(e.boss||e.statusMul)e.res[S.st]=(e.res[S.st]||0)+1;
-      if(S.st==='curse'){e.st.atkdn=turns;e.st.defdn=turns;}
+      if(S.st==='curse'){if(e.ebuff>0)e.ebuff=0;else e.st.atkdn=turns;e.st.defdn=turns;}
       if(S.st==='poison')e.poisonPow=1+(m?passives(m).poisonPow||0:0);
       ev.push({t:'status',side:'e',i,st:S.st,text:`${e.name}は ${ST_NAME[S.st]}に なった！`});}
     else ev.push({t:'msg',text:`${e.name}には きかなかった。`});};
@@ -869,10 +872,10 @@ function battleTurn(B,cmds,r){
     m.bst=m.bst||{};
     if(m.bst.sleep>0&&r()<.5){m.bst.sleep=0;ev.push({t:'msg',text:`${m.name}は めをさました！`});}
     if(stun&&tryStatus(m,'stun',stun)){m.bst.stun=1;ev.push({t:'status',side:'p',i:tgt,st:'stun',text:`${m.name}は しびれた！`});}
-    if(phys&&ei!==undefined&&(B.stance[tgt]==='counter'||(guarded&&dp.guardCounter)||(dp.counter&&r()<dp.counter)))counter(tgt,ei);};
+    if(phys&&ei!==undefined&&(B.stance[tgt]==='counter'||B.kamae[tgt]>0||(guarded&&dp.guardCounter)||(dp.counter&&r()<dp.counter)))counter(tgt,ei);};
   const counter=(pi,ei)=>{const m=P[pi],e=EN[ei];if(!e||e.hp<=0||m.hp<=0)return;
     ev.push({t:'act',side:'p',i:pi,text:`${m.name}の カウンター！`});
-    const dmg=metalDmg(e,physDmg(memberAtk(B,m),enemyDef(e),1,r,'e'));hitEnemy(ei,dmg,{by:m,text:`${e.name}に ${dmg}の ダメージ！`});addKiai(m);};
+    const dmg=metalDmg(e,physDmg(memberAtk(B,m),enemyDef(e),B.kamae[pi]>0?1.5:1,r,'e'));hitEnemy(ei,dmg,{by:m,text:`${e.name}に ${dmg}の ダメージ！`});addKiai(m);};
   const pickEnemy=t=>{const al=aliveEnemies(B);
     if(B.eguard!=null&&EN[B.eguard]&&EN[B.eguard].hp>0&&B.eguard!==t&&al.includes(t)){ev.push({t:'msg',text:`${EN[B.eguard].name}が なかまを かばった！`});return B.eguard;}
     if(al.includes(t))return t;return al[Math.floor(r()*al.length)];};
@@ -928,7 +931,7 @@ function battleTurn(B,cmds,r){
             hitEnemy(t,dmg,{by:m,weak:mu>1,text:`${e.name}に ${dmg}の ダメージ！`});
             if(S.drain)m.hp=Math.min(d.maxhp,m.hp+Math.round(dmg*S.drain));}};
         if(S.kind==='guard'){guard.who=a.i;guard.cut=S.cut;}
-        else if(S.kind==='stance'){B.stance[a.i]=S.stance;}
+        else if(S.kind==='stance'){if(S.turns){B.kamae[a.i]=S.turns;ev.push({t:'msg',text:`${m.name}は ${S.turns}ターンの あいだ かまえている。`});}else B.stance[a.i]=S.stance;}
         else if(S.kind==='phys'){
           const ts=S.tgt==='enemies'||(S.fist&&d.p.fistAll)?aliveEnemies(B):[pickEnemy(c.t)];
           if(S.kiaiCost)m.kiai-=S.kiaiCost;
@@ -950,7 +953,9 @@ function battleTurn(B,cmds,r){
           for(const t of ts){P[t].poison=false;const b=bstOf(P[t]);b.sleep=0;b.stun=0;b.silence=0;}}
         else if(S.kind==='mpheal'){for(const t of aliveParty(B)){if(t===a.i)continue;const x=P[t];x.mp=Math.min(derived(x).maxmp,x.mp+S.amt);}}
         else if(S.kind==='buff'){const turns=CONFIG.buff.turns+(d.p.buffTurns||0)+1,pow=d.p.buffPow||0;
-          for(const b of S.buff==='all'?['atk','def','spd']:[S.buff])B.buff[b]={turns,pow};ev.push({t:'buff',buff:S.buff});
+          // バフと デバフは 打ち消しあう：さがっている能力は もとに もどるだけ
+          const fixed=[];for(const b of S.buff==='all'?['atk','def','spd']:[S.buff]){if(B.pdebuff[b]>0){B.pdebuff[b]=0;fixed.push(b);}else B.buff[b]={turns,pow};}
+          ev.push({t:'buff',buff:S.buff});if(fixed.length)ev.push({t:'msg',text:`みんなの ${fixed.map(b=>STAT_JP[b]).join('と ')}が もとに もどった！`});
           if(d.p.singKiai)addKiai(m,d.p.singKiai);
           if(d.p.songHeal)for(const x of P)if(x.hp>0)x.hp=Math.min(derived(x).maxhp,x.hp+Math.ceil(derived(x).maxhp*d.p.songHeal));}
         else if(S.kind==='extend'){const n=S.kiai?m.kiai:S.turns;if(S.kiai)m.kiai=0;for(const k in B.buff)if(B.buff[k].turns>0)B.buff[k].turns+=n;ev.push({t:'msg',text:'バフが のびた！'});}
@@ -1005,10 +1010,13 @@ function battleTurn(B,cmds,r){
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='magic'||mv.k==='magicAll'){const ts=mv.k==='magic'?[pick()]:al;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         for(const t of ts){if(P[t].hp<=0)continue;const vs=mv.vsStatus&&(P[t].poison||(P[t].bst&&(P[t].bst.sleep>0||P[t].bst.stun>0)))?1.6:1;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*vs*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
-      else if(mv.k==='debuffAll'){B.pdebuff[mv.st]=CONFIG.debuff.turns+1;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${mv.st==='atk'?'こうげき':'ぼうぎょ'}が さがった！`});}
+      else if(mv.k==='debuffAll'){
+        if(B.buff[mv.st]&&B.buff[mv.st].turns>0){delete B.buff[mv.st];ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${STAT_JP[mv.st]}アップが 打ち消された！`});}
+        else{B.pdebuff[mv.st]=CONFIG.debuff.turns+1;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${STAT_JP[mv.st]}が さがった！`});}}
       else if(mv.k==='silence'){const t=pick();const m=P[t];const c=mv.rate*(partyP().some(p=>p.statusResist)?.5:1);ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         if(tryStatus(m,'silence',c)){bstOf(m).silence=2;ev.push({t:'status',side:'p',i:t,st:'silence',text:`${m.name}は ふういんされた！`});}else ev.push({t:'msg',text:`${m.name}は ふういんされなかった。`});}
-      else if(mv.k==='ebuff'){for(const j of aliveEnemies(B))EN[j].ebuff=3;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ 敵が ちからを ました！`});}
+      else if(mv.k==='ebuff'){let fx=0;for(const j of aliveEnemies(B)){const x=EN[j];if(x.st.atkdn>0){x.st.atkdn=0;fx++;}else x.ebuff=3;}
+        ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ `+(fx&&fx===aliveEnemies(B).length?'さげた こうげきが もとに もどった！':fx?'敵が ちからを ました！（さげた こうげきは もとに もどった）':'敵が ちからを ました！')});}
       else if(mv.k==='eguard'){B.eguard=a.i;B.eguardT=2;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は なかまを まもっている。`});}
       else if(mv.k==='reviveAlly'){const dead=EN.map((x,j)=>j).filter(j=>EN[j].hp<=0&&!EN[j].fled&&!EN[j].revivedOnce&&j!==a.i);
         if(dead.length){const j=dead[0];EN[j].hp=Math.ceil(EN[j].max/2);EN[j].revivedOnce=true;EN[j].st={};ev.push({t:'add',i:j,text:`${e.name}は ${EN[j].name}を よみがえらせた！`});}
@@ -1027,6 +1035,7 @@ function battleTurn(B,cmds,r){
     if(!forever)for(const k in B.buff)if(B.buff[k].turns>0)B.buff[k].turns--;
     if(B.taunt&&B.taunt.turns>0)B.taunt.turns--;
     for(const k in B.pdebuff)if(B.pdebuff[k]>0)B.pdebuff[k]--;
+    for(const k in B.kamae)if(B.kamae[k]>0)B.kamae[k]--;
     for(const e of EN)if(e.ebuff>0)e.ebuff--;
     // 予告：つぎに 大きな連携を する敵を 知らせる
     for(const j of aliveEnemies(B)){const e=EN[j];if(!e.plan||e.st.sleep>0||e.st.stun>0)continue;const nx=e.plan[(e.pi||0)%e.plan.length];if(nx.tele)ev.push({t:'msg',text:`${e.name}は ${nx.tele}`,tele:true});}

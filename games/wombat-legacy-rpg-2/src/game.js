@@ -244,7 +244,7 @@ function skillDesc(S){
     case 'revive':return 'たおれた仲間を おこす（HP半分）';
     case 'mark':return 'えらんだ仲間が この戦闘で たおれたとき、1度だけ HP半分で おきる';
     case 'guard':return `仲間を かばう（うけるダメージ ${Math.round((S.cut||.5)*100)}%）`;
-    case 'stance':return S.stance==='counter'?'このターン、うけた こうげきに 必ず はんげき':'このターン、こうげきを うけない';
+    case 'stance':return S.stance==='counter'?(S.turns?`${S.turns}ターン、うけた こうげきに 必ず 1.5倍の はんげき`:'このターン、うけた こうげきに 必ず はんげき'):'このターン、こうげきを うけない';
     case 'status':return `${T}を ${ST_JP[S.st]}に（${Math.round(S.rate*100)}%）`+(S.pow?'＋こうげき':'')+(S.st2?`・${ST_JP[S.st2]}も`:'');
     case 'buff':return `3ターン、仲間みんなの ${BUFF_JP[S.buff]}↑`;
     case 'extend':return S.kiai?'きあいを ぜんぶ使って、その段数だけ 歌の効果を のばす':`歌の効果を ${S.turns}ターン のばす`;

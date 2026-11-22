@@ -89,9 +89,9 @@ function statusTags(m,i,hp){
   const b=m.bst||{};
   if(mode==='battle'){
     // 演出の途中は、その時点の状態（BA.vs）を出す。計算が終わった後の状態を先に出さないため
-    const V=BA&&BA.vs,vm=V?V.m[i]:{sleep:b.sleep,stun:b.stun,silence:b.silence,rage:b.rage,kiai:m.kiai};
+    const V=BA&&BA.vs,vm=V?V.m[i]:{sleep:b.sleep,stun:b.stun,silence:b.silence,rage:b.rage,kiai:m.kiai,kamae:B&&B.kamae?B.kamae[i]:0};
     if(vm.sleep>0)st.push('<i class="s-bad">ねむり</i>');if(vm.stun>0)st.push('<i class="s-bad">まひ</i>');if(vm.silence>0)st.push('<i class="s-bad">ふういん</i>');
-    if(vm.kiai>0)st.push(`<i class="s-tmp">きあい${vm.kiai}</i>`);
+    if(vm.kiai>0)st.push(`<i class="s-tmp">きあい${vm.kiai}</i>`);if(vm.kamae>0)st.push(`<i class="s-buf">かまえ${vm.kamae}</i>`);
     if(B){const bf=V?V.bf:Object.fromEntries(Object.keys(B.buff).map(k=>[k,B.buff[k].turns||0])),pd=V?V.pd:B.pdebuff,mk=V?V.mk:B.marks;
       for(const [k,n] of [['atk','攻↑'],['def','防↑'],['spd','速↑'],['eva','避↑']])if(bf[k]>0)st.push(`<i class="s-buf">${n}${bf[k]}</i>`);
       if(pd.atk>0)st.push(`<i class="s-bad">攻↓${pd.atk}</i>`);if(pd.def>0)st.push(`<i class="s-bad">防↓${pd.def}</i>`);
@@ -469,12 +469,22 @@ async function slotMenu(){
     const cand=slotCandidates(m).filter(k=>!m.slots.includes(k));
     const slots=m.slots.map(k=>({label:`✖ ${SKILLS[k].name}`,sub:`はずす（${jobName(SKILLS[k].job)}）`,cls:'',k,rm:true}));
     const adds=cand.map(k=>({label:`＋ ${SKILLS[k].name}`,sub:`${jobName(SKILLS[k].job)}：${skillDesc(SKILLS[k])}`,cls:'wide',dis:m.slots.length>=SLOT_MAX,k}));
-    const all=[...slots,...adds];
+    const view={label:`📖 いまの職業（${jobName(m.job)}）の わざを 見る`,cls:'wide',view:true};
+    const all=[view,...slots,...adds];
     const c=await ask(`${m.name}の 引き継ぎ枠 ${'■'.repeat(m.slots.length)}${'□'.repeat(SLOT_MAX-m.slots.length)}（${m.slots.length}/${SLOT_MAX}）\nいまの職業の わざは 枠を 使わない。`+(cand.length?'':'\n（ほかの職業を 学ぶと、入れられる わざが ふえる）'),[...all,{label:'← もどる',cls:'wide sub'}]);
     if(c>=all.length){save();return;}
-    const it=all[c];if(it.rm)m.slots=m.slots.filter(k=>k!==it.k);else setSlots(m,[...m.slots,it.k]);
+    const it=all[c];if(it.view){await jobSkillView(m);continue;}
+    if(it.rm)m.slots=m.slots.filter(k=>k!==it.k);else setSlots(m,[...m.slots,it.k]);
     renderParty();
   }
+}
+// いまの職業の わざ（覚えたもの と これから覚えるもの）。引き継ぎ枠を えらぶときの 参考に
+async function jobSkillView(m){
+  const J=JOBS[m.job],have=new Set(jobSkills(m));
+  const ks=Object.keys(SKILLS).filter(k=>SKILLS[k].job===m.job).sort((a,b)=>(SKILLS[a].master?99:SKILLS[a].lv)-(SKILLS[b].master?99:SKILLS[b].lv));
+  const rows=ks.map(k=>{const S=SKILLS[k],h=have.has(k);
+    return {label:(h?'':'🔒 ')+S.name+(S.mp?`  MP${S.mp}`:''),sub:(h?'':S.master?'きわめると おぼえる：':`Lv${S.lv}で おぼえる：`)+skillDesc(S),dis:!h,cls:'wide'};});
+  while(true){const c=await ask(`${m.name}（${J.name} Lv${m.lv}）の わざ\n（引き継ぎ枠を 使わずに 使える）`,[...rows,{label:'← もどる',cls:'wide sub'}]);if(c>=rows.length)return;}
 }
 // ---------- 名前を かえる（ゲームの 画面の 中で 入力する） ----------
 const NAME_MAX=6;

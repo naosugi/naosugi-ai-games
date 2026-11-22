@@ -318,3 +318,16 @@ test('すごいハリモグラ：深い階だけに出て、アリづかで よ�
   const o=C.mkMob(35,'opalEchidna'),g=C.mkMob(35,'goldEchidna'),e=C.mkMob(35,'echidna');
   assert.ok(o.metal===2&&g.metal===3&&g.exp>o.exp&&o.exp>e.exp);
 });
+test('バフと デバフは 打ち消しあう',()=>{
+  const G=C.newGame();const e=C.mkEnemy(10,'normal');e.moves=[{n:'いかく',k:'debuffAll',st:'def',w:1}];e.spd=9999;
+  const B=C.newBattle(G,[e]);B.buff.def={turns:3,pow:0};C.battleTurn(B,G.party.map(()=>({k:'defend'})),C.rng(1));
+  assert.ok(!(B.buff.def&&B.buff.def.turns>0));assert.ok(!(B.pdebuff.def>0));
+  const e2=C.mkEnemy(10,'normal');e2.moves=[{n:'いかく',k:'debuffAll',st:'def',w:1}];e2.spd=9999;const B2=C.newBattle(G,[e2]);
+  C.battleTurn(B2,G.party.map(()=>({k:'defend'})),C.rng(1));assert.ok(B2.pdebuff.def>0);
+});
+test('かまえは 5ターン つづく',()=>{
+  const G=C.newGame();const m=G.party[0];m.mastered.hwar=true;m.slots=['kamae'];
+  const e=C.mkEnemy(10,'tank');e.hp=e.max=99999;const B=C.newBattle(G,[e]);
+  C.battleTurn(B,[{k:'skill',s:'kamae'},{k:'defend'},{k:'defend'}],C.rng(2));assert.strictEqual(B.kamae[0],4);
+  for(let t=0;t<4;t++)C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(3+t));assert.strictEqual(B.kamae[0],0);
+});
