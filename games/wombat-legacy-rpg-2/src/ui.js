@@ -526,7 +526,7 @@ async function fieldItemMenu(){
     const t=await pickMember(`${it.name}を だれに 使う？`,m=>it.revive?m.hp<=0:it.cure?m.hp>0&&m.poison:m.hp>0);if(t<0)continue;
     const m=G.party[t],d=derived(m);G.inv[id]--;
     if(it.cure){m.poison=false;snd('heal');renderParty();await talk(`${m.name}の どくが きえた！`);}
-    else if(it.revive){m.hp=Math.ceil(d.maxhp/2);m.poison=false;await talk(`${m.name}は 目を さました！`);}
+    else if(it.revive){m.hp=Math.ceil(d.maxhp/2);m.poison=false;snd('heal');renderParty();await talk(`${m.name}は 目を さました！`);}
     else if(it.heal){const a=Math.min(it.heal,d.maxhp-m.hp);m.hp+=a;snd('heal');renderParty();await talk(`${m.name}の HPが ${a} かいふくした！`);}
     else if(it.mp){const a=Math.min(it.mp,d.maxmp-m.mp);m.mp+=a;snd('heal');renderParty();await talk(`${m.name}の MPが ${a} かいふくした！`);}
     renderParty();save();
@@ -810,6 +810,11 @@ async function playEvents(ev){
         if(e.text)say(e.text);await bwait(420);break;
       case 'status':if(e.side==='p'&&e.st==='poison')disp[e.i].poison=true;say(e.text);renderParty();await bwait(420);break;
       case 'buff':renderParty();break;
+      case 'sync':{let ch=false;e.p.forEach((x,i)=>{const o=disp[i];if(!o)return;
+          if(x.mp>o.mp&&x.hp>0)pop(partyCenter(i),'MP+'+(x.mp-o.mp),'#8ac8ff');
+          else if(x.hp>o.hp&&o.hp>0)pop(partyCenter(i),x.hp-o.hp,'#8aff9a');
+          if(o.hp!==x.hp||o.mp!==x.mp||o.poison!==x.poison){o.hp=x.hp;o.mp=x.mp;o.poison=x.poison;ch=true;}});
+        if(ch)renderParty();break;}
       case 'die':if(e.side==='e'){if(BA.e[e.i])BA.e[e.i].dead=now;scatter(e.i);snd('die');if(e.fled)say(`${B.enemies[e.i].name}は にげだした！`);}else{disp[e.i].hp=0;disp[e.i].poison=false;renderParty();}await bwait(260);break;
       case 'revive':disp[e.i].hp=e.hp;disp[e.i].poison=false;partySparkle(e.i,'#8aff9a');renderParty();if(e.text)say(e.text);await bwait(450);break;
       case 'add':if(BA.e[e.i]){BA.e[e.i].dead=0;BA.e[e.i].hp=B.enemies[e.i].hp;BA.e[e.i].show=null;BA.e[e.i].trail=null;}else BA.e.push({flash:-1e9,lunge:-1e9,dead:0,hp:B.enemies[e.i].hp});

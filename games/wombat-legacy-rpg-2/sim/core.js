@@ -871,7 +871,10 @@ function battleTurn(B,cmds,r){
     const p=derived(m).p;if(p.atkPoison&&e.hp>0&&!e.st.poison&&r()<statusChance(B,m,{rate:p.atkPoison,st:'poison'},e)){e.st.poison=99;if(e.boss)e.res.poison=(e.res.poison||0)+1;e.poisonPow=1+(p.poisonPow||0);ev.push({t:'status',side:'e',i:t,st:'poison',text:`${e.name}は どくに なった！`});}
     if(e.counter&&e.hp>0&&!(e.st.sleep>0)&&!(e.st.stun>0)&&r()<e.counter){ev.push({t:'act',side:'e',i:t,text:`${e.name}の はんげき！`});
       const pi=P.indexOf(m);hitParty(pi,physDmg(enemyAtk(e),memberDef(B,m),1,r,'p'),null,0,false);}};
+  // 画面用：直前の行動で 変わった HP・MP・どくを 仲間カードに 反映させる（回復の出来事が ない変化も ふくむ）
+  const sync=()=>{if(B.track)ev.push({t:'sync',p:P.map(x=>({hp:x.hp,mp:x.mp,poison:!!x.poison}))});};
   for(const a of acts){
+    sync();
     if(B.over)break;
     if(a.side==='p'){
       const m=P[a.i];if(m.hp<=0)continue;const d=derived(m),c=a.c;m.bst=m.bst||{};
@@ -891,8 +894,8 @@ function battleTurn(B,cmds,r){
         else if(P[t].hp<=0)t=a.i;
         B.inv[c.item]--;ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は ${it.name}を つかった！`});
         const tm=P[t],td=derived(tm),ip=1+(d.p.itemPow||0);
-        if(it.revive)tm.hp=Math.ceil(td.maxhp/2);
-        if(it.heal)tm.hp=Math.min(td.maxhp,tm.hp+Math.round(it.heal*ip));
+        if(it.revive){tm.hp=Math.ceil(td.maxhp/2);ev.push({t:'revive',i:t,hp:tm.hp});}
+        if(it.heal){const h0=tm.hp;tm.hp=Math.min(td.maxhp,tm.hp+Math.round(it.heal*ip));ev.push({t:'heal',side:'p',i:t,amt:tm.hp-h0,hp:tm.hp});}
         if(it.mp)tm.mp=Math.min(td.maxmp,tm.mp+Math.round(it.mp*ip));
         if(it.cure)tm.poison=false;
       } else if(c.k==='skill'){
@@ -1022,6 +1025,7 @@ function battleTurn(B,cmds,r){
       if(dd.p.pinchRegen&&m.hp<dd.maxhp*.3)m.hp=Math.min(dd.maxhp,m.hp+Math.ceil(dd.maxhp*dd.p.pinchRegen));}
     checkEnd();
   }
+  sync();
   return ev;
 }
 function battleRewards(B){let exp=0,gold=0;for(const e of B.enemies){if(e.fled||e.hp>0)continue;exp+=e.exp;gold+=e.gold;}return {exp,gold};}
