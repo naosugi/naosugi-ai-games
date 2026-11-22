@@ -226,7 +226,7 @@ const EFF_JP={hp:v=>`最大HP+${Math.round(v*100)}%`,def:v=>`ぼうぎょ+${Math
   danceKiai:()=>'行動すると、仲間みんなに きあいが1段',magEcho:v=>`まほうが ${Math.round(v*100)}%で もう1回`,statusMagPow:v=>`状態異常の敵に まほう+${Math.round(v*100)}%`,statusResist:()=>'仲間みんな 状態異常に かかりにくい',
   songHeal:()=>'歌うと 仲間みんなを 少し回復',itemPow:v=>`どうぐの効果+${Math.round(v*100)}%`,poisonKillHeal:()=>'どくの敵を たおすと 仲間みんなを 少し回復',startCure:()=>'戦闘のはじめに どくを なおす',
   extraAct:v=>`${Math.round(v*100)}%で もう1回 こうげき`,pinch:v=>`HPが少ないとき 全能力+${Math.round(v*100)}%`,pinchRegen:()=>'HPが少ないとき 毎ターン回復',startKiai:()=>'戦闘のはじめから きあい最大',killAtk:v=>`敵を たおすたび こうげき+${Math.round(v*100)}%`,
-  buffForever:()=>'歌の効果が 戦闘中ずっと つづく',itemFind:()=>'（掘ると 道具が出やすい）',digLuck:()=>'（掘ると 道具が出やすく、まれに 最強装備の素材）'};
+  buffForever:()=>'歌の効果が 戦闘中ずっと つづく',itemFind:()=>'掘ったときと 戦闘のあとに 道具が 見つかりやすい',digLuck:()=>'（掘ると 道具が出やすく、まれに 最強装備の素材）'};
 function skillDesc(S){
   const T=S.tgt==='enemies'?'敵ぜんたい':S.tgt==='enemy'?'敵1体':S.tgt==='allies'?'仲間みんな':S.tgt==='ally'?'仲間1匹':S.tgt==='dead'?'たおれた仲間':'自分';
   switch(S.kind){

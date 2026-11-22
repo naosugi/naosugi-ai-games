@@ -34,6 +34,7 @@ $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
 function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
+function prevLevel(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return 0;const s=JSON.parse(t);if(s&&s.party)return Math.max(...s.party.map(m=>+m.lv||0));}catch(e){}return 0;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
 
 // ---------- message & commands ----------
@@ -86,8 +87,8 @@ function statusTags(m,i,hp){
   if(mode==='battle'){
     if(b.sleep>0)st.push('<i class="s-bad">ねむり</i>');if(b.stun>0)st.push('<i class="s-bad">まひ</i>');if(b.silence>0)st.push('<i class="s-bad">ふういん</i>');
     if(m.kiai>0)st.push(`<i class="s-tmp">きあい${m.kiai}</i>`);
-    if(B){for(const [k,n] of [['atk','攻↑'],['def','防↑'],['spd','速↑'],['eva','避↑']])if(B.buff[k]&&B.buff[k].turns>0)st.push(`<i class="s-buf">${n}</i>`);
-      if(B.pdebuff.atk>0)st.push('<i class="s-bad">攻↓</i>');if(B.pdebuff.def>0)st.push('<i class="s-bad">防↓</i>');
+    if(B){for(const [k,n] of [['atk','攻↑'],['def','防↑'],['spd','速↑'],['eva','避↑']])if(B.buff[k]&&B.buff[k].turns>0)st.push(`<i class="s-buf">${n}${B.buff[k].turns>=90?'∞':B.buff[k].turns}</i>`);
+      if(B.pdebuff.atk>0)st.push(`<i class="s-bad">攻↓${B.pdebuff.atk}</i>`);if(B.pdebuff.def>0)st.push(`<i class="s-bad">防↓${B.pdebuff.def}</i>`);
       if(B.marks[i])st.push('<i class="s-buf">いのり</i>');if(b.rage>0)st.push('<i class="s-tmp">いかり</i>');}
     const ts=BA&&BA.tstat&&BA.tstat[i];if(ts)st.push(`<i class="s-tmp">${ts}</i>`);
   }
@@ -295,12 +296,12 @@ function title(){
 }
 async function startNew(){
   if(load()){const c=await ask('前のデータは 消えてしまいます。はじめから あそびますか？',['はじめから あそぶ','やめる']);if(c===1){title();return;}}
-  G=newGame2();const pn=prevNames()||['ガッシ','ユーカ','モフ'];G.parents=pn;
+  G=newGame2();const pn=prevNames()||['ガッシ','ユーカ','モフ'];G.parents=pn;const plv=prevLevel();
   $('overlay').innerHTML='';renderParty();updateTop('');playMusic('town');
   await talks(['ここは オーストラリアの ユーカリ村。\n大地に ふたたび ユーカリが しげって、何年かが たった。',
     `ある朝、村の まんなかに、どこまでも つづく 大きな 穴が あいた。`,
     `長老「この穴の いちばん下に、わしらの ご先祖が のこしたものが ある…という 言い伝えがある」`,
-    `むかし 旅をした ${pn[0]}・${pn[1]}・${pn[2]}の 子どもたちが、名のりを あげた。`]);
+    `むかし 旅をした ${pn[0]}・${pn[1]}・${pn[2]}の 子どもたちが、名のりを あげた。`,...(plv?[`${pn[0]}「おれたちが 旅を していたころは、Lv${plv}まで きたえたもんだ。おまえたちなら、もっと 先まで 行けるさ」`]:[])]);
   const c=await ask(`子どもたちの 名前は「${G.party.map(m=>m.name).join('・')}」。\nこのままで いい？`,[{label:'このままで はじめる',cls:'wide hi'},{label:'名前を かえる',cls:'wide'}]);
   if(c===1)await nameEditor(true);
   await talks([`${pn[0]}「穴の中は 迷路に なっている。5階ごとに 強い ぬしが いるそうだ。気をつけるんだぞ」`,
@@ -484,7 +485,7 @@ function nameEditor(first){return new Promise(res=>{
 
 // ---------- party menu ----------
 async function partyMenu(back){
-  const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll'].includes(SKILLS[k].kind)));
+  const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll','mpheal'].includes(SKILLS[k].kind)));
   const c=await ask('なにを しますか？',[{label:'📊 つよさを見る',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 武器の つけかえ',cls:''},{label:'✏️ 名前を かえる',cls:''},{label:'← もどる',cls:'sub'}]);
   if(c===0){for(const m of G.party){const d=derived(m),J=JOBS[m.job];
       await talk(`${m.name}（${J.name}${m.mastered[m.job]?'★':''}）Lv${m.lv}  次まで ${m.lv>=J.cap?'-':expNext(m.job,m.lv)-m.exp}\nHP ${m.hp}/${d.maxhp}  MP ${m.mp}/${d.maxmp}${m.poison?'  【どく】':''}\nこうげき${d.atk} ぼうぎょ${d.def} まりょく${d.mag} すばやさ${d.spd}\n${weaponLabel(m)} ／ ${ARMORS[m.a][0]}`);
@@ -522,8 +523,9 @@ async function fieldItemMenu(){
 }
 async function fieldSkillMenu(){
   while(true){
-    const users=G.party.filter(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll'].includes(SKILLS[k].kind)));if(!users.length)return;
-    const opts=[];for(const p of users)for(const k of skillsOf(p).filter(k=>['heal','revive','cure','cureAll'].includes(SKILLS[k].kind)))opts.push([p,k]);
+    const FK=['heal','revive','cure','cureAll','mpheal'];
+    const users=G.party.filter(m=>m.hp>0&&skillsOf(m).some(k=>FK.includes(SKILLS[k].kind)));if(!users.length)return;
+    const opts=[];for(const p of users)for(const k of skillsOf(p).filter(k=>FK.includes(SKILLS[k].kind)))opts.push([p,k]);
     const c=await ask('どの とくぎを 使う？',[...opts.map(([p,k])=>({label:`${p.name}：${SKILLS[k].name}  MP${SKILLS[k].mp}`,sub:skillDesc(SKILLS[k]),dis:p.mp<SKILLS[k].mp,cls:'wide'})),{label:'← もどる',cls:'wide sub'}]);
     if(c>=opts.length)return;
     const [p,key]=opts[c],S=SKILLS[key];let ts=[];
@@ -534,6 +536,7 @@ async function fieldSkillMenu(){
     for(const t of ts){const m=G.party[t],md=derived(m);
       if(S.kind==='revive'){m.hp=Math.ceil(md.maxhp/2);out.push(`${m.name}は 目を さました！`);}
       else if(S.kind==='cure'||S.kind==='cureAll'){m.poison=false;out.push(`${m.name}の どくが きえた！`);}
+      else if(S.kind==='mpheal'){if(m===p)continue;const a=Math.min(S.amt,md.maxmp-m.mp);m.mp+=a;out.push(`${m.name}の MPが ${a} かいふくした！`);}
       else{const a=Math.min(Math.round((S.base+d.mag*S.k)*(1+(d.p.healPow||0))*(.9+R()*.2)),md.maxhp-m.hp);m.hp+=a;out.push(`${m.name}の HPが ${a} かいふくした！`);}}
     renderParty();save();await talk(`${p.name}は ${S.name}を つかった！\n`+out.join('\n'));
   }
@@ -742,7 +745,8 @@ function inputPhase(){return new Promise(res=>{
     setMsg(`${m.name}の とくぎ（MP ${m.mp}）`+(m.kiai?`  きあい${m.kiai}`:''));
     setCmds([...ks.map(key=>{const S=SKILLS[key];const noDead=S.tgt==='dead'&&!G.party.some(x=>x.hp<=0);
       const needK=(S.kiaiCost&&(m.kiai||0)<S.kiaiCost)||(S.kind==='extend'&&S.kiai&&!(m.kiai>0));
-      return {label:`${S.name}  MP${S.mp||0}`,sub:skillDesc(S),dis:m.mp<(S.mp||0)||noDead||needK||(sil&&(S.mp||0)>0),fn:()=>{
+      let sub=skillDesc(S);if(S.kind==='status'){const ps=[...new Set(aliveEnemies(B).map(j=>Math.round(statusChance(B,m,S,B.enemies[j])*100)))].sort((a,b)=>a-b);if(ps.length)sub+=`\nいまの 敵に かかる 確率：${ps.length>1?ps[0]+'〜'+ps[ps.length-1]:ps[0]}%`;}
+      return {label:`${S.name}  MP${S.mp||0}`,sub,dis:m.mp<(S.mp||0)||noDead||needK||(sil&&(S.mp||0)>0),fn:()=>{
         if(S.tgt==='enemy')pickE(t=>choose({k:'skill',s:key,t}),again,`${S.name}を どの 敵に？`);
         else if(S.tgt==='enemies')pickAllE(S.name,()=>choose({k:'skill',s:key}),again);
         else if(S.tgt==='allies')pickAllA(`${S.name}を みんなに 使う？`,()=>choose({k:'skill',s:key}),again);
@@ -809,6 +813,7 @@ async function endBattle(){
     if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     await talk(`敵を やっつけた！\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:''));
     addGold(rw.gold);
+    if(partyHas('itemFind')&&!B.opt.boss&&R()<.25){const f=F?F.f:1,it=f<10?'herb':f<30?'herb2':R()<.5?'herb3':'water2';if(addItem(it,1))await talk(`ほりあての かんで、${ITEMS[it].name}を 見つけた！`);}
     for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
       for(const s of ms){if(s.includes('レベル')){jingle('G5 C6 E6 G6',.08);banner('LEVEL UP!',`${m.name}  Lv${(s.match(/レベル(\d+)/)||[0,m.lv])[1]}`,'#7cf0ff',1700);partySparkle(mi);}
         else if(s.includes('転職できる')){const sup=/王に 転職/.test(s);jingle(sup?'C5 E5 G5 C6 E6 G6 C7':'E5 G5 C6 E6',.08);banner(sup?'★ 超上級職 解放 ★':'解放！',s.replace(/^.*は /,'').replace('に 転職できるように なった！',''),sup?'#ffd36b':'#7cf0ff',2200);partySparkle(mi,sup?'#ffd36b':'#7cf0ff');}
