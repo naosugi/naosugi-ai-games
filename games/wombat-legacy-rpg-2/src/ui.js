@@ -61,7 +61,14 @@ function setCmds(list,head,grid){
 function talk(text){return new Promise(res=>{setMsg(text,true,0);const go=()=>{if(typeDone){typeDone();return;}advance=null;res();};advance=go;setCmds([{label:'▶ つぎへ',fn:go,cls:'wide hi'}]);});}
 async function talks(a){for(const t of a)await talk(t);}
 function ask(text,opts){advance=null;return new Promise(res=>{setMsg(text);setCmds(opts.map((o,i)=>{o=typeof o==='string'?{label:o}:o;return {label:o.label,sub:o.sub,dis:o.dis,cls:o.cls||'wide',fn:()=>res(i)};}));});}
-function bwait(ms){return new Promise(res=>{const t=setTimeout(()=>{skipFn=null;res();},ms);skipFn=()=>{clearTimeout(t);skipFn=null;res();};});}
+// 戦闘の 文の はやさ（画面上の ボタンで きりかえ。タップで すすむ は 自動では 進まない）
+const MSG_SPEEDS=[{n:'ゆっくり',f:2.6},{n:'ふつう',f:1.8},{n:'はやい',f:1},{n:'タップ',f:0}],MSG_KEY='wombatlegacy2_msgspeed';
+let msgSpd=1;try{const v=+localStorage.getItem(MSG_KEY);if(localStorage.getItem(MSG_KEY)!==null&&MSG_SPEEDS[v])msgSpd=v;}catch(e){}
+function setMsgSpd(i){msgSpd=i;try{localStorage.setItem(MSG_KEY,String(i));}catch(e){}$('spd').textContent='💬'+MSG_SPEEDS[i].n;$('spd').title='戦闘の 文の はやさ';}
+function bwait(ms){const f=mode==='battle'?MSG_SPEEDS[msgSpd].f:1;const manual=f===0&&ms>=400;
+  return new Promise(res=>{const done=()=>{clearTimeout(t);skipFn=null;$('msg').classList.remove('more');res();};
+    const t=manual?null:setTimeout(done,Math.round(ms*(f||1)));if(manual)$('msg').classList.add('more');skipFn=done;});}
+$('spd').onclick=e=>{e.stopPropagation();setMsgSpd((msgSpd+1)%MSG_SPEEDS.length);snd('tap');};setMsgSpd(msgSpd);
 $('msg').onclick=()=>{if(advance)advance();else if(typeDone)typeDone();else if(skipFn)skipFn();};
 cv.addEventListener('click',e=>{
   if(mode==='battle'&&enemyMark&&BA&&BA.pickE){const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*SW,y=(e.clientY-r.top)/r.height*SH;
