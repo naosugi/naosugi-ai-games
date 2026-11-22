@@ -833,7 +833,8 @@ async function endBattle(){
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
     if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
-    await talk(`敵を やっつけた！\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:''));
+    {const vet=G.party.filter(m=>m.hp>0&&vetBonus(m)&&m.lv<JOBS[m.job].cap).map(m=>m.name);
+    await talk(`敵を やっつけた！\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:'')+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}
     addGold(rw.gold);
     if(partyHas('itemFind')&&!B.opt.boss&&R()<.25){const f=F?F.f:1,it=f<10?'herb':f<30?'herb2':R()<.5?'herb3':'water2';if(addItem(it,1))await talk(`ほりあての かんで、${ITEMS[it].name}を 見つけた！`);}
     for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
@@ -885,7 +886,8 @@ async function raidWin(r){
   const R=RAIDS.find(x=>x.id===r.id),first=!G.raids[R.id],rw=raidReward(R,first);
   G.raids[R.id]=(G.raids[R.id]||0)+1;
   banner(first?'討伐 せいこう！':'討伐 せいこう','コアラたちは 森へ にげていった','#ffd36b',2200);flashT=performance.now();await sleep(800);
-  await talk(`コアラたちは 森の 奥へ にげていった！\n${rw.exp}の けいけんちを 手に入れた！\n${rw.gold}ウォンを ひろった！`);addGold(rw.gold);
+  {const vet=G.party.filter(m=>m.hp>0&&vetBonus(m)&&m.lv<JOBS[m.job].cap).map(m=>m.name);
+  await talk(`コアラたちは 森の 奥へ にげていった！\n${rw.exp}の けいけんちを 手に入れた！\n${rw.gold}ウォンを ひろった！`+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}addGold(rw.gold);
   for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
     for(const s of ms){if(s.includes('レベル')){jingle('G5 C6 E6 G6',.08);banner('LEVEL UP!',`${m.name}  Lv${(s.match(/レベル(\d+)/)||[0,m.lv])[1]}`,'#7cf0ff',1700);partySparkle(mi);}
       else if(s.includes('転職できる')){const sup=/王に 転職/.test(s);jingle(sup?'C5 E5 G5 C6 E6 G6 C7':'E5 G5 C6 E6',.08);banner(sup?'★ 超上級職 解放 ★':'解放！',s.replace(/^.*は /,'').replace('に 転職できるように なった！',''),sup?'#ffd36b':'#7cf0ff',2200);}

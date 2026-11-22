@@ -340,8 +340,12 @@ function changeJob(m,job){
   const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;return true;
 }
 // 経験値。返り値はメッセージ
+// 経験者ボーナス：上級職を 1つでも 極めた仲間は、基本職の 経験値が 3倍（2回目以降の 基本職育成を 短くする）
+const VET_MUL=3;
+function vetBonus(m){return JOBS[m.job].tier===1&&Object.keys(m.mastered||{}).some(j=>m.mastered[j]&&JOBS[j]&&JOBS[j].tier>=2);}
 function gainExp(m,amt){
   const out=[],J=JOBS[m.job];if(m.hp<=0)return out;
+  if(vetBonus(m))amt*=VET_MUL;
   m.totalExp+=amt;
   if(m.lv>=J.cap)return out;
   m.exp+=amt;
@@ -623,7 +627,7 @@ function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
     e.hp=e.max=Math.round(v('hp')*o.hp*S.hp);e.atk=Math.round(v('atk')*(o.atk||1)*S.atk);e.def=Math.round(v('def')*(o.def||1.2));e.spd=Math.round(v('spd')*1.3);
     e.mag=Math.round(v('atk')*.55*(o.mag||1)*S.atk);e.plan=o.plan;e.moves=o.plan;e.acts=o.acts||1;e.counter=o.counter||0;e.statusMul=.55;e.raid=true;
     e.exp=0;e.gold=0;e.look={spr:'koala',pal:o.pal,s:o.acc==='crown'?1.15:1.05,acc:o.acc||null};e.id=R.id+'_'+i;e.weak=[];return e;});}
-function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)),gold:Math.round(curve('gold',f)*(first?20:6))};}
+function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)*expFloorMul(f)),gold:Math.round(curve('gold',f)*(first?20:6))};}
 
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
 const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:8800,atk:290,def:95,mag:230},acts:2,
@@ -1028,7 +1032,9 @@ function battleTurn(B,cmds,r){
   sync();
   return ev;
 }
-function battleRewards(B){let exp=0,gold=0;for(const e of B.enemies){if(e.fled||e.hp>0)continue;exp+=e.exp;gold+=e.gold;}return {exp,gold};}
+// 深い層ほど 経験値を ふやす（育成のテンポのため。オパールの層 1.5倍、B41〜 2倍）
+const expFloorMul=f=>f>=41?2:f>=31?1.5:1;
+function battleRewards(B){let exp=0,gold=0;for(const e of B.enemies){if(e.fled||e.hp>0)continue;exp+=Math.round(e.exp*expFloorMul(e.f||0));gold+=e.gold;}return {exp,gold};}
 // 勝ったら、生きている仲間それぞれに経験値（倒れた仲間には入らない）
 function giveRewards(G,B){const {exp,gold}=battleRewards(B);G.gold+=gold;const msgs=[];for(const m of G.party)if(m.hp>0)msgs.push(...gainExp(m,exp));return {exp,gold,msgs};}
 
@@ -1037,7 +1043,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

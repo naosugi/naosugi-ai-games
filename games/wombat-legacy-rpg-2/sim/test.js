@@ -301,3 +301,12 @@ test('穴に かくれた敵には こうげきが 当たらない',()=>{
   const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,G.party.map(()=>({k:'attack',t:0})),C.rng(3));
   assert.strictEqual(B.enemies[0].hp,hp);assert.ok(ev.some(x=>x.text&&x.text.includes('かくれている')));
 });
+test('経験者ボーナス：上級職を極めた仲間は 基本職の経験値が3倍',()=>{
+  const a=C.newMember('war','a'),b=C.newMember('war','b');b.mastered.hwar=true;
+  C.gainExp(a,1);C.gainExp(b,1);assert.strictEqual(a.exp,1);assert.strictEqual(b.exp,3);
+  const c=C.newMember('war','c');c.mastered.war=true;c.mastered.kar=true;c.mastered.hwar=true;C.changeJob(c,'hwar');c.lv=1;c.exp=0;C.gainExp(c,10);assert.strictEqual(c.exp,10);
+});
+test('深い層の経験値：B31〜40は1.5倍、B41〜は2倍',()=>{
+  const G=C.newGame();for(const [f,mul] of [[30,1],[31,1.5],[41,2]]){const e=C.mkEnemy(f,'normal');e.hp=0;const B=C.newBattle(G,[e]);
+    assert.strictEqual(C.battleRewards(B).exp,Math.round(e.exp*mul));}
+});
