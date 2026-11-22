@@ -69,6 +69,10 @@ body{display:flex;justify-content:center;overscroll-behavior:none;-webkit-user-s
 .spg{display:grid;grid-template-columns:auto auto auto auto auto auto auto auto;gap:1px 6px;font-size:clamp(11px,3.2vw,13px);color:#eee;justify-content:start}
 .spg .up{color:#8ef08a}.spg .dn{color:#ff9a8a}
 .sp2{font-size:clamp(10px,2.9vw,12px);color:#c4e8ff;margin-top:5px;line-height:1.35}
+#cmd .nmrow{grid-column:1/-1;display:flex;align-items:center;gap:8px;background:var(--win);border:2px solid var(--line);border-radius:8px;padding:5px 8px}
+#cmd .nmrow span{flex:none;width:7.5em;font-size:13px;color:var(--dim)}
+#cmd .nmrow input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--txt);background:#0d0a16;border:1px solid #5a5068;border-radius:6px;padding:6px 8px}
+#cmd .nmrow input:focus{outline:2px solid var(--acc);border-color:var(--acc)}
 #overlay p.clr{color:#ffd36b;font-weight:bold}
 #cmd button.sec{grid-column:1/-1;min-height:20px;padding:2px 6px;font-size:12px;opacity:.85;border:none;background:none;box-shadow:none;color:var(--acc)}
 #cmd.five{grid-template-columns:repeat(5,1fr);gap:4px}

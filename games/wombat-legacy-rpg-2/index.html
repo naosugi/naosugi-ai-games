@@ -79,6 +79,10 @@ body{display:flex;justify-content:center;overscroll-behavior:none;-webkit-user-s
 .spg{display:grid;grid-template-columns:auto auto auto auto auto auto auto auto;gap:1px 6px;font-size:clamp(11px,3.2vw,13px);color:#eee;justify-content:start}
 .spg .up{color:#8ef08a}.spg .dn{color:#ff9a8a}
 .sp2{font-size:clamp(10px,2.9vw,12px);color:#c4e8ff;margin-top:5px;line-height:1.35}
+#cmd .nmrow{grid-column:1/-1;display:flex;align-items:center;gap:8px;background:var(--win);border:2px solid var(--line);border-radius:8px;padding:5px 8px}
+#cmd .nmrow span{flex:none;width:7.5em;font-size:13px;color:var(--dim)}
+#cmd .nmrow input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--txt);background:#0d0a16;border:1px solid #5a5068;border-radius:6px;padding:6px 8px}
+#cmd .nmrow input:focus{outline:2px solid var(--acc);border-color:var(--acc)}
 #overlay p.clr{color:#ffd36b;font-weight:bold}
 #cmd button.sec{grid-column:1/-1;min-height:20px;padding:2px 6px;font-size:12px;opacity:.85;border:none;background:none;box-shadow:none;color:var(--acc)}
 #cmd.five{grid-template-columns:repeat(5,1fr);gap:4px}
@@ -2428,7 +2432,7 @@ async function startNew(){
     `長老「この穴の いちばん下に、わしらの ご先祖が のこしたものが ある…という 言い伝えがある」`,
     `むかし 旅をした ${pn[0]}・${pn[1]}・${pn[2]}の 子どもたちが、名のりを あげた。`]);
   const c=await ask(`子どもたちの 名前は「${G.party.map(m=>m.name).join('・')}」。\nこのままで いい？`,[{label:'このままで はじめる',cls:'wide hi'},{label:'名前を かえる',cls:'wide'}]);
-  if(c===1){for(const m of G.party){let n=null;try{n=window.prompt(`${jobName(m.job)}の 子の 名前（6文字まで）`,m.name);}catch(e){}if(n&&n.trim())m.name=n.trim().slice(0,6);}renderParty();}
+  if(c===1)await nameEditor(true);
   await talks([`${pn[0]}「穴の中は 迷路に なっている。5階ごとに 強い ぬしが いるそうだ。気をつけるんだぞ」`,
     '【あそびかた】\n村では ボタンで 行き先を えらぶよ。\n「⛏ 穴に もぐる」で 冒険に 出よう。いちど行った 階からなら、いつでも はじめられるよ。']);
   save();fadeT=now;enterTown();
@@ -2590,10 +2594,28 @@ async function slotMenu(){
     renderParty();
   }
 }
+// ---------- 名前を かえる（ゲームの 画面の 中で 入力する） ----------
+const NAME_MAX=6;
+function cleanName(v,fb){const t=Array.from(String(v||'').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g,'').trim()).slice(0,NAME_MAX).join('');return t||fb;}
+function nameEditor(first){return new Promise(res=>{
+  advance=null;partyPick=null;
+  setMsg(`名前を 入れてね（1〜${NAME_MAX}文字）。\n空っぽに すると ${first?'はじめの':'いまの'} 名前の ままに なるよ。`);
+  const c=$('cmd');c.className='';cmdList=[];
+  c.innerHTML=G.party.map((m,i)=>`<label class="nmrow"><span>${esc(jobName(m.job))}の 子</span><input id="nm${i}" type="text" maxlength="${NAME_MAX*2}" value="${esc(m.name)}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="${i<2?'next':'done'}"></label>`).join('')
+    +`<button class="wide hi" id="nmok">✔ これで けってい</button>`+(first?`<button class="wide sub" id="nmdef">デフォルトの 名前に もどす</button>`:`<button class="wide sub" id="nmno">← やめる</button>`);
+  const ins=G.party.map((m,i)=>$('nm'+i));
+  const done=ok=>{if(ok){G.party.forEach((m,i)=>{m.name=cleanName(ins[i].value,m.name);});snd('quest');}renderParty();save();ins.forEach(x=>x.blur());res(ok);};
+  ins.forEach((x,i)=>{x.addEventListener('input',()=>{const a=Array.from(x.value);if(a.length>NAME_MAX)x.value=a.slice(0,NAME_MAX).join('');});
+    x.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();if(i<2)ins[i+1].focus();else done(true);}});});
+  $('nmok').onclick=()=>done(true);
+  if(first)$('nmdef').onclick=()=>{ins.forEach((x,i)=>x.value=DEFAULT_NAMES[i]);snd('tap');};
+  else $('nmno').onclick=()=>done(false);
+});}
+
 // ---------- party menu ----------
 async function partyMenu(back){
   const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll'].includes(SKILLS[k].kind)));
-  const c=await ask('なにを しますか？',[{label:'📊 つよさを見る',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 武器の つけかえ',cls:''},{label:'← もどる',cls:'sub'}]);
+  const c=await ask('なにを しますか？',[{label:'📊 つよさを見る',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 武器の つけかえ',cls:''},{label:'✏️ 名前を かえる',cls:''},{label:'← もどる',cls:'sub'}]);
   if(c===0){for(const m of G.party){const d=derived(m),J=JOBS[m.job];
       await talk(`${m.name}（${J.name}${m.mastered[m.job]?'★':''}）Lv${m.lv}  次まで ${m.lv>=J.cap?'-':expNext(m.job,m.lv)-m.exp}\nHP ${m.hp}/${d.maxhp}  MP ${m.mp}/${d.maxmp}${m.poison?'  【どく】':''}\nこうげき${d.atk} ぼうぎょ${d.def} まりょく${d.mag} すばやさ${d.spd}\n${weaponLabel(m)} ／ ${ARMORS[m.a][0]}`);
       const own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
@@ -2602,6 +2624,7 @@ async function partyMenu(back){
   if(c===1){await fieldItemMenu();return partyMenu(back);}
   if(c===2){await fieldSkillMenu();return partyMenu(back);}
   if(c===3){await weaponSwap();return partyMenu(back);}
+  if(c===4){await nameEditor(false);return partyMenu(back);}
   back();
 }
 function pickMember(text,filter){return new Promise(res=>{partyPick={ok:i=>filter(G.party[i]),cb:i=>{renderParty();res(i);}};renderParty();setMsg(text+'\n↓ 仲間の カードを おしてね');setCmds([{label:'← もどる',cls:'wide sub',fn:()=>{partyPick=null;renderParty();res(-1);}}]);});}
@@ -2961,6 +2984,7 @@ async function bossDown(f){
 // ---------- input ----------
 const KEYDIR={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};
 document.addEventListener('keydown',e=>{
+  if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))return; // 名前の入力中は ゲームの キー操作を しない
   const dir=KEYDIR[e.key]||KEYDIR[e.key.toLowerCase&&e.key.toLowerCase()];
   if(dir&&mode==='field'){e.preventDefault();if(!busy)heldDir=dir;return;}
   if(e.key==='Enter'||e.key===' '||e.key==='z'||e.key==='Z'){e.preventDefault();if(e.repeat)return;
