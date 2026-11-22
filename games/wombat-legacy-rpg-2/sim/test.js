@@ -310,3 +310,11 @@ test('深い層の経験値：B31〜40は1.5倍、B41〜は2倍',()=>{
   const G=C.newGame();for(const [f,mul] of [[30,1],[31,1.5],[41,2]]){const e=C.mkEnemy(f,'normal');e.hp=0;const B=C.newBattle(G,[e]);
     assert.strictEqual(C.battleRewards(B).exp,Math.round(e.exp*mul));}
 });
+test('すごいハリモグラ：深い階だけに出て、アリづかで よく出る',()=>{
+  const cnt=(f,lu)=>{const r=C.rng(9),c={};for(let i=0;i<20000;i++){const g=C.rollGroup(f,r,lu);c[g[0].id]=(c[g[0].id]||0)+1;}return c;};
+  const a=cnt(15,false),b=cnt(35,false),c=cnt(35,true);
+  assert.ok(!a.opalEchidna&&!a.goldEchidna);assert.ok(b.opalEchidna>0&&b.goldEchidna>0);
+  assert.ok(c.goldEchidna>b.goldEchidna*3&&c.echidna>b.echidna*3);
+  const o=C.mkMob(35,'opalEchidna'),g=C.mkMob(35,'goldEchidna'),e=C.mkMob(35,'echidna');
+  assert.ok(o.metal===2&&g.metal===3&&g.exp>o.exp&&o.exp>e.exp);
+});

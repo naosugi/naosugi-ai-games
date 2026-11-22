@@ -523,6 +523,9 @@ async function fieldItemMenu(){
     const c=await ask('どの どうぐを 使う？',[...ids.map(id=>({label:`${ITEMS[id].name} ×${G.inv[id]}`,sub:ITEM_DESC[id],cls:''})),{label:'← もどる',cls:'wide sub'}]);
     if(c>=ids.length)return;
     const id=ids[c],it=ITEMS[id];
+    if(it.lure){if(mode!=='field'||!F){await talk('ダンジョンの 中で 使おう。');continue;}
+      G.inv[id]--;G.lure=(G.lure||0)+it.lure;G.lureEnd=0;snd('heal');save();
+      await talk(`${it.name}を まいた。\nアリの においに さそわれて、ハリモグラが よってきそうだ！（のこり 戦闘${G.lure}回ぶん）`);continue;}
     const t=await pickMember(`${it.name}を だれに 使う？`,m=>it.revive?m.hp<=0:it.cure?m.hp>0&&m.poison:m.hp>0);if(t<0)continue;
     const m=G.party[t],d=derived(m);G.inv[id]--;
     if(it.cure){m.poison=false;snd('heal');renderParty();await talk(`${m.name}の どくが きえた！`);}
@@ -590,6 +593,7 @@ function fieldIdle(){
   updateTop(`B${F.f} ${AREA_NAME[areaOf(F.f)]}`);renderParty();$('fmap').textContent=G.flags.noMap?'🗺 地図 OFF':'🗺 地図';
   let hint=F.fl.boss&&!G.bossDown[F.f]?'この階の 奥に ぬしが いる！':'下への 階段を さがそう';
   if(GUARDIANS[F.f]&&!G.guardDown[F.f])hint+='\nどこかに 番人つきの 光る宝箱が あるらしい';
+  if(G.lure>0)hint+=`\n🐜 アリの におい：のこり 戦闘${G.lure}回`;else if(G.lureEnd){G.lureEnd=0;hint+='\n🐜 アリの においが きえた';}
   if(G.flags.dig)hint+='\n（土色の かべは ほれる）';
   setMsg(`B${F.f}  ${AREA_NAME[areaOf(F.f)]}\n${hint}`);
   showPad(true);
@@ -641,7 +645,7 @@ async function onStep(){
     busy=false;fieldIdle();return;}
   if(t==='S'){heldDir=null;busy=true;showPad(false);const c=await ask('ロープを のぼって、村に もどりますか？',['村に もどる','まだ 探検する']);busy=false;if(c===0){leaveDungeon();return;}fieldIdle();return;}
   F.since++;
-  if(F.since>4&&R()<1/16){F.since=0;heldDir=null;startBattle(rollGroup(F.f,R),{});}
+  if(F.since>4&&R()<1/16){F.since=0;heldDir=null;const lu=G.lure>0;if(lu){G.lure--;if(!G.lure)G.lureEnd=1;}startBattle(rollGroup(F.f,R,lu),{});}
 }
 async function changeFloor(f){
   if(f>(G.reached||0))G.reached=f;
@@ -699,6 +703,8 @@ async function startBattle(enemies,opt){
   layoutEnemies();mode='battle';fadeT=performance.now();playMusic((B.boss&&B.opt.f>=STAGE_MAX)||B.opt.secret?'lastboss':B.boss||B.opt.guard||B.opt.raid?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   B.enemies.forEach(e=>{if(e.id)G.seen[e.id]=1;});
   const names=[...new Set(B.enemies.map(e=>e.name.replace(/ [A-E]$/,'')))];
+  const rare=B.enemies.reduce((a,e)=>Math.max(a,e.metal||0),0);
+  if(rare>=2)setTimeout(()=>{banner(rare>=3?'★ 大チャンス ★':'チャンス！',names[0],rare>=3?'#ffd36b':'#9af0ff',1900);jingle(rare>=3?'C6 E6 G6 C7 G6 C7':'E6 G6 B6 E7',.07);},350);
   if(B.boss||B.opt.guard||B.opt.raid){setTimeout(()=>{banner(B.boss?'BOSS':B.opt.raid?'コアラ討伐':'番人',B.opt.raid?B.opt.raid.name:names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
   setMsg(B.boss?`${names[0]}が おそいかかってきた！`:`${names.join('と ')}が あらわれた！`,false,0);setCmds([]);
   await bwait(B.boss||B.opt.guard?1600:1000);
@@ -768,7 +774,7 @@ function inputPhase(){return new Promise(res=>{
         else choose({k:'skill',s:key});}};}),{label:'← もどる',cls:'wide sub',fn:()=>menuFor(i)}]);
   };
   const itemMenu=i=>{
-    const again=()=>itemMenu(i),ids=Object.keys(ITEMS).filter(id=>(G.inv[id]||0)-reserved(id)>0);
+    const again=()=>itemMenu(i),ids=Object.keys(ITEMS).filter(id=>!ITEMS[id].field&&(G.inv[id]||0)-reserved(id)>0);
     if(!ids.length){setMsg('どうぐを 持っていない。');setCmds([{label:'← もどる',cls:'wide sub',fn:()=>menuFor(i)}]);return;}
     setMsg('どの どうぐを 使う？');
     setCmds([...ids.map(id=>{const it=ITEMS[id];return {label:`${it.name} ×${G.inv[id]-reserved(id)}`,sub:ITEM_DESC[id],fn:()=>{
@@ -832,6 +838,8 @@ async function endBattle(){
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
+    const rareK=B.enemies.reduce((a,e)=>e.hp<=0&&!e.fled?Math.max(a,e.metal||0):a,0);
+    if(rareK>=2&&!(B.opt.boss||B.opt.guard)){flashT=performance.now();banner(rareK>=3?'★ 大当たり ★':'当たり！',B.enemies.find(e=>e.metal===rareK).name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     {const vet=G.party.filter(m=>m.hp>0&&vetBonus(m)&&m.lv<JOBS[m.job].cap).map(m=>m.name);
     await talk(`敵を やっつけた！\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:'')+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}

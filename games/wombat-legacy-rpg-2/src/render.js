@@ -411,6 +411,8 @@ const EPAL={
   devil:{m:'#2a2420',l:'#443a34',d:'#141010',b:'#f2ede4',p:'#e08a8a',e:'#111',w:'#f2ede4'},
   eagle:{m:'#4a3424',l:'#b8843f',d:'#2a1c12',a:'#e8b830',e:'#111'},
   echidna:{m:'#5a4632',l:'#efe4c8',d:'#3a2a1c',b:'#8a6a4a',a:'#2a1c12'},
+  opalE:{m:'#3a4a7a',l:'#9af0ff',d:'#22305a',b:'#c8b0ff',a:'#ff7ad0'},
+  goldE:{m:'#a0701a',l:'#fff2a0',d:'#6a4610',b:'#ffd75a',a:'#fff8e0'},
   gold:{m:'#c99a20',l:'#fff6b0',d:'#7a5a10',b:'#e8c050',a:'#8a6a10'},
   goanna:{m:'#45402f',l:'#625a46',d:'#26231a',b:'#d8c070',e:'#e0b020',w:'#ffffff'},
   perentie:{m:'#9a6a3a',l:'#c08a4e',d:'#5e3e20',b:'#f0d8a0',e:'#e0b020',w:'#ffffff'},

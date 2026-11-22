@@ -291,6 +291,7 @@ const ITEMS={
   water:{name:'まほうのしずく',price:40,mp:20},
   leaf: {name:'めざめの葉',price:80,revive:true},
   water2:{name:'まほうのしずく大',price:220,mp:80},
+  lure:{name:'アリづかの かけら',price:600,lure:15,field:true}, // ダンジョンで使う。15回の戦闘のあいだ ハリモグラが よく出る
 };
 
 // おまもり：1匹に1つ。決まった状態異常に かかる確率を 1/4 にする（STAGE3.md）
@@ -371,7 +372,7 @@ const ARCH={
   caller:{hp:1,  atk:1,  def:.9, spd:1.2,moves:[{n:'こうげき',k:'atk',w:4},{n:'なかまをよぶ',k:'call',w:1}]},
   wide:  {hp:.9, atk:.9, def:.9, spd:1,  moves:[{n:'こうげき',k:'atk',w:2},{n:'なぎはらう',k:'all',pow:.6,w:1}]},
   twice: {hp:.8, atk:.8, def:.8, spd:1.4,acts:2},
-  metal: {metal:true},
+  metal: {metal:1},metal2:{metal:2},metal3:{metal:3},
   // 特徴的な攻撃をする敵（名前は仮。エリアごとに実在の動物を当てはめる）
   sleeper:{hp:.9,atk:.8, def:.9, spd:1.1,moves:[{n:'こうげき',k:'atk',w:2},{n:'ねむりのこな',k:'sleepAll',rate:.35,w:1}]},
   stunner:{hp:1, atk:.9, def:1,  spd:1,  moves:[{n:'こうげき',k:'atk',w:2},{n:'しびれのしっぽ',k:'atk',pow:.9,stun:.45,w:2}]},
@@ -397,11 +398,15 @@ const ARCH={
   kWarrior:{hp:4.5,atk:1.2,def:1.6,spd:1.2,moves:[{n:'なかまを かばう',k:'eguard',w:2},{n:'つよいこうげき',k:'atk',pow:1.4,w:2}]},
   kKarate:{hp:3.0,atk:1.1,def:1.2,spd:1.5,counter:.35,acts:2,moves:[{n:'せいけんづき',k:'atk',pow:1.2,w:3},{n:'きあいを ためる',k:'charge',w:1}]},
 };
+// ハリモグラ（1発 1ダメージ、すぐ にげる、経験値が 多い）。2・3 は深い階だけに出る すごい ハリモグラ
+const METAL={1:{hp:5,flee:.35,spd:3,exp:12,gold:3},2:{hp:8,flee:.38,spd:3.5,exp:40,gold:10},3:{hp:9,flee:.38,spd:4,exp:100,gold:40}};
+// 出る確率（アリづかの かけらを 使っている間は LURE_MUL 倍）
+const METAL_RATE={echidna:.04,opalEchidna:.02,goldEchidna:.01},LURE_MUL=4;
 function mkEnemy(f,arch,opt){
   opt=opt||{};const A=ARCH[arch];
   const v=(k)=>curve(k,f);
   let e;
-  if(A.metal){e={hp:5,max:5,atk:Math.round(v('atk')*1.2),def:0,spd:Math.round(v('spd')*3),exp:Math.round(v('exp')*12),gold:Math.round(v('gold')*3),metal:true,flee:.35};}
+  if(A.metal){const M=METAL[A.metal];e={hp:M.hp,max:M.hp,atk:Math.round(v('atk')*1.2),def:0,spd:Math.round(v('spd')*M.spd),exp:Math.round(v('exp')*M.exp),gold:Math.round(v('gold')*M.gold),metal:A.metal,flee:M.flee};}
   else e={hp:Math.round(v('hp')*A.hp),atk:Math.round(v('atk')*A.atk),def:Math.round(v('def')*A.def),spd:Math.round(v('spd')*A.spd),
     exp:Math.round(v('exp')*Math.max(1,A.hp)),gold:Math.round(v('gold')*Math.max(1,A.hp)),acts:A.acts||1,moves:A.moves,
     counter:A.counter,reflect:A.reflect,evade:A.evade,prio:A.prio,mag:Math.round(v('atk')*.55*(A.mag||0))};
@@ -442,6 +447,8 @@ const ANIMALS={
   dingo: {name:'ディンゴ',arch:'twice',spr:'dingo',pal:'dingo',weak:['fire'],moves:[{n:'かみつく',k:'atk',w:1}]},
   frill: {name:'エリマキトカゲ',arch:'frill',spr:'croc',pal:'frill',s:.7,weak:['ice']},
   echidna:{name:'ハリモグラ',arch:'metal',spr:'echidna',pal:'echidna'},
+  opalEchidna:{name:'オパールハリモグラ',arch:'metal2',spr:'echidna',pal:'opalE',s:1.05},
+  goldEchidna:{name:'おうごんハリモグラ',arch:'metal3',spr:'echidna',pal:'goldE',s:1.12},
   devil: {name:'タスマニアデビル',arch:'jammer',spr:'devil',pal:'devil',weak:['light'],moves:[{n:'かみつく',k:'atk',w:2},{n:'さけびごえ',k:'dispel',w:1},{n:'MPを すいとる',k:'drain',w:1}]},
   octo:  {name:'ヒョウモンダコ',arch:'stunner',spr:'octo',pal:'octo',weak:['thunder'],moves:[{n:'からみつく',k:'atk',w:2},{n:'かみついて まひさせる',k:'atk',pow:.9,stun:.45,w:2}]},
   lyre:  {name:'コトドリ',arch:'silencer',spr:'eagle',pal:'lyre',s:.75,weak:['thunder']},
@@ -549,9 +556,11 @@ function mkMob(f,key){
   if(f>=31&&f<=40)e.gold=Math.round(e.gold*1.5); // オパールの層はお金が多い
   return e;
 }
-function rollGroup(f,r){
-  const G=floorGroups(f);
-  if(r()<G.metalRate)return [mkMob(f,'echidna')];
+function rollGroup(f,r,lure){
+  const G=floorGroups(f),mul=lure?LURE_MUL:1;
+  if(f>=31&&r()<METAL_RATE.goldEchidna*mul)return [mkMob(f,'goldEchidna')];
+  if(f>=21&&r()<METAL_RATE.opalEchidna*mul)return [mkMob(f,'opalEchidna')];
+  if(r()<G.metalRate*mul){const n=f>=11&&r()<.3?2+(r()<.4?1:0):1;return Array.from({length:n},()=>mkMob(f,'echidna'));}
   const g=G.pool[Math.floor(r()*G.pool.length)];
   return g.map(a=>mkMob(f,a));
 }
@@ -1043,7 +1052,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
