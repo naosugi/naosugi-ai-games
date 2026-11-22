@@ -340,6 +340,22 @@
       "playtime": "約60分",
       "added": "2026-11-20",
       "author": "@naoya_oosugi"
+    },
+    {
+      "id": "wombat-legacy-rpg-2",
+      "title": "ウォンバット☆レガシーRPG 2",
+      "description": "前作の3匹の子どもたちが、地下50階の大きな穴にもぐる、やりこみ型のコマンドRPG。転職と技の引き継ぎで21の職業を育て、壁を掘りながら迷路を進もう。10階ごとに景色も曲も出てくる生き物もがらりと変わる。",
+      "path": "../games/wombat-legacy-rpg-2/",
+      "thumbnail": "../games/wombat-legacy-rpg-2/thumb.jpg",
+      "tags": [
+        "RPG",
+        "育成",
+        "戦略"
+      ],
+      "controls": "タップ / キーボード・クリック",
+      "playtime": "長め（やりこみ型）",
+      "added": "2026-11-22",
+      "author": "@naoya_oosugi"
     }
   ]
 }
