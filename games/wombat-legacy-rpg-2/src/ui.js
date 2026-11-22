@@ -134,7 +134,7 @@ function drawTown(){
 }
 function clouds(col){for(let i=0;i<3;i++){const x=((now/90+i*85)%270)-40,y=12+i*10;ctx.fillStyle=col;for(const [dx,dy,r] of [[0,0,5],[6,-3,6],[12,0,5],[6,2,5]]){ctx.beginPath();ctx.arc(x+dx,y+dy,r,0,7);ctx.fill();}}}
 function birds(col){for(let i=0;i<2;i++){const x=((now/38+i*120)%250)-30,y=28+i*9+Math.sin(now/300+i)*3,w=Math.floor(now/170+i)%2?1:3;ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-3,y-w+1);ctx.lineTo(x,y);ctx.lineTo(x+3,y-w+1);ctx.stroke();}}
-function drawFFX(cx,cy){FFX=FFX.filter(f=>now-f.t0<f.life);for(const f of FFX){const k=(now-f.t0)/f.life,t=(now-f.t0)/1000;
+function drawFFX(cx,cy){FFX=FFX.filter(f=>now-f.t0<f.life);for(const f of FFX){if(now<f.t0)continue;const k=(now-f.t0)/f.life,t=(now-f.t0)/1000;
   if(f.k==='p')rect(f.x-cx+f.vx*t,f.y-cy+f.vy*t+(f.g||0)*t*t,f.sz||1,f.sz||1,f.col);
   else if(f.k==='dust'){ctx.fillStyle=`rgba(225,205,175,${.55*(1-k)})`;ctx.beginPath();ctx.arc(f.x-cx+(f.dx||0)*k,f.y-cy-k*3,1+k*2.5,0,7);ctx.fill();}
   else if(f.k==='txt'){ctx.font='bold 9px sans-serif';ctx.textAlign='center';const y=f.y-cy-Math.min(1,k*3)*12;ctx.globalAlpha=k>.8?(1-k)*5:1;ctx.lineWidth=3;ctx.strokeStyle='#000';ctx.strokeText(f.text,f.x-cx,y);ctx.fillStyle=f.col;ctx.fillText(f.text,f.x-cx,y);ctx.globalAlpha=1;ctx.textAlign='left';}}}
@@ -175,9 +175,10 @@ function drawField(){
   }
   const walking=F.moving||heldDir;const fr=walking?Math.floor(now/140)%2:0;
   drawSpr(fieldWombat(F.dir,fr),ppx-camX,ppy-camY-3);F.scr=[ppx-camX+8,ppy-camY+8];
-  drawFFX(camX,camY);
+  drawFFX(camX,camY);ambient(ts,camX,camY);
   const fr0=36+Math.sin(now/130)*2+Math.sin(now/57)*1.2;const g=ctx.createRadialGradient(ppx-camX+8,ppy-camY+8,fr0,ppx-camX+8,ppy-camY+8,125);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.6)');ctx.fillStyle=g;ctx.fillRect(0,0,SW,SH);
   drawMinimap();
+  if(F.irisT){const k=Math.min(1,(now-F.irisT)/650),rr=(1-k)*(1-k)*170;ctx.fillStyle='#000';ctx.beginPath();ctx.rect(0,0,SW,SH);ctx.arc(F.scr[0],F.scr[1],Math.max(0,rr),0,Math.PI*2);ctx.fill('evenodd');}
 }
 
 // ---------- battle drawing ----------
@@ -215,7 +216,7 @@ function drawBattle(){
   const T=TILESETS[B.ts];
   grad(0,96,T.bg[0],T.bg[1]);
   rect(0,96,SW,48,T.top2);for(let k=0;k<6;k++)rect(0,96+k*k*1.4,SW,1,T.f3);
-  ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(66,112,64,10,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(66,112,64,10,0,0,7);ctx.fill();ambient(B.ts,0,0);
   let sx=0,sy=0;if(now-shakeT<260){sx=(R()-.5)*4;sy=(R()-.5)*3;}
   ctx.save();ctx.translate(Math.round(sx),Math.round(sy));
   B.enemies.forEach((e,i)=>{const a=BA.e[i],p=BA.pos[i];if(!a||!p)return;
@@ -235,6 +236,7 @@ function drawBattle(){
       rect(bx-1,by-1,w+2,5,'#000');rect(bx,by,w,3,'#3a2a2a');rect(bx,by,Math.round(w*tr),3,'#ffffff');
       rect(bx,by,Math.round(w*r),3,r<.3?'#ff5a5a':r<.6?'#e8d05a':'#78e070');rect(bx,by,Math.round(w*r),1,'rgba(255,255,255,.35)');}
   });
+  bossPlate();
   if(enemyMark){const blink=Math.floor(now/280)%2===0;ctx.font='bold 8px sans-serif';ctx.textAlign='center';
     for(const i of enemyMark.list){const p=BA.pos[i],e=B.enemies[i];if(!p||e.hp<=0)continue;const foc=enemyMark.focus===i;
       if(blink||foc){const cx=Math.round(p.x+p.w/2),cy=p.y-3+(foc?0:Math.round(Math.sin(now/150)));ctx.fillStyle=foc?'#ffffff':'#ffd36b';ctx.beginPath();ctx.moveTo(cx-4,cy-6);ctx.lineTo(cx+4,cy-6);ctx.lineTo(cx,cy);ctx.fill();}
@@ -267,7 +269,9 @@ function drawDex(){grad(0,SH,'#2a2240','#46385e');rect(0,104,SW,40,'#3a3050');
   else party3(132);}
 function frame(t){
   now=t;ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.imageSmoothingEnabled=false;
-  try{if(mode==='title')drawTitle();else if(mode==='town')drawTown();else if(mode==='field')drawField();else if(mode==='battle')drawBattle();else if(mode==='dex')drawDex();}catch(e){console.error(e);}
+  if(mode==='field'&&now-shakeT<400)ctx.translate(Math.round((R()-.5)*4),Math.round((R()-.5)*3));
+  try{if(mode==='title')drawTitle();else if(mode==='town')drawTown();else if(mode==='field')drawField();else if(mode==='battle')drawBattle();else if(mode==='dex')drawDex();else if(mode==='ending')drawEnding();}catch(e){console.error(e);}
+  ctx.setTransform(1,0,0,1,0,0);
   if(now-wipeT<700&&mode!=='battle')drawWipe();
   if(now-flashT<120){ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(0,0,SW,SH);}
   if(now-fadeT<400){ctx.fillStyle='rgba(0,0,0,'+(1-(now-fadeT)/400)+')';ctx.fillRect(0,0,SW,SH);}
@@ -285,8 +289,8 @@ function newGame2(){
 }
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
-  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>';
-  const sv=load();setMsg(sv?(sv.cleared?'つづきから あそべます。（★クリアずみ）':'つづきから あそべます。'):'ボタンを おして はじめよう。');
+  const sv=load();
+  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
 }
 async function startNew(){
@@ -399,7 +403,7 @@ async function elder(){
   for(let b=0;b<a;b++)if(!Object.keys(G.qdone[b]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(b));
   const hs=Object.keys(HINTS).filter(f=>G.hints[f]);
   if(hs.length){const c=await ask(`長老「いにしえの 石ばんを ${hs.length}つ 持っておるな。読んでみるか？」`,[{label:'📜 読む',cls:'wide hi'},{label:'いまは いい',cls:'wide'}]);
-    if(c===0){for(const f of hs)await talk(`【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);await talk('長老「ことばの 意味は…\n'+HINT_KEY+'」');}}
+    if(c===0){for(const f of hs){showTablet(f);await talk(`長老「B${f}で 見つけた 石ばんじゃな」`);}$('overlay').innerHTML='';await talk('長老「ことばの 意味は…\n'+HINT_KEY+'」');}}
   await checkQuests();townMenu();
 }
 async function parentsHome(){
@@ -423,8 +427,9 @@ async function jobChangeMenu(){
   const t=await pickMember('だれが 転職する？',()=>true);if(t<0)return;
   const m=G.party[t];
   while(true){
-    const opts=[],keys=[];
+    const opts=[],keys=[];let lastT=0;
     for(const j of Object.keys(JOBS)){const J=JOBS[j],un=jobUnlocked(m,j),cur=m.job===j;
+      if(J.tier!==lastT){lastT=J.tier;opts.push({label:['','― 基本職（上限 Lv20）―','― 上級職（上限 Lv30）― 基本職2つを 極めると','― 超上級職（上限 Lv40）― 上級職4つを 極めると'][J.tier],cls:'wide sec',dis:true});keys.push(null);}
       let label,sub;
       if(J.tier===1){label=`${J.name}${m.mastered[j]?'★':''}`;sub=cur?'いまの職業':m.mastered[j]?'極めた（Lv上限のまま もどれる）':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`Lv上限 ${J.cap}`;}
       else if(J.tier===2){label=un?`${J.name}${m.mastered[j]?'★':''}`:`🔒 ${J.name}`;sub=cur?'いまの職業':un?(m.mastered[j]?'極めた':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`上級職・Lv上限 ${J.cap}`):`条件：${J.req.map(r=>JOBS[r].name+(m.mastered[r]?'★':'')).join('＋')}を 極める`;}
@@ -433,12 +438,14 @@ async function jobChangeMenu(){
     const c=await ask(`${m.name}（いま ${jobName(m.job)} Lv${m.lv}）\nどの職業に 転職する？`,[...opts,{label:'← もどる',cls:'wide sub'}]);
     if(c>=keys.length)return;
     const j=keys[c],J=JOBS[j];
-    const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:jobStartLv(m,j)>1?`前に きたえた Lv${jobStartLv(m,j)}から つづきになる。`:'Lv1から になる（ステータスも その職業の Lv1に もどる）。')+`\n（いまの ${jobName(m.job)} Lv${m.lv}は おぼえておく）`+'\nいまの職業の わざは、引き継ぎ枠に 入れられる。',[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
+    statPanel(m,j);
+    const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:jobStartLv(m,j)>1?`前に きたえた Lv${jobStartLv(m,j)}から つづきになる。`:'Lv1から はじまる。')+`\n（いまの ${jobName(m.job)} Lv${m.lv}は おぼえておく。わざは 引き継ぎ枠に 入れられる）`,[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
+    $('overlay').innerHTML='';
     if(k!==0)continue;
     changeJob(m,j);if(J.tier===3)G.qflag.superJob=true;
     const bl=bestLine(j);if((m.own[bl]||0)>0||m.w===0){m.wl=bl;m.w=m.own[bl]||0;}
-    snd('quest');partySparkleTown();renderParty();save();
-    await talk(`${m.name}は ${J.name}に なった！`+(m.wl===bl?`\n（武器を ${weaponLabel(m)}に つけかえた）`:''));
+    renderParty();save();await jobChangeFx(m,J);
+    await talk(`${m.name}は ${J.name}に なった！（Lv${m.lv}）`+(m.wl===bl?`\n（武器を ${weaponLabel(m)}に つけかえた）`:''));
     return;
   }
 }
@@ -451,20 +458,12 @@ async function slotMenu(){
     const slots=m.slots.map(k=>({label:`✖ ${SKILLS[k].name}`,sub:`はずす（${jobName(SKILLS[k].job)}）`,cls:'',k,rm:true}));
     const adds=cand.map(k=>({label:`＋ ${SKILLS[k].name}`,sub:`${jobName(SKILLS[k].job)}：${skillDesc(SKILLS[k])}`,cls:'wide',dis:m.slots.length>=SLOT_MAX,k}));
     const all=[...slots,...adds];
-    const c=await ask(`${m.name}の 引き継ぎ枠（${m.slots.length}/${SLOT_MAX}）\nいまの職業の わざは 枠を 使わない。`+(cand.length?'':'\n（ほかの職業を 学ぶと、入れられる わざが ふえる）'),[...all,{label:'← もどる',cls:'wide sub'}]);
+    const c=await ask(`${m.name}の 引き継ぎ枠 ${'■'.repeat(m.slots.length)}${'□'.repeat(SLOT_MAX-m.slots.length)}（${m.slots.length}/${SLOT_MAX}）\nいまの職業の わざは 枠を 使わない。`+(cand.length?'':'\n（ほかの職業を 学ぶと、入れられる わざが ふえる）'),[...all,{label:'← もどる',cls:'wide sub'}]);
     if(c>=all.length){save();return;}
     const it=all[c];if(it.rm)m.slots=m.slots.filter(k=>k!==it.k);else setSlots(m,[...m.slots,it.k]);
     renderParty();
   }
 }
-async function progressView(){
-  for(const m of G.party){
-    const ms=Object.keys(m.mastered).filter(j=>m.mastered[j]).map(j=>JOBS[j].name);
-    const adv=Object.keys(JOBS).filter(j=>JOBS[j].tier===2&&jobUnlocked(m,j)).map(j=>JOBS[j].name);
-    await talk(`${m.name}（${jobName(m.job)} Lv${m.lv}）\n極めた：${ms.join('・')||'まだ なし'}\n就ける上級職：${adv.join('・')||'まだ なし'}`);
-  }
-}
-
 // ---------- party menu ----------
 async function partyMenu(back){
   const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll'].includes(SKILLS[k].kind)));
@@ -550,6 +549,7 @@ async function startFloor(f){
   mode='field';fadeT=now;busy=true;showPad(false);save();
   if(!G.flags.tipField){G.flags.tipField=1;save();
     await talks(['【ダンジョンの ヒント】\n下の 十字キー（パソコンなら 矢印キー）で 歩こう。','歩いていると ときどき 敵が あらわれるよ。\n行き止まりには 宝箱。いちばん奥には 下への 階段が ある。','光っている ロープの マスに もどるか、「メニュー」から いつでも 村へ 帰れるよ。']);}
+  await areaIntro(areaOf(f));
   busy=false;fieldIdle();
 }
 function fieldIdle(){
@@ -602,7 +602,8 @@ async function onStep(){
   if(t==='V'){heldDir=null;busy=true;showPad(false);
     if(!G.flags.digDown){if(!G.flags.tipCrack){G.flags.tipCrack=1;await talk('床に ひびが 入っている。\n下へ ほれそうだけど、かたくて まだ ほれない。');}busy=false;fieldIdle();return;}
     const c=await ask('ひびわれた床だ。下へ ほって、B'+(F.f+1)+'へ おりますか？',[{label:'⛏ 下へ ほる',cls:'wide hi'},'やめておく']);
-    if(c===0){snd('dig');G.qcount.down=(G.qcount.down||0)+1;await sleep(200);snd('stairs');await changeFloor(F.f+1);busy=false;return;}
+    if(c===0){snd('dig');shakeT=now;for(let k=0;k<14;k++)FFX.push({k:'dust',x:F.px*16+8+(R()-.5)*14,y:F.py*16+12,dx:(R()-.5)*10,t0:now+k*25,life:500});
+      await sleep(250);snd('dig');F.irisT=now;await sleep(700);G.qcount.down=(G.qcount.down||0)+1;snd('stairs');F.irisT=0;await changeFloor(F.f+1);busy=false;return;}
     busy=false;fieldIdle();return;}
   if(t==='S'){heldDir=null;busy=true;showPad(false);const c=await ask('ロープを のぼって、村に もどりますか？',['村に もどる','まだ 探検する']);busy=false;if(c===0){leaveDungeon();return;}fieldIdle();return;}
   F.since++;
@@ -612,7 +613,7 @@ async function changeFloor(f){
   if(f>(G.reached||0))G.reached=f;
   F.f=f;F.fl=buildFloor(f);F.px=1;F.py=1;fadeT=now;
   FFX=[];reveal();playMusic(dungeonTrack(f));banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1400);save();
-  F.since=0;await sleep(150);fieldIdle();
+  F.since=0;await sleep(150);await areaIntro(areaOf(f));fieldIdle();
 }
 function leaveDungeon(){fadeT=now;enterTown();}
 async function openChest(){
@@ -645,12 +646,12 @@ async function openGuardChest(f){
   renderParty();save();
 }
 async function getHint(f){G.hints[f]=true;snd('quest');banner('★ 石ばん ★','いにしえの 石ばん','#e8d8a0',2000);
-  await talk(`${GUARDIANS[f]?'宝の そば':'ぬしが いた ところ'}に「いにしえの 石ばん」が あった。\n【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);
-  await talk('（長老の 巣穴で いつでも 読みかえせる。ことばの 意味も 教えてもらえる）');save();}
+  showTablet(f);await talk(`${GUARDIANS[f]?'宝の そば':'ぬしが いた ところ'}に「いにしえの 石ばん」が あった。\n文字が きざまれている…`);
+  await talk('（長老の 巣穴で いつでも 読みかえせる。ことばの 意味も 教えてもらえる）');$('overlay').innerHTML='';save();}
 async function onBoss(){
   busy=true;showPad(false);const e=bossFor(F.f)[0];
   const c=await ask(`${e.name}が いる！\nたたかいますか？`,[{label:'⚔ たたかう',cls:'wide hi'},'やめておく']);
-  if(c===0){startBattle(bossFor(F.f),{boss:true,f:F.f});return;}
+  if(c===0){await bossIntro(F.f);startBattle(bossFor(F.f),{boss:true,f:F.f});return;}
   busy=false;fieldIdle();
 }
 
@@ -786,10 +787,12 @@ async function endBattle(){
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
+    if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     await talk(`敵を やっつけた！\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:''));
     addGold(rw.gold);
     for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
       for(const s of ms){if(s.includes('レベル')){jingle('G5 C6 E6 G6',.08);banner('LEVEL UP!',`${m.name}  Lv${(s.match(/レベル(\d+)/)||[0,m.lv])[1]}`,'#7cf0ff',1700);partySparkle(mi);}
+        else if(s.includes('転職できる')){const sup=/王に 転職/.test(s);jingle(sup?'C5 E5 G5 C6 E6 G6 C7':'E5 G5 C6 E6',.08);banner(sup?'★ 超上級職 解放 ★':'解放！',s.replace(/^.*は /,'').replace('に 転職できるように なった！',''),sup?'#ffd36b':'#7cf0ff',2200);partySparkle(mi,sup?'#ffd36b':'#7cf0ff');}
         else if(s.includes('きわめた')){jingle('C5 E5 G5 C6 E6',.09);banner('きわめた！',`${m.name}  ${jobName(m.job)}`,'#ffd36b',2000);partySparkle(mi,'#ffd36b');}else snd('lvl');renderParty();await talk(s);}}
     if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
     renderParty();
@@ -829,31 +832,6 @@ async function bossDown(f){
   if(f===5||f===10||f===25){B=null;BA=null;fadeT=now;enterTown();return;}
   backToField();
 }
-// ---------- 結末（STAGE3.md） ----------
-async function ending(){
-  const p=G.parents,k=G.party.map(m=>m.name);
-  B=null;BA=null;disp=null;mode='field';fadeT=now;renderParty();stopMusic();
-  await talks(['メガラニアは、ゆっくりと たおれた。','穴の いちばん奥に、大きな 骨が 2つ ねむっている。',
-    '1つは、ディプロトドン。ウォンバットや コアラの 遠い 親戚で、いままでに 知られている中で いちばん 大きな 有袋類だ。',
-    'もう1つは、本当の「大きな ウォンバット」ファスコロヌス。いまの ウォンバットの 何倍も 大きかった。',
-    'まわりを さがしても、宝箱は ひとつも ない。',
-    `${k[0]}「…宝は、なかったね」`,
-    `${k[1]}「でも、この 骨たちも、ここで くらして、ここで 穴を ほっていたんだ」`,
-    `${k[2]}「長老が 言ってた。レガシーとは 宝では ない、って」`]);
-  playMusic('ending');
-  mode='town';F=null;showPad(false);renderParty();updateTop('ユーカリ村');
-  await talks(['3匹は、ロープを のぼって 村へ 帰った。',
-    `${p[0]}・${p[1]}・${p[2]}と 長老が、穴の 入口で 待っていた。`,
-    '長老「どうじゃった？ ご先祖の のこしたものは」',
-    `${k[0]}「穴を ほって、仲間と 分けあって、ねぐらを 守る。それを ずっと つづけてきたこと…かな」`,
-    `${k[1]}「わたしたちも、それを つづける」`,
-    `${k[2]}「それが、ぼくたちの レガシー」`,
-    '長老は、だまって うなずいた。',
-    '～ おしまい ～\n\nウォンバット☆レガシーRPG 2\nあそんでくれて ありがとう！',
-    '（このあとも、穴に もぐって あそびつづけられます。\nまだ 極めていない 職業や、光る宝箱、図鑑を うめてみよう）']);
-  G.cleared=true;save();fadeT=now;enterTown();
-}
-
 // ---------- input ----------
 const KEYDIR={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};
 document.addEventListener('keydown',e=>{
@@ -882,6 +860,180 @@ async function openFieldMenu(){
 }
 $('fmenu').onclick=()=>{snd('tap');openFieldMenu();};
 $('fmap').onclick=()=>{if(!G)return;snd('tap');G.flags.noMap=!G.flags.noMap;$('fmap').textContent=G.flags.noMap?'🗺 地図 OFF':'🗺 地図';save();};
+
+// ===================== 演出（続編で足したもの） =====================
+// ---------- エリアに はじめて 入ったとき ----------
+const AREA_INFO=[
+  {sub:'ウォンバットの 巣穴のような、土の 迷路',col:'#e8b880',jg:'C5 G5 C6'},
+  {sub:'ユーカリの 根が はりめぐらされた 層',col:'#b0d878',jg:'D5 A5 D6'},
+  {sub:'地下の 川が ながれる、青い どうくつ',col:'#7cd0f0',jg:'E5 B5 E6 G6'},
+  {sub:'むかし 海だった 地面が、宝石を はぐくんだ 層',col:'#e0b0ff',jg:'F5 A5 C6 E6'},
+  {sub:'大むかしの 生き物たちが ねむる、いちばん深い 層',col:'#f0d890',jg:'C5 D#5 G5 C6'},
+];
+const AREA_TEXT=[
+  ['穴の 中は ひんやりしている。','どこかで、土の くずれる 音が した。'],
+  ['天井から、太い ユーカリの 根が たれさがっている。','根の あいだを、見たことのない 生き物が 走りぬけた。'],
+  ['ぴちょん、ぴちょん… 水の しずくが 落ちる。','足もとを、すんだ 地下の 川が ながれている。'],
+  ['かべの あちこちが、にじいろに 光っている。オパールだ！','暑い 地上を さけて、地下に くらした 人びとの 話を 思いだした。'],
+  ['空気が 重い。古い 古い においが する。','かべに うまった 大きな 骨が、こちらを 見ているようだ…'],
+];
+async function areaIntro(a){
+  G.areaSeen=G.areaSeen||{};if(G.areaSeen[a])return;G.areaSeen[a]=1;save();
+  const I=AREA_INFO[a];$('fx').innerHTML='';showPad(false);
+  $('overlay').innerHTML=`<div class="acard" style="--c:${I.col}"><small>B${a*10+1} 〜 B${a*10+10}</small><b>${esc(AREA_NAME[a])}</b><span>${esc(I.sub)}</span></div>`;
+  jingle(I.jg,.17);setMsg('',false);setCmds([]);
+  await sleep(1700);await talks(AREA_TEXT[a]);$('overlay').innerHTML='';
+}
+// ---------- エリアごとの 空気（ちり・しずく・きらめき） ----------
+function ambient(ts,cx,cy){
+  const t=now/1000,wrap=(v,m)=>((v%m)+m)%m;
+  if(ts===0){for(let i=0;i<9;i++){const sp=5+hash(i,3)*6,x=wrap(hash(i,1)*SW-cx*.3+Math.sin(t*.7+i)*3,SW),y=wrap(t*sp+hash(i,9)*SH-cy*.3,SH);rect(x,y,1,1,'rgba(210,170,120,.55)');}}
+  else if(ts===1){for(let i=0;i<8;i++){const sp=7+hash(i,4)*5,x=wrap(hash(i,2)*SW-cx*.3+Math.sin(t*1.3+i*2)*6,SW),y=wrap(t*sp+hash(i,8)*SH-cy*.3,SH);rect(x,y,2,1,i%2?'rgba(150,200,90,.7)':'rgba(120,160,70,.6)');}}
+  else if(ts===2){for(let i=0;i<7;i++){const per=1.4+hash(i,5)*1.6,ph=wrap(t+hash(i,6)*per,per)/per,x=wrap(hash(i,7)*SW-cx*.5,SW),y0=hash(i,11)*30,y1=60+hash(i,12)*70;
+      if(ph<.7){const y=y0+(y1-y0)*(ph/.7)**2;rect(x,y-cy*.0,1,2,'rgba(170,220,255,.8)');}else{const k=(ph-.7)/.3;ctx.strokeStyle=`rgba(170,220,255,${.6*(1-k)})`;ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y1,1+k*6,.5+k*2,0,0,7);ctx.stroke();}}
+    ctx.fillStyle='rgba(120,200,255,.05)';for(let i=0;i<3;i++){const y=wrap(t*6+i*50,SH);ctx.fillRect(0,y,SW,6);}}
+  else if(ts===3){const cols=['#ff8ad8','#7cf0ff','#ffe24a','#ffffff'];for(let i=0;i<16;i++){const a=Math.max(0,Math.sin(t*2.2+hash(i,3)*9))**10;if(a<.05)continue;
+      const x=wrap(hash(i,1)*SW-cx*.6,SW),y=wrap(hash(i,2)*SH-cy*.6,SH);ctx.globalAlpha=a;ctx.fillStyle=cols[i%4];ctx.fillRect(x,y,1,1);if(a>.5){ctx.fillRect(x-1,y,3,1);ctx.fillRect(x,y-1,1,3);}ctx.globalAlpha=1;}}
+  else if(ts===4){for(let i=0;i<10;i++){const sp=3+hash(i,4)*4,x=wrap(hash(i,2)*SW-cx*.3+Math.sin(t*.8+i)*4,SW),y=wrap(hash(i,8)*SH-t*sp-cy*.3,SH),a=.3+.4*Math.abs(Math.sin(t*1.7+i));rect(x,y,1,1,`rgba(255,220,140,${a})`);}}
+}
+// ---------- ぬしの 登場 ----------
+const BOSS_LINE={
+  5:['ギチギチ… 女王が 大きな あごを 鳴らしている。'],
+  10:['「ウォォーン！」 群れの とおぼえが 穴じゅうに ひびいた。'],
+  15:['コアラのだいまどうし「わしの ひるねを じゃまするのは だれじゃ…」'],
+  20:['水面が もりあがり、大きな 目が こちらを 見た…'],
+  25:['カモノハシのぬしが くちばしを ふるわせている。','こちらの 気配を、電気で 感じとっているようだ…'],
+  30:['地下の 川の 底から、大きな かげが のぼってきた…'],
+  35:['アカカンガルーのチャンピオンが、しっぽで 立ち、こぶしを かまえた！'],
+  40:['岩の 中の オパールが にじいろに 光りだした。','化石が… うごいている！'],
+  45:['やみの 中で、大きな 親指の ツメが きらりと 光った…'],
+  50:['穴の いちばん奥の、大きな 部屋。','地面が ゆれる。とてつもなく 大きな トカゲが、すがたを あらわした…','太古の 王者 メガラニアが、ご先祖の ねどこを まもっている！'],
+};
+async function bossIntro(f){const L=BOSS_LINE[f];if(!L)return;stopMusic();
+  for(let i=0;i<L.length;i++){if(i===L.length-1){shakeT=now;snd('enc');}await talk(L[i]);}}
+function bossPlate(){
+  if(!(B.boss||(B.opt&&B.opt.guard)))return;const i=B.enemies.findIndex(e=>e.boss||e.guardian);if(i<0)return;const e=B.enemies[i],a=BA.e[i];
+  const r=Math.max(0,((a&&a.show!=null)?a.show:e.hp)/e.max);
+  rect(3,3,118,12,'rgba(0,0,0,.62)');ctx.font='bold 7px sans-serif';ctx.fillStyle=e.guardian?'#d8a8ff':'#ff8a6a';ctx.fillText((e.guardian?'番人 ':'ぬし ')+e.name.replace(/ [A-E]$/,''),6,10);
+  rect(6,12,112,2,'#3a2a2a');rect(6,12,Math.round(112*r),2,r<.3?'#ff5a5a':r<.6?'#e8d05a':'#78e070');
+}
+// ---------- 職業の 進み具合（表） ----------
+function jobGridHTML(m){
+  const cell=j=>{const J=JOBS[j],un=jobUnlocked(m,j),ms=!!m.mastered[j],cur=m.job===j,lv=cur?m.lv:jobStartLv(m,j);
+    const hf=J.tier===3&&Object.keys(HINTS).some(f=>HINTS[f].job===j&&G.hints[f]);
+    const name=J.tier===3&&!un&&!ms&&!hf?'？？？王':J.name;
+    const mark=ms?'★':cur?'Lv'+m.lv:un?(lv>1?'Lv'+lv:'○'):'🔒';
+    return `<i class="jc ${ms?'ms':un?'un':'lk'}${cur?' cur':''}"><b>${esc(name)}</b><em>${mark}</em></i>`;};
+  const sec=(t,tier)=>`<div class="jh">${t}</div><div class="jg">${Object.keys(JOBS).filter(j=>JOBS[j].tier===tier).map(cell).join('')}</div>`;
+  return `<div class="jgrid"><div class="jt">${esc(m.name)}の 職業</div>${sec('基本職（上限 Lv20）',1)}${sec('上級職（上限 Lv30）',2)}${sec('超上級職（上限 Lv40）',3)}</div>`;
+}
+async function progressView(){let i=0;
+  while(true){const m=G.party[i],n=Object.keys(m.mastered).filter(j=>m.mastered[j]).length;$('overlay').innerHTML=jobGridHTML(m);
+    const c=await ask(`${m.name}：極めた 職業 ${n}/21\n★極めた　○就ける　Lv＝きたえた ところ　🔒まだ`,[{label:'◀ 前の 仲間',cls:''},{label:'次の 仲間 ▶',cls:''},{label:'← もどる',cls:'wide sub'}]);
+    if(c===0)i=(i+2)%3;else if(c===1)i=(i+1)%3;else break;}
+  $('overlay').innerHTML='';}
+// ---------- いにしえの 石ばん ----------
+function showTablet(f){const H=HINTS[f];$('overlay').innerHTML=`<div class="tablet"><small>いにしえの 石ばん</small><b>${esc(JOBS[H.job].name)}の 言い伝え</b><p>${esc(H.text)}</p></div>`;}
+// ---------- 転職の 前と後の つよさ ----------
+function statPanel(m,j){const J=JOBS[j],c=JSON.parse(JSON.stringify(m));c.job=j;c.lv=jobStartLv(m,j);c.slots=c.slots.filter(k=>SKILLS[k].job!==j);const a=derived(m),b=derived(c);
+  const rows=[['HP',a.maxhp,b.maxhp],['MP',a.maxmp,b.maxmp],['こうげき',a.atk,b.atk],['ぼうぎょ',a.def,b.def],['まりょく',a.mag,b.mag],['すばやさ',a.spd,b.spd]];
+  const sk=jobSkills(c).map(k=>SKILLS[k].name);
+  $('overlay').innerHTML=`<div class="spanel"><div class="sp1">${esc(jobName(m.job))} Lv${m.lv}　→　<b>${esc(J.name)} Lv${c.lv}</b></div><div class="spg">${rows.map(r=>`<span>${r[0]}</span><span>${r[1]}</span><span>→</span><span class="${r[2]>r[1]?'up':r[2]<r[1]?'dn':''}">${r[2]}${r[2]>r[1]?'▲':r[2]<r[1]?'▼':''}</span>`).join('')}</div><div class="sp2">${J.name}の わざ：${esc(sk.join('・')||'（レベルが 上がると おぼえる）')}</div></div>`;}
+async function jobChangeFx(m,J){const ti=G.party.indexOf(m);
+  $('overlay').innerHTML=`<div class="acard" style="--c:${J.tier===3?'#ffd36b':J.tier===2?'#7cf0ff':'#e8e0d0'}"><small>${esc(m.name)}は</small><b>${esc(J.name)}</b><span>に なった！</span></div>`;
+  jingle(J.tier===3?'C5 E5 G5 C6 E6 G6 C7':J.tier===2?'D5 F#5 A5 D6':'C5 E5 G5',.09);snd('quest');partySparkleTown();sparkle(96,100,30,J.tier===3?'#ffd36b':'#7cf0ff',50);
+  await sleep(1300);$('overlay').innerHTML='';}
+
+// ===================== 結末 =====================
+let ES=null;
+function boneSprite(kind){return cached('bone|'+kind,()=>{
+  const blk={m:'#000',l:'#000',d:'#000',b:'#000',w:'#000',e:'#000',p:'#000'};
+  const src=kind==='dip'?toCanvas(GEN.quad(blk,1.6,{tail:'short',snout:.7,ears:'round',stocky:true})):toCanvas(renderWombat({eye:'closed'}));
+  const c=document.createElement('canvas');c.width=src.width;c.height=src.height;const x=c.getContext('2d');x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';
+  x.fillStyle='#e8dcc0';x.fillRect(0,0,c.width,c.height);x.fillStyle='rgba(110,86,50,.6)';for(let i=2;i<c.width;i+=3)x.fillRect(i,Math.floor(c.height*.25),1,Math.floor(c.height*.4));
+  x.fillStyle='rgba(255,255,255,.35)';x.fillRect(0,0,c.width,Math.max(2,c.height*.12));return c;});}
+function parents3(y){['war','mag','pri'].forEach((c,i)=>{const bob=Math.floor((now/600+i)%2);const spr=wombatSprite(c,'front',{bob});const w=spr.width*1.1,h=spr.height*1.1;ctx.drawImage(spr,Math.round(96-w/2+(i-1)*66),Math.round(y-h),w,h);});}
+function drawEnding(){if(!ES)return;const t=(now-ES.t0)/1000;
+  if(ES.s==='chamber'){grad(0,104,'#100c06','#2e2414');rect(0,104,SW,40,'#3a3020');rect(0,104,SW,1,'#4a3e2a');ambient(4,0,0);
+    const gl=.32+.14*Math.sin(now/600),g=ctx.createRadialGradient(96,66,6,96,66,96);g.addColorStop(0,`rgba(255,228,160,${gl})`);g.addColorStop(1,'rgba(255,228,160,0)');ctx.fillStyle=g;ctx.fillRect(0,0,SW,SH);
+    const d=boneSprite('dip'),w=boneSprite('wom');ctx.globalAlpha=Math.min(1,t/1.5);ctx.drawImage(d,4,38,d.width*1.05,d.height*1.05);
+    ctx.save();ctx.translate(SW-2,0);ctx.scale(-1,1);ctx.drawImage(w,0,58,w.width*1.45,w.height*1.45);ctx.restore();ctx.globalAlpha=1;party3(146);}
+  else if(ES.s==='climb'){grad(0,SH,'#0e0a04','#000');const k=Math.min(1,t/7);const g=ctx.createLinearGradient(0,0,0,SH);g.addColorStop(0,`rgba(255,240,200,${.25+.6*k})`);g.addColorStop(1,'rgba(255,240,200,0)');ctx.fillStyle=g;ctx.fillRect(60,0,72,SH);
+    rect(95,0,2,SH,'#d8c08a');for(let i=0;i<3;i++){const y=120-k*70+i*14+Math.sin(now/180+i)*1;drawSpr(fieldWombat('up',Math.floor(now/200+i)%2),88,y);}
+    for(let i=0;i<12;i++){const y=((hash(i,3)*SH-t*(8+hash(i,4)*8))%SH+SH)%SH;rect(64+hash(i,1)*64,y,1,1,'rgba(255,240,200,.7)');}}
+  else if(ES.s==='village'){grad(0,90,'#ff8a50','#ffd8a0');ctx.fillStyle='#fff0c0';ctx.beginPath();ctx.arc(150,74,13,0,7);ctx.fill();
+    clouds('rgba(255,200,170,.8)');rect(0,86,SW,58,'#55743a');rect(0,86,SW,3,'#6e8e48');tree(18,92,1.3,'#3e5a3a');tree(176,94,1.5,'#3e5a3a');burrow(8,112,12);
+    ctx.fillStyle='#3a2410';ctx.beginPath();ctx.ellipse(120,92,20,5,0,0,7);ctx.fill();birds('#5a3a2a');parents3(104);party3(146);drawFFX(0,0);}
+  else if(ES.s==='roll'||ES.s==='end'){grad(0,SH,'#0a0e26','#2e2450');for(const [x,y,p] of STARS){const a=.4+.6*Math.abs(Math.sin(now/700+p*9));rect(x,y,1,1,`rgba(255,250,220,${a})`);}
+    rect(0,128,SW,16,'#1a1424');rect(0,128,SW,1,'#3a3050');
+    if(ES.s==='roll'){const T=ES.T,k=Math.min(1,t/T);
+      ctx.save();ctx.beginPath();ctx.rect(0,0,SW,94);ctx.clip();ctx.textAlign='center';
+      const y0=SH-k*(SH+ES.lines.length*12);ES.lines.forEach((L,i)=>{const y=y0+i*12;if(y<-8||y>100)return;ctx.font=L.b?'bold 9px sans-serif':'8px sans-serif';ctx.fillStyle=L.c||'#efe6d2';ctx.fillText(L.t,96,y);});
+      ctx.restore();ctx.textAlign='left';
+      const x0=SW+10-k*(SW+20+ES.parade.length*34);
+      ES.parade.forEach((id,i)=>{const x=x0+i*34;if(x<-40||x>SW+4)return;const spr=enemySprite(dexLook(id));const sc=Math.min(26/spr.height,32/spr.width,1),w=spr.width*sc,h=spr.height*sc,hop=Math.abs(Math.sin(now/180+i))*2;ctx.drawImage(spr,x,128-h-hop,w,h);});}
+    else{ctx.textAlign='center';ctx.font='bold 18px serif';ctx.lineWidth=3;ctx.strokeStyle='#3a1a0a';const a=Math.min(1,t/1.2);ctx.globalAlpha=a;ctx.strokeText('THE END',96,52);ctx.fillStyle='#ffd36b';ctx.fillText('THE END',96,52);
+      ctx.font='8px sans-serif';ctx.fillStyle='#efe6d2';ctx.fillText('ウォンバット☆レガシーRPG 2',96,66);ctx.globalAlpha=1;ctx.textAlign='left';party3(128);
+      if(Math.floor(now/400)%2)sparkle(20+R()*150,20+R()*60,1,R()<.5?'#ffd36b':'#fff6b0',8);drawFFX(0,0);}}
+}
+function epilogueLine(m){
+  const SUP={kNin:'かげのように 穴を 見まわり、まいごの 子を 何度も 見つけだした。',kAll:'何でも こなす たよれる 見はり役として、村の 入口を まもっている。',
+    kMag:'ふしぎな 力で、けがを した 生き物たちを なおして まわっている。',kAtk:'村いちばんの 力じまんとして、力くらべで 負けしらずだ。',
+    kIdl:'歌で 村じゅうを 元気にする、村いちばんの 人気ものに なった。',kDig:'穴を ほりつづけ、村の 地下に 雨水を ためる 大きな 巣穴を つくった。'};
+  const sup=['kDig','kIdl','kAll','kMag','kNin','kAtk'].filter(j=>m.mastered[j]);
+  const pick=sup.includes(m.job)?m.job:sup[0];
+  if(pick)return `${m.name}は ${JOBS[pick].name}として、${SUP[pick]}`;
+  if(Object.keys(m.mastered).some(j=>m.mastered[j]&&JOBS[j].tier===2))return `${m.name}は ${JOBS[m.job].name}の わざを みがきながら、まだ 見ぬ 職業を さがして 穴に もぐりつづけている。`;
+  return `${m.name}は 穴の 入口で、きょうも ${JOBS[m.job].name}の けいこを している。`;
+}
+function endingRecord(){
+  const seen=dexKeys().filter(k=>G.seen[k]).length,tot=dexKeys().length,gd=Object.keys(GUARDIANS).filter(f=>G.guardDown[f]).length;
+  const ms=G.party.map(m=>`${m.name}：極めた 職業 ${Object.keys(m.mastered).filter(j=>m.mastered[j]).length}こ（いま ${jobName(m.job)}）`);
+  const days=Math.max(0,Math.floor((Date.now()-(G.started||Date.now()))/86400000));
+  return {seen,tot,gd,ms,days};
+}
+async function ending(){
+  const p=G.parents,k=G.party.map(m=>m.name);
+  B=null;BA=null;disp=null;showPad(false);$('overlay').innerHTML='';$('fx').innerHTML='';
+  G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});
+  mode='ending';ES={s:'chamber',t0:now};fadeT=now;stopMusic();renderParty();updateTop('B50 いちばん奥');
+  await talks(['メガラニアは、ゆっくりと たおれた。','あたりが しずかに なると、部屋の 奥が ぼんやりと 光りだした。',
+    '大きな 骨が 2つ、ならんで ねむっている。',
+    '1つは、ディプロトドン。ウォンバットや コアラの 遠い 親戚で、いままでに 知られている中で いちばん 大きな 有袋類だ。',
+    'もう1つは、ファスコロヌス。本当の「大きな ウォンバット」で、いまの ウォンバットの 何倍も 大きかった。',
+    'まわりを さがしても、宝箱は ひとつも ない。',
+    `${k[0]}「…宝は、なかったね」`,
+    `${k[1]}「でも、この 骨たちも、ここで くらして、ここで 穴を ほっていたんだ」`,
+    `${k[2]}「長老が 言ってた。レガシーとは 宝では ない、って」`,
+    '3匹は、骨に むかって そっと 頭を さげた。']);
+  ES={s:'climb',t0:now};fadeT=now;playMusic('ending');updateTop('');
+  await talks(['3匹は ロープを のぼっていく。','上から さしこむ 光が、だんだん 大きくなる…']);
+  ES={s:'village',t0:now};fadeT=now;updateTop('ユーカリ村');
+  await talks([`穴の 入口では、${p[0]}・${p[1]}・${p[2]}と 長老が 待っていた。`,
+    '長老「おかえり。どうじゃった？ ご先祖の のこしたものは」',
+    `${k[0]}「穴を ほって、仲間と 分けあって、ねぐらを 守る。それを ずっと つづけてきたこと…かな」`,
+    `${k[1]}「わたしたちも、それを つづける」`,`${k[2]}「それが、ぼくたちの レガシー」`,
+    '長老は、だまって うなずいた。',
+    `${p[0]}「…おまえたちは、おれたちより ずっと 遠くまで 行ったな」`,
+    `${p[1]}「レガシーって、こうやって つながっていくのね」`,
+    `${p[2]}「さあ、ごはんに しよう。みんなで 分けあって」`]);
+  await talks(['それから――',...G.party.map(epilogueLine),'ユーカリ村の 大きな 穴は、いまも そこに ある。\nいつか また、だれかが もぐる 日まで。']);
+  G.cleared=true;G.clearedAt=G.clearedAt||Date.now();save();
+  const r=endingRecord();
+  const parade=dexKeys().filter(k=>G.seen[k]&&!k.startsWith('guard'));
+  const lines=[{t:'ウォンバット☆レガシーRPG 2',b:1,c:'#ffd36b'},{t:''},{t:'～ ぼうけんの きろく ～',b:1,c:'#7cf0ff'},{t:'いちばん深い 階：B50'},{t:`たたかった 回数：${G.battles}回`},...r.ms.map(t=>({t})),
+    {t:`ずかん：${r.seen} / ${r.tot}`},{t:`光る宝箱：${r.gd} / 5`},{t:''},{t:'～ 出会った 生き物たち ～',b:1,c:'#7cf0ff'},{t:'（下を 歩いているよ）'},{t:''},
+    {t:'～ 図鑑の しりょう ～',b:1,c:'#7cf0ff'},{t:'オーストラリア博物館 ほか'},{t:''},{t:'ぜんさく',b:1,c:'#7cf0ff'},{t:'ウォンバット☆レガシーRPG'},{t:''},{t:'あそんでくれて ありがとう！',b:1,c:'#ffd36b'}];
+  const T=Math.max(26,Math.min(48,parade.length*.6));
+  ES={s:'roll',t0:now,T,lines,parade};fadeT=now;updateTop('');
+  setMsg(`～ ぼうけんの きろく ～\nたたかった 回数 ${G.battles}回　ずかん ${r.seen}/${r.tot}　光る宝箱 ${r.gd}/5`,false);
+  await new Promise(res=>{const tm=setTimeout(res,T*1000+600);setCmds([{label:'▶ とばす',cls:'wide sub',fn:()=>{clearTimeout(tm);res();}}]);});
+  ES={s:'end',t0:now};jingle('C5 E5 G5 C6 - E6 G6 C7',.12);
+  await sleep(1500);
+  const c=await ask('～ おしまい ～\nあそんでくれて ありがとう！\n（このあとも 穴に もぐって、極めていない 職業や ずかんを うめられるよ）',[{label:'つづけて あそぶ（村へ）',cls:'wide hi'},{label:'タイトルへ',cls:'wide'}]);
+  ES=null;G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});save();
+  if(c===0){fadeT=now;enterTown();}else{fadeT=now;title();}
+}
 
 requestAnimationFrame(frame);
 title();

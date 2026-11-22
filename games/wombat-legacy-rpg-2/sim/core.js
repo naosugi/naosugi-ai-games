@@ -339,7 +339,8 @@ function gainExp(m,amt){
     m.exp-=expNext(m.job,m.lv);const before=derived(m);m.lv++;const after=derived(m);
     out.push(`${m.name}は レベル${m.lv}に あがった！`);
     m.hp=after.maxhp;m.mp=after.maxmp; // 前作と同じく、レベルアップで全回復（テンポのため）
-    if(m.lv>=J.cap){m.mastered[m.job]=true;m.exp=0;out.push(`${m.name}は ${J.name}を きわめた！`);}
+    if(m.lv>=J.cap){const before=Object.keys(JOBS).filter(j=>jobUnlocked(m,j));m.mastered[m.job]=true;m.exp=0;out.push(`${m.name}は ${J.name}を きわめた！`);
+      for(const j of Object.keys(JOBS))if(!before.includes(j)&&jobUnlocked(m,j))out.push(`${m.name}は ${JOBS[j].name}に 転職できるように なった！`);}
     for(const k of learnUpTo(m))out.push(`${m.name}は「${SKILLS[k].name}」を おぼえた！`);
   }
   return out;

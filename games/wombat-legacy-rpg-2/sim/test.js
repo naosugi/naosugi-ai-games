@@ -269,3 +269,8 @@ test('敵の顔ぶれは10階ごとに大きく入れかわる（となりのエ
 test('色違いはエリアの技を1つ足す',()=>{
   const e=C.mkMob(25,'c:dingo');assert.ok(e.name.startsWith('あお'));assert.ok(e.moves.some(m=>m.n==='みずを はく'));assert.ok(e.mag>0);
 });
+
+test('極めて新しい職業が解放されると、その知らせが出る',()=>{
+  const m=C.newMember('war','a');master(m,'war');C.changeJob(m,'kar');m.lv=19;m.exp=0;
+  const out=C.gainExp(m,1e7);assert.ok(out.some(s=>s.includes('上級戦士に 転職できるように なった')),out.join('/'));
+});
