@@ -282,3 +282,22 @@ test('おまもりは、その状態異常に かかる確率を 1/4 にする',
     const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,G.party.map(()=>({k:'defend'})),C.rng(k+1));n+=ev.filter(x=>x.st==='sleep').length;}return n;};
   const a=count(null),b=count('sleep');assert.ok(b<a*.45,`おまもりなし${a} あり${b}`);
 });
+
+test('コアラ討伐：6組あり、解放は ダンジョンの進み具合しだい。予告つきの連携がある',()=>{
+  assert.strictEqual(C.RAIDS.length,6);
+  const G=C.newGame();assert.ok(!C.RAIDS.some(R=>C.raidUnlocked(G,R)));
+  G.bossDown={15:true,20:true};assert.deepStrictEqual(C.RAIDS.filter(R=>C.raidUnlocked(G,R)).map(R=>R.id),['r1','r2']);
+  G.cleared=true;assert.ok(C.raidUnlocked(G,C.RAIDS[5]));
+  for(const R of C.RAIDS){const es=C.raidEnemies(R);assert.strictEqual(es.length,3);assert.ok(es.every(e=>e.plan&&e.plan.length>=3));assert.ok(es.some(e=>e.plan.some(m=>m.tele)||e.plan.some(m=>m.k==='charge'||m.k==='eguard')));}
+  // 予告が ターンの終わりに出る
+  const G2=C.newGame();G2.party.forEach(m=>{m.lv=60;const d=C.derived(m);m.hp=d.maxhp;});const es=C.raidEnemies(C.RAIDS[0]);es[1].pi=2;const B=C.newBattle(G2,es);
+  const ev=C.battleTurn(B,G2.party.map(()=>({k:'defend'})),C.rng(1));
+  // まほうつかいコアラは 3番目の行動（大魔法）を したので、つぎの予告は まだない。もう2ターンで予告が出る
+  let seen=false;for(let t=0;t<3&&!B.over;t++){const e2=C.battleTurn(B,G2.party.map(()=>({k:'defend'})),C.rng(t+2));if(e2.some(x=>x.tele))seen=true;}
+  assert.ok(seen,'予告が出ない');
+});
+test('穴に かくれた敵には こうげきが 当たらない',()=>{
+  const G=C.newGame();const e=C.mkEnemy(10,'normal');e.plan=[{n:'あなに かくれる',k:'ehide'}];e.moves=e.plan;e.spd=9999;const hp=e.hp;
+  const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,G.party.map(()=>({k:'attack',t:0})),C.rng(3));
+  assert.strictEqual(B.enemies[0].hp,hp);assert.ok(ev.some(x=>x.text&&x.text.includes('かくれている')));
+});

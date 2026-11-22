@@ -731,6 +731,52 @@ const GUARDIANS={
   48:{name:'いにしえの番人',   hp:1.03,atk:1.1,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
       moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
 };
+// ---------- コアラ討伐（STAGE3.md の8d） ----------
+// 村の近くに出るようになったコアラを、長老の依頼で追い返す。ダンジョンとは別の寄り道。会話はしない
+// plan：決まった順番の行動。tele つきの技は、前のターンの終わりに予告する
+const A=(n,o)=>Object.assign({n,k:'atk'},o||{}),M=(n,pow,o)=>Object.assign({n,k:'magic',pow},o||{}),MA=(n,pow,o)=>Object.assign({n,k:'magicAll',pow},o||{});
+const RAIDS=[
+  {id:'r1',unlock:15,f:16,name:'村はずれの コアラたち',hint:'せんしコアラが まほうつかいを かばい、そうりょコアラが 回復する。まほうつかいコアラは ときどき 大魔法を ためる。',
+   members:[
+    {name:'せんしコアラ',pal:'kWarrior',hp:4.2,atk:1.2,def:1.6,plan:[{n:'なかまを かばう',k:'eguard'},A('つよいこうげき',{pow:1.3}),{n:'なかまを かばう',k:'eguard'},A('こうげき')]},
+    {name:'まほうつかいコアラ',pal:'kMage',hp:3.0,mag:2.1,plan:[M('ほのおのまほう',1.0),M('こおりのまほう',1.0),MA('ほのおの だいまほう',1.5,{tele:'まほうの ちからを ためている…'})]},
+    {name:'そうりょコアラ',pal:'kPriest',hp:3.0,mag:1.4,plan:[{n:'いやしの まほう',k:'healAllE',pct:.16},M('ひかりのまほう',.8),{n:'なかまを よみがえらせる',k:'reviveAlly'},{n:'いやしの まほう',k:'healAllE',pct:.16}]}]},
+  {id:'r2',unlock:20,f:21,name:'畑を あらす コアラたち',hint:'うたいてコアラが 歌で 仲間を 強くし、からてかコアラが ちからを ためて 大わざを ねらう。どくつかいコアラは のろいで こちらの まもりを 下げる。',
+   members:[
+    {name:'うたいてコアラ',pal:'kSinger',hp:3.0,mag:1.3,plan:[{n:'はげましの歌',k:'ebuff',tele:'歌う じゅんびを している…'},A('ひっかく'),{n:'ねむりの歌',k:'sleepAll',rate:.3},A('ひっかく')]},
+    {name:'からてかコアラ',pal:'kKarate',hp:3.4,atk:1.25,counter:.3,plan:[A('せいけんづき',{pow:1.1}),A('まわしげり'),{n:'きあいを ためる',k:'charge'}]},
+    {name:'どくつかいコアラ',pal:'kPoison',hp:3.0,mag:1.5,plan:[MA('どくのきり',.5,{poison:.5}),{n:'のろい',k:'debuffAll',st:'def'},A('ひっかく')]}]},
+  {id:'r3',unlock:30,f:31,name:'井戸を ふさぐ 上級コアラたち',hint:'かたくて、反撃し、みんなで 回復する。物理こうげきは 反撃されやすい。',
+   members:[
+    {name:'じょうきゅうせんしコアラ',pal:'kHwar',acc:'band',hp:4.4,atk:1.25,def:1.5,counter:.4,plan:[A('こうげき',{pow:1.2}),{n:'ふみこみ',k:'all',pow:.7},A('こうげき')]},
+    {name:'せいきしコアラ',pal:'kPal',acc:'band',hp:4.6,def:1.8,mag:1.3,counter:.3,plan:[{n:'せいなる たてで かばう',k:'eguard'},M('ひかりのけん',1.0),{n:'せいなる たてで かばう',k:'eguard'},{n:'いやしのて',k:'healAllE',pct:.12}]},
+    {name:'せいかしコアラ',pal:'kHym',acc:'band',hp:3.4,mag:1.4,plan:[{n:'いのりの歌',k:'healAllE',pct:.2,tele:'いのりの 歌を うたおうとしている…'},{n:'きよめの歌',k:'ecure'},{n:'げんきの歌',k:'ebuff'},M('ひかりのまほう',.9)]}]},
+  {id:'r4',unlock:40,f:41,name:'森を まどわす 上級コアラたち',hint:'ねむらせたり、こうげきを 下げたりして みだし、状態異常に かかった 仲間を 呪術師コアラの 魔法が ねらう。薬師コアラは なかまの 状態異常を なおす。',
+   members:[
+    {name:'げんじゅつしコアラ',pal:'kIll',acc:'band',hp:3.2,mag:1.6,plan:[{n:'ゆめのきり',k:'sleepAll',rate:.35},{n:'まぼろし',k:'debuffAll',st:'atk'},M('まどわしの まほう',1.0)]},
+    {name:'じゅじゅつしコアラ',pal:'kCur',acc:'band',hp:3.2,mag:2.0,plan:[{n:'のろい',k:'debuffAll',st:'def'},M('じわじわ',1.3,{vsStatus:true}),MA('ドカーン',.95,{tele:'ぶきみな ちからを あつめている…'})]},
+    {name:'くすしコアラ',pal:'kApo',acc:'band',hp:3.6,mag:1.4,plan:[{n:'ばんのうやく',k:'ecure'},MA('どくのくすり',.5,{poison:.6}),{n:'くすり',k:'healAllE',pct:.15}]}]},
+  {id:'r5',unlock:45,f:46,name:'夜に あらわれる コアラの 王たち',hint:'アイドル王コアラの 歌が つづくあいだ、忍者王コアラが 何度も おそってくる。あなほり王コアラは 穴に かくれて こうげきを うけない。',
+   members:[
+    {name:'アイドルおうコアラ',pal:'kIdl',acc:'crown',hp:3.6,mag:1.4,plan:[{n:'かっさいの歌',k:'ebuff',tele:'ステージの じゅんびを している…'},A('ひっかく'),A('ひっかく')]},
+    {name:'にんじゃおうコアラ',pal:'kNin',acc:'crown',hp:3.4,atk:1.1,acts:2,plan:[{n:'しゅりけん',k:'all',pow:.55},A('かげうち',{pow:1.1}),{n:'ねらいうち',k:'snipe',pow:1.3}]},
+    {name:'あなほりおうコアラ',pal:'kDig',acc:'crown',hp:4.4,atk:1.2,def:1.4,plan:[{n:'あなに かくれる',k:'ehide'},{n:'じひびき',k:'all',pow:.8,tele:'じめんを たたこうとしている…'},A('つめで ほりかえす',{pow:1.2})]}]},
+  {id:'r6',unlock:'clear',f:50,name:'コアラの 王たちの 総大将',hint:'力・魔法・守りを ぜんぶ もつ。突撃王コアラは ちからを ためて 大わざ、魔道王コアラは だいまほうと 回復、万能王コアラは 仲間を まもる。',
+   members:[
+    {name:'とつげきおうコアラ',pal:'kAtk',acc:'crown',hp:4.0,atk:1.3,plan:[A('とつげき',{pow:1.3}),{n:'ぜんりょくを ためる',k:'charge'},{n:'あばれまわる',k:'all',pow:.8}]},
+    {name:'まどうおうコアラ',pal:'kMagK',acc:'crown',hp:3.6,mag:2.2,plan:[MA('だいまほう',1.0,{tele:'だいまほうの じゅもんを となえている…'}),{n:'おおいなる いやし',k:'healAllE',pct:.18},M('いかずち',1.2)]},
+    {name:'ばんのうおうコアラ',pal:'kAllK',acc:'crown',hp:4.8,def:1.6,mag:1.4,counter:.3,plan:[{n:'みんなを まもる',k:'eguard'},M('すべての ぞくせい',1.1),{n:'いやしの ひかり',k:'healAllE',pct:.12}]}]},
+];
+// 解放されたころのパーティ（sim.js の raid）で 勝率4〜6割に なるよう シミュレーションで決めた倍率
+const RAID_SCALE={r1:{hp:.99,atk:.97},r2:{hp:1.04,atk:1.07},r3:{hp:1.23,atk:1.51},r4:{hp:.9,atk:.8},r5:{hp:.86,atk:.74},r6:{hp:.84,atk:.7}};
+function raidUnlocked(G,R){return R.unlock==='clear'?!!G.cleared:!!(G.bossDown&&G.bossDown[R.unlock]);}
+function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
+  return R.members.map((o,i)=>{const e=mkEnemy(R.f,'normal',{name:o.name});const v=k=>curve(k,R.f);
+    e.hp=e.max=Math.round(v('hp')*o.hp*S.hp);e.atk=Math.round(v('atk')*(o.atk||1)*S.atk);e.def=Math.round(v('def')*(o.def||1.2));e.spd=Math.round(v('spd')*1.3);
+    e.mag=Math.round(v('atk')*.55*(o.mag||1)*S.atk);e.plan=o.plan;e.moves=o.plan;e.acts=o.acts||1;e.counter=o.counter||0;e.statusMul=.55;e.raid=true;
+    e.exp=0;e.gold=0;e.look={spr:'koala',pal:o.pal,s:o.acc==='crown'?1.15:1.05,acc:o.acc||null};e.id=R.id+'_'+i;e.weak=[];return e;});}
+function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)),gold:Math.round(curve('gold',f)*(first?20:6))};}
+
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
 const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:8800,atk:290,def:95,mag:230},acts:2,
   moves:[{n:'ひっかく',k:'atk',w:3},{n:'木の上から とびかかる',k:'snipe',pow:1.8,w:2},{n:'だきついて はなさない',k:'atk',pow:.9,stun:.45,w:2},
@@ -787,6 +833,7 @@ function statusChance(B,m,S,e){
   const p=m?passives(m):{};
   let c=S.rate*(1+(p.statusRate||0));
   if(e.boss)c*=CONFIG.bossStatusRate*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
+  if(e.statusMul)c*=e.statusMul*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
   return Math.min(.95,c);
 }
 function skillDmgEstimate(B,m,S,e){
@@ -920,7 +967,7 @@ function battleTurn(B,cmds,r){
     if(!aliveParty(B).length){B.over='lose';return true;}return false;};
   const metalDmg=(e,dmg,crit)=>e.metal?(crit?3:1):dmg;
   const addKiai=(m,n)=>{const p=derived(m).p;if(p.kiai||n)m.kiai=Math.min(kiaiCap(m),(m.kiai||0)+(n||p.kiai));};
-  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
+  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;if(e.hidden){ev.push({t:'msg',text:`${e.name}は あなに かくれている！`});return;}e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
     if(e.st.sleep>0&&e.hp>0&&r()<.5){e.st.sleep=0;ev.push({t:'msg',text:`${e.name}は めをさました！`});}
     if(e.hp<=0){ev.push({t:'die',side:'e',i});
       if(extra&&extra.by){bstOf(extra.by).kills=(bstOf(extra.by).kills||0)+1;}
@@ -930,7 +977,7 @@ function battleTurn(B,cmds,r){
     if(e.st[S.st]>0){ev.push({t:'msg',text:`${e.name}は すでに ${ST_NAME[S.st]}だ。`});return;}
     const c=statusChance(B,m,S,e);
     if(r()<c){const turns=S.st==='poison'?99:S.st==='sleep'?2+Math.floor(r()*2):S.st==='stun'?(e.boss?1:2):CONFIG.debuff.turns;
-      e.st[S.st]=turns;if(e.boss)e.res[S.st]=(e.res[S.st]||0)+1;
+      e.st[S.st]=turns;if(e.boss||e.statusMul)e.res[S.st]=(e.res[S.st]||0)+1;
       if(S.st==='curse'){e.st.atkdn=turns;e.st.defdn=turns;}
       if(S.st==='poison')e.poisonPow=1+(m?passives(m).poisonPow||0:0);
       ev.push({t:'status',side:'e',i,st:S.st,text:`${e.name}は ${ST_NAME[S.st]}に なった！`});}
@@ -1064,12 +1111,19 @@ function battleTurn(B,cmds,r){
       if(e.charged){e.charged=false;const al0=aliveParty(B);const t=al0[Math.floor(r()*al0.length)];
         ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ためた いちげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),2.4,r,'p'),null,0,true,a.i);if(checkEnd())break;continue;}
       if(e.flee&&r()<e.flee){e.hp=0;e.fled=true;ev.push({t:'die',side:'e',i:a.i,fled:true});if(checkEnd())break;continue;}
+      e.hidden=false;
       let tw=moves.reduce((s,x)=>s+x.w,0),x=r()*tw,mv=moves[0];for(const mm of moves){x-=mm.w;if(x<0){mv=mm;break;}}
+      // 決まった順番で動く敵（コアラ討伐の連携）。眠ったり しびれたりすると 順番は すすまない
+      if(e.plan){mv=e.plan[(e.pi||0)%e.plan.length];e.pi=(e.pi||0)+1;if(mv.k==='eguard'&&aliveEnemies(B).length<2)mv={n:'こうげき',k:'atk'};}
       if(mv.k==='call'&&EN.filter(z=>z.hp>0).length>=3)mv=moves[0];
       const al=aliveParty(B);if(!al.length)break;
       // 狙い：戦士系（かばう持ち）を少し狙いやすい。HPの割合は見ない（弱った仲間ばかり狙わない）
       const pick=()=>{if(B.taunt&&B.taunt.turns>0&&P[B.taunt.i].hp>0)return B.taunt.i;const w=al.map(j=>skillsOf(P[j]).some(k=>SKILLS[k].kind==='guard')?4:3);let s=w.reduce((p,q)=>p+q,0)*r();for(let k=0;k<al.length;k++){s-=w[k];if(s<0)return al[k];}return al[0];};
-      if(mv.k==='atk'){const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+      if(mv.k==='healAllE'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+        for(const j of aliveEnemies(B)){const x=EN[j];const amt=Math.min(x.max-x.hp,Math.round(x.max*(mv.pct||.2)));if(amt>0){x.hp+=amt;ev.push({t:'heal',side:'e',i:j,amt});}}}
+      else if(mv.k==='ecure'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ なかまの 状態異常が なおった！`});for(const j of aliveEnemies(B))for(const k in EN[j].st)EN[j].st[k]=0;}
+      else if(mv.k==='ehide'){e.hidden=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！`});}
+      else if(mv.k==='atk'){const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r,'p'),null,mv.poison,true,a.i,mv.stun);}
       else if(mv.k==='all'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！`});
         for(const t of al){if(P[t].hp<=0)continue;hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow,r,'p'),null,mv.poison,false);if(checkEnd())break;}}
@@ -1086,7 +1140,7 @@ function battleTurn(B,cmds,r){
         if(hurt.length){const j=hurt[0];const amt=Math.min(EN[j].max-EN[j].hp,Math.round(EN[j].max*.4));EN[j].hp+=amt;ev.push({t:'heal',side:'e',i:j,amt,text:`${e.name}は ${EN[j].name}の きずを なおした！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='magic'||mv.k==='magicAll'){const ts=mv.k==='magic'?[pick()]:al;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
-        for(const t of ts){if(P[t].hp<=0)continue;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
+        for(const t of ts){if(P[t].hp<=0)continue;const vs=mv.vsStatus&&(P[t].poison||(P[t].bst&&(P[t].bst.sleep>0||P[t].bst.stun>0)))?1.6:1;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*vs*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
       else if(mv.k==='debuffAll'){B.pdebuff[mv.st]=CONFIG.debuff.turns+1;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${mv.st==='atk'?'こうげき':'ぼうぎょ'}が さがった！`});}
       else if(mv.k==='silence'){const t=pick();const m=P[t];const c=mv.rate*(partyP().some(p=>p.statusResist)?.5:1);ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         if(tryStatus(m,'silence',c)){bstOf(m).silence=2;ev.push({t:'status',side:'p',i:t,st:'silence',text:`${m.name}は ふういんされた！`});}else ev.push({t:'msg',text:`${m.name}は ふういんされなかった。`});}
@@ -1110,6 +1164,8 @@ function battleTurn(B,cmds,r){
     if(B.taunt&&B.taunt.turns>0)B.taunt.turns--;
     for(const k in B.pdebuff)if(B.pdebuff[k]>0)B.pdebuff[k]--;
     for(const e of EN)if(e.ebuff>0)e.ebuff--;
+    // 予告：つぎに 大きな連携を する敵を 知らせる
+    for(const j of aliveEnemies(B)){const e=EN[j];if(!e.plan||e.st.sleep>0||e.st.stun>0)continue;const nx=e.plan[(e.pi||0)%e.plan.length];if(nx.tele)ev.push({t:'msg',text:`${e.name}は ${nx.tele}`,tele:true});}
     if(B.eguard!=null&&--B.eguardT<=0)B.eguard=null;
     for(const x of P)if(x.bst&&x.bst.silence>0)x.bst.silence--;
     for(const i of aliveParty(B)){const m=P[i],b=bstOf(m),dd=derived(m);
@@ -1129,7 +1185,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
@@ -1602,6 +1658,19 @@ const EPAL={
   thyleo:{m:'#a88850',l:'#c8a870',d:'#6a5430',b:'#f0e0c0',w:'#f0e0c0',e:'#111',p:'#c08a6a'},
   thyleoB:{m:'#8a6a3a',l:'#b08a50',d:'#54401e',b:'#efd8b0',w:'#efd8b0',e:'#ff3a2a',p:'#c08a6a'},
   opal:{m:'#7aa8c8',l:'#c8e8f8',d:'#4a6a9a',b:'#f0e8ff',a:'#ff8ad8',e:'#ffe24a'},
+  // コアラ討伐の 上級・超上級コアラ（a：はちまき・冠の色）
+  kHwar:{m:'#7a6a5a',l:'#a8988a',d:'#4a3e34',b:'#f0e8e0',n:'#1b1b1e',e:'#d8463a',w:'#ffffff',a:'#d8463a'},
+  kPal:{m:'#a8b0c0',l:'#d8e0ec',d:'#6a7488',b:'#ffffff',n:'#1b1b1e',e:'#3a7ad8',w:'#ffffff',a:'#e8c040'},
+  kHym:{m:'#d8b0d8',l:'#f4dcf4',d:'#9a709a',b:'#fff4ff',n:'#1b1b1e',e:'#5fb85a',w:'#ffffff',a:'#5fb85a'},
+  kIll:{m:'#6a7ab8',l:'#9aaae0',d:'#3e4a80',b:'#e8ecff',n:'#1b1b1e',e:'#ff8ad8',w:'#ffffff',a:'#ff8ad8'},
+  kCur:{m:'#5a4a6a',l:'#8a789a',d:'#342a40',b:'#e0d8e8',n:'#120a1e',e:'#a0ff60',w:'#ffffff',a:'#a050c8'},
+  kApo:{m:'#7aa87a',l:'#a8d0a8',d:'#4a704a',b:'#f0fff0',n:'#1b1b1e',e:'#e8e0a0',w:'#ffffff',a:'#f0f0f0'},
+  kIdl:{m:'#e8a0b8',l:'#ffd0e0',d:'#a86078',b:'#fff4f8',n:'#1b1b1e',e:'#1a1a1e',w:'#ffffff',a:'#ffd36b'},
+  kNin:{m:'#3a3a4a',l:'#5a5a6e',d:'#1e1e28',b:'#c8c8d8',n:'#0a0a10',e:'#ff4a4a',w:'#ffffff',a:'#ffd36b'},
+  kDig:{m:'#9a7a52',l:'#c8a478',d:'#5e4a2e',b:'#f4e8d0',n:'#1b1b1e',e:'#1a1a1e',w:'#ffffff',a:'#ffd36b'},
+  kAtk:{m:'#b85a3a',l:'#e0845e',d:'#6e3220',b:'#ffe8d8',n:'#1b1b1e',e:'#ffe24a',w:'#ffffff',a:'#ffd36b'},
+  kMagK:{m:'#3e2a6a',l:'#6a50a0',d:'#22163e',b:'#e0d0ff',n:'#0a061a',e:'#7cf0ff',w:'#ffffff',a:'#ffd36b'},
+  kAllK:{m:'#c8c8d0',l:'#f4f4fa',d:'#8a8a96',b:'#ffffff',n:'#1b1b1e',e:'#e8c040',w:'#ffffff',a:'#ffd36b'},
   megal:{m:'#4a3e30',l:'#6e5e4a',d:'#28201a',b:'#b8a070',e:'#ff2a1a',w:'#ffffff'},
 };
 // 色違い（B21〜）：もとの色を、その色に寄せる
@@ -1779,8 +1848,12 @@ GEN.thyla=function(c,s){const R=GEN.quad(c,s,{tail:'thin',snout:1.3});const K=s;
   for(let x=9*K;x<25*K;x+=3*K)for(let y=10.5*K;y<17*K;y++)for(let dx=0;dx<Math.max(1,Math.round(K));dx++){const i=Math.floor(y)*R.W+Math.floor(x)+dx;if(R.img[i]&&R.img[i]!=='o')R.img[i]=c.s;}
   return R;};
 // 敵のドット絵：look = {spr, pal, s, tint}
-function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'');
-  return cached(key,()=>toCanvas(GEN[look.spr](tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),look.s||1)));}
+function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'')+'|'+(look.acc||'');
+  return cached(key,()=>{const pal=tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),c=toCanvas(GEN[look.spr](pal,look.s||1));
+    if(look.acc&&look.spr==='koala'){const x=c.getContext('2d'),K=look.s||1,R=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(a*K),Math.round(b*K),Math.max(1,Math.round(w*K)),Math.max(1,Math.round(h*K)));};
+      if(look.acc==='band'){R(13,9.5,20,1.6,pal.a);R(31,8.5,3,1,pal.a);R(32,10.5,3,1,pal.a);} // はちまき（上級）
+      else if(look.acc==='crown'){R(17,4,12,2.4,'#e8b830');for(const cx of [17,22,27])R(cx,1.5,2,2.6,'#e8b830');R(22.5,4.4,1,1,'#ff4a6a');R(18,4.6,10,.8,'#fff0a0');}} // 冠（超上級）
+    return c;});}
 
 // ---------- field wombat (16x16) ----------
 const FW_ROWS={
@@ -2187,7 +2260,7 @@ $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 // ---------- save ----------
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
-function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
+function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats','raids','raidNews'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevLevel(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return 0;const s=JSON.parse(t);if(s&&s.party)return Math.max(...s.party.map(m=>+m.lv||0));}catch(e){}return 0;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
 
@@ -2448,7 +2521,7 @@ function newGame2(){
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   const sv=load();
-  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
+  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
 }
 async function startNew(){
@@ -2473,6 +2546,7 @@ async function enterTown(arrive){
   renderParty();updateTop('ユーカリ村');save();playMusic('town');
   if(arrive)await talks(arrive);
   await checkQuests();
+  await raidNews();
   townMenu();
 }
 function questLine(a,short){if(!questOpen(a))return '';const Q=QUESTS[a];return Q.list.map((q,i)=>{const done=(G.qdone[a]||{})[i];let s=(done?'✅ ':'□ ')+(short?q.s:q.text);
@@ -2510,6 +2584,7 @@ function townMenu(){
     {label:'🗡 武器と防具',sub:'ツメ・つえ・ふえ・よろい',fn:equipShop},
     {label:'👴 長老の巣穴',sub:'お話・クエスト',fn:elder},
     G.flags.jobChange?{label:'🎓 転職所',sub:'転職・引き継ぎ枠',fn:jobHall}:{label:`🏠 ${G.parents[0]}たちの 家`,sub:'ヒントを 聞く',fn:parentsHome},
+    ...(RAIDS.some(R=>raidUnlocked(G,R))?[{label:'🐨 コアラ討伐',sub:'村の近くの コアラを 追いかえす',fn:raidMenu}]:[]),
     {label:'📊 つよさ・どうぐ',fn:()=>partyMenu(townMenu)},
     {label:'📖 ずかん',fn:dex},
   ];
@@ -2843,12 +2918,12 @@ async function startBattle(enemies,opt){
   busy=true;heldDir=null;showPad(false);
   const snap=JSON.stringify(G),ret=F?{f:F.f,px:F.px,py:F.py,dir:F.dir}:null,init=JSON.stringify(enemies);
   snd('enc');stopMusic();flashT=performance.now();await sleep(110);flashT=performance.now();await sleep(90);wipeT=performance.now();await sleep(520);
-  B=newBattle(G,enemies);B.snap=snap;B.init=init;B.opt=opt||{};B.ret=ret;B.ts=areaOf(F?F.f:1);
+  B=newBattle(G,enemies);B.snap=snap;B.init=init;B.opt=opt||{};B.ret=ret;B.ts=opt&&opt.ts!=null?opt.ts:areaOf(F?F.f:1);
   BA={e:B.enemies.map(e=>({flash:-1e9,lunge:-1e9,dead:0,hp:e.hp})),p:G.party.map(()=>({step:0,shake:-1e9})),fx:[],pops:[],enter:performance.now()+150,win:0};
-  layoutEnemies();mode='battle';fadeT=performance.now();playMusic((B.boss&&B.opt.f>=STAGE_MAX)||B.opt.secret?'lastboss':B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
+  layoutEnemies();mode='battle';fadeT=performance.now();playMusic((B.boss&&B.opt.f>=STAGE_MAX)||B.opt.secret?'lastboss':B.boss||B.opt.guard||B.opt.raid?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   B.enemies.forEach(e=>{if(e.id)G.seen[e.id]=1;});
   const names=[...new Set(B.enemies.map(e=>e.name.replace(/ [A-E]$/,'')))];
-  if(B.boss||B.opt.guard){setTimeout(()=>{banner(B.boss?'BOSS':'番人',names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
+  if(B.boss||B.opt.guard||B.opt.raid){setTimeout(()=>{banner(B.boss?'BOSS':B.opt.raid?'コアラ討伐':'番人',B.opt.raid?B.opt.raid.name:names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
   setMsg(B.boss?`${names[0]}が おそいかかってきた！`:`${names.join('と ')}が あらわれた！`,false,0);setCmds([]);
   await bwait(B.boss||B.opt.guard?1600:1000);
   if(!G.flags.tipBattle){G.flags.tipBattle=1;
@@ -2897,7 +2972,7 @@ function inputPhase(){return new Promise(res=>{
       {label:'🛡 ぼうぎょ',sub:'うける ダメージ 半分',fn:()=>choose({k:'defend'})},
       {label:'🎒 どうぐ',sub:'やくそう など',fn:()=>itemMenu(i)},
       {label:'🤖 おまかせ',sub:k===0?'みんな 自動で うごく':'のこりを 自動で',fn:auto,cls:'hi'},
-      {label:'🏃 にげる',sub:B.boss?'ぬしからは にげられない':'たたかいを やめる',dis:B.boss,fn:()=>{clearPick();const c=[];c[order[0]]={k:'run'};res(c);}},
+      {label:'🏃 にげる',sub:B.boss?'ぬしからは にげられない':B.opt.raid?'討伐から にげられない':'たたかいを やめる',dis:B.boss||!!B.opt.raid,fn:()=>{clearPick();const c=[];c[order[0]]={k:'run'};res(c);}},
       ...(k>0?[{label:'← 前の仲間に もどる',fn:back,cls:'wide sub'}]:[]),
     ]);
   };
@@ -2972,6 +3047,7 @@ async function endBattle(){
   if(B.over==='win'||B.over==='fled'){
     if(B.enemies.some(e=>e.id==='devil'&&e.hp<=0&&!e.fled&&e.st.poison>0))G.qflag.devilPoison=true;
     if(B.enemies.some(e=>e.id==='archer'&&e.hp<=0&&!e.fled&&e.st.sleep>0))G.qflag.archerSleep=true;
+    if(B.opt.raid){await raidWin(B.opt.raid);return;}
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
@@ -2999,6 +3075,49 @@ async function endBattle(){
   G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});fadeT=now;enterTown();
 }
 function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic(dungeonTrack(F.f));fieldIdle();}
+// ---------- コアラ討伐（STAGE3.md の8d） ----------
+const RAID_NEWS={
+  r1:['長老「たいへんじゃ。村はずれに コアラが 出るように なった」','長老「穴の 奥から 出てきたのかのう。畑の ユーカリを ねらって、3匹で うろついておる」','長老「むりにとは 言わんが、追いかえしてくれると たすかる」\n（村の「🐨 コアラ討伐」から 挑めるよ。しなくても 先へ すすめる 寄り道だよ）'],
+  r2:['長老「こんどは 畑に コアラが 出た。歌ったり、毒を まいたり、やっかいな 連中じゃ」'],
+  r3:['長老「井戸の そばに、かたい コアラたちが いすわってしまった。水が くめんで こまっておる」'],
+  r4:['長老「森で まいごが ふえておる。どうも コアラたちが 森を まどわしているらしい」'],
+  r5:['長老「夜に なると、冠を つけた コアラが 村の まわりを うろつくそうじゃ…」'],
+  r6:['長老「穴の 底の ぬしが いなくなって、コアラの 王たちが いっせいに 村へ やってきた！ これが さいごの 討伐じゃ」'],
+};
+async function raidNews(){for(const R of RAIDS){if(!raidUnlocked(G,R)||G.raidNews[R.id])continue;G.raidNews[R.id]=1;save();banner('依頼','コアラ討伐：'+R.name,'#ffb070',2000);snd('quest');await talks(RAID_NEWS[R.id]);}}
+function raidMenu(){
+  const list=RAIDS.map(R=>{const un=raidUnlocked(G,R),n=G.raids[R.id]||0;
+    return {label:(un?(n?'✔ ':'🐨 '):'🔒 ')+(un?R.name:'？？？'),sub:un?(n?`追いかえした（${n}回）・もう一度 たたかえる`:'はじめて 勝つと 大きな ごほうび'):(R.unlock==='clear'?'穴の 底の ぬしを たおすと':`B${R.unlock}の ぬしを たおすと`),dis:!un,cls:'wide',fn:()=>raidDetail(R)};});
+  setMsg('コアラ討伐の 依頼\n村の 近くに 出る コアラを 追いかえそう。3匹 そろって 連携してくるよ。');
+  setCmds([...list,{label:'← もどる',fn:townMenu,cls:'wide sub'}]);
+}
+async function raidDetail(R){
+  const first=!G.raids[R.id],rw=raidReward(R,first);
+  const c=await ask(`【${R.name}】\n${R.hint}`,[{label:'⚔ 討伐に 行く',sub:`ごほうび：けいけんち ${rw.exp}・${rw.gold}ウォン${first?(R.id==='r6'?'・称号':'・とくべつな 武器'):''}`,cls:'wide hi'},{label:'← もどる',cls:'wide sub'}]);
+  if(c!==0){raidMenu();return;}
+  const p=await ask('村の 宿屋で 休んでから 行く？\n（HPと MPが 全回復する。お金は かからない）',[{label:'休んでから 行く',cls:'wide hi'},{label:'このまま 行く',cls:'wide'}]);
+  if(p===0)G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});
+  F=null;showPad(false);$('overlay').innerHTML='';
+  startBattle(raidEnemies(R),{raid:{id:R.id,name:R.name},ts:Math.min(4,Math.floor((R.f-1)/10))});
+}
+async function raidWin(r){
+  const R=RAIDS.find(x=>x.id===r.id),first=!G.raids[R.id],rw=raidReward(R,first);
+  G.raids[R.id]=(G.raids[R.id]||0)+1;
+  banner(first?'討伐 せいこう！':'討伐 せいこう','コアラたちは 森へ にげていった','#ffd36b',2200);flashT=performance.now();await sleep(800);
+  await talk(`コアラたちは 森の 奥へ にげていった！\n${rw.exp}の けいけんちを 手に入れた！\n${rw.gold}ウォンを ひろった！`);addGold(rw.gold);
+  for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
+    for(const s of ms){if(s.includes('レベル')){jingle('G5 C6 E6 G6',.08);banner('LEVEL UP!',`${m.name}  Lv${(s.match(/レベル(\d+)/)||[0,m.lv])[1]}`,'#7cf0ff',1700);partySparkle(mi);}
+      else if(s.includes('転職できる')){const sup=/王に 転職/.test(s);jingle(sup?'C5 E5 G5 C6 E6 G6 C7':'E5 G5 C6 E6',.08);banner(sup?'★ 超上級職 解放 ★':'解放！',s.replace(/^.*は /,'').replace('に 転職できるように なった！',''),sup?'#ffd36b':'#7cf0ff',2200);}
+      else if(s.includes('きわめた')){jingle('C5 E5 G5 C6 E6',.09);banner('きわめた！',`${m.name}  ${jobName(m.job)}`,'#ffd36b',2000);}renderParty();await talk(s);}}
+  if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
+  if(first){
+    if(R.id==='r6'){G.title='村の まもりて';snd('quest');banner('★ 称号 ★','村の まもりて','#ffd36b',2600);await talk('★ コアラの 王たちを すべて 追いかえした！ ★\n長老から「村の まもりて」の 称号を もらった！');}
+    else{const tier=Math.min(SHOP_TOP,shopMax(G.shopTier)+2);const m=G.party.slice().sort((a,b)=>(a.own[bestLine(a.job)]||0)-(b.own[bestLine(b.job)]||0))[0],l=bestLine(m.job);
+      if((m.own[l]||0)<tier){m.own[l]=tier;m.wl=l;m.w=tier;banner('★ GET ★',WEAPON_LINES[l].names[tier],'#d098ff',2200);await talk(`お礼に、長老から「${WEAPON_LINES[l].names[tier]}」を もらった！\n${m.name}が そうびした！`);}
+      else{const g=Math.floor(WEAPON_PRICE[tier]/2);addGold(g);await talk(`お礼に ${g}ウォン もらった！`);}}}
+  B=null;BA=null;disp=null;save();fadeT=now;enterTown();
+}
+
 // ---------- クリア後の隠しボス（ドロップベア） ----------
 async function secretIntro(){
   await talks(['化石の 部屋の 天井に、太い ユーカリの 根が はりめぐらされている。','…根の あいだで、なにかが じっと こちらを 見ている。']);
@@ -3021,7 +3140,7 @@ async function bossDown(f){
   const lines={
     5:['ツムギアリの女王は、はっぱの 巣へ 帰っていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「よく やったわね。ほうびに、穴の ほりかたを 教えてあげる」`,'★ やわらかい かべを ほれるように なった！ ★\n（土の色の かべに 向かって 進むと ほれる）'],
     10:['ディンゴのおやぶんは、群れを つれて 去っていった。',`${p[2]}「りっぱに なったなあ。村に 転職所を ひらこう」`,'★ 転職が できるように なった！ ★\n（村の「転職所」で、職業を かえたり、わざを 引きついだり できる）'],
-    15:['コアラのだいまどうしは「ふむ…やるのう」と つぶやいて、ねむってしまった。'],
+    15:['コアラのだいまどうしは つえを おとし、ふらふらと 木の 上へ にげていった。'],
     20:['イリエワニのぬしは、しずかに 地下の 水へ もどっていった。','穴の 下の ほうから、水の 音が きこえる…',`（${p[0]}の 声が した気がした）「この先は 水の層。足もとに 気をつけろ」`],
     25:['カモノハシのぬしは、川岸の 巣穴へ もぐっていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「カモノハシは 川岸に 巣穴を ほるのよ。下へ ほる コツを 教えてあげる」`,'★ ひびわれた床から 下へ ほれるように なった！ ★\n（B21より深い 階の「ひびわれた床」に 乗ると、つぎの 階へ おりられる）'],
     30:['マーレーコッドのおおぬしは、地下の 川の 奥へ 泳いでいった。','水の層を ぬけると、岩が きらきらと 光っている…','長老の 話を 思いだした。「むかし、暑さを さけて 地下に くらした 人びとが いたそうじゃ」'],
@@ -3108,7 +3227,7 @@ function ambient(ts,cx,cy){
 const BOSS_LINE={
   5:['ギチギチ… 女王が 大きな あごを 鳴らしている。'],
   10:['「ウォォーン！」 群れの とおぼえが 穴じゅうに ひびいた。'],
-  15:['コアラのだいまどうし「わしの ひるねを じゃまするのは だれじゃ…」'],
+  15:['ねむっていた コアラのだいまどうしが、うすく 目を あけた。','つえの 先に、つめたい まりょくが あつまっていく…'],
   20:['水面が もりあがり、大きな 目が こちらを 見た…'],
   25:['カモノハシのぬしが くちばしを ふるわせている。','こちらの 気配を、電気で 感じとっているようだ…'],
   30:['地下の 川の 底から、大きな かげが のぼってきた…'],

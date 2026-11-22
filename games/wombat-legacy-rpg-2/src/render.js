@@ -465,6 +465,19 @@ const EPAL={
   thyleo:{m:'#a88850',l:'#c8a870',d:'#6a5430',b:'#f0e0c0',w:'#f0e0c0',e:'#111',p:'#c08a6a'},
   thyleoB:{m:'#8a6a3a',l:'#b08a50',d:'#54401e',b:'#efd8b0',w:'#efd8b0',e:'#ff3a2a',p:'#c08a6a'},
   opal:{m:'#7aa8c8',l:'#c8e8f8',d:'#4a6a9a',b:'#f0e8ff',a:'#ff8ad8',e:'#ffe24a'},
+  // コアラ討伐の 上級・超上級コアラ（a：はちまき・冠の色）
+  kHwar:{m:'#7a6a5a',l:'#a8988a',d:'#4a3e34',b:'#f0e8e0',n:'#1b1b1e',e:'#d8463a',w:'#ffffff',a:'#d8463a'},
+  kPal:{m:'#a8b0c0',l:'#d8e0ec',d:'#6a7488',b:'#ffffff',n:'#1b1b1e',e:'#3a7ad8',w:'#ffffff',a:'#e8c040'},
+  kHym:{m:'#d8b0d8',l:'#f4dcf4',d:'#9a709a',b:'#fff4ff',n:'#1b1b1e',e:'#5fb85a',w:'#ffffff',a:'#5fb85a'},
+  kIll:{m:'#6a7ab8',l:'#9aaae0',d:'#3e4a80',b:'#e8ecff',n:'#1b1b1e',e:'#ff8ad8',w:'#ffffff',a:'#ff8ad8'},
+  kCur:{m:'#5a4a6a',l:'#8a789a',d:'#342a40',b:'#e0d8e8',n:'#120a1e',e:'#a0ff60',w:'#ffffff',a:'#a050c8'},
+  kApo:{m:'#7aa87a',l:'#a8d0a8',d:'#4a704a',b:'#f0fff0',n:'#1b1b1e',e:'#e8e0a0',w:'#ffffff',a:'#f0f0f0'},
+  kIdl:{m:'#e8a0b8',l:'#ffd0e0',d:'#a86078',b:'#fff4f8',n:'#1b1b1e',e:'#1a1a1e',w:'#ffffff',a:'#ffd36b'},
+  kNin:{m:'#3a3a4a',l:'#5a5a6e',d:'#1e1e28',b:'#c8c8d8',n:'#0a0a10',e:'#ff4a4a',w:'#ffffff',a:'#ffd36b'},
+  kDig:{m:'#9a7a52',l:'#c8a478',d:'#5e4a2e',b:'#f4e8d0',n:'#1b1b1e',e:'#1a1a1e',w:'#ffffff',a:'#ffd36b'},
+  kAtk:{m:'#b85a3a',l:'#e0845e',d:'#6e3220',b:'#ffe8d8',n:'#1b1b1e',e:'#ffe24a',w:'#ffffff',a:'#ffd36b'},
+  kMagK:{m:'#3e2a6a',l:'#6a50a0',d:'#22163e',b:'#e0d0ff',n:'#0a061a',e:'#7cf0ff',w:'#ffffff',a:'#ffd36b'},
+  kAllK:{m:'#c8c8d0',l:'#f4f4fa',d:'#8a8a96',b:'#ffffff',n:'#1b1b1e',e:'#e8c040',w:'#ffffff',a:'#ffd36b'},
   megal:{m:'#4a3e30',l:'#6e5e4a',d:'#28201a',b:'#b8a070',e:'#ff2a1a',w:'#ffffff'},
 };
 // 色違い（B21〜）：もとの色を、その色に寄せる
@@ -642,8 +655,12 @@ GEN.thyla=function(c,s){const R=GEN.quad(c,s,{tail:'thin',snout:1.3});const K=s;
   for(let x=9*K;x<25*K;x+=3*K)for(let y=10.5*K;y<17*K;y++)for(let dx=0;dx<Math.max(1,Math.round(K));dx++){const i=Math.floor(y)*R.W+Math.floor(x)+dx;if(R.img[i]&&R.img[i]!=='o')R.img[i]=c.s;}
   return R;};
 // 敵のドット絵：look = {spr, pal, s, tint}
-function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'');
-  return cached(key,()=>toCanvas(GEN[look.spr](tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),look.s||1)));}
+function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'')+'|'+(look.acc||'');
+  return cached(key,()=>{const pal=tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),c=toCanvas(GEN[look.spr](pal,look.s||1));
+    if(look.acc&&look.spr==='koala'){const x=c.getContext('2d'),K=look.s||1,R=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(a*K),Math.round(b*K),Math.max(1,Math.round(w*K)),Math.max(1,Math.round(h*K)));};
+      if(look.acc==='band'){R(13,9.5,20,1.6,pal.a);R(31,8.5,3,1,pal.a);R(32,10.5,3,1,pal.a);} // はちまき（上級）
+      else if(look.acc==='crown'){R(17,4,12,2.4,'#e8b830');for(const cx of [17,22,27])R(cx,1.5,2,2.6,'#e8b830');R(22.5,4.4,1,1,'#ff4a6a');R(18,4.6,10,.8,'#fff0a0');}} // 冠（超上級）
+    return c;});}
 
 // ---------- field wombat (16x16) ----------
 const FW_ROWS={

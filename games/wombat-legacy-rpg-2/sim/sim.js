@@ -299,6 +299,13 @@ function main(){
   const hours=val('--hours',60),seeds=val('--seeds',5),n=val('--n',120);
   let md=`# シミュレーション結果\n\n\`node sim.js\` で作った結果。数字はすべて仮の設定（core.js の CONFIG、sim.js の TIME）にもとづく。時間は「おまかせで遊んだときのめやす」。\n\n`;
   if(mode==='check'){process.stdout.write(stageMd(stageCheck(n))+'\n');return;}
+  if(mode==='raid'){ // コアラ討伐：解放されたころのパーティで
+    const party={r1:[['war','mag','pri'],16],r2:[['kar','poi','sin'],20],r3:[['hwar','hym','ill'],30],r4:[['hwar','hym','ill'],30],r5:[['kAll','kMag','kNin'],35],r6:[['kAll','kMag','kNin'],40]};
+    let o='| 討伐 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n';
+    for(const R of C.RAIDS){const [j,l]=party[R.id],gear=Math.min(C.SHOP_TOP,shopMax(1+Math.floor((R.f-1)/10)));const r=C.rng(42);let w=0,tt=0;const N=n>=120?80:n;
+      for(let k=0;k<N;k++){const G=makeParty(j,l,gear);G.inv={herb2:3,leaf:1};const res=fight(G,C.raidEnemies(R),r);if(res.over==='win')w++;tt+=res.turns;}
+      o+=`| ${R.name} | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(w/N)} | ${(tt/N).toFixed(1)} |\n`;}
+    process.stdout.write(o);return;}
   if(mode==='boss'){ // ぬしと番人を全部、その階に見合うレベルで（中ボスは上限より低め）
     const cap=f=>f<=20?[['war','mag','pri'],20]:f<=40?[['hwar','hym','ill'],30]:[['kAll','kMag','kNin'],40];
     const midLv={5:8,15:16,25:20,35:27,45:35};

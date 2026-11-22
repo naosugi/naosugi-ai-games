@@ -579,6 +579,52 @@ const GUARDIANS={
   48:{name:'いにしえの番人',   hp:1.03,atk:1.1,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
       moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
 };
+// ---------- コアラ討伐（STAGE3.md の8d） ----------
+// 村の近くに出るようになったコアラを、長老の依頼で追い返す。ダンジョンとは別の寄り道。会話はしない
+// plan：決まった順番の行動。tele つきの技は、前のターンの終わりに予告する
+const A=(n,o)=>Object.assign({n,k:'atk'},o||{}),M=(n,pow,o)=>Object.assign({n,k:'magic',pow},o||{}),MA=(n,pow,o)=>Object.assign({n,k:'magicAll',pow},o||{});
+const RAIDS=[
+  {id:'r1',unlock:15,f:16,name:'村はずれの コアラたち',hint:'せんしコアラが まほうつかいを かばい、そうりょコアラが 回復する。まほうつかいコアラは ときどき 大魔法を ためる。',
+   members:[
+    {name:'せんしコアラ',pal:'kWarrior',hp:4.2,atk:1.2,def:1.6,plan:[{n:'なかまを かばう',k:'eguard'},A('つよいこうげき',{pow:1.3}),{n:'なかまを かばう',k:'eguard'},A('こうげき')]},
+    {name:'まほうつかいコアラ',pal:'kMage',hp:3.0,mag:2.1,plan:[M('ほのおのまほう',1.0),M('こおりのまほう',1.0),MA('ほのおの だいまほう',1.5,{tele:'まほうの ちからを ためている…'})]},
+    {name:'そうりょコアラ',pal:'kPriest',hp:3.0,mag:1.4,plan:[{n:'いやしの まほう',k:'healAllE',pct:.16},M('ひかりのまほう',.8),{n:'なかまを よみがえらせる',k:'reviveAlly'},{n:'いやしの まほう',k:'healAllE',pct:.16}]}]},
+  {id:'r2',unlock:20,f:21,name:'畑を あらす コアラたち',hint:'うたいてコアラが 歌で 仲間を 強くし、からてかコアラが ちからを ためて 大わざを ねらう。どくつかいコアラは のろいで こちらの まもりを 下げる。',
+   members:[
+    {name:'うたいてコアラ',pal:'kSinger',hp:3.0,mag:1.3,plan:[{n:'はげましの歌',k:'ebuff',tele:'歌う じゅんびを している…'},A('ひっかく'),{n:'ねむりの歌',k:'sleepAll',rate:.3},A('ひっかく')]},
+    {name:'からてかコアラ',pal:'kKarate',hp:3.4,atk:1.25,counter:.3,plan:[A('せいけんづき',{pow:1.1}),A('まわしげり'),{n:'きあいを ためる',k:'charge'}]},
+    {name:'どくつかいコアラ',pal:'kPoison',hp:3.0,mag:1.5,plan:[MA('どくのきり',.5,{poison:.5}),{n:'のろい',k:'debuffAll',st:'def'},A('ひっかく')]}]},
+  {id:'r3',unlock:30,f:31,name:'井戸を ふさぐ 上級コアラたち',hint:'かたくて、反撃し、みんなで 回復する。物理こうげきは 反撃されやすい。',
+   members:[
+    {name:'じょうきゅうせんしコアラ',pal:'kHwar',acc:'band',hp:4.4,atk:1.25,def:1.5,counter:.4,plan:[A('こうげき',{pow:1.2}),{n:'ふみこみ',k:'all',pow:.7},A('こうげき')]},
+    {name:'せいきしコアラ',pal:'kPal',acc:'band',hp:4.6,def:1.8,mag:1.3,counter:.3,plan:[{n:'せいなる たてで かばう',k:'eguard'},M('ひかりのけん',1.0),{n:'せいなる たてで かばう',k:'eguard'},{n:'いやしのて',k:'healAllE',pct:.12}]},
+    {name:'せいかしコアラ',pal:'kHym',acc:'band',hp:3.4,mag:1.4,plan:[{n:'いのりの歌',k:'healAllE',pct:.2,tele:'いのりの 歌を うたおうとしている…'},{n:'きよめの歌',k:'ecure'},{n:'げんきの歌',k:'ebuff'},M('ひかりのまほう',.9)]}]},
+  {id:'r4',unlock:40,f:41,name:'森を まどわす 上級コアラたち',hint:'ねむらせたり、こうげきを 下げたりして みだし、状態異常に かかった 仲間を 呪術師コアラの 魔法が ねらう。薬師コアラは なかまの 状態異常を なおす。',
+   members:[
+    {name:'げんじゅつしコアラ',pal:'kIll',acc:'band',hp:3.2,mag:1.6,plan:[{n:'ゆめのきり',k:'sleepAll',rate:.35},{n:'まぼろし',k:'debuffAll',st:'atk'},M('まどわしの まほう',1.0)]},
+    {name:'じゅじゅつしコアラ',pal:'kCur',acc:'band',hp:3.2,mag:2.0,plan:[{n:'のろい',k:'debuffAll',st:'def'},M('じわじわ',1.3,{vsStatus:true}),MA('ドカーン',.95,{tele:'ぶきみな ちからを あつめている…'})]},
+    {name:'くすしコアラ',pal:'kApo',acc:'band',hp:3.6,mag:1.4,plan:[{n:'ばんのうやく',k:'ecure'},MA('どくのくすり',.5,{poison:.6}),{n:'くすり',k:'healAllE',pct:.15}]}]},
+  {id:'r5',unlock:45,f:46,name:'夜に あらわれる コアラの 王たち',hint:'アイドル王コアラの 歌が つづくあいだ、忍者王コアラが 何度も おそってくる。あなほり王コアラは 穴に かくれて こうげきを うけない。',
+   members:[
+    {name:'アイドルおうコアラ',pal:'kIdl',acc:'crown',hp:3.6,mag:1.4,plan:[{n:'かっさいの歌',k:'ebuff',tele:'ステージの じゅんびを している…'},A('ひっかく'),A('ひっかく')]},
+    {name:'にんじゃおうコアラ',pal:'kNin',acc:'crown',hp:3.4,atk:1.1,acts:2,plan:[{n:'しゅりけん',k:'all',pow:.55},A('かげうち',{pow:1.1}),{n:'ねらいうち',k:'snipe',pow:1.3}]},
+    {name:'あなほりおうコアラ',pal:'kDig',acc:'crown',hp:4.4,atk:1.2,def:1.4,plan:[{n:'あなに かくれる',k:'ehide'},{n:'じひびき',k:'all',pow:.8,tele:'じめんを たたこうとしている…'},A('つめで ほりかえす',{pow:1.2})]}]},
+  {id:'r6',unlock:'clear',f:50,name:'コアラの 王たちの 総大将',hint:'力・魔法・守りを ぜんぶ もつ。突撃王コアラは ちからを ためて 大わざ、魔道王コアラは だいまほうと 回復、万能王コアラは 仲間を まもる。',
+   members:[
+    {name:'とつげきおうコアラ',pal:'kAtk',acc:'crown',hp:4.0,atk:1.3,plan:[A('とつげき',{pow:1.3}),{n:'ぜんりょくを ためる',k:'charge'},{n:'あばれまわる',k:'all',pow:.8}]},
+    {name:'まどうおうコアラ',pal:'kMagK',acc:'crown',hp:3.6,mag:2.2,plan:[MA('だいまほう',1.0,{tele:'だいまほうの じゅもんを となえている…'}),{n:'おおいなる いやし',k:'healAllE',pct:.18},M('いかずち',1.2)]},
+    {name:'ばんのうおうコアラ',pal:'kAllK',acc:'crown',hp:4.8,def:1.6,mag:1.4,counter:.3,plan:[{n:'みんなを まもる',k:'eguard'},M('すべての ぞくせい',1.1),{n:'いやしの ひかり',k:'healAllE',pct:.12}]}]},
+];
+// 解放されたころのパーティ（sim.js の raid）で 勝率4〜6割に なるよう シミュレーションで決めた倍率
+const RAID_SCALE={r1:{hp:.99,atk:.97},r2:{hp:1.04,atk:1.07},r3:{hp:1.23,atk:1.51},r4:{hp:.9,atk:.8},r5:{hp:.86,atk:.74},r6:{hp:.84,atk:.7}};
+function raidUnlocked(G,R){return R.unlock==='clear'?!!G.cleared:!!(G.bossDown&&G.bossDown[R.unlock]);}
+function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
+  return R.members.map((o,i)=>{const e=mkEnemy(R.f,'normal',{name:o.name});const v=k=>curve(k,R.f);
+    e.hp=e.max=Math.round(v('hp')*o.hp*S.hp);e.atk=Math.round(v('atk')*(o.atk||1)*S.atk);e.def=Math.round(v('def')*(o.def||1.2));e.spd=Math.round(v('spd')*1.3);
+    e.mag=Math.round(v('atk')*.55*(o.mag||1)*S.atk);e.plan=o.plan;e.moves=o.plan;e.acts=o.acts||1;e.counter=o.counter||0;e.statusMul=.55;e.raid=true;
+    e.exp=0;e.gold=0;e.look={spr:'koala',pal:o.pal,s:o.acc==='crown'?1.15:1.05,acc:o.acc||null};e.id=R.id+'_'+i;e.weak=[];return e;});}
+function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)),gold:Math.round(curve('gold',f)*(first?20:6))};}
+
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
 const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:8800,atk:290,def:95,mag:230},acts:2,
   moves:[{n:'ひっかく',k:'atk',w:3},{n:'木の上から とびかかる',k:'snipe',pow:1.8,w:2},{n:'だきついて はなさない',k:'atk',pow:.9,stun:.45,w:2},
@@ -635,6 +681,7 @@ function statusChance(B,m,S,e){
   const p=m?passives(m):{};
   let c=S.rate*(1+(p.statusRate||0));
   if(e.boss)c*=CONFIG.bossStatusRate*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
+  if(e.statusMul)c*=e.statusMul*Math.pow(CONFIG.bossStatusRepeat,e.res[S.st]||0);
   return Math.min(.95,c);
 }
 function skillDmgEstimate(B,m,S,e){
@@ -768,7 +815,7 @@ function battleTurn(B,cmds,r){
     if(!aliveParty(B).length){B.over='lose';return true;}return false;};
   const metalDmg=(e,dmg,crit)=>e.metal?(crit?3:1):dmg;
   const addKiai=(m,n)=>{const p=derived(m).p;if(p.kiai||n)m.kiai=Math.min(kiaiCap(m),(m.kiai||0)+(n||p.kiai));};
-  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
+  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;if(e.hidden){ev.push({t:'msg',text:`${e.name}は あなに かくれている！`});return;}e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
     if(e.st.sleep>0&&e.hp>0&&r()<.5){e.st.sleep=0;ev.push({t:'msg',text:`${e.name}は めをさました！`});}
     if(e.hp<=0){ev.push({t:'die',side:'e',i});
       if(extra&&extra.by){bstOf(extra.by).kills=(bstOf(extra.by).kills||0)+1;}
@@ -778,7 +825,7 @@ function battleTurn(B,cmds,r){
     if(e.st[S.st]>0){ev.push({t:'msg',text:`${e.name}は すでに ${ST_NAME[S.st]}だ。`});return;}
     const c=statusChance(B,m,S,e);
     if(r()<c){const turns=S.st==='poison'?99:S.st==='sleep'?2+Math.floor(r()*2):S.st==='stun'?(e.boss?1:2):CONFIG.debuff.turns;
-      e.st[S.st]=turns;if(e.boss)e.res[S.st]=(e.res[S.st]||0)+1;
+      e.st[S.st]=turns;if(e.boss||e.statusMul)e.res[S.st]=(e.res[S.st]||0)+1;
       if(S.st==='curse'){e.st.atkdn=turns;e.st.defdn=turns;}
       if(S.st==='poison')e.poisonPow=1+(m?passives(m).poisonPow||0:0);
       ev.push({t:'status',side:'e',i,st:S.st,text:`${e.name}は ${ST_NAME[S.st]}に なった！`});}
@@ -912,12 +959,19 @@ function battleTurn(B,cmds,r){
       if(e.charged){e.charged=false;const al0=aliveParty(B);const t=al0[Math.floor(r()*al0.length)];
         ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ためた いちげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),2.4,r,'p'),null,0,true,a.i);if(checkEnd())break;continue;}
       if(e.flee&&r()<e.flee){e.hp=0;e.fled=true;ev.push({t:'die',side:'e',i:a.i,fled:true});if(checkEnd())break;continue;}
+      e.hidden=false;
       let tw=moves.reduce((s,x)=>s+x.w,0),x=r()*tw,mv=moves[0];for(const mm of moves){x-=mm.w;if(x<0){mv=mm;break;}}
+      // 決まった順番で動く敵（コアラ討伐の連携）。眠ったり しびれたりすると 順番は すすまない
+      if(e.plan){mv=e.plan[(e.pi||0)%e.plan.length];e.pi=(e.pi||0)+1;if(mv.k==='eguard'&&aliveEnemies(B).length<2)mv={n:'こうげき',k:'atk'};}
       if(mv.k==='call'&&EN.filter(z=>z.hp>0).length>=3)mv=moves[0];
       const al=aliveParty(B);if(!al.length)break;
       // 狙い：戦士系（かばう持ち）を少し狙いやすい。HPの割合は見ない（弱った仲間ばかり狙わない）
       const pick=()=>{if(B.taunt&&B.taunt.turns>0&&P[B.taunt.i].hp>0)return B.taunt.i;const w=al.map(j=>skillsOf(P[j]).some(k=>SKILLS[k].kind==='guard')?4:3);let s=w.reduce((p,q)=>p+q,0)*r();for(let k=0;k<al.length;k++){s-=w[k];if(s<0)return al[k];}return al[0];};
-      if(mv.k==='atk'){const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+      if(mv.k==='healAllE'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
+        for(const j of aliveEnemies(B)){const x=EN[j];const amt=Math.min(x.max-x.hp,Math.round(x.max*(mv.pct||.2)));if(amt>0){x.hp+=amt;ev.push({t:'heal',side:'e',i:j,amt});}}}
+      else if(mv.k==='ecure'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ なかまの 状態異常が なおった！`});for(const j of aliveEnemies(B))for(const k in EN[j].st)EN[j].st[k]=0;}
+      else if(mv.k==='ehide'){e.hidden=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！`});}
+      else if(mv.k==='atk'){const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow||1,r,'p'),null,mv.poison,true,a.i,mv.stun);}
       else if(mv.k==='all'){ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！`});
         for(const t of al){if(P[t].hp<=0)continue;hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),mv.pow,r,'p'),null,mv.poison,false);if(checkEnd())break;}}
@@ -934,7 +988,7 @@ function battleTurn(B,cmds,r){
         if(hurt.length){const j=hurt[0];const amt=Math.min(EN[j].max-EN[j].hp,Math.round(EN[j].max*.4));EN[j].hp+=amt;ev.push({t:'heal',side:'e',i:j,amt,text:`${e.name}は ${EN[j].name}の きずを なおした！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='magic'||mv.k==='magicAll'){const ts=mv.k==='magic'?[pick()]:al;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
-        for(const t of ts){if(P[t].hp<=0)continue;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
+        for(const t of ts){if(P[t].hp<=0)continue;const vs=mv.vsStatus&&(P[t].poison||(P[t].bst&&(P[t].bst.sleep>0||P[t].bst.stun>0)))?1.6:1;const dmg=Math.max(1,Math.round(enemyMag(e)*(mv.pow||1)*vs*(.9+r()*.2)));hitParty(t,dmg,{magic:true},mv.poison,false);if(checkEnd())break;}}
       else if(mv.k==='debuffAll'){B.pdebuff[mv.st]=CONFIG.debuff.turns+1;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！ みんなの ${mv.st==='atk'?'こうげき':'ぼうぎょ'}が さがった！`});}
       else if(mv.k==='silence'){const t=pick();const m=P[t];const c=mv.rate*(partyP().some(p=>p.statusResist)?.5:1);ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の ${mv.n}！`});
         if(tryStatus(m,'silence',c)){bstOf(m).silence=2;ev.push({t:'status',side:'p',i:t,st:'silence',text:`${m.name}は ふういんされた！`});}else ev.push({t:'msg',text:`${m.name}は ふういんされなかった。`});}
@@ -958,6 +1012,8 @@ function battleTurn(B,cmds,r){
     if(B.taunt&&B.taunt.turns>0)B.taunt.turns--;
     for(const k in B.pdebuff)if(B.pdebuff[k]>0)B.pdebuff[k]--;
     for(const e of EN)if(e.ebuff>0)e.ebuff--;
+    // 予告：つぎに 大きな連携を する敵を 知らせる
+    for(const j of aliveEnemies(B)){const e=EN[j];if(!e.plan||e.st.sleep>0||e.st.stun>0)continue;const nx=e.plan[(e.pi||0)%e.plan.length];if(nx.tele)ev.push({t:'msg',text:`${e.name}は ${nx.tele}`,tele:true});}
     if(B.eguard!=null&&--B.eguardT<=0)B.eguard=null;
     for(const x of P)if(x.bst&&x.bst.silence>0)x.bst.silence--;
     for(const i of aliveParty(B)){const m=P[i],b=bstOf(m),dd=derived(m);
@@ -977,7 +1033,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
