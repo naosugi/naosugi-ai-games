@@ -49,6 +49,10 @@ body{display:flex;justify-content:center;overscroll-behavior:none;-webkit-user-s
 #cmd button:active{background:#2a2440}
 #cmd button:disabled{opacity:.35;cursor:default}
 #cmd button.wide{grid-column:1/-1}
+#cmd.five{grid-template-columns:repeat(5,1fr);gap:4px}
+#cmd.five button.flr{min-height:34px;padding:4px 2px;text-align:center;font-size:14px}
+#cmd.five button.sec{min-height:22px;padding:2px 6px;font-size:12px;opacity:.8;border:none;background:none;box-shadow:none}
+#cmd button.a1{border-color:#5e7040}#cmd button.a2{border-color:#3c6474}#cmd button.a3{border-color:#a090ba}#cmd button.a4{border-color:#c0aa7e}
 #cmd button.hi{border-color:var(--acc);color:var(--acc)}
 #cmd button.sub{border-color:#5a5068;color:var(--dim);font-size:14px;min-height:42px}
 #cmd button small{display:block;font-size:11px;color:var(--dim);margin-top:2px}

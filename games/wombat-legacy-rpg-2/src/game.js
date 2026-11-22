@@ -1,15 +1,17 @@
 // ===== ゲームのデータ（画面に関係するもの。ルールは core.js） =====
 const SAVE_KEY='wombatlegacy2_save_v1',SND_KEY='wombatlegacy2_snd',PREV_SAVE_KEY='wombatlegacy_save_v1';
-const STAGE_MAX=20;           // 段階②：B20まで
+const STAGE_MAX=50;           // B50まで（最後）
 const MAXITEM=9;
 const AREA_NAME=['巣穴の層','ユーカリの根の層','地下水脈の層','オパールの層','太古の層'];
 const areaOf=f=>Math.min(4,Math.floor((f-1)/10));
-const shopMax=tier=>Math.min(WEAPON_POW.length-1,tier*2-1);
+// 10階ごとに曲を変える（決定）
+const dungeonTrack=f=>['dungeon','dungeon2','dungeon3','dungeon4','dungeon5'][areaOf(f)];
+const shopMax=tier=>Math.min(SHOP_TOP,tier*2-1);
 const DEFAULT_NAMES=['ガッチ','ユカリ','モフル'];
 
 // ---------- アイテムの説明（ITEMS は core.js） ----------
-const ITEM_DESC={herb:'HPを 30 回復',herb2:'HPを 90 回復',herb3:'HPを 300 回復',antidote:'どくを なおす',water:'MPを 20 回復',leaf:'たおれた仲間を おこす（HP半分）'};
-const SHOP_ITEMS=[['herb',1],['antidote',1],['water',1],['herb2',2],['leaf',2],['herb3',3]]; // [道具, 並ぶ店の段階]
+const ITEM_DESC={herb:'HPを 30 回復',herb2:'HPを 90 回復',herb3:'HPを 300 回復',antidote:'どくを なおす',water:'MPを 20 回復',water2:'MPを 80 回復',leaf:'たおれた仲間を おこす（HP半分）'};
+const SHOP_ITEMS=[['herb',1],['antidote',1],['water',1],['herb2',2],['leaf',2],['herb3',3],['water2',4]]; // [道具, 並ぶ店の段階]
 
 // ---------- 迷路 ----------
 // '#'壁 '%'やわらかい壁 'z'あやしい壁 '.'通路 'S'地上へのロープ 'D'下への階段 'B'ボス 'H'光る宝箱 'T'宝箱
@@ -46,6 +48,10 @@ function genFloor(f){
   if(GUARDIANS[f]&&dead.length){const g=dead.shift();m[g[1]][g[0]]='H';guard=[g[0],g[1]];}
   for(const [x,y] of dead)m[y][x]='T';
   m[1][1]='S';
+  // ひびわれた床（下へ掘る近道）：B21〜49 のボスのいない階に1か所（STAGE3.md）
+  let crack=null;
+  if(f>=21&&f<STAGE_MAX&&!boss){const cand=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(m[y][x]==='.'&&nbOpen(x,y)>=2&&dist[y][x]>=8)cand.push([x,y]);
+    if(cand.length){crack=cand[Math.floor(r()*cand.length)];m[crack[1]][crack[0]]='V';}}
   // やわらかい壁：2つの通路にはさまれた内側の壁の一部。ボスのまわりは硬いまま
   const near=(x,y,p)=>Math.abs(x-p[0])+Math.abs(y-p[1])<=2;
   const soft=[];
@@ -57,7 +63,7 @@ function genFloor(f){
   // あやしい壁：やわらかい壁のうち2〜3か所
   const nz=2+Math.floor(r()*2);
   for(let k=0;k<nz&&soft.length;k++){const i=Math.floor(r()*soft.length);const [x,y]=soft.splice(i,1)[0];m[y][x]='z';}
-  return {W,H,m,goal,boss,guard};
+  return {W,H,m,goal,boss,guard,crack};
 }
 function floorDistM(m,W,H){const dist=Array.from({length:H},()=>Array(W).fill(-1));const q=[[1,1]];dist[1][1]=0;
   while(q.length){const [x,y]=q.shift();for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=x+a,Y=y+b;const t=m[Y]&&m[Y][X];if(t&&t!=='#'&&t!=='%'&&t!=='z'&&dist[Y][X]<0){dist[Y][X]=dist[y][x]+1;q.push([X,Y]);}}}return dist;}
@@ -66,17 +72,23 @@ function floorDistM(m,W,H){const dist=Array.from({length:H},()=>Array(W).fill(-1
 function chestLoot(f,x,y){
   const r=rng(f*131+x*17+y*29+7),k=r();
   const g=Math.round(curve('gold',f)*(2.5+r()*1.5));
-  if(f%5===4&&k<.18){const lines=['claw','staff','flute'];return {eq:lines[Math.floor(r()*3)],tier:Math.min(WEAPON_POW.length-1,shopMax(1+areaOf(f))+(f>=10?1:0))};}
+  if(f%5===4&&k<.18){const lines=['claw','staff','flute'];return {eq:lines[Math.floor(r()*3)],tier:Math.min(SHOP_TOP,shopMax(1+areaOf(f))+(f>=10?1:0))};}
   if(k<.45)return {gold:g};
-  const it=f<8?['herb','herb','antidote','water']:f<30?['herb2','herb2','water','leaf','antidote']:['herb3','herb2','water','leaf'];
+  const it=f<8?['herb','herb','antidote','water']:f<30?['herb2','herb2','water','leaf','antidote']:['herb3','herb2','water2','leaf'];
   return {item:it[Math.floor(r()*it.length)],n:1+(r()<.3?1:0)};
 }
+// あなほり王の素材（空想）。持ち帰ると、その系統の最強装備（番号11）が店に並ぶ
+const MATS={claw:{name:'いにしえの キバ'},staff:{name:'かせきの えだ'},flute:{name:'にじいろの ふえいし'},armor:{name:'いにしえの こうら'}};
+function partyHas(k){return G.party.some(m=>m.hp>0&&passives(m)[k]);}
 function digLoot(f,ayashi,R){ // R: 遊んでいるときの乱数
-  if(!ayashi){if(R()<.12)return R()<.6?{gold:Math.round(curve('gold',f)*(.8+R()*.6))}:{item:f<8?'herb':'herb2',n:1};return null;}
+  const luck=partyHas('digLuck'),find=luck||partyHas('itemFind');
+  if(luck&&f>=31){const left=Object.keys(MATS).filter(k=>!G.mats[k]);if(left.length&&R()<(ayashi?.12:.02))return {mat:left[Math.floor(R()*left.length)]};}
+  if(!ayashi){if(R()<(find?.3:.12))return R()<.6?{gold:Math.round(curve('gold',f)*(.8+R()*.6))}:{item:f<8?'herb':f<30?'herb2':'herb3',n:1};return null;}
   if(f>=5&&f<=10&&!questDoneG(0,1)&&(G.qcount.seed||0)<3&&R()<.6)return {seed:1};
-  const k=R();if(k<.35)return {gold:Math.round(curve('gold',f)*(3+R()*2))};
-  const it=f<10?['herb2','water','leaf']:f<30?['herb2','water','leaf','herb3']:['herb3','water','leaf'];
-  return {item:it[Math.floor(R()*it.length)],n:1+(R()<.4?1:0)};
+  if(f>=31&&f<=40&&questOpen(3)&&!questDoneG(3,1)&&(G.qcount.opal||0)<5&&R()<.5)return {opal:1};
+  const k=R();if(k<(find?.25:.35))return {gold:Math.round(curve('gold',f)*(3+R()*2))};
+  const it=f<10?['herb2','water','leaf']:f<30?['herb2','water','leaf','herb3']:['herb3','water2','leaf'];
+  return {item:it[Math.floor(R()*it.length)],n:1+(R()<(find?.6:.4)?1:0)};
 }
 
 // ---------- クエスト（エリアごとに3つ。どれか1つで店の品ぞろえが1段上がる） ----------
@@ -89,6 +101,18 @@ const QUESTS=[
     {k:'boss',f:20,s:'イリエワニのぬしを たおす',text:'B20の イリエワニのぬしを たおす',reward:{gold:1200}},
     {k:'flag',flag:'devilPoison',s:'デビルを どくで たおす',text:'タスマニアデビルを どくで たおす',reward:{item:'leaf',n:3}},
     {k:'dex',n:15,s:'ずかんを 15 うめる',text:'ずかんを 15しゅるい うめる',reward:{item:'herb3',n:2}}]},
+  {area:2,list:[
+    {k:'boss',f:30,s:'マーレーコッドを たおす',text:'B30の マーレーコッドのおおぬしを たおす',reward:{gold:4000}},
+    {k:'flag',flag:'archerSleep',s:'テッポウウオを ねむらせて たおす',text:'テッポウウオを ねむらせて たおす',reward:{item:'leaf',n:3}},
+    {k:'down',n:3,s:'ひびわれた床から 3回 ほる',text:'ひびわれた床から 3回 下へ ほる',reward:{item:'herb3',n:3}}]},
+  {area:3,list:[
+    {k:'boss',f:40,s:'オパールのうみりゅうを たおす',text:'B40の オパールのうみりゅうを たおす',reward:{gold:12000}},
+    {k:'opal',n:5,s:'オパールを 5こ ほる',text:'B31〜40の あやしい壁から オパールを 5こ ほりだす',reward:{item:'water2',n:3}},
+    {k:'gold',amt:30000,s:'30000ウォン かせぐ',text:'クエストを 受けてから 30000ウォン かせぐ',reward:{item:'leaf',n:4}}]},
+  {area:4,list:[
+    {k:'boss',f:50,s:'メガラニアを たおす',text:'B50の メガラニアを たおす',reward:{gold:30000}},
+    {k:'super',s:'だれかが 超上級職に つく',text:'だれかが 超上級職（〇〇王）に つく',reward:{item:'herb3',n:5}},
+    {k:'dex',n:60,s:'ずかんを 60 うめる',text:'ずかんを 60しゅるい うめる',reward:{item:'water2',n:5}}]},
 ];
 function questOpen(a){return a===0||!!G.bossDown[10*a];}
 function questDoneG(a,i){const q=QUESTS[a].list[i];
@@ -97,7 +121,22 @@ function questDoneG(a,i){const q=QUESTS[a].list[i];
   if(q.k==='gold')return (G.earned['a'+a]||0)>=q.amt;
   if(q.k==='flag')return !!G.qflag[q.flag];
   if(q.k==='dex')return Object.keys(G.seen).filter(k=>DEX[k]).length>=q.n;
+  if(q.k==='down')return (G.qcount.down||0)>=q.n;
+  if(q.k==='opal')return (G.qcount.opal||0)>=q.n;
+  if(q.k==='super')return !!G.qflag.superJob;
   return false;}
+
+// ---------- 超上級職のヒント（いにしえの 石ばん。STAGE3.md） ----------
+// ボス・番人の階 → 超上級職と言い伝え
+const HINTS={
+  25:{job:'kIdl',text:'おどり・まぼろし・いのりの歌・せいなる剣を 極めしもの、みなの ひかりと なる'},
+  28:{job:'kDig',text:'上級の戦い・狂う力・おどり・くすりを 極めしもの、大地の 王と なる'},
+  30:{job:'kAll',text:'上級の戦い・せいなる剣・まほうの拳・いのりの歌を 極めしもの、すべてを こなす'},
+  35:{job:'kAtk',text:'上級の戦い・狂う力・まほうの拳・のろいを 極めしもの、とまらぬ 力を 得る'},
+  38:{job:'kMag',text:'まぼろし・のろい・いのりの歌・くすりを 極めしもの、まほうの みちを きわめる'},
+  40:{job:'kNin',text:'おどり・まほうの拳・まぼろし・くすりを 極めしもの、かげと なる'},
+};
+const HINT_KEY='（上級戦士＝上級の戦い、狂戦士＝狂う力、聖騎士＝せいなる剣、魔拳士＝まほうの拳、舞闘家＝おどり、幻術師＝まぼろし、呪術師＝のろい、聖歌士＝いのりの歌、薬師＝くすり）';
 
 // ---------- 図鑑 ----------
 // 前作の動物は前作の文章を使う。新しい動物は STAGE2.md の根拠にもとづく
@@ -137,6 +176,42 @@ const DEX={
   boss20:'この穴の 水べを おさめる 大きなイリエワニ。イリエワニは、いま生きている爬虫類の中で いちばん大きい。',
   guard8:'光る宝箱を まもる ゴアナ。ゴアナは オーストラリアにすむ 大きなオオトカゲの仲間。',
   guard18:'光る宝箱を まもる ペレンティ。オーストラリアで いちばん大きな トカゲ。',
+  // B21〜30 地下水脈の層（根拠は STAGE3.md）
+  platy:'たまごを うむ ほにゅう類。くちばしで、えものの 出す 弱い 電気を 感じとる。オスの 後ろ足には 毒の けづめが ある。',
+  yabby:'オーストラリアの ザリガニの なかま。日照りに なると、穴を ほって 地下の 水を 追いかけ、入口を 土で ふさぐ。',
+  rakali:'オーストラリアの 水べに すむ 大きな ネズミ。毒のある オオヒキガエルを、毒の ところを さけて 食べることがある。',
+  archer:'口から 水を とばして、えだの 上の 虫を 水に 落として 食べる。オーストラリア北部の 川や マングローブに すむ。',
+  glow:'虫の 名前だが、正体は ハエの なかまの 幼虫。光で 虫を さそい、ねばねばの 糸で つかまえる。（光で ねむらせるのは ゲームの 空想）',
+  ghost:'オーストラリアで ただ一種の 肉食の コウモリ（英名 ゴーストバット）。どうくつや 古い 坑道に すむ。',
+  cod:'オーストラリアで いちばん 大きな 淡水魚。記録では 1.8m・113kgの ものも いる。',
+  turtle:'首が 長い カメ。おどろくと くさい しるを 出すので「スティンカー（くさいやつ）」とも よばれる。',
+  fwcroc:'口の 細い、オーストラリアの 淡水の ワニ。イリエワニより ずっと 小さい。',
+  // B31〜40 オパールの層
+  thorny:'全身が トゲで おおわれた トカゲ。皮ふの 細い みぞで 水を 口まで はこぶ。首の 後ろに「にせの頭」が ある。',
+  redroo:'いちばん 大きな カンガルー。オスどうしは ボクシングのように 戦い、しっぽで 体を ささえて けることもある。',
+  emu:'飛べないが、時速50kmほどで 走る。世界で 2番目に 大きな 鳥。',
+  bilby:'長い 耳と 強い ツメを もつ 有袋類（ビルビー）。らせん形の 深い 巣穴を ほる。',
+  taipan:'マウスでの 実験では、いちばん 強い 毒を もつ ヘビ。でも おとなしく、人の いない 土地に すむ。',
+  scorp:'オーストラリアの サソリは、さされると いたいが、人の 命に かかわるほどの 毒は ないとされる。（まひさせるのは ゲームの 空想）',
+  galah:'ピンクと 灰色の オウムの なかま。大きくて さわがしい 群れを つくる。',
+  shingle:'短い しっぽが 頭のように 見え、栄養も たくわえる。青い 舌を 見せて 相手を おどかす。',
+  // B41〜50 太古の層（化石から よみがえった すがたは ゲームの 空想）
+  thyla:'背中の しま模様から「タスマニアタイガー」とも よばれた。知られている 最後の 1頭は、1936年に 動物園で 死んだ。',
+  procop:'知られている中で いちばん 大きく がっしりした カンガルー。高さ 2mほど、重さ 200kgほど。化石で 知られる。',
+  genyo:'飛べない 大きな 鳥。高さ 2mを こえ、およそ 4万5千年前まで いた。化石で 知られる。',
+  meio:'大きな ツノガメ。ツノの せいで 頭を こうらに しまえず、しっぽには トゲと こんぼうが あった。（まほうを はね返すのは 空想）',
+  wonambi:'しめつけて えものを とる 大きな ヘビ。南オーストラリアの どうくつで 化石が 見つかった。',
+  quink:'陸で くらした ワニ。長い 足で 走り、刃のような 歯を もっていた。化石で 知られる。',
+  thyleo:'オーストラリアで いちばん 大きな 肉食の 有袋類。かむ力が とても 強く、親指に 大きな ツメが あった。化石で 知られる。',
+  boss25:'この穴の 水脈を おさめる 大きな カモノハシ（ゲームの 空想）。本物の カモノハシも 川岸に 巣穴を ほる。',
+  boss30:'この穴の 地下水を おさめる 大きな マーレーコッド（ゲームの 空想）。マーレーコッドは オーストラリアで いちばん 大きな 淡水魚。',
+  boss35:'この穴で いちばん 強い アカカンガルー（ゲームの 空想）。本物の オスも ボクシングのように 戦う。',
+  boss40:'オーストラリアの オパールの 町で、オパールに なった 首長竜の なかまの 化石が 見つかっている。この ぬしは、その 化石が うごきだした すがた（ゲームの 空想）。',
+  boss45:'太古の層の ぬしの フクロライオン（よみがえった すがたは ゲームの 空想）。かむ力が とても 強かったと 考えられている。',
+  boss50:'知られている中で いちばん 大きな 陸の トカゲ。骨が 少ないので、大きさの 見つもりには はばが ある。（よみがえった すがたは ゲームの 空想）',
+  guard28:'光る宝箱を まもる 大きな カニ（前作にも 出た、空想の 生き物）。',
+  guard38:'光る宝箱を まもる、コアラ一族の 長老（ゲームの 空想）。',
+  guard48:'光る宝箱を まもる、いにしえの けもの（前作にも 出た、空想の 生き物）。',
 };
 
 // ---------- スキルの説明 ----------

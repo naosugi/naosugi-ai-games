@@ -256,3 +256,16 @@ test('極める前の職業に戻ると、前回のレベルと経験値から�
   // 古いセーブ（jobLv がない）でも動く
   delete m.jobLv;C.changeJob(m,'war');assert.strictEqual(m.lv,1);
 });
+
+test('B1〜50 のどの階にも敵の組み合わせがあり、名前のついたボスがいる',()=>{
+  for(let f=1;f<=50;f++){const g=C.floorGroups(f);assert.ok(g.pool.length>=3,`B${f} の組み合わせが少ない`);
+    for(const grp of g.pool)for(const k of grp){const e=C.mkMob(f,k);assert.ok(e.hp>0&&e.name,`B${f} ${k}`);}}
+  for(let f=5;f<=50;f+=5){const b=C.bossFor(f)[0];assert.ok(C.BOSS_DEF[f],`B${f} のボスに名前がない`);assert.ok(b.moves.length>=3);}
+});
+test('敵の顔ぶれは10階ごとに大きく入れかわる（となりのエリアと共通の動物は少ない）',()=>{
+  const ids=a=>{const s=new Set();for(let f=a*10+1;f<=a*10+10;f++)for(const g of C.floorGroups(f).pool)for(const k of g)s.add(C.mkMob(f,k).name);return s;}; // 色違いは名前（あお・きん・くろ）で区別する
+  for(let a=0;a<4;a++){const x=ids(a),y=ids(a+1);const same=[...y].filter(k=>x.has(k));assert.ok(same.length<=Math.ceil(y.size*.25),`エリア${a+1}→${a+2} で共通が多い: ${same}`);}
+});
+test('色違いはエリアの技を1つ足す',()=>{
+  const e=C.mkMob(25,'c:dingo');assert.ok(e.name.startsWith('あお'));assert.ok(e.moves.some(m=>m.n==='みずを はく'));assert.ok(e.mag>0);
+});

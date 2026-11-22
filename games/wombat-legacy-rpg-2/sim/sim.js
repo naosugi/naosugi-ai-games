@@ -13,7 +13,7 @@ const fs=require('fs'),path=require('path');
 const TIME={battleBase:5,perTurn:2.5,floorWalk:f=>40+f*1.2,town:20};
 // 1階あたりの戦闘の回数。「掘る」が使えると、近道を掘って1回へらせる（仮）
 const battlesPerFloor=(f,dig)=>Math.max(2,3+Math.floor(f/20)-(dig?1:0));
-const shopMax=tier=>Math.min(C.WEAPONS.length-1,tier*2-1); // 店の段階 → 買える装備の番号の上限
+const shopMax=tier=>Math.min(C.SHOP_TOP,tier*2-1); // 店の段階 → 買える装備の番号の上限
 
 // ---------- 引き継ぎ枠の選び方（おまかせ用の仮ルール） ----------
 // スキルごとの点数。書いていないものは種類と効果から決める
@@ -100,7 +100,7 @@ function useItemsOutside(G,to=.7){
 }
 // 番人のごほうび：店で買えるより1段上の装備
 function giveGuardReward(G,rw){
-  const tier=Math.min(C.WEAPON_POW.length-1,shopMax(G.shopTier)+2);
+  const tier=Math.min(C.SHOP_TOP,shopMax(G.shopTier)+2);
   if(rw.armor){const m=G.party.slice().sort((a,b)=>a.a-b.a)[0];m.a=Math.max(m.a,tier);return;}
   const targets=rw.line==='best'?G.party:[G.party.find(m=>C.bestLine(m.job)===rw.line)||G.party[0]];
   for(const m of targets){const l=rw.line==='best'?C.bestLine(m.job):rw.line;m.own[l]=Math.max(m.own[l],tier);if(C.bestLine(m.job)===l){m.wl=l;m.w=m.own[l];}}
@@ -299,10 +299,17 @@ function main(){
   const hours=val('--hours',60),seeds=val('--seeds',5),n=val('--n',120);
   let md=`# シミュレーション結果\n\n\`node sim.js\` で作った結果。数字はすべて仮の設定（core.js の CONFIG、sim.js の TIME）にもとづく。時間は「おまかせで遊んだときのめやす」。\n\n`;
   if(mode==='check'){process.stdout.write(stageMd(stageCheck(n))+'\n');return;}
+  if(mode==='boss'){ // ぬしと番人を全部、その階に見合うレベルで（中ボスは上限より低め）
+    const cap=f=>f<=20?[['war','mag','pri'],20]:f<=40?[['hwar','hym','ill'],30]:[['kAll','kMag','kNin'],40];
+    const midLv={5:8,15:16,25:20,35:27,45:35};
+    const gf=f=>Math.min(C.SHOP_TOP,shopMax(1+Math.floor((f-1)/10)));
+    let o='| 相手 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n';
+    for(let f=5;f<=50;f+=5){const [j,l0]=cap(f),l=midLv[f]||l0;const b=bossCheck(j,l,f,n>=120?80:n);o+=`| B${f} ${C.bossFor(f)[0].name} | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(b.win)} | ${b.turns.toFixed(1)} |\n`;}
+    process.stdout.write(o);return;}
   if(mode==='all'){
     md+=`## 0a. ボスと番人の強さ\n\nその段階の上限レベル・満タンから挑んだときの勝率（各80戦）。めやす：ボス・番人とも勝率4〜8割。人間は自動プレイより上手なので、ボスは強めにしている。\n\n| 相手 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n`;
     const cap=f=>f<=20?[['war','mag','pri'],20]:f<=40?[['hwar','hym','ill'],30]:[['kAll','kMag','kNin'],40];
-    const gf=f=>Math.min(C.WEAPON_POW.length-1,shopMax(1+Math.floor((f-1)/10)));
+    const gf=f=>Math.min(C.SHOP_TOP,shopMax(1+Math.floor((f-1)/10)));
     for(const f of [10,20,30,40,50]){const [j,l]=cap(f);const b=bossCheck(j,l,f,80);md+=`| B${f} ${C.bossFor(f)[0].name} | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(b.win)} | ${b.turns.toFixed(1)} |\n`;}
     for(const f of Object.keys(C.GUARDIANS).map(Number)){const [j,l]=f===8?[['war','mag','pri'],12]:cap(f);const rr=C.rng(f);let w=0,tt=0;
       for(let i=0;i<80;i++){const G=makeParty(j,l,gf(f));G.inv={herb2:4,leaf:1};const o=fight(G,C.guardianFor(f),rr);if(o.over==='win')w++;tt+=o.turns;}

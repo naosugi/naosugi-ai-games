@@ -49,6 +49,10 @@ body{display:flex;justify-content:center;overscroll-behavior:none;-webkit-user-s
 #cmd button:active{background:#2a2440}
 #cmd button:disabled{opacity:.35;cursor:default}
 #cmd button.wide{grid-column:1/-1}
+#cmd.five{grid-template-columns:repeat(5,1fr);gap:4px}
+#cmd.five button.flr{min-height:34px;padding:4px 2px;text-align:center;font-size:14px}
+#cmd.five button.sec{min-height:22px;padding:2px 6px;font-size:12px;opacity:.8;border:none;background:none;box-shadow:none}
+#cmd button.a1{border-color:#5e7040}#cmd button.a2{border-color:#3c6474}#cmd button.a3{border-color:#a090ba}#cmd button.a4{border-color:#c0aa7e}
 #cmd button.hi{border-color:var(--acc);color:var(--acc)}
 #cmd button.sub{border-color:#5a5068;color:var(--dim);font-size:14px;min-height:42px}
 #cmd button small{display:block;font-size:11px;color:var(--dim);margin-top:2px}
@@ -379,15 +383,17 @@ function passives(m){
 // 武器は3系統。どの職業でも装備できる。防具は1系統。強さは段階（番号）で決まる
 //   ツメ：こうげき / つえ：まりょく（＋こうげき少し） / ふえ：こうげきとまりょくの両方に7割ずつ
 // 名前は仮。素材から並ぶ装備（あなほり王）はまだ入れていない
-const WEAPON_POW=[3,8,15,24,36,50,66,84,104,126,150];
-const WEAPON_PRICE=[0,90,320,900,2400,5200,9800,16000,26000,40000,60000];
+// 11番目（番号10）までが店と宝箱。12番目（番号11）は、あなほり王の素材を持ち帰ると店に並ぶ最強装備（STAGE3.md）
+const WEAPON_POW=[3,8,15,24,36,50,66,84,104,126,150,180];
+const WEAPON_PRICE=[0,90,320,900,2400,5200,9800,16000,26000,40000,60000,90000];
+const SHOP_TOP=10;
 const WEAPON_LINES={
-  claw: {name:'ツメ',names:['木のツメ','石のツメ','鉄のツメ','ユーカリのツメ','オパールのツメ','水晶のツメ','化石のツメ','いにしえのツメ','ほろびのツメ','レガシーのツメ','レガシーのツメ+'],atk:1,mag:0},
-  staff:{name:'つえ',names:['木のつえ','石のつえ','鉄のつえ','ユーカリのつえ','オパールのつえ','水晶のつえ','化石のつえ','いにしえのつえ','ほろびのつえ','レガシーのつえ','レガシーのつえ+'],atk:.25,mag:1},
-  flute:{name:'ふえ',names:['木のふえ','石のふえ','鉄のふえ','ユーカリのふえ','オパールのふえ','水晶のふえ','化石のふえ','いにしえのふえ','ほろびのふえ','レガシーのふえ','レガシーのふえ+'],atk:.7,mag:.7},
+  claw: {name:'ツメ',names:['木のツメ','石のツメ','鉄のツメ','ユーカリのツメ','オパールのツメ','水晶のツメ','化石のツメ','いにしえのツメ','ほろびのツメ','レガシーのツメ','レガシーのツメ+','ほりおうのツメ'],atk:1,mag:0},
+  staff:{name:'つえ',names:['木のつえ','石のつえ','鉄のつえ','ユーカリのつえ','オパールのつえ','水晶のつえ','化石のつえ','いにしえのつえ','ほろびのつえ','レガシーのつえ','レガシーのつえ+','ほりおうのつえ'],atk:.25,mag:1},
+  flute:{name:'ふえ',names:['木のふえ','石のふえ','鉄のふえ','ユーカリのふえ','オパールのふえ','水晶のふえ','化石のふえ','いにしえのふえ','ほろびのふえ','レガシーのふえ','レガシーのふえ+','ほりおうのふえ'],atk:.7,mag:.7},
 };
 const ARMORS=[['草のふく',2,0],['かわのよろい',6,80],['いわのよろい',12,300],['こうらのよろい',19,850],['オパールのよろい',28,2200],
-  ['水晶のよろい',38,4800],['化石のよろい',50,9000],['いにしえのよろい',63,15000],['ほろびのよろい',78,24000],['レガシーのよろい',94,38000],['レガシーのよろい+',112,56000]];
+  ['水晶のよろい',38,4800],['化石のよろい',50,9000],['いにしえのよろい',63,15000],['ほろびのよろい',78,24000],['レガシーのよろい',94,38000],['レガシーのよろい+',112,56000],['ほりおうのよろい',135,80000]];
 const WEAPONS=WEAPON_POW.map((p,i)=>[WEAPON_LINES.claw.names[i],p,WEAPON_PRICE[i]]); // 旧形式（段階の数を数えるのに使う）
 function weaponName(m){return WEAPON_LINES[m.wl].names[m.w];}
 // 職業に合う系統（おまかせで装備を選ぶときに使う）
@@ -400,6 +406,7 @@ const ITEMS={
   antidote:{name:'どくけし草',price:6,cure:true},
   water:{name:'まほうのしずく',price:40,mp:20},
   leaf: {name:'めざめの葉',price:80,revive:true},
+  water2:{name:'まほうのしずく大',price:220,mp:80},
 };
 
 // ---------- 仲間 ----------
@@ -550,53 +557,97 @@ const ANIMALS={
   kPoison:{name:'どくつかいコアラ',arch:'kPoison',spr:'koala',pal:'kPoison',weak:['fire']},
   kWarrior:{name:'せんしコアラ',arch:'kWarrior',spr:'koala',pal:'kWarrior',weak:['thunder']},
   kKarate:{name:'からてかコアラ',arch:'kKarate',spr:'koala',pal:'kKarate',weak:['ice']},
+  // B21〜30 地下水脈の層（STAGE3.md）
+  platy: {name:'カモノハシ',arch:'poison',spr:'platy',pal:'platy',weak:['ice'],moves:[{n:'かみつく',k:'atk',w:2},{n:'けづめの どく',k:'atk',pow:1.1,poison:.6,w:2}]},
+  yabby: {name:'ヤビー',arch:'counter',spr:'crab',pal:'yabby',s:.85,weak:['thunder'],moves:[{n:'はさむ',k:'atk',w:3},{n:'おおばさみ',k:'atk',pow:1.4,w:1}]},
+  rakali:{name:'ラカリ',arch:'twice',spr:'rat',pal:'rakali',weak:['ice'],moves:[{n:'かみつく',k:'atk',w:1}]},
+  archer:{name:'テッポウウオ',arch:'sniper',spr:'fish',pal:'archer',s:.8,weak:['thunder'],moves:[{n:'みずでっぽう',k:'snipe',pow:1.3,w:2},{n:'たいあたり',k:'atk',w:1}]},
+  glow:  {name:'ツチボタル',arch:'stunner',spr:'glow',pal:'glow',weak:['fire'],moves:[{n:'あおい ひかりで さそう',k:'sleepAll',rate:.3,w:1},{n:'ねばねばの いと',k:'atk',pow:.8,stun:.45,w:2}]},
+  ghost: {name:'ゴーストコウモリ',arch:'evasive',spr:'bat',pal:'ghost',weak:['light'],moves:[{n:'かみつく',k:'atk',w:2},{n:'ねらいうち',k:'snipe',pow:1.3,w:1}]},
+  cod:   {name:'マーレーコッド',arch:'heavy',spr:'fish',pal:'cod',weak:['thunder'],moves:[{n:'たいあたり',k:'atk',w:2},{n:'まるのみ',k:'atk',pow:1.8,w:1}]},
+  turtle:{name:'ナガクビガメ',arch:'tank',spr:'turtle',pal:'turtle',weak:['thunder'],moves:[{n:'かみつく',k:'atk',w:2},{n:'くさい しる',k:'debuffAll',st:'atk',w:1}]},
+  fwcroc:{name:'ジョンストンワニ',arch:'charger',spr:'croc',pal:'fwcroc',s:.85,weak:['thunder'],moves:[{n:'ちからを ためる',k:'charge',w:2},{n:'かみつく',k:'atk',w:1}]},
+  // B31〜40 オパールの層
+  thorny:{name:'モロクトカゲ',arch:'counter',spr:'croc',pal:'thorny',s:.6,weak:['ice'],moves:[{n:'トゲで つつく',k:'atk',w:1}]},
+  redroo:{name:'アカカンガルー',arch:'twice',spr:'roo',pal:'redroo',weak:['ice'],moves:[{n:'キック',k:'atk',pow:1.2,w:2},{n:'ボクシング',k:'atk',w:1}]},
+  emu:   {name:'エミュー',arch:'fast',spr:'emu',pal:'emu',weak:['thunder'],moves:[{n:'けりとばす',k:'atk',pow:1.2,w:2},{n:'つつく',k:'atk',w:1}]},
+  bilby: {name:'ミミナガバンディクート',arch:'evasive',spr:'bilby',pal:'bilby',weak:['ice'],moves:[{n:'ひっかく',k:'atk',w:1}]},
+  taipan:{name:'ナイリクタイパン',arch:'poison',spr:'snake',pal:'taipan',weak:['ice'],moves:[{n:'かみつく',k:'atk',w:1},{n:'もうどくの キバ',k:'atk',poison:.7,w:2}]},
+  scorp: {name:'サソリ',arch:'stunner',spr:'scorp',pal:'scorp',weak:['ice'],moves:[{n:'はさむ',k:'atk',w:2},{n:'どくばり',k:'atk',pow:.9,stun:.4,poison:.3,w:2}]},
+  galah: {name:'モモイロインコ',arch:'caller',spr:'eagle',pal:'galah',s:.7,weak:['thunder'],moves:[{n:'つつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:1},{n:'さわぎたてる',k:'debuffAll',st:'atk',w:1}]},
+  shingle:{name:'マツカサトカゲ',arch:'tank',spr:'croc',pal:'shingle',s:.65,weak:['ice'],moves:[{n:'かみつく',k:'atk',w:2},{n:'あおい したで おどかす',k:'debuffAll',st:'def',w:1}]},
+  // B41〜50 太古の層（化石から よみがえった すがた＝空想）
+  thyla: {name:'フクロオオカミ',arch:'twice',spr:'thyla',pal:'thyla',weak:['fire'],fic:true,moves:[{n:'かみつく',k:'atk',w:1}]},
+  procop:{name:'プロコプトドン',arch:'heavy',spr:'roo',pal:'procop',s:1.25,weak:['ice'],fic:true,moves:[{n:'けりとばす',k:'atk',pow:1.3,w:2},{n:'のしかかる',k:'all',pow:.6,w:1}]},
+  genyo: {name:'ゲニオルニス',arch:'wide',spr:'emu',pal:'genyo',s:1.25,weak:['thunder'],fic:true,moves:[{n:'つつく',k:'atk',w:2},{n:'ふみならす',k:'all',pow:.6,w:1}]},
+  meio:  {name:'メイオラニア',arch:'mirror',spr:'hturtle',pal:'meio',s:1.2,weak:['thunder'],fic:true,moves:[{n:'ツノで つく',k:'atk',w:2},{n:'しっぽの こんぼう',k:'atk',pow:1.4,w:1}]},
+  wonambi:{name:'ウォナンビ',arch:'stunner',spr:'snake',pal:'wonambi',s:1.2,weak:['ice'],fic:true,moves:[{n:'しめつける',k:'atk',stun:.45,w:2},{n:'かみつく',k:'atk',w:1}]},
+  quink: {name:'クインカナ',arch:'sniper',spr:'croc',pal:'quink',weak:['thunder'],fic:true,moves:[{n:'おいかける',k:'snipe',pow:1.3,w:2},{n:'きりさく',k:'atk',pow:1.2,w:1}]},
+  thyleo:{name:'フクロライオン',arch:'charger',spr:'lion',pal:'thyleo',weak:['ice'],fic:true,moves:[{n:'かみくだく',k:'atk',pow:1.5,w:2},{n:'ちからを ためる',k:'charge',w:1}]},
 };
 // B1〜20 の出かた [この階から, この階まで, 組み合わせ]
 const POOL20=[
+  // B1〜10：前作の動物とコアラ（B10で出なくなる。10階ごとに大きく入れかえる＝決定）
   [1,6,['ant','ant']],[1,7,['fox']],[1,8,['ant','fox']],
   [2,9,['spider']],[2,9,['ant','spider']],
-  [3,12,['goanna']],[3,12,['tiger']],[3,8,['ant','ant','ant']],
-  [4,14,['toad']],[4,20,['koala']],[4,12,['tiger','ant']],
-  [5,15,['wantr']],[5,14,['wantr','fox']],
-  [6,18,['eagle','ant']],[6,18,['kooka','fox']],
-  [7,20,['crab']],[7,14,['crab','spider']],
-  [8,20,['honey','crab']],[8,20,['dingo']],
-  [9,20,['frill','dingo']],[9,18,['frill','goanna']],
-  [11,20,['devil']],[11,20,['devil','dingo']],[11,20,['kMage']],
-  [12,20,['octo','wantr']],[12,20,['lyre','dingo']],
-  [13,20,['ssnake']],[13,20,['kPriest','dingo']],
-  [14,20,['ray','ray']],[14,20,['perentie']],[14,20,['perentie','ssnake']],
-  [15,20,['ffox','ffox']],[15,20,['kSinger','toad']],
-  [16,20,['croc']],[16,20,['croc','goanna']],
-  [17,20,['kPoison','dingo']],[17,20,['eagle','eagle']],
-  [19,20,['kWarrior','dingo']],[19,20,['kKarate']],
+  [3,10,['goanna']],[3,10,['tiger']],[3,8,['ant','ant','ant']],
+  [4,10,['toad']],[4,10,['koala']],[4,10,['tiger','ant']],
+  [5,10,['wantr']],[5,10,['wantr','fox']],
+  [6,10,['eagle','ant']],[6,10,['kooka','fox']],
+  [7,10,['crab']],[7,10,['crab','spider']],
+  [8,10,['honey','crab']],[8,10,['dingo']],
+  [9,10,['frill','dingo']],[9,10,['frill','goanna']],
+  // B11〜20：ユーカリの根の層（デビル・タコ・コトドリ・コアラ一族など）
+  [11,20,['devil']],[11,20,['devil','octo']],[11,20,['octo','octo']],[11,20,['ssnake']],[11,16,['crab']],[11,20,['crab','ssnake']],[11,20,['kMage']],
+  [12,20,['lyre','devil']],[12,20,['perentie']],[13,20,['ray','ray']],[13,20,['kPriest','crab']],[13,20,['perentie','ssnake']],
+  [14,20,['ffox','ffox']],[14,20,['lyre','octo']],[15,20,['kSinger','perentie']],[15,20,['croc']],[16,20,['croc','ray']],[16,20,['kPoison','devil']],
+  [18,20,['kWarrior','ssnake']],[18,20,['kKarate']],
+  // B21〜30：地下水脈の層（c: は色違い）
+  [21,30,['platy']],[21,30,['platy','yabby']],[21,26,['rakali','rakali']],[21,30,['yabby']],[21,25,['c:dingo']],[21,30,['c:koala']],
+  [22,30,['archer','archer']],[22,30,['archer','yabby']],[22,30,['c:kMage']],
+  [23,30,['glow','glow']],[23,30,['glow','rakali']],[23,30,['c:kPriest','rakali']],
+  [24,30,['ghost']],[24,30,['ghost','c:ray']],[24,30,['c:kSinger','cod']],
+  [25,30,['cod']],[25,30,['cod','archer']],[25,30,['c:kWarrior','c:kMage']],
+  [26,30,['turtle','platy']],[26,30,['turtle','c:ssnake']],[26,30,['c:kPoison','yabby']],
+  [27,30,['fwcroc']],[27,30,['fwcroc','glow']],[28,30,['c:kKarate']],[28,30,['c:octo','ghost']],
+  // B31〜40：オパールの層
+  [31,40,['thorny']],[31,40,['thorny','redroo']],[31,36,['redroo']],[31,40,['c:goanna','c:frill']],[31,40,['c:koala']],
+  [32,40,['emu','emu']],[32,40,['bilby','emu']],[32,40,['c:kMage','c:kPriest']],
+  [33,40,['taipan']],[33,40,['scorp','scorp']],[33,40,['taipan','bilby']],[33,40,['c:devil','emu']],
+  [34,40,['galah','galah']],[34,40,['galah','thorny']],[34,40,['c:lyre','redroo']],
+  [35,40,['shingle','scorp']],[35,40,['shingle','redroo']],[35,40,['c:kSinger','c:kKarate']],
+  [36,40,['c:kWarrior','c:kMage','c:kPriest']],[37,40,['c:eagle','c:eagle']],[37,40,['c:kPoison','taipan']],
+  // B41〜50：太古の層
+  [41,50,['thyla']],[41,50,['thyla','thyla']],[41,50,['procop']],[41,50,['c:koala','c:honey']],[41,50,['c:kMage','c:kMage']],
+  [42,50,['genyo','thyla']],[42,50,['genyo','genyo']],[42,50,['c:kPriest','c:kWarrior','c:kMage']],
+  [43,50,['meio']],[43,50,['meio','procop']],[43,50,['c:devil','procop']],
+  [44,50,['wonambi']],[44,50,['wonambi','genyo']],[44,50,['c:kooka','c:croc']],
+  [45,50,['quink']],[45,50,['quink','thyla']],[45,50,['c:kPoison','c:lyre','c:kPriest']],
+  [46,50,['thyleo']],[46,50,['c:kSinger','c:kKarate']],[47,50,['thyleo','meio']],[47,50,['c:ray','c:ray','wonambi']],
 ];
 // B21〜：種類から、色違いの動物を当てる（名前と色は仮）
 const ARCH_ANIMAL={normal:'dingo',tank:'crab',fast:'fox',heavy:'toad',poison:'tiger',caller:'wantr',wide:'goanna',twice:'dingo',sleeper:'koala',
   stunner:'octo',jammer:'devil',bomber:'toad',medic:'honey',sniper:'eagle',counter:'crab',mirror:'lyre',charger:'croc',evasive:'ffox',mage:'ray',
   hexer:'kooka',frill:'frill',silencer:'lyre',koala:'koala',kMage:'kMage',kPriest:'kPriest',kSinger:'kSinger',kPoison:'kPoison',kWarrior:'kWarrior',kKarate:'kKarate'};
-const AREA_COLOR=['','あお','あか','くろ','きん'];
+// 色違いの名前（エリアごと）。B21〜 で前作などの動物が色違いで出る。技を1つ足す（STAGE3.md）
+const AREA_COLOR=['','','あお','きん','くろ'];
+const COLOR_MOVE={'あお':{n:'みずを はく',k:'magic',pow:.8,w:1},'きん':{n:'まぶしい ひかり',k:'debuffAll',st:'atk',w:1},'くろ':{n:'やみの いき',k:'magicAll',pow:.5,w:1}};
+const areaIdx=f=>Math.min(4,Math.floor((f-1)/10));
 function floorGroups(f){
-  const area=Math.floor((f-1)/10);
-  if(f<=20)return {pool:POOL20.filter(([a,b])=>f>=a&&f<=b).map(x=>x[2]),metalRate:.04};
-  const pool=[['normal','normal'],['tank'],['fast','normal'],['poison'],['normal','normal','normal'],['wide','normal'],['caller'],['heavy'],
-    ['koala'],['hexer','normal'],['frill','normal'],['sniper','normal'],['twice'],['medic','tank'],['stunner','normal'],['jammer','heavy'],['counter'],['kMage'],
-    ['silencer','normal'],['kPriest','normal'],['mage','mage'],['evasive','evasive'],['kSinger','heavy'],['charger','wide'],['kPoison','normal'],
-    ['kWarrior','normal'],['kKarate'],['tank','poison'],['heavy','fast'],['sniper','sniper']];
-  pool.push(['mirror','normal'],['bomber','bomber'],['sleeper','normal'],['hexer','frill']);
-  if(f>=25)pool.push(['twice','wide'],['caller','poison','normal'],['medic','counter'],['jammer','sniper'],['kWarrior','kMage']);  if(f>=31)pool.push(['mirror','counter'],['charger','sleeper'],['bomber','medic','sniper']);
-  if(f>=31)pool.push(['kPriest','kWarrior','kMage'],['kSinger','kKarate']);
-  if(f>=41)pool.push(['stunner','charger','jammer'],['evasive','mirror','medic'],['kMage','kMage'],['kPoison','silencer','kPriest']);
-  return {pool,metalRate:.04};
+  return {pool:POOL20.filter(([a,b])=>f>=a&&f<=b).map(x=>x[2]),metalRate:.04};
 }
-// 動物か種類から、敵を1体つくる
+// 動物か種類から、敵を1体つくる。'c:動物' は色違い。どれでもなければ種類（ARCH）に動物を当てる
 function mkMob(f,key){
-  let id=key,arch,A=ANIMALS[key],color='';
+  let id=key,arch,A,color='';
+  if(key.startsWith('c:')){id=key.slice(2);A=ANIMALS[id];color=AREA_COLOR[areaIdx(f)];}
+  else A=ANIMALS[key];
   if(A)arch=typeof A.arch==='function'?A.arch(f):A.arch;
-  else{arch=key;id=ARCH_ANIMAL[key]||'dingo';A=ANIMALS[id];color=AREA_COLOR[Math.min(4,Math.floor((f-1)/10))];}
+  else{arch=key;id=ARCH_ANIMAL[key]||'dingo';A=ANIMALS[id];color=AREA_COLOR[areaIdx(f)];}
   const e=mkEnemy(f,arch,{name:color+A.name,weak:A.weak||[]});
   e.id=id;e.color=color;e.look={spr:A.spr,pal:A.pal,s:A.s||1,tint:color};
-  if(A.moves&&ANIMALS[key]&&!ARCH[arch].metal)e.moves=A.moves;
+  if(A.moves&&!ARCH[arch].metal)e.moves=A.moves;
+  if(color&&COLOR_MOVE[color]&&e.moves){e.moves=e.moves.concat([COLOR_MOVE[color]]);if(!e.mag)e.mag=Math.round(curve('atk',f)*.55*.8);}
+  if(f>=31&&f<=40)e.gold=Math.round(e.gold*1.5); // オパールの層はお金が多い
   return e;
 }
 function rollGroup(f,r){
@@ -610,6 +661,12 @@ const BOSS_DEF={
   5: {name:'ツムギアリの女王',look:{spr:'ant',pal:'antQ',s:1.6},weak:['fire'],arch:'normal',moves:[{n:'かみつく',k:'atk',w:3},{n:'なかまを よぶ',k:'call',w:2},{n:'ぎ酸を とばす',k:'debuffAll',st:'def',w:1}]},
   10:{name:'ディンゴのおやぶん',look:{spr:'dingo',pal:'dboss',s:1.45},weak:['fire'],arch:'normal',moves:[{n:'とびかかる',k:'atk',pow:1.4,w:3},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'むれで おそう',k:'all',pow:.7,w:2},{n:'なかまを よぶ',k:'call',w:1}]},
   15:{name:'コアラのだいまどうし',look:{spr:'koala',pal:'kMageB',s:1.5},weak:['light'],arch:'kMage',mag:2.2,moves:[{n:'だいばくはつ',k:'magicAll',pow:.8,w:3},{n:'こおりのまほう',k:'magic',pow:1.3,w:2},{n:'ねむけを さそう',k:'sleepAll',rate:.3,w:1},{n:'ふういんの歌',k:'silence',rate:.5,w:1}]},
+  25:{name:'カモノハシのぬし',hpMul:1.15,atkMul:1.3,look:{spr:'platy',pal:'platyB',s:1.5},weak:['ice'],arch:'normal',moves:[{n:'けづめの どく',k:'atk',pow:1.3,poison:.6,w:3},{n:'でんきを かんじる',k:'snipe',pow:1.5,w:2},{n:'みずを はねあげる',k:'magicAll',pow:.6,w:2},{n:'もぐって ちからを ためる',k:'charge',w:1}]},
+  30:{name:'マーレーコッドのおおぬし',hpMul:1.15,atkMul:1.1,look:{spr:'fish',pal:'codB',s:1.6},weak:['thunder'],arch:'normal',moves:[{n:'まるのみ',k:'atk',pow:1.9,w:2},{n:'うずしお',k:'magicAll',pow:.8,w:2},{n:'しっぽで たたく',k:'atk',pow:1.2,w:2},{n:'なかまを よぶ',k:'call',w:1},{n:'どろを まきあげる',k:'debuffAll',st:'atk',w:1}]},
+  35:{name:'アカカンガルーのチャンピオン',look:{spr:'roo',pal:'redrooB',s:1.5},weak:['ice'],arch:'normal',counter:.35,moves:[{n:'キック',k:'atk',pow:1.5,w:3},{n:'ジャブ',k:'atk',w:2},{n:'しっぽで たつ',k:'charge',w:1},{n:'ボクシングの かまえ',k:'ebuff',w:1}]},
+  40:{name:'オパールのうみりゅう',hpMul:1.15,atkMul:1.1,look:{spr:'plesio',pal:'opal',s:1.4},weak:['thunder'],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.3,w:3},{n:'にじいろの ひかり',k:'magicAll',pow:.8,w:2},{n:'まぶしい ひかり',k:'debuffAll',st:'atk',w:1},{n:'ふういん',k:'silence',rate:.4,w:1},{n:'ちからを ためる',k:'charge',w:1}]},
+  45:{name:'フクロライオンのぬし',look:{spr:'lion',pal:'thyleoB',s:1.5},weak:['ice'],arch:'normal',fic:true,evade:.25,moves:[{n:'かみくだく',k:'atk',pow:1.7,w:3},{n:'おやゆびの ツメ',k:'snipe',pow:1.5,w:2},{n:'ちからを ためる',k:'charge',w:1},{n:'ほえる',k:'debuffAll',st:'atk',w:1}]},
+  50:{name:'メガラニア',atkMul:.9,look:{spr:'croc',pal:'megal',s:1.5},weak:[],arch:'normal',fic:true,moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'しっぽで なぎはらう',k:'all',pow:.8,w:2},{n:'どくの よだれ',k:'all',pow:.5,poison:.5,w:1},{n:'ちからを ためる',k:'charge',w:1},{n:'いかく',k:'debuffAll',st:'def',w:1},{n:'ふういん',k:'silence',rate:.4,w:1}]},
   20:{name:'イリエワニのぬし',look:{spr:'croc',pal:'crocB',s:1.3},weak:['thunder'],arch:'normal',moves:[{n:'かみつく',k:'atk',pow:1.2,w:3},{n:'ちからを ためる',k:'charge',w:2},{n:'しっぽで なぎはらう',k:'all',pow:.7,w:2},{n:'いかく',k:'debuffAll',st:'def',w:1}]},
 };
 // 光る宝箱の番人（前作と同じく、ボスより強いことがある）。エリアに1体。倒すと店より1段上の装備
@@ -624,7 +681,7 @@ const GUARDIANS={
       moves:[{n:'おおばさみ',k:'atk',pow:1.5,w:3},{n:'あわを ふきかける',k:'magicAll',pow:.7,w:2},{n:'かたく なる',k:'eguard',w:1}]},
   38:{name:'コアラの大けんじゃ',hp:1.0,atk:1.0,acts:2,look:{spr:'koala',pal:'koalaG',s:1.5},mag:1.15,reward:{armor:true},
       moves:[{n:'だいばくはつ',k:'magicAll',pow:.9,w:3},{n:'ふういんの歌',k:'silence',rate:.6,w:1},{n:'まりょくを たかめる',k:'ebuff',w:1},{n:'ねむけを さそう',k:'sleepAll',rate:.35,w:1}]},
-  48:{name:'いにしえの番人',   hp:1.0,atk:.95,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
+  48:{name:'いにしえの番人',   hp:1.0,atk:1.06,acts:2,look:{spr:'dingo',pal:'ancient',s:1.45},reward:{line:'best'},fic:true,
       moves:[{n:'かみつく',k:'atk',pow:1.4,w:3},{n:'とびかかる',k:'atk',pow:1.8,w:1},{n:'とおぼえ',k:'debuffAll',st:'atk',w:1},{n:'ちからを ためる',k:'charge',w:1}]},
 };
 function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
@@ -634,7 +691,7 @@ function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
   e.exp=Math.round(B.exp*1.2);e.gold=Math.round(B.gold*1.2);return [e];}
 function bossFor(f){
   const D=BOSS_DEF[f];
-  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:D.weak||[],name:D.name});e.moves=D.moves;e.look=D.look;e.id='boss'+f;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);return [e];}const look=[{spr:'crab',pal:'tide',s:1.4},{spr:'croc',pal:'perentie',s:1.3},{spr:'devil',pal:'devil',s:1.5},{spr:'eagle',pal:'eagle',s:1.4},{spr:'dingo',pal:'ancient',s:1.45}][Math.floor((f-1)/10)];
+  if(D){const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid',weak:D.weak||[],name:D.name});e.moves=D.moves;e.look=D.look;e.id='boss'+f;if(D.mag)e.mag=Math.round(curve('atk',f)*.55*D.mag);if(D.counter)e.counter=D.counter;if(D.evade)e.evade=D.evade;if(D.hpMul){e.hp=e.max=Math.round(e.hp*D.hpMul);}if(D.atkMul){e.atk=Math.round(e.atk*D.atkMul);e.mag=Math.round(e.mag*D.atkMul);}return [e];}const look=[{spr:'crab',pal:'tide',s:1.4},{spr:'croc',pal:'perentie',s:1.3},{spr:'devil',pal:'devil',s:1.5},{spr:'eagle',pal:'eagle',s:1.4},{spr:'dingo',pal:'ancient',s:1.45}][Math.floor((f-1)/10)];
   const e=mkEnemy(f,'normal',{boss:f%10===0?'big':'mid'});e.look=look;e.id='boss'+f;return f%5===0?[e]:null;}
 
 // ---------- 戦闘 ----------
@@ -979,7 +1036,7 @@ function battleTurn(B,cmds,r){
         if(dead.length){const j=dead[0];EN[j].hp=Math.ceil(EN[j].max/2);EN[j].revivedOnce=true;EN[j].st={};ev.push({t:'add',i:j,text:`${e.name}は ${EN[j].name}を よみがえらせた！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='charge'){e.charged=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ちからを ためている！`});}
-      else if(mv.k==='call'){const ne=e.id&&!e.boss?mkMob(e.f,e.color?ANIMALS[e.id].arch:e.id):mkEnemy(e.f,'normal',{weak:e.weak});if(!ne.look&&e.look)ne.look=Object.assign({},e.look,{s:1});ne.name=(e.boss?e.name.replace(/の.*$/,'').replace(/ [A-E]$/,''):e.name.replace(/ [A-E]$/,''))+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
+      else if(mv.k==='call'){const ne=e.id&&!e.boss?mkMob(e.f,e.color?'c:'+e.id:e.id):mkEnemy(e.f,'normal',{weak:e.weak});if(!ne.look&&e.look)ne.look=Object.assign({},e.look,{s:1});ne.name=(e.boss?e.name.replace(/の.*$/,'').replace(/ [A-E]$/,''):e.name.replace(/ [A-E]$/,''))+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
     }
     if(checkEnd())break;
   }
@@ -1012,7 +1069,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={ANIMALS,POOL20,mkMob,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
@@ -1213,6 +1270,22 @@ const TRACKS={
   boss:{bpm:164,mw:'sawtooth',mv:.016,bv:.05,
     mel:'D5 - D5 F5 E5 - D5 C5 A#4 - A4 - G4 - A4 - D5 - D5 F5 G5 - F5 E5 D5 - C#5 - D5 - - - F5 - F5 G5 A5 - G5 F5 E5 - D5 - C#5 - E5 - D5 - C5 A#4 A4 - G4 - A4 - C#5 - E5 - D5 -',
     bass:'D2 D3 D2 D3 D2 D3 D2 D3 A#1 A#2 A#1 A#2 A#1 A#2 A#1 A#2 G1 G2 G1 G2 G1 G2 G1 G2 A1 A2 A1 A2 A1 A2 A1 A2 D2 D3 D2 D3 D2 D3 D2 D3 A#1 A#2 A#1 A#2 C2 C3 C2 C3 G1 G2 G1 G2 A1 A2 A1 A2 A1 A2 A1 A2 D2 D3 D2 D3'},
+  // 10階ごとに曲を変える（決定）：dungeon=B1〜10, dungeon2=B11〜20, dungeon3=B21〜30, dungeon4=B31〜40, dungeon5=B41〜50
+  dungeon2:{bpm:100,mw:'triangle',mv:.05,bv:.04,
+    mel:'D5 - F5 - E5 - C5 - D5 - A4 - - - C5 - D5 - E5 - G5 - F5 - E5 - D5 - - - A5 - G5 - F5 - E5 - F5 - G5 - A5 - - - G5 - F5 - E5 - C5 - D5 - - - - - - - - -',
+    bass:'D3 - - - A2 - - - C3 - - - G2 - - - F2 - - - C3 - - - D3 - - - A2 - - - F2 - - - G2 - - - A2 - - - E2 - - - G2 - - - C3 - - - D3 - - - D3 - - -'},
+  dungeon3:{bpm:84,mw:'sine',mv:.06,bv:.04,
+    mel:'E5 G5 B5 G5 E5 G5 B5 - D5 F#5 A5 F#5 D5 F#5 A5 - C5 E5 G5 E5 C5 E5 G5 - B4 D#5 F#5 D#5 B4 - - - E5 G5 B5 G5 E5 G5 B5 - D5 G5 B5 G5 D5 G5 B5 - C5 E5 A5 E5 C5 E5 A5 - B4 D#5 F#5 B5 A5 F#5 D#5 -',
+    bass:'E2 - - - - - - - D2 - - - - - - - C2 - - - - - - - B1 - - - - - - - E2 - - - - - - - G2 - - - - - - - A2 - - - - - - - B1 - - - - - - -'},
+  dungeon4:{bpm:112,mw:'square',mv:.018,bv:.045,
+    mel:'F5 A5 C6 B5 A5 - G5 - A5 C6 E6 D6 C6 - B5 - G5 B5 D6 C6 B5 - A5 - G5 - F5 - E5 - - - F5 A5 C6 B5 A5 - C6 - E6 - D6 C6 B5 - G5 - A5 G5 F5 E5 F5 - G5 - F5 - - - - - - -',
+    bass:'F2 - C3 - F2 - C3 - A2 - E3 - A2 - E3 - G2 - D3 - G2 - D3 - C3 - G2 - C3 - G2 - F2 - C3 - F2 - C3 - D3 - A2 - D3 - A2 - G2 - D3 - G2 - D3 - C3 - G2 - F2 - - -'},
+  dungeon5:{bpm:76,mw:'sawtooth',mv:.014,bv:.05,
+    mel:'C5 - - - D#5 - D5 - C5 - - - G4 - - - G#4 - - - G4 - F4 - D#4 - - - D4 - - - C5 - - - D#5 - F5 - G5 - - - F5 - D#5 - D5 - - - C5 - B4 - C5 - - - - - - -',
+    bass:'C2 - - - - - - - G#1 - - - - - - - F1 - - - - - - - G1 - - - - - - - C2 - - - - - - - D#2 - - - - - - - G1 - - - - - - - C2 - - - - - - -'},
+  lastboss:{bpm:172,mw:'sawtooth',mv:.016,bv:.05,
+    mel:'E5 - E5 G5 F#5 - E5 D5 C5 - B4 - A4 - B4 - E5 - E5 G5 A5 - G5 F#5 G5 - A5 - B5 - - - C6 - B5 A5 G5 - F#5 E5 D#5 - E5 - F#5 - G5 - A5 - G5 F#5 E5 - D#5 - B4 - D#5 - E5 - - -',
+    bass:'E2 E3 E2 E3 E2 E3 E2 E3 C2 C3 C2 C3 C2 C3 C2 C3 A1 A2 A1 A2 A1 A2 A1 A2 B1 B2 B1 B2 B1 B2 B1 B2 E2 E3 E2 E3 E2 E3 E2 E3 C2 C3 C2 C3 D2 D3 D2 D3 B1 B2 B1 B2 B1 B2 B1 B2 B1 B2 D#2 D#3 E2 E3 E2 E3'},
   ending:{bpm:72,mw:'triangle',mv:.055,bv:.04,
     mel:'C5 - E5 - G5 - - - A5 - G5 - E5 - - - F5 - E5 - D5 - C5 - D5 - - - - - - - C5 - E5 - G5 - - - C6 - B5 - A5 - - - G5 - E5 - D5 - E5 - C5 - - - - - - -',
     bass:'C3 - - - E3 - - - F3 - - - C3 - - - D3 - - - A2 - - - G2 - - - G2 - - - C3 - - - E3 - - - A2 - - - F2 - - - G2 - - - G2 - - - C3 - - - C3 - - -'},
@@ -1225,6 +1298,7 @@ function playMusic(name){if(MUS.name===name&&MUS.timer)return;MUS.name=name;star
 function stopMusic(){clearInterval(MUS.timer);MUS.timer=null;if(MUS.gain&&SND.a){const g=MUS.gain;const t=SND.a.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+.15);const ng=SND.a.createGain();ng.gain.value=1;ng.connect(SND.a.destination);setTimeout(()=>{try{g.disconnect();}catch(e){}},400);MUS.gain=ng;}}
 function startMusic(){
   stopMusic();if(!SND.on||!MUS.name||!SND.a||SND.a.state!=='running'||!TRACKS[MUS.name])return;
+  if(!MUS.gain&&!ensureAudio())return; // 効果音が先に AudioContext を作ったときは、音楽用の音量ノードがまだない
   const T=TRACKS[MUS.name],step=60/T.bpm/2,toks=[T.mel.split(/\s+/),T.bass.split(/\s+/)];
   MUS.i=0;MUS.t=SND.a.currentTime+.08;const gain=MUS.gain;
   MUS.timer=setInterval(()=>{const a=SND.a;if(!a||MUS.gain!==gain)return;
@@ -1438,6 +1512,37 @@ const EPAL={
   crocB:{m:'#3e4a26',l:'#5d6b3a',d:'#232c12',b:'#a8a070',e:'#ff3a2a',w:'#ffffff'},
   octo:{m:'#c8a060',l:'#e8c888',d:'#7a5a30',a:'#2a6aff',e:'#111'},
   ray:{m:'#8a8070',l:'#b0a890',d:'#5a5040',a:'#ffe24a',e:'#111'},
+  // B21〜50（STAGE3.md）
+  platy:{m:'#6a4a32',l:'#8c6a4a',d:'#3e2a1a',a:'#3a3a40',e:'#111'},
+  platyB:{m:'#4e3424',l:'#7a5638',d:'#2a1a10',a:'#2a2a34',e:'#ff4a2a'},
+  yabby:{m:'#4a5a6a',l:'#6a7e90',d:'#2a3440',a:'#5a7090',e:'#111'},
+  rakali:{m:'#5a4a3a',l:'#7a6650',d:'#3a2e22',b:'#e8b860',w:'#fbf6ee',e:'#111',p:'#c89a7a'},
+  archer:{m:'#c8c8a8',l:'#eeeed8',d:'#7a7a5a',b:'#f4f4e4',a:'#2a2a24',e:'#111'},
+  glow:{m:'#d8d0b8',l:'#f0ead8',d:'#9a927a',a:'#7cf0ff',e:'#111'},
+  ghost:{m:'#c8c4cc',l:'#ecebf0',d:'#8a8690',a:'#e8b8c0',e:'#c81e2a'},
+  cod:{m:'#6a8a4a',l:'#8aaa62',d:'#3e5a2a',b:'#ece8c8',a:'#2e4a1e',e:'#111'},
+  codB:{m:'#4e6e36',l:'#6e904e',d:'#2a421a',b:'#e0dcb8',a:'#1e3412',e:'#ff4a2a'},
+  turtle:{m:'#5a4a30',l:'#7e6a46',d:'#34281a',b:'#d8c89a',a:'#c8a860',e:'#111'},
+  fwcroc:{m:'#8a7a4a',l:'#aa9a62',d:'#5a4a2a',b:'#ddd0a0',e:'#e0b020',w:'#ffffff'},
+  thorny:{m:'#c88a3a',l:'#e8b060',d:'#7a4a1a',b:'#f0d090',e:'#111',w:'#ffffff'},
+  redroo:{m:'#b8603a',l:'#d8845a',d:'#7a3a1e',b:'#f0dcc8',e:'#111'},
+  redrooB:{m:'#a04a2a',l:'#c8704a',d:'#6a2a12',b:'#f4e0c8',e:'#e01e1e'},
+  emu:{m:'#6a5a4a',l:'#8a7a66',d:'#3e3226',b:'#3a4a6a',a:'#4a3a2a',e:'#f0a020'},
+  bilby:{m:'#9aa0aa',l:'#c4cad2',d:'#5e646e',b:'#f2f2f2',w:'#fbfbfb',e:'#111',p:'#e8a0b0'},
+  taipan:{m:'#8a6a3a',b:'#d8b878',d:'#4a3418',l:'#a8884a',e:'#111',t:'#2a1a10'},
+  scorp:{m:'#a8783a',l:'#c89a5a',d:'#5a3a18',a:'#d83a2a',e:'#111'},
+  galah:{m:'#9a9aa2',l:'#e888a8',d:'#5e5e66',a:'#f0d8e0',e:'#111'},
+  shingle:{m:'#5a4a3a',l:'#8a6e52',d:'#2e241a',b:'#3a6ad8',e:'#111',w:'#ffffff'},
+  thyla:{m:'#c8a060',l:'#e0c080',d:'#8a6a3a',b:'#f0e0c0',w:'#f0e0c0',e:'#111',s:'#3a2a1a'},
+  procop:{m:'#8a6a4a',l:'#aa8a66',d:'#54402a',b:'#e8d8b8',e:'#111'},
+  genyo:{m:'#5a4e44',l:'#7a6e62',d:'#342c24',b:'#3a3a3a',a:'#e8c040',e:'#e0c040'},
+  meio:{m:'#6a6a50',l:'#8e8e6e',d:'#3e3e2c',b:'#d0c8a0',a:'#e8e0c0',e:'#111'},
+  wonambi:{m:'#4a5a3a',b:'#a8a878',d:'#2a3420',l:'#6a7a52',e:'#e0c020',t:'#d8463a'},
+  quink:{m:'#6a5a4a',l:'#8a7a66',d:'#3e3226',b:'#d8c8a8',e:'#ff8a2a',w:'#ffffff'},
+  thyleo:{m:'#a88850',l:'#c8a870',d:'#6a5430',b:'#f0e0c0',w:'#f0e0c0',e:'#111',p:'#c08a6a'},
+  thyleoB:{m:'#8a6a3a',l:'#b08a50',d:'#54401e',b:'#efd8b0',w:'#efd8b0',e:'#ff3a2a',p:'#c08a6a'},
+  opal:{m:'#7aa8c8',l:'#c8e8f8',d:'#4a6a9a',b:'#f0e8ff',a:'#ff8ad8',e:'#ffe24a'},
+  megal:{m:'#4a3e30',l:'#6e5e4a',d:'#28201a',b:'#b8a070',e:'#ff2a1a',w:'#ffffff'},
 };
 // 色違い（B21〜）：もとの色を、その色に寄せる
 const TINT_COL={'あお':'#3a6ad8','あか':'#d83a3a','くろ':'#2a2430','きん':'#e8c040'};
@@ -1473,7 +1578,7 @@ const GEN={
     const sn=o.snout==null?1:o.snout;
     SE(hx+(4+sn)*K,hy+2*K,(3.6+sn)*K,2.7*K,2.2,5,(x,y,dy)=>dy>.15?(c.b||c.l):c.m);
     if(o.ears==='round'){E(hx-3.5*K,hy-5*K,2.3*K,2.3*K,6,()=>c.p||c.d);E(hx+1.5*K,hy-5.3*K,2.3*K,2.3*K,6,()=>c.p||c.d);}
-    else for(const ex of [hx-3.2*K,hx+1.2*K]){const top=hy-10*K,h=5*K;for(let j=0;j<=h;j++){const w=(j/h)*2.3*K;for(let x=ex-w;x<=ex+w;x++)S(x,top+j,j<h*.5?c.d:c.m,6);}}
+    else for(const ex of [hx-3.2*K,hx+1.2*K]){const top=hy-(o.ears==='long'?13:10)*K,h=(o.ears==='long'?8:5)*K;for(let j=0;j<=h;j++){const w=(j/h)*2.3*K;for(let x=ex-w;x<=ex+w;x++)S(x,top+j,j<h*.5?c.d:c.m,6);}}
     return finish(G,P=>{const e=c.e;P(hx+1*K,hy-1.5*K,e);P(hx+1*K+1,hy-1.5*K,e);if(K>1.2){P(hx+1*K,hy-1.5*K+1,e);P(hx+1*K+1,hy-1.5*K+1,e);}
       const nx=hx+(7.4+2*sn)*K;P(nx,hy+1.2*K,'#120a08');P(nx-1,hy+1.2*K,'#120a08');P(nx,hy+1.2*K+1,'#120a08');
       P(nx-2*K,hy+4*K,'#120a08');P(nx-3*K,hy+4*K,'#120a08');});},
@@ -1551,6 +1656,68 @@ GEN.ray=function(c,s){const K=s,G=eg(48*K,28*K),{E,S}=G;
   E(33*K,14*K,5*K,5*K,2,shade(c));
   return finish(G,P=>{P(14*K,11*K,c.e);P(15*K,11*K,c.e);P(22*K,11*K,c.e);P(23*K,11*K,c.e);
     for(const [x,y] of [[6,6],[34,5],[8,22],[30,23],[40,9]]){P(x*K,y*K,c.a);P(x*K+1,y*K-1,c.a);P(x*K+2,y*K,c.a);}});};
+// ---- B21〜50 の形 ----
+GEN.platy=function(c,s){const K=s,G=eg(48*K,24*K),{E,SE,S}=G;
+  SE(8*K,15*K,7*K,3.2*K,2.4,2,()=>c.d);
+  for(const lx of [16,28])for(let y=17*K;y<=21*K;y++)for(let x=lx*K;x<(lx+4)*K;x++)S(x,y,c.d,1);
+  E(22*K,14*K,12*K,6*K,3,shade(c));E(34*K,12*K,5*K,4.5*K,4,shade(c));
+  SE(42*K,13*K,6*K,2.2*K,2.2,5,(x,y,dy)=>dy<-.3?mixHex(c.a,'#ffffff',.25):c.a);
+  return finish(G,P=>{P(35*K,10*K,c.e);P(36*K,10*K,c.e);for(let k=0;k<3;k++)P((44+k)*K,12.5*K,'#18181c');});};
+GEN.fish=function(c,s){const K=s,G=eg(46*K,28*K),{E,S}=G,r=rng(11);
+  for(let j=0;j<10*K;j++){const h=j*.9;for(let y=14*K-h;y<=14*K+h;y++)S(10*K-j,y,c.d,1);}
+  for(let j=0;j<6*K;j++)for(let x=18*K-j*.5;x<26*K-j*.8;x++)S(x,6.5*K-j,c.d,2);
+  E(24*K,14*K,15*K,8.5*K,3,(x,y,dy)=>dy>.35?c.b:dy<-.5?c.l:c.m);
+  return finish(G,P=>{for(let k=0;k<16;k++)P(14*K+r()*18*K,8.5*K+r()*7*K,c.a);P(33*K,11*K,'#fff');P(34*K,11*K,c.e);P(34*K,12*K,c.e);for(let k=0;k<4*K;k++)P(35*K+k,16*K,'#2a1a10');});};
+function turtleShape(c,s,horn){const K=s,G=eg(52*K,30*K),{E,SE,S}=G;
+  for(const lx of [11,31])for(let y=19*K;y<=26*K;y++)for(let x=lx*K;x<(lx+5)*K;x++)S(x,y,c.d,1);
+  if(horn){eline(G,10*K,19*K,3*K,21*K,c.d,Math.max(2,Math.round(2*K)),1);E(3*K,21*K,2.6*K,2.6*K,1,()=>c.a);}
+  else eline(G,9*K,19*K,4*K,21*K,c.d,Math.max(1,Math.round(1.5*K)),1);
+  if(horn){E(40*K,17*K,5.5*K,4.6*K,4,shade(c));eline(G,38*K,13*K,35*K,8*K,c.a,Math.max(2,Math.round(2*K)),5);eline(G,42*K,13*K,46*K,8*K,c.a,Math.max(2,Math.round(2*K)),5);}
+  else{eline(G,34*K,17*K,42*K,9*K,c.m,Math.max(2,Math.round(3*K)),3);E(44*K,8*K,3.8*K,2.8*K,4,shade(c));}
+  SE(23*K,16*K,14*K,9*K,2.3,2,(x,y,dy)=>dy>.6?c.b:dy<-.45?c.l:c.m);
+  return finish(G,P=>{for(const [x0,x1] of [[14,32],[18,28]])for(let x=x0*K;x<x1*K;x++)P(x,(x0===14?14:9.5)*K,c.d);for(const x of [17,23,29])for(let y=9*K;y<20*K;y++)P(x*K,y,c.d);
+    if(horn){P(42*K,16*K,c.e);P(43*K,16*K,c.e);}else{P(45*K,7*K,c.e);P(46*K,7*K,c.e);}});}
+GEN.turtle=function(c,s){return turtleShape(c,s,false);};
+GEN.hturtle=function(c,s){return turtleShape(c,s,true);};
+GEN.glow=function(c,s){const K=s,G=eg(38*K,40*K),{E,S}=G;
+  for(let i=0;i<7;i++){const x=(5+i*4.6)*K,len=(16+((i*7)%5)*4)*K;for(let y=8*K;y<len;y++)S(x,y,c.l,1);for(let y=12*K;y<len;y+=3*K)S(x,y,c.a,2);}
+  for(let i=0;i<5;i++)E((7+i*5)*K,6*K,3*K,2.6*K,3,shade(c));
+  E(32*K,6*K,3.8*K,3.4*K,4,()=>c.a);
+  return finish(G,P=>{P(5*K,5*K,c.e);P(5*K,6*K,c.e);for(const [x,y] of [[30,3],[35,4],[33,9]])P(x*K,y*K,'#ffffff');});};
+GEN.roo=function(c,s){const K=s,G=eg(40*K,48*K),{E,SE,S}=G;
+  eline(G,14*K,36*K,2*K,46*K,c.m,Math.max(3,Math.round(3.5*K)),1);
+  SE(25*K,45.5*K,8*K,1.8*K,2,2,()=>c.d);E(18*K,37*K,6*K,7.5*K,2,shade(c));
+  E(20*K,26*K,7*K,11*K,3,(x,y,dy)=>Math.abs(x-23*K)<3*K&&dy>-.3?c.b:(dy<-.5?c.l:c.m));
+  eline(G,25*K,23*K,31*K,28*K,c.m,Math.max(2,Math.round(2*K)),4);
+  for(const ex of [21*K,25*K]){for(let j=0;j<=6*K;j++){const w=(j/(6*K))*1.8*K;for(let x=ex-w;x<=ex+w;x++)S(x,4*K+j,j<3*K?c.d:c.m,6);}}
+  E(25*K,13*K,5*K,4.5*K,5,shade(c));SE(30*K,14.5*K,3.6*K,2.4*K,2,5,()=>c.l);
+  return finish(G,P=>{P(26*K,11.5*K,c.e);P(27*K,11.5*K,c.e);P(33.4*K,13.5*K,'#120a08');P(32*K,26*K,c.d);});};
+GEN.emu=function(c,s){const K=s,G=eg(40*K,50*K),{E,SE,S}=G;
+  for(const lx of [15,22]){eline(G,lx*K,30*K,(lx-1)*K,47*K,c.a,Math.max(1,Math.round(1.8*K)),1);SE((lx+1)*K,48*K,3.2*K,1*K,2,1,()=>c.a);}
+  E(18*K,24*K,12*K,9*K,2,(x,y,dy)=>dy<-.4?c.l:dy>.5?c.d:c.m);
+  eline(G,26*K,20*K,30*K,7*K,c.b,Math.max(2,Math.round(2.8*K)),3);
+  E(31*K,5.5*K,3.2*K,2.8*K,4,()=>c.b);SE(35.5*K,6*K,2.4*K,1.1*K,2,4,()=>c.a);
+  return finish(G,P=>{P(32*K,4.5*K,c.e);for(let k=0;k<10;k++){const x=(8+k*2)*K,y=(29+(k%3))*K;P(x,y,c.d);}});};
+GEN.scorp=function(c,s){const K=s,G=eg(46*K,34*K),{E,S}=G;
+  for(let i=0;i<4;i++){const x0=(15+i*3)*K;eline(G,x0,24*K,x0-3*K,30*K,c.d,Math.max(1,Math.round(1.2*K)),1);}
+  for(let i=0;i<14;i++){const a=Math.PI*(.5+i/13*1.25),x=12*K+Math.cos(a)*9*K,y=14*K+Math.sin(a)*9*K;E(x,y,(2.4-i*.08)*K,(2.4-i*.08)*K,2,shade(c));}
+  E(20*K,23*K,9*K,4.5*K,3,shade(c));
+  for(const dy of [-3,2]){eline(G,27*K,22*K,34*K,(19+dy)*K,c.m,Math.max(2,Math.round(1.8*K)),4);E(37*K,(18+dy)*K,3.6*K,2.4*K,5,shade(c));}
+  const tx=12*K+Math.cos(Math.PI*1.75)*9*K,ty=14*K+Math.sin(Math.PI*1.75)*9*K;
+  return finish(G,P=>{for(let k=0;k<3*K;k++)P(tx+k*.6,ty+k*.4,c.a);P(27*K,21*K,c.e);P(28*K,21*K,c.e);});};
+GEN.plesio=function(c,s){const K=s,G=eg(60*K,32*K),{E,SE,S}=G,r=rng(21);
+  for(const [x0,y0,x1,y1] of [[18,20,9,29],[34,20,43,29],[16,12,8,5],[32,12,40,5]])eline(G,x0*K,y0*K,x1*K,y1*K,c.d,Math.max(2,Math.round(3*K)),1);
+  eline(G,9*K,16*K,1*K,18*K,c.m,Math.max(2,Math.round(2.4*K)),1);
+  E(24*K,16*K,15*K,7.5*K,2,(x,y,dy)=>dy>.4?c.b:dy<-.45?c.l:c.m);
+  E(41*K,14*K,6*K,4.6*K,3,shade(c));SE(50*K,15*K,8.5*K,3*K,2.2,4,(x,y,dy)=>dy>.2?c.b:c.m);
+  return finish(G,P=>{for(let k=0;k<26;k++){const x=12*K+r()*26*K,y=11*K+r()*10*K;P(x,y,[c.a,'#ffffff','#7cf0ff','#ffe24a'][k%4]);}
+    for(let x=45*K;x<57*K;x+=2*K)P(x,16*K,'#ffffff');P(45*K,12*K,c.e);P(46*K,12*K,c.e);});};
+GEN.rat=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:1.6,ears:'round'});};
+GEN.bilby=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:2,ears:'long'});};
+GEN.lion=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:.3,ears:'round',stocky:true});};
+GEN.thyla=function(c,s){const R=GEN.quad(c,s,{tail:'thin',snout:1.3});const K=s;
+  for(let x=9*K;x<25*K;x+=3*K)for(let y=10.5*K;y<17*K;y++)for(let dx=0;dx<Math.max(1,Math.round(K));dx++){const i=Math.floor(y)*R.W+Math.floor(x)+dx;if(R.img[i]&&R.img[i]!=='o')R.img[i]=c.s;}
+  return R;};
 // 敵のドット絵：look = {spr, pal, s, tint}
 function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'');
   return cached(key,()=>toCanvas(GEN[look.spr](tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),look.s||1)));}
@@ -1651,6 +1818,7 @@ function tileCanvas(ts,kind,v){
       return c;}
     floor();
     if(kind==='floor')return c;
+    if(kind==='crack'){x.fillStyle='#120c0a';for(const [a,b,w] of [[3,5,4],[6,7,3],[8,8,4],[10,10,2],[7,10,1],[6,11,2],[11,6,2]])x.fillRect(a,b,w,1);x.fillStyle=T.f2;x.fillRect(4,4,2,1);x.fillRect(10,11,2,1);return c;}
     if(kind==='down'){x.fillStyle='#120c0a';x.fillRect(3,3,10,10);x.fillStyle=T.f2;for(let i=0;i<4;i++)x.fillRect(3+i,4+i*2,10-i*2,1);return c;}
     if(kind==='up'){x.fillStyle=T.f2;for(let i=0;i<4;i++){x.fillRect(3,3+i*3,10,2);}x.fillStyle=T.f3;for(let i=0;i<4;i++)x.fillRect(3,5+i*3,10,1);return c;}
     if(kind==='exit'){const g=x.createRadialGradient(8,8,1,8,8,8);g.addColorStop(0,'rgba(255,240,180,.95)');g.addColorStop(1,'rgba(255,240,180,0)');x.fillStyle=g;x.fillRect(0,0,16,16);
@@ -1669,16 +1837,18 @@ function tileCanvas(ts,kind,v){
 // ---- src/game.js ----
 // ===== ゲームのデータ（画面に関係するもの。ルールは core.js） =====
 const SAVE_KEY='wombatlegacy2_save_v1',SND_KEY='wombatlegacy2_snd',PREV_SAVE_KEY='wombatlegacy_save_v1';
-const STAGE_MAX=20;           // 段階②：B20まで
+const STAGE_MAX=50;           // B50まで（最後）
 const MAXITEM=9;
 const AREA_NAME=['巣穴の層','ユーカリの根の層','地下水脈の層','オパールの層','太古の層'];
 const areaOf=f=>Math.min(4,Math.floor((f-1)/10));
-const shopMax=tier=>Math.min(WEAPON_POW.length-1,tier*2-1);
+// 10階ごとに曲を変える（決定）
+const dungeonTrack=f=>['dungeon','dungeon2','dungeon3','dungeon4','dungeon5'][areaOf(f)];
+const shopMax=tier=>Math.min(SHOP_TOP,tier*2-1);
 const DEFAULT_NAMES=['ガッチ','ユカリ','モフル'];
 
 // ---------- アイテムの説明（ITEMS は core.js） ----------
-const ITEM_DESC={herb:'HPを 30 回復',herb2:'HPを 90 回復',herb3:'HPを 300 回復',antidote:'どくを なおす',water:'MPを 20 回復',leaf:'たおれた仲間を おこす（HP半分）'};
-const SHOP_ITEMS=[['herb',1],['antidote',1],['water',1],['herb2',2],['leaf',2],['herb3',3]]; // [道具, 並ぶ店の段階]
+const ITEM_DESC={herb:'HPを 30 回復',herb2:'HPを 90 回復',herb3:'HPを 300 回復',antidote:'どくを なおす',water:'MPを 20 回復',water2:'MPを 80 回復',leaf:'たおれた仲間を おこす（HP半分）'};
+const SHOP_ITEMS=[['herb',1],['antidote',1],['water',1],['herb2',2],['leaf',2],['herb3',3],['water2',4]]; // [道具, 並ぶ店の段階]
 
 // ---------- 迷路 ----------
 // '#'壁 '%'やわらかい壁 'z'あやしい壁 '.'通路 'S'地上へのロープ 'D'下への階段 'B'ボス 'H'光る宝箱 'T'宝箱
@@ -1715,6 +1885,10 @@ function genFloor(f){
   if(GUARDIANS[f]&&dead.length){const g=dead.shift();m[g[1]][g[0]]='H';guard=[g[0],g[1]];}
   for(const [x,y] of dead)m[y][x]='T';
   m[1][1]='S';
+  // ひびわれた床（下へ掘る近道）：B21〜49 のボスのいない階に1か所（STAGE3.md）
+  let crack=null;
+  if(f>=21&&f<STAGE_MAX&&!boss){const cand=[];for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(m[y][x]==='.'&&nbOpen(x,y)>=2&&dist[y][x]>=8)cand.push([x,y]);
+    if(cand.length){crack=cand[Math.floor(r()*cand.length)];m[crack[1]][crack[0]]='V';}}
   // やわらかい壁：2つの通路にはさまれた内側の壁の一部。ボスのまわりは硬いまま
   const near=(x,y,p)=>Math.abs(x-p[0])+Math.abs(y-p[1])<=2;
   const soft=[];
@@ -1726,7 +1900,7 @@ function genFloor(f){
   // あやしい壁：やわらかい壁のうち2〜3か所
   const nz=2+Math.floor(r()*2);
   for(let k=0;k<nz&&soft.length;k++){const i=Math.floor(r()*soft.length);const [x,y]=soft.splice(i,1)[0];m[y][x]='z';}
-  return {W,H,m,goal,boss,guard};
+  return {W,H,m,goal,boss,guard,crack};
 }
 function floorDistM(m,W,H){const dist=Array.from({length:H},()=>Array(W).fill(-1));const q=[[1,1]];dist[1][1]=0;
   while(q.length){const [x,y]=q.shift();for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=x+a,Y=y+b;const t=m[Y]&&m[Y][X];if(t&&t!=='#'&&t!=='%'&&t!=='z'&&dist[Y][X]<0){dist[Y][X]=dist[y][x]+1;q.push([X,Y]);}}}return dist;}
@@ -1735,17 +1909,23 @@ function floorDistM(m,W,H){const dist=Array.from({length:H},()=>Array(W).fill(-1
 function chestLoot(f,x,y){
   const r=rng(f*131+x*17+y*29+7),k=r();
   const g=Math.round(curve('gold',f)*(2.5+r()*1.5));
-  if(f%5===4&&k<.18){const lines=['claw','staff','flute'];return {eq:lines[Math.floor(r()*3)],tier:Math.min(WEAPON_POW.length-1,shopMax(1+areaOf(f))+(f>=10?1:0))};}
+  if(f%5===4&&k<.18){const lines=['claw','staff','flute'];return {eq:lines[Math.floor(r()*3)],tier:Math.min(SHOP_TOP,shopMax(1+areaOf(f))+(f>=10?1:0))};}
   if(k<.45)return {gold:g};
-  const it=f<8?['herb','herb','antidote','water']:f<30?['herb2','herb2','water','leaf','antidote']:['herb3','herb2','water','leaf'];
+  const it=f<8?['herb','herb','antidote','water']:f<30?['herb2','herb2','water','leaf','antidote']:['herb3','herb2','water2','leaf'];
   return {item:it[Math.floor(r()*it.length)],n:1+(r()<.3?1:0)};
 }
+// あなほり王の素材（空想）。持ち帰ると、その系統の最強装備（番号11）が店に並ぶ
+const MATS={claw:{name:'いにしえの キバ'},staff:{name:'かせきの えだ'},flute:{name:'にじいろの ふえいし'},armor:{name:'いにしえの こうら'}};
+function partyHas(k){return G.party.some(m=>m.hp>0&&passives(m)[k]);}
 function digLoot(f,ayashi,R){ // R: 遊んでいるときの乱数
-  if(!ayashi){if(R()<.12)return R()<.6?{gold:Math.round(curve('gold',f)*(.8+R()*.6))}:{item:f<8?'herb':'herb2',n:1};return null;}
+  const luck=partyHas('digLuck'),find=luck||partyHas('itemFind');
+  if(luck&&f>=31){const left=Object.keys(MATS).filter(k=>!G.mats[k]);if(left.length&&R()<(ayashi?.12:.02))return {mat:left[Math.floor(R()*left.length)]};}
+  if(!ayashi){if(R()<(find?.3:.12))return R()<.6?{gold:Math.round(curve('gold',f)*(.8+R()*.6))}:{item:f<8?'herb':f<30?'herb2':'herb3',n:1};return null;}
   if(f>=5&&f<=10&&!questDoneG(0,1)&&(G.qcount.seed||0)<3&&R()<.6)return {seed:1};
-  const k=R();if(k<.35)return {gold:Math.round(curve('gold',f)*(3+R()*2))};
-  const it=f<10?['herb2','water','leaf']:f<30?['herb2','water','leaf','herb3']:['herb3','water','leaf'];
-  return {item:it[Math.floor(R()*it.length)],n:1+(R()<.4?1:0)};
+  if(f>=31&&f<=40&&questOpen(3)&&!questDoneG(3,1)&&(G.qcount.opal||0)<5&&R()<.5)return {opal:1};
+  const k=R();if(k<(find?.25:.35))return {gold:Math.round(curve('gold',f)*(3+R()*2))};
+  const it=f<10?['herb2','water','leaf']:f<30?['herb2','water','leaf','herb3']:['herb3','water2','leaf'];
+  return {item:it[Math.floor(R()*it.length)],n:1+(R()<(find?.6:.4)?1:0)};
 }
 
 // ---------- クエスト（エリアごとに3つ。どれか1つで店の品ぞろえが1段上がる） ----------
@@ -1758,6 +1938,18 @@ const QUESTS=[
     {k:'boss',f:20,s:'イリエワニのぬしを たおす',text:'B20の イリエワニのぬしを たおす',reward:{gold:1200}},
     {k:'flag',flag:'devilPoison',s:'デビルを どくで たおす',text:'タスマニアデビルを どくで たおす',reward:{item:'leaf',n:3}},
     {k:'dex',n:15,s:'ずかんを 15 うめる',text:'ずかんを 15しゅるい うめる',reward:{item:'herb3',n:2}}]},
+  {area:2,list:[
+    {k:'boss',f:30,s:'マーレーコッドを たおす',text:'B30の マーレーコッドのおおぬしを たおす',reward:{gold:4000}},
+    {k:'flag',flag:'archerSleep',s:'テッポウウオを ねむらせて たおす',text:'テッポウウオを ねむらせて たおす',reward:{item:'leaf',n:3}},
+    {k:'down',n:3,s:'ひびわれた床から 3回 ほる',text:'ひびわれた床から 3回 下へ ほる',reward:{item:'herb3',n:3}}]},
+  {area:3,list:[
+    {k:'boss',f:40,s:'オパールのうみりゅうを たおす',text:'B40の オパールのうみりゅうを たおす',reward:{gold:12000}},
+    {k:'opal',n:5,s:'オパールを 5こ ほる',text:'B31〜40の あやしい壁から オパールを 5こ ほりだす',reward:{item:'water2',n:3}},
+    {k:'gold',amt:30000,s:'30000ウォン かせぐ',text:'クエストを 受けてから 30000ウォン かせぐ',reward:{item:'leaf',n:4}}]},
+  {area:4,list:[
+    {k:'boss',f:50,s:'メガラニアを たおす',text:'B50の メガラニアを たおす',reward:{gold:30000}},
+    {k:'super',s:'だれかが 超上級職に つく',text:'だれかが 超上級職（〇〇王）に つく',reward:{item:'herb3',n:5}},
+    {k:'dex',n:60,s:'ずかんを 60 うめる',text:'ずかんを 60しゅるい うめる',reward:{item:'water2',n:5}}]},
 ];
 function questOpen(a){return a===0||!!G.bossDown[10*a];}
 function questDoneG(a,i){const q=QUESTS[a].list[i];
@@ -1766,7 +1958,22 @@ function questDoneG(a,i){const q=QUESTS[a].list[i];
   if(q.k==='gold')return (G.earned['a'+a]||0)>=q.amt;
   if(q.k==='flag')return !!G.qflag[q.flag];
   if(q.k==='dex')return Object.keys(G.seen).filter(k=>DEX[k]).length>=q.n;
+  if(q.k==='down')return (G.qcount.down||0)>=q.n;
+  if(q.k==='opal')return (G.qcount.opal||0)>=q.n;
+  if(q.k==='super')return !!G.qflag.superJob;
   return false;}
+
+// ---------- 超上級職のヒント（いにしえの 石ばん。STAGE3.md） ----------
+// ボス・番人の階 → 超上級職と言い伝え
+const HINTS={
+  25:{job:'kIdl',text:'おどり・まぼろし・いのりの歌・せいなる剣を 極めしもの、みなの ひかりと なる'},
+  28:{job:'kDig',text:'上級の戦い・狂う力・おどり・くすりを 極めしもの、大地の 王と なる'},
+  30:{job:'kAll',text:'上級の戦い・せいなる剣・まほうの拳・いのりの歌を 極めしもの、すべてを こなす'},
+  35:{job:'kAtk',text:'上級の戦い・狂う力・まほうの拳・のろいを 極めしもの、とまらぬ 力を 得る'},
+  38:{job:'kMag',text:'まぼろし・のろい・いのりの歌・くすりを 極めしもの、まほうの みちを きわめる'},
+  40:{job:'kNin',text:'おどり・まほうの拳・まぼろし・くすりを 極めしもの、かげと なる'},
+};
+const HINT_KEY='（上級戦士＝上級の戦い、狂戦士＝狂う力、聖騎士＝せいなる剣、魔拳士＝まほうの拳、舞闘家＝おどり、幻術師＝まぼろし、呪術師＝のろい、聖歌士＝いのりの歌、薬師＝くすり）';
 
 // ---------- 図鑑 ----------
 // 前作の動物は前作の文章を使う。新しい動物は STAGE2.md の根拠にもとづく
@@ -1806,6 +2013,42 @@ const DEX={
   boss20:'この穴の 水べを おさめる 大きなイリエワニ。イリエワニは、いま生きている爬虫類の中で いちばん大きい。',
   guard8:'光る宝箱を まもる ゴアナ。ゴアナは オーストラリアにすむ 大きなオオトカゲの仲間。',
   guard18:'光る宝箱を まもる ペレンティ。オーストラリアで いちばん大きな トカゲ。',
+  // B21〜30 地下水脈の層（根拠は STAGE3.md）
+  platy:'たまごを うむ ほにゅう類。くちばしで、えものの 出す 弱い 電気を 感じとる。オスの 後ろ足には 毒の けづめが ある。',
+  yabby:'オーストラリアの ザリガニの なかま。日照りに なると、穴を ほって 地下の 水を 追いかけ、入口を 土で ふさぐ。',
+  rakali:'オーストラリアの 水べに すむ 大きな ネズミ。毒のある オオヒキガエルを、毒の ところを さけて 食べることがある。',
+  archer:'口から 水を とばして、えだの 上の 虫を 水に 落として 食べる。オーストラリア北部の 川や マングローブに すむ。',
+  glow:'虫の 名前だが、正体は ハエの なかまの 幼虫。光で 虫を さそい、ねばねばの 糸で つかまえる。（光で ねむらせるのは ゲームの 空想）',
+  ghost:'オーストラリアで ただ一種の 肉食の コウモリ（英名 ゴーストバット）。どうくつや 古い 坑道に すむ。',
+  cod:'オーストラリアで いちばん 大きな 淡水魚。記録では 1.8m・113kgの ものも いる。',
+  turtle:'首が 長い カメ。おどろくと くさい しるを 出すので「スティンカー（くさいやつ）」とも よばれる。',
+  fwcroc:'口の 細い、オーストラリアの 淡水の ワニ。イリエワニより ずっと 小さい。',
+  // B31〜40 オパールの層
+  thorny:'全身が トゲで おおわれた トカゲ。皮ふの 細い みぞで 水を 口まで はこぶ。首の 後ろに「にせの頭」が ある。',
+  redroo:'いちばん 大きな カンガルー。オスどうしは ボクシングのように 戦い、しっぽで 体を ささえて けることもある。',
+  emu:'飛べないが、時速50kmほどで 走る。世界で 2番目に 大きな 鳥。',
+  bilby:'長い 耳と 強い ツメを もつ 有袋類（ビルビー）。らせん形の 深い 巣穴を ほる。',
+  taipan:'マウスでの 実験では、いちばん 強い 毒を もつ ヘビ。でも おとなしく、人の いない 土地に すむ。',
+  scorp:'オーストラリアの サソリは、さされると いたいが、人の 命に かかわるほどの 毒は ないとされる。（まひさせるのは ゲームの 空想）',
+  galah:'ピンクと 灰色の オウムの なかま。大きくて さわがしい 群れを つくる。',
+  shingle:'短い しっぽが 頭のように 見え、栄養も たくわえる。青い 舌を 見せて 相手を おどかす。',
+  // B41〜50 太古の層（化石から よみがえった すがたは ゲームの 空想）
+  thyla:'背中の しま模様から「タスマニアタイガー」とも よばれた。知られている 最後の 1頭は、1936年に 動物園で 死んだ。',
+  procop:'知られている中で いちばん 大きく がっしりした カンガルー。高さ 2mほど、重さ 200kgほど。化石で 知られる。',
+  genyo:'飛べない 大きな 鳥。高さ 2mを こえ、およそ 4万5千年前まで いた。化石で 知られる。',
+  meio:'大きな ツノガメ。ツノの せいで 頭を こうらに しまえず、しっぽには トゲと こんぼうが あった。（まほうを はね返すのは 空想）',
+  wonambi:'しめつけて えものを とる 大きな ヘビ。南オーストラリアの どうくつで 化石が 見つかった。',
+  quink:'陸で くらした ワニ。長い 足で 走り、刃のような 歯を もっていた。化石で 知られる。',
+  thyleo:'オーストラリアで いちばん 大きな 肉食の 有袋類。かむ力が とても 強く、親指に 大きな ツメが あった。化石で 知られる。',
+  boss25:'この穴の 水脈を おさめる 大きな カモノハシ（ゲームの 空想）。本物の カモノハシも 川岸に 巣穴を ほる。',
+  boss30:'この穴の 地下水を おさめる 大きな マーレーコッド（ゲームの 空想）。マーレーコッドは オーストラリアで いちばん 大きな 淡水魚。',
+  boss35:'この穴で いちばん 強い アカカンガルー（ゲームの 空想）。本物の オスも ボクシングのように 戦う。',
+  boss40:'オーストラリアの オパールの 町で、オパールに なった 首長竜の なかまの 化石が 見つかっている。この ぬしは、その 化石が うごきだした すがた（ゲームの 空想）。',
+  boss45:'太古の層の ぬしの フクロライオン（よみがえった すがたは ゲームの 空想）。かむ力が とても 強かったと 考えられている。',
+  boss50:'知られている中で いちばん 大きな 陸の トカゲ。骨が 少ないので、大きさの 見つもりには はばが ある。（よみがえった すがたは ゲームの 空想）',
+  guard28:'光る宝箱を まもる 大きな カニ（前作にも 出た、空想の 生き物）。',
+  guard38:'光る宝箱を まもる、コアラ一族の 長老（ゲームの 空想）。',
+  guard48:'光る宝箱を まもる、いにしえの けもの（前作にも 出た、空想の 生き物）。',
 };
 
 // ---------- スキルの説明 ----------
@@ -1883,7 +2126,7 @@ $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 // ---------- save ----------
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
-function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
+function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
 
 // ---------- message & commands ----------
@@ -1896,8 +2139,8 @@ function setMsg(t,more,from){const m=$('msg');clearInterval(typeTimer);typeTimer
   const bottom=from>0;if(!bottom)m.scrollTop=0;
   typeTimer=setInterval(()=>{i+=2;m.textContent=ch.slice(0,i).join('');if(bottom)m.scrollTop=m.scrollHeight;if(i>=ch.length&&typeDone)typeDone();},18);}
 let cmdList=[],advance=null,skipFn=null;
-function setCmds(list,head){
-  const c=$('cmd');c.innerHTML='';cmdList=[];
+function setCmds(list,head,grid){
+  const c=$('cmd');c.innerHTML='';cmdList=[];c.className=grid||'';
   if(head){const h=document.createElement('div');h.className='head';h.textContent=head;c.appendChild(h);}
   for(const it of list){const b=document.createElement('button');b.innerHTML=esc(it.label)+(it.sub?'<small>'+esc(it.sub)+'</small>':'');
     if(it.cls)b.className=it.cls;if(it.dis)b.disabled=true;b.style.animationDelay=Math.min(cmdList.length+(it.dis?1:0),10)*22+'ms';
@@ -1953,7 +2196,7 @@ function renderParty(act,hurt){
     <div class="lbl"><span>MP</span><span>${mp}/${d.maxmp}</span></div><div class="bar"><i style="width:${d.maxmp?100*mp/d.maxmp:0}%;background:var(--mp)"></i></div><div class="st">${statusTags(m,i,hp).join('')}</div></div>`;}).join('');
 }
 function updateTop(where){$('gold').textContent=G?G.gold.toLocaleString('ja-JP')+' ウォン':'';if(where!==undefined)$('where').textContent=where;}
-function addGold(n){G.gold+=n;G.earned.a0=(G.earned.a0||0)+n;if(G.bossDown[10])G.earned.a1=(G.earned.a1||0)+n;updateTop();}
+function addGold(n){G.gold+=n;for(let a=0;a<QUESTS.length;a++)if(questOpen(a))G.earned['a'+a]=(G.earned['a'+a]||0)+n;updateTop();}
 function addItem(id,n){const have=G.inv[id]||0,can=Math.min(n,MAXITEM-have);G.inv[id]=have+can;return can;}
 
 // ---------- drawing helpers ----------
@@ -1998,14 +2241,14 @@ function tileKind(fl,x,y){const t=fl.m[y]&&fl.m[y][x];if(t===undefined)return 'w
   if(t==='T')return G.opened[chestKey(x,y)]?'open':'chest';
   if(t==='H')return G.guardDown[F.f]?'open':'hchest';
   if(t==='B')return G.bossDown[F.f]?'down':'floor';
-  if(t==='D')return 'down';if(t==='S')return 'exit';return 'floor';}
+  if(t==='D')return 'down';if(t==='S')return 'exit';if(t==='V')return 'crack';return 'floor';}
 function reveal(){if(!F)return;const fl=F.fl;let s=G.maps[F.f];if(!s||s.length!==fl.W*fl.H)s='0'.repeat(fl.W*fl.H);const a=s.split('');
   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=F.px+dx,y=F.py+dy;if(x>=0&&y>=0&&x<fl.W&&y<fl.H)a[y*fl.W+x]='1';}G.maps[F.f]=a.join('');}
 function drawMinimap(){if(G.flags.noMap)return;const fl=F.fl,s=G.maps[F.f];if(!s)return;const ox=SW-fl.W*2-4,oy=4;
   ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(ox-2,oy-2,fl.W*2+4,fl.H*2+4);ctx.strokeStyle='rgba(239,230,210,.5)';ctx.lineWidth=1;ctx.strokeRect(ox-2.5,oy-2.5,fl.W*2+5,fl.H*2+5);
   for(let y=0;y<fl.H;y++)for(let x=0;x<fl.W;x++){if(s[y*fl.W+x]!=='1')continue;const t=fl.m[y][x];if(t==='#')continue;let c='rgba(215,200,165,.8)';
     if(t==='%')c='rgba(160,120,80,.8)';else if(t==='z')c='#c8a040';
-    else if(t==='T'&&!G.opened[chestKey(x,y)])c='#ffd040';else if(t==='H'&&!G.guardDown[F.f])c='#d098ff';else if(t==='D'||t==='S'||(t==='B'&&G.bossDown[F.f]))c='#6ab8ff';else if(t==='B')c='#ff4a4a';
+    else if(t==='V')c='#8a5a3a';else if(t==='T'&&!G.opened[chestKey(x,y)])c='#ffd040';else if(t==='H'&&!G.guardDown[F.f])c='#d098ff';else if(t==='D'||t==='S'||(t==='B'&&G.bossDown[F.f]))c='#6ab8ff';else if(t==='B')c='#ff4a4a';
     ctx.fillStyle=c;ctx.fillRect(ox+x*2,oy+y*2,2,2);}
   if(Math.floor(now/250)%2===0){ctx.fillStyle='#ffffff';ctx.fillRect(ox+F.px*2-1,oy+F.py*2-1,4,4);}}
 function drawField(){
@@ -2136,7 +2379,7 @@ function newGame2(){
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>';
-  const sv=load();setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。\n（いまは 地下20階まで あそべます）');
+  const sv=load();setMsg(sv?(sv.cleared?'つづきから あそべます。（★クリアずみ）':'つづきから あそべます。'):'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
 }
 async function startNew(){
@@ -2166,9 +2409,11 @@ async function enterTown(arrive){
 function questLine(a,short){if(!questOpen(a))return '';const Q=QUESTS[a];return Q.list.map((q,i)=>{const done=(G.qdone[a]||{})[i];let s=(done?'✅ ':'□ ')+(short?q.s:q.text);
   if(!done&&q.k==='gold'){const left=q.amt-(G.earned['a'+a]||0);if(left>0)s+=`（あと${left}）`;}
   if(!done&&q.k==='seed')s+=`（${G.qcount.seed||0}/3）`;
+  if(!done&&q.k==='down')s+=`（${G.qcount.down||0}/${q.n}）`;
+  if(!done&&q.k==='opal')s+=`（${G.qcount.opal||0}/${q.n}）`;
   if(!done&&q.k==='dex')s+=`（${Object.keys(G.seen).filter(k=>DEX[k]).length}/${q.n}）`;
   if(!done&&questDoneG(a,i))s+=short?' ←報告！':' ← 報告できる！';return s;}).join('\n');}
-function curArea(){return G.bossDown[10]?1:0;}
+function curArea(){let a=0;for(let i=1;i<QUESTS.length;i++)if(G.bossDown[10*i])a=i;return a;}
 async function checkQuests(){
   for(let a=0;a<QUESTS.length;a++){if(!questOpen(a))continue;G.qdone[a]=G.qdone[a]||{};
     for(let i=0;i<QUESTS[a].list.length;i++){
@@ -2227,6 +2472,12 @@ function equipFor(t){
     const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
     list.push({label:(l===best?'★おすすめ ':'')+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている（つよさ画面で つけかえ）'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:l===best?'wide hi':'',
       fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;const d=derived(m);m.hp=Math.min(m.hp,d.maxhp);updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！\n（同じ系統の 古い武器は 半額で 下取り）`);}});}
+  for(const l of ['claw','staff','flute']){if(!G.mats[l])continue;const L=WEAPON_LINES[l],idx=WEAPON_POW.length-1,own=m.own[l]||0,cost=WEAPON_PRICE[idx]-Math.floor(WEAPON_PRICE[own]/2),have=own>=idx;
+    const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
+    list.push({label:'⛏ '+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:'wide',
+      fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！`);}});}
+  if(G.mats.armor){const ti=ARMORS.length-1,tc=ARMORS[ti][2]-Math.floor(ARMORS[m.a][2]/2),th=m.a>=ti;
+    list.push({label:'⛏ '+ARMORS[ti][0],sub:th?'そうびずみ':`ぼうぎょ+${ARMORS[ti][1]}  ${tc}ウォン`,dis:th||G.gold<tc,cls:'wide',fn:()=>{G.gold-=tc;m.a=ti;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ti][0]}を そうびした！`);}});}
   const ai=mx,cur=m.a,acost=ARMORS[ai][2]-Math.floor(ARMORS[cur][2]/2),ahave=cur>=ai;
   list.push({label:ARMORS[ai][0],sub:ahave?'そうびずみ':`ぼうぎょ+${ARMORS[ai][1]}（いま+${ARMORS[cur][1]}）  ${acost}ウォン`,dis:ahave||G.gold<acost,
     fn:()=>{G.gold-=acost;m.a=ai;updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ai][0]}を そうびした！`);}});
@@ -2238,7 +2489,10 @@ async function elder(){
     await talks(['長老「よく来たのう。この穴は、ほればほるほど 深く つづいておる」','長老「クエストを どれか1つ やりとげたら、村の 店に 新しい 品を ならべてもらおう」']);}
   const a=curArea();
   await talk(`長老「クエストは こんな かんじじゃ」\n${questLine(a)}`);
-  if(a===1&&!Object.keys(G.qdone[0]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(0));
+  for(let b=0;b<a;b++)if(!Object.keys(G.qdone[b]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(b));
+  const hs=Object.keys(HINTS).filter(f=>G.hints[f]);
+  if(hs.length){const c=await ask(`長老「いにしえの 石ばんを ${hs.length}つ 持っておるな。読んでみるか？」`,[{label:'📜 読む',cls:'wide hi'},{label:'いまは いい',cls:'wide'}]);
+    if(c===0){for(const f of hs)await talk(`【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);await talk('長老「ことばの 意味は…\n'+HINT_KEY+'」');}}
   await checkQuests();townMenu();
 }
 async function parentsHome(){
@@ -2267,14 +2521,14 @@ async function jobChangeMenu(){
       let label,sub;
       if(J.tier===1){label=`${J.name}${m.mastered[j]?'★':''}`;sub=cur?'いまの職業':m.mastered[j]?'極めた（Lv上限のまま もどれる）':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`Lv上限 ${J.cap}`;}
       else if(J.tier===2){label=un?`${J.name}${m.mastered[j]?'★':''}`:`🔒 ${J.name}`;sub=cur?'いまの職業':un?(m.mastered[j]?'極めた':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`上級職・Lv上限 ${J.cap}`):`条件：${J.req.map(r=>JOBS[r].name+(m.mastered[r]?'★':'')).join('＋')}を 極める`;}
-      else{label=un?`${J.name}`:'🔒 ？？？王';sub=un?(cur?'いまの職業':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`;}
+      else{const hf=Object.keys(HINTS).find(f=>HINTS[f].job===j&&G.hints[f]);label=un?`${J.name}`:(hf?`🔒 ${J.name}`:'🔒 ？？？王');sub=un?(cur?'いまの職業':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`+(hf?`／「${HINTS[hf].text}」`:'');}
       opts.push({label,sub,dis:!un||cur,cls:J.tier===3?'wide':''});keys.push(j);}
     const c=await ask(`${m.name}（いま ${jobName(m.job)} Lv${m.lv}）\nどの職業に 転職する？`,[...opts,{label:'← もどる',cls:'wide sub'}]);
     if(c>=keys.length)return;
     const j=keys[c],J=JOBS[j];
     const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:jobStartLv(m,j)>1?`前に きたえた Lv${jobStartLv(m,j)}から つづきになる。`:'Lv1から になる（ステータスも その職業の Lv1に もどる）。')+`\n（いまの ${jobName(m.job)} Lv${m.lv}は おぼえておく）`+'\nいまの職業の わざは、引き継ぎ枠に 入れられる。',[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
     if(k!==0)continue;
-    changeJob(m,j);
+    changeJob(m,j);if(J.tier===3)G.qflag.superJob=true;
     const bl=bestLine(j);if((m.own[bl]||0)>0||m.w===0){m.wl=bl;m.w=m.own[bl]||0;}
     snd('quest');partySparkleTown();renderParty();save();
     await talk(`${m.name}は ${J.name}に なった！`+(m.wl===bl?`\n（武器を ${weaponLabel(m)}に つけかえた）`:''));
@@ -2374,9 +2628,10 @@ function dex(){
 async function pickFloor(){
   const max=Math.min(STAGE_MAX,Math.max(1,G.reached||1));
   const list=[{label:`⬇ いちばん深い B${max}から`,fn:()=>startFloor(max),cls:'wide hi'}];
-  for(let f=1;f<=max;f++)list.push({label:`B${f}`+(f%5===0?(G.bossDown[f]?' ✔':' 👑'):'')+(GUARDIANS[f]&&!G.guardDown[f]?' ✨':''),sub:AREA_NAME[areaOf(f)],fn:()=>startFloor(f)});
+  for(let f=1;f<=max;f++){if(f%10===1)list.push({label:`${AREA_NAME[areaOf(f)]}（B${f}〜）`,cls:'wide sec',dis:true,fn:()=>{}});
+    list.push({label:`${f}`+(f%5===0?(G.bossDown[f]?'✔':'👑'):'')+(GUARDIANS[f]&&!G.guardDown[f]?'✨':''),cls:'flr a'+areaOf(f),fn:()=>startFloor(f)});}
   list.push({label:'← もどる',fn:townMenu,cls:'wide sub'});
-  setMsg('どの階から もぐる？\n（👑ぬしが いる　✨光る宝箱が ある）');setCmds(list);
+  setMsg('どの階から もぐる？（数字は 地下の 階）\n（👑ぬしが いる　✨光る宝箱が ある）');setCmds(list,null,'five');
 }
 function buildFloor(f){const fl=genFloor(f);const d=G.dug[f]||[],z=G.az[f]||[];
   for(const i of d){const x=i%fl.W,y=Math.floor(i/fl.W);if(fl.m[y][x]==='%')fl.m[y][x]='.';}
@@ -2384,7 +2639,7 @@ function buildFloor(f){const fl=genFloor(f);const d=G.dug[f]||[],z=G.az[f]||[];
   return fl;}
 async function startFloor(f){
   if(f>(G.reached||0))G.reached=f;
-  F={f,fl:buildFloor(f),px:1,py:1,dir:'down',since:0,moving:null};FFX=[];reveal();playMusic('dungeon');banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1500);
+  F={f,fl:buildFloor(f),px:1,py:1,dir:'down',since:0,moving:null};FFX=[];reveal();playMusic(dungeonTrack(f));banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1500);
   mode='field';fadeT=now;busy=true;showPad(false);save();
   if(!G.flags.tipField){G.flags.tipField=1;save();
     await talks(['【ダンジョンの ヒント】\n下の 十字キー（パソコンなら 矢印キー）で 歩こう。','歩いていると ときどき 敵が あらわれるよ。\n行き止まりには 宝箱。いちばん奥には 下への 階段が ある。','光っている ロープの マスに もどるか、「メニュー」から いつでも 村へ 帰れるよ。']);}
@@ -2423,6 +2678,8 @@ async function digWall(x,y,t){
   const L=digLoot(F.f,t==='z',R);
   if(L){snd('chest');sparkle(x*16+8,y*16+6,14);
     if(L.seed){G.qcount.seed=(G.qcount.seed||0)+1;banner('★ GET ★','ユーカリの種','#ffd36b',1800);await talk(`ほったら「ユーカリの種」が 出てきた！（${G.qcount.seed}/3）`);}
+    else if(L.opal){G.qcount.opal=(G.qcount.opal||0)+1;banner('★ GET ★','オパール','#ffb0f0',1800);await talk(`ほったら きらきら光る「オパール」が 出てきた！（${G.qcount.opal}/5）`);}
+    else if(L.mat){G.mats[L.mat]=true;banner('★ 素材 ★',MATS[L.mat].name,'#ffd36b',2400);await talk(`ほったら「${MATS[L.mat].name}」が 出てきた！\n（村に 持ちかえると、武器屋に 新しい 装備が ならぶ）`);}
     else if(L.gold){addGold(L.gold);await talk(`ほったら ${L.gold}ウォン 出てきた！`);}
     else if(L.item){const n=addItem(L.item,L.n);await talk(`ほったら ${ITEMS[L.item].name}が ${L.n}こ 出てきた！`+(n<L.n?'（持ちきれない分は おいていった）':''));}}
   save();busy=false;fieldIdle();
@@ -2433,8 +2690,13 @@ async function onStep(){
   if(G.steps%2===0&&G.party.some(m=>m.poison&&m.hp>1)){G.party.forEach(m=>{if(m.poison&&m.hp>1)m.hp--;});flashT=now-60;renderParty();}
   if(t==='T'&&!G.opened[chestKey(F.px,F.py)]){heldDir=null;busy=true;showPad(false);await openChest();busy=false;fieldIdle();return;}
   if(t==='D'||(t==='B'&&G.bossDown[F.f])){heldDir=null;busy=true;showPad(false);
-    if(F.f>=STAGE_MAX){await talk('下の ほうから 水の 音が きこえる…\n（この先は まだ ほられていない。つづきを おたのしみに！）');busy=false;fieldIdle();return;}
+    if(F.f>=STAGE_MAX){await talk('ここが 穴の いちばん 下だ。\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
     snd('stairs');await changeFloor(F.f+1);busy=false;return;}
+  if(t==='V'){heldDir=null;busy=true;showPad(false);
+    if(!G.flags.digDown){if(!G.flags.tipCrack){G.flags.tipCrack=1;await talk('床に ひびが 入っている。\n下へ ほれそうだけど、かたくて まだ ほれない。');}busy=false;fieldIdle();return;}
+    const c=await ask('ひびわれた床だ。下へ ほって、B'+(F.f+1)+'へ おりますか？',[{label:'⛏ 下へ ほる',cls:'wide hi'},'やめておく']);
+    if(c===0){snd('dig');G.qcount.down=(G.qcount.down||0)+1;await sleep(200);snd('stairs');await changeFloor(F.f+1);busy=false;return;}
+    busy=false;fieldIdle();return;}
   if(t==='S'){heldDir=null;busy=true;showPad(false);const c=await ask('ロープを のぼって、村に もどりますか？',['村に もどる','まだ 探検する']);busy=false;if(c===0){leaveDungeon();return;}fieldIdle();return;}
   F.since++;
   if(F.since>4&&R()<1/16){F.since=0;heldDir=null;startBattle(rollGroup(F.f,R),{});}
@@ -2442,7 +2704,7 @@ async function onStep(){
 async function changeFloor(f){
   if(f>(G.reached||0))G.reached=f;
   F.f=f;F.fl=buildFloor(f);F.px=1;F.py=1;fadeT=now;
-  FFX=[];reveal();banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1400);save();
+  FFX=[];reveal();playMusic(dungeonTrack(f));banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1400);save();
   F.since=0;await sleep(150);fieldIdle();
 }
 function leaveDungeon(){fadeT=now;enterTown();}
@@ -2465,15 +2727,19 @@ async function onGuard(){
   busy=false;fieldIdle();
 }
 async function openGuardChest(f){
-  const rw=GUARDIANS[f].reward,tier=Math.min(WEAPON_POW.length-1,shopMax(G.shopTier)+2);
+  const rw=GUARDIANS[f].reward,tier=Math.min(SHOP_TOP,shopMax(G.shopTier)+2);
   G.guardDown[f]=true;snd('quest');sparkle(F.px*16+8,F.py*16+6,26,'#d8a8ff',40);
   await talk('光る宝箱を あけた！');
   if(rw.armor){const m=G.party.slice().sort((a,b)=>a.a-b.a)[0];m.a=Math.max(m.a,tier);banner('★ GET ★',ARMORS[tier][0],'#d098ff',2200);await talk(`★「${ARMORS[tier][0]}」を 手に入れた！ ★\n${m.name}が そうびした！（ぼうぎょ+${ARMORS[tier][1]}）`);}
   else{const targets=rw.line==='best'?G.party:[G.party.find(m=>bestLine(m.job)===rw.line)||G.party[0]];
     for(const m of targets){const l=rw.line==='best'?bestLine(m.job):rw.line,nm=WEAPON_LINES[l].names[tier];m.own[l]=Math.max(m.own[l]||0,tier);m.wl=l;m.w=m.own[l];
       banner('★ GET ★',nm,'#d098ff',2200);await talk(`★「${nm}」を 手に入れた！ ★\n${m.name}が そうびした！`);}}
+  if(HINTS[f]&&!G.hints[f])await getHint(f);
   renderParty();save();
 }
+async function getHint(f){G.hints[f]=true;snd('quest');banner('★ 石ばん ★','いにしえの 石ばん','#e8d8a0',2000);
+  await talk(`${GUARDIANS[f]?'宝の そば':'ぬしが いた ところ'}に「いにしえの 石ばん」が あった。\n【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);
+  await talk('（長老の 巣穴で いつでも 読みかえせる。ことばの 意味も 教えてもらえる）');save();}
 async function onBoss(){
   busy=true;showPad(false);const e=bossFor(F.f)[0];
   const c=await ask(`${e.name}が いる！\nたたかいますか？`,[{label:'⚔ たたかう',cls:'wide hi'},'やめておく']);
@@ -2488,7 +2754,7 @@ async function startBattle(enemies,opt){
   snd('enc');stopMusic();flashT=performance.now();await sleep(110);flashT=performance.now();await sleep(90);wipeT=performance.now();await sleep(520);
   B=newBattle(G,enemies);B.snap=snap;B.init=init;B.opt=opt||{};B.ret=ret;B.ts=areaOf(F?F.f:1);
   BA={e:B.enemies.map(e=>({flash:-1e9,lunge:-1e9,dead:0,hp:e.hp})),p:G.party.map(()=>({step:0,shake:-1e9})),fx:[],pops:[],enter:performance.now()+150,win:0};
-  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
+  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss&&B.opt.f>=STAGE_MAX?'lastboss':B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   B.enemies.forEach(e=>{if(e.id)G.seen[e.id]=1;});
   const names=[...new Set(B.enemies.map(e=>e.name.replace(/ [A-E]$/,'')))];
   if(B.boss||B.opt.guard){setTimeout(()=>{banner(B.boss?'BOSS':'番人',names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
@@ -2609,6 +2875,7 @@ async function endBattle(){
   disp=null;renderParty();
   if(B.over==='win'||B.over==='fled'){
     if(B.enemies.some(e=>e.id==='devil'&&e.hp<=0&&!e.fled&&e.st.poison>0))G.qflag.devilPoison=true;
+    if(B.enemies.some(e=>e.id==='archer'&&e.hp<=0&&!e.fled&&e.st.sleep>0))G.qflag.archerSleep=true;
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
@@ -2620,7 +2887,7 @@ async function endBattle(){
     if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
     renderParty();
     if(B.opt.boss){G.bossDown[B.opt.f]=true;save();await bossDown(B.opt.f);return;}
-    if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic('dungeon');await openGuardChest(F.f);backToField();return;}
+    if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic(dungeonTrack(F.f));await openGuardChest(F.f);backToField();return;}
     save();backToField();return;
   }
   if(B.over==='run'){backToField();return;}
@@ -2631,20 +2898,53 @@ async function endBattle(){
   if(c===0){if(ret){F.f=ret.f;F.fl=buildFloor(ret.f);F.px=ret.px;F.py=ret.py;}startBattle(init,opt);return;}
   G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});fadeT=now;enterTown();
 }
-function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic('dungeon');fieldIdle();}
+function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic(dungeonTrack(F.f));fieldIdle();}
 async function bossDown(f){
   const p=G.parents;
   const lines={
     5:['ツムギアリの女王は、はっぱの 巣へ 帰っていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「よく やったわね。ほうびに、穴の ほりかたを 教えてあげる」`,'★ やわらかい かべを ほれるように なった！ ★\n（土の色の かべに 向かって 進むと ほれる）'],
     10:['ディンゴのおやぶんは、群れを つれて 去っていった。',`${p[2]}「りっぱに なったなあ。村に 転職所を ひらこう」`,'★ 転職が できるように なった！ ★\n（村の「転職所」で、職業を かえたり、わざを 引きついだり できる）'],
     15:['コアラのだいまどうしは「ふむ…やるのう」と つぶやいて、ねむってしまった。'],
-    20:['イリエワニのぬしは、しずかに 地下の 水へ もどっていった。','穴の 下の ほうから、水の 音が きこえる…','（ここまでで 地下20階。この先「地下水脈の層」は つづきで あそべるように なる予定です）'],
+    20:['イリエワニのぬしは、しずかに 地下の 水へ もどっていった。','穴の 下の ほうから、水の 音が きこえる…',`（${p[0]}の 声が した気がした）「この先は 水の層。足もとに 気をつけろ」`],
+    25:['カモノハシのぬしは、川岸の 巣穴へ もぐっていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「カモノハシは 川岸に 巣穴を ほるのよ。下へ ほる コツを 教えてあげる」`,'★ ひびわれた床から 下へ ほれるように なった！ ★\n（B21より深い 階の「ひびわれた床」に 乗ると、つぎの 階へ おりられる）'],
+    30:['マーレーコッドのおおぬしは、地下の 川の 奥へ 泳いでいった。','水の層を ぬけると、岩が きらきらと 光っている…','長老の 話を 思いだした。「むかし、暑さを さけて 地下に くらした 人びとが いたそうじゃ」'],
+    35:['アカカンガルーのチャンピオンは、しっぽで 立ちあがり、ふかく おじぎを した。'],
+    40:['オパールのうみりゅうは、ただの 化石に もどった。','むかし ここが 海だったころの 生き物らしい。','さらに 下からは、古い 古い においが する…「太古の層」だ。'],
+    45:['フクロライオンのぬしは、やみの 奥へ 消えていった。','いちばん下は もうすぐだ。'],
   }[f]||[`${bossFor(f)[0].name}を たおした！`];
   if(f===5)G.flags.dig=true;
   if(f===10)G.flags.jobChange=true;
-  save();await talks(lines);
-  if(f===5||f===10){B=null;BA=null;fadeT=now;enterTown();return;}
+  if(f===25)G.flags.digDown=true;
+  save();
+  if(f>=STAGE_MAX){await ending();return;}
+  await talks(lines);
+  if(HINTS[f]&&!G.hints[f])await getHint(f);
+  if(f===5||f===10||f===25){B=null;BA=null;fadeT=now;enterTown();return;}
   backToField();
+}
+// ---------- 結末（STAGE3.md） ----------
+async function ending(){
+  const p=G.parents,k=G.party.map(m=>m.name);
+  B=null;BA=null;disp=null;mode='field';fadeT=now;renderParty();stopMusic();
+  await talks(['メガラニアは、ゆっくりと たおれた。','穴の いちばん奥に、大きな 骨が 2つ ねむっている。',
+    '1つは、ディプロトドン。ウォンバットや コアラの 遠い 親戚で、いままでに 知られている中で いちばん 大きな 有袋類だ。',
+    'もう1つは、本当の「大きな ウォンバット」ファスコロヌス。いまの ウォンバットの 何倍も 大きかった。',
+    'まわりを さがしても、宝箱は ひとつも ない。',
+    `${k[0]}「…宝は、なかったね」`,
+    `${k[1]}「でも、この 骨たちも、ここで くらして、ここで 穴を ほっていたんだ」`,
+    `${k[2]}「長老が 言ってた。レガシーとは 宝では ない、って」`]);
+  playMusic('ending');
+  mode='town';F=null;showPad(false);renderParty();updateTop('ユーカリ村');
+  await talks(['3匹は、ロープを のぼって 村へ 帰った。',
+    `${p[0]}・${p[1]}・${p[2]}と 長老が、穴の 入口で 待っていた。`,
+    '長老「どうじゃった？ ご先祖の のこしたものは」',
+    `${k[0]}「穴を ほって、仲間と 分けあって、ねぐらを 守る。それを ずっと つづけてきたこと…かな」`,
+    `${k[1]}「わたしたちも、それを つづける」`,
+    `${k[2]}「それが、ぼくたちの レガシー」`,
+    '長老は、だまって うなずいた。',
+    '～ おしまい ～\n\nウォンバット☆レガシーRPG 2\nあそんでくれて ありがとう！',
+    '（このあとも、穴に もぐって あそびつづけられます。\nまだ 極めていない 職業や、光る宝箱、図鑑を うめてみよう）']);
+  G.cleared=true;save();fadeT=now;enterTown();
 }
 
 // ---------- input ----------

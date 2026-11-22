@@ -33,7 +33,7 @@ $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 // ---------- save ----------
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
 function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
-function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
+function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
 
 // ---------- message & commands ----------
@@ -46,8 +46,8 @@ function setMsg(t,more,from){const m=$('msg');clearInterval(typeTimer);typeTimer
   const bottom=from>0;if(!bottom)m.scrollTop=0;
   typeTimer=setInterval(()=>{i+=2;m.textContent=ch.slice(0,i).join('');if(bottom)m.scrollTop=m.scrollHeight;if(i>=ch.length&&typeDone)typeDone();},18);}
 let cmdList=[],advance=null,skipFn=null;
-function setCmds(list,head){
-  const c=$('cmd');c.innerHTML='';cmdList=[];
+function setCmds(list,head,grid){
+  const c=$('cmd');c.innerHTML='';cmdList=[];c.className=grid||'';
   if(head){const h=document.createElement('div');h.className='head';h.textContent=head;c.appendChild(h);}
   for(const it of list){const b=document.createElement('button');b.innerHTML=esc(it.label)+(it.sub?'<small>'+esc(it.sub)+'</small>':'');
     if(it.cls)b.className=it.cls;if(it.dis)b.disabled=true;b.style.animationDelay=Math.min(cmdList.length+(it.dis?1:0),10)*22+'ms';
@@ -103,7 +103,7 @@ function renderParty(act,hurt){
     <div class="lbl"><span>MP</span><span>${mp}/${d.maxmp}</span></div><div class="bar"><i style="width:${d.maxmp?100*mp/d.maxmp:0}%;background:var(--mp)"></i></div><div class="st">${statusTags(m,i,hp).join('')}</div></div>`;}).join('');
 }
 function updateTop(where){$('gold').textContent=G?G.gold.toLocaleString('ja-JP')+' ウォン':'';if(where!==undefined)$('where').textContent=where;}
-function addGold(n){G.gold+=n;G.earned.a0=(G.earned.a0||0)+n;if(G.bossDown[10])G.earned.a1=(G.earned.a1||0)+n;updateTop();}
+function addGold(n){G.gold+=n;for(let a=0;a<QUESTS.length;a++)if(questOpen(a))G.earned['a'+a]=(G.earned['a'+a]||0)+n;updateTop();}
 function addItem(id,n){const have=G.inv[id]||0,can=Math.min(n,MAXITEM-have);G.inv[id]=have+can;return can;}
 
 // ---------- drawing helpers ----------
@@ -148,14 +148,14 @@ function tileKind(fl,x,y){const t=fl.m[y]&&fl.m[y][x];if(t===undefined)return 'w
   if(t==='T')return G.opened[chestKey(x,y)]?'open':'chest';
   if(t==='H')return G.guardDown[F.f]?'open':'hchest';
   if(t==='B')return G.bossDown[F.f]?'down':'floor';
-  if(t==='D')return 'down';if(t==='S')return 'exit';return 'floor';}
+  if(t==='D')return 'down';if(t==='S')return 'exit';if(t==='V')return 'crack';return 'floor';}
 function reveal(){if(!F)return;const fl=F.fl;let s=G.maps[F.f];if(!s||s.length!==fl.W*fl.H)s='0'.repeat(fl.W*fl.H);const a=s.split('');
   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=F.px+dx,y=F.py+dy;if(x>=0&&y>=0&&x<fl.W&&y<fl.H)a[y*fl.W+x]='1';}G.maps[F.f]=a.join('');}
 function drawMinimap(){if(G.flags.noMap)return;const fl=F.fl,s=G.maps[F.f];if(!s)return;const ox=SW-fl.W*2-4,oy=4;
   ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(ox-2,oy-2,fl.W*2+4,fl.H*2+4);ctx.strokeStyle='rgba(239,230,210,.5)';ctx.lineWidth=1;ctx.strokeRect(ox-2.5,oy-2.5,fl.W*2+5,fl.H*2+5);
   for(let y=0;y<fl.H;y++)for(let x=0;x<fl.W;x++){if(s[y*fl.W+x]!=='1')continue;const t=fl.m[y][x];if(t==='#')continue;let c='rgba(215,200,165,.8)';
     if(t==='%')c='rgba(160,120,80,.8)';else if(t==='z')c='#c8a040';
-    else if(t==='T'&&!G.opened[chestKey(x,y)])c='#ffd040';else if(t==='H'&&!G.guardDown[F.f])c='#d098ff';else if(t==='D'||t==='S'||(t==='B'&&G.bossDown[F.f]))c='#6ab8ff';else if(t==='B')c='#ff4a4a';
+    else if(t==='V')c='#8a5a3a';else if(t==='T'&&!G.opened[chestKey(x,y)])c='#ffd040';else if(t==='H'&&!G.guardDown[F.f])c='#d098ff';else if(t==='D'||t==='S'||(t==='B'&&G.bossDown[F.f]))c='#6ab8ff';else if(t==='B')c='#ff4a4a';
     ctx.fillStyle=c;ctx.fillRect(ox+x*2,oy+y*2,2,2);}
   if(Math.floor(now/250)%2===0){ctx.fillStyle='#ffffff';ctx.fillRect(ox+F.px*2-1,oy+F.py*2-1,4,4);}}
 function drawField(){
@@ -286,7 +286,7 @@ function newGame2(){
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>';
-  const sv=load();setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。\n（いまは 地下20階まで あそべます）');
+  const sv=load();setMsg(sv?(sv.cleared?'つづきから あそべます。（★クリアずみ）':'つづきから あそべます。'):'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
 }
 async function startNew(){
@@ -316,9 +316,11 @@ async function enterTown(arrive){
 function questLine(a,short){if(!questOpen(a))return '';const Q=QUESTS[a];return Q.list.map((q,i)=>{const done=(G.qdone[a]||{})[i];let s=(done?'✅ ':'□ ')+(short?q.s:q.text);
   if(!done&&q.k==='gold'){const left=q.amt-(G.earned['a'+a]||0);if(left>0)s+=`（あと${left}）`;}
   if(!done&&q.k==='seed')s+=`（${G.qcount.seed||0}/3）`;
+  if(!done&&q.k==='down')s+=`（${G.qcount.down||0}/${q.n}）`;
+  if(!done&&q.k==='opal')s+=`（${G.qcount.opal||0}/${q.n}）`;
   if(!done&&q.k==='dex')s+=`（${Object.keys(G.seen).filter(k=>DEX[k]).length}/${q.n}）`;
   if(!done&&questDoneG(a,i))s+=short?' ←報告！':' ← 報告できる！';return s;}).join('\n');}
-function curArea(){return G.bossDown[10]?1:0;}
+function curArea(){let a=0;for(let i=1;i<QUESTS.length;i++)if(G.bossDown[10*i])a=i;return a;}
 async function checkQuests(){
   for(let a=0;a<QUESTS.length;a++){if(!questOpen(a))continue;G.qdone[a]=G.qdone[a]||{};
     for(let i=0;i<QUESTS[a].list.length;i++){
@@ -377,6 +379,12 @@ function equipFor(t){
     const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
     list.push({label:(l===best?'★おすすめ ':'')+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている（つよさ画面で つけかえ）'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:l===best?'wide hi':'',
       fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;const d=derived(m);m.hp=Math.min(m.hp,d.maxhp);updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！\n（同じ系統の 古い武器は 半額で 下取り）`);}});}
+  for(const l of ['claw','staff','flute']){if(!G.mats[l])continue;const L=WEAPON_LINES[l],idx=WEAPON_POW.length-1,own=m.own[l]||0,cost=WEAPON_PRICE[idx]-Math.floor(WEAPON_PRICE[own]/2),have=own>=idx;
+    const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
+    list.push({label:'⛏ '+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:'wide',
+      fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！`);}});}
+  if(G.mats.armor){const ti=ARMORS.length-1,tc=ARMORS[ti][2]-Math.floor(ARMORS[m.a][2]/2),th=m.a>=ti;
+    list.push({label:'⛏ '+ARMORS[ti][0],sub:th?'そうびずみ':`ぼうぎょ+${ARMORS[ti][1]}  ${tc}ウォン`,dis:th||G.gold<tc,cls:'wide',fn:()=>{G.gold-=tc;m.a=ti;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ti][0]}を そうびした！`);}});}
   const ai=mx,cur=m.a,acost=ARMORS[ai][2]-Math.floor(ARMORS[cur][2]/2),ahave=cur>=ai;
   list.push({label:ARMORS[ai][0],sub:ahave?'そうびずみ':`ぼうぎょ+${ARMORS[ai][1]}（いま+${ARMORS[cur][1]}）  ${acost}ウォン`,dis:ahave||G.gold<acost,
     fn:()=>{G.gold-=acost;m.a=ai;updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ai][0]}を そうびした！`);}});
@@ -388,7 +396,10 @@ async function elder(){
     await talks(['長老「よく来たのう。この穴は、ほればほるほど 深く つづいておる」','長老「クエストを どれか1つ やりとげたら、村の 店に 新しい 品を ならべてもらおう」']);}
   const a=curArea();
   await talk(`長老「クエストは こんな かんじじゃ」\n${questLine(a)}`);
-  if(a===1&&!Object.keys(G.qdone[0]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(0));
+  for(let b=0;b<a;b++)if(!Object.keys(G.qdone[b]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(b));
+  const hs=Object.keys(HINTS).filter(f=>G.hints[f]);
+  if(hs.length){const c=await ask(`長老「いにしえの 石ばんを ${hs.length}つ 持っておるな。読んでみるか？」`,[{label:'📜 読む',cls:'wide hi'},{label:'いまは いい',cls:'wide'}]);
+    if(c===0){for(const f of hs)await talk(`【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);await talk('長老「ことばの 意味は…\n'+HINT_KEY+'」');}}
   await checkQuests();townMenu();
 }
 async function parentsHome(){
@@ -417,14 +428,14 @@ async function jobChangeMenu(){
       let label,sub;
       if(J.tier===1){label=`${J.name}${m.mastered[j]?'★':''}`;sub=cur?'いまの職業':m.mastered[j]?'極めた（Lv上限のまま もどれる）':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`Lv上限 ${J.cap}`;}
       else if(J.tier===2){label=un?`${J.name}${m.mastered[j]?'★':''}`:`🔒 ${J.name}`;sub=cur?'いまの職業':un?(m.mastered[j]?'極めた':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`上級職・Lv上限 ${J.cap}`):`条件：${J.req.map(r=>JOBS[r].name+(m.mastered[r]?'★':'')).join('＋')}を 極める`;}
-      else{label=un?`${J.name}`:'🔒 ？？？王';sub=un?(cur?'いまの職業':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`;}
+      else{const hf=Object.keys(HINTS).find(f=>HINTS[f].job===j&&G.hints[f]);label=un?`${J.name}`:(hf?`🔒 ${J.name}`:'🔒 ？？？王');sub=un?(cur?'いまの職業':jobStartLv(m,j)>1?`Lv${jobStartLv(m,j)}から つづき（上限 ${J.cap}）`:`超上級職・Lv上限 ${J.cap}`):`ヒント：${superHint(m,j)}`+(hf?`／「${HINTS[hf].text}」`:'');}
       opts.push({label,sub,dis:!un||cur,cls:J.tier===3?'wide':''});keys.push(j);}
     const c=await ask(`${m.name}（いま ${jobName(m.job)} Lv${m.lv}）\nどの職業に 転職する？`,[...opts,{label:'← もどる',cls:'wide sub'}]);
     if(c>=keys.length)return;
     const j=keys[c],J=JOBS[j];
     const k=await ask(`${J.name}に 転職する？\n`+(m.mastered[j]?`極めた職業なので Lv${J.cap}のまま。`:jobStartLv(m,j)>1?`前に きたえた Lv${jobStartLv(m,j)}から つづきになる。`:'Lv1から になる（ステータスも その職業の Lv1に もどる）。')+`\n（いまの ${jobName(m.job)} Lv${m.lv}は おぼえておく）`+'\nいまの職業の わざは、引き継ぎ枠に 入れられる。',[{label:'転職する',cls:'wide hi'},{label:'やめる',cls:'wide'}]);
     if(k!==0)continue;
-    changeJob(m,j);
+    changeJob(m,j);if(J.tier===3)G.qflag.superJob=true;
     const bl=bestLine(j);if((m.own[bl]||0)>0||m.w===0){m.wl=bl;m.w=m.own[bl]||0;}
     snd('quest');partySparkleTown();renderParty();save();
     await talk(`${m.name}は ${J.name}に なった！`+(m.wl===bl?`\n（武器を ${weaponLabel(m)}に つけかえた）`:''));
@@ -524,9 +535,10 @@ function dex(){
 async function pickFloor(){
   const max=Math.min(STAGE_MAX,Math.max(1,G.reached||1));
   const list=[{label:`⬇ いちばん深い B${max}から`,fn:()=>startFloor(max),cls:'wide hi'}];
-  for(let f=1;f<=max;f++)list.push({label:`B${f}`+(f%5===0?(G.bossDown[f]?' ✔':' 👑'):'')+(GUARDIANS[f]&&!G.guardDown[f]?' ✨':''),sub:AREA_NAME[areaOf(f)],fn:()=>startFloor(f)});
+  for(let f=1;f<=max;f++){if(f%10===1)list.push({label:`${AREA_NAME[areaOf(f)]}（B${f}〜）`,cls:'wide sec',dis:true,fn:()=>{}});
+    list.push({label:`${f}`+(f%5===0?(G.bossDown[f]?'✔':'👑'):'')+(GUARDIANS[f]&&!G.guardDown[f]?'✨':''),cls:'flr a'+areaOf(f),fn:()=>startFloor(f)});}
   list.push({label:'← もどる',fn:townMenu,cls:'wide sub'});
-  setMsg('どの階から もぐる？\n（👑ぬしが いる　✨光る宝箱が ある）');setCmds(list);
+  setMsg('どの階から もぐる？（数字は 地下の 階）\n（👑ぬしが いる　✨光る宝箱が ある）');setCmds(list,null,'five');
 }
 function buildFloor(f){const fl=genFloor(f);const d=G.dug[f]||[],z=G.az[f]||[];
   for(const i of d){const x=i%fl.W,y=Math.floor(i/fl.W);if(fl.m[y][x]==='%')fl.m[y][x]='.';}
@@ -534,7 +546,7 @@ function buildFloor(f){const fl=genFloor(f);const d=G.dug[f]||[],z=G.az[f]||[];
   return fl;}
 async function startFloor(f){
   if(f>(G.reached||0))G.reached=f;
-  F={f,fl:buildFloor(f),px:1,py:1,dir:'down',since:0,moving:null};FFX=[];reveal();playMusic('dungeon');banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1500);
+  F={f,fl:buildFloor(f),px:1,py:1,dir:'down',since:0,moving:null};FFX=[];reveal();playMusic(dungeonTrack(f));banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1500);
   mode='field';fadeT=now;busy=true;showPad(false);save();
   if(!G.flags.tipField){G.flags.tipField=1;save();
     await talks(['【ダンジョンの ヒント】\n下の 十字キー（パソコンなら 矢印キー）で 歩こう。','歩いていると ときどき 敵が あらわれるよ。\n行き止まりには 宝箱。いちばん奥には 下への 階段が ある。','光っている ロープの マスに もどるか、「メニュー」から いつでも 村へ 帰れるよ。']);}
@@ -573,6 +585,8 @@ async function digWall(x,y,t){
   const L=digLoot(F.f,t==='z',R);
   if(L){snd('chest');sparkle(x*16+8,y*16+6,14);
     if(L.seed){G.qcount.seed=(G.qcount.seed||0)+1;banner('★ GET ★','ユーカリの種','#ffd36b',1800);await talk(`ほったら「ユーカリの種」が 出てきた！（${G.qcount.seed}/3）`);}
+    else if(L.opal){G.qcount.opal=(G.qcount.opal||0)+1;banner('★ GET ★','オパール','#ffb0f0',1800);await talk(`ほったら きらきら光る「オパール」が 出てきた！（${G.qcount.opal}/5）`);}
+    else if(L.mat){G.mats[L.mat]=true;banner('★ 素材 ★',MATS[L.mat].name,'#ffd36b',2400);await talk(`ほったら「${MATS[L.mat].name}」が 出てきた！\n（村に 持ちかえると、武器屋に 新しい 装備が ならぶ）`);}
     else if(L.gold){addGold(L.gold);await talk(`ほったら ${L.gold}ウォン 出てきた！`);}
     else if(L.item){const n=addItem(L.item,L.n);await talk(`ほったら ${ITEMS[L.item].name}が ${L.n}こ 出てきた！`+(n<L.n?'（持ちきれない分は おいていった）':''));}}
   save();busy=false;fieldIdle();
@@ -583,8 +597,13 @@ async function onStep(){
   if(G.steps%2===0&&G.party.some(m=>m.poison&&m.hp>1)){G.party.forEach(m=>{if(m.poison&&m.hp>1)m.hp--;});flashT=now-60;renderParty();}
   if(t==='T'&&!G.opened[chestKey(F.px,F.py)]){heldDir=null;busy=true;showPad(false);await openChest();busy=false;fieldIdle();return;}
   if(t==='D'||(t==='B'&&G.bossDown[F.f])){heldDir=null;busy=true;showPad(false);
-    if(F.f>=STAGE_MAX){await talk('下の ほうから 水の 音が きこえる…\n（この先は まだ ほられていない。つづきを おたのしみに！）');busy=false;fieldIdle();return;}
+    if(F.f>=STAGE_MAX){await talk('ここが 穴の いちばん 下だ。\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
     snd('stairs');await changeFloor(F.f+1);busy=false;return;}
+  if(t==='V'){heldDir=null;busy=true;showPad(false);
+    if(!G.flags.digDown){if(!G.flags.tipCrack){G.flags.tipCrack=1;await talk('床に ひびが 入っている。\n下へ ほれそうだけど、かたくて まだ ほれない。');}busy=false;fieldIdle();return;}
+    const c=await ask('ひびわれた床だ。下へ ほって、B'+(F.f+1)+'へ おりますか？',[{label:'⛏ 下へ ほる',cls:'wide hi'},'やめておく']);
+    if(c===0){snd('dig');G.qcount.down=(G.qcount.down||0)+1;await sleep(200);snd('stairs');await changeFloor(F.f+1);busy=false;return;}
+    busy=false;fieldIdle();return;}
   if(t==='S'){heldDir=null;busy=true;showPad(false);const c=await ask('ロープを のぼって、村に もどりますか？',['村に もどる','まだ 探検する']);busy=false;if(c===0){leaveDungeon();return;}fieldIdle();return;}
   F.since++;
   if(F.since>4&&R()<1/16){F.since=0;heldDir=null;startBattle(rollGroup(F.f,R),{});}
@@ -592,7 +611,7 @@ async function onStep(){
 async function changeFloor(f){
   if(f>(G.reached||0))G.reached=f;
   F.f=f;F.fl=buildFloor(f);F.px=1;F.py=1;fadeT=now;
-  FFX=[];reveal();banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1400);save();
+  FFX=[];reveal();playMusic(dungeonTrack(f));banner(AREA_NAME[areaOf(f)],'B'+f,'#efe6d2',1400);save();
   F.since=0;await sleep(150);fieldIdle();
 }
 function leaveDungeon(){fadeT=now;enterTown();}
@@ -615,15 +634,19 @@ async function onGuard(){
   busy=false;fieldIdle();
 }
 async function openGuardChest(f){
-  const rw=GUARDIANS[f].reward,tier=Math.min(WEAPON_POW.length-1,shopMax(G.shopTier)+2);
+  const rw=GUARDIANS[f].reward,tier=Math.min(SHOP_TOP,shopMax(G.shopTier)+2);
   G.guardDown[f]=true;snd('quest');sparkle(F.px*16+8,F.py*16+6,26,'#d8a8ff',40);
   await talk('光る宝箱を あけた！');
   if(rw.armor){const m=G.party.slice().sort((a,b)=>a.a-b.a)[0];m.a=Math.max(m.a,tier);banner('★ GET ★',ARMORS[tier][0],'#d098ff',2200);await talk(`★「${ARMORS[tier][0]}」を 手に入れた！ ★\n${m.name}が そうびした！（ぼうぎょ+${ARMORS[tier][1]}）`);}
   else{const targets=rw.line==='best'?G.party:[G.party.find(m=>bestLine(m.job)===rw.line)||G.party[0]];
     for(const m of targets){const l=rw.line==='best'?bestLine(m.job):rw.line,nm=WEAPON_LINES[l].names[tier];m.own[l]=Math.max(m.own[l]||0,tier);m.wl=l;m.w=m.own[l];
       banner('★ GET ★',nm,'#d098ff',2200);await talk(`★「${nm}」を 手に入れた！ ★\n${m.name}が そうびした！`);}}
+  if(HINTS[f]&&!G.hints[f])await getHint(f);
   renderParty();save();
 }
+async function getHint(f){G.hints[f]=true;snd('quest');banner('★ 石ばん ★','いにしえの 石ばん','#e8d8a0',2000);
+  await talk(`${GUARDIANS[f]?'宝の そば':'ぬしが いた ところ'}に「いにしえの 石ばん」が あった。\n【${JOBS[HINTS[f].job].name}の 言い伝え】\n「${HINTS[f].text}」`);
+  await talk('（長老の 巣穴で いつでも 読みかえせる。ことばの 意味も 教えてもらえる）');save();}
 async function onBoss(){
   busy=true;showPad(false);const e=bossFor(F.f)[0];
   const c=await ask(`${e.name}が いる！\nたたかいますか？`,[{label:'⚔ たたかう',cls:'wide hi'},'やめておく']);
@@ -638,7 +661,7 @@ async function startBattle(enemies,opt){
   snd('enc');stopMusic();flashT=performance.now();await sleep(110);flashT=performance.now();await sleep(90);wipeT=performance.now();await sleep(520);
   B=newBattle(G,enemies);B.snap=snap;B.init=init;B.opt=opt||{};B.ret=ret;B.ts=areaOf(F?F.f:1);
   BA={e:B.enemies.map(e=>({flash:-1e9,lunge:-1e9,dead:0,hp:e.hp})),p:G.party.map(()=>({step:0,shake:-1e9})),fx:[],pops:[],enter:performance.now()+150,win:0};
-  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
+  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss&&B.opt.f>=STAGE_MAX?'lastboss':B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   B.enemies.forEach(e=>{if(e.id)G.seen[e.id]=1;});
   const names=[...new Set(B.enemies.map(e=>e.name.replace(/ [A-E]$/,'')))];
   if(B.boss||B.opt.guard){setTimeout(()=>{banner(B.boss?'BOSS':'番人',names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
@@ -759,6 +782,7 @@ async function endBattle(){
   disp=null;renderParty();
   if(B.over==='win'||B.over==='fled'){
     if(B.enemies.some(e=>e.id==='devil'&&e.hp<=0&&!e.fled&&e.st.poison>0))G.qflag.devilPoison=true;
+    if(B.enemies.some(e=>e.id==='archer'&&e.hp<=0&&!e.fled&&e.st.sleep>0))G.qflag.archerSleep=true;
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
@@ -770,7 +794,7 @@ async function endBattle(){
     if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
     renderParty();
     if(B.opt.boss){G.bossDown[B.opt.f]=true;save();await bossDown(B.opt.f);return;}
-    if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic('dungeon');await openGuardChest(F.f);backToField();return;}
+    if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic(dungeonTrack(F.f));await openGuardChest(F.f);backToField();return;}
     save();backToField();return;
   }
   if(B.over==='run'){backToField();return;}
@@ -781,20 +805,53 @@ async function endBattle(){
   if(c===0){if(ret){F.f=ret.f;F.fl=buildFloor(ret.f);F.px=ret.px;F.py=ret.py;}startBattle(init,opt);return;}
   G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});fadeT=now;enterTown();
 }
-function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic('dungeon');fieldIdle();}
+function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic(dungeonTrack(F.f));fieldIdle();}
 async function bossDown(f){
   const p=G.parents;
   const lines={
     5:['ツムギアリの女王は、はっぱの 巣へ 帰っていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「よく やったわね。ほうびに、穴の ほりかたを 教えてあげる」`,'★ やわらかい かべを ほれるように なった！ ★\n（土の色の かべに 向かって 進むと ほれる）'],
     10:['ディンゴのおやぶんは、群れを つれて 去っていった。',`${p[2]}「りっぱに なったなあ。村に 転職所を ひらこう」`,'★ 転職が できるように なった！ ★\n（村の「転職所」で、職業を かえたり、わざを 引きついだり できる）'],
     15:['コアラのだいまどうしは「ふむ…やるのう」と つぶやいて、ねむってしまった。'],
-    20:['イリエワニのぬしは、しずかに 地下の 水へ もどっていった。','穴の 下の ほうから、水の 音が きこえる…','（ここまでで 地下20階。この先「地下水脈の層」は つづきで あそべるように なる予定です）'],
+    20:['イリエワニのぬしは、しずかに 地下の 水へ もどっていった。','穴の 下の ほうから、水の 音が きこえる…',`（${p[0]}の 声が した気がした）「この先は 水の層。足もとに 気をつけろ」`],
+    25:['カモノハシのぬしは、川岸の 巣穴へ もぐっていった。',`村に もどると、${p[1]}が 待っていた。`,`${p[1]}「カモノハシは 川岸に 巣穴を ほるのよ。下へ ほる コツを 教えてあげる」`,'★ ひびわれた床から 下へ ほれるように なった！ ★\n（B21より深い 階の「ひびわれた床」に 乗ると、つぎの 階へ おりられる）'],
+    30:['マーレーコッドのおおぬしは、地下の 川の 奥へ 泳いでいった。','水の層を ぬけると、岩が きらきらと 光っている…','長老の 話を 思いだした。「むかし、暑さを さけて 地下に くらした 人びとが いたそうじゃ」'],
+    35:['アカカンガルーのチャンピオンは、しっぽで 立ちあがり、ふかく おじぎを した。'],
+    40:['オパールのうみりゅうは、ただの 化石に もどった。','むかし ここが 海だったころの 生き物らしい。','さらに 下からは、古い 古い においが する…「太古の層」だ。'],
+    45:['フクロライオンのぬしは、やみの 奥へ 消えていった。','いちばん下は もうすぐだ。'],
   }[f]||[`${bossFor(f)[0].name}を たおした！`];
   if(f===5)G.flags.dig=true;
   if(f===10)G.flags.jobChange=true;
-  save();await talks(lines);
-  if(f===5||f===10){B=null;BA=null;fadeT=now;enterTown();return;}
+  if(f===25)G.flags.digDown=true;
+  save();
+  if(f>=STAGE_MAX){await ending();return;}
+  await talks(lines);
+  if(HINTS[f]&&!G.hints[f])await getHint(f);
+  if(f===5||f===10||f===25){B=null;BA=null;fadeT=now;enterTown();return;}
   backToField();
+}
+// ---------- 結末（STAGE3.md） ----------
+async function ending(){
+  const p=G.parents,k=G.party.map(m=>m.name);
+  B=null;BA=null;disp=null;mode='field';fadeT=now;renderParty();stopMusic();
+  await talks(['メガラニアは、ゆっくりと たおれた。','穴の いちばん奥に、大きな 骨が 2つ ねむっている。',
+    '1つは、ディプロトドン。ウォンバットや コアラの 遠い 親戚で、いままでに 知られている中で いちばん 大きな 有袋類だ。',
+    'もう1つは、本当の「大きな ウォンバット」ファスコロヌス。いまの ウォンバットの 何倍も 大きかった。',
+    'まわりを さがしても、宝箱は ひとつも ない。',
+    `${k[0]}「…宝は、なかったね」`,
+    `${k[1]}「でも、この 骨たちも、ここで くらして、ここで 穴を ほっていたんだ」`,
+    `${k[2]}「長老が 言ってた。レガシーとは 宝では ない、って」`]);
+  playMusic('ending');
+  mode='town';F=null;showPad(false);renderParty();updateTop('ユーカリ村');
+  await talks(['3匹は、ロープを のぼって 村へ 帰った。',
+    `${p[0]}・${p[1]}・${p[2]}と 長老が、穴の 入口で 待っていた。`,
+    '長老「どうじゃった？ ご先祖の のこしたものは」',
+    `${k[0]}「穴を ほって、仲間と 分けあって、ねぐらを 守る。それを ずっと つづけてきたこと…かな」`,
+    `${k[1]}「わたしたちも、それを つづける」`,
+    `${k[2]}「それが、ぼくたちの レガシー」`,
+    '長老は、だまって うなずいた。',
+    '～ おしまい ～\n\nウォンバット☆レガシーRPG 2\nあそんでくれて ありがとう！',
+    '（このあとも、穴に もぐって あそびつづけられます。\nまだ 極めていない 職業や、光る宝箱、図鑑を うめてみよう）']);
+  G.cleared=true;save();fadeT=now;enterTown();
 }
 
 // ---------- input ----------

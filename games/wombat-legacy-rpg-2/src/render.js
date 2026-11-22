@@ -193,6 +193,22 @@ const TRACKS={
   boss:{bpm:164,mw:'sawtooth',mv:.016,bv:.05,
     mel:'D5 - D5 F5 E5 - D5 C5 A#4 - A4 - G4 - A4 - D5 - D5 F5 G5 - F5 E5 D5 - C#5 - D5 - - - F5 - F5 G5 A5 - G5 F5 E5 - D5 - C#5 - E5 - D5 - C5 A#4 A4 - G4 - A4 - C#5 - E5 - D5 -',
     bass:'D2 D3 D2 D3 D2 D3 D2 D3 A#1 A#2 A#1 A#2 A#1 A#2 A#1 A#2 G1 G2 G1 G2 G1 G2 G1 G2 A1 A2 A1 A2 A1 A2 A1 A2 D2 D3 D2 D3 D2 D3 D2 D3 A#1 A#2 A#1 A#2 C2 C3 C2 C3 G1 G2 G1 G2 A1 A2 A1 A2 A1 A2 A1 A2 D2 D3 D2 D3'},
+  // 10階ごとに曲を変える（決定）：dungeon=B1〜10, dungeon2=B11〜20, dungeon3=B21〜30, dungeon4=B31〜40, dungeon5=B41〜50
+  dungeon2:{bpm:100,mw:'triangle',mv:.05,bv:.04,
+    mel:'D5 - F5 - E5 - C5 - D5 - A4 - - - C5 - D5 - E5 - G5 - F5 - E5 - D5 - - - A5 - G5 - F5 - E5 - F5 - G5 - A5 - - - G5 - F5 - E5 - C5 - D5 - - - - - - - - -',
+    bass:'D3 - - - A2 - - - C3 - - - G2 - - - F2 - - - C3 - - - D3 - - - A2 - - - F2 - - - G2 - - - A2 - - - E2 - - - G2 - - - C3 - - - D3 - - - D3 - - -'},
+  dungeon3:{bpm:84,mw:'sine',mv:.06,bv:.04,
+    mel:'E5 G5 B5 G5 E5 G5 B5 - D5 F#5 A5 F#5 D5 F#5 A5 - C5 E5 G5 E5 C5 E5 G5 - B4 D#5 F#5 D#5 B4 - - - E5 G5 B5 G5 E5 G5 B5 - D5 G5 B5 G5 D5 G5 B5 - C5 E5 A5 E5 C5 E5 A5 - B4 D#5 F#5 B5 A5 F#5 D#5 -',
+    bass:'E2 - - - - - - - D2 - - - - - - - C2 - - - - - - - B1 - - - - - - - E2 - - - - - - - G2 - - - - - - - A2 - - - - - - - B1 - - - - - - -'},
+  dungeon4:{bpm:112,mw:'square',mv:.018,bv:.045,
+    mel:'F5 A5 C6 B5 A5 - G5 - A5 C6 E6 D6 C6 - B5 - G5 B5 D6 C6 B5 - A5 - G5 - F5 - E5 - - - F5 A5 C6 B5 A5 - C6 - E6 - D6 C6 B5 - G5 - A5 G5 F5 E5 F5 - G5 - F5 - - - - - - -',
+    bass:'F2 - C3 - F2 - C3 - A2 - E3 - A2 - E3 - G2 - D3 - G2 - D3 - C3 - G2 - C3 - G2 - F2 - C3 - F2 - C3 - D3 - A2 - D3 - A2 - G2 - D3 - G2 - D3 - C3 - G2 - F2 - - -'},
+  dungeon5:{bpm:76,mw:'sawtooth',mv:.014,bv:.05,
+    mel:'C5 - - - D#5 - D5 - C5 - - - G4 - - - G#4 - - - G4 - F4 - D#4 - - - D4 - - - C5 - - - D#5 - F5 - G5 - - - F5 - D#5 - D5 - - - C5 - B4 - C5 - - - - - - -',
+    bass:'C2 - - - - - - - G#1 - - - - - - - F1 - - - - - - - G1 - - - - - - - C2 - - - - - - - D#2 - - - - - - - G1 - - - - - - - C2 - - - - - - -'},
+  lastboss:{bpm:172,mw:'sawtooth',mv:.016,bv:.05,
+    mel:'E5 - E5 G5 F#5 - E5 D5 C5 - B4 - A4 - B4 - E5 - E5 G5 A5 - G5 F#5 G5 - A5 - B5 - - - C6 - B5 A5 G5 - F#5 E5 D#5 - E5 - F#5 - G5 - A5 - G5 F#5 E5 - D#5 - B4 - D#5 - E5 - - -',
+    bass:'E2 E3 E2 E3 E2 E3 E2 E3 C2 C3 C2 C3 C2 C3 C2 C3 A1 A2 A1 A2 A1 A2 A1 A2 B1 B2 B1 B2 B1 B2 B1 B2 E2 E3 E2 E3 E2 E3 E2 E3 C2 C3 C2 C3 D2 D3 D2 D3 B1 B2 B1 B2 B1 B2 B1 B2 B1 B2 D#2 D#3 E2 E3 E2 E3'},
   ending:{bpm:72,mw:'triangle',mv:.055,bv:.04,
     mel:'C5 - E5 - G5 - - - A5 - G5 - E5 - - - F5 - E5 - D5 - C5 - D5 - - - - - - - C5 - E5 - G5 - - - C6 - B5 - A5 - - - G5 - E5 - D5 - E5 - C5 - - - - - - -',
     bass:'C3 - - - E3 - - - F3 - - - C3 - - - D3 - - - A2 - - - G2 - - - G2 - - - C3 - - - E3 - - - A2 - - - F2 - - - G2 - - - G2 - - - C3 - - - C3 - - -'},
@@ -205,6 +221,7 @@ function playMusic(name){if(MUS.name===name&&MUS.timer)return;MUS.name=name;star
 function stopMusic(){clearInterval(MUS.timer);MUS.timer=null;if(MUS.gain&&SND.a){const g=MUS.gain;const t=SND.a.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+.15);const ng=SND.a.createGain();ng.gain.value=1;ng.connect(SND.a.destination);setTimeout(()=>{try{g.disconnect();}catch(e){}},400);MUS.gain=ng;}}
 function startMusic(){
   stopMusic();if(!SND.on||!MUS.name||!SND.a||SND.a.state!=='running'||!TRACKS[MUS.name])return;
+  if(!MUS.gain&&!ensureAudio())return; // 効果音が先に AudioContext を作ったときは、音楽用の音量ノードがまだない
   const T=TRACKS[MUS.name],step=60/T.bpm/2,toks=[T.mel.split(/\s+/),T.bass.split(/\s+/)];
   MUS.i=0;MUS.t=SND.a.currentTime+.08;const gain=MUS.gain;
   MUS.timer=setInterval(()=>{const a=SND.a;if(!a||MUS.gain!==gain)return;
@@ -418,6 +435,37 @@ const EPAL={
   crocB:{m:'#3e4a26',l:'#5d6b3a',d:'#232c12',b:'#a8a070',e:'#ff3a2a',w:'#ffffff'},
   octo:{m:'#c8a060',l:'#e8c888',d:'#7a5a30',a:'#2a6aff',e:'#111'},
   ray:{m:'#8a8070',l:'#b0a890',d:'#5a5040',a:'#ffe24a',e:'#111'},
+  // B21〜50（STAGE3.md）
+  platy:{m:'#6a4a32',l:'#8c6a4a',d:'#3e2a1a',a:'#3a3a40',e:'#111'},
+  platyB:{m:'#4e3424',l:'#7a5638',d:'#2a1a10',a:'#2a2a34',e:'#ff4a2a'},
+  yabby:{m:'#4a5a6a',l:'#6a7e90',d:'#2a3440',a:'#5a7090',e:'#111'},
+  rakali:{m:'#5a4a3a',l:'#7a6650',d:'#3a2e22',b:'#e8b860',w:'#fbf6ee',e:'#111',p:'#c89a7a'},
+  archer:{m:'#c8c8a8',l:'#eeeed8',d:'#7a7a5a',b:'#f4f4e4',a:'#2a2a24',e:'#111'},
+  glow:{m:'#d8d0b8',l:'#f0ead8',d:'#9a927a',a:'#7cf0ff',e:'#111'},
+  ghost:{m:'#c8c4cc',l:'#ecebf0',d:'#8a8690',a:'#e8b8c0',e:'#c81e2a'},
+  cod:{m:'#6a8a4a',l:'#8aaa62',d:'#3e5a2a',b:'#ece8c8',a:'#2e4a1e',e:'#111'},
+  codB:{m:'#4e6e36',l:'#6e904e',d:'#2a421a',b:'#e0dcb8',a:'#1e3412',e:'#ff4a2a'},
+  turtle:{m:'#5a4a30',l:'#7e6a46',d:'#34281a',b:'#d8c89a',a:'#c8a860',e:'#111'},
+  fwcroc:{m:'#8a7a4a',l:'#aa9a62',d:'#5a4a2a',b:'#ddd0a0',e:'#e0b020',w:'#ffffff'},
+  thorny:{m:'#c88a3a',l:'#e8b060',d:'#7a4a1a',b:'#f0d090',e:'#111',w:'#ffffff'},
+  redroo:{m:'#b8603a',l:'#d8845a',d:'#7a3a1e',b:'#f0dcc8',e:'#111'},
+  redrooB:{m:'#a04a2a',l:'#c8704a',d:'#6a2a12',b:'#f4e0c8',e:'#e01e1e'},
+  emu:{m:'#6a5a4a',l:'#8a7a66',d:'#3e3226',b:'#3a4a6a',a:'#4a3a2a',e:'#f0a020'},
+  bilby:{m:'#9aa0aa',l:'#c4cad2',d:'#5e646e',b:'#f2f2f2',w:'#fbfbfb',e:'#111',p:'#e8a0b0'},
+  taipan:{m:'#8a6a3a',b:'#d8b878',d:'#4a3418',l:'#a8884a',e:'#111',t:'#2a1a10'},
+  scorp:{m:'#a8783a',l:'#c89a5a',d:'#5a3a18',a:'#d83a2a',e:'#111'},
+  galah:{m:'#9a9aa2',l:'#e888a8',d:'#5e5e66',a:'#f0d8e0',e:'#111'},
+  shingle:{m:'#5a4a3a',l:'#8a6e52',d:'#2e241a',b:'#3a6ad8',e:'#111',w:'#ffffff'},
+  thyla:{m:'#c8a060',l:'#e0c080',d:'#8a6a3a',b:'#f0e0c0',w:'#f0e0c0',e:'#111',s:'#3a2a1a'},
+  procop:{m:'#8a6a4a',l:'#aa8a66',d:'#54402a',b:'#e8d8b8',e:'#111'},
+  genyo:{m:'#5a4e44',l:'#7a6e62',d:'#342c24',b:'#3a3a3a',a:'#e8c040',e:'#e0c040'},
+  meio:{m:'#6a6a50',l:'#8e8e6e',d:'#3e3e2c',b:'#d0c8a0',a:'#e8e0c0',e:'#111'},
+  wonambi:{m:'#4a5a3a',b:'#a8a878',d:'#2a3420',l:'#6a7a52',e:'#e0c020',t:'#d8463a'},
+  quink:{m:'#6a5a4a',l:'#8a7a66',d:'#3e3226',b:'#d8c8a8',e:'#ff8a2a',w:'#ffffff'},
+  thyleo:{m:'#a88850',l:'#c8a870',d:'#6a5430',b:'#f0e0c0',w:'#f0e0c0',e:'#111',p:'#c08a6a'},
+  thyleoB:{m:'#8a6a3a',l:'#b08a50',d:'#54401e',b:'#efd8b0',w:'#efd8b0',e:'#ff3a2a',p:'#c08a6a'},
+  opal:{m:'#7aa8c8',l:'#c8e8f8',d:'#4a6a9a',b:'#f0e8ff',a:'#ff8ad8',e:'#ffe24a'},
+  megal:{m:'#4a3e30',l:'#6e5e4a',d:'#28201a',b:'#b8a070',e:'#ff2a1a',w:'#ffffff'},
 };
 // 色違い（B21〜）：もとの色を、その色に寄せる
 const TINT_COL={'あお':'#3a6ad8','あか':'#d83a3a','くろ':'#2a2430','きん':'#e8c040'};
@@ -453,7 +501,7 @@ const GEN={
     const sn=o.snout==null?1:o.snout;
     SE(hx+(4+sn)*K,hy+2*K,(3.6+sn)*K,2.7*K,2.2,5,(x,y,dy)=>dy>.15?(c.b||c.l):c.m);
     if(o.ears==='round'){E(hx-3.5*K,hy-5*K,2.3*K,2.3*K,6,()=>c.p||c.d);E(hx+1.5*K,hy-5.3*K,2.3*K,2.3*K,6,()=>c.p||c.d);}
-    else for(const ex of [hx-3.2*K,hx+1.2*K]){const top=hy-10*K,h=5*K;for(let j=0;j<=h;j++){const w=(j/h)*2.3*K;for(let x=ex-w;x<=ex+w;x++)S(x,top+j,j<h*.5?c.d:c.m,6);}}
+    else for(const ex of [hx-3.2*K,hx+1.2*K]){const top=hy-(o.ears==='long'?13:10)*K,h=(o.ears==='long'?8:5)*K;for(let j=0;j<=h;j++){const w=(j/h)*2.3*K;for(let x=ex-w;x<=ex+w;x++)S(x,top+j,j<h*.5?c.d:c.m,6);}}
     return finish(G,P=>{const e=c.e;P(hx+1*K,hy-1.5*K,e);P(hx+1*K+1,hy-1.5*K,e);if(K>1.2){P(hx+1*K,hy-1.5*K+1,e);P(hx+1*K+1,hy-1.5*K+1,e);}
       const nx=hx+(7.4+2*sn)*K;P(nx,hy+1.2*K,'#120a08');P(nx-1,hy+1.2*K,'#120a08');P(nx,hy+1.2*K+1,'#120a08');
       P(nx-2*K,hy+4*K,'#120a08');P(nx-3*K,hy+4*K,'#120a08');});},
@@ -531,6 +579,68 @@ GEN.ray=function(c,s){const K=s,G=eg(48*K,28*K),{E,S}=G;
   E(33*K,14*K,5*K,5*K,2,shade(c));
   return finish(G,P=>{P(14*K,11*K,c.e);P(15*K,11*K,c.e);P(22*K,11*K,c.e);P(23*K,11*K,c.e);
     for(const [x,y] of [[6,6],[34,5],[8,22],[30,23],[40,9]]){P(x*K,y*K,c.a);P(x*K+1,y*K-1,c.a);P(x*K+2,y*K,c.a);}});};
+// ---- B21〜50 の形 ----
+GEN.platy=function(c,s){const K=s,G=eg(48*K,24*K),{E,SE,S}=G;
+  SE(8*K,15*K,7*K,3.2*K,2.4,2,()=>c.d);
+  for(const lx of [16,28])for(let y=17*K;y<=21*K;y++)for(let x=lx*K;x<(lx+4)*K;x++)S(x,y,c.d,1);
+  E(22*K,14*K,12*K,6*K,3,shade(c));E(34*K,12*K,5*K,4.5*K,4,shade(c));
+  SE(42*K,13*K,6*K,2.2*K,2.2,5,(x,y,dy)=>dy<-.3?mixHex(c.a,'#ffffff',.25):c.a);
+  return finish(G,P=>{P(35*K,10*K,c.e);P(36*K,10*K,c.e);for(let k=0;k<3;k++)P((44+k)*K,12.5*K,'#18181c');});};
+GEN.fish=function(c,s){const K=s,G=eg(46*K,28*K),{E,S}=G,r=rng(11);
+  for(let j=0;j<10*K;j++){const h=j*.9;for(let y=14*K-h;y<=14*K+h;y++)S(10*K-j,y,c.d,1);}
+  for(let j=0;j<6*K;j++)for(let x=18*K-j*.5;x<26*K-j*.8;x++)S(x,6.5*K-j,c.d,2);
+  E(24*K,14*K,15*K,8.5*K,3,(x,y,dy)=>dy>.35?c.b:dy<-.5?c.l:c.m);
+  return finish(G,P=>{for(let k=0;k<16;k++)P(14*K+r()*18*K,8.5*K+r()*7*K,c.a);P(33*K,11*K,'#fff');P(34*K,11*K,c.e);P(34*K,12*K,c.e);for(let k=0;k<4*K;k++)P(35*K+k,16*K,'#2a1a10');});};
+function turtleShape(c,s,horn){const K=s,G=eg(52*K,30*K),{E,SE,S}=G;
+  for(const lx of [11,31])for(let y=19*K;y<=26*K;y++)for(let x=lx*K;x<(lx+5)*K;x++)S(x,y,c.d,1);
+  if(horn){eline(G,10*K,19*K,3*K,21*K,c.d,Math.max(2,Math.round(2*K)),1);E(3*K,21*K,2.6*K,2.6*K,1,()=>c.a);}
+  else eline(G,9*K,19*K,4*K,21*K,c.d,Math.max(1,Math.round(1.5*K)),1);
+  if(horn){E(40*K,17*K,5.5*K,4.6*K,4,shade(c));eline(G,38*K,13*K,35*K,8*K,c.a,Math.max(2,Math.round(2*K)),5);eline(G,42*K,13*K,46*K,8*K,c.a,Math.max(2,Math.round(2*K)),5);}
+  else{eline(G,34*K,17*K,42*K,9*K,c.m,Math.max(2,Math.round(3*K)),3);E(44*K,8*K,3.8*K,2.8*K,4,shade(c));}
+  SE(23*K,16*K,14*K,9*K,2.3,2,(x,y,dy)=>dy>.6?c.b:dy<-.45?c.l:c.m);
+  return finish(G,P=>{for(const [x0,x1] of [[14,32],[18,28]])for(let x=x0*K;x<x1*K;x++)P(x,(x0===14?14:9.5)*K,c.d);for(const x of [17,23,29])for(let y=9*K;y<20*K;y++)P(x*K,y,c.d);
+    if(horn){P(42*K,16*K,c.e);P(43*K,16*K,c.e);}else{P(45*K,7*K,c.e);P(46*K,7*K,c.e);}});}
+GEN.turtle=function(c,s){return turtleShape(c,s,false);};
+GEN.hturtle=function(c,s){return turtleShape(c,s,true);};
+GEN.glow=function(c,s){const K=s,G=eg(38*K,40*K),{E,S}=G;
+  for(let i=0;i<7;i++){const x=(5+i*4.6)*K,len=(16+((i*7)%5)*4)*K;for(let y=8*K;y<len;y++)S(x,y,c.l,1);for(let y=12*K;y<len;y+=3*K)S(x,y,c.a,2);}
+  for(let i=0;i<5;i++)E((7+i*5)*K,6*K,3*K,2.6*K,3,shade(c));
+  E(32*K,6*K,3.8*K,3.4*K,4,()=>c.a);
+  return finish(G,P=>{P(5*K,5*K,c.e);P(5*K,6*K,c.e);for(const [x,y] of [[30,3],[35,4],[33,9]])P(x*K,y*K,'#ffffff');});};
+GEN.roo=function(c,s){const K=s,G=eg(40*K,48*K),{E,SE,S}=G;
+  eline(G,14*K,36*K,2*K,46*K,c.m,Math.max(3,Math.round(3.5*K)),1);
+  SE(25*K,45.5*K,8*K,1.8*K,2,2,()=>c.d);E(18*K,37*K,6*K,7.5*K,2,shade(c));
+  E(20*K,26*K,7*K,11*K,3,(x,y,dy)=>Math.abs(x-23*K)<3*K&&dy>-.3?c.b:(dy<-.5?c.l:c.m));
+  eline(G,25*K,23*K,31*K,28*K,c.m,Math.max(2,Math.round(2*K)),4);
+  for(const ex of [21*K,25*K]){for(let j=0;j<=6*K;j++){const w=(j/(6*K))*1.8*K;for(let x=ex-w;x<=ex+w;x++)S(x,4*K+j,j<3*K?c.d:c.m,6);}}
+  E(25*K,13*K,5*K,4.5*K,5,shade(c));SE(30*K,14.5*K,3.6*K,2.4*K,2,5,()=>c.l);
+  return finish(G,P=>{P(26*K,11.5*K,c.e);P(27*K,11.5*K,c.e);P(33.4*K,13.5*K,'#120a08');P(32*K,26*K,c.d);});};
+GEN.emu=function(c,s){const K=s,G=eg(40*K,50*K),{E,SE,S}=G;
+  for(const lx of [15,22]){eline(G,lx*K,30*K,(lx-1)*K,47*K,c.a,Math.max(1,Math.round(1.8*K)),1);SE((lx+1)*K,48*K,3.2*K,1*K,2,1,()=>c.a);}
+  E(18*K,24*K,12*K,9*K,2,(x,y,dy)=>dy<-.4?c.l:dy>.5?c.d:c.m);
+  eline(G,26*K,20*K,30*K,7*K,c.b,Math.max(2,Math.round(2.8*K)),3);
+  E(31*K,5.5*K,3.2*K,2.8*K,4,()=>c.b);SE(35.5*K,6*K,2.4*K,1.1*K,2,4,()=>c.a);
+  return finish(G,P=>{P(32*K,4.5*K,c.e);for(let k=0;k<10;k++){const x=(8+k*2)*K,y=(29+(k%3))*K;P(x,y,c.d);}});};
+GEN.scorp=function(c,s){const K=s,G=eg(46*K,34*K),{E,S}=G;
+  for(let i=0;i<4;i++){const x0=(15+i*3)*K;eline(G,x0,24*K,x0-3*K,30*K,c.d,Math.max(1,Math.round(1.2*K)),1);}
+  for(let i=0;i<14;i++){const a=Math.PI*(.5+i/13*1.25),x=12*K+Math.cos(a)*9*K,y=14*K+Math.sin(a)*9*K;E(x,y,(2.4-i*.08)*K,(2.4-i*.08)*K,2,shade(c));}
+  E(20*K,23*K,9*K,4.5*K,3,shade(c));
+  for(const dy of [-3,2]){eline(G,27*K,22*K,34*K,(19+dy)*K,c.m,Math.max(2,Math.round(1.8*K)),4);E(37*K,(18+dy)*K,3.6*K,2.4*K,5,shade(c));}
+  const tx=12*K+Math.cos(Math.PI*1.75)*9*K,ty=14*K+Math.sin(Math.PI*1.75)*9*K;
+  return finish(G,P=>{for(let k=0;k<3*K;k++)P(tx+k*.6,ty+k*.4,c.a);P(27*K,21*K,c.e);P(28*K,21*K,c.e);});};
+GEN.plesio=function(c,s){const K=s,G=eg(60*K,32*K),{E,SE,S}=G,r=rng(21);
+  for(const [x0,y0,x1,y1] of [[18,20,9,29],[34,20,43,29],[16,12,8,5],[32,12,40,5]])eline(G,x0*K,y0*K,x1*K,y1*K,c.d,Math.max(2,Math.round(3*K)),1);
+  eline(G,9*K,16*K,1*K,18*K,c.m,Math.max(2,Math.round(2.4*K)),1);
+  E(24*K,16*K,15*K,7.5*K,2,(x,y,dy)=>dy>.4?c.b:dy<-.45?c.l:c.m);
+  E(41*K,14*K,6*K,4.6*K,3,shade(c));SE(50*K,15*K,8.5*K,3*K,2.2,4,(x,y,dy)=>dy>.2?c.b:c.m);
+  return finish(G,P=>{for(let k=0;k<26;k++){const x=12*K+r()*26*K,y=11*K+r()*10*K;P(x,y,[c.a,'#ffffff','#7cf0ff','#ffe24a'][k%4]);}
+    for(let x=45*K;x<57*K;x+=2*K)P(x,16*K,'#ffffff');P(45*K,12*K,c.e);P(46*K,12*K,c.e);});};
+GEN.rat=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:1.6,ears:'round'});};
+GEN.bilby=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:2,ears:'long'});};
+GEN.lion=function(c,s){return GEN.quad(c,s,{tail:'thin',snout:.3,ears:'round',stocky:true});};
+GEN.thyla=function(c,s){const R=GEN.quad(c,s,{tail:'thin',snout:1.3});const K=s;
+  for(let x=9*K;x<25*K;x+=3*K)for(let y=10.5*K;y<17*K;y++)for(let dx=0;dx<Math.max(1,Math.round(K));dx++){const i=Math.floor(y)*R.W+Math.floor(x)+dx;if(R.img[i]&&R.img[i]!=='o')R.img[i]=c.s;}
+  return R;};
 // 敵のドット絵：look = {spr, pal, s, tint}
 function enemySprite(look){look=look||{spr:'dingo',pal:'dingo'};const key='e|'+look.spr+'|'+look.pal+'|'+(look.s||1)+'|'+(look.tint||'');
   return cached(key,()=>toCanvas(GEN[look.spr](tintPal(EPAL[look.pal]||EPAL.dingo,look.tint),look.s||1)));}
@@ -631,6 +741,7 @@ function tileCanvas(ts,kind,v){
       return c;}
     floor();
     if(kind==='floor')return c;
+    if(kind==='crack'){x.fillStyle='#120c0a';for(const [a,b,w] of [[3,5,4],[6,7,3],[8,8,4],[10,10,2],[7,10,1],[6,11,2],[11,6,2]])x.fillRect(a,b,w,1);x.fillStyle=T.f2;x.fillRect(4,4,2,1);x.fillRect(10,11,2,1);return c;}
     if(kind==='down'){x.fillStyle='#120c0a';x.fillRect(3,3,10,10);x.fillStyle=T.f2;for(let i=0;i<4;i++)x.fillRect(3+i,4+i*2,10-i*2,1);return c;}
     if(kind==='up'){x.fillStyle=T.f2;for(let i=0;i<4;i++){x.fillRect(3,3+i*3,10,2);}x.fillStyle=T.f3;for(let i=0;i<4;i++)x.fillRect(3,5+i*3,10,1);return c;}
     if(kind==='exit'){const g=x.createRadialGradient(8,8,1,8,8,8);g.addColorStop(0,'rgba(255,240,180,.95)');g.addColorStop(1,'rgba(255,240,180,0)');x.fillStyle=g;x.fillRect(0,0,16,16);
