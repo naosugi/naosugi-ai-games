@@ -274,3 +274,11 @@ test('極めて新しい職業が解放されると、その知らせが出る',
   const m=C.newMember('war','a');master(m,'war');C.changeJob(m,'kar');m.lv=19;m.exp=0;
   const out=C.gainExp(m,1e7);assert.ok(out.some(s=>s.includes('上級戦士に 転職できるように なった')),out.join('/'));
 });
+
+test('おまもりは、その状態異常に かかる確率を 1/4 にする',()=>{
+  const m=C.newMember('war','a');assert.strictEqual(C.charmMul(m,'sleep'),1);m.charm='sleep';assert.strictEqual(C.charmMul(m,'sleep'),.25);assert.strictEqual(C.charmMul(m,'stun'),1);
+  // ねむらせる技だけの敵と 100回たたかって、ねむった回数をくらべる
+  const count=charm=>{let n=0;for(let k=0;k<100;k++){const G=C.newGame();G.party.forEach(x=>{x.charm=charm;});const e=C.mkEnemy(10,'normal');e.moves=[{n:'ねむり',k:'sleepAll',rate:.8,w:1}];e.spd=999;
+    const B=C.newBattle(G,[e]);const ev=C.battleTurn(B,G.party.map(()=>({k:'defend'})),C.rng(k+1));n+=ev.filter(x=>x.st==='sleep').length;}return n;};
+  const a=count(null),b=count('sleep');assert.ok(b<a*.45,`おまもりなし${a} あり${b}`);
+});

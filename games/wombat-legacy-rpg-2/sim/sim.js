@@ -305,6 +305,8 @@ function main(){
     const gf=f=>Math.min(C.SHOP_TOP,shopMax(1+Math.floor((f-1)/10)));
     let o='| 相手 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n';
     for(let f=5;f<=50;f+=5){const [j,l0]=cap(f),l=midLv[f]||l0;const b=bossCheck(j,l,f,n>=120?80:n);o+=`| B${f} ${C.bossFor(f)[0].name} | ${C.JOBS[j[0]].name}ほか Lv${l} | ${pct(b.win)} | ${b.turns.toFixed(1)} |\n`;}
+    {const r=C.rng(99);let w=0,tt=0;const N=n>=120?80:n;for(let k=0;k<N;k++){const G=makeParty(['kAll','kMag','kNin'],40,C.SHOP_TOP);const res=fight(G,C.secretBoss(),r);if(res.over==='win')w++;tt+=res.turns;}
+      o+=`| クリア後 ${C.SECRET_BOSS.name} | 万能王ほか Lv40・最強装備 | ${pct(w/N)} | ${(tt/N).toFixed(1)} |\n`;}
     process.stdout.write(o);return;}
   if(mode==='all'){
     md+=`## 0a. ボスと番人の強さ\n\nその段階の上限レベル・満タンから挑んだときの勝率（各80戦）。めやす：ボス・番人とも勝率4〜8割。人間は自動プレイより上手なので、ボスは強めにしている。\n\n| 相手 | パーティ | 勝率 | ターン |\n|---|---|---|---|\n`;

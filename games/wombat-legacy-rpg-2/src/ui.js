@@ -294,7 +294,7 @@ function newGame2(){
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   const sv=load();
-  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
+  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
 }
 async function startNew(){
@@ -393,6 +393,9 @@ function equipFor(t){
       fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！`);}});}
   if(G.mats.armor){const ti=ARMORS.length-1,tc=ARMORS[ti][2]-Math.floor(ARMORS[m.a][2]/2),th=m.a>=ti;
     list.push({label:'⛏ '+ARMORS[ti][0],sub:th?'そうびずみ':`ぼうぎょ+${ARMORS[ti][1]}  ${tc}ウォン`,dis:th||G.gold<tc,cls:'wide',fn:()=>{G.gold-=tc;m.a=ti;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ti][0]}を そうびした！`);}});}
+  if(G.shopTier>=3){m.charms=m.charms||{};for(const k of Object.keys(CHARMS)){const C=CHARMS[k],own=!!m.charms[k],on=m.charm===k;
+    list.push({label:`🔰 ${C.name}`,sub:on?'つけている（はずす）':own?'持っている（つける）':`${ST_JP2[C.st]}に かかりにくい  ${C.price}ウォン`,dis:!own&&G.gold<C.price,cls:'',
+      fn:()=>{if(on)m.charm=null;else{if(!own){G.gold-=C.price;m.charms[k]=1;}m.charm=k;}updateTop();save();snd('chest');equipFor(t);setMsg(on?`${m.name}は ${C.name}を はずした。`:`${m.name}は ${C.name}を つけた！\n（${ST_JP2[C.st]}に かかる確率が 4分の1に なる。おまもりは 1匹 1つまで）`);}});}}
   const ai=mx,cur=m.a,acost=ARMORS[ai][2]-Math.floor(ARMORS[cur][2]/2),ahave=cur>=ai;
   list.push({label:ARMORS[ai][0],sub:ahave?'そうびずみ':`ぼうぎょ+${ARMORS[ai][1]}（いま+${ARMORS[cur][1]}）  ${acost}ウォン`,dis:ahave||G.gold<acost,
     fn:()=>{G.gold-=acost;m.a=ai;updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ai][0]}を そうびした！`);}});
@@ -491,7 +494,7 @@ async function partyMenu(back){
   const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll','mpheal'].includes(SKILLS[k].kind)));
   const c=await ask('なにを しますか？',[{label:'📊 つよさを見る',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 武器の つけかえ',cls:''},{label:'✏️ 名前を かえる',cls:''},{label:'← もどる',cls:'sub'}]);
   if(c===0){for(const m of G.party){const d=derived(m),J=JOBS[m.job];
-      await talk(`${m.name}（${J.name}${m.mastered[m.job]?'★':''}）Lv${m.lv}  次まで ${m.lv>=J.cap?'-':expNext(m.job,m.lv)-m.exp}\nHP ${m.hp}/${d.maxhp}  MP ${m.mp}/${d.maxmp}${m.poison?'  【どく】':''}\nこうげき${d.atk} ぼうぎょ${d.def} まりょく${d.mag} すばやさ${d.spd}\n${weaponLabel(m)} ／ ${ARMORS[m.a][0]}`);
+      await talk(`${m.name}（${J.name}${m.mastered[m.job]?'★':''}）Lv${m.lv}  次まで ${m.lv>=J.cap?'-':expNext(m.job,m.lv)-m.exp}\nHP ${m.hp}/${d.maxhp}  MP ${m.mp}/${d.maxmp}${m.poison?'  【どく】':''}\nこうげき${d.atk} ぼうぎょ${d.def} まりょく${d.mag} すばやさ${d.spd}\n${weaponLabel(m)} ／ ${ARMORS[m.a][0]}`+(m.charm?` ／ ${CHARMS[m.charm].name}`:''));
       const own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
       await talk(`【${m.name}の わざ】\n${J.name}：${own.join('・')||'なし'}\n引き継ぎ：${sl.join('・')||'なし'}`);}
     return partyMenu(back);}
@@ -545,8 +548,8 @@ async function fieldSkillMenu(){
   }
 }
 function dexKeys(){return Object.keys(DEX);}
-function dexLook(k){if(ANIMALS[k])return {spr:ANIMALS[k].spr,pal:ANIMALS[k].pal,s:ANIMALS[k].s||1};const f=+k.replace(/\D/g,'');return k.startsWith('boss')?bossFor(f)[0].look:guardianFor(f)[0].look;}
-function dexName(k){if(ANIMALS[k])return ANIMALS[k].name;const f=+k.replace(/\D/g,'');return k.startsWith('boss')?BOSS_DEF[f].name:GUARDIANS[f].name;}
+function dexLook(k){if(k==='dropbear')return SECRET_BOSS.look;if(ANIMALS[k])return {spr:ANIMALS[k].spr,pal:ANIMALS[k].pal,s:ANIMALS[k].s||1};const f=+k.replace(/\D/g,'');return k.startsWith('boss')?bossFor(f)[0].look:guardianFor(f)[0].look;}
+function dexName(k){if(k==='dropbear')return SECRET_BOSS.name;if(ANIMALS[k])return ANIMALS[k].name;const f=+k.replace(/\D/g,'');return k.startsWith('boss')?BOSS_DEF[f].name:GUARDIANS[f].name;}
 function dex(){
   mode='dex';const ids=dexKeys();const seen=ids.filter(id=>G.seen[id]).length;
   setMsg(`ずかん（${seen}/${ids.length}）\n会ったことのある 生き物を しらべられるよ。`);
@@ -622,7 +625,8 @@ async function onStep(){
   if(G.steps%2===0&&G.party.some(m=>m.poison&&m.hp>1)){G.party.forEach(m=>{if(m.poison&&m.hp>1)m.hp--;});flashT=now-60;renderParty();}
   if(t==='T'&&!G.opened[chestKey(F.px,F.py)]){heldDir=null;busy=true;showPad(false);await openChest();busy=false;fieldIdle();return;}
   if(t==='D'||(t==='B'&&G.bossDown[F.f])){heldDir=null;busy=true;showPad(false);
-    if(F.f>=STAGE_MAX){await talk('ここが 穴の いちばん 下だ。\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
+    if(F.f>=STAGE_MAX){if(G.cleared&&!G.secretDown){await secretIntro();return;}
+      await talk('ここが 穴の いちばん 下だ。'+(G.secretDown?'\n天井の 大木の 根は、もう しずかだ。':'')+'\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
     snd('stairs');await changeFloor(F.f+1);busy=false;return;}
   if(t==='V'){heldDir=null;busy=true;showPad(false);
     if(!G.flags.digDown){if(!G.flags.tipCrack){G.flags.tipCrack=1;await talk('床に ひびが 入っている。\n下へ ほれそうだけど、かたくて まだ ほれない。');}busy=false;fieldIdle();return;}
@@ -687,7 +691,7 @@ async function startBattle(enemies,opt){
   snd('enc');stopMusic();flashT=performance.now();await sleep(110);flashT=performance.now();await sleep(90);wipeT=performance.now();await sleep(520);
   B=newBattle(G,enemies);B.snap=snap;B.init=init;B.opt=opt||{};B.ret=ret;B.ts=areaOf(F?F.f:1);
   BA={e:B.enemies.map(e=>({flash:-1e9,lunge:-1e9,dead:0,hp:e.hp})),p:G.party.map(()=>({step:0,shake:-1e9})),fx:[],pops:[],enter:performance.now()+150,win:0};
-  layoutEnemies();mode='battle';fadeT=performance.now();playMusic(B.boss&&B.opt.f>=STAGE_MAX?'lastboss':B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
+  layoutEnemies();mode='battle';fadeT=performance.now();playMusic((B.boss&&B.opt.f>=STAGE_MAX)||B.opt.secret?'lastboss':B.boss||B.opt.guard?'boss':'battle');disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();updateTop('せんとう');
   B.enemies.forEach(e=>{if(e.id)G.seen[e.id]=1;});
   const names=[...new Set(B.enemies.map(e=>e.name.replace(/ [A-E]$/,'')))];
   if(B.boss||B.opt.guard){setTimeout(()=>{banner(B.boss?'BOSS':'番人',names[0],'#ff6a6a',2000);shakeT=performance.now();},350);}
@@ -827,6 +831,7 @@ async function endBattle(){
         else if(s.includes('きわめた')){jingle('C5 E5 G5 C6 E6',.09);banner('きわめた！',`${m.name}  ${jobName(m.job)}`,'#ffd36b',2000);partySparkle(mi,'#ffd36b');}else snd('lvl');renderParty();await talk(s);}}
     if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
     renderParty();
+    if(B.opt.secret){G.secretDown=true;save();await secretDown();return;}
     if(B.opt.boss){G.bossDown[B.opt.f]=true;save();await bossDown(B.opt.f);return;}
     if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic(dungeonTrack(F.f));await openGuardChest(F.f);backToField();return;}
     save();backToField();return;
@@ -840,6 +845,23 @@ async function endBattle(){
   G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});fadeT=now;enterTown();
 }
 function backToField(){B=null;BA=null;disp=null;mode='field';fadeT=now;busy=false;renderParty();playMusic(dungeonTrack(F.f));fieldIdle();}
+// ---------- クリア後の隠しボス（ドロップベア） ----------
+async function secretIntro(){
+  await talks(['化石の 部屋の 天井に、太い ユーカリの 根が はりめぐらされている。','…根の あいだで、なにかが じっと こちらを 見ている。']);
+  const c=await ask('とても 強い 気配だ。たたかいますか？\n（ぜんめつしても、なにも 失わないよ）',[{label:'⚔ たたかう',cls:'wide hi'},'やめておく']);
+  if(c!==0){busy=false;fieldIdle();return;}
+  stopMusic();await talk('上から なにかが 落ちてきた！');shakeT=now;snd('enc');
+  await talk(`それは… 長老の 昔話に 出てくる「ドロップベア」だった！\n${G.parents[0]}たちが むかし たたかったという、あの…！`);
+  startBattle(secretBoss(),{boss:true,secret:true,f:STAGE_MAX});
+}
+async function secretDown(){
+  B=null;BA=null;fadeT=now;
+  await talks(['ドロップベアは「…まいった」と言うように 両手を あげ、根を つたって 木の上へ かえっていった。',
+    `${G.party[0].name}「いまのって、ほんとうに いたんだ…」`,`${G.party[1].name}「ううん、${G.parents[1]}さんたちの 話を、だれかが まねしてたのかも」`,`${G.party[2].name}「どっちでも いいや。いい しょうぶだった！」`]);
+  G.gold+=50000;updateTop();banner('★★ 完全クリア ★★','ドロップベアを たおした','#ffd36b',2600);jingle('C5 E5 G5 C6 E6 G6 C7 - G6 C7',.1);sparkle(96,60,40,'#ffd36b',60);
+  await talk('★ ドロップベアを たおした！ ★\nお礼の 50000ウォンを 見つけた。\nタイトルに「完全クリア」の しるしが つくよ。');
+  save();backToField();
+}
 async function bossDown(f){
   const p=G.parents;
   const lines={
@@ -1062,7 +1084,7 @@ async function ending(){
   await new Promise(res=>{const tm=setTimeout(res,T*1000+600);setCmds([{label:'▶ とばす',cls:'wide sub',fn:()=>{clearTimeout(tm);res();}}]);});
   ES={s:'end',t0:now};jingle('C5 E5 G5 C6 - E6 G6 C7',.12);
   await sleep(1500);
-  const c=await ask('～ おしまい ～\nあそんでくれて ありがとう！\n（このあとも 穴に もぐって、極めていない 職業や ずかんを うめられるよ）',[{label:'つづけて あそぶ（村へ）',cls:'wide hi'},{label:'タイトルへ',cls:'wide'}]);
+  const c=await ask('～ おしまい ～\nあそんでくれて ありがとう！\n（このあとも 穴に もぐれるよ。B50の いちばん奥に、まだ なにかが いるみたい…）',[{label:'つづけて あそぶ（村へ）',cls:'wide hi'},{label:'タイトルへ',cls:'wide'}]);
   ES=null;G.party.forEach(m=>{const d=derived(m);m.hp=d.maxhp;m.mp=d.maxmp;m.poison=false;});save();
   if(c===0){fadeT=now;enterTown();}else{fadeT=now;title();}
 }
