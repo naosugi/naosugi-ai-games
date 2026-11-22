@@ -728,8 +728,12 @@ function autoCmd(B,i){
   return {k:'attack',t:weakest()};
 }
 
+// 画面用：その時点の、仲間カードに出す状態（バフ・デバフ・ねむりなど）。B.track のときだけ記録する
+function visState(B){return {pd:{atk:B.pdebuff.atk||0,def:B.pdebuff.def||0},bf:Object.fromEntries(Object.keys(B.buff).map(k=>[k,B.buff[k].turns||0])),mk:Object.assign({},B.marks),
+  m:B.party.map(m=>({sleep:(m.bst&&m.bst.sleep)||0,stun:(m.bst&&m.bst.stun)||0,silence:(m.bst&&m.bst.silence)||0,rage:(m.bst&&m.bst.rage)||0,kiai:m.kiai||0}))};}
 function battleTurn(B,cmds,r){
   const ev=[],P=B.party,EN=B.enemies;B.turn++;
+  if(B.track){const push=ev.push.bind(ev);ev.push=(...xs)=>{for(const x of xs)x.vs=visState(B);return push(...xs);};}
   const acts=[];
   B.stance={};
   P.forEach((m,i)=>{if(m.hp>0&&cmds[i]){const c=cmds[i];const S=c.k==='skill'?SKILLS[c.s]:null;
@@ -955,6 +959,6 @@ function newGame(){
 }
 
 const CORE={ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
-  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
+  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

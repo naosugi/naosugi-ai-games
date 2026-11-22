@@ -880,8 +880,12 @@ function autoCmd(B,i){
   return {k:'attack',t:weakest()};
 }
 
+// 画面用：その時点の、仲間カードに出す状態（バフ・デバフ・ねむりなど）。B.track のときだけ記録する
+function visState(B){return {pd:{atk:B.pdebuff.atk||0,def:B.pdebuff.def||0},bf:Object.fromEntries(Object.keys(B.buff).map(k=>[k,B.buff[k].turns||0])),mk:Object.assign({},B.marks),
+  m:B.party.map(m=>({sleep:(m.bst&&m.bst.sleep)||0,stun:(m.bst&&m.bst.stun)||0,silence:(m.bst&&m.bst.silence)||0,rage:(m.bst&&m.bst.rage)||0,kiai:m.kiai||0}))};}
 function battleTurn(B,cmds,r){
   const ev=[],P=B.party,EN=B.enemies;B.turn++;
+  if(B.track){const push=ev.push.bind(ev);ev.push=(...xs)=>{for(const x of xs)x.vs=visState(B);return push(...xs);};}
   const acts=[];
   B.stance={};
   P.forEach((m,i)=>{if(m.hp>0&&cmds[i]){const c=cmds[i];const S=c.k==='skill'?SKILLS[c.s]:null;
@@ -1107,7 +1111,7 @@ function newGame(){
 }
 
 const CORE={ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
-  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,autoCmd,battleRewards,giveRewards,
+  newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
 
@@ -2215,11 +2219,14 @@ function statusTags(m,i,hp){
   const poi=disp&&disp[i]&&disp[i].poison!=null?disp[i].poison:m.poison;if(poi)st.push('<i class="s-poi">どく</i>');
   const b=m.bst||{};
   if(mode==='battle'){
-    if(b.sleep>0)st.push('<i class="s-bad">ねむり</i>');if(b.stun>0)st.push('<i class="s-bad">まひ</i>');if(b.silence>0)st.push('<i class="s-bad">ふういん</i>');
-    if(m.kiai>0)st.push(`<i class="s-tmp">きあい${m.kiai}</i>`);
-    if(B){for(const [k,n] of [['atk','攻↑'],['def','防↑'],['spd','速↑'],['eva','避↑']])if(B.buff[k]&&B.buff[k].turns>0)st.push(`<i class="s-buf">${n}${B.buff[k].turns>=90?'∞':B.buff[k].turns}</i>`);
-      if(B.pdebuff.atk>0)st.push(`<i class="s-bad">攻↓${B.pdebuff.atk}</i>`);if(B.pdebuff.def>0)st.push(`<i class="s-bad">防↓${B.pdebuff.def}</i>`);
-      if(B.marks[i])st.push('<i class="s-buf">いのり</i>');if(b.rage>0)st.push('<i class="s-tmp">いかり</i>');}
+    // 演出の途中は、その時点の状態（BA.vs）を出す。計算が終わった後の状態を先に出さないため
+    const V=BA&&BA.vs,vm=V?V.m[i]:{sleep:b.sleep,stun:b.stun,silence:b.silence,rage:b.rage,kiai:m.kiai};
+    if(vm.sleep>0)st.push('<i class="s-bad">ねむり</i>');if(vm.stun>0)st.push('<i class="s-bad">まひ</i>');if(vm.silence>0)st.push('<i class="s-bad">ふういん</i>');
+    if(vm.kiai>0)st.push(`<i class="s-tmp">きあい${vm.kiai}</i>`);
+    if(B){const bf=V?V.bf:Object.fromEntries(Object.keys(B.buff).map(k=>[k,B.buff[k].turns||0])),pd=V?V.pd:B.pdebuff,mk=V?V.mk:B.marks;
+      for(const [k,n] of [['atk','攻↑'],['def','防↑'],['spd','速↑'],['eva','避↑']])if(bf[k]>0)st.push(`<i class="s-buf">${n}${bf[k]}</i>`);
+      if(pd.atk>0)st.push(`<i class="s-bad">攻↓${pd.atk}</i>`);if(pd.def>0)st.push(`<i class="s-bad">防↓${pd.def}</i>`);
+      if(mk[i])st.push('<i class="s-buf">いのり</i>');if(vm.rage>0)st.push('<i class="s-tmp">いかり</i>');}
     const ts=BA&&BA.tstat&&BA.tstat[i];if(ts)st.push(`<i class="s-tmp">${ts}</i>`);
   }
   return st;
@@ -2829,6 +2836,7 @@ async function battleLoop(){
     disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));BA.tstat={};renderParty();
     const cmds=await inputPhase();BA.cmds=cmds;enemyMark=null;partyPick=null;BA.pickE=null;
     renderParty();setCmds([]);
+    B.track=true;BA.vs=visState(B);
     const ev=battleTurn(B,cmds,R);
     await playEvents(ev);
     if(B.over){await endBattle();return;}
@@ -2905,6 +2913,9 @@ function fxKindOf(S){if(!S)return null;
 async function playEvents(ev){
   let lines=[];const say=t=>{lines.push(t);if(lines.length>3)lines=lines.slice(-3);const pre=lines.slice(0,-1).join('\n');setMsg(lines.join('\n'),false,pre?[...pre].length+1:0);};
   for(let n=0;n<ev.length;n++){const e=ev[n];
+    // 仲間カードの状態は、その出来事の時点のものを出す。行動（act）は、文が出て 一呼吸おいてから
+    const applyVs=()=>{if(!e.vs)return;const ch=JSON.stringify(e.vs)!==JSON.stringify(BA.vs);BA.vs=e.vs;if(ch)renderParty();};
+    if(e.t!=='act')applyVs();
     switch(e.t){
       case 'act':{lines=[];say(e.text);
         if(e.side==='p'){BA.p[e.i].step=1;const c=BA.cmds&&BA.cmds[e.i];if(c&&c.k==='defend')BA.tstat[e.i]='ぼうぎょ';if(e.s&&SKILLS[e.s].kind==='guard')BA.tstat[e.i]='かばう';disp[e.i].mp=G.party[e.i].mp;renderParty(e.i);}else if(BA.e[e.i])BA.e[e.i].lunge=now;
@@ -2913,7 +2924,7 @@ async function playEvents(ev){
         if(kind){const pts=[];for(let j=n+1;j<ev.length&&ev[j].t!=='act';j++){const x=ev[j];if((x.t==='hit'||x.t==='heal'||x.t==='status'||x.t==='revive')&&x.i!=null){const side=x.side||'p';pts.push(side==='e'?enemyCenter(x.i):partyCenter(x.i));}}
           if(!pts.length&&S&&S.kind==='buff')G.party.forEach((m,j)=>{if(m.hp>0)pts.push(partyCenter(j));});
           await bwait(250);spawnFx(kind,pts.slice(0,4));if(kind!=='slash')snd(kind==='heal'?'heal':'magic');}
-        await bwait(400);if(e.side==='p')BA.p[e.i].step=0;break;}
+        await bwait(400);if(e.side==='p')BA.p[e.i].step=0;applyVs();break;}
       case 'msg':say(e.text);await bwait(420);break;
       case 'hit':
         if(e.side==='e'){if(BA.e[e.i]){BA.e[e.i].flash=now;BA.e[e.i].hp=e.hp;}pop(enemyCenter(e.i),e.dmg,e.weak?'#ffe060':'#ffffff',e.weak||e.crit);snd('hit');if(e.weak||e.crit)shakeT=now;}
@@ -2930,7 +2941,7 @@ async function playEvents(ev){
         layoutEnemies();if(B.enemies[e.i].id)G.seen[B.enemies[e.i].id]=1;say(e.text||`${B.enemies[e.i].name}が あらわれた！`);await bwait(500);break;
     }
   }
-  disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();
+  BA.vs=null;disp=G.party.map(m=>({hp:m.hp,mp:m.mp,poison:m.poison}));renderParty();
 }
 async function endBattle(){
   disp=null;renderParty();
