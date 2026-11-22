@@ -40,10 +40,11 @@ function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)retur
 // ---------- message & commands ----------
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let typeTimer=null,typeDone=null;
-function setMsg(t,more,from){const m=$('msg');clearInterval(typeTimer);typeTimer=null;typeDone=null;
+let typeWaiters=[],lastLineLen=0;
+function setMsg(t,more,from){const m=$('msg');clearInterval(typeTimer);typeTimer=null;typeDone=null;{const w=typeWaiters;typeWaiters=[];w.forEach(f=>f());}
   if(from==null){m.textContent=t;m.classList.toggle('more',!!more);m.scrollTop=0;return;}
   const ch=[...t];let i=Math.min(from,ch.length);m.classList.remove('more');m.textContent=ch.slice(0,i).join('');
-  typeDone=()=>{clearInterval(typeTimer);typeTimer=null;typeDone=null;m.textContent=t;m.classList.toggle('more',!!more);};
+  typeDone=()=>{clearInterval(typeTimer);typeTimer=null;typeDone=null;m.textContent=t;m.classList.toggle('more',!!more);const w=typeWaiters;typeWaiters=[];w.forEach(f=>f());};
   const bottom=from>0;if(!bottom)m.scrollTop=0;
   typeTimer=setInterval(()=>{i+=2;m.textContent=ch.slice(0,i).join('');if(bottom)m.scrollTop=m.scrollHeight;if(i>=ch.length&&typeDone)typeDone();},18);}
 let cmdList=[],advance=null,skipFn=null;
@@ -65,9 +66,12 @@ function ask(text,opts){advance=null;return new Promise(res=>{setMsg(text);setCm
 const MSG_SPEEDS=[{n:'ゆっくり',f:2.6},{n:'ふつう',f:1.8},{n:'はやい',f:1},{n:'タップ',f:0}],MSG_KEY='wombatlegacy2_msgspeed';
 let msgSpd=1;try{const v=+localStorage.getItem(MSG_KEY);if(localStorage.getItem(MSG_KEY)!==null&&MSG_SPEEDS[v])msgSpd=v;}catch(e){}
 function setMsgSpd(i){msgSpd=i;try{localStorage.setItem(MSG_KEY,String(i));}catch(e){}$('spd').textContent='💬'+MSG_SPEEDS[i].n;$('spd').title='戦闘の 文の はやさ';}
+// 文が 出きってから 待ちはじめる。長い文は そのぶん 長く 待つ（12文字を こえた 1文字ごとに 30ミリ秒）
 function bwait(ms){const f=mode==='battle'?MSG_SPEEDS[msgSpd].f:1;const manual=f===0&&ms>=400;
-  return new Promise(res=>{const done=()=>{clearTimeout(t);skipFn=null;$('msg').classList.remove('more');res();};
-    const t=manual?null:setTimeout(done,Math.round(ms*(f||1)));if(manual)$('msg').classList.add('more');skipFn=done;});}
+  const extra=ms>=400?Math.max(0,lastLineLen-12)*30:0;
+  return new Promise(res=>{let t=null,fin=false;const done=()=>{if(fin)return;fin=true;clearTimeout(t);skipFn=null;$('msg').classList.remove('more');res();};
+    const start=()=>{if(fin)return;if(manual){$('msg').classList.add('more');return;}t=setTimeout(done,Math.round((ms+extra)*(f||1)));};
+    skipFn=done;if(typeTimer)typeWaiters.push(start);else start();});}
 $('spd').onclick=e=>{e.stopPropagation();setMsgSpd((msgSpd+1)%MSG_SPEEDS.length);snd('tap');};setMsgSpd(msgSpd);
 $('msg').onclick=()=>{if(advance)advance();else if(typeDone)typeDone();else if(skipFn)skipFn();};
 cv.addEventListener('click',e=>{
@@ -809,7 +813,7 @@ function fxKindOf(S){if(!S)return null;
   if(['phys','finisher'].includes(S.kind))return S.el||'slash';
   return null;}
 async function playEvents(ev){
-  let lines=[];const say=t=>{lines.push(t);if(lines.length>3)lines=lines.slice(-3);const pre=lines.slice(0,-1).join('\n');setMsg(lines.join('\n'),false,pre?[...pre].length+1:0);};
+  let lines=[];const say=t=>{lines.push(t);lastLineLen=[...t].length;if(lines.length>3)lines=lines.slice(-3);const pre=lines.slice(0,-1).join('\n');setMsg(lines.join('\n'),false,pre?[...pre].length+1:0);};
   for(let n=0;n<ev.length;n++){const e=ev[n];
     // 仲間カードの状態は、その出来事の時点のものを出す。行動（act）は、文が出て 一呼吸おいてから
     const applyVs=()=>{if(!e.vs)return;const ch=JSON.stringify(e.vs)!==JSON.stringify(BA.vs);BA.vs=e.vs;if(ch)renderParty();};
