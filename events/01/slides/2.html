@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>第2回　つくる（AIに頼むコツ）</title>
+<!-- このファイルは tools/build_slides.py が書き出します。直接編集せず slides/src/ を直してください -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@700;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b1220;overflow:hidden;font-family:'Zen Kaku Gothic New',system-ui,-apple-system,"Hiragino Sans",sans-serif}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#stage>section{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:none!important}
+#stage>section.on{display:flex!important}
+section ul{padding-left:1.3em}
+section li{margin:.15em 0}
+section table{border-collapse:collapse;width:100%;border-radius:16px;overflow:hidden}
+section th,section td{text-align:left;vertical-align:top;padding:18px 28px;border-bottom:2px solid #D5DDE3;line-height:1.45}
+section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
+/* ポスターに合わせた見た目（section に class="px" を付けたスライド） */
+.px{--navy:#1C2A5B;--ink:#191B2B;--yel:#FFD95A;--org:#F2A33A;--red:#E8613C;--grass:#5DB548;--muted:#BFD0F0;
+  flex-direction:column;gap:32px;padding:52px 100px 136px;color:#fff;font-family:'Zen Kaku Gothic New',system-ui,sans-serif;font-weight:700;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 1490px 70px/300px 120px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 70px 40px/200px 80px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 960px 22px/150px 60px,linear-gradient(180deg,#3E8BD9 0%,#6FB6EC 70%,#92CDF3 100%)}
+.px::after{content:'';position:absolute;left:0;right:0;bottom:0;height:96px;background:linear-gradient(#3F9A3A,#3F9A3A) top/100% 6px no-repeat,linear-gradient(var(--grass),var(--grass)) 0 6px/100% 18px no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='80' shape-rendering='crispEdges'%3E%3Crect width='160' height='80' fill='%23A86A37'/%3E%3Cg fill='%23C4824A'%3E%3Crect x='4' y='4' width='72' height='3'/%3E%3Crect x='84' y='4' width='72' height='3'/%3E%3Crect x='44' y='44' width='72' height='3'/%3E%3Crect x='0' y='44' width='36' height='3'/%3E%3Crect x='124' y='44' width='36' height='3'/%3E%3C/g%3E%3Cg fill='%237A4520'%3E%3Crect y='0' width='160' height='4'/%3E%3Crect y='40' width='160' height='4'/%3E%3Crect x='0' y='0' width='4' height='40'/%3E%3Crect x='80' y='0' width='4' height='40'/%3E%3Crect x='40' y='40' width='4' height='40'/%3E%3Crect x='120' y='40' width='4' height='40'/%3E%3C/g%3E%3C/svg%3E") 0 24px/160px 80px repeat-x,#A86A37}
+.px .dot,.px h1,.px h2,.px h3,.px .kick,.px .num{font-family:'DotGothic16','Zen Kaku Gothic New',sans-serif;font-weight:400}
+.px .hd{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.px .kick{display:inline-flex;align-items:center;gap:14px;background:var(--yel);color:var(--ink);font-size:38px;padding:4px 24px;border:5px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.px h1,.px h2{color:#fff;letter-spacing:2px;text-shadow:-4px 0 0 var(--ink),4px 0 0 var(--ink),0 -4px 0 var(--ink),0 4px 0 var(--ink),-4px -4px 0 var(--ink),4px 4px 0 var(--ink),-4px 4px 0 var(--ink),4px -4px 0 var(--ink),8px 8px 0 #0e1440}
+.px h2{font-size:78px;line-height:1.2}
+.px h1{font-size:124px;line-height:1.15}
+.px .y{color:var(--yel)}
+.px .o{color:var(--org)}
+.px .panel{background:var(--navy);border:6px solid #fff;box-shadow:0 0 0 6px var(--ink),10px 10px 0 6px #0e144066;padding:30px 44px;font-size:54px;line-height:1.42;min-height:0}
+.px .cols>.panel,.px .cols3>.panel,.px .flow>.panel,.px .panel.v{display:flex;flex-direction:column;justify-content:center}
+.px .panel h3{color:var(--yel);font-size:60px;line-height:1.25;margin-bottom:12px}
+.px .panel b,.px .panel .y{color:var(--yel)}
+.px .panel .s{font-size:38px;color:var(--muted);font-weight:500}
+.px .panel p+p{margin-top:12px}
+.px ul{list-style:none;padding:0}
+.px li{position:relative;padding-left:1.15em;margin:.18em 0}
+.px li::before{content:'▸';position:absolute;left:0;color:var(--yel)}
+.px .cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;flex:1;min-height:0}
+.px .cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;flex:1;min-height:0}
+.px .ybox{background:var(--yel);color:var(--ink);border:6px solid var(--ink);box-shadow:8px 8px 0 #0e144088;padding:14px 34px;font-size:44px;line-height:1.4}
+.px .ybox b{color:#B3361A}
+.px .wip{background:var(--red);color:#fff;font-size:36px;padding:0 12px;border:3px solid var(--ink);font-family:'DotGothic16',sans-serif}
+.px .todo{border:5px dashed var(--yel);background:#1C2A5BCC;color:var(--yel);padding:20px 32px;font-size:44px;line-height:1.45}
+.px table{border-collapse:collapse;width:100%;border-radius:0}
+.px th,.px td{padding:14px 26px;border-bottom:3px dashed #3E5394;font-size:50px;line-height:1.35;text-align:left;vertical-align:top}
+.px th{background:var(--ink);color:var(--yel);font-family:'DotGothic16',sans-serif;font-weight:400;border-bottom:none}
+.px td:first-child{color:var(--yel);white-space:nowrap}
+.px tr:last-child td{border-bottom:none}
+.px .center,.px.center{align-items:center;justify-content:center;text-align:center}
+.px .kick{align-self:flex-start}
+.px.center .kick,.px .center .kick{align-self:center}
+.px .card{display:flex;flex-direction:column;justify-content:flex-start;gap:14px}
+.px .card img{width:100%;aspect-ratio:2/1;object-fit:cover;border:5px solid #fff;image-rendering:auto}
+.px .code{font-family:'DotGothic16',monospace;white-space:pre-wrap;font-size:50px;line-height:1.45}
+.px .flow{display:flex;gap:22px;align-items:stretch}
+.px .flow>.panel{flex:1;padding:24px 28px;font-size:52px}
+.px .num{display:inline-block;background:var(--yel);color:var(--ink);min-width:1.6em;text-align:center;margin-right:10px;padding:0 6px}
+#stage .note{display:none}
+#notebox{position:fixed;left:0;right:0;bottom:0;max-height:55vh;overflow:auto;background:#0b1220f2;color:#e6eefb;font-size:16px;line-height:1.75;padding:16px 20px 72px;padding-bottom:max(72px,calc(env(safe-area-inset-bottom) + 64px));border-top:2px solid #FFD95A;z-index:2;display:none}
+#notebox.open{display:block}
+#notebox h4{color:#FFD95A;font-size:15px;margin-bottom:6px}
+#notebox p+p,#notebox ul{margin-top:8px}
+#notebox ul{padding-left:1.3em}
+#notebox a{color:#8fd3ff}
+#wip{position:fixed;top:0;left:0;right:0;background:#FFE066;color:#1D2A36;font-size:13px;font-weight:700;text-align:center;padding:6px 10px;padding-top:max(6px,env(safe-area-inset-top));z-index:3}
+#bar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:#0b1220cc;color:#cfe0f7;font-size:13px;z-index:3}
+#bar a,#bar button{white-space:nowrap;font:inherit;color:#cfe0f7;background:#1b2a44;border:1px solid #2a4670;border-radius:8px;padding:6px 12px;text-decoration:none;cursor:pointer}
+#bar .sp{flex:1}
+#count{min-width:4.5em;text-align:center}
+@media (max-width:440px){#fs{display:none}#bar{gap:6px}}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;background:#fff;height:auto}
+  #bar,#wip,#notebox{display:none!important}
+  #stage{position:static;transform:none!important;width:auto;height:auto}
+  #stage>section{position:relative;display:flex!important;break-after:page}
+}
+</style>
+</head>
+<body>
+<div id="wip">下の「メモ」で、各スライドの補足が読めます。</div>
+<div id="stage">
+<section id="cover" class="px" style="flex-direction:row;align-items:center;gap:50px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<p class="kick">第2回　1/17（日）　つくる</p>
+<h1 style="font-size:130px">AIに<br><span class="y">頼む</span>コツ</h1>
+<p class="ybox" style="align-self:flex-start">設計図を、動くゲームにする</p>
+<p class="dot" style="font-size:40px;text-shadow:3px 3px 0 #191B2B">親子でAIゲームづくり講座</p>
+</div>
+<div><svg viewBox='0 0 44 34' width='560' height='432' shape-rendering='crispEdges' aria-hidden='true'><rect x='0' y='0' width='44' height='28' fill='#191B2B'/><rect x='1' y='1' width='42' height='26' fill='#B7C2CF'/><rect x='3' y='3' width='38' height='22' fill='#6FB6EC'/><rect x='6' y='5' width='5' height='1' fill='#fff'/><rect x='5' y='6' width='8' height='1' fill='#fff'/><rect x='30' y='4' width='4' height='1' fill='#fff'/><rect x='29' y='5' width='7' height='1' fill='#fff'/><rect x='3' y='19' width='38' height='1' fill='#5DB548'/><rect x='3' y='20' width='38' height='5' fill='#A86A37'/><rect x='6' y='22' width='4' height='1' fill='#7A4520'/><rect x='18' y='23' width='4' height='1' fill='#7A4520'/><rect x='31' y='21' width='4' height='1' fill='#7A4520'/><rect x='21' y='12' width='10' height='1' fill='#5DB548'/><rect x='21' y='13' width='10' height='2' fill='#A86A37'/><rect x='23' y='8' width='2' height='3' fill='#FFD95A'/><rect x='27' y='8' width='2' height='3' fill='#FFD95A'/><rect x='23' y='8' width='1' height='1' fill='#fff'/><rect x='27' y='8' width='1' height='1' fill='#fff'/><rect x='9' y='12' width='4' height='1' fill='#3B2A20'/><rect x='9' y='13' width='4' height='2' fill='#F5C9A0'/><rect x='10' y='13' width='1' height='1' fill='#191B2B'/><rect x='12' y='13' width='1' height='1' fill='#191B2B'/><rect x='8' y='15' width='6' height='3' fill='#F2A33A'/><rect x='9' y='18' width='1' height='1' fill='#1C2A5B'/><rect x='12' y='18' width='1' height='1' fill='#1C2A5B'/><rect x='34' y='16' width='4' height='1' fill='#E8613C'/><rect x='33' y='17' width='6' height='2' fill='#E8613C'/><rect x='34' y='17' width='1' height='1' fill='#fff'/><rect x='37' y='17' width='1' height='1' fill='#fff'/><rect x='18' y='28' width='8' height='3' fill='#B7C2CF'/><rect x='12' y='31' width='20' height='3' fill='#191B2B'/><rect x='13' y='31' width='18' height='1' fill='#4D5D6A'/></svg></div>
+</section>
+<section id="agenda" class="px">
+<div class="hd"><p class="kick">今日の流れ（120分）</p><h2>ゴール：全組のゲームが動く</h2></div>
+<div class="panel" style="padding:8px 16px">
+<table>
+<tr><td>15分</td><td>動作確認</td></tr>
+<tr><td>15分</td><td>講義：AIに頼むコツ</td></tr>
+<tr><td>75分</td><td>開発</td></tr>
+<tr><td>15分</td><td>全組の動作確認と保存</td></tr>
+</table>
+</div>
+<aside class="note"><p>動作確認では、会場のWi-Fi、AIへのログイン、保存ができるかを確かめます。</p><p>開発の間、講師が全組を回ります。動いたゲームは大画面で紹介します。</p><p>ゴールは最小版でかまいません。</p></aside>
+</section>
+<section id="check" class="px">
+<div class="hd"><p class="kick">はじめに（15分）</p><h2>動作確認</h2></div>
+<div class="panel v" style="flex:1"><ul><li>会場のWi-Fiにつながる</li><li>AIにログインできる</li><li>「こんにちは」に返事が来る</li><li>宿題のゲームが開ける</li></ul></div>
+<p class="ybox">できなかったら、<b>手を挙げてください</b></p>
+<aside class="note"><p>Wi-Fiの名前とパスワードは、会場に掲示します。</p><p>アカウントがまだの組も、ここで作ります。</p><p>ほかのAIを持ち込んだ組は、講師はサポートできません。うまくいかないときは、Claude・ChatGPT・Geminiのどれかに切り替えてください。</p></aside>
+</section>
+<section id="limit" class="px">
+<div class="hd"><p class="kick">まず知っておくこと</p><h2>使える量には、上限がある</h2></div>
+<div class="cols">
+<div class="panel"><h3>たくさん使う</h3><ul><li>長い会話の続き</li><li>大きなファイル</li><li>まるごと作り直し</li></ul></div>
+<div class="panel"><h3>だから</h3><p><b>作り直しが少なくなる</b>頼み方をする</p></div>
+</div>
+<p class="ybox">止まったら、<b>手を挙げてください</b></p>
+<aside class="note"><p>出典：Claudeのヘルプ。長くなった会話の続き、大きなファイルを渡すこと、使わない機能（Web検索など）をオンのままにすることで、たくさん使います。ほかのAIでは決まりが違うことがあります。Claudeの無料プランは、5時間ごとに使える量が戻ります。</p><p>ゲームをまるごと作り直すたびにたくさん使う、というのは講師の見立てです（試作での経験から）。</p></aside>
+</section>
+<section id="paper" class="px">
+<div class="hd"><p class="kick">コツ1　頼む前</p><h2>紙で決めてから頼む</h2></div>
+<div class="cols">
+<div class="panel"><h3>悪い例</h3><p>「子育てゲームを作って」</p><p>→ <b>ボタンを押すだけ</b>に</p></div>
+<div class="panel"><h3>良い例</h3><p>決めたことを書いて<br>「質問ある？」</p><p>→ AIが<b>作る前に12個質問</b></p></div>
+</div>
+<p class="ybox">「質問には、<b>おすすめ案も付けて</b>」と頼む</p>
+<aside class="note"><p>悪い例：「スマホ簡単操作でドーパミンが非常に刺激される子育てゲームを作って」。AIは質問せずに作った。中身は、赤ちゃんの絵文字と🍼🌙🛁🧸の4つのボタンを早押しするだけ。大人になってもボタンは同じ。遊んでから「おかしい」と気づき、まるごと作り直し。</p><p>良い例：「入力した文字で正解か判定。時間で焦らせない。ステージは5種類。画面は最低4つ……ここまで何か質問ある？」。AIが作る前に12個質問した。「送信はEnter？」→「別ボタンで」、「全角と半角はどちらも正解？」→「区別する。それも問題にする」。</p><p>おすすめ案を付けてもらえば、分からない質問には「おすすめで」と答えられます。</p></aside>
+</section>
+<section id="small" class="px">
+<div class="hd"><p class="kick">コツ2　頼む前</p><h2>まず「最小版」を作る</h2></div>
+<div class="cols">
+<div class="panel"><h3>軽い（おすすめ）</h3><ul><li>ボタンや絵文字</li><li>平面（2D）</li><li>最小版だけ</li></ul></div>
+<div class="panel"><h3>重い（避ける）</h3><ul><li>立体（3D）</li><li>絵や文章がたくさん</li><li>最初から全部</li></ul></div>
+</div>
+<p class="ybox">追加は、<b>最小版が動いてから</b></p>
+<aside class="note"><p>ファイルが大きいほど、直すたびにたくさん使います。</p><p>例：講師のクレーンゲーム 約30KB、子育てゲーム 約60KB、3Dシューティング 約620KB（子育てゲームの約10倍）。</p></aside>
+</section>
+<section id="proto" class="px">
+<div class="hd"><p class="kick">コツ3　遊んで確かめる</p><h2>面白さは、人が遊んで確かめる</h2></div>
+<div class="panel" style="padding:8px 16px">
+<table>
+<tr><td>最小版ができたら</td><td>面白い？ 操作できる？</td></tr>
+<tr><td>機能を足したら</td><td>最後まで遊べる？</td></tr>
+<tr><td>発表の前</td><td>発表の端末で動く？</td></tr>
+</table>
+</div>
+<aside class="note"><p>AIが確かめられるのは、エラーが出ないかまで。面白さ、手ざわり、手元のスマホで動くかは、人が遊んで確かめます。</p><ul><li>最小版ができた直後（何も足す前）：面白い？ 遊ぶ端末で開けて、指やキーで操作できる？</li><li>機能を足したあと：最後まで通して遊べる？ 後半が簡単すぎ・難しすぎにならない？</li><li>発表の前：発表で使う端末で動く？ エラーは出ない？</li></ul></aside>
+</section>
+<section id="batch" class="px">
+<div class="hd"><p class="kick">コツ4　送るとき</p><h2>何をまとめて送るか</h2></div>
+<div class="cols3"><div class="panel center"><h3>設計を<br>変える話</h3><p><b>単独で</b></p></div><div class="panel center"><h3>追加・<br>変更</h3><p><b>まとめて<br>OK</b></p></div><div class="panel center"><h3>不具合・<br>数値</h3><p><b>まとめて<br>OK</b></p></div></div>
+<p class="ybox">「<b>やらないこと</b>」も1行書く</p>
+<aside class="note"><p>設計を変える話：ぶらさない点や面白さの中心が変わるなら、単独で送る。紙に戻って作り直す前提で。</p><p>追加・変更と、不具合・数値の直しは、まとめて送ってよい。ただし、設計を変える話と不具合の直しは混ぜない。</p><p>「やらないこと」の例：「難易度選択はいらない」。</p></aside>
+</section>
+<section id="fix" class="px">
+<div class="hd"><p class="kick">コツ5　直しを頼むとき</p><h2>何をしたら→何が起きて<br>→どうしたい</h2></div>
+<div class="panel v" style="flex:1"><p>「ピーマンが速すぎて60秒もたない。</p><p>　最初はゆっくりにしたい」</p></div>
+<p class="ybox">エラーは、<b>画面の文をそのまま貼る</b></p>
+<aside class="note"><p>ワークシート4ページ目の例です。</p><p>エラーの文が貼れないときは、画面を写真に撮って送ります。「どこを押したら止まったか」も書きます。</p><p>見た目と演出は、遊べるようになってから。「もっと派手に喜ぶ感じに」のように、方向性の言葉で頼みます。</p></aside>
+</section>
+<section id="move" class="px">
+<div class="hd"><p class="kick">コツ6　詰まったら</p><h2>引っ越すか、作り直すか</h2></div>
+<div class="cols">
+<div class="panel"><h3>引っ越す</h3><p>直しが3〜4回続いたら</p><p>→ <b>新しいチャットへ</b></p></div>
+<div class="panel"><h3>作り直す</h3><p>同じ不具合が</p><p><b>2回直らない</b>とき</p></div>
+</div>
+<p class="ybox">作り直しは、<b>こわくない</b></p>
+<aside class="note"><p>引っ越すときは、最新のファイルと、設計図のメモを渡します。使える量の上限で止まったときも同じです。</p><p>ぶらさない点を変えたくなったときも、設計図から作り直します。残したいものを先に書きます。</p><p>コードを書くのはAIなので、作り直しはこわくありません。</p></aside>
+</section>
+<section id="dev" class="px">
+<div class="hd"><p class="kick">開発（75分）</p><h2>この順で進める</h2></div>
+<div class="flow" style="flex:1;min-height:0"><div class="panel center"><h3><span class="num">1</span></h3><p><b>送る</b></p></div><div class="panel center"><h3><span class="num">2</span></h3><p><b>答える</b></p></div><div class="panel center"><h3><span class="num">3</span></h3><p><b>遊ぶ</b></p></div><div class="panel center"><h3><span class="num">4</span></h3><p><b>まとめて<br>直す</b></p></div></div>
+<p class="ybox">③④をくり返す。<b>動いたら手を挙げて！</b></p>
+<aside class="note"><ol><li>お願いの文を、子どもに確かめてから送る</li><li>AIの質問に答える。分からなければ「おすすめで」</li><li>最小版を、遊ぶ端末で遊ぶ。見た目はまだ直さない</li><li>直したいことを親子で話し、1通にまとめて送る</li></ol><p>動いたゲームは大画面で紹介します。講師が全組を回ります。</p></aside>
+</section>
+<section id="help" class="px">
+<div class="hd"><p class="kick">開発中</p><h2>困ったときは</h2></div>
+<div class="panel" style="padding:8px 16px">
+<table>
+<tr><td>止まった</td><td>手を挙げる</td></tr>
+<tr><td>動かない</td><td>エラーを貼って「直して」</td></tr>
+<tr><td>思っていたのと違う</td><td>設計図を見直す</td></tr>
+<tr><td>意見が割れた</td><td>遊ぶ人が決める</td></tr>
+</table>
+</div>
+<aside class="note"><ul><li>上限で止まった：手を挙げる。続ける方法を、講師といっしょに考えます。</li><li>真っ白・動かない：エラーの文を貼って「動かないので直して」。2回直らなければコツ6。</li><li>思っていたのと違う：設計図のどこが伝わっていないかを、親子で見直す。</li><li>スマホで開けない：AIの画面の中で遊ぶ。発表で使う端末で動くかは、最後に確かめる。</li><li>親子で意見が割れた：遊ぶ人が決める。設計図の「ぶらさない点」に戻る。</li></ul></aside>
+</section>
+<section id="save" class="px">
+<div class="hd"><p class="kick">最後の15分</p><h2>第3回に、続きを持っていく</h2></div>
+<div class="cols">
+<div class="panel"><h3>全員</h3><p>HTMLファイルを</p><p><b>保存する</b></p></div>
+<div class="panel"><h3>iPhoneのとき</h3><p>開けなければ</p><p><b>AIの画面</b>で遊ぶ</p></div>
+</div>
+<p class="ybox">動くのを確かめて、「<b>次に直したいこと</b>」をメモ</p>
+<aside class="note"><p>第3回は、遊んで直し（改良）、見せ合う（発表）回です。そのために、今日のゲームを続きから直せる状態にして帰ります。講師が回って、全組のゲームが動くのを確かめます。</p><p>PCでもスマホでも、ゲームをHTMLファイルとして保存し、ファイル名をゲームの名前にします。保存のボタンが見つからないときは、手を挙げてください。</p><p>iPhone・iPadでは、保存したファイルを開いても遊べないことがあります。そのときは、AIの画面の中で遊べます。第3回も、今日の会話の続きで直せます。</p><p>「次に直したいこと」は、第3回の改良で使います。</p></aside>
+</section>
+<section id="close" class="px center">
+<p class="kick">次回</p>
+<h1 style="font-size:104px">1/24（日）<br><span class="y">なおす・みせる</span></h1>
+<p class="ybox">家族に遊んでもらい、<b>直したいことをメモ</b></p>
+<aside class="note"><p>10:00〜12:00　小川パレット5階 第一多目的室。遊んで直し、見せ合います。</p></aside>
+</section>
+</div>
+<div id="notebox" aria-live="polite"></div>
+<div id="bar">
+  <a href="../">← 講座のページ</a>
+  <span class="sp"></span>
+  <button id="prev" aria-label="前へ">◀</button><span id="count"></span><button id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button id="memo" aria-pressed="false">メモ</button>
+  <button id="fs">全画面</button>
+</div>
+<script>
+(() => {
+  const st = document.getElementById('stage'), s = [...st.children];
+  let i = Math.min(Math.max((parseInt(location.hash.slice(1)) || 1) - 1, 0), s.length - 1);
+  function fit() {
+    const top = document.getElementById('wip') ? document.getElementById('wip').offsetHeight : 0;
+    const bot = document.getElementById('bar').offsetHeight;
+    const w = innerWidth, h = innerHeight - top - bot;
+    const k = Math.min(w / 1920, h / 1080);
+    st.style.transform = `translate(${-960 * k}px, ${-540 * k + (top - bot) / 2}px) scale(${k})`;
+  }
+  function show(n) {
+    i = Math.min(Math.max(n, 0), s.length - 1);
+    s.forEach((e, j) => e.classList.toggle('on', j === i));
+    document.getElementById('count').textContent = (i + 1) + ' / ' + s.length;
+    const nt = s[i].querySelector('.note'), nb = document.getElementById('notebox'), mb = document.getElementById('memo');
+    nb.innerHTML = '<h4>メモ（この画面の補足）</h4>' + (nt ? nt.innerHTML : '<p>このスライドの補足はありません。</p>');
+    mb.style.opacity = nt ? '1' : '.5';
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(s.length - 1);
+  });
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('memo').onclick = () => { const nb = document.getElementById('notebox'); nb.classList.toggle('open'); document.getElementById('memo').setAttribute('aria-pressed', nb.classList.contains('open')); };
+  document.getElementById('fs').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} };
+  st.addEventListener('click', e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  let x0 = null;
+  addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) show(dx < 0 ? i + 1 : i - 1); x0 = null; });
+  addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
