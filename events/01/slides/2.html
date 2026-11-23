@@ -58,7 +58,7 @@ section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
 .px .card img{width:100%;aspect-ratio:2/1;object-fit:cover;border:5px solid #fff;image-rendering:auto}
 .px .code{font-family:'DotGothic16',monospace;white-space:pre-wrap;font-size:50px;line-height:1.45}
 .px .flow{display:flex;gap:22px;align-items:stretch}
-.px .flow>.panel{flex:1;padding:24px 28px;font-size:52px}
+.px .flow>.panel{flex:1;padding:64px 28px 24px;font-size:52px;justify-content:flex-start!important}
 .px .num{display:inline-block;background:var(--yel);color:var(--ink);min-width:1.6em;text-align:center;margin-right:10px;padding:0 6px}
 #stage .note{display:none}
 #notebox{position:fixed;left:0;right:0;bottom:0;max-height:55vh;overflow:auto;background:#0b1220f2;color:#e6eefb;font-size:16px;line-height:1.75;padding:16px 20px 72px;padding-bottom:max(72px,calc(env(safe-area-inset-bottom) + 64px));border-top:2px solid #FFD95A;z-index:2;display:none}
@@ -121,23 +121,48 @@ section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
 <p class="ybox">止まったら、<b>手を挙げてください</b></p>
 <aside class="note"><p>出典：Claudeのヘルプ。長くなった会話の続き、大きなファイルを渡すこと、使わない機能（Web検索など）をオンのままにすることで、たくさん使います。ほかのAIでは決まりが違うことがあります。Claudeの無料プランは、5時間ごとに使える量が戻ります。</p><p>ゲームをまるごと作り直すたびにたくさん使う、というのは講師の見立てです（試作での経験から）。</p></aside>
 </section>
-<section id="paper" class="px">
-<div class="hd"><p class="kick">コツ1　頼む前</p><h2>紙で決めてから頼む</h2></div>
+<section id="finish" class="px">
+<div class="hd"><p class="kick">進め方</p><h2>まず1つ、完成させる</h2></div>
 <div class="cols">
-<div class="panel"><h3>悪い例</h3><p>「子育てゲームを作って」</p><p>→ <b>ボタンを押すだけ</b>に</p></div>
-<div class="panel"><h3>良い例</h3><p>決めたことを書いて<br>「質問ある？」</p><p>→ AIが<b>作る前に12個質問</b></p></div>
+<div class="panel"><h3>よくある失敗</h3><p>いきなり<b>大作</b>を目指す</p><p>→ 完成しない</p></div>
+<div class="panel"><h3>おすすめ</h3><p><b>シンプル</b>に完成させる</p><p>→ 遊んでから考え直す</p></div>
 </div>
-<p class="ybox">「質問には、<b>おすすめ案も付けて</b>」と頼む</p>
-<aside class="note"><p>悪い例：「スマホ簡単操作でドーパミンが非常に刺激される子育てゲームを作って」。AIは質問せずに作った。中身は、赤ちゃんの絵文字と🍼🌙🛁🧸の4つのボタンを早押しするだけ。大人になってもボタンは同じ。遊んでから「おかしい」と気づき、まるごと作り直し。</p><p>良い例：「入力した文字で正解か判定。時間で焦らせない。ステージは5種類。画面は最低4つ……ここまで何か質問ある？」。AIが作る前に12個質問した。「送信はEnter？」→「別ボタンで」、「全角と半角はどちらも正解？」→「区別する。それも問題にする」。</p><p>おすすめ案を付けてもらえば、分からない質問には「おすすめで」と答えられます。</p></aside>
+<p class="ybox">「そもそも」の見直しは、<b>完成してから</b></p>
+<aside class="note"><p>まずは1つ作りきることを目的にします。完成させて遊んでみると、「そもそも何が面白いのか」が見えてきます。そこから試行錯誤するのが大切です。</p><p>大きな作品をいきなり目指すと、途中で使える量の上限に当たったり、直しが追いつかなくなったりして、完成しないことがよくあります。</p><p>軽く作るには：ボタンや絵文字、平面（2D）で作る。立体（3D）や、たくさんの絵や長い文章は、ファイルが大きくなり、直すたびにたくさん使います（第1回で見せたゲームでは、つみきドカーン！とウォンバット☆レガシーRPGが約150〜160KB、INFINITE SHOT 3Dが約620KB）。</p></aside>
 </section>
-<section id="small" class="px">
-<div class="hd"><p class="kick">コツ2　頼む前</p><h2>まず「最小版」を作る</h2></div>
-<div class="cols">
-<div class="panel"><h3>軽い（おすすめ）</h3><ul><li>ボタンや絵文字</li><li>平面（2D）</li><li>最小版だけ</li></ul></div>
-<div class="panel"><h3>重い（避ける）</h3><ul><li>立体（3D）</li><li>絵や文章がたくさん</li><li>最初から全部</li></ul></div>
+<section id="sequel" class="px">
+<div class="hd"><p class="kick">進め方</p><h2>複雑な要素は「続編」で</h2></div>
+<div style="display:flex;gap:36px;align-items:center;flex:1;min-height:0">
+<div class="panel card" style="flex:1;padding:18px 20px"><img src="../../../games/wombat-legacy-rpg/thumb.jpg" alt=""><h3 style="font-size:44px;margin:0;color:#fff">1作目：シンプルに</h3></div>
+<p class="dot" style="font-size:90px;text-shadow:4px 4px 0 #191B2B">→</p>
+<div class="panel card" style="flex:1;padding:18px 20px"><img src="../../../games/wombat-legacy-rpg-2/thumb.jpg" alt=""><h3 style="font-size:44px;margin:0;color:#fff">2作目：<span class="y">広げる</span></h3></div>
 </div>
-<p class="ybox">追加は、<b>最小版が動いてから</b></p>
-<aside class="note"><p>ファイルが大きいほど、直すたびにたくさん使います。</p><p>例：講師のクレーンゲーム 約30KB、子育てゲーム 約60KB、3Dシューティング 約620KB（子育てゲームの約10倍）。</p></aside>
+<p class="ybox">前のゲームを<b>素材</b>にして、別のゲームとして作る</p>
+<aside class="note"><p>最初はシンプルなゲームにして完成させ、複雑な要素は続編として、前のゲームを素材に別に作るやり方もあります。1作目はそのまま遊べる形で残ります。</p><p>例：ウォンバット☆レガシーRPG（2026年11月20日公開）のあと、続編のウォンバット☆レガシーRPG 2（11月22日公開）で、地下50階の穴や21の職業を加えた。INFINITE SHOT 3D にも続編（II）があります。</p></aside>
+</section>
+<section id="own" class="px">
+<div class="hd"><p class="kick">コツ1　頼む前</p><h2>肝だけ自分で決めて、あとは任せる</h2></div>
+<div class="cols">
+<div class="panel"><h3>自分で決める</h3><ul><li>面白い点</li><li>ぶらさない点</li><li>遊ぶ人・遊ぶ端末</li></ul></div>
+<div class="panel"><h3>任せる・提案させる</h3><ul><li>細かいルール</li><li>数値（速さ・点数）</li><li>見た目と演出</li></ul></div>
+</div>
+<p class="ybox">設計図が埋まらないところは「<b>おまかせ</b>」でいい</p>
+<aside class="note"><p>ゲームの全部を自分だけでデザインするのは難しいものです。ゲーム作りに慣れるまでは、AIに任せたり提案させたりして、肝となる部分だけは自分で決める進め方をおすすめします。</p><p>肝となる部分は、第1回の設計図の「面白い点」と「ぶらさない点」です。ここだけは親子で決めます。</p></aside>
+</section>
+<section id="paper" class="px">
+<div class="hd"><p class="kick">コツ2　頼むとき</p><h2>基本形で頼み、質問させる</h2></div>
+<div class="panel code v" style="flex:1;font-size:68px;padding-left:80px"><p>ローカルhtml完結のゲームを作りたい</p><p class="y">（設計図の内容）</p><p>質問ある？</p></div>
+<p class="ybox">「質問には、<b>おすすめ案も付けて</b>」と頼む</p>
+<aside class="note"><p>第1回で書いたお願いの文を、そのまま送ります。「質問ある？」と聞くと、AIは作る前に、決まっていないところを質問してきます。</p><p>「面白いゲームを作って」とだけ頼むと、AIは質問せずに、それらしいものを作ります。でも、思っていたものとは限りません。</p><p>おすすめ案を付けてもらえば、分からない質問には「おすすめで」と答えられます。</p></aside>
+</section>
+<section id="qa" class="px">
+<div class="hd"><p class="kick">コツ2　実際のやりとり</p><h2>AIの質問には、短く答えていい</h2></div>
+<div class="cols">
+<div class="panel"><h3>AIの質問</h3><p>お子さんは何歳くらい？</p><p>iPhoneとAndroidのどちら？</p></div>
+<div class="panel"><h3>答え</h3><p>「面クリア型にしたい」</p><p>「両方」</p></div>
+</div>
+<p class="ybox">分からなければ「<b>おすすめで</b>」でいい</p>
+<aside class="note"><p>「つみきドカーン！」を作ったときの、実際のやりとりです。最初の文を送ると、AIは作る前に、積み木の置き場所、操作がぶつからないか、物理演算の方法などの気になる点を挙げ、2つ質問してきました。</p><p>年齢の質問には、年齢ではなく「面クリア型にしたい」と、決めたいことを答えています。それで十分伝わりました。</p></aside>
 </section>
 <section id="proto" class="px">
 <div class="hd"><p class="kick">コツ3　遊んで確かめる</p><h2>面白さは、人が遊んで確かめる</h2></div>
@@ -157,13 +182,23 @@ section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
 <aside class="note"><p>設計を変える話：ぶらさない点や面白さの中心が変わるなら、単独で送る。紙に戻って作り直す前提で。</p><p>追加・変更と、不具合・数値の直しは、まとめて送ってよい。ただし、設計を変える話と不具合の直しは混ぜない。</p><p>「やらないこと」の例：「難易度選択はいらない」。</p></aside>
 </section>
 <section id="fix" class="px">
-<div class="hd"><p class="kick">コツ5　直しを頼むとき</p><h2>何をしたら→何が起きて<br>→どうしたい</h2></div>
-<div class="panel v" style="flex:1"><p>「ピーマンが速すぎて60秒もたない。</p><p>　最初はゆっくりにしたい」</p></div>
+<div class="hd"><p class="kick">コツ5　直しを頼むとき</p><h2>遊んで、気になったことを伝える</h2></div>
+<div class="panel v" style="flex:1"><p class="s">実際に送った直し（つみきドカーン！）</p><p class="dot y" style="font-size:72px;text-shadow:4px 4px 0 #191B2B">「上からがちょっと弱すぎる」</p><p>短くても、<b>どこが・どうなのか</b>が分かれば伝わる</p></div>
 <p class="ybox">エラーは、<b>画面の文をそのまま貼る</b></p>
-<aside class="note"><p>ワークシート4ページ目の例です。</p><p>エラーの文が貼れないときは、画面を写真に撮って送ります。「どこを押したら止まったか」も書きます。</p><p>見た目と演出は、遊べるようになってから。「もっと派手に喜ぶ感じに」のように、方向性の言葉で頼みます。</p></aside>
+<aside class="note"><p>最初の版を遊んでみて送った直しです。AIは、ボールを大きく重くし、当たったときに積み木が飛ぶ範囲と力を強くしました。</p><p>長く書くときは、何をしたら → 何が起きて → どうしたい、の順で書くと伝わりやすくなります。</p><p>エラーの文が貼れないときは、画面を写真に撮って送ります。「どこを押したら止まったか」も書きます。</p></aside>
+</section>
+<section id="look" class="px">
+<div class="hd"><p class="kick">コツ6　仕上げ</p><h2>見た目と演出は、最後にAIに任せる</h2></div>
+<div class="flow" style="flex:1;min-height:0">
+<div class="panel center"><h3><span class="num">1</span></h3><p>AIに<br>「<b>UIと演出を<br>良くして</b>」</p></div>
+<div class="panel center"><h3><span class="num">2</span></h3><p>人が<b>遊んで</b>みる</p></div>
+<div class="panel center"><h3><span class="num">3</span></h3><p>気になるところを<br><b>細かく直す</b></p></div>
+</div>
+<p class="ybox">それまでは、<b>見た目を直さない</b></p>
+<aside class="note"><p>UIは、ボタンや文字の配置など、画面の見た目と操作のしかたのことです。</p><p>一通り遊べるようになったら、まず「UIと演出を良くして」とAIに任せます。それだけで、それらしくなります。そのあと人が遊んでみて、「ボタンが小さくて押しにくい」「当たったときの音が大きすぎる」のように、気になるところを細かく直してもらうのが効果的です。</p><p>途中で見た目を直すと、そのたびにファイルが大きく作り直され、使える量を使います。遊びの中身が決まってから、まとめて頼みます。</p><p>方向を伝えたいときは「もっと派手に喜ぶ感じに」のように、方向性の言葉で頼みます。</p></aside>
 </section>
 <section id="move" class="px">
-<div class="hd"><p class="kick">コツ6　詰まったら</p><h2>引っ越すか、作り直すか</h2></div>
+<div class="hd"><p class="kick">コツ7　詰まったら</p><h2>引っ越すか、作り直すか</h2></div>
 <div class="cols">
 <div class="panel"><h3>引っ越す</h3><p>直しが3〜4回続いたら</p><p>→ <b>新しいチャットへ</b></p></div>
 <div class="panel"><h3>作り直す</h3><p>同じ不具合が</p><p><b>2回直らない</b>とき</p></div>
