@@ -85,7 +85,7 @@ function fight(G,enemies,r){
   const B=C.newBattle(G,enemies);let t=0;
   while(!B.over&&t<80){C.battleTurn(B,G.party.map((m,i)=>m.hp>0?C.autoCmd(B,i):null),r);t++;}
   if(!B.over)B.over='lose';
-  let rw=null;if(B.over==='win'||B.over==='fled'){const useS=process.env.STREAK!=='0'&&G.streak!=null;rw=C.giveRewards(G,B,useS?C.streakMul(G.streak):1);if(useS&&rw.exp>0)G.streak++;}
+  let rw=null;if(B.over==='win'||B.over==='fled'){const useS=process.env.STREAK!=='0'&&G.streak!=null&&C.streakOn(G);rw=C.giveRewards(G,B,useS?C.streakMul(G.streak):1);if(useS&&rw.exp>0)G.streak++;}
   G.battles++;
   return {over:B.over,turns:t,rw};
 }

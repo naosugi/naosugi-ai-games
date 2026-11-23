@@ -1074,6 +1074,8 @@ function battleRewards(B){let exp=0,gold=0;for(const e of B.enemies){if(e.fled||
 // 勝ったら、生きている仲間それぞれに経験値（倒れた仲間には入らない）
 // 連戦ボーナス：村に もどらずに 勝ちつづけると 経験値が ふえる（1勝ごとに +10%、最大3倍）。村に もどる・全滅で 1倍に もどる
 const STREAK={step:.1,max:3};
+// B20の ぬしを たおすと 解放（長老が 教えてくれる）
+const streakOn=G=>!!(G.bossDown&&G.bossDown[20]);
 const streakMul=n=>Math.min(STREAK.max,Math.round((1+STREAK.step*(n||0))*10)/10);
 function giveRewards(G,B,mul=1){let {exp,gold}=battleRewards(B);exp=Math.round(exp*mul);G.gold+=gold;const msgs=[];for(const m of G.party)if(m.hp>0)msgs.push(...gainExp(m,exp));return {exp,gold,msgs};}
 
@@ -1082,7 +1084,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={STREAK,streakMul,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={STREAK,streakMul,streakOn,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,enemyAtk,enemyDef,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

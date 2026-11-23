@@ -350,7 +350,8 @@ test('ふどうのかまえ・かまえ：全体こうげきでも かわして�
   ({B}=setup({n:'こうげき',k:'atk',w:1}));B.kamae[0]=3;B.party[0].bst={sleep:9};B.party[1].hp=0;B.party[2].hp=0;
   ev=C.battleTurn(B,[null,null,null],C.rng(2));assert.strictEqual(cnt(ev),0);
 });
-test('連戦ボーナス：1勝ごとに +10%、最大3倍',()=>{
+test('連戦ボーナス：B20の ぬしを たおすと 解放、1勝ごとに +10%、最大3倍',()=>{
+  const G0=C.newGame();assert.ok(!C.streakOn(G0));G0.bossDown[20]=true;assert.ok(C.streakOn(G0));
   assert.strictEqual(C.streakMul(0),1);assert.strictEqual(C.streakMul(5),1.5);assert.strictEqual(C.streakMul(20),3);assert.strictEqual(C.streakMul(99),3);
   const G=C.newGame();const e=C.mkEnemy(10,'normal');e.hp=0;const B=C.newBattle(G,[e]);
   assert.strictEqual(C.giveRewards(G,B,2).exp,Math.round(C.battleRewards(B).exp*2));

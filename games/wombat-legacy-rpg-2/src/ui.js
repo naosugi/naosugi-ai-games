@@ -367,6 +367,7 @@ async function enterTown(arrive){
   if(st>=5)await talk(`れんせん${st}で 村に もどった。\n（れんせんの けいけんちボーナスは 1倍に もどった）`);
   await checkQuests();
   await raidNews();
+  await streakNews();
   townMenu();
 }
 function questLine(a,short){if(!questOpen(a))return '';const Q=QUESTS[a];return Q.list.map((q,i)=>{const done=(G.qdone[a]||{})[i];let s=(done?'✅ ':'□ ')+(short?q.s:q.text);
@@ -457,6 +458,7 @@ async function elder(){
   const a=curArea();
   await talk(`長老「クエストは こんな かんじじゃ」\n${questLine(a)}`);
   for(let b=0;b<a;b++)if(!Object.keys(G.qdone[b]||{}).length)await talk('長老「まえの クエストも、まだ やりとげられるぞ」\n'+questLine(b));
+  if(G.flags.streakTold)await talk('長老「穴で 休まず 勝ちつづければ、けいけんちが ふえる（さいごは 3倍）。村で 休むと 元どおりじゃぞ」');
   const hs=Object.keys(HINTS).filter(f=>G.hints[f]);
   if(hs.length){const c=await ask(`長老「いにしえの 石ばんを ${hs.length}つ 持っておるな。読んでみるか？」`,[{label:'📜 読む',cls:'wide hi'},{label:'いまは いい',cls:'wide'}]);
     if(c===0){for(const f of hs){showTablet(f);await talk(`長老「B${f}で 見つけた 石ばんじゃな」`);}$('overlay').innerHTML='';await talk('長老「ことばの 意味は…\n'+HINT_KEY+'」');}}
@@ -647,7 +649,7 @@ function fieldIdle(){
   updateTop(`B${F.f} ${AREA_NAME[areaOf(F.f)]}`);renderParty();$('fmap').textContent=G.flags.noMap?'🗺 地図 OFF':'🗺 地図';
   let hint=F.fl.boss&&!G.bossDown[F.f]?'この階の 奥に ぬしが いる！':'下への 階段を さがそう';
   if(GUARDIANS[F.f]&&!G.guardDown[F.f])hint+='\nどこかに 番人つきの 光る宝箱が あるらしい';
-  if(G.streak>0)hint+=`\n🔥 れんせん${G.streak}：つぎの けいけんち ×${streakMul(G.streak)}（村に もどると 1倍）`;
+  if(streakOn(G)&&G.streak>0)hint+=`\n🔥 れんせん${G.streak}：つぎの けいけんち ×${streakMul(G.streak)}（村に もどると 1倍）`;
   if(G.lure>0)hint+=`\n🐜 アリの におい：のこり 戦闘${G.lure}回`;else if(G.lureEnd){G.lureEnd=0;hint+='\n🐜 アリの においが きえた';}
   if(G.flags.dig)hint+='\n（土色の かべは ほれる）';
   setMsg(`B${F.f}  ${AREA_NAME[areaOf(F.f)]}\n${hint}`);
@@ -892,7 +894,7 @@ async function endBattle(){
     if(B.opt.raid){await raidWin(B.opt.raid);return;}
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
-    const sMul=streakMul(G.streak);rw.exp=Math.round(rw.exp*sMul);G.streak=(G.streak||0)+1;const sMax=sMul<STREAK.max&&streakMul(G.streak)>=STREAK.max;
+    const sOn=streakOn(G),sMul=sOn?streakMul(G.streak):1;rw.exp=Math.round(rw.exp*sMul);if(sOn)G.streak=(G.streak||0)+1;const sMax=sOn&&sMul<STREAK.max&&streakMul(G.streak)>=STREAK.max;
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
     const rareK=B.enemies.reduce((a,e)=>e.hp<=0&&!e.fled?Math.max(a,e.metal||0):a,0);
     if(rareK>=2&&!(B.opt.boss||B.opt.guard)){flashT=performance.now();banner(rareK>=3?'★ おめでとう！ ★':'おめでとう！','けいけんちが どっさり！','#ffd36b',2200);await sleep(900);}
@@ -932,6 +934,11 @@ const RAID_NEWS={
   r5:['長老「夜に なると、冠を つけた コアラが 村の まわりを うろつくそうじゃ…」'],
   r6:['長老「穴の 底の ぬしが いなくなって、コアラの 王たちが いっせいに 村へ やってきた！ これが さいごの 討伐じゃ」'],
 };
+// 連戦ボーナスの 解放（B20の ぬしを たおしたあと、はじめて 村に もどったとき。コアラ討伐2段目の 知らせと つづけて）
+const STREAK_TALK=['長老「それと、もう1つ 教えておこう。そなたらも ずいぶん 深くまで もぐれるように なったのう」',
+  '長老「穴の 中で 休まず 戦いつづけると、体が どんどん 戦いを おぼえていく。勝つたびに 身に つく けいけんちが ふえて、さいごは 3倍じゃ」',
+  '長老「ただし、村に もどって 休むと 元どおり。どこまで ねばるかは、そなたら しだいじゃ」\n（🔥 れんせんボーナス：村に もどらずに 1勝するごとに けいけんち +10%、20連勝で 3倍）'];
+async function streakNews(){if(!streakOn(G)||G.flags.streakTold)return;G.flags.streakTold=1;G.streak=0;save();banner('解放！','🔥 れんせんボーナス','#ff9a5a',2000);snd('quest');await talks(STREAK_TALK);}
 async function raidNews(){for(const R of RAIDS){if(!raidUnlocked(G,R)||G.raidNews[R.id])continue;G.raidNews[R.id]=1;save();banner('依頼','コアラ討伐：'+R.name,'#ffb070',2000);snd('quest');await talks(RAID_NEWS[R.id]);}}
 function raidMenu(){
   const list=RAIDS.map(R=>{const un=raidUnlocked(G,R),n=G.raids[R.id]||0;
