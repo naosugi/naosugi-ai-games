@@ -46,7 +46,7 @@ function deleteSlot(n){try{localStorage.removeItem(slotKey(n));}catch(e){}setSlo
 // 読めるデータだけ（こわれたものは のぞく）
 function saves(){return slotList().map(n=>({n,g:load(n)})).filter(x=>x.g);}
 function slotSummary(x){const g=x.g,d=g.savedAt?new Date(g.savedAt):null,p=v=>String(v).padStart(2,'0');
-  return {label:`データ${x.n}　${g.party.map(m=>m.name).join('・')}`,sub:`いちばん深い B${g.reached||0}`+(g.secretDown?'  ★★完全クリア':g.cleared?'  ★クリア':'')+(d?`  ${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`:'')};}
+  return {label:`セーブ${x.n}　${g.party.map(m=>m.name).join('・')}`,sub:`いちばん深い B${g.reached||0}`+(g.secretDown?'  ★★完全クリア':g.cleared?'  ★クリア':'')+(d?`  ${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`:'')};}
 function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats','raids','raidNews'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevLevel(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return 0;const s=JSON.parse(t);if(s&&s.party)return Math.max(...s.party.map(m=>+m.lv||0));}catch(e){}return 0;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
@@ -323,27 +323,27 @@ function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   const all=saves(),sv=all.length?all.reduce((a,b)=>(b.g.savedAt||0)>(a.g.savedAt||0)?b:a).g:null;
   $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?`つづきから あそべます。（セーブデータ ${all.length}こ）`:'ボタンを おして はじめよう。');
-  setCmds([{label:'▶ はじめから',sub:all.length?`データ${nextSlot()}に 記録`:'',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:'データを えらぶ',fn:continueMenu,cls:'hi'}]:[])]);
+  setCmds([{label:'▶ はじめから',sub:all.length?`セーブ${nextSlot()}に 記録`:'',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:'セーブを えらぶ',fn:continueMenu,cls:'hi'}]:[])]);
 }
 const nextSlot=()=>Math.max(0,...slotList())+1;
 async function continueMenu(){
   while(true){const all=saves();if(!all.length){title();return;}
-    const c=await ask('どの データで あそぶ？',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'🗑 データを けす',cls:'wide sub'},{label:'← もどる',cls:'wide sub'}]);
+    const c=await ask('どの セーブで あそぶ？',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'🗑 セーブを けす',cls:'wide sub'},{label:'← もどる',cls:'wide sub'}]);
     if(c===all.length){await deleteMenu();continue;}
     if(c>all.length){title();return;}
     curSlot=all[c].n;G=all[c].g;$('overlay').innerHTML='';fadeT=now;enterTown();return;}
 }
 async function deleteMenu(){
   const all=saves();
-  const c=await ask('どの データを けす？（もとに もどせません）',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'← もどる',cls:'wide sub'}]);
+  const c=await ask('どの セーブを けす？（もとに もどせません）',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'← もどる',cls:'wide sub'}]);
   if(c>=all.length)return;const x=all[c];
-  const ok=await ask(`データ${x.n}（${x.g.party.map(m=>m.name).join('・')}、B${x.g.reached||0}）を 本当に けしますか？`,[{label:'けす',cls:'wide'},{label:'やめる',cls:'wide hi'}]);
-  if(ok===0){deleteSlot(x.n);snd('die');await talk(`データ${x.n}を けしました。`);}
+  const ok=await ask(`セーブ${x.n}（${x.g.party.map(m=>m.name).join('・')}、B${x.g.reached||0}）を 本当に けしますか？`,[{label:'けす',cls:'wide'},{label:'やめる',cls:'wide hi'}]);
+  if(ok===0){deleteSlot(x.n);snd('die');await talk(`セーブ${x.n}を けしました。`);}
 }
 async function startNew(){
   const n=nextSlot();
-  if(slotList().length>=SAVE_MAX){await talk(`セーブデータは ${SAVE_MAX}こまでです。「つづきから」で いらない データを けしてから はじめてね。`);title();return;}
-  if(slotList().length){const c=await ask(`あたらしく データ${n}を つくって はじめから あそびますか？\n（いまの データは のこります）`,[{label:'はじめる',cls:'wide hi'},{label:'やめる',cls:'wide'}]);if(c===1){title();return;}}
+  if(slotList().length>=SAVE_MAX){await talk(`セーブデータは ${SAVE_MAX}こまでです。「つづきから」で いらない セーブを けしてから はじめてね。`);title();return;}
+  if(slotList().length){const c=await ask(`あたらしく セーブ${n}を つくって はじめから あそびますか？\n（いまの セーブは のこります）`,[{label:'はじめる',cls:'wide hi'},{label:'やめる',cls:'wide'}]);if(c===1){title();return;}}
   curSlot=n;G=newGame2();const pn=prevNames()||['ガッシ','ユーカ','モフ'];G.parents=pn;const plv=prevLevel();
   $('overlay').innerHTML='';renderParty();updateTop('');playMusic('town');
   await talks(['ここは オーストラリアの ユーカリ村。\n大地に ふたたび ユーカリが しげって、何年かが たった。',
@@ -361,7 +361,7 @@ async function startNew(){
 async function enterTown(arrive){
   mode='town';F=null;B=null;disp=null;busy=false;heldDir=null;showPad(false);
   G.az={}; // あやしい壁は 村に もどると また うまる
-  renderParty();updateTop('ユーカリ村');save();playMusic('town');
+  renderParty();updateTop(`ユーカリ村（セーブ${curSlot}）`);save();playMusic('town');
   if(arrive)await talks(arrive);
   await checkQuests();
   await raidNews();
@@ -391,7 +391,7 @@ async function checkQuests(){
     }}
 }
 function townMenu(){
-  mode='town';advance=null;dexSel=null;updateTop('ユーカリ村');renderParty();
+  mode='town';advance=null;dexSel=null;updateTop(`ユーカリ村（セーブ${curSlot}）`);renderParty();
   const a=curArea();
   setMsg(`【ユーカリ村】`+(G.reached?`B${G.reached}まで`:'まだ もぐっていない')+(Object.keys(G.qdone[a]||{}).length?'':' ／ クエスト1つで 店が よくなる')+'\n'+questLine(a,true));
   const inn=10+(G.reached||0)*3;
