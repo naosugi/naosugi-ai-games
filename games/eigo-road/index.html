@@ -86,6 +86,12 @@ label.tg input{width:20px;height:20px}
 .hint{background:#0007;border-left:3px solid var(--acc);padding:6px 8px;margin:6px 0;font-size:15px}
 ul.ph{margin:6px 0;padding-left:20px}
 ul.ph li{margin:4px 0}
+u.pt{text-decoration:underline wavy var(--acc);text-underline-offset:5px;text-decoration-thickness:2px}
+.pts{background:#0006;border-radius:6px;padding:6px 10px;margin:8px 0;font-size:14px}
+.pts ul{margin:4px 0;padding-left:0;list-style:none}.pts li{margin:5px 0;line-height:1.45}
+.pk{display:inline-block;font-size:11px;font-weight:700;background:#4b3a8a;border-radius:8px;padding:0 6px;margin-right:4px}
+.fd{border-left:3px solid var(--mid)}
+.fd .pk{background:#8a5a12}
 .center{text-align:center}
 hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
 </style>
@@ -268,7 +274,7 @@ const lineByKey = k => { const p = k.lastIndexOf('-'); const s = sceneById(k.sli
 
 /* ---------- 保存 ---------- */
 const KEY = 'eigoroad_save';
-const DEF = () => ({ v: 1, speed: 1, voice: '', multi: true, useSR: false, cue: true, scenes: {}, lines: {}, days: {}, bench: [], boss: [], checked: false });
+const DEF = () => ({ v: 1, speed: 1, voice: '', multi: true, useSR: false, srBoth: false, cue: true, scenes: {}, lines: {}, days: {}, bench: [], boss: [], checked: false });
 let S = load();
 function load() {
   try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j && j.v === 1) return Object.assign(DEF(), j); } catch (e) {}
@@ -320,7 +326,8 @@ function speak(text, who = 'me', mul = 1) {
     u.rate = Math.max(0.5, Math.min(2, S.speed * mul)); u.pitch = p;
     let done = false;
     const fin = ok => { if (done) return; done = true; clearTimeout(t); res(ok && tok === speakTok); };
-    u.onend = () => fin(true); u.onerror = () => fin(false);
+    let st0 = 0; u.onstart = () => { st0 = performance.now(); };
+    u.onend = () => { if (st0 && tok === speakTok) ttsDur[text] = { ms: performance.now() - st0, rate: u.rate }; fin(true); }; u.onerror = () => fin(false);
     const t = setTimeout(() => fin(true), 4000 + text.length * 160 / u.rate);
     setTimeout(() => { if (tok === speakTok) speechSynthesis.speak(u); else fin(false); }, 60);
   });
@@ -356,7 +363,7 @@ function startRec(o = {}) {
       mr.start();
     } catch (e) { mr = null; }
     const tStart = performance.now(); const calib = o.calib || 0;
-    let t0 = null, fSum = 0, fN = 0, thr = 0.02, onset = null, above = 0, lastLoud = 0, stopped = false, iv = 0;
+    let t0 = null, fSum = 0, fN = 0, thr = 0.02, onset = null, above = 0, lastLoud = 0, stopped = false, iv = 0; const env = [];
     const finish = () => {
       if (stopped) return; stopped = true; clearInterval(iv);
       const end = performance.now();
@@ -364,7 +371,7 @@ function startRec(o = {}) {
         stream.getTracks().forEach(t => t.stop());
         try { src && src.disconnect(); } catch (e) {}
         if (curRec === ctl) curRec = null;
-        resolve({ blob: chunks.length ? new Blob(chunks, { type: (mr && mr.mimeType) || 'audio/webm' }) : null, onset, dur: end - (t0 ?? tStart) });
+        resolve({ blob: chunks.length ? new Blob(chunks, { type: (mr && mr.mimeType) || 'audio/webm' }) : null, onset, dur: end - (t0 ?? tStart), env, thr });
       };
       if (mr && mr.state !== 'inactive') { mr.onstop = out; try { mr.stop(); } catch (e) { out(); } } else out();
     };
@@ -378,6 +385,7 @@ function startRec(o = {}) {
         o.onLevel && o.onLevel(r, thr); return;
       }
       o.onLevel && o.onLevel(r, thr);
+      if (env.length < 3000) env.push([now - t0, r]);
       if (r > thr) { above++; lastLoud = now; if (onset === null && above >= 3) { onset = Math.max(0, now - t0 - 60); o.onOnset && o.onOnset(onset); } } else above = 0;
       if (o.autoStop && onset !== null && now - lastLoud > (o.silence || 1600)) finish();
       if (now - t0 > (o.max || 20000)) finish();
@@ -393,6 +401,176 @@ function meterUpdate(r, thr) {
   el.style.width = k(r) + '%';
   const b = $('#lvt'); if (b) b.style.left = k(thr) + '%';
 }
+
+/* ---------- 注意ポイント（英文から決まる） ---------- */
+const STRESS = {
+  data: 'DA-ta', datasets: 'DA-ta-sets', server: 'SER-ver', access: 'AC-cess', project: 'PROJ-ect', average: 'AV-er-age', update: 'UP-date',
+  poster: 'POS-ter', conference: 'CON-fer-ence', robotics: 'ro-BOT-ics', simulation: 'sim-u-LA-tion', model: 'MOD-el', baseline: 'BASE-line',
+  evaluation: 'e-val-u-A-tion', accuracy: 'AC-cu-ra-cy', percent: 'per-CENT', design: 'de-SIGN', latency: 'LA-ten-cy', validation: 'val-i-DA-tion',
+  parameters: 'pa-RAM-e-ters', mathematical: 'math-e-MAT-i-cal', regularization: 'reg-u-lar-i-ZA-tion', generalize: 'GEN-er-al-ize', penalty: 'PEN-al-ty',
+  overfitting: 'o-ver-FIT-ting', underfitting: 'un-der-FIT-ting', adequately: 'AD-e-quate-ly', underlying: 'un-der-LY-ing', memorizes: 'MEM-o-riz-es',
+  interesting: 'IN-ter-est-ing', augmentation: 'aug-men-TA-tion', randomness: 'RAN-dom-ness', entrance: 'EN-trance', professor: 'pro-FES-sor',
+  possible: 'POS-si-ble', discourages: 'dis-COUR-ag-es', reproduced: 're-pro-DUCED', results: 're-SULTS', reported: 're-POR-ted', username: 'U-ser-name',
+  accounts: 'ac-COUNTS', totally: 'TO-tal-ly', exactly: 'ex-ACT-ly', difference: 'DIF-fer-ence', inference: 'IN-fer-ence', maintenance: 'MAIN-te-nance',
+  concerned: 'con-CERNED', reasoning: 'REA-son-ing', tokyo: 'TO-kyo', machine: 'ma-CHINE', lecture: 'LEC-ture', homework: 'HOME-work', transfer: 'trans-FER',
+  usually: 'U-su-al-ly', connect: 'con-NECT', enjoy: 'en-JOY', compare: 'com-PARE', pattern: 'PAT-tern', structure: 'STRUC-ture', question: 'QUES-tion',
+  understood: 'un-der-STOOD', present: 'pre-SENT', singapore: 'SIN-ga-pore', linkedin: 'LINKED-in', performs: 'per-FORMS', problems: 'PROB-lems',
+  common: 'COM-mon', warning: 'WARN-ing', thirty: 'THIR-ty', forty: 'FOR-ty', minutes: 'MIN-utes', professor_: '', general: 'GEN-er-al', normal: 'NOR-mal',
+};
+const KATA = {
+  data: 'カタカナの「データ」より「デイタ」に近い', server: '「サーバー」と平らにしない', access: '「アクセス」の「セ」ではなく、最初の a を強く',
+  average: '「アベレージ」と平らにしない', percent: '後ろの cent を強く', design: '後ろの sign を強く', model: '「モデル」の「デ」ではなく、最初を強く',
+  robotics: '「ロボティクス」の「ボ」を強く', machine: '後ろの chine を強く', enjoy: '後ろの joy を強く', compare: '後ろの pare を強く',
+};
+const FUNC = new Set('a an the to of and or in on at for with is are was were be been am i you he she it we they me my your our their this that these those do does did have has had will would can could should may might not no so but if as by from up out about into than then there here what which who how when where why just also very really too its it\'s i\'m i\'ll i\'d that\'s'.split(' '));
+const NAMES = new Set(['Priya', 'Miller', 'Tom', 'Wei', 'Tokyo', 'Singapore', 'LinkedIn', 'PhD', 'GPU', 'QR']);
+const LINKS = [
+  [/\bgetting used to\b/i, 'used to は「ユーストゥ」：s のあとの d はほぼ消えてつながる'],
+  [/\bLet me\b/i, '「レッミー」：t はほとんど聞こえない'],
+  [/\bGot it\b/i, '「ガリッ」に近い：t が母音にはさまれて弾む音になる（アメリカ英語）'],
+  [/\bNot at all\b/i, '3語を区切らず、つなげて一息で'],
+  [/\bDid you\b/i, '「ディジュ」：d と y がつながる'],
+  [/\bCould you\b/i, '「クッジュ」：d と y がつながる'],
+  [/\bCould I\b/i, '「クダイ」：d と I がつながる'],
+  [/\bwould it be\b/i, '「ウッディッビー」：would it をつなげる'],
+  [/\bmind if I\b/i, '「マインディファイ」：単語の境目なくつなげる'],
+  [/\bcome on in\b/i, '「カモニン」：3語を1語のようにつなげる'],
+  [/\btalk about\b/i, '「トーカバウト」：k と a をつなげる'],
+  [/\bone of\b/i, '「ワノヴ」：n と of をつなげ、of は弱く'],
+  [/\bIn other words\b/i, '「イナザー」：n と o をつなげる'],
+  [/\blast week\b/i, 'last の t はほぼ消えて「ラスウィーク」'],
+  [/\bnext (week|room)\b/i, 'next の t はほぼ消える'],
+  [/\bWhat can I\b/i, 'What の t は止めるだけ、can I はつなげて「キャナイ」'],
+  [/\blove to\b/i, 'to は弱く「タ」くらい'],
+  [/\bThanks for\b/i, 'for は弱く「ファ」くらい'],
+  [/\bit was great\b/i, 'it was は弱く速く「イッワズ」'],
+  [/\bcare of\b/i, '「ケアロヴ」とつなげる'],
+  [/\blike a\b/i, '「ライカ」：k と a をつなげる'],
+  [/\bfit every\b/i, '「フィッテヴリ」：t と every をつなげる'],
+  [/\bstop by\b/i, 'stop の p は口を閉じるだけで、息を出さない'],
+  [/\bcheck back\b/i, 'check の k は止めるだけで、すぐ back へ'],
+  [/\bget started\b/i, 'get の t は止めるだけで、すぐ started へ'],
+];
+function sylCount(w) {
+  w = w.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; if (w.length <= 3) return 1;
+  w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+  const m = w.match(/[aeiouy]{1,2}/g); return m ? m.length : 1;
+}
+const sylOf = en => en.split(/[\s-]+/).reduce((a, w) => a + sylCount(w), 0);
+const ptCache = {};
+function makePoints(en) {
+  if (ptCache[en]) return ptCache[en];
+  const pts = [];
+  for (const [re, tip] of LINKS) { const m = en.match(re); if (m) { pts.push({ k: '音のつながり', hl: m[0], tip: m[0] + '：' + tip }); break; } }
+  const toks = en.match(/[A-Za-z][A-Za-z'’]*/g) || [];
+  for (const t of toks) { const w = t.toLowerCase().replace(/['’]s$/, ''); if (STRESS[w]) { pts.push({ k: '強勢', hl: t, tip: `${STRESS[w]}：大文字の部分を強く・長く・はっきり${KATA[w] ? '。' + KATA[w] : ''}` }); break; } }
+  let best = null, bs = 0, letter = '';
+  toks.forEach(t => {
+    if (NAMES.has(t) || pts.some(p => p.hl.includes(t))) return;
+    const w = t.toLowerCase().replace(/ly$/, ''); if (FUNC.has(t.toLowerCase())) return;
+    let sc = 0, le = '', m;
+    if (/^[lr]/.test(w)) { sc = 3; le = w[0]; } else if ((m = w.match(/[bcdfgkpt]([lr])/))) { sc = 2; le = m[1]; } else if ((m = w.match(/[aeiou]([lr])[aeiou]/))) { sc = 1; le = m[1]; }
+    if (sc > bs) { bs = sc; best = t; letter = le; }
+  });
+  if (best) pts.push({ k: 'L と R', hl: best, tip: letter === 'l' ? `${best} の l：舌先を上の前歯の裏の歯ぐきにしっかりつけて声を出す` : `${best} の r：舌先はどこにもつけず、少し奥に引いて唇を軽く丸める` });
+  const th = toks.find(t => /th/i.test(t) && !/^the$/i.test(t));
+  if (th) pts.push({ k: 'th', hl: th, tip: `${th} の th：舌先を上の前歯に軽く当てて出す（s・z・d にならないように）` });
+  const v = toks.find(t => /v/i.test(t));
+  if (v) pts.push({ k: 'v', hl: v, tip: `${v} の v：上の前歯を下唇に軽く当てて声を出す（b にならないように）` });
+  const okEp = t => { const w = t.toLowerCase(); return w.length >= 3 && !FUNC.has(w) && !/ing$/.test(w) && !NAMES.has(t) && !pts.some(p => p.hl.includes(t)); };
+  const ep = toks.find(t => okEp(t) && /(st|sk|nt|nd|ld|lt|ks|ct|pt|ft|sp|mp|nk|rk|rd|rt|lp|lk|ts|ds)$/i.test(t)) || toks.find(t => okEp(t) && /[kgtdpb]$/i.test(t));
+  if (ep) pts.push({ k: '語末の子音', hl: ep, tip: `${ep}：最後の子音で止める。「ウ」「オ」などの母音を足さない` });
+  return (ptCache[en] = pts.slice(0, 3));
+}
+function hlText(en, pts) {
+  const rs = [];
+  pts.forEach(p => { let from = 0; while (true) { const i = en.indexOf(p.hl, from); if (i < 0) return; const r = [i, i + p.hl.length]; const okB = (i === 0 || !/[A-Za-z]/.test(en[i - 1])) && !/[A-Za-z]/.test(en[r[1]] || ''); if (okB && !rs.some(x => r[0] < x[1] && x[0] < r[1])) { rs.push(r); return; } from = i + 1; } });
+  rs.sort((a, b) => a[0] - b[0]);
+  let h = '', c = 0; rs.forEach(([a, b]) => { h += esc(en.slice(c, a)) + '<u class="pt">' + esc(en.slice(a, b)) + '</u>'; c = b; });
+  return h + esc(en.slice(c));
+}
+const pointsHTML = pts => pts.length ? `<div class="pts"><b>注意ポイント</b><ul>${pts.map(p => `<li><span class="pk">${esc(p.k)}</span>${esc(p.tip)}</li>`).join('')}</ul></div>` : '';
+
+/* ---------- 録音から気になるところを推定（正確ではない） ---------- */
+const ttsDur = {};
+function modelMs(line) { const d = ttsDur[line.en]; if (d) return d.ms * d.rate / S.speed; return sylOf(line.en) * 220 / S.speed + 200; }
+function wordsAround(en, f) {
+  const ws = en.split(/\s+/), sy = ws.map(w => Math.max(1, sylOf(w))), tot = sy.reduce((a, b) => a + b, 0);
+  const cl = w => (w || '').replace(/[^A-Za-z'’-]/g, '');
+  let c = 0; for (let i = 0; i < ws.length; i++) { c += sy[i]; if (c / tot >= f) return i + 1 < ws.length ? `${cl(ws[i])} … ${cl(ws[i + 1])}` : null; }
+  return null;
+}
+function analyzeRec(rec, line, full) {
+  const out = []; if (!rec || !rec.env || rec.env.length < 8) return out;
+  const env = rec.env, thr = rec.thr, T = i => env[i][0];
+  const s = env.map((e, i) => { let a = 0, n = 0; for (let k = i - 1; k <= i + 1; k++) if (env[k]) { a += env[k][1]; n++; } return a / n; });
+  const first = s.findIndex(v => v > thr); let last = -1; for (let i = s.length - 1; i >= 0; i--) if (s[i] > thr) { last = i; break; }
+  if (first < 0 || T(last) - T(first) < 250) { out.push({ k: '音量', t: '声があまり拾えていないようです。マイクとの距離や声の大きさを確かめてください' }); return out; }
+  const span = T(last) - T(first);
+  const gaps = []; let gs = null;
+  for (let i = first; i <= last; i++) { if (s[i] < thr) { if (gs === null) gs = i; } else if (gs !== null) { if (T(i) - T(gs) >= 450) gaps.push(gs); gs = null; } }
+  const allowed = (line.en.slice(0, -1).match(/[,.?!:;]/g) || []).length;
+  if (gaps.length > allowed) {
+    const where = gaps.map(g => wordsAround(line.en, (T(g) - T(first)) / span)).filter(Boolean);
+    out.push({ k: '止まり', t: `途中で${gaps.length}回、0.5秒以上止まっています（言いよどみかも）${full && where.length ? `。「${where.slice(0, 2).join('」「')}」のあたり（おおよそ）` : ''}` });
+  }
+  if (!full) return out;
+  const ratio = span / modelMs(line);
+  if (ratio > 1.6) out.push({ k: '長さ', t: `お手本の約${ratio.toFixed(1)}倍の長さです。ゆっくりすぎるか、つかえているかも` });
+  else if (ratio < 0.65) out.push({ k: '長さ', t: 'お手本よりかなり短めです。音が抜けていないか聞き比べてください' });
+  const pk = []; for (let i = Math.max(first, 1); i < Math.min(last + 1, s.length - 1); i++) if (s[i] >= s[i - 1] && s[i] > s[i + 1] && s[i] > thr * 1.3) pk.push(i);
+  const kept = [];
+  for (const i of pk) {
+    if (!kept.length) { kept.push(i); continue; }
+    const j = kept[kept.length - 1]; let v = Infinity; for (let k = j; k <= i; k++) v = Math.min(v, s[k]);
+    if (T(i) - T(j) >= 90 && v < Math.min(s[i], s[j]) * 0.75) kept.push(i); else if (s[i] > s[j]) kept[kept.length - 1] = i;
+  }
+  const exp = sylOf(line.en);
+  if (kept.length >= exp * 1.3 && kept.length - exp >= 2) out.push({ k: '母音', t: `声のかたまりが多めです（推定${kept.length}個／この文の音節は約${exp}個）。子音のあとに「ウ」「オ」を足していないか聞いてみてください` });
+  if (kept.length >= 5) { const h = kept.map(i => s[i]), m = h.reduce((a, b) => a + b, 0) / h.length, sd = Math.sqrt(h.reduce((a, b) => a + (b - m) ** 2, 0) / h.length); if (sd / m < 0.12) out.push({ k: '強弱', t: '声の強弱が平らぎみです。強く言う音節をもっとはっきり' }); }
+  return out;
+}
+// 音声認識の結果とのずれ
+const NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const numWords = n => n < 20 ? NUMW[n] : n < 100 ? TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + NUMW[n % 10] : '') : n < 1000 ? NUMW[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' ' + numWords(n % 100) : '') : String(n);
+function normWords(s) {
+  const out = [];
+  s.replace(/[’]/g, "'").replace(/\./g, '').split(/[\s-]+/).forEach((tok, ti) => {
+    let w = tok.toLowerCase().replace(/[^a-z0-9']/g, ''); if (!w) return;
+    if (/^\d+$/.test(w)) { numWords(+w).split(' ').forEach(x => out.push({ w: x, o: tok, ti })); return; }
+    w = w.replace(/^can't$/, 'can not').replace(/^won't$/, 'will not').replace(/n't$/, ' not').replace(/'re$/, ' are').replace(/'ll$/, ' will').replace(/'ve$/, ' have').replace(/'m$/, ' am').replace(/'d$/, ' would').replace(/'s$/, ' is').replace(/'/g, '');
+    w.split(' ').forEach(x => out.push({ w: x, o: tok, ti }));
+  });
+  return out;
+}
+function srFindings(exp, got) {
+  const A = normWords(exp), B = normWords(got), n = A.length, m = B.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i].w === B[j].w ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const runs = []; let cur = null, i = 0, j = 0;
+  const flush = () => { if (cur && cur.miss.length) runs.push(cur); cur = null; };
+  while (i < n || j < m) {
+    if (i < n && j < m && A[i].w === B[j].w) { flush(); i++; j++; continue; }
+    cur = cur || { miss: [], heard: [] };
+    if (j < m && (i >= n || dp[i][j + 1] >= dp[i + 1][j])) { cur.heard.push(B[j].w); j++; } else { cur.miss.push(A[i]); i++; }
+  }
+  flush();
+  const out = [];
+  for (const r of runs) {
+    const miss = r.miss.filter(x => !FUNC.has(x.w) && !(x.ti > 0 && /^[A-Z]/.test(x.o)));
+    if (!miss.length) continue;
+    const mw = [...new Set(miss.map(x => x.o.replace(/[^A-Za-z'’-]/g, '')))].join(' '), hw = r.heard.join(' ');
+    const lr = miss.length === 1 && r.heard.length === 1 && miss[0].w !== r.heard[0] && miss[0].w.replace(/l/g, 'r') === r.heard[0].replace(/l/g, 'r');
+    out.push({ k: '認識', t: hw ? `「${mw}」が「${hw}」と聞き取られました${lr ? '。L と R の区別が原因かも' : ''}` : `「${mw}」が聞き取られませんでした（弱い・抜けているかも）` });
+    if (out.length >= 2) break;
+  }
+  return out;
+}
+function findingsHTML(list, note) {
+  return `<div class="pts fd"><b>🔍 気になるところ（推定）</b>${list.length ? `<ul>${list.slice(0, 3).map(f => `<li><span class="pk">${esc(f.k)}</span>${esc(f.t)}</li>`).join('')}</ul>` : '<p style="margin:4px 0">目立つところは見つかりませんでした。</p>'}<div class="small">※ ${note}正確な判定ではありません。聞き比べて自分の耳で確かめてください。</div></div>`;
+}
+
 const meterHTML = '<div class="meter"><i id="lv"></i><b id="lvt"></b></div>';
 
 let curAudio = null;
@@ -616,6 +794,14 @@ SCENE_STEPS.mimic = ({ sc }) => {
   const k = Math.min(V.mi || 0, idxs.length - 1), i = idxs[k], l = sc.lines[i], id = lineId(sc.id, i);
   const hide = V.hide && !V.reveal, rec = mimicRecs[id];
   const useSR = S.useSR && SR;
+  V.sr = V.sr || {};
+  const pts = makePoints(l.en), srR = V.sr[id];
+  let fd = '';
+  if (rec && !V.recording) {
+    const list = [...(srR && srR.text != null ? srFindings(l.en, srR.text) : []), ...analyzeRec(rec, l, true)];
+    fd = findingsHTML(list, srR && srR.text != null ? '声の大きさの変化と音声認識の結果から機械的に推定したもので、' : '声の大きさの変化から機械的に推定したもので、');
+  }
+  const srLine = srR ? (srR.text != null ? `<div class="small">認識結果：「${esc(srR.text)}」</div>` : `<div class="small ngc">音声認識：${esc(SR_ERR[srR.err] || srR.err)}</div>`) : '';
   return {
     html: `
 <div class="win">
@@ -626,14 +812,17 @@ SCENE_STEPS.mimic = ({ sc }) => {
 <div class="win">
 <p class="small">${k + 1} / ${idxs.length}</p>
 ${whoTag(l.w)}${badge(l.r)}
-${hide ? `<div class="big" style="color:var(--sub)" data-a="reveal">（テキストをかくしています。タップで表示）</div>` : `<div class="big">${esc(l.en)}</div>`}
+${hide ? `<div class="big" style="color:var(--sub)" data-a="reveal">（テキストをかくしています。タップで表示）</div>` : `<div class="big">${hlText(l.en, pts)}</div>`}
 ${V.showJa ? `<div class="ja">${esc(l.ja)}</div>` : `<button class="btn" style="padding:4px 8px;font-size:13px;width:auto;display:inline-block" data-a="ja">日本語訳</button>`}
 ${srcTag(l)}
+${hide ? '' : pointsHTML(pts)}
 <div class="row"><button class="btn pri" data-a="model">🔊 お手本</button><button class="btn" data-a="slow">🐢 ゆっくり</button></div>
 ${V.recording ? `${meterHTML}<button class="btn red" data-a="recStop">■ 録音を止める</button>` :
   `<div class="row"><button class="btn red" data-a="rec">● 録音</button><button class="btn" data-a="mine" ${rec ? '' : 'disabled'}>🎧 自分</button><button class="btn" data-a="cmp" ${rec ? '' : 'disabled'}>🔁 聞き比べ</button></div>`}
-${useSR ? `<button class="btn" data-a="sr">🗣 音声認識で確認（参考）</button>` : ''}
+${fd}${srLine}
+${useSR && !S.srBoth ? `<button class="btn" data-a="sr">🗣 音声認識で確認（もう一度言う）</button>` : ''}
 ${V.srRes ? `<div class="hint">${V.srRes}</div>` : ''}
+${useSR && S.srBoth && V.recording ? '<p class="small">音声認識も同時に動かしています（試験的）</p>' : ''}
 ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
 </div>
 <div class="row"><button class="btn" data-a="prev" ${k > 0 ? '' : 'disabled'}>◀ 前</button>${k < idxs.length - 1 ? `<button class="btn pri" data-a="nextL">次 ▶</button>` : `<button class="btn pri cur" data-a="done">③書き取り へ</button>`}</div>`,
@@ -646,18 +835,21 @@ ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
       slow: () => speak(l.en, l.w, 0.7),
       rec: async () => {
         stopSpeak(); stopAudio(); V.err = ''; V.srRes = ''; V.recording = true; render();
+        delete V.sr[id];
+        const srP = useSR && S.srBoth ? recognize() : null;
         const c = startRec({ calib: 0, autoStop: true, silence: 1800, max: 20000, onLevel: meterUpdate });
-        try { const r = await c.done; if (r.blob) mimicRecs[id] = r.blob; else V.err = '録音データが取れませんでした'; }
+        try { const r = await c.done; if (r.blob) mimicRecs[id] = r; else V.err = '録音データが取れませんでした'; if (srP) { const x = await srP; V.sr[id] = x; } }
         catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
         V.recording = false; if (V.name === 'scene' && V.step === 'mimic') render();
       },
       recStop: () => { curRec && curRec.stop(); },
-      mine: () => { stopSpeak(); playBlob(rec); },
-      cmp: async () => { stopAudio(); const tok = playAllTok; await speak(l.en, l.w); if (tok !== playAllTok) return; await sleep(300); await playBlob(rec); },
+      mine: () => { stopSpeak(); playBlob(rec.blob); },
+      cmp: async () => { stopAudio(); const tok = playAllTok; await speak(l.en, l.w); if (tok !== playAllTok) return; await sleep(300); await playBlob(rec.blob); },
       sr: async () => {
         stopSpeak(); stopAudio(); V.srRes = '🎤 どうぞ話してください…'; render();
         const r = await recognize();
-        V.srRes = r.text != null ? `認識結果：「${esc(r.text)}」<br>一致率 ${pct(matchRate(l.en, r.text))}（認識エンジンは補正するので甘めに出ます）` : `認識できませんでした：${esc(SR_ERR[r.err] || r.err)}`;
+        V.sr[id] = r;
+        V.srRes = r.text != null ? `一致率 ${pct(matchRate(l.en, r.text))}（認識エンジンは補正するので甘めに出ます）${rec ? '' : '<br>録音もすると、声の大きさからの推定も出ます'}` : '';
         if (V.name === 'scene') render();
       },
       prev: () => { stopAll(); V.mi = k - 1; V.reveal = false; V.srRes = ''; V.err = ''; V.showJa = false; render(); },
@@ -786,7 +978,9 @@ ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))}
   } else if (q.phase === 'judge') {
     h = `<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
 <p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
-<div class="big">${esc(l.en)}</div>${srcTag(l)}
+<div class="big">${hlText(l.en, makePoints(l.en))}</div>${srcTag(l)}
+${pointsHTML(makePoints(l.en))}
+${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言い方が人によって違うため、止まった回数だけを声の大きさから推定しています。') : ''}
 <div class="row"><button class="btn pri" data-a="model">🔊 お手本</button><button class="btn" data-a="mine" ${q.blob ? '' : 'disabled'}>🎧 自分</button><button class="btn" data-a="cmp" ${q.blob ? '' : 'disabled'}>🔁 比べる</button></div>
 <hr><p class="small">自分で判定してください</p>
 <div class="row judge"><button class="btn j-o" data-a="j" data-v="o">○<br><small>言えた</small></button><button class="btn j-m" data-a="j" data-v="m">△<br><small>だいたい</small></button><button class="btn j-x" data-a="j" data-v="x">×<br><small>言えず</small></button></div></div>`;
@@ -800,7 +994,7 @@ ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))}
         ac();
         const tok = playAllTok;
         if (prev && prev.w !== 'me' && S.cue) { q.phase = 'cue'; render(); await speak(prev.en, prev.w); if (tok !== playAllTok) return; await sleep(200); }
-        q.phase = 'prep'; q.rt = null; q.blob = null; q.hint = false; q.onset = null; q.manual = false; q.autoPlayed = false; render();
+        q.phase = 'prep'; q.rt = null; q.blob = null; q.rec = null; q.hint = false; q.onset = null; q.manual = false; q.autoPlayed = false; render();
         let t0 = 0;
         const c = startRec({
           calib: 600, autoStop: true, silence: 1500, max: 20000, noVoiceMax: 15000, onLevel: meterUpdate,
@@ -811,7 +1005,7 @@ ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))}
           const r = await c.done;
           if (tok !== playAllTok) return;
           tickers.forEach(clearInterval); tickers = [];
-          q.rt = r.onset; q.blob = r.blob; q.phase = 'judge'; render();
+          q.rt = r.onset; q.blob = r.blob; q.rec = r; q.phase = 'judge'; render();
         } catch (e) {
           if (tok !== playAllTok) return;
           q.manual = true; q.phase = 'rec'; t0 = performance.now(); q.t0 = t0; render();
@@ -1054,7 +1248,8 @@ ${V.recording ? meterHTML + '<p class="center">録音中…</p>' : `<button clas
 <p>${SR ? 'このブラウザは音声認識に対応しています（オンラインで動作）。' : 'このブラウザは音声認識に対応していません。なくても遊べます。'}</p>
 ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言ってみる</button>
 <p>結果：${ok(t.sr)} ${t.srMsg ? `<span class="small">${esc(t.srMsg)}</span>` : ''}</p>
-<label class="tg"><input type="checkbox" data-c="useSR" ${S.useSR ? 'checked' : ''}>「②まねる」で音声認識の確認ボタンを出す</label>
+<label class="tg"><input type="checkbox" data-c="useSR" ${S.useSR ? 'checked' : ''}>「まねる」で音声認識を使う（聞き取られなかった単語を「気になるところ」に出す）</label>
+<label class="tg"><input type="checkbox" data-c="srBoth" ${S.srBoth ? 'checked' : ''}>録音と同時に音声認識する（試験的。端末によっては録音か認識が失敗します。そのときはオフにすると、認識用にもう一度言う方式になります）</label>
 <p class="small">認識エンジンは、ありそうな単語に補正して聞き取るため、発音の判定としては甘めに出ます。</p>` : ''}</div>
 
 <div class="win"><h2>④ 保存</h2>
@@ -1074,6 +1269,7 @@ ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言って�
       speedSet: () => save(),
       multi: b => { S.multi = b.checked; save(); },
       useSR: b => { S.useSR = b.checked; save(); },
+      srBoth: b => { S.srBoth = b.checked; save(); },
       tts: async () => { t.tts = true; S.checked = true; save(); render(); await speak("Hi, I'm Priya. Let me show you around the lab.", 'priya'); await speak('Today, we are going to talk about overfitting.', 'miller'); },
       ttsNg: () => { t.tts = false; render(); },
       mic: async () => {
