@@ -102,11 +102,11 @@ events/<番号>/         イベントで作られたゲームの一覧（samples
 
 QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Clause）、共有用画像 `assets/og.jpg` の作成には [Pillow](https://python-pillow.org/)（MIT-CMU License）を使っています（ビルド時のみ。サイトには含めていません）。
 
-このリポジトリのコードは MIT License（[LICENSE](LICENSE)）です。
+このリポジトリのコードは MIT License（[LICENSE](LICENSE)）です。ただし、下の「引用している文章」と「同梱しているサードパーティ製ソフトウェア」は MIT License の対象外で、それぞれ元のライセンスに従います。転載・再利用するときは、その部分について元のライセンスの条件（出典の表示など）を守ってください。
 
 引用している文章:
 
-- `games/eigo-road/index.html` の講義スライドの英文2文は、[Wikipedia「Overfitting」](https://en.wikipedia.org/wiki/Overfitting)（CC BY-SA 4.0）からの引用です。この2文は CC BY-SA 4.0 で利用できます。ゲーム内のクレジットにも出典を表示しています。
+- `games/eigo-road/index.html` の講義スライドの英文2文は、[Wikipedia「Overfitting」](https://en.wikipedia.org/wiki/Overfitting)の執筆者による文章で、[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja) で提供されています。この2文を再利用するときは、出典とライセンスを表示し、改変したものも同じ CC BY-SA 4.0 で提供してください。ゲーム内のクレジットにも出典を表示しています。それ以外の英文は、このゲームのオリジナルです。
 
 同梱しているサードパーティ製ソフトウェア:
 
