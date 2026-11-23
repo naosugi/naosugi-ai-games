@@ -92,6 +92,26 @@ u.pt{text-decoration:underline wavy var(--acc);text-underline-offset:5px;text-de
 .pk{display:inline-block;font-size:11px;font-weight:700;background:#4b3a8a;border-radius:8px;padding:0 6px;margin-right:4px}
 .fd{border-left:3px solid var(--mid)}
 .fd .pk{background:#8a5a12}
+canvas.pix{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.stage{position:relative;display:flex;justify-content:space-around;align-items:flex-end;height:118px;border:3px solid #fff;border-radius:8px;margin:10px 4px 6px;overflow:hidden;box-shadow:0 0 0 3px var(--bg),0 0 0 5px #6f7fd0}
+.stage .actor{display:flex;flex-direction:column;align-items:center;margin-bottom:2px;transition:transform .2s}
+.stage .actor span{font-size:10px;font-weight:700;background:#000a;color:#fff;border-radius:6px;padding:0 6px;margin-top:-2px;white-space:nowrap}
+.stage .actor.dim{opacity:.55;transform:scale(.92)}
+.stage .lbl{position:absolute;left:6px;top:4px;font-size:11px;font-weight:700;color:#fff;background:#0008;border-radius:6px;padding:0 6px}
+.hop{animation:hop .55s ease-in-out infinite alternate}
+@keyframes hop{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.chat .msg{display:flex;gap:6px;align-items:flex-end;margin:8px 0;cursor:pointer}
+.chat .msg.me{flex-direction:row-reverse}
+.chat .face{flex:0 0 52px}
+.chat .bub{flex:1;background:#ffffff14;border:2px solid #ffffff40;border-radius:12px 12px 12px 2px;padding:6px 9px;min-width:0}
+.chat .msg.me .bub{background:#7fe3ff1c;border-color:#7fe3ff70;border-radius:12px 12px 2px 12px}
+.chat .msg.on .bub{border-color:var(--acc);background:#ffd23f22}
+.road{margin:6px 4px 0;border-radius:8px;overflow:hidden;border:3px solid #fff;box-shadow:0 0 0 3px var(--bg),0 0 0 5px #6f7fd0}
+.btn.sc{display:flex;align-items:center;gap:8px}
+.btn.sc canvas{flex:0 0 auto}
+.btn.sc .t{flex:1}
 .center{text-align:center}
 hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
 </style>
@@ -318,21 +338,21 @@ let speakTok = 0;
 function speak(text, who = 'me', mul = 1) {
   return new Promise(res => {
     if (!TTS.ok) { res(false); return; }
-    const tok = ++speakTok;
+    const tok = ++speakTok; SPK.who = who;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const { v, p } = voiceFor(who);
     if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
     u.rate = Math.max(0.5, Math.min(2, S.speed * mul)); u.pitch = p;
     let done = false;
-    const fin = ok => { if (done) return; done = true; clearTimeout(t); res(ok && tok === speakTok); };
+    const fin = ok => { if (done) return; done = true; clearTimeout(t); if (tok === speakTok) SPK.who = null; res(ok && tok === speakTok); };
     let st0 = 0; u.onstart = () => { st0 = performance.now(); };
     u.onend = () => { if (st0 && tok === speakTok) ttsDur[text] = { ms: performance.now() - st0, rate: u.rate }; fin(true); }; u.onerror = () => fin(false);
     const t = setTimeout(() => fin(true), 4000 + text.length * 160 / u.rate);
     setTimeout(() => { if (tok === speakTok) speechSynthesis.speak(u); else fin(false); }, 60);
   });
 }
-function stopSpeak() { speakTok++; if (TTS.ok) speechSynthesis.cancel(); }
+function stopSpeak() { speakTok++; SPK.who = null; if (TTS.ok) speechSynthesis.cancel(); }
 
 /* ---------- 録音 ---------- */
 let AC = null;
@@ -353,6 +373,7 @@ function startRec(o = {}) {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('この環境ではマイクが使えません');
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
     } catch (e) { if (curRec === ctl) curRec = null; reject(e); return; }
+    MIC.on = true; MIC.loud = false;
     const ctx = ac(); let an = null, src = null, buf = null;
     if (ctx) { try { src = ctx.createMediaStreamSource(stream); an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an); buf = new Float32Array(an.fftSize); } catch (e) { an = null; } }
     let mr = null; const chunks = [];
@@ -371,6 +392,7 @@ function startRec(o = {}) {
         stream.getTracks().forEach(t => t.stop());
         try { src && src.disconnect(); } catch (e) {}
         if (curRec === ctl) curRec = null;
+        MIC.on = false; MIC.loud = false;
         resolve({ blob: chunks.length ? new Blob(chunks, { type: (mr && mr.mimeType) || 'audio/webm' }) : null, onset, dur: end - (t0 ?? tStart), env, thr });
       };
       if (mr && mr.state !== 'inactive') { mr.onstop = out; try { mr.stop(); } catch (e) { out(); } } else out();
@@ -396,10 +418,303 @@ function startRec(o = {}) {
   return ctl;
 }
 function meterUpdate(r, thr) {
+  MIC.loud = r > thr;
   const el = $('#lv'); if (!el) return;
   const k = x => Math.min(100, Math.sqrt(x / 0.25) * 100);
   el.style.width = k(r) + '%';
   const b = $('#lvt'); if (b) b.style.left = k(thr) + '%';
+}
+
+/* ---------- 登場人物（ウォンバット） ----------
+   ドット絵の描画は、同じリポジトリの「神に愛されたヒメウォンバット」（games/kami-wombat）から流用 */
+const WB = (() => {
+const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
+
+// ---------- shared pixel helpers ----------
+function mkGrid(W,H){
+  const g=new Array(W*H).fill(0),pt=new Uint8Array(W*H);
+  const S=(x,y,c,p=9)=>{x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=W||y>=H)return;g[y*W+x]=c;pt[y*W+x]=p;};
+  const SE=(cx,cy,rx,ry,n,p,fn)=>{
+    for(let y=Math.floor(cy-ry-1);y<=cy+ry+1;y++)for(let x=Math.floor(cx-rx-1);x<=cx+rx+1;x++){
+      const dx=Math.abs((x+.5-cx)/rx),dy=(y+.5-cy)/ry;if(Math.pow(dx,n)+Math.pow(Math.abs(dy),n)<=1)S(x,y,fn(x,y,dy),p);}
+  };
+  const E=(cx,cy,rx,ry,p,fn)=>SE(cx,cy,rx,ry,2,p,fn);
+  return {W,H,g,pt,S,SE,E};
+}
+// fluffy silhouette: little tufts on upper edges of fur parts
+function fuzz(G,pids,maxY){
+  const {W,H,g,pt}=G,add=[];
+  for(let y=1;y<Math.min(H,maxY);y++)for(let x=1;x<W-1;x++){
+    const i=y*W+x;if(!pids.includes(pt[i]))continue;
+    if(!g[i-W]&&((x*5+y*3)%7===0))add.push([i-W,g[i]==='f'?'l':g[i],pt[i]]);
+    else if(!g[i-1]&&((y*5+x)%6===0))add.push([i-1,g[i],pt[i]]);
+    else if(!g[i+1]&&((y*7+x)%6===0))add.push([i+1,g[i],pt[i]]);
+  }
+  for(const [i,c,p] of add){g[i]=c;pt[i]=p;}
+}
+function outline(G){
+  const {W,H}=G,out=G.g,fin=out.slice();
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=y*W+x;if(out[i])continue;
+    if((x>0&&out[i-1])||(x<W-1&&out[i+1])||(y>0&&out[i-W])||(y<H-1&&out[i+W]))fin[i]='o';
+  }
+  return fin;
+}
+// grizzled frosting on fur: light tips scattered on the upper part
+const hash=(x,y)=>{let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296;};
+const frost=(x,y,r)=>r<.6&&hash(x,y)<(r<.3?.11:.05);
+
+// ---------- side view ----------
+const WW=48,WH=32,AX=20;
+function renderWombat(o){
+  const G=mkGrid(WW,WH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,low=o.low||0,bob=o.bob||0;
+  const bcx=19,bcy=18+bob+low,brx=14.5*(1+sq),bry=7.6+(o.br||0)-sq*6;
+  const hcx=29.5+(o.hx||0),hcy=bcy-.5+(o.hy||0);
+  const claws=[];
+  if(!o.noLegs){
+    const legs=[[7,'d',0,0],[23,'d',1,1],[11,'b',1,0],[27,'b',0,1]];
+    for(const [lx,c,ph,fr] of legs){
+      let lift=0,sx=0;
+      if(o.walk&&(!o.dig||fr)){ if(ph===o.wp){lift=1;sx=1;} }
+      for(let y=Math.floor(bcy+5);y<=27-lift;y++)for(let x=lx+sx;x<lx+sx+3;x++)S(x,y,y>=26-lift?'d':c,1);
+      if(fr)claws.push([lx+sx+3,27-lift],[lx+sx+3,26-lift]); else claws.push([lx+sx+3,27-lift]);
+    }
+  }
+  const bsh=(x,y)=>{const r=(y+.5-(bcy-8))/16;return r<.22?(frost(x,y,r)?'f':'l'):r>.78?'d':(frost(x,y,r)?'f':'b');};
+  const rearX=bcx-brx+1.2;
+  E(bcx,bcy,brx,bry,2,(x,y)=>bsh(x,y));
+  SE(bcx-6.5,bcy-.8,8.6,bry+1.1,2.25,2,(x,y)=>bsh(x,y));
+  for(let y=0;y<WH;y++)for(let x=0;x<Math.floor(rearX);x++)if(pt[y*WW+x]===2){g[y*WW+x]=0;pt[y*WW+x]=0;}
+  const K=1.28;
+  // far ear
+  E(hcx-5.6*K,hcy-5.6*K+(o.ear||0)*.6,1.5*K,2*K,4,()=>'d');
+  // head
+  const hsh=(x,y)=>{const r=(y+.5-(hcy-6*K))/(12*K);return r<.25?(frost(x,y,r)?'f':'l'):r>.8?'d':(frost(x,y,r)&&x<hcx+2?'f':'b');};
+  E(hcx-1.5*K,hcy,6.3*K,5.7*K,3,hsh);
+  SE(hcx+3.6*K,hcy+1.3*K,4.4*K,4*K,3.2,3,hsh);
+  fuzz(G,[2,3],bcy+2);
+  // near ear: small, pale rim
+  const ey0=hcy-5.7*K-(o.ear>0?1:0)+(o.ear<0?1.4:0);
+  E(hcx-3.4*K,ey0,1.6*K,2.1*K,4,(x,y,dy)=>dy<-.3?'p':'d');S(hcx-3.4*K-.6,ey0-2.1*K,'p',4);
+  // nose: big bare matte nose
+  const ncx=hcx+6.6*K,ncy=hcy+.4*K;
+  SE(ncx,ncy,2.4*K,2.8*K,3,5,()=>'n');
+  S(ncx-1.6,ncy-2.4,'nh',5);S(ncx-.6,ncy-2.4,'nh',5);S(ncx-1.6,ncy-1.4,'nh',5);
+  S(ncx+1.5,ncy+.8,'e',5);S(ncx+.5,ncy+.8,'e',5);
+  // eye: small round beady
+  const ex=Math.floor(hcx+.8*K),ey=Math.floor(hcy-2.6*K);
+  if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='half'){S(ex-1,ey,'e');S(ex,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='happy'){S(ex-1,ey+1,'e');S(ex,ey,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='strain'){S(ex-1,ey,'e');S(ex,ey+1,'e');S(ex-1,ey+2,'e');}
+  else {S(ex,ey,'w');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  if(o.blush){S(hcx+1.4*K,hcy+2*K,'c');S(hcx+1.4*K+1,hcy+2*K,'c');}
+  // mouth
+  S(ncx-2.5,ncy+3.8,'o');S(ncx-1.5,ncy+3.8,'o');if(o.chew){S(ncx-2.5,ncy+4.8,'o');S(ncx-1.5,ncy+4.8,'o');}
+  // joey
+  if(o.joey>0){
+    const jx=bcx+.5,jy=bcy+bry+2.5-o.joey;
+    E(jx,jy,3.4,2.9,6,(x,y,dy)=>dy>.6?'b':'l');
+    S(jx-2,jy-3,'p',6);S(jx-1,jy-3,'l',6);
+    S(jx+1,jy-1,'e',6);S(jx+3,jy+.2,'n',6);S(jx+2,jy+.2,'n',6);
+  }
+  // inner edges
+  const out=g.slice();
+  for(let y=0;y<WH;y++)for(let x=0;x<WW;x++){
+    const i=y*WW+x,p=pt[i];if(!p)continue;
+    for(const [qx,qy] of [[x-1,y],[x+1,y],[x,y+1],[x,y-1]]){
+      if(qx<0||qy<0||qx>=WW||qy>=WH)continue;const q=pt[qy*WW+qx];
+      if(p===3&&q===2&&(qx<x||qy>y)){out[i]='d';break;}
+      if(p===6&&(q===2||q===1)){out[i]='o';break;}
+      if(p===2&&q===1&&qy>y){out[i]='d';break;}
+    }
+  }
+  G.g=out;
+  const fin=outline(G);
+  // claws & whiskers drawn over the outline
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<WW&&y<WH)fin[y*WW+x]=c;};
+  for(const [x,y] of claws)P(x,y,'k');
+  P(ncx-2.5,ncy+2.4,'v');P(ncx-1.5,ncy+3,'v');
+  P(ncx-3,ncy+1.6,'v');P(ncx-4,ncy+1.8,'v');
+  return {W:WW,H:WH,ax:AX,img:fin};
+}
+
+// ---------- front view ----------
+const FW=40,FH=32,FAX=20;
+function renderFront(o){
+  const G=mkGrid(FW,FH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,cx=20,ty=o.bob||0;
+  const bry=10.6+(o.br||0)-sq*8,brx=14*(1+sq);
+  const bcy=27.5-bry;
+  // paws (behind body first)
+  const pawY=26;
+  // body
+  const fsh=(x,y)=>{const r=(y+.5-(bcy-bry))/(2*bry);return r<.18?(frost(x,y,r)?'f':'l'):r>.82?'d':(frost(x,y,r)?'f':'b');};
+  E(cx,bcy,brx,bry,2,fsh);
+  // head merges with body (no neck)
+  const hcy=bcy-3.2+ty+(o.hy||0),hrx=10.4*(1+sq*.5),hry=8.6;
+  E(cx,hcy,hrx,hry,3,(x,y,dy)=>dy<-.55?(frost(x,y,0)?'f':'l'):'b');
+  // ears: small, wide-set, pale rims
+  const eo=o.ear>0?1:0;
+  for(const s of [-1,1]){
+    const ex=cx+s*7.6,ey=hcy-7.4-eo;
+    E(ex,ey,2.2,2.6,4,(x,y,dy)=>dy<-.25||Math.abs(x+.5-ex)>1.4?'p':'d');
+  }
+  fuzz(G,[2,3],bcy);
+  // face: slightly lighter muzzle
+  E(cx,hcy+3.8,6,3.6,5,()=>'l');
+  // eyes: small, round, beady, wide-set
+  for(const s of [-1,1]){
+    const ex=Math.floor(cx+s*4.6-(s<0?1:0)),ey=Math.floor(hcy-1);
+    if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+    else if(o.eye==='half'){S(ex,ey,'d');S(ex+1,ey,'d');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:1),ey+1,'e');}
+    else if(o.eye==='happy'){S(ex,ey+1,'e');S(ex+1,ey,'e');S(ex+2,ey+1,'e');}
+    else {S(ex,ey,'e');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:0),ey,'w');}
+  }
+  if(o.blush){S(cx-7,hcy+2,'c');S(cx-6,hcy+2,'c');S(cx+6,hcy+2,'c');S(cx+7,hcy+2,'c');}
+  // big bare nose
+  // big bare nose: wide top, rounded bottom (shield shape), nostrils at the lower sides
+  const ny=hcy+3.4+(o.nw||0);
+  for(let y=Math.floor(ny-2.9);y<=ny+2.9;y++){const t=(y+.5-(ny-2.9))/5.8;let hw=4.7-2.4*t*t;if(t<.22)hw-=(.22-t)*6;
+    for(let x=Math.floor(cx-hw);x<cx+hw;x++)S(x,y,t<.25?'nh':'n',6);}
+  S(cx-3,ny+.6,'e',6);S(cx-2,ny+1.4,'e',6);S(cx+2,ny+.6,'e',6);S(cx+1,ny+1.4,'e',6);
+  S(cx-.5,ny+2.2,'o',6);
+  // mouth
+  S(cx-.5,ny+3.3,'o');S(cx-1.5,ny+4,'o');S(cx+.5,ny+4,'o');
+  if(o.chew){S(cx-.5,ny+4.2,'o');}
+  G.g=g;
+  const fin=outline(G);
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<FW&&y<FH)fin[y*FW+x]=c;};
+  // front paws with long pale claws, turned slightly inward
+  for(const s of [-1,1]){
+    const px=cx+s*5.5;
+    for(let y=pawY;y<=27;y++)for(let x=Math.floor(px-2);x<=Math.floor(px+1);x++)P(x,y,'d');
+    P(px-2,28,'o');P(px+1,28,'o');
+    const c0=s<0?px:px-2;P(c0-1,28,'k');P(c0,28,'k');P(c0+1,28,'k');
+    P(px-3,pawY,'o');P(px+2,pawY,'o');P(px-3,27,'o');P(px+2,27,'o');
+  }
+  // whiskers
+  for(const s of [-1,1]){
+    const b=s<0?-1:0;
+    P(cx+s*6.5+b,hcy+3.6,'v');P(cx+s*7.5+b,hcy+3.1,'v');P(cx+s*8.5+b,hcy+2.8,'v');
+    P(cx+s*6.5+b,hcy+5,'v');P(cx+s*7.5+b,hcy+5.4,'v');P(cx+s*8.5+b,hcy+6,'v');
+  }
+  return {W:FW,H:FH,ax:FAX,img:fin};
+}
+
+  return { renderWombat, renderFront, PAL };
+})();
+const XPAL = { r: '#d23a2a', rd: '#8f2018', g: '#e8c35a', gd: '#9a7a2a', h: '#2b2b36', hl: '#6a6a80', u: '#2f6fd6', pu: '#a35be0', sw: '#f4f6ff', sg: '#7a8599', sb: '#3a7bd5', sr: '#e2553f', sk: '#1d2a3a', sf: '#e8eef8' };
+const FUR = {
+  me: {},
+  priya: { b: '#9a7448', l: '#b98f60', d: '#6e4e2f', f: '#c9a576', m: '#7d5c3a' },
+  miller: { b: '#87817a', l: '#a7a19a', d: '#5d5853', f: '#cdc7bf', m: '#6f6a64', p: '#d8d0c6' },
+  tom: { b: '#5f4630', l: '#7a5b3e', d: '#3f2c1c', f: '#8d6c4b', m: '#4c3826' },
+  wei: { b: '#93593a', l: '#b2744e', d: '#643a24', f: '#c08a68', m: '#7a4830' },
+};
+// 小物（正面向き 40×32 の上に描く）。ty = 頭の上下
+function accessory(who, img, ty) {
+  const W = 40, P = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < 32) img[y * W + x] = c; };
+  const ey = 12 + ty;
+  const ring = (x0, c) => { for (let x = x0 + 1; x <= x0 + 2; x++) { P(x, ey - 1, c); P(x, ey + 2, c); } for (let y = ey; y <= ey + 1; y++) { P(x0, y, c); P(x0 + 3, y, c); } };
+  if (who === 'me') { // 赤いマフラー
+    for (let x = 11; x <= 29; x++) { P(x, 23, 'r'); P(x, 24, x % 3 ? 'r' : 'rd'); }
+    for (let y = 25; y <= 28; y++) { P(25, y, 'r'); P(26, y, y % 2 ? 'rd' : 'r'); }
+  } else if (who === 'priya') { // 丸めがね
+    ring(13, 'pu'); ring(23, 'pu'); for (let x = 17; x <= 22; x++) P(x, ey, 'pu');
+  } else if (who === 'miller') { // 片眼鏡と蝶ネクタイ
+    ring(23, 'g'); for (let k = 0; k < 6; k++) P(27 + (k >> 1), ey + 3 + k, 'gd');
+    [[17, 23], [18, 23], [22, 23], [23, 23], [16, 24], [17, 24], [18, 24], [19, 24], [21, 24], [22, 24], [23, 24], [24, 24], [17, 25], [18, 25], [22, 25], [23, 25]].forEach(([x, y]) => P(x, y, 'r'));
+    P(20, 24, 'rd');
+  } else if (who === 'tom') { // ヘッドホン
+    for (let x = 13; x <= 27; x++) P(x, 2 + ty, 'h');
+    P(12, 3 + ty, 'h'); P(28, 3 + ty, 'h'); P(11, 4 + ty, 'h'); P(29, 4 + ty, 'h');
+    for (let y = 5; y <= 10; y++) for (const x0 of [9, 28]) for (let x = x0; x <= x0 + 2; x++) P(x, y + ty, x === x0 + 1 && y > 5 && y < 10 ? 'hl' : 'h');
+  } else if (who === 'wei') { // 学会の名札
+    for (let k = 0; k <= 4; k++) { P(15 + k, 22 + k, 'u'); P(25 - k, 22 + k, 'u'); }
+    for (let y = 26; y <= 30; y++) for (let x = 17; x <= 23; x++) P(x, y, y === 26 ? 'u' : (x === 17 || x === 23 || y === 30) ? 'sg' : 'sw');
+    P(19, 28, 'sg'); P(20, 28, 'sg'); P(21, 28, 'sg');
+  }
+}
+// 講義スライド（過学習のグラフ）
+function slideImg(st) {
+  const W = 40, H = 32, img = new Array(W * H).fill(0), P = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) img[y * W + x] = c; };
+  for (let y = 2; y <= 25; y++) for (let x = 2; x <= 37; x++) P(x, y, (x === 2 || x === 37 || y === 2 || y === 25) ? 'sk' : 'sf');
+  for (let x = 6; x <= 33; x++) P(x, 22, 'sg'); for (let y = 6; y <= 22; y++) P(6, y, 'sg');
+  for (let x = 7; x <= 33; x++) { const t = (x - 7) / 26; P(x, Math.round(21 - 13 * Math.exp(-3.5 * t)), 'sb'); P(x, Math.round(21 - 12 * Math.exp(-4 * t) - (t > .45 ? (t - .45) * 22 : 0)), 'sr'); }
+  if (st.chew) for (let x = 9; x <= 13; x++) P(x, 4, 'sr');
+  for (let y = 26; y <= 30; y++) { P(19, y, 'sk'); P(20, y, 'sk'); } for (let x = 14; x <= 25; x++) P(x, 31, 'sk');
+  return { W, H, img };
+}
+const wbCache = {};
+function wbImg(who, st) {
+  const key = who + '|' + (st.side ? 's' + st.wp : '') + (st.eye || '') + (st.chew ? 'c' : '') + (st.bob || 0) + (st.blush ? 'b' : '');
+  if (wbCache[key]) return wbCache[key];
+  let R;
+  if (who === 'slide') R = slideImg(st);
+  else if (st.side) R = WB.renderWombat({ walk: true, wp: st.wp, bob: st.bob || 0, eye: st.eye, chew: st.chew });
+  else { R = WB.renderFront({ eye: st.eye, chew: st.chew, bob: st.bob || 0, blush: st.blush }); R = { W: R.W, H: R.H, img: R.img.slice() }; accessory(who, R.img, Math.round(st.bob || 0)); }
+  const pal = Object.assign({}, WB.PAL, FUR[who] || {}, XPAL);
+  const c = document.createElement('canvas'); c.width = R.W; c.height = R.H; const x = c.getContext('2d');
+  for (let y = 0; y < R.H; y++) for (let i = 0; i < R.W; i++) { const k = R.img[y * R.W + i]; if (k && pal[k]) { x.fillStyle = pal[k]; x.fillRect(i, y, 1, 1); } }
+  return (wbCache[key] = c);
+}
+const SPK = { who: null }, MIC = { on: false, loud: false };
+// 顔のキャンバス。eye: 目の形（happy/half/closed）、blush: ほっぺ
+const face = (who, px, o = {}) => `<canvas class="pix wb${o.cls ? ' ' + o.cls : ''}" data-who="${who}" data-eye="${o.eye || ''}" data-blush="${o.blush ? 1 : ''}" width="40" height="32" style="width:${px}px;height:${Math.round(px * .8)}px"></canvas>`;
+const BGS = {
+  c1s1: 'linear-gradient(#cfe0f0 0 64%,#8b6f4e 64% 67%,#a8865f 67%)',
+  c1s2: 'linear-gradient(#e6e1d2 0 64%,#6b4b32 64% 67%,#8a6440 67%)',
+  c1s3: 'linear-gradient(#ecdcb8 0 64%,#7a5a3a 64% 67%,#94704a 67%)',
+  c1s4: 'linear-gradient(#d4dde2 0 64%,#55636f 64% 67%,#6e7e8b 67%)',
+  c1s5: 'radial-gradient(circle at 20% 18%,#ffd23f55 0 6%,transparent 7%),radial-gradient(circle at 75% 12%,#ff8fd055 0 5%,transparent 6%),radial-gradient(circle at 50% 25%,#7fe3ff44 0 5%,transparent 6%),linear-gradient(#20214f 0 64%,#3b2a4a 64% 67%,#4e3a5e 67%)',
+};
+function stageHTML(sid, actors, label) {
+  return `<div class="stage" style="background:${BGS[sid] || BGS.c1s1}">${label ? `<span class="lbl">${esc(label)}</span>` : ''}${actors.map(a => `<div class="actor ${a.dim ? 'dim' : ''} ${a.hop ? 'hop' : ''}">${face(a.who, a.px || 96, a)}<span>${esc(CHARS[a.who].name)}</span></div>`).join('')}</div>`;
+}
+const castOf = sc => [...new Set(sc.lines.map(l => l.w))];
+const partnerOf = sc => sc.lines.find(l => l.w !== 'me' && l.w !== 'slide')?.w || 'miller';
+let animT = 0;
+function paintFaces() {
+  animT++;
+  document.querySelectorAll('canvas.wb').forEach(cv => {
+    const who = cv.dataset.who;
+    const talking = SPK.who === who || (who === 'me' && MIC.on && MIC.loud);
+    const seed = who.length * 7 + (cv.dataset.eye ? 3 : 0);
+    const blink = !talking && !cv.dataset.eye && (animT + seed) % 29 === 0;
+    const st = { eye: blink ? 'closed' : (cv.dataset.eye || undefined), chew: talking && animT % 2 === 0, bob: talking && animT % 4 < 2 ? -1 : 0, blush: cv.dataset.blush === '1' };
+    const k = JSON.stringify(st); if (cv._k === k) return; cv._k = k;
+    const g = cv.getContext('2d'); g.clearRect(0, 0, 40, 32); g.drawImage(wbImg(who, st), 0, 0);
+  });
+}
+setInterval(paintFaces, 150);
+// タイトルの道を歩くウォンバット
+let roadTok = 0;
+function startRoad() {
+  const cv = document.getElementById('road'); if (!cv) return;
+  const tok = ++roadTok, g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  let x = -40, f = 0;
+  const step = () => {
+    if (tok !== roadTok || !document.body.contains(cv)) return;
+    g.fillStyle = '#7fc8ff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#ffffffcc'; [[18, 6], [70, 9], [120, 5]].forEach(([cx, cy]) => { const ox = ((cx - f * .15) % (W + 30) + W + 30) % (W + 30) - 15; g.fillRect(ox, cy, 12, 3); g.fillRect(ox + 3, cy - 2, 6, 2); });
+    g.fillStyle = '#4caf50'; g.fillRect(0, 30, W, 3); g.fillStyle = '#8d8d8d'; g.fillRect(0, 33, W, 7); g.fillStyle = '#ffd23f';
+    for (let i = 0; i < W; i += 10) g.fillRect((i - f) % W < 0 ? (i - f) % W + W : (i - f) % W, 36, 5, 1);
+    g.fillStyle = '#6b4b32'; g.fillRect(W - 22, 14, 2, 17); g.fillStyle = '#2f6fd6'; g.fillRect(W - 32, 10, 22, 7); g.fillStyle = '#fff'; g.fillRect(W - 29, 13, 14, 1); g.fillRect(W - 15, 12, 1, 3); g.fillRect(W - 14, 13, 1, 1);
+    g.drawImage(wbImg('me', { side: true, wp: (f >> 3) % 2, bob: 0 }), Math.round(x), 30 - 28 + 2 - 1);
+    x += .35; f++; if (x > W + 4) x = -48;
+    requestAnimationFrame(step);
+  };
+  step();
+}
+/* ---------- 効果音（小さな合成音） ---------- */
+function sfx(kind) {
+  if (S.sfx === false || curRec) return;
+  const c = ac(); if (!c) return;
+  const seq = { ok: [[880, .07], [1320, .12]], ng: [[220, .14]], clear: [[523, .09], [659, .09], [784, .09], [1047, .22]], tap: [[660, .04]] }[kind]; if (!seq) return;
+  let t = c.currentTime + .01;
+  for (const [f, d] of seq) { const o = c.createOscillator(), gn = c.createGain(); o.type = 'square'; o.frequency.value = f; gn.gain.setValueAtTime(.05, t); gn.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(gn).connect(c.destination); o.start(t); o.stop(t + d + .02); t += d * .9; }
 }
 
 /* ---------- 注意ポイント（英文から決まる） ---------- */
@@ -660,6 +975,7 @@ function render() {
   app.innerHTML = r.html;
   ACTS = Object.assign({ home: () => go('title'), story: () => go('story') }, r.acts || {});
   r.after && r.after();
+  paintFaces();
 }
 app.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; const f = ACTS[b.dataset.a]; if (f) f(b.dataset.v, b, e); });
 app.addEventListener('change', e => { const b = e.target.closest('[data-c]'); if (!b) return; const f = ACTS[b.dataset.c]; if (f) f(b, e); });
@@ -684,6 +1000,7 @@ SCREENS.title = () => {
     html: `
 <div class="top"><a href="../../trial/">← ゲーム一覧</a><span>🔥 連続 ${st}日</span></div>
 <div class="logo">ENGLISH<br>ROAD</div>
+<div class="road"><canvas id="road" class="pix" width="160" height="40" style="width:100%"></canvas></div>
 <div class="sub">留学生からAIエンジニアへ<br><span class="badge" style="background:#b3261e">試作中</span> 第1章のみ・内容は変わることがあります</div>
 <div class="win">
   <p>ランク：<b style="color:var(--acc)">${esc(rank())}</b></p>
@@ -696,6 +1013,7 @@ ${!S.checked ? `<div class="win"><h2>はじめに</h2><p>まず「せってい�
 <button class="btn" data-a="stats">📈 きろく</button>
 <button class="btn" data-a="settings">⚙ せってい・動作チェック</button>
 <p class="small center">数字や星の基準はゲーム内のめやすです。</p>`,
+    after: startRoad,
     acts: { review: () => startReview(), bench: () => go('bench', { mode: 'list' }), stats: () => go('stats'), settings: () => go('settings', { t: {} }) },
   };
 };
@@ -713,7 +1031,7 @@ SCREENS.story = () => {
     h += `<div class="win"><h2>${esc(ch.title)}${chapterClear(ch) ? ' <span class="okc">CLEAR</span>' : ''}</h2>`;
     ch.scenes.forEach((sc, i) => {
       const x = { ch, sc, i }, ok = unlocked(x), r = S.scenes[sc.id] || {};
-      h += `<button class="btn" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}<span class="r"><span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span></span></button>`;
+      h += `<button class="btn sc" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${face(partnerOf(sc), 44, { eye: r.clear ? 'happy' : '' })}<span class="t">${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}</span><span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span></button>`;
     });
     h += `<p class="small">★1 = 書き取りと「とっさに」を1回ずつ終える／★2 = 書き取り${pct(STAR_DICT)}以上／★3 = 全文「言えた」で反応${STAR_RT / 1000}秒以内（中央値）。基準は仮のめやすです。👑 = 30秒スピーチつき</p></div>`;
   });
@@ -744,6 +1062,7 @@ SCENE_STEPS.intro = ({ sc }) => {
   const nMe = sc.lines.filter(l => l.w === 'me').length;
   return {
     html: `
+${stageHTML(sc.id, castOf(sc).map(w => ({ who: w, px: castOf(sc).length > 3 ? 72 : 88 })), sc.place)}
 <div class="win"><h2>📍 ${esc(sc.place)}</h2><p>${esc(sc.intro)}</p><p class="center small">▼</p></div>
 <div class="win"><h3>この場面の英語</h3>
 <p>${Object.keys(cnt).filter(k => cnt[k]).map(k => `${badge(k)} ${cnt[k]}文`).join('　')}</p>
@@ -763,7 +1082,7 @@ SCENE_STEPS.listen = ({ sc }) => {
 <div class="win">
 <div class="row"><button class="btn pri" data-a="all">${V.playing ? '■ 停止' : '▶ 全部再生'}</button><button class="btn" data-a="ja">${showJa ? '訳をかくす' : '日本語訳'}</button></div>
 <p class="small">文をタップすると、その文だけ再生します。</p>
-${sc.lines.map((l, i) => `<div class="ln ${V.cur === i ? 'on' : ''}" data-a="one" data-v="${i}" id="ln${i}">${whoTag(l.w)}${badge(l.r)}<div class="en">${esc(l.en)}</div>${showJa ? `<div class="ja">${esc(l.ja)}</div>` : ''}${srcTag(l)}</div>`).join('')}
+<div class="chat">${sc.lines.map((l, i) => `<div class="msg ln ${l.w === 'me' ? 'me' : ''} ${V.cur === i ? 'on' : ''}" data-a="one" data-v="${i}" id="ln${i}"><div class="face">${face(l.w, 52)}</div><div class="bub">${whoTag(l.w)}${badge(l.r)}<div class="en">${esc(l.en)}</div>${showJa ? `<div class="ja">${esc(l.ja)}</div>` : ''}${srcTag(l)}</div></div>`).join('')}</div>
 </div>
 <button class="btn pri cur" data-a="next">②まねる へ</button>`,
     acts: {
@@ -811,6 +1130,7 @@ SCENE_STEPS.mimic = ({ sc }) => {
 </div>
 <div class="win">
 <p class="small">${k + 1} / ${idxs.length}</p>
+${stageHTML(sc.id, l.w === 'me' ? [{ who: 'me', px: 104 }] : [{ who: l.w, px: 96 }, { who: 'me', px: 80, dim: !V.recording }])}
 ${whoTag(l.w)}${badge(l.r)}
 ${hide ? `<div class="big" style="color:var(--sub)" data-a="reveal">（テキストをかくしています。タップで表示）</div>` : `<div class="big">${hlText(l.en, pts)}</div>`}
 ${V.showJa ? `<div class="ja">${esc(l.ja)}</div>` : `<button class="btn" style="padding:4px 8px;font-size:13px;width:auto;display:inline-block" data-a="ja">日本語訳</button>`}
@@ -878,7 +1198,7 @@ SCENE_STEPS.dict = ({ sc }) => {
     html: `
 <div class="win">
 <p class="small">${d.i + 1} / ${sc.lines.length}　正解 ${d.ok} / ${d.tot}</p>
-${whoTag(l.w)}${badge(l.r)}
+<div style="display:flex;align-items:center;gap:8px">${face(l.w, 64, { eye: d.checked ? (d.res.every(r => r.ok) ? 'happy' : 'half') : '' })}<div>${whoTag(l.w)}${badge(l.r)}</div></div>
 <div class="big">${noBlank && !d.checked ? '（この文は聞くだけ。再生してから「次へ」）' : body}</div>
 ${V.showJa || d.checked ? `<div class="ja">${esc(l.ja)}</div>` : ''}
 ${d.checked ? srcTag(l) : ''}
@@ -894,7 +1214,7 @@ ${d.checked || noBlank ? `<button class="btn pri cur" data-a="nextQ">次へ</but
       czEnter: b => { const n = +b.dataset.n; const nx = $('#cz' + (n + 1)); if (nx) nx.focus(); else ACTS.check(); },
       check: () => {
         d.res = cl.blanks.map((b, k) => { const v = ($('#cz' + k)?.value || ''); return { v, ok: normW(v) === normW(b.core) }; });
-        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true;
+        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true; sfx(d.res.every(r => r.ok) ? 'ok' : 'ng');
         render();
       },
       nextQ: () => {
@@ -926,10 +1246,10 @@ function checkClear(sc) {
 function clearBox(sc) {
   const r = S.scenes[sc.id];
   if (!r || !r.justCleared) return '';
-  r.justCleared = false; save();
+  r.justCleared = false; save(); setTimeout(() => sfx('clear'), 250);
   const x = sceneById(sc.id), nx = x.ch.scenes[x.i + 1];
   const chDone = chapterClear(x.ch);
-  return `<div class="win"><h2>🎉 場面クリア！ <span class="stars">${starStr(sceneStars(sc.id))}</span></h2><p>${esc(sc.outro)}</p>
+  return `${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, eye: 'happy' }, { who: 'me', px: 96, eye: 'happy', blush: true, hop: true }], '場面クリア')}<div class="win pop"><h2>🎉 場面クリア！ <span class="stars">${starStr(sceneStars(sc.id))}</span></h2><p>${esc(sc.outro)}</p>
 ${sc.boss && !r.boss ? '<p>最後に「⑤スピーチ」で30秒自己紹介に挑戦しよう。</p>' : ''}
 ${chDone ? `<p class="okc">${esc(x.ch.title)} クリア！ 次の章は準備中です。</p>` : ''}
 ${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面：${esc(nx.title)}</button>` : ''}</div>`;
@@ -958,25 +1278,28 @@ function quickView() {
   const prev = i > 0 ? s.sc.lines[i - 1] : null;
   const ctx = prev ? `<div class="hint">${whoTag(prev.w)}${esc(prev.en)}</div>` : '';
   const head = `<p class="small">${q.i + 1} / ${q.keys.length}　📍${esc(s.sc.title)}　${badge(l.r)}</p>`;
+  const pw = prev && prev.w !== 'me' ? prev.w : partnerOf(s.sc);
+  const meEye = q.phase === 'judge' ? (q.rt == null ? 'half' : q.rt <= 1500 ? 'happy' : q.rt <= 3000 ? '' : 'half') : '';
+  const stg = stageHTML(s.sc.id, [{ who: pw, px: 88, dim: q.phase === 'rec' }, { who: 'me', px: 96, dim: q.phase === 'cue', eye: meEye, blush: q.phase === 'rec' }]);
   let h = '';
   if (q.phase === 'wait') {
-    h = `<div class="win">${head}${ctx}
+    h = `${stg}<div class="win">${head}${ctx}
 <p>スタートを押すと${prev && prev.w !== 'me' && S.cue ? '相手のセリフが流れ、そのあと' : ''}日本語が出ます。<b>すぐに英語で</b>言ってください。言い始めるまでの秒数を測ります。</p>
 <label class="tg"><input type="checkbox" data-c="cue" ${S.cue ? 'checked' : ''}>相手のセリフを先に流す</label>
 <button class="btn pri cur" data-a="go">スタート</button></div>
 <p class="small">日本語訳は意味のめやすです。同じ意味なら、お手本と違う言い方でもかまいません。</p>`;
   } else if (q.phase === 'cue') {
-    h = `<div class="win">${head}${ctx}<p class="center">🔊 相手のセリフ…</p></div>`;
+    h = `${stg}<div class="win">${head}${ctx}<p class="center">🔊 相手のセリフ…</p></div>`;
   } else if (q.phase === 'prep') {
-    h = `<div class="win">${head}<p class="center">準備中…（静かにしてください）</p>${meterHTML}</div>`;
+    h = `${stg}<div class="win">${head}<p class="center">準備中…（静かにしてください）</p>${meterHTML}</div>`;
   } else if (q.phase === 'rec') {
-    h = `<div class="win">${head}<div class="jaBig">${esc(l.ja)}</div>
+    h = `${stg}<div class="win">${head}<div class="jaBig">${esc(l.ja)}</div>
 <div class="timer" id="tm">0.0</div>
 ${q.manual ? `<p class="small">マイクが使えないため、手動で計ります。</p>${q.onset == null ? `<button class="btn pri" data-a="mOn">言い始めたらタップ</button>` : `<button class="btn pri" data-a="stop">言い終えたらタップ</button>`}` :
   `${meterHTML}<p class="small center" id="st">話し終えて少し黙ると、自動で止まります</p><button class="btn red" data-a="stop">■ 話し終えた</button>`}
 ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))} …</div>` : `<button class="btn" data-a="hint">💡 ヒント（最初の2語）</button>`}</div>`;
   } else if (q.phase === 'judge') {
-    h = `<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
+    h = `${stg}<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
 <p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
 <div class="big">${hlText(l.en, makePoints(l.en))}</div>${srcTag(l)}
 ${pointsHTML(makePoints(l.en))}
@@ -1028,6 +1351,7 @@ ${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言
 }
 function judge(mark) {
   const q = V.q, key = q.keys[q.i];
+  sfx(mark === 'o' ? 'ok' : mark === 'x' ? 'ng' : 'tap');
   const L = S.lines[key] || (S.lines[key] = { b: 0, d: today(), n: 0 });
   if (mark === 'o') L.b = Math.min(L.b + 1, 6); else if (mark === 'm') L.b = Math.max(1, L.b); else L.b = 0;
   L.d = addDays(today(), INTV[L.b]); L.n = (L.n || 0) + 1; L.last = today();
@@ -1052,7 +1376,8 @@ function judge(mark) {
 function quickEnd() {
   const q = V.q, n = k => q.res.filter(x => x.mark === k).length;
   const md = median(q.res.map(x => x.rt).filter(x => x != null));
-  let h = `<div class="win center"><h2>${q.src === 'scene' ? 'とっさに 結果' : '復習 結果'}</h2>
+  const good = q.res.length && n('o') / q.res.length >= .7;
+  let h = `${q.src === 'review' ? stageHTML('c1s1', [{ who: 'me', px: 96, eye: good ? 'happy' : 'half', hop: good }], '復習おわり') : ''}<div class="win center"><h2>${q.src === 'scene' ? 'とっさに 結果' : '復習 結果'}</h2>
 <div class="stat"><div><b>${n('o')}</b><span>○ 言えた</span></div><div><b>${n('m')} / ${n('x')}</b><span>△ / ×</span></div></div>
 <p>反応時間（中央値）<b style="color:var(--acc);font-size:22px">${sec(md)}</b></p>
 <p class="small">×の文は今日もう一度、復習に出てきます。○の文は間隔をあけて出てきます。</p>`;
@@ -1077,6 +1402,7 @@ SCENE_STEPS.boss = ({ sc }) => {
   const b = sc.boss, list = S.boss.filter(x => x.sid === sc.id);
   return {
     html: `
+${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, dim: V.recording }, { who: 'me', px: 100, blush: true }], b.title)}
 <div class="win"><h2>👑 ${esc(b.title)}</h2><p>${esc(b.prompt)}</p>
 <h3>使えるフレーズ</h3><ul class="ph">${b.hints.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
 ${V.recording ? `<div class="timer" id="tm">${b.sec}</div>${meterHTML}<button class="btn red" data-a="stop">■ 終了</button>` :
@@ -1235,6 +1561,7 @@ ${TTS.voices.length ? `<select data-c="voice">${TTS.voices.map(v => `<option val
 <p>速さ：<b id="spv">${S.speed.toFixed(2)}倍</b></p>
 <input type="range" min="0.6" max="1.4" step="0.05" value="${S.speed}" data-i="speed" data-c="speedSet">
 <label class="tg"><input type="checkbox" data-c="multi" ${S.multi ? 'checked' : ''}>登場人物ごとに声を変える（端末にあるアクセントの声を使う）</label>
+<label class="tg"><input type="checkbox" data-c="sfx" ${S.sfx !== false ? 'checked' : ''}>効果音を鳴らす</label>
 <button class="btn pri" data-a="tts">🔊 試しに聞く</button>
 <p>結果：${ok(t.tts)}${t.tts === undefined ? '' : `　<button class="btn" style="display:inline-block;width:auto;padding:4px 10px" data-a="ttsNg">聞こえなかった</button>`}</p></div>
 
@@ -1262,12 +1589,14 @@ ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言って�
 
 <div class="win"><h2>クレジット</h2>
 <p class="small">教材の英文は、下記の引用を除きこのゲームのオリジナルです。</p>
+<p class="small">ウォンバットのドット絵は、同じサイトの「神に愛されたヒメウォンバット」の描画プログラムを使っています。</p>
 <p class="small">講義スライドの2文：<a href="${SOURCES.wpOverfit.url}" target="_blank" rel="noopener">${esc(SOURCES.wpOverfit.title)}</a> より引用（${SOURCES.wpOverfit.lic}）。この2文は CC BY-SA 4.0 で利用できます。</p></div>`,
     acts: {
       voice: b => { S.voice = b.value; save(); },
       speed: b => { S.speed = +b.value; const e = $('#spv'); if (e) e.textContent = S.speed.toFixed(2) + '倍'; },
       speedSet: () => save(),
       multi: b => { S.multi = b.checked; save(); },
+      sfx: b => { S.sfx = b.checked; save(); if (b.checked) sfx('ok'); },
       useSR: b => { S.useSR = b.checked; save(); },
       srBoth: b => { S.srBoth = b.checked; save(); },
       tts: async () => { t.tts = true; S.checked = true; save(); render(); await speak("Hi, I'm Priya. Let me show you around the lab.", 'priya'); await speak('Today, we are going to talk about overfitting.', 'miller'); },
