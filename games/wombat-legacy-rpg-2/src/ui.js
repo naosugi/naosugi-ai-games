@@ -31,8 +31,22 @@ function setSnd(on,init){SND.on=on;try{localStorage.setItem(SND_KEY,on?'1':'0');
 $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 
 // ---------- save ----------
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
-function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
+// セーブデータは 複数。1番は 前からの キー（そのまま 読める）、2番からは キーの 後ろに _2, _3…
+// 番号の 一覧は SLOTS_KEY に 持つ。新しく はじめると いちばん大きい番号＋1
+const SLOTS_KEY='wombatlegacy2_slots',SAVE_MAX=9;let curSlot=1;
+const slotKey=n=>n===1?SAVE_KEY:SAVE_KEY+'_'+n;
+function slotList(){let a=null;try{a=JSON.parse(localStorage.getItem(SLOTS_KEY)||'null');}catch(e){}
+  if(!Array.isArray(a)){a=[];try{if(localStorage.getItem(SAVE_KEY))a=[1];}catch(e){}}
+  return a.filter(n=>Number.isInteger(n)&&n>0).sort((x,y)=>x-y);}
+function setSlotList(a){try{localStorage.setItem(SLOTS_KEY,JSON.stringify(a));}catch(e){}}
+function save(){if(!G)return;G.savedAt=Date.now();try{localStorage.setItem(slotKey(curSlot),JSON.stringify(G));}catch(e){}
+  const a=slotList();if(!a.includes(curSlot)){a.push(curSlot);setSlotList(a.sort((x,y)=>x-y));}}
+function load(n=curSlot){try{const t=localStorage.getItem(slotKey(n));if(!t)return null;const s=JSON.parse(t);if(s&&s.v===2&&s.party)return fixSave(s);return null;}catch(e){return null;}}
+function deleteSlot(n){try{localStorage.removeItem(slotKey(n));}catch(e){}setSlotList(slotList().filter(x=>x!==n));}
+// 読めるデータだけ（こわれたものは のぞく）
+function saves(){return slotList().map(n=>({n,g:load(n)})).filter(x=>x.g);}
+function slotSummary(x){const g=x.g,d=g.savedAt?new Date(g.savedAt):null,p=v=>String(v).padStart(2,'0');
+  return {label:`データ${x.n}　${g.party.map(m=>m.name).join('・')}`,sub:`いちばん深い B${g.reached||0}`+(g.secretDown?'  ★★完全クリア':g.cleared?'  ★クリア':'')+(d?`  ${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`:'')};}
 function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats','raids','raidNews'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevLevel(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return 0;const s=JSON.parse(t);if(s&&s.party)return Math.max(...s.party.map(m=>+m.lv||0));}catch(e){}return 0;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
@@ -307,13 +321,30 @@ function newGame2(){
 }
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
-  const sv=load();
-  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
-  setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`いちばん深い B${sv.reached||0}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown();},cls:'hi'}]:[])]);
+  const all=saves(),sv=all.length?all.reduce((a,b)=>(b.g.savedAt||0)>(a.g.savedAt||0)?b:a).g:null;
+  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?`つづきから あそべます。（セーブデータ ${all.length}こ）`:'ボタンを おして はじめよう。');
+  setCmds([{label:'▶ はじめから',sub:all.length?`データ${nextSlot()}に 記録`:'',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:'データを えらぶ',fn:continueMenu,cls:'hi'}]:[])]);
+}
+const nextSlot=()=>Math.max(0,...slotList())+1;
+async function continueMenu(){
+  while(true){const all=saves();if(!all.length){title();return;}
+    const c=await ask('どの データで あそぶ？',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'🗑 データを けす',cls:'wide sub'},{label:'← もどる',cls:'wide sub'}]);
+    if(c===all.length){await deleteMenu();continue;}
+    if(c>all.length){title();return;}
+    curSlot=all[c].n;G=all[c].g;$('overlay').innerHTML='';fadeT=now;enterTown();return;}
+}
+async function deleteMenu(){
+  const all=saves();
+  const c=await ask('どの データを けす？（もとに もどせません）',[...all.map(x=>({...slotSummary(x),cls:'wide'})),{label:'← もどる',cls:'wide sub'}]);
+  if(c>=all.length)return;const x=all[c];
+  const ok=await ask(`データ${x.n}（${x.g.party.map(m=>m.name).join('・')}、B${x.g.reached||0}）を 本当に けしますか？`,[{label:'けす',cls:'wide'},{label:'やめる',cls:'wide hi'}]);
+  if(ok===0){deleteSlot(x.n);snd('die');await talk(`データ${x.n}を けしました。`);}
 }
 async function startNew(){
-  if(load()){const c=await ask('前のデータは 消えてしまいます。はじめから あそびますか？',['はじめから あそぶ','やめる']);if(c===1){title();return;}}
-  G=newGame2();const pn=prevNames()||['ガッシ','ユーカ','モフ'];G.parents=pn;const plv=prevLevel();
+  const n=nextSlot();
+  if(slotList().length>=SAVE_MAX){await talk(`セーブデータは ${SAVE_MAX}こまでです。「つづきから」で いらない データを けしてから はじめてね。`);title();return;}
+  if(slotList().length){const c=await ask(`あたらしく データ${n}を つくって はじめから あそびますか？\n（いまの データは のこります）`,[{label:'はじめる',cls:'wide hi'},{label:'やめる',cls:'wide'}]);if(c===1){title();return;}}
+  curSlot=n;G=newGame2();const pn=prevNames()||['ガッシ','ユーカ','モフ'];G.parents=pn;const plv=prevLevel();
   $('overlay').innerHTML='';renderParty();updateTop('');playMusic('town');
   await talks(['ここは オーストラリアの ユーカリ村。\n大地に ふたたび ユーカリが しげって、何年かが たった。',
     `ある朝、村の まんなかに、どこまでも つづく 大きな 穴が あいた。`,
