@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>第1回　かんがえる（何が楽しいかは、誰が決める？）</title>
+<!-- このファイルは tools/build_slides.py が書き出します。直接編集せず slides/src/ を直してください -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@700;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b1220;overflow:hidden;font-family:'Zen Kaku Gothic New',system-ui,-apple-system,"Hiragino Sans",sans-serif}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#stage>section{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:none!important}
+#stage>section.on{display:flex!important}
+section ul{padding-left:1.3em}
+section li{margin:.15em 0}
+section table{border-collapse:collapse;width:100%;border-radius:16px;overflow:hidden}
+section th,section td{text-align:left;vertical-align:top;padding:18px 28px;border-bottom:2px solid #D5DDE3;line-height:1.45}
+section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
+/* ポスターに合わせた見た目（section に class="px" を付けたスライド） */
+.px{--navy:#1C2A5B;--ink:#191B2B;--yel:#FFD95A;--org:#F2A33A;--red:#E8613C;--grass:#5DB548;--muted:#BFD0F0;
+  flex-direction:column;gap:34px;padding:60px 110px 150px;color:#fff;font-family:'Zen Kaku Gothic New',system-ui,sans-serif;font-weight:700;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 1490px 70px/300px 120px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 70px 40px/200px 80px,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' d='M6 0h5v1h2v1h3v1h2v2h2v3H0V5h1V3h2V2h3z'/%3E%3Cpath fill='%23d7ecfb' d='M0 7h20v1H0z'/%3E%3C/svg%3E") no-repeat 960px 22px/150px 60px,linear-gradient(180deg,#3E8BD9 0%,#6FB6EC 70%,#92CDF3 100%)}
+.px::after{content:'';position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(#3F9A3A,#3F9A3A) top/100% 6px no-repeat,linear-gradient(var(--grass),var(--grass)) 0 6px/100% 18px no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='80' shape-rendering='crispEdges'%3E%3Crect width='160' height='80' fill='%23A86A37'/%3E%3Cg fill='%23C4824A'%3E%3Crect x='4' y='4' width='72' height='3'/%3E%3Crect x='84' y='4' width='72' height='3'/%3E%3Crect x='44' y='44' width='72' height='3'/%3E%3Crect x='0' y='44' width='36' height='3'/%3E%3Crect x='124' y='44' width='36' height='3'/%3E%3C/g%3E%3Cg fill='%237A4520'%3E%3Crect y='0' width='160' height='4'/%3E%3Crect y='40' width='160' height='4'/%3E%3Crect x='0' y='0' width='4' height='40'/%3E%3Crect x='80' y='0' width='4' height='40'/%3E%3Crect x='40' y='40' width='4' height='40'/%3E%3Crect x='120' y='40' width='4' height='40'/%3E%3C/g%3E%3C/svg%3E") 0 24px/160px 80px repeat-x,#A86A37}
+.px .dot,.px h1,.px h2,.px h3,.px .kick,.px .num{font-family:'DotGothic16','Zen Kaku Gothic New',sans-serif;font-weight:400}
+.px .hd{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.px .kick{display:inline-flex;align-items:center;gap:14px;background:var(--yel);color:var(--ink);font-size:32px;padding:6px 22px;border:5px solid var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.px h1,.px h2{color:#fff;letter-spacing:2px;text-shadow:-4px 0 0 var(--ink),4px 0 0 var(--ink),0 -4px 0 var(--ink),0 4px 0 var(--ink),-4px -4px 0 var(--ink),4px 4px 0 var(--ink),-4px 4px 0 var(--ink),4px -4px 0 var(--ink),8px 8px 0 #0e1440}
+.px h2{font-size:66px;line-height:1.22}
+.px h1{font-size:120px;line-height:1.15}
+.px .y{color:var(--yel)}
+.px .o{color:var(--org)}
+.px .panel{background:var(--navy);border:6px solid #fff;box-shadow:0 0 0 6px var(--ink),10px 10px 0 6px #0e144066;padding:32px 42px;font-size:38px;line-height:1.55;min-height:0}
+.px .panel h3{color:var(--yel);font-size:44px;line-height:1.3;margin-bottom:14px}
+.px .panel b,.px .panel .y{color:var(--yel)}
+.px .panel .s{font-size:28px;color:var(--muted);font-weight:500}
+.px .panel p+p{margin-top:12px}
+.px ul{list-style:none;padding:0}
+.px li{position:relative;padding-left:1.15em;margin:.18em 0}
+.px li::before{content:'▸';position:absolute;left:0;color:var(--yel)}
+.px .cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;flex:1;min-height:0}
+.px .cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;flex:1;min-height:0}
+.px .ybox{background:var(--yel);color:var(--ink);border:6px solid var(--ink);box-shadow:8px 8px 0 #0e144088;padding:18px 34px;font-size:34px;line-height:1.5}
+.px .ybox b{color:#B3361A}
+.px .wip{background:var(--red);color:#fff;font-size:22px;padding:2px 12px;border:3px solid var(--ink);font-family:'DotGothic16',sans-serif}
+.px .todo{border:5px dashed var(--yel);background:#1C2A5BCC;color:var(--yel);padding:16px 28px;font-size:28px;line-height:1.5}
+.px table{border-collapse:collapse;width:100%;border-radius:0}
+.px th,.px td{padding:10px 22px;border-bottom:3px dashed #3E5394;font-size:32px;line-height:1.45;text-align:left;vertical-align:top}
+.px th{background:var(--ink);color:var(--yel);font-family:'DotGothic16',sans-serif;font-weight:400;border-bottom:none}
+.px td:first-child{color:var(--yel);white-space:nowrap}
+.px tr:last-child td{border-bottom:none}
+.px .center,.px.center{align-items:center;justify-content:center;text-align:center}
+.px .kick{align-self:flex-start}
+.px.center .kick,.px .center .kick{align-self:center}
+.px .card{display:flex;flex-direction:column;gap:14px}
+.px .card img{width:100%;aspect-ratio:2/1;object-fit:cover;border:5px solid #fff;image-rendering:auto}
+.px .code{font-family:'DotGothic16',monospace;white-space:pre-wrap;font-size:30px;line-height:1.55}
+.px .flow{display:flex;gap:22px;align-items:stretch}
+.px .flow>.panel{flex:1;padding:24px 26px;font-size:30px}
+.px .num{display:inline-block;background:var(--yel);color:var(--ink);min-width:1.6em;text-align:center;margin-right:10px;padding:0 6px}
+#wip{position:fixed;top:0;left:0;right:0;background:#FFE066;color:#1D2A36;font-size:13px;font-weight:700;text-align:center;padding:6px 10px;padding-top:max(6px,env(safe-area-inset-top));z-index:3}
+#bar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:#0b1220cc;color:#cfe0f7;font-size:13px;z-index:3}
+#bar a,#bar button{white-space:nowrap;font:inherit;color:#cfe0f7;background:#1b2a44;border:1px solid #2a4670;border-radius:8px;padding:6px 12px;text-decoration:none;cursor:pointer}
+#bar .sp{flex:1}
+#count{min-width:4.5em;text-align:center}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible;background:#fff;height:auto}
+  #bar,#wip{display:none}
+  #stage{position:static;transform:none!important;width:auto;height:auto}
+  #stage>section{position:relative;display:flex!important;break-after:page}
+}
+</style>
+</head>
+<body>
+<div id="wip">講師2名の自己紹介と「なぜこの講座を開くのか」は作成中です。</div>
+<div id="stage">
+<section id="cover" class="px" style="flex-direction:row;align-items:center;gap:60px">
+<div style="flex:1;display:flex;flex-direction:column;gap:36px">
+<p class="kick">第1回　1/10（日）　かんがえる</p>
+<h1>何が<span class="y">楽しい</span>かは、<br>誰が決める？</h1>
+<p class="ybox" style="align-self:flex-start">親子で、作りたいゲームを考えて、紙に設計図をかく</p>
+<p class="dot" style="font-size:34px;text-shadow:3px 3px 0 #191B2B">親子でAIゲームづくり講座</p>
+</div>
+<div><svg viewBox='0 0 44 34' width='620' height='479' shape-rendering='crispEdges' aria-hidden='true'><rect x='0' y='0' width='44' height='28' fill='#191B2B'/><rect x='1' y='1' width='42' height='26' fill='#B7C2CF'/><rect x='3' y='3' width='38' height='22' fill='#6FB6EC'/><rect x='6' y='5' width='5' height='1' fill='#fff'/><rect x='5' y='6' width='8' height='1' fill='#fff'/><rect x='30' y='4' width='4' height='1' fill='#fff'/><rect x='29' y='5' width='7' height='1' fill='#fff'/><rect x='3' y='19' width='38' height='1' fill='#5DB548'/><rect x='3' y='20' width='38' height='5' fill='#A86A37'/><rect x='6' y='22' width='4' height='1' fill='#7A4520'/><rect x='18' y='23' width='4' height='1' fill='#7A4520'/><rect x='31' y='21' width='4' height='1' fill='#7A4520'/><rect x='21' y='12' width='10' height='1' fill='#5DB548'/><rect x='21' y='13' width='10' height='2' fill='#A86A37'/><rect x='23' y='8' width='2' height='3' fill='#FFD95A'/><rect x='27' y='8' width='2' height='3' fill='#FFD95A'/><rect x='23' y='8' width='1' height='1' fill='#fff'/><rect x='27' y='8' width='1' height='1' fill='#fff'/><rect x='9' y='12' width='4' height='1' fill='#3B2A20'/><rect x='9' y='13' width='4' height='2' fill='#F5C9A0'/><rect x='10' y='13' width='1' height='1' fill='#191B2B'/><rect x='12' y='13' width='1' height='1' fill='#191B2B'/><rect x='8' y='15' width='6' height='3' fill='#F2A33A'/><rect x='9' y='18' width='1' height='1' fill='#1C2A5B'/><rect x='12' y='18' width='1' height='1' fill='#1C2A5B'/><rect x='34' y='16' width='4' height='1' fill='#E8613C'/><rect x='33' y='17' width='6' height='2' fill='#E8613C'/><rect x='34' y='17' width='1' height='1' fill='#fff'/><rect x='37' y='17' width='1' height='1' fill='#fff'/><rect x='18' y='28' width='8' height='3' fill='#B7C2CF'/><rect x='12' y='31' width='20' height='3' fill='#191B2B'/><rect x='13' y='31' width='18' height='1' fill='#4D5D6A'/></svg></div>
+</section>
+<section id="question" class="px center">
+<p class="kick">この講座の問い</p>
+<h1 style="font-size:104px">何が<span class="y">楽しい</span>かは、<br>誰が決めるんだろう？</h1>
+<div class="panel" style="font-size:38px">答えは、今は出さなくていい。<br>3回の中で、<b>「自分たちが決めたこと」</b>に注目してみてください。</div>
+</section>
+<section id="course" class="px">
+<div class="hd"><p class="kick">全3回の流れ</p><h2>考えて、作って、直して見せる</h2></div>
+<div class="cols3">
+<div class="panel center card"><p class="dot y" style="font-size:40px">第1回　1/10</p><h3 style="font-size:64px;color:#fff">かんがえる</h3><p>紙に設計図をかく</p><p class="s">AIはまだ使いません</p></div>
+<div class="panel center card"><p class="dot y" style="font-size:40px">第2回　1/17</p><h3 style="font-size:64px;color:#fff">つくる</h3><p>AIにたのんで動かす</p><p class="s">保護者のAIのアカウントを使います</p></div>
+<div class="panel center card"><p class="dot y" style="font-size:40px">第3回　1/24</p><h3 style="font-size:64px;color:#fff">なおす・みせる</h3><p>遊んで直し、見せ合う</p><p class="s">内容は検討中です</p></div>
+</div>
+<p class="ybox">どの回も日曜 10:00〜12:00、小川パレット5階 第一多目的室</p>
+</section>
+<section id="agenda" class="px">
+<div class="hd"><p class="kick">今日の流れ（120分）</p><h2>最初は苦労する。途中から、まとめ方を知る</h2></div>
+<div class="panel" style="padding:10px 16px">
+<table>
+<tr><th>時間</th><th>内容</th></tr>
+<tr><td>5分</td><td>はじめに：この講座の問い</td></tr>
+<tr><td>30分</td><td>講義：講師紹介、AIでできるようになったこと、今回作るゲーム、サンプルの実演</td></tr>
+<tr><td>5分</td><td>ワーク前半：白紙に、親子で自由に考える</td></tr>
+<tr><td>10分</td><td>中間講義：設計図で決めておくこと</td></tr>
+<tr><td>50分</td><td>ワーク後半：設計図を書き、最後の10分でAIへのお願いの文に書き写す</td></tr>
+<tr><td>10分</td><td>宿題の説明（＋予備10分）</td></tr>
+</table>
+</div>
+<p class="ybox">今日のゴール：AIに渡せる<b>「お願いの文」</b>ができている</p>
+</section>
+<section id="lecturer1" class="px">
+<p class="kick" style="align-self:flex-start">講師紹介　1/3</p>
+<div style="display:flex;gap:48px;flex:1;min-height:0">
+<div class="panel center" style="width:400px;flex:none;border-style:dashed;color:#BFD0F0;font-size:30px">写真<br><span class="s">（差し替え）</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:28px;min-width:0">
+<div><p class="dot" style="font-size:32px;text-shadow:3px 3px 0 #191B2B">おおすぎ なおや</p><h2 style="font-size:92px">大杉 直也</h2>
+<p class="dot y" style="font-size:36px;text-shadow:3px 3px 0 #191B2B;margin-top:8px">デジタル庁　源内班　ガバメントAIリードエンジニア</p></div>
+<div class="panel" style="font-size:30px;flex:1">
+<ul>
+<li>政府職員が使う生成AIの環境「<b>ガバメントAI 源内</b>」を、企画・立ち上げから開発・運用まで担当</li>
+<li>2023年度から、行政職員向けの生成AIワークショップを企画し、講師もしている</li>
+<li>デジタル庁「テキスト生成AI利活用におけるリスクへの対策ガイドブック（α版）」（2024年）を執筆</li>
+<li>この講座のサンプルゲームは、講師がAIに頼んで作ったもの</li>
+</ul>
+</div>
+</div>
+</div>
+<p class="ybox" style="font-size:29px">寄り道の多い経歴：高校中退 → 千葉大学文学部に飛び入学 → 大学院でサルの脳波のデータ分析 → リクルート → 社会人のままN高等学校に入り、卒業 → デジタル庁</p>
+</section>
+<section id="lecturer2" class="px">
+<p class="kick" style="align-self:flex-start">講師紹介　2/3 <span class="wip">差し替え</span></p>
+<div style="display:flex;gap:48px;flex:1;min-height:0">
+<div class="panel center" style="width:400px;flex:none;border-style:dashed;color:#BFD0F0;font-size:30px">写真<br><span class="s">（差し替え）</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<div><p class="dot" style="font-size:32px;text-shadow:3px 3px 0 #191B2B">（ふりがな）</p><h2 style="font-size:92px">講師2の名前</h2>
+<p class="dot y" style="font-size:36px;text-shadow:3px 3px 0 #191B2B;margin-top:8px">（ふだんの仕事）</p></div>
+<div class="todo" style="flex:1">この1枚は、講師2の自己紹介スライドに差し替えます。</div>
+</div>
+</div>
+</section>
+<section id="lecturer3" class="px">
+<p class="kick" style="align-self:flex-start">講師紹介　3/3 <span class="wip">差し替え</span></p>
+<div style="display:flex;gap:48px;flex:1;min-height:0">
+<div class="panel center" style="width:400px;flex:none;border-style:dashed;color:#BFD0F0;font-size:30px">写真<br><span class="s">（差し替え）</span></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<div><p class="dot" style="font-size:32px;text-shadow:3px 3px 0 #191B2B">（ふりがな）</p><h2 style="font-size:92px">講師3の名前</h2>
+<p class="dot y" style="font-size:36px;text-shadow:3px 3px 0 #191B2B;margin-top:8px">（ふだんの仕事）</p></div>
+<div class="todo" style="flex:1">この1枚は、講師3の自己紹介スライドに差し替えます。</div>
+</div>
+</div>
+</section>
+<section id="why" class="px">
+<div class="hd"><p class="kick">はじめに <span class="wip">作成中</span></p><h2>なぜ、この講座を開くのか</h2></div>
+<div class="todo" style="flex:1;font-size:34px">ここに入れる内容は、これから相談して決めます。</div>
+</section>
+<section id="now" class="px">
+<div class="hd"><p class="kick">講義 ①</p><h2>言葉で頼むだけで、動くゲームが作れるようになった</h2></div>
+<div class="cols">
+<div class="panel"><h3>できるようになったこと</h3>
+<ul><li>プログラムを書く手間が、大きく下がった</li><li>言葉で頼むと、AIがコードを書く</li><li>直したいことも、言葉で頼める</li></ul></div>
+<div class="panel"><h3>では……</h3>
+<p style="font-size:44px">作れるなら、<b>必ず面白くなる</b>？</p>
+<p>同じゲームでも、楽しいと感じる人と、そうでない人がいる。</p></div>
+</div>
+</section>
+<section id="kinds" class="px">
+<div class="hd"><p class="kick">講義 ②</p><h2>今回作るのは、ネットなしで動く<br>「HTMLファイル1つ」のゲーム</h2></div>
+<div class="cols">
+<div class="panel"><h3>デジタルゲームのいろいろ</h3>
+<ul><li>ブラウザで遊ぶゲーム</li><li>スマホのアプリ</li><li>家庭用のゲーム機</li><li>ネットにつなぐもの、つながないもの</li></ul></div>
+<div class="panel"><h3>今回のゲーム</h3>
+<ul><li>ブラウザで遊ぶ</li><li>インターネットにつながなくても動く</li><li>HTMLファイル1つで完結</li><li>ファイルを渡せば、人にも遊んでもらえる</li></ul></div>
+</div>
+<p class="ybox" style="font-size:30px"><b>苦手なこと：</b>ランキングをみんなで共有する、ログイン、重い3D。iPhoneでは、ファイルが開けないことがある（AIの画面の中でなら遊べる）。</p>
+</section>
+<section id="sample" class="px">
+<div class="hd"><p class="kick">講義 ③　実演</p><h2>サンプルを見てみよう</h2></div>
+<div class="cols3">
+<div class="panel card" style="padding:20px 22px;font-size:27px;gap:8px"><img src="../../../games/tsumiki-dokaan/thumb.jpg" alt=""><h3 style="font-size:34px;margin:0">つみきドカーン！</h3><p>ボールで積み木をたおす、こども向けのゲーム。タップで落とす、引っぱって飛ばす。</p><p class="s">平面（2D）・約160KB</p></div><div class="panel card" style="padding:20px 22px;font-size:27px;gap:8px"><img src="../../../games/wombat-legacy-rpg/thumb.jpg" alt=""><h3 style="font-size:34px;margin:0">ウォンバット☆レガシーRPG</h3><p>コマンドを選んで戦うRPG。負けても失うものがなく、はじめての人でも最後まで遊べる。</p><p class="s">平面（2D）・約150KB・約60分</p></div><div class="panel card" style="padding:20px 22px;font-size:27px;gap:8px"><img src="../../../games/infinite-shot-3d/thumb.jpg" alt=""><h3 style="font-size:34px;margin:0">INFINITE SHOT 3D</h3><p>自動で前に進む3Dのシューティング。5分間を生き抜く。</p><p class="s">立体（3D）・約620KB・有料プランで時間をかけて作成</p></div>
+</div>
+<p class="ybox">見るところ：<b>どこが面白い？</b>　どう操作する？　どうなったら終わり？</p>
+</section>
+<section id="split" class="px">
+<div class="hd"><p class="kick">講義 ④</p><h2>AIに任せられること、自分たちで決めること</h2></div>
+<div class="cols">
+<div class="panel"><h3>AIに任せられる</h3>
+<ul><li>コードを書く</li><li>画面や動きを作る</li><li>不具合を直す</li><li>案を出す</li></ul></div>
+<div class="panel"><h3>自分たちで決める</h3>
+<ul><li>何が面白いか</li><li>ルール、勝ち負け</li><li>難しさ（ちょうどよさ）</li><li>その題材で大丈夫か</li></ul></div>
+</div>
+<p class="ybox">AIも案は出せる。でも、<b>自分たちにとって何が楽しいか</b>は、自分たちで考えてみないと分からない。</p>
+</section>
+<section id="rule" class="px center">
+<p class="kick">ワークの前に</p>
+<h2>親子のルールは、ひとつだけ</h2>
+<div class="panel" style="font-size:54px;line-height:1.5;padding:44px 70px">AIに入力するのは、保護者。<br><b>入力する前に、必ず子どもに確認する。</b></div>
+<p class="ybox">考えるのは親子いっしょに。決めるのは、遊ぶ人。</p>
+</section>
+<section id="blank" class="px">
+<div class="hd"><p class="kick">ワーク前半（5分）</p><h2>白紙に、作りたいゲームを自由に書いてみよう</h2></div>
+<div class="cols">
+<div class="panel"><h3>書いてみるもの（自由）</h3>
+<ul><li>どんなゲーム？</li><li>どこが楽しい？</li><li>絵で描いてもいい</li></ul></div>
+<div class="panel"><h3>この5分のねらい</h3>
+<p>うまくまとまらなくて大丈夫。</p><p><b>「決めないとまとまらない」</b>を体験する時間。</p></div>
+</div>
+</section>
+<section id="ask-ai" class="px">
+<div class="hd"><p class="kick">中間講義</p><h2>AIに「面白いゲームを作って」とだけ頼んだら？</h2></div>
+<div class="cols">
+<div class="panel"><h3>何が起きる？</h3>
+<p>AIは、それらしいゲームを作る。</p><p>でも、<b>自分たちが思っていたゲーム</b>になるとは限らない。</p></div>
+<div class="panel"><h3>だから</h3>
+<p>頼む前に、<b>自分たちで決めておく</b>。</p><p>決めたことを紙に書いておけば、そのままAIに渡せる。</p></div>
+</div>
+<p class="ybox">白紙のワーク、うまくまとまった組、困った組は？（手を挙げてみよう）</p>
+</section>
+<section id="items" class="px">
+<div class="hd"><p class="kick">中間講義</p><h2>設計図で決めておくこと</h2></div>
+<div class="panel" style="padding:8px 14px">
+<table>
+<tr><th>項目</th><th>考えてみよう</th></tr>
+<tr><td>面白い点</td><td>なぜ、ここを先に決めるとよい？</td></tr>
+<tr><td>終わり方</td><td>どうなったら終わり？ 決めないと、どうなる？</td></tr>
+<tr><td>イメージ図</td><td>言葉だけで伝えると、どうなる？</td></tr>
+<tr><td>ひとことで言うと</td><td>どんなゲーム？（近いジャンルは？）</td></tr>
+<tr><td>操作・ルール</td><td>何をすると、どうなる？</td></tr>
+<tr><td>遊ぶ端末</td><td>スマホ？ パソコン？（操作が変わる）</td></tr>
+<tr><td>本物はどうなっている？</td><td>現実が題材なら、本物らしさで大事なところ</td></tr>
+<tr><td>この題材で大丈夫？</td><td>人に見せて大丈夫？ 子ども向けにふさわしい？</td></tr>
+</table>
+</div>
+</section>
+<section id="examples" class="px">
+<div class="hd"><p class="kick">中間講義</p><h2>講師も、最初に決めておけばよかった</h2></div>
+<div class="cols3">
+<div class="panel"><h3>遊ぶ端末</h3><p>キーボード☆ドライバーでは、最初に「スマホで」と伝えた。AIは作る前に「スマホだとキーボードの練習にならないのでは」と指摘した。</p></div>
+<div class="panel"><h3>本物らしさ</h3><p>ゴルフでは「コースは本当にありそうな感じに」、子育てゲームでは「学資保険みたいな選択肢」と伝えた。</p></div>
+<div class="panel"><h3>題材</h3><p>銀玉エスパーは途中まで作ったが、パチンコが子ども向けにふさわしくないと気づいてやめた。最初に考えれば分かったはず。</p></div>
+</div>
+</section>
+<section id="core" class="px">
+<div class="hd"><p class="kick">中間講義</p><h2>「ぶらさない点」と「最小版」を決める</h2></div>
+<div class="cols">
+<div class="panel"><h3>ぶらさない点</h3>
+<p>これだけは変えない、というところ。</p><p>ここを変えたくなったら、<b>最初から考え直す</b>。</p>
+<p class="s">例：ウォンバット☆レガシーRPGは「RPGがはじめての人でも最後まで遊べる」</p></div>
+<div class="panel"><h3>最小版</h3>
+<p>「これがあれば遊べる」だけのゲーム。</p><p><b>第2回の終わりまでは、最小版から出ない。</b></p></div>
+</div>
+<p class="ybox" style="font-size:30px">実例：名を持つ十二の兵は「シンプルな戦闘シミュレーション」から始めて、5日ほどで3つの物語を持つゲームに広がった。<b>広げるのは、遊べてから。</b></p>
+</section>
+<section id="template" class="px">
+<div class="hd"><p class="kick">ワーク後半の最後の10分</p><h2>設計図を、AIへのお願いの文に書き写す</h2></div>
+<div class="panel code" style="font-size:31px;padding:26px 40px">次のゲームを、ネット接続なしで動く1つのhtmlファイルで作ってください。
+遊ぶ端末：<span class="y">□</span>　　コンセプト（一言で）：<span class="y">□</span>
+面白い点：<span class="y">□</span>　　ルール：<span class="y">□</span>　　終了条件：<span class="y">□</span>
+本物らしさで大事なところ：<span class="y">□</span>（現実が題材のときだけ）
+見た目の方向性：<span class="y">□</span>（例：にぎやかでポップ、自分は青・敵は赤）細かいところはお任せします。
+変えないでほしいこと：<span class="y">□</span>　　まず作る最小版：<span class="y">□</span>
+今はまだ入れないこと：<span class="y">□</span>（例：ステージ、ランキング、派手な演出）
+エラーが出たら、画面に表示してください。
+作る前に質問があれば、おすすめ案を付けて聞いてください。
+説明は短く、変更点だけ書いてください。</div>
+<p class="ybox" style="font-size:30px">ワークシート3ページ目に書き写します。今日はAIに送りません。送るのは第2回です。</p>
+</section>
+<section id="homework" class="px">
+<div class="hd"><p class="kick">宿題（1/17までに）</p><h2>おうちで、AIでゲームを1つ作ってみる</h2></div>
+<div class="flow" style="flex:1;min-height:0">
+<div class="panel"><h3><span class="num">1</span>アカウントを作る</h3><p>保護者のアカウントで、AIを使えるようにする。</p><p class="s">次のページのどれか。無料プランで大丈夫です。</p></div>
+<div class="panel"><h3><span class="num">2</span>簡単なゲームを頼む</h3><p>例：「じゃんけんゲームを、ネット接続なしで動く1つのhtmlファイルで作って」</p><p class="s">今日の設計図のゲームは、まだ頼まない。</p></div>
+<div class="panel"><h3><span class="num">3</span>保存して開く</h3><p>できたゲームを保存し、もう一度開けるか確かめる。</p><p class="s">うまくいかなくても大丈夫。第2回の最初に確かめます。</p></div>
+</div>
+<p class="ybox" style="font-size:30px">第2回の持ち物：<b>今日の設計図とお願いの文</b>、AIにログインできるノートPCかスマホ（充電しておく）、ログインに必要なパスワード</p>
+</section>
+<section id="ai" class="px">
+<div class="hd"><p class="kick">宿題</p><h2>どのAIを使う？（おすすめの順）</h2></div>
+<div class="panel" style="padding:8px 14px">
+<table>
+<tr><th>AI</th><th>ゲームが出るところ</th><th>宿題のときに</th></tr>
+<tr><td>1　Claude</td><td>「アーティファクト」<br><span class="s">会話の横（スマホでは別の画面）</span></td><td>設定の「機能」で「コード実行とファイル作成」をオンにしておく</td></tr>
+<tr><td>2　ChatGPT</td><td>「キャンバス」</td><td>スマホのアプリでは出ないことがある。そのときはブラウザで開く</td></tr>
+<tr><td>3　Gemini</td><td>「Canvas」</td><td>入力欄の下の［Canvas］を選んでから頼む</td></tr>
+</table>
+</div>
+<p class="ybox" style="font-size:29px">ほかのAIで作れそうなら、持ち込みは自由です。<b>ただし、講師はサポートできません。</b></p>
+<p class="dot" style="font-size:28px;text-shadow:3px 3px 0 #191B2B">画面やボタンの名前は、2026年11月時点のものです。変わることがあります。</p>
+</section>
+<section id="close" class="px center">
+<p class="kick">次回</p>
+<h1 style="font-size:110px">1/17（日）<span class="y">つくる</span></h1>
+<div class="panel" style="font-size:38px">設計図をAIにわたして、動くゲームにします。<br>10:00〜12:00　小川パレット5階 第一多目的室</div>
+<p class="ybox">設計図とお願いの文を、なくさずに持ってきてください</p>
+</section>
+</div>
+<div id="bar">
+  <a href="../">← 講座のページ</a>
+  <span class="sp"></span>
+  <button id="prev" aria-label="前へ">◀</button><span id="count"></span><button id="next" aria-label="次へ">▶</button>
+  <span class="sp"></span>
+  <button id="fs">全画面</button>
+</div>
+<script>
+(() => {
+  const st = document.getElementById('stage'), s = [...st.children];
+  let i = Math.min(Math.max((parseInt(location.hash.slice(1)) || 1) - 1, 0), s.length - 1);
+  function fit() {
+    const top = document.getElementById('wip') ? document.getElementById('wip').offsetHeight : 0;
+    const bot = document.getElementById('bar').offsetHeight;
+    const w = innerWidth, h = innerHeight - top - bot;
+    const k = Math.min(w / 1920, h / 1080);
+    st.style.transform = `translate(${-960 * k}px, ${-540 * k + (top - bot) / 2}px) scale(${k})`;
+  }
+  function show(n) {
+    i = Math.min(Math.max(n, 0), s.length - 1);
+    s.forEach((e, j) => e.classList.toggle('on', j === i));
+    document.getElementById('count').textContent = (i + 1) + ' / ' + s.length;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(s.length - 1);
+  });
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('fs').onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} };
+  st.addEventListener('click', e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  let x0 = null;
+  addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) show(dx < 0 ? i + 1 : i - 1); x0 = null; });
+  addEventListener('resize', fit);
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>
