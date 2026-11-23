@@ -891,7 +891,7 @@ async function endBattle(){
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
     const rareK=B.enemies.reduce((a,e)=>e.hp<=0&&!e.fled?Math.max(a,e.metal||0):a,0);
-    if(rareK>=2&&!(B.opt.boss||B.opt.guard)){flashT=performance.now();banner(rareK>=3?'★ 大当たり ★':'当たり！','けいけんちが どっさり！','#ffd36b',2200);await sleep(900);}
+    if(rareK>=2&&!(B.opt.boss||B.opt.guard)){flashT=performance.now();banner(rareK>=3?'★ おめでとう！ ★':'おめでとう！','けいけんちが どっさり！','#ffd36b',2200);await sleep(900);}
     if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     {const vet=G.party.filter(m=>m.hp>0&&vetBonus(m)&&m.lv<JOBS[m.job].cap).map(m=>m.name);
     const rareE=rareK>=2?B.enemies.find(e=>e.metal===rareK):null;
