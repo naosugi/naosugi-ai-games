@@ -1107,7 +1107,7 @@ function tileCanvas(ts,kind,v){
 // ===== UI / screens =====
 const $=id=>document.getElementById(id);
 const cv=$('cv'),ctx=cv.getContext('2d');
-const SW=192,SH=144,SAVE_KEY='wombatlegacy_save_v1';
+const SW=192,SH=144,SAVE_KEY='wombatlegacy_save_v1',SLOT_PREFIX='wombatlegacy_slot_';
 const R=rng((Date.now()^(Math.random()*1e9))&0x7fffffff);
 let G=null,mode='title',B=null,F=null,BA=null,busy=false,heldDir=null,disp=null,now=0,dexSel=null,shakeT=-1e9,flashT=-1e9,fadeT=-1e9;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -1141,8 +1141,19 @@ function setSnd(on,init){SND.on=on;try{localStorage.setItem('wombatlegacy_snd',o
 $('snd').onclick=()=>{setSnd(!SND.on);snd('tap');};setSnd(SND.on,true);
 
 // ---------- save ----------
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
-function load(){try{const t=localStorage.getItem(SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.v===1&&s.party){s.keys=s.keys||{};s.maps=s.maps||{};return s;}return null;}catch(e){return null;}}
+// セーブは「セーブ1・2・3…」に分けて保存する（wombatlegacy_slot_<番号>）。
+// wombatlegacy_save_v1 には、最後に保存したデータの写しを書く（続編がレベルと名前を引き継ぐときに読むため）。
+function normSave(s){if(s&&s.v===1&&s.party){s.keys=s.keys||{};s.maps=s.maps||{};s.flags=s.flags||{};return s;}return null;}
+function migrateSave(){try{const old=localStorage.getItem(SAVE_KEY);if(!old||listSlots().length)return;const s=normSave(JSON.parse(old));if(!s)return;
+  s.slot=1;localStorage.setItem(SLOT_PREFIX+1,JSON.stringify(s));localStorage.setItem(SAVE_KEY,JSON.stringify(s));}catch(e){}}
+function listSlots(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),m=/^wombatlegacy_slot_(\d+)$/.exec(k||'');if(!m)continue;
+  try{const s=normSave(JSON.parse(localStorage.getItem(k)));if(s){s.slot=+m[1];out.push({n:+m[1],data:s});}}catch(e){}}}catch(e){}return out.sort((a,b)=>a.n-b.n);}
+function nextSlotNo(){const s=listSlots();return s.length?s[s.length-1].n+1:1;}
+function save(){if(!G||!G.slot)return;try{G.savedAt=Date.now();const t=JSON.stringify(G);localStorage.setItem(SLOT_PREFIX+G.slot,t);localStorage.setItem(SAVE_KEY,t);}catch(e){}}
+function deleteSlot(n){try{localStorage.removeItem(SLOT_PREFIX+n);const t=localStorage.getItem(SAVE_KEY);const cur=t?JSON.parse(t):null;
+  if(cur&&(cur.slot===n||cur.slot==null)){const rest=listSlots();if(rest.length){rest.sort((a,b)=>(b.data.savedAt||0)-(a.data.savedAt||0));localStorage.setItem(SAVE_KEY,JSON.stringify(rest[0].data));}else localStorage.removeItem(SAVE_KEY);}}catch(e){}}
+function fmtDate(ts){if(!ts)return '';const d=new Date(ts),p=x=>String(x).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;}
+function slotInfo(s){const g=s.data;return {label:`セーブ${s.n}${g.cleared?' ★クリア':''}`,sub:`${TOWNS[g.town]?TOWNS[g.town].name:''} / Lv ${g.party.map(m=>m.lv).join('・')}${g.savedAt?' / '+fmtDate(g.savedAt):''}`};}
 
 // ---------- message & commands ----------
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1383,17 +1394,33 @@ function drawWipe(){const k=Math.min(1,(now-wipeT)/460),n=Math.floor(k*SPIRAL.le
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG');
   $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG</h1><p>はじめてでも あそべる クラシックRPG</p>';
-  const sv=load();setMsg(sv?'つづきから あそべます。':'ボタンを おして はじめよう。');
-  setCmds([{label:'▶ はじめから',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:`${TOWNS[sv.town].name} / Lv${sv.party[0].lv}`,fn:()=>{G=sv;$('overlay').innerHTML='';fadeT=now;enterTown(G.town);},cls:'hi'}]:[])]);
+  migrateSave();const slots=listSlots();
+  setMsg(slots.length?`セーブデータが ${slots.length}こ あります。\n「つづきから」で えらんで あそべるよ。`:'ボタンを おして はじめよう。');
+  setCmds([{label:'▶ はじめから',sub:`「セーブ${nextSlotNo()}」に 記録されるよ`,fn:startNew,cls:slots.length?'':'wide hi'},...(slots.length?[{label:'▶ つづきから',sub:'セーブデータを えらぶ',fn:continueMenu,cls:'hi'}]:[])]);
+}
+function continueMenu(){
+  const slots=listSlots();if(!slots.length){title();return;}
+  setMsg('どの データで あそぶ？');
+  setCmds([...slots.map(s=>Object.assign(slotInfo(s),{cls:'wide',fn:()=>{G=s.data;G.slot=s.n;$('overlay').innerHTML='';fadeT=now;enterTown(G.town);}})),
+    {label:'🗑 データを 消す',cls:'wide sub',fn:deleteMenu},{label:'← もどる',cls:'wide sub',fn:title}]);
+}
+function deleteMenu(){
+  const slots=listSlots();if(!slots.length){title();return;}
+  setMsg('どの データを 消す？\n（消した データは もとに もどせません）');
+  setCmds([...slots.map(s=>Object.assign(slotInfo(s),{cls:'wide',fn:async()=>{
+      const c=await ask(`「セーブ${s.n}」を 消します。\nもとに もどせません。本当に 消しますか？`,[{label:'やめる',cls:'wide hi'},{label:'🗑 消す',cls:'wide'}]);
+      if(c===1){deleteSlot(s.n);snd('die');await talk(`「セーブ${s.n}」を 消しました。`);}
+      if(listSlots().length)deleteMenu();else title();}})),
+    {label:'← もどる',cls:'wide sub',fn:continueMenu}]);
 }
 async function startNew(){
-  if(load()){const c=await ask('前のデータは 消えてしまいます。はじめから あそびますか？',['はじめから あそぶ','やめる']);if(c===1){title();return;}}
-  G=newGame();$('overlay').innerHTML='';renderParty();updateTop('');
+  G=newGame();G.slot=nextSlotNo();$('overlay').innerHTML='';renderParty();updateTop('');
   await talks(['ここは オーストラリアの どこか。\nウォンバットたちが 巣穴を ほって くらしている。',
     'ある年、大地が かわきはじめ、\n巣穴が つぎつぎに くずれだした…',
     '村の長老は 言った。\n「言い伝えでは、祖先が のこした『レガシー』が、遠くの遺跡に ねむっておるそうじゃ」',
     '「せんしの ガッシ、まほうつかいの ユーカ、そうりょの モフ。\nおまえたち 3匹に たのみたい！」',
-    '【あそびかた】\n町では ボタンで 行き先を えらぶよ。\nまずは「長老の巣穴」で クエストを 聞いてみよう。']);
+    '【あそびかた】\n町では ボタンで 行き先を えらぶよ。\nまずは「長老の巣穴」で クエストを 聞いてみよう。',
+    `この冒険は「セーブ${G.slot}」に 自動で 記録されるよ。`]);
   fadeT=now;enterTown(0);
 }
 
@@ -1427,7 +1454,7 @@ async function checkQuests(){
 }
 function townMenu(){
   const t=G.town,T=TOWNS[t],U=TOWN_UI[t],D=DUNGEONS[T.dungeon];mode='town';advance=null;dexSel=null;
-  updateTop(T.name);renderParty();
+  updateTop(`${T.name}（セーブ${G.slot}）`);renderParty();
   setMsg(`【${T.name}】`+(T.final?' 目標\n':' どれか1つで次の町へ\n')+questLines(t,true));
   const list=[
     {label:'🛏 宿屋',sub:`${T.inn}ウォンで 全回復`,fn:inn},
