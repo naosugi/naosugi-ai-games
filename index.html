@@ -40,7 +40,7 @@
         <a class="card coll" href="${esc(c.path)}">
           <div class="thumb" ${c.thumbnail ? `style="background-image:url('${esc(c.thumbnail)}')"` : ''}>${c.thumbnail ? '' : '<div class="ph">🎮</div>'}</div>
           <div class="body">
-            <span class="kind">${c.kind === 'event' ? 'イベント' : 'サンプル'}</span>
+            <span class="kind">${c.kind === 'event' ? 'イベント' : c.kind === 'trial' ? '試作中' : 'サンプル'}</span>
             <h2>${esc(c.title)}</h2>
             ${c.date || c.place ? `<div class="evmeta">${c.date ? '<span>📅 ' + esc(c.date) + '</span>' : ''}${c.place ? '<span>📍 ' + esc(c.place) + '</span>' : ''}</div>` : ''}
             <p>${esc(c.lead)}</p>
