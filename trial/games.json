@@ -1,0 +1,22 @@
+{
+  "title": "試作中のゲーム",
+  "kind": "trial",
+  "lead": "作っている途中のゲームです。遊べますが、内容や記録の形式が変わることがあります。",
+  "games": [
+    {
+      "id": "eigo-road",
+      "title": "ENGLISH ROAD（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "留学生からAIエンジニアを目指す英語のリスニング・スピーキング練習。場面ごとに聞く・まねる・書き取る・とっさに言うをくり返す。言い始めるまでの秒数の記録と、自分の声の録音で上達が分かる。",
+      "path": "../games/eigo-road/",
+      "thumbnail": "../games/eigo-road/thumb.jpg",
+      "tags": [
+        "英語",
+        "音声"
+      ],
+      "controls": "タップ・マイク / クリック・マイク",
+      "playtime": "1場面 約10分",
+      "added": "2026-11-23"
+    }
+  ]
+}

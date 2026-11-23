@@ -31,6 +31,14 @@
 | [ウォンバット☆レガシーRPG](games/wombat-legacy-rpg/) | ウォンバット3匹のコマンド選択式RPG。迷路のダンジョンで宝箱とボスに挑む。RPG未経験でも遊べる作り |
 | [ウォンバット☆レガシーRPG 2](games/wombat-legacy-rpg-2/) | 前作の子どもたちが地下50階の穴に挑む、やりこみ型の続編。転職・技の引き継ぎ・壁掘りで進む |
 
+## 試作中のゲーム
+
+作っている途中のゲームです。内容や記録の形式が変わることがあります。
+
+| ゲーム | 内容 |
+|---|---|
+| [ENGLISH ROAD（試作中）](games/eigo-road/) | AIエンジニアを目指す英語のリスニング・スピーキング練習。場面ごとに聞く・まねる・書き取る・とっさに言う |
+
 ## 構成
 
 ```
@@ -45,6 +53,8 @@ samples/                      サンプルゲームの一覧（中の人が作�
   index.html, print.html      tools/build.py が書き出す（直接編集しない）
   qr/                         QRコード画像（_page.png は一覧ページ、<id>.png は各ゲーム）
 games/<id>/index.html         サンプルゲーム本体（1ファイル完結）。URLを変えないため場所はそのまま
+
+trial/                        試作中のゲームの一覧（samples/ と同じ作り。ゲーム本体は games/<id>/ に置く）
 
 events/<番号>/         イベントで作られたゲームの一覧（samples/ と同じ作り）
   games/<id>/index.html       イベントのゲーム本体
@@ -93,6 +103,10 @@ events/<番号>/         イベントで作られたゲームの一覧（samples
 QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Clause）、共有用画像 `assets/og.jpg` の作成には [Pillow](https://python-pillow.org/)（MIT-CMU License）を使っています（ビルド時のみ。サイトには含めていません）。
 
 このリポジトリのコードは MIT License（[LICENSE](LICENSE)）です。
+
+引用している文章:
+
+- `games/eigo-road/index.html` の講義スライドの英文2文は、[Wikipedia「Overfitting」](https://en.wikipedia.org/wiki/Overfitting)（CC BY-SA 4.0）からの引用です。この2文は CC BY-SA 4.0 で利用できます。ゲーム内のクレジットにも出典を表示しています。
 
 同梱しているサードパーティ製ソフトウェア:
 

@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1430">
+<title>ENGLISH ROAD（試作中）─ 留学生からAIエンジニアへ</title>
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ENGLISH ROAD（試作中）">
+<meta property="og:description" content="留学生からAIエンジニアを目指す英語のリスニング・スピーキング練習。場面ごとに聞く・まねる・書き取る・とっさに言うをくり返す。言い始めるまでの秒数の記録と、自分の声の録音で上達が分かる。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/eigo-road/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/eigo-road/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<style>
+:root{--bg:#0d1430;--win1:#11257a;--win2:#08164e;--txt:#f4f6ff;--sub:#b3bce6;--acc:#ffd23f;--ok:#5fe08a;--mid:#ffb347;--ng:#ff7a7a;--me:#7fe3ff}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:16px 16px;color:var(--txt);font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:16px;line-height:1.55;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{max-width:480px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left))}
+a{color:var(--me)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;margin-bottom:8px;min-height:32px}
+.top a,.top button.link{color:var(--sub);text-decoration:none;background:none;border:none;font:inherit;padding:4px 0;cursor:pointer}
+.top .ttl{font-weight:700;color:var(--acc);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.win{background:linear-gradient(var(--win1),var(--win2));border:3px solid #fff;border-radius:8px;box-shadow:0 0 0 3px var(--bg),0 0 0 5px #6f7fd0;padding:12px 14px;margin:10px 4px 16px}
+.win h2{margin:0 0 6px;font-size:17px;color:var(--acc)}
+.win h3{margin:10px 0 4px;font-size:15px;color:var(--acc)}
+.win p{margin:6px 0}
+.small{font-size:13px;color:var(--sub)}
+.logo{text-align:center;margin:22px 0 2px;font-family:"Courier New",ui-monospace,monospace;font-weight:900;font-size:40px;letter-spacing:3px;color:var(--acc);text-shadow:3px 3px 0 #c2410c,6px 6px 0 #000}
+.sub{text-align:center;color:var(--sub);margin-bottom:14px}
+.btn{display:block;width:100%;margin:8px 0;padding:12px 14px;font:inherit;font-weight:700;color:#fff;background:#1d2c7a;border:2px solid #fff;border-radius:6px;box-shadow:0 3px 0 rgba(0,0,0,.6);text-align:left;cursor:pointer}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.6)}
+.btn:disabled{opacity:.4}
+.btn.pri{background:#d9a400;color:#1a1200;border-color:#fff3b0}
+.btn.red{background:#b3261e}
+.btn .r{float:right;font-weight:400;color:var(--sub)}
+.btn.pri .r{color:#4a3a00}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1 1 0;text-align:center;padding:10px 6px;min-width:0}
+.cur::before{content:"▶";color:var(--acc);margin-right:6px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;color:#fff;vertical-align:middle;white-space:nowrap}
+.rw{background:#2b6fd6}.rf{background:#b8620e}.rc{background:#1f8a4c}
+.ln{padding:8px 4px;border-bottom:1px dashed rgba(255,255,255,.2);cursor:pointer}
+.ln:last-child{border-bottom:none}
+.ln.on{background:rgba(255,210,63,.15)}
+.who{font-size:13px;font-weight:700;color:var(--sub);margin-right:6px}
+.who.me{color:var(--me)}
+.en{font-size:17px;margin:2px 0}
+.ja{font-size:13px;color:var(--sub)}
+.src{font-size:11px;color:var(--sub)}
+.big{font-size:20px;line-height:1.5;margin:8px 0}
+.jaBig{font-size:19px;font-weight:700;margin:10px 0;line-height:1.5}
+.tabs{display:flex;gap:4px;margin:4px 0 0}
+.tabs button{flex:1;font:inherit;font-size:12px;white-space:nowrap;min-width:0;font-weight:700;padding:7px 2px;border:2px solid #6f7fd0;background:#0f1a50;color:var(--sub);border-radius:6px 6px 0 0;cursor:pointer}
+.tabs button.on{background:var(--win1);color:#fff;border-color:#fff}
+.tabs button.done::after{content:" ✓";color:var(--ok)}
+.meter{height:10px;background:#000a;border:1px solid #fff6;border-radius:5px;overflow:hidden;margin:8px 0;position:relative}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s}
+.meter b{position:absolute;top:0;bottom:0;width:2px;background:var(--acc)}
+.timer{font-family:"Courier New",monospace;font-size:34px;font-weight:900;color:var(--acc);text-align:center}
+input.cz{font:inherit;font-size:17px;background:#fff;color:#111;border:none;border-bottom:3px solid var(--acc);border-radius:3px;padding:1px 4px;margin:2px 1px;min-width:4ch}
+input.cz.ok{background:#c9f7d7}input.cz.ng{background:#ffd6d6}
+.ans{color:var(--ok);font-weight:700}
+.ngw{color:var(--ng);text-decoration:line-through}
+.stars{color:var(--acc);letter-spacing:2px}
+.lock{opacity:.45}
+.judge .btn{font-size:20px}
+.j-o{background:#1f8a4c!important}.j-m{background:#b8620e!important}.j-x{background:#8b1f1f!important}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}
+.stat div{background:#0006;border-radius:6px;padding:8px;text-align:center}
+.stat b{display:block;font-size:22px;color:var(--acc)}
+.stat span{font-size:12px;color:var(--sub)}
+svg.chart{width:100%;height:auto;display:block;background:#0005;border-radius:6px}
+select,input[type=range]{width:100%;font:inherit;margin:6px 0}
+select{padding:6px;border-radius:6px}
+label.tg{display:flex;gap:8px;align-items:center;margin:8px 0}
+label.tg input{width:20px;height:20px}
+.okc{color:var(--ok)}.ngc{color:var(--ng)}.midc{color:var(--mid)}
+.hint{background:#0007;border-left:3px solid var(--acc);padding:6px 8px;margin:6px 0;font-size:15px}
+ul.ph{margin:6px 0;padding-left:20px}
+ul.ph li{margin:4px 0}
+.center{text-align:center}
+hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* =========================================================
+   ENGLISH ROAD ─ 留学生からAIエンジニアへ
+   聞く → まねる → 書き取る → とっさに言う、を場面ごとにくり返す英語練習ゲーム
+   ========================================================= */
+
+/* ---------- 教材 ---------- */
+// r: written=書き言葉 / formal=改まった話し言葉 / casual=くだけた話し言葉
+const REG = {
+  written: { label: '書き言葉', cls: 'rw' },
+  formal:  { label: '改まった話し言葉', cls: 'rf' },
+  casual:  { label: 'くだけた話し言葉', cls: 'rc' },
+};
+// acc: 使いたい英語音声の地域（端末にあれば使う）
+const CHARS = {
+  me:     { name: 'あなた', acc: [], pitch: 1 },
+  priya:  { name: 'Priya（先輩）', acc: ['en-IN', 'en-GB'], pitch: 1.15 },
+  miller: { name: 'Miller 先生', acc: ['en-US'], pitch: 0.85 },
+  tom:    { name: 'Tom（同期）', acc: ['en-AU', 'en-GB'], pitch: 0.95 },
+  wei:    { name: 'Wei（研究者）', acc: ['en-SG', 'en-GB', 'en-AU'], pitch: 1.05 },
+  slide:  { name: '講義スライド', acc: ['en-US'], pitch: 1 },
+};
+const SOURCES = {
+  wpOverfit: { title: 'Wikipedia「Overfitting」', url: 'https://en.wikipedia.org/wiki/Overfitting', lic: 'CC BY-SA 4.0' },
+};
+
+const CHAPTERS = [
+  {
+    id: 1, title: '第1章 留学生編', rank: '留学生',
+    scenes: [
+      {
+        id: 'c1s1', title: '研究室の初日', place: '大学・研究室',
+        intro: '9月。あなたは東京からアメリカの大学院に留学してきた。今日は研究室の初日。ドアを開けると、先輩らしき人が手を振っている。',
+        outro: '研究室の場所もサーバーの使い方も分かった。なんとかやっていけそうだ。',
+        lines: [
+          { w: 'priya', r: 'casual', en: "Hey, you must be the new student. I'm Priya, a third-year PhD student here.", ja: 'やあ、新しく来た学生さんだよね。私はプリヤ、ここの博士課程3年生。' },
+          { w: 'me', r: 'casual', en: 'Hi, nice to meet you. I just got here from Tokyo last week.', ja: 'こんにちは、はじめまして。先週東京から来たばかりです。' },
+          { w: 'priya', r: 'casual', en: 'Welcome! How are you settling in so far?', ja: 'ようこそ！ こっちの生活にはもう慣れてきた？' },
+          { w: 'me', r: 'casual', en: 'Pretty well, thanks. Still getting used to the time difference, though.', ja: 'おかげさまで順調です。時差にはまだ慣れていないですけど。' },
+          { w: 'priya', r: 'casual', en: "That's totally normal. Let me show you around. This is your desk, and the GPU server is in the next room.", ja: 'それは普通だよ。案内するね。ここがあなたの机で、GPUサーバーは隣の部屋。' },
+          { w: 'me', r: 'casual', en: 'Great. How do I get access to the server?', ja: 'いいですね。サーバーを使うにはどうすればいいですか？' },
+          { w: 'priya', r: 'casual', en: 'Just send your username to Tom. He takes care of the accounts.', ja: 'トムにユーザー名を送ればいいよ。アカウントは彼が管理してるから。' },
+          { w: 'me', r: 'casual', en: 'Got it. Thanks for showing me around.', ja: 'わかりました。案内してくれてありがとうございます。' },
+        ],
+      },
+      {
+        id: 'c1s2', title: '講義：過学習', place: '大学・講義室',
+        intro: '最初の授業は機械学習の講義。スライドの英文（書き言葉）と、先生の説明（話し言葉）で、文の作りがどう違うかに注目しよう。',
+        outro: '手を挙げて答えられた。スライドの硬い英語も、先生が言い換えると分かりやすい。',
+        lines: [
+          { w: 'miller', r: 'formal', en: "Today, we're going to talk about one of the most common problems in machine learning: overfitting.", ja: '今日は、機械学習でとてもよくある問題の一つ、過学習について話します。' },
+          { w: 'slide', r: 'written', en: 'An overfitted model is a mathematical model that contains more parameters than can be justified by the data.', ja: '過学習したモデルとは、データから正当化できる以上のパラメータを含む数理モデルである。', src: 'wpOverfit' },
+          { w: 'miller', r: 'formal', en: 'In other words, the model memorizes the training data instead of learning the general pattern.', ja: '言い換えると、モデルが一般的なパターンを学ぶ代わりに、訓練データを丸暗記してしまうのです。' },
+          { w: 'miller', r: 'formal', en: "That's why it performs well on the training set but poorly on new data.", ja: 'だから訓練データではよい成績なのに、新しいデータではうまくいかないのです。' },
+          { w: 'slide', r: 'written', en: 'Underfitting occurs when a mathematical model cannot adequately capture the underlying structure of the data.', ja: '過少適合は、数理モデルがデータの根底にある構造を十分に捉えられないときに起こる。', src: 'wpOverfit' },
+          { w: 'miller', r: 'formal', en: 'So how do we know if our model is overfitting? Can anyone tell me?', ja: 'では、モデルが過学習しているかどうかは、どうすれば分かるでしょう？ 誰か答えられますか？' },
+          { w: 'me', r: 'formal', en: 'We can compare the training loss with the validation loss.', ja: '訓練損失と検証損失を比べれば分かると思います。' },
+          { w: 'miller', r: 'formal', en: "Exactly. If the gap keeps growing, that's a clear warning sign.", ja: 'その通り。その差が広がり続けるなら、はっきりした危険信号です。' },
+        ],
+      },
+      {
+        id: 'c1s3', title: 'オフィスアワー', place: '大学・教授室',
+        intro: '講義の「正則化」の話が、いまいち腑に落ちない。まずはメールで面談をお願いして、先生のオフィスアワーに行ってみよう。',
+        outro: '質問してよかった。分からないことを英語で聞けると、留学生活がぐっと楽になる。',
+        lines: [
+          { w: 'me', r: 'written', en: 'Dear Professor Miller, would it be possible to meet during your office hours this week?', ja: '（メール）ミラー先生、今週のオフィスアワーにお時間をいただくことは可能でしょうか。' },
+          { w: 'me', r: 'formal', en: 'Excuse me, Professor Miller. Do you have a few minutes?', ja: 'すみません、ミラー先生。少しお時間よろしいですか？' },
+          { w: 'miller', r: 'casual', en: 'Sure, come on in. What can I do for you?', ja: 'ええ、どうぞ入って。どうしました？' },
+          { w: 'me', r: 'formal', en: "I had a question about today's lecture. I wasn't sure I understood regularization.", ja: '今日の講義について質問があります。正則化を理解できたか自信がなくて。' },
+          { w: 'miller', r: 'casual', en: 'Okay. Which part was unclear?', ja: 'なるほど。どの部分が分かりにくかった？' },
+          { w: 'me', r: 'formal', en: 'Why does adding a penalty term help the model generalize?', ja: 'なぜペナルティ項を加えると、モデルの汎化に役立つのでしょうか？' },
+          { w: 'miller', r: 'formal', en: "Good question. The penalty discourages large weights, so the model can't fit every bit of noise.", ja: '良い質問です。ペナルティは大きな重みを抑えるので、モデルはノイズの細部にまで合わせられなくなるんです。' },
+          { w: 'me', r: 'formal', en: "I see. So it's a trade-off between fitting the data and keeping the model simple.", ja: 'なるほど。データへの当てはまりと、モデルの単純さのトレードオフなんですね。' },
+          { w: 'miller', r: 'casual', en: "That's exactly right. Try a few values in your homework and see what happens.", ja: 'まさにその通り。宿題でいくつか値を試して、どうなるか見てごらん。' },
+          { w: 'me', r: 'formal', en: 'I will. Thank you for your time.', ja: 'そうします。お時間をいただきありがとうございました。' },
+        ],
+      },
+      {
+        id: 'c1s4', title: '研究室ミーティング', place: '大学・会議室',
+        intro: '毎週の研究室ミーティング。今日はあなたが進捗を報告する番だ。指摘を受けたら、受け止めて次の行動を言おう。',
+        outro: '指摘をもらって、次にやることがはっきりした。報告の型が少し身についてきた。',
+        lines: [
+          { w: 'miller', r: 'formal', en: "Let's get started. Could you give us a quick update on your project?", ja: '始めましょう。プロジェクトの進捗を手短に報告してもらえますか？' },
+          { w: 'me', r: 'formal', en: 'Sure. This week, I reproduced the baseline results from the paper.', ja: 'はい。今週は、論文のベースラインの結果を再現しました。' },
+          { w: 'me', r: 'formal', en: "The accuracy was about two points lower than reported, so I'm looking into why.", ja: '精度が報告値より2ポイントほど低かったので、原因を調べています。' },
+          { w: 'tom', r: 'casual', en: 'Did you use the same data split as the authors?', ja: '著者と同じデータ分割を使った？' },
+          { w: 'me', r: 'formal', en: "Good point. I'm not sure, actually. I'll double-check that.", ja: 'いい指摘ですね。実ははっきりしません。確認してみます。' },
+          { w: 'priya', r: 'casual', en: 'Also, the random seed can make a big difference on small datasets.', ja: 'それに、小さいデータセットだと、乱数シードで結果がかなり変わることもあるよ。' },
+          { w: 'me', r: 'formal', en: "That makes sense. I'll run it with five different seeds and report the average.", ja: 'なるほど。5種類のシードで実行して、平均を報告します。' },
+          { w: 'miller', r: 'formal', en: "Sounds like a plan. Let's check back next week.", ja: 'いい計画ですね。また来週確認しましょう。' },
+        ],
+      },
+      {
+        id: 'c1s5', title: '初めての学会・懇親会', place: '国際学会・レセプション会場',
+        intro: '初めての国際学会。昼の発表が終わり、夜は懇親会。グラスを片手に、ひとりで立っている研究者がいる。話しかけて、話を広げて、感じよく切り上げよう。',
+        outro: '話しかけるのも、切り上げるのも、思ったより自然にできた。',
+        boss: {
+          title: '30秒自己紹介',
+          prompt: '懇親会で初めて会った人に、30秒で自己紹介してみよう。名前・所属・研究内容に加えて、最後に相手へ質問を返すと会話が続きます。',
+          hints: [
+            "Hi, I'm ___. I'm a master's student at ___.",
+            "I work on ___, especially ___.",
+            "Basically, I'm trying to figure out ___.",
+            'What brings you to this conference?',
+            'What are you working on these days?',
+          ],
+          sec: 30,
+        },
+        lines: [
+          { w: 'me', r: 'casual', en: 'Hi, mind if I join you?', ja: 'こんにちは、ご一緒してもいいですか？' },
+          { w: 'wei', r: 'casual', en: "Not at all. I'm Wei, from a robotics lab in Singapore.", ja: 'もちろん。ウェイです。シンガポールのロボティクスの研究室から来ました。' },
+          { w: 'me', r: 'casual', en: "Nice to meet you. I'm a master's student, and I work on model evaluation.", ja: 'はじめまして。修士の学生で、モデルの評価を研究しています。' },
+          { w: 'wei', r: 'casual', en: 'Oh, interesting. What kind of evaluation?', ja: 'へえ、面白いですね。どんな評価ですか？' },
+          { w: 'me', r: 'casual', en: 'Mainly how to tell if a model will still work on real-world data.', ja: '主に、モデルが実世界のデータでもちゃんと動くかを見分ける方法です。' },
+          { w: 'wei', r: 'casual', en: "That's a big problem in robotics too. Simulation results often don't transfer.", ja: 'それはロボティクスでも大問題なんです。シミュレーションの結果が、そのまま通用しないことが多くて。' },
+          { w: 'me', r: 'casual', en: 'Really? How do you usually deal with that?', ja: '本当ですか？ 普段はどう対処しているんですか？' },
+          { w: 'wei', r: 'casual', en: "We add a lot of randomness during training. It's not perfect, but it helps.", ja: '訓練中にランダム性をたくさん加えるんです。完璧ではないけど、効果はあります。' },
+          { w: 'me', r: 'casual', en: 'That sounds similar to data augmentation. Did you present a poster today?', ja: 'データ拡張に似ていますね。今日はポスター発表をされたんですか？' },
+          { w: 'wei', r: 'casual', en: "Yes, it's number forty-two, near the entrance. Feel free to stop by.", ja: 'ええ、入口近くの42番です。気軽に寄ってください。' },
+          { w: 'me', r: 'casual', en: "I'd love to. Could I connect with you on LinkedIn?", ja: 'ぜひ。LinkedInでつながってもいいですか？' },
+          { w: 'wei', r: 'casual', en: "Of course. Here's my QR code.", ja: 'もちろん。これが私のQRコードです。' },
+          { w: 'me', r: 'casual', en: "Thanks. I'll let you mingle, but it was great talking to you.", ja: 'ありがとうございます。そろそろ他の方ともお話しください。お話しできてよかったです。' },
+          { w: 'wei', r: 'casual', en: 'Likewise. Enjoy the rest of the conference!', ja: 'こちらこそ。学会の残りも楽しんでください！' },
+        ],
+      },
+    ],
+  },
+  { id: 2, title: '第2章 インターン編', rank: 'インターン', locked: true, scenes: [] },
+  { id: 3, title: '第3章 ジュニアエンジニア編', rank: 'ジュニアエンジニア', locked: true, scenes: [] },
+  { id: 4, title: '第4章 ミドルエンジニア編', rank: 'ミドルエンジニア', locked: true, scenes: [] },
+  { id: 5, title: '第5章 シニア／リード編', rank: 'リードエンジニア', locked: true, scenes: [] },
+];
+
+// 定点録音の10文（ずっと同じ文で録り続け、初回と聞き比べる）
+const BENCH = [
+  'Hi, nice to meet you. I just got here from Tokyo last week.',
+  'We can compare the training loss with the validation loss.',
+  "So it's a trade-off between fitting the data and keeping the model simple.",
+  "The accuracy was about two points lower than reported, so I'm looking into why.",
+  "I'll run it with five different seeds and report the average.",
+  'Mainly how to tell if a model will still work on real-world data.',
+  "I'll let you mingle, but it was great talking to you.",
+  'Our model reduces inference latency by thirty percent without hurting accuracy.',
+  'Could you walk me through the reasoning behind this design choice?',
+  "I see your point, but I'm a bit concerned about the maintenance cost.",
+];
+
+const INTV = [0, 1, 2, 4, 7, 15, 30]; // 復習の間隔（日）。箱0〜6
+// 星の基準（めやす。使いながら調整する前提）
+const STAR_DICT = 0.9;   // 書き取り正答率
+const STAR_RT = 2000;    // とっさの反応時間（中央値, ms）
+
+/* ---------- 便利関数 ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const z2 = n => String(n).padStart(2, '0');
+const dayKey = d => d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate());
+const today = () => dayKey(new Date());
+const parseDay = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (k, n) => { const d = parseDay(k); d.setDate(d.getDate() + n); return dayKey(d); };
+const diffDays = (a, b) => { const u = k => { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d); }; return Math.round((u(b) - u(a)) / 864e5); };
+const median = a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const sec = ms => ms == null ? '—' : (ms / 1000).toFixed(1) + '秒';
+const pct = x => x == null ? '—' : Math.round(x * 100) + '%';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmtDate = k => { const d = parseDay(k); return (d.getMonth() + 1) + '/' + d.getDate(); };
+
+const ALL_SCENES = [];
+CHAPTERS.forEach(ch => ch.scenes.forEach((sc, i) => ALL_SCENES.push({ ch, sc, i })));
+const sceneById = id => ALL_SCENES.find(x => x.sc.id === id);
+const lineId = (sid, i) => sid + '-' + i;
+const lineByKey = k => { const p = k.lastIndexOf('-'); const s = sceneById(k.slice(0, p)); return s ? { s, i: +k.slice(p + 1), line: s.sc.lines[+k.slice(p + 1)] } : null; };
+
+/* ---------- 保存 ---------- */
+const KEY = 'eigoroad_save';
+const DEF = () => ({ v: 1, speed: 1, voice: '', multi: true, useSR: false, cue: true, scenes: {}, lines: {}, days: {}, bench: [], boss: [], checked: false });
+let S = load();
+function load() {
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j && j.v === 1) return Object.assign(DEF(), j); } catch (e) {}
+  return DEF();
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { return false; } }
+function dayRec() { const k = today(); return S.days[k] || (S.days[k] = { rt: [], dOk: 0, dTot: 0, qO: 0, qM: 0, qX: 0 }); }
+function scRec(id) { return S.scenes[id] || (S.scenes[id] = {}); }
+function streak() {
+  let n = 0, k = today();
+  if (!S.days[k]) k = addDays(k, -1);
+  while (S.days[k]) { n++; k = addDays(k, -1); }
+  return n;
+}
+function dueKeys() { const t = today(); return Object.keys(S.lines).filter(k => S.lines[k].d <= t && lineByKey(k)); }
+function sceneStars(id) {
+  const r = S.scenes[id]; if (!r || !r.clear) return 0;
+  let n = 1; if ((r.dictBest || 0) >= STAR_DICT) n++; if (r.quickBest != null && r.quickBest <= STAR_RT) n++;
+  return n;
+}
+function chapterClear(ch) { return ch.scenes.length && ch.scenes.every(sc => S.scenes[sc.id]?.clear && (!sc.boss || S.scenes[sc.id]?.boss)); }
+function rank() {
+  let r = '留学生';
+  for (const ch of CHAPTERS) { if (!ch.scenes.length) break; r = ch.rank; if (!chapterClear(ch)) return r; r = ch.rank + '（第' + ch.id + '章クリア）'; }
+  return r;
+}
+
+/* ---------- 読み上げ ---------- */
+const TTS = { ok: 'speechSynthesis' in window, voices: [] };
+const nl = l => (l || '').replace('_', '-').toLowerCase();
+function loadVoices() { if (TTS.ok) TTS.voices = speechSynthesis.getVoices().filter(v => /^en([-_]|$)/i.test(v.lang)); }
+if (TTS.ok) { loadVoices(); speechSynthesis.addEventListener?.('voiceschanged', () => { loadVoices(); if (V.name === 'settings') render(); }); }
+function mainVoice() { const v = TTS.voices; return v.find(x => x.name === S.voice) || v.find(x => nl(x.lang) === 'en-us') || v[0] || null; }
+function voiceFor(who) {
+  const c = CHARS[who] || CHARS.me, main = mainVoice();
+  if (!S.multi || who === 'me') return { v: main, p: 1 };
+  for (const a of c.acc) { const f = TTS.voices.find(x => nl(x.lang) === a.toLowerCase() && x !== main); if (f) return { v: f, p: 1 }; }
+  return { v: main, p: c.pitch };
+}
+let speakTok = 0;
+function speak(text, who = 'me', mul = 1) {
+  return new Promise(res => {
+    if (!TTS.ok) { res(false); return; }
+    const tok = ++speakTok;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const { v, p } = voiceFor(who);
+    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
+    u.rate = Math.max(0.5, Math.min(2, S.speed * mul)); u.pitch = p;
+    let done = false;
+    const fin = ok => { if (done) return; done = true; clearTimeout(t); res(ok && tok === speakTok); };
+    u.onend = () => fin(true); u.onerror = () => fin(false);
+    const t = setTimeout(() => fin(true), 4000 + text.length * 160 / u.rate);
+    setTimeout(() => { if (tok === speakTok) speechSynthesis.speak(u); else fin(false); }, 60);
+  });
+}
+function stopSpeak() { speakTok++; if (TTS.ok) speechSynthesis.cancel(); }
+
+/* ---------- 録音 ---------- */
+let AC = null;
+function ac() {
+  if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (C) { try { AC = new C(); } catch (e) {} } }
+  if (AC && AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+let curRec = null;
+// o: calib(ms) / autoStop / silence(ms) / max(ms) / noVoiceMax(ms) / onLevel(rms,thr) / onReady() / onOnset(ms)
+function startRec(o = {}) {
+  const ctl = { pending: false };
+  ctl.stop = () => { ctl.pending = true; };
+  curRec = ctl;
+  ctl.done = new Promise(async (resolve, reject) => {
+    let stream;
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('この環境ではマイクが使えません');
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch (e) { if (curRec === ctl) curRec = null; reject(e); return; }
+    const ctx = ac(); let an = null, src = null, buf = null;
+    if (ctx) { try { src = ctx.createMediaStreamSource(stream); an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an); buf = new Float32Array(an.fftSize); } catch (e) { an = null; } }
+    let mr = null; const chunks = [];
+    try {
+      const mt = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(t => window.MediaRecorder?.isTypeSupported?.(t));
+      mr = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined);
+      mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.start();
+    } catch (e) { mr = null; }
+    const tStart = performance.now(); const calib = o.calib || 0;
+    let t0 = null, fSum = 0, fN = 0, thr = 0.02, onset = null, above = 0, lastLoud = 0, stopped = false, iv = 0;
+    const finish = () => {
+      if (stopped) return; stopped = true; clearInterval(iv);
+      const end = performance.now();
+      const out = () => {
+        stream.getTracks().forEach(t => t.stop());
+        try { src && src.disconnect(); } catch (e) {}
+        if (curRec === ctl) curRec = null;
+        resolve({ blob: chunks.length ? new Blob(chunks, { type: (mr && mr.mimeType) || 'audio/webm' }) : null, onset, dur: end - (t0 ?? tStart) });
+      };
+      if (mr && mr.state !== 'inactive') { mr.onstop = out; try { mr.stop(); } catch (e) { out(); } } else out();
+    };
+    ctl.stop = finish;
+    const rms = () => { if (!an) return 0; an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i]; return Math.sqrt(s / buf.length); };
+    iv = setInterval(() => {
+      const now = performance.now(), r = rms();
+      if (t0 === null) {
+        fSum += r; fN++;
+        if (now - tStart >= calib) { const f = fN ? fSum / fN : 0; thr = Math.max(0.012, f * 2.5 + 0.008); t0 = now; o.onReady && o.onReady(); }
+        o.onLevel && o.onLevel(r, thr); return;
+      }
+      o.onLevel && o.onLevel(r, thr);
+      if (r > thr) { above++; lastLoud = now; if (onset === null && above >= 3) { onset = Math.max(0, now - t0 - 60); o.onOnset && o.onOnset(onset); } } else above = 0;
+      if (o.autoStop && onset !== null && now - lastLoud > (o.silence || 1600)) finish();
+      if (now - t0 > (o.max || 20000)) finish();
+      if (o.noVoiceMax && onset === null && now - t0 > o.noVoiceMax) finish();
+    }, 30);
+    if (ctl.pending) finish();
+  });
+  return ctl;
+}
+function meterUpdate(r, thr) {
+  const el = $('#lv'); if (!el) return;
+  const k = x => Math.min(100, Math.sqrt(x / 0.25) * 100);
+  el.style.width = k(r) + '%';
+  const b = $('#lvt'); if (b) b.style.left = k(thr) + '%';
+}
+const meterHTML = '<div class="meter"><i id="lv"></i><b id="lvt"></b></div>';
+
+let curAudio = null;
+function playBlob(b) {
+  return new Promise(res => {
+    stopAudio(); if (!b) { res(); return; }
+    const a = new Audio(URL.createObjectURL(b)); curAudio = a;
+    const fin = () => { a.onended = a.onerror = null; URL.revokeObjectURL(a.src); if (curAudio === a) curAudio = null; res(); };
+    a.onended = a.onerror = fin; a._fin = fin;
+    a.play().catch(fin);
+  });
+}
+function stopAudio() { if (curAudio) { const a = curAudio; curAudio = null; a.pause(); a._fin && a._fin(); } }
+
+/* ---------- 音声の保存（IndexedDB） ---------- */
+let DB = null;
+function idb() {
+  return new Promise((res, rej) => {
+    if (DB) return res(DB);
+    if (!window.indexedDB) return rej(new Error('IndexedDB が使えません'));
+    const r = indexedDB.open('eigoroad_audio', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('a');
+    r.onsuccess = () => { DB = r.result; res(DB); };
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbOp(mode, fn) {
+  const db = await idb();
+  return new Promise((res, rej) => { const tx = db.transaction('a', mode); const st = tx.objectStore('a'); const q = fn(st); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); });
+}
+const idbPut = (k, v) => idbOp('readwrite', s => s.put(v, k));
+const idbGet = k => idbOp('readonly', s => s.get(k));
+const idbDel = k => idbOp('readwrite', s => s.delete(k));
+
+/* ---------- 音声認識（参考値） ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function recognize() {
+  return new Promise(res => {
+    if (!SR) { res({ err: 'この端末のブラウザは音声認識に対応していません' }); return; }
+    const r = new SR(); r.lang = 'en-US'; r.interimResults = false; r.maxAlternatives = 1;
+    let got = null, done = false;
+    const fin = x => { if (done) return; done = true; clearTimeout(t); try { r.abort(); } catch (e) {} res(x); };
+    r.onresult = e => { got = e.results[0][0].transcript; fin({ text: got }); };
+    r.onerror = e => fin({ err: e.error });
+    r.onend = () => fin(got !== null ? { text: got } : { err: 'no-speech' });
+    const t = setTimeout(() => fin({ err: 'timeout' }), 12000);
+    try { r.start(); } catch (e) { fin({ err: String(e) }); }
+  });
+}
+const words = s => s.toLowerCase().replace(/[’]/g, "'").replace(/-/g, ' ').replace(/[^a-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean);
+function matchRate(exp, got) {
+  const a = words(exp), b = words(got); if (!a.length) return 0;
+  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+  return dp[a.length][b.length] / a.length;
+}
+const SR_ERR = { 'no-speech': '声が聞き取れませんでした', 'not-allowed': 'マイクの使用が許可されていません', 'network': 'ネットに接続できません（音声認識はオンラインで動きます）', 'timeout': '時間切れです', 'aborted': '中断しました', 'audio-capture': 'マイクが見つかりません' };
+
+/* ---------- 穴埋め書き取り ---------- */
+const STOP = new Set('this that with have from they them then than what when where which will would could should there their about just your into been were also very much some here does like over only well'.split(' '));
+function makeCloze(en) {
+  const toks = en.split(/(\s+)/); const cand = []; let wc = 0;
+  toks.forEach((t, i) => {
+    if (!t || /^\s+$/.test(t)) return; wc++;
+    const m = t.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/);
+    if (!m || wc === 1) return;
+    const core = m[2];
+    if (core[0] !== core[0].toLowerCase() || core.length < 4 || STOP.has(core.toLowerCase())) return;
+    cand.push({ ti: i, pre: m[1], core, post: m[3] });
+  });
+  const n = Math.min(cand.length, wc <= 7 ? 1 : wc <= 13 ? 2 : 3);
+  for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+  const blanks = cand.slice(0, n).sort((a, b) => a.ti - b.ti);
+  return { toks, blanks };
+}
+const normW = s => s.trim().toLowerCase().replace(/[’]/g, "'").replace(/[^a-z']/g, '');
+
+/* ---------- 画面の仕組み ---------- */
+let V = { name: 'title' };
+let ACTS = {};
+let tickers = [];
+const app = $('#app');
+function go(name, p = {}) { stopAll(); V = Object.assign({ name }, p); render(); window.scrollTo(0, 0); }
+function stopAll() { stopSpeak(); stopAudio(); if (curRec) curRec.stop(); playAllTok++; tickers.forEach(clearInterval); tickers = []; }
+function render() {
+  const r = SCREENS[V.name]();
+  app.innerHTML = r.html;
+  ACTS = Object.assign({ home: () => go('title'), story: () => go('story') }, r.acts || {});
+  r.after && r.after();
+}
+app.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; const f = ACTS[b.dataset.a]; if (f) f(b.dataset.v, b, e); });
+app.addEventListener('change', e => { const b = e.target.closest('[data-c]'); if (!b) return; const f = ACTS[b.dataset.c]; if (f) f(b, e); });
+app.addEventListener('input', e => { const b = e.target.closest('[data-i]'); if (!b) return; const f = ACTS[b.dataset.i]; if (f) f(b, e); });
+app.addEventListener('keydown', e => { if (e.key !== 'Enter') return; const b = e.target.closest('[data-k]'); if (!b) return; const f = ACTS[b.dataset.k]; if (f) { e.preventDefault(); f(b, e); } });
+
+const badge = r => `<span class="badge ${REG[r].cls}">${REG[r].label}</span>`;
+const whoTag = w => `<span class="who ${w === 'me' ? 'me' : ''}">${esc(CHARS[w].name)}</span>`;
+const srcTag = l => l.src ? `<div class="src">出典: <a href="${SOURCES[l.src].url}" target="_blank" rel="noopener">${esc(SOURCES[l.src].title)}</a>（${SOURCES[l.src].lic}）</div>` : '';
+const starStr = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+const topBar = (back, title) => `<div class="top"><button class="link" data-a="${back}">← もどる</button><span class="ttl">${esc(title)}</span></div>`;
+
+const SCREENS = {};
+
+/* ---------- タイトル ---------- */
+SCREENS.title = () => {
+  const due = dueKeys().length, st = streak(), d = S.days[today()];
+  const nToday = d ? d.qO + d.qM + d.qX : 0;
+  const lastB = S.bench.length ? S.bench[S.bench.length - 1].date : null;
+  const benchNote = !lastB ? '未録音' : diffDays(lastB, today()) >= 28 ? `前回から${diffDays(lastB, today())}日・録り直しどき` : `前回 ${fmtDate(lastB)}`;
+  return {
+    html: `
+<div class="top"><a href="../../trial/">← ゲーム一覧</a><span>🔥 連続 ${st}日</span></div>
+<div class="logo">ENGLISH<br>ROAD</div>
+<div class="sub">留学生からAIエンジニアへ<br><span class="badge" style="background:#b3261e">試作中</span> 第1章のみ・内容は変わることがあります</div>
+<div class="win">
+  <p>ランク：<b style="color:var(--acc)">${esc(rank())}</b></p>
+  <p class="small">練習した日 ${Object.keys(S.days).length}日 ／ 今日とっさに言った文 ${nToday}</p>
+</div>
+${!S.checked ? `<div class="win"><h2>はじめに</h2><p>まず「せってい・動作チェック」で、英語の読み上げとマイク録音がこの端末で使えるか確かめてください。録音した声は端末の中だけに保存されます。シャドーイングにはイヤホンがおすすめです。</p></div>` : ''}
+<button class="btn pri cur" data-a="story">ストーリー<span class="r">${esc(nextSceneLabel())}</span></button>
+<button class="btn" data-a="review" ${due ? '' : 'disabled'}>🔁 復習<span class="r">今日 ${due}文</span></button>
+<button class="btn" data-a="bench">🎙 定点録音<span class="r">${benchNote}</span></button>
+<button class="btn" data-a="stats">📈 きろく</button>
+<button class="btn" data-a="settings">⚙ せってい・動作チェック</button>
+<p class="small center">数字や星の基準はゲーム内のめやすです。</p>`,
+    acts: { review: () => startReview(), bench: () => go('bench', { mode: 'list' }), stats: () => go('stats'), settings: () => go('settings', { t: {} }) },
+  };
+};
+function nextSceneLabel() {
+  const n = ALL_SCENES.find(x => !S.scenes[x.sc.id]?.clear);
+  return n ? n.sc.title : '第1章クリア';
+}
+
+/* ---------- ストーリー（章と場面） ---------- */
+function unlocked(x) { if (x.i === 0) return true; return !!S.scenes[x.ch.scenes[x.i - 1].id]?.clear; }
+SCREENS.story = () => {
+  let h = topBar('home', 'ストーリー');
+  CHAPTERS.forEach(ch => {
+    if (ch.locked) { h += `<div class="win lock"><h2>${esc(ch.title)}</h2><p class="small">🔒 準備中</p></div>`; return; }
+    h += `<div class="win"><h2>${esc(ch.title)}${chapterClear(ch) ? ' <span class="okc">CLEAR</span>' : ''}</h2>`;
+    ch.scenes.forEach((sc, i) => {
+      const x = { ch, sc, i }, ok = unlocked(x), r = S.scenes[sc.id] || {};
+      h += `<button class="btn" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}<span class="r"><span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span></span></button>`;
+    });
+    h += `<p class="small">★1 = 書き取りと「とっさに」を1回ずつ終える／★2 = 書き取り${pct(STAR_DICT)}以上／★3 = 全文「言えた」で反応${STAR_RT / 1000}秒以内（中央値）。基準は仮のめやすです。👑 = 30秒スピーチつき</p></div>`;
+  });
+  return { html: h, acts: { open: id => go('scene', { id, step: 'intro' }) } };
+};
+
+/* ---------- 場面 ---------- */
+const STEPS = [['listen', '聞く'], ['mimic', 'まねる'], ['dict', '書き取り'], ['quick', 'とっさに']];
+function sceneTabs(sc) {
+  const r = S.scenes[sc.id] || {};
+  const st = sc.boss ? [...STEPS, ['boss', 'スピーチ']] : STEPS;
+  const done = { listen: r.listen, mimic: r.mimic, dict: r.dictBest != null, quick: r.quickDone, boss: r.boss };
+  return `<div class="tabs">${st.map(([k, l]) => `<button class="${V.step === k ? 'on' : ''} ${done[k] ? 'done' : ''}" data-a="step" data-v="${k}">${l}</button>`).join('')}</div>`;
+}
+SCREENS.scene = () => {
+  const x = sceneById(V.id), sc = x.sc;
+  const head = topBar('story', `${x.ch.title.split(' ')[0]}-${x.i + 1} ${sc.title}`) + sceneTabs(sc);
+  const f = SCENE_STEPS[V.step] || SCENE_STEPS.intro;
+  const r = f(x);
+  r.html = head + r.html;
+  r.acts = Object.assign({ step: k => go('scene', { id: V.id, step: k }) }, r.acts || {});
+  return r;
+};
+const SCENE_STEPS = {};
+
+SCENE_STEPS.intro = ({ sc }) => {
+  const cnt = { written: 0, formal: 0, casual: 0 }; sc.lines.forEach(l => cnt[l.r]++);
+  const nMe = sc.lines.filter(l => l.w === 'me').length;
+  return {
+    html: `
+<div class="win"><h2>📍 ${esc(sc.place)}</h2><p>${esc(sc.intro)}</p><p class="center small">▼</p></div>
+<div class="win"><h3>この場面の英語</h3>
+<p>${Object.keys(cnt).filter(k => cnt[k]).map(k => `${badge(k)} ${cnt[k]}文`).join('　')}</p>
+<p class="small">あなたのセリフ ${nMe}文が「④とっさに」の課題になります。</p>
+<h3>進め方</h3>
+<p class="small">①台本を見ながら聞く → ②重ねて読む・影読み・録音して聞き比べ → ③穴埋めで書き取り → ④日本語を見て、とっさに英語で言う${sc.boss ? ' → ⑤30秒スピーチ' : ''}</p></div>
+<button class="btn pri cur" data-a="step" data-v="listen">はじめる</button>`,
+  };
+};
+
+/* ① 聞く */
+let playAllTok = 0;
+SCENE_STEPS.listen = ({ sc }) => {
+  const showJa = V.showJa ?? false;
+  return {
+    html: `
+<div class="win">
+<div class="row"><button class="btn pri" data-a="all">${V.playing ? '■ 停止' : '▶ 全部再生'}</button><button class="btn" data-a="ja">${showJa ? '訳をかくす' : '日本語訳'}</button></div>
+<p class="small">文をタップすると、その文だけ再生します。</p>
+${sc.lines.map((l, i) => `<div class="ln ${V.cur === i ? 'on' : ''}" data-a="one" data-v="${i}" id="ln${i}">${whoTag(l.w)}${badge(l.r)}<div class="en">${esc(l.en)}</div>${showJa ? `<div class="ja">${esc(l.ja)}</div>` : ''}${srcTag(l)}</div>`).join('')}
+</div>
+<button class="btn pri cur" data-a="next">②まねる へ</button>`,
+    acts: {
+      ja: () => { V.showJa = !showJa; render(); },
+      one: async v => { if (V.playing) return; const i = +v; mark(i); await speak(sc.lines[i].en, sc.lines[i].w); mark(null); },
+      all: async () => {
+        if (V.playing) { playAllTok++; stopSpeak(); V.playing = false; V.cur = null; render(); return; }
+        const tok = ++playAllTok; V.playing = true; render();
+        for (let i = 0; i < sc.lines.length; i++) {
+          if (tok !== playAllTok) return;
+          mark(i); document.getElementById('ln' + i)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          await speak(sc.lines[i].en, sc.lines[i].w);
+          await sleep(350);
+        }
+        if (tok !== playAllTok) return;
+        V.playing = false; V.cur = null; scRec(sc.id).listen = true; save(); render();
+      },
+      next: () => { scRec(sc.id).listen = true; save(); go('scene', { id: sc.id, step: 'mimic' }); },
+    },
+  };
+  function mark(i) { V.cur = i; document.querySelectorAll('.ln').forEach((e, k) => e.classList.toggle('on', k === i)); }
+};
+
+/* ② まねる */
+const mimicRecs = {};
+SCENE_STEPS.mimic = ({ sc }) => {
+  const idxs = sc.lines.map((l, i) => i).filter(i => !V.onlyMe || sc.lines[i].w === 'me');
+  const k = Math.min(V.mi || 0, idxs.length - 1), i = idxs[k], l = sc.lines[i], id = lineId(sc.id, i);
+  const hide = V.hide && !V.reveal, rec = mimicRecs[id];
+  const useSR = S.useSR && SR;
+  return {
+    html: `
+<div class="win">
+<p class="small">練習の順番：1) テキストを見ながら音声に重ねて読む → 2)「テキストをかくす」で影読み（音声を少し遅れて追いかける）→ 3) 録音して、お手本と聞き比べる</p>
+<label class="tg"><input type="checkbox" data-c="hide" ${V.hide ? 'checked' : ''}>テキストをかくす（影読み）</label>
+<label class="tg"><input type="checkbox" data-c="onlyMe" ${V.onlyMe ? 'checked' : ''}>あなたのセリフだけ</label>
+</div>
+<div class="win">
+<p class="small">${k + 1} / ${idxs.length}</p>
+${whoTag(l.w)}${badge(l.r)}
+${hide ? `<div class="big" style="color:var(--sub)" data-a="reveal">（テキストをかくしています。タップで表示）</div>` : `<div class="big">${esc(l.en)}</div>`}
+${V.showJa ? `<div class="ja">${esc(l.ja)}</div>` : `<button class="btn" style="padding:4px 8px;font-size:13px;width:auto;display:inline-block" data-a="ja">日本語訳</button>`}
+${srcTag(l)}
+<div class="row"><button class="btn pri" data-a="model">🔊 お手本</button><button class="btn" data-a="slow">🐢 ゆっくり</button></div>
+${V.recording ? `${meterHTML}<button class="btn red" data-a="recStop">■ 録音を止める</button>` :
+  `<div class="row"><button class="btn red" data-a="rec">● 録音</button><button class="btn" data-a="mine" ${rec ? '' : 'disabled'}>🎧 自分</button><button class="btn" data-a="cmp" ${rec ? '' : 'disabled'}>🔁 聞き比べ</button></div>`}
+${useSR ? `<button class="btn" data-a="sr">🗣 音声認識で確認（参考）</button>` : ''}
+${V.srRes ? `<div class="hint">${V.srRes}</div>` : ''}
+${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
+</div>
+<div class="row"><button class="btn" data-a="prev" ${k > 0 ? '' : 'disabled'}>◀ 前</button>${k < idxs.length - 1 ? `<button class="btn pri" data-a="nextL">次 ▶</button>` : `<button class="btn pri cur" data-a="done">③書き取り へ</button>`}</div>`,
+    acts: {
+      hide: b => { V.hide = b.checked; V.reveal = false; render(); },
+      onlyMe: b => { V.onlyMe = b.checked; V.mi = 0; render(); },
+      reveal: () => { V.reveal = true; render(); },
+      ja: () => { V.showJa = true; render(); },
+      model: () => speak(l.en, l.w),
+      slow: () => speak(l.en, l.w, 0.7),
+      rec: async () => {
+        stopSpeak(); stopAudio(); V.err = ''; V.srRes = ''; V.recording = true; render();
+        const c = startRec({ calib: 0, autoStop: true, silence: 1800, max: 20000, onLevel: meterUpdate });
+        try { const r = await c.done; if (r.blob) mimicRecs[id] = r.blob; else V.err = '録音データが取れませんでした'; }
+        catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
+        V.recording = false; if (V.name === 'scene' && V.step === 'mimic') render();
+      },
+      recStop: () => { curRec && curRec.stop(); },
+      mine: () => { stopSpeak(); playBlob(rec); },
+      cmp: async () => { stopAudio(); const tok = playAllTok; await speak(l.en, l.w); if (tok !== playAllTok) return; await sleep(300); await playBlob(rec); },
+      sr: async () => {
+        stopSpeak(); stopAudio(); V.srRes = '🎤 どうぞ話してください…'; render();
+        const r = await recognize();
+        V.srRes = r.text != null ? `認識結果：「${esc(r.text)}」<br>一致率 ${pct(matchRate(l.en, r.text))}（認識エンジンは補正するので甘めに出ます）` : `認識できませんでした：${esc(SR_ERR[r.err] || r.err)}`;
+        if (V.name === 'scene') render();
+      },
+      prev: () => { stopAll(); V.mi = k - 1; V.reveal = false; V.srRes = ''; V.err = ''; V.showJa = false; render(); },
+      nextL: () => { stopAll(); V.mi = k + 1; V.reveal = false; V.srRes = ''; V.err = ''; V.showJa = false; render(); },
+      done: () => { scRec(sc.id).mimic = true; save(); go('scene', { id: sc.id, step: 'dict' }); },
+    },
+  };
+};
+
+/* ③ 書き取り */
+SCENE_STEPS.dict = ({ sc }) => {
+  if (!V.d) V.d = { i: 0, ok: 0, tot: 0, cl: makeCloze(sc.lines[0].en), checked: false, res: null };
+  const d = V.d;
+  if (d.i >= sc.lines.length) return dictEnd(sc);
+  const l = sc.lines[d.i], cl = d.cl;
+  let bi = 0;
+  const body = cl.toks.map((t, ti) => {
+    const b = cl.blanks.find(x => x.ti === ti);
+    if (!b) return esc(t);
+    const k = bi++;
+    if (d.checked) { const r = d.res[k]; return esc(b.pre) + (r.ok ? `<span class="ans">${esc(b.core)}</span>` : `<span class="ngw">${esc(r.v || '＿')}</span> <span class="ans">${esc(b.core)}</span>`) + esc(b.post); }
+    return esc(b.pre) + `<input class="cz" id="cz${k}" data-k="czEnter" data-n="${k}" size="${Math.max(4, b.core.length)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="${k < cl.blanks.length - 1 ? 'next' : 'done'}">` + esc(b.post);
+  }).join('');
+  const noBlank = !cl.blanks.length;
+  return {
+    html: `
+<div class="win">
+<p class="small">${d.i + 1} / ${sc.lines.length}　正解 ${d.ok} / ${d.tot}</p>
+${whoTag(l.w)}${badge(l.r)}
+<div class="big">${noBlank && !d.checked ? '（この文は聞くだけ。再生してから「次へ」）' : body}</div>
+${V.showJa || d.checked ? `<div class="ja">${esc(l.ja)}</div>` : ''}
+${d.checked ? srcTag(l) : ''}
+<div class="row"><button class="btn pri" data-a="play">🔊 もう一度</button><button class="btn" data-a="slow">🐢 ゆっくり</button>${!d.checked && !V.showJa ? `<button class="btn" data-a="ja">訳</button>` : ''}</div>
+${d.checked || noBlank ? `<button class="btn pri cur" data-a="nextQ">次へ</button>` : `<button class="btn pri cur" data-a="check">答え合わせ</button>`}
+</div>
+<p class="small">聞こえた単語を空欄に入れます。大文字・小文字は区別しません。</p>`,
+    after: () => { if (!d.played) { d.played = true; speak(l.en, l.w); } if (!d.checked) $('#cz0')?.focus({ preventScroll: true }); },
+    acts: {
+      play: () => speak(l.en, l.w),
+      slow: () => speak(l.en, l.w, 0.7),
+      ja: () => { V.showJa = true; render(); },
+      czEnter: b => { const n = +b.dataset.n; const nx = $('#cz' + (n + 1)); if (nx) nx.focus(); else ACTS.check(); },
+      check: () => {
+        d.res = cl.blanks.map((b, k) => { const v = ($('#cz' + k)?.value || ''); return { v, ok: normW(v) === normW(b.core) }; });
+        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true;
+        render();
+      },
+      nextQ: () => {
+        stopSpeak(); d.i++; d.checked = false; d.played = false; V.showJa = false;
+        if (d.i < sc.lines.length) d.cl = makeCloze(sc.lines[d.i].en);
+        else { const D = dayRec(); D.dOk += d.ok; D.dTot += d.tot; const r = scRec(sc.id); const acc = d.tot ? d.ok / d.tot : 1; d.acc = acc; d.prevBest = r.dictBest; r.dictBest = Math.max(r.dictBest ?? 0, acc); checkClear(sc); save(); }
+        render(); window.scrollTo(0, 0);
+      },
+    },
+  };
+};
+function dictEnd(sc) {
+  const d = V.d, r = S.scenes[sc.id];
+  const best = d.prevBest != null && d.acc > d.prevBest ? '<p class="okc">自己ベスト更新！</p>' : '';
+  return {
+    html: `
+<div class="win center"><h2>書き取り 結果</h2>
+<div class="timer">${pct(d.acc)}</div><p>${d.ok} / ${d.tot} 語</p>${best}
+<p class="small">自己ベスト ${pct(r.dictBest)}　${r.dictBest >= STAR_DICT ? '★2 の基準クリア' : `★2 は ${pct(STAR_DICT)} 以上`}</p></div>
+${clearBox(sc)}
+<div class="row"><button class="btn" data-a="again">もう一度</button><button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button></div>`,
+    acts: { again: () => go('scene', { id: sc.id, step: 'dict' }) },
+  };
+}
+function checkClear(sc) {
+  const r = scRec(sc.id);
+  if (!r.clear && r.dictBest != null && r.quickDone) { r.clear = true; r.justCleared = true; }
+}
+function clearBox(sc) {
+  const r = S.scenes[sc.id];
+  if (!r || !r.justCleared) return '';
+  r.justCleared = false; save();
+  const x = sceneById(sc.id), nx = x.ch.scenes[x.i + 1];
+  const chDone = chapterClear(x.ch);
+  return `<div class="win"><h2>🎉 場面クリア！ <span class="stars">${starStr(sceneStars(sc.id))}</span></h2><p>${esc(sc.outro)}</p>
+${sc.boss && !r.boss ? '<p>最後に「⑤スピーチ」で30秒自己紹介に挑戦しよう。</p>' : ''}
+${chDone ? `<p class="okc">${esc(x.ch.title)} クリア！ 次の章は準備中です。</p>` : ''}
+${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面：${esc(nx.title)}</button>` : ''}</div>`;
+}
+
+/* ④ とっさに（場面・復習で共通） */
+SCENE_STEPS.quick = ({ sc }) => {
+  if (!V.q) V.q = newQ(sc.lines.map((l, i) => i).filter(i => sc.lines[i].w === 'me').map(i => lineId(sc.id, i)), 'scene');
+  return quickView();
+};
+function newQ(keys, src) { return { keys, i: 0, phase: 'wait', rt: null, blob: null, hint: false, res: [], src }; }
+function startReview() {
+  const keys = dueKeys().sort((a, b) => (S.lines[a].b - S.lines[b].b) || (S.lines[a].d < S.lines[b].d ? -1 : 1)).slice(0, 15);
+  go('review', { q: newQ(keys, 'review') });
+}
+SCREENS.review = () => {
+  const r = quickView();
+  r.html = topBar('home', '復習') + r.html;
+  return r;
+};
+function quickView() {
+  const q = V.q;
+  if (!q.keys.length) return { html: `<div class="win"><p>今日の復習はありません。</p></div><button class="btn" data-a="home">タイトルへ</button>` };
+  if (q.i >= q.keys.length) return quickEnd();
+  const { s, i, line: l } = lineByKey(q.keys[q.i]);
+  const prev = i > 0 ? s.sc.lines[i - 1] : null;
+  const ctx = prev ? `<div class="hint">${whoTag(prev.w)}${esc(prev.en)}</div>` : '';
+  const head = `<p class="small">${q.i + 1} / ${q.keys.length}　📍${esc(s.sc.title)}　${badge(l.r)}</p>`;
+  let h = '';
+  if (q.phase === 'wait') {
+    h = `<div class="win">${head}${ctx}
+<p>スタートを押すと${prev && prev.w !== 'me' && S.cue ? '相手のセリフが流れ、そのあと' : ''}日本語が出ます。<b>すぐに英語で</b>言ってください。言い始めるまでの秒数を測ります。</p>
+<label class="tg"><input type="checkbox" data-c="cue" ${S.cue ? 'checked' : ''}>相手のセリフを先に流す</label>
+<button class="btn pri cur" data-a="go">スタート</button></div>
+<p class="small">日本語訳は意味のめやすです。同じ意味なら、お手本と違う言い方でもかまいません。</p>`;
+  } else if (q.phase === 'cue') {
+    h = `<div class="win">${head}${ctx}<p class="center">🔊 相手のセリフ…</p></div>`;
+  } else if (q.phase === 'prep') {
+    h = `<div class="win">${head}<p class="center">準備中…（静かにしてください）</p>${meterHTML}</div>`;
+  } else if (q.phase === 'rec') {
+    h = `<div class="win">${head}<div class="jaBig">${esc(l.ja)}</div>
+<div class="timer" id="tm">0.0</div>
+${q.manual ? `<p class="small">マイクが使えないため、手動で計ります。</p>${q.onset == null ? `<button class="btn pri" data-a="mOn">言い始めたらタップ</button>` : `<button class="btn pri" data-a="stop">言い終えたらタップ</button>`}` :
+  `${meterHTML}<p class="small center" id="st">話し終えて少し黙ると、自動で止まります</p><button class="btn red" data-a="stop">■ 話し終えた</button>`}
+${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))} …</div>` : `<button class="btn" data-a="hint">💡 ヒント（最初の2語）</button>`}</div>`;
+  } else if (q.phase === 'judge') {
+    h = `<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
+<p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
+<div class="big">${esc(l.en)}</div>${srcTag(l)}
+<div class="row"><button class="btn pri" data-a="model">🔊 お手本</button><button class="btn" data-a="mine" ${q.blob ? '' : 'disabled'}>🎧 自分</button><button class="btn" data-a="cmp" ${q.blob ? '' : 'disabled'}>🔁 比べる</button></div>
+<hr><p class="small">自分で判定してください</p>
+<div class="row judge"><button class="btn j-o" data-a="j" data-v="o">○<br><small>言えた</small></button><button class="btn j-m" data-a="j" data-v="m">△<br><small>だいたい</small></button><button class="btn j-x" data-a="j" data-v="x">×<br><small>言えず</small></button></div></div>`;
+  }
+  return {
+    html: h,
+    after: q.phase === 'judge' && !q.autoPlayed ? () => { q.autoPlayed = true; speak(l.en, l.w); } : null,
+    acts: {
+      cue: b => { S.cue = b.checked; save(); render(); },
+      go: async () => {
+        ac();
+        const tok = playAllTok;
+        if (prev && prev.w !== 'me' && S.cue) { q.phase = 'cue'; render(); await speak(prev.en, prev.w); if (tok !== playAllTok) return; await sleep(200); }
+        q.phase = 'prep'; q.rt = null; q.blob = null; q.hint = false; q.onset = null; q.manual = false; q.autoPlayed = false; render();
+        let t0 = 0;
+        const c = startRec({
+          calib: 600, autoStop: true, silence: 1500, max: 20000, noVoiceMax: 15000, onLevel: meterUpdate,
+          onReady: () => { q.phase = 'rec'; t0 = performance.now(); render(); tickers.push(setInterval(() => { const e = $('#tm'); if (e && q.onset == null) e.textContent = ((performance.now() - t0) / 1000).toFixed(1); }, 100)); },
+          onOnset: ms => { q.onset = ms; const e = $('#tm'); if (e) { e.textContent = (ms / 1000).toFixed(1); e.style.color = 'var(--ok)'; } const st = $('#st'); if (st) st.textContent = '🎤 話しています…'; },
+        });
+        try {
+          const r = await c.done;
+          if (tok !== playAllTok) return;
+          tickers.forEach(clearInterval); tickers = [];
+          q.rt = r.onset; q.blob = r.blob; q.phase = 'judge'; render();
+        } catch (e) {
+          if (tok !== playAllTok) return;
+          q.manual = true; q.phase = 'rec'; t0 = performance.now(); q.t0 = t0; render();
+          tickers.push(setInterval(() => { const el = $('#tm'); if (el && q.onset == null) el.textContent = ((performance.now() - t0) / 1000).toFixed(1); }, 100));
+        }
+      },
+      mOn: () => { q.onset = performance.now() - q.t0; render(); const e = $('#tm'); if (e) e.textContent = (q.onset / 1000).toFixed(1); },
+      stop: () => {
+        if (q.manual) { tickers.forEach(clearInterval); tickers = []; q.rt = q.onset; q.phase = 'judge'; render(); }
+        else curRec && curRec.stop();
+      },
+      hint: () => { q.hint = true; render(); },
+      model: () => { stopAudio(); speak(l.en, l.w); },
+      mine: () => { stopSpeak(); playBlob(q.blob); },
+      cmp: async () => { stopAudio(); const tok = playAllTok; await speak(l.en, l.w); if (tok !== playAllTok) return; await sleep(300); playBlob(q.blob); },
+      j: m => judge(m),
+    },
+  };
+  function L(q) { return S.lines[q.keys[q.i]]?.rt; }
+}
+function judge(mark) {
+  const q = V.q, key = q.keys[q.i];
+  const L = S.lines[key] || (S.lines[key] = { b: 0, d: today(), n: 0 });
+  if (mark === 'o') L.b = Math.min(L.b + 1, 6); else if (mark === 'm') L.b = Math.max(1, L.b); else L.b = 0;
+  L.d = addDays(today(), INTV[L.b]); L.n = (L.n || 0) + 1; L.last = today();
+  const valid = q.rt != null && mark !== 'x' && !q.hint;
+  if (valid) L.rt = Math.round(q.rt);
+  const D = dayRec(); if (mark === 'o') D.qO++; else if (mark === 'm') D.qM++; else D.qX++;
+  if (valid) { D.rt.push(Math.round(q.rt)); if (D.rt.length > 400) D.rt.shift(); }
+  q.res.push({ mark, rt: valid ? q.rt : null });
+  stopAll();
+  q.i++; q.phase = 'wait';
+  if (q.i >= q.keys.length && q.src === 'scene') {
+    const sc = sceneById(V.id).sc, r = scRec(sc.id);
+    r.quickDone = true;
+    const allO = q.res.every(x => x.mark === 'o');
+    const md = median(q.res.map(x => x.rt).filter(x => x != null));
+    q.md = md; q.prevBest = r.quickBest;
+    if (allO && md != null && (r.quickBest == null || md < r.quickBest)) r.quickBest = Math.round(md);
+    checkClear(sc);
+  }
+  save(); render(); window.scrollTo(0, 0);
+}
+function quickEnd() {
+  const q = V.q, n = k => q.res.filter(x => x.mark === k).length;
+  const md = median(q.res.map(x => x.rt).filter(x => x != null));
+  let h = `<div class="win center"><h2>${q.src === 'scene' ? 'とっさに 結果' : '復習 結果'}</h2>
+<div class="stat"><div><b>${n('o')}</b><span>○ 言えた</span></div><div><b>${n('m')} / ${n('x')}</b><span>△ / ×</span></div></div>
+<p>反応時間（中央値）<b style="color:var(--acc);font-size:22px">${sec(md)}</b></p>
+<p class="small">×の文は今日もう一度、復習に出てきます。○の文は間隔をあけて出てきます。</p>`;
+  if (q.src === 'scene') {
+    const r = S.scenes[V.id];
+    if (q.prevBest != null && r.quickBest < q.prevBest) h += '<p class="okc">自己ベスト更新！</p>';
+    h += `<p class="small">★3 の記録（全文○のときの中央値）：${sec(r.quickBest)}　基準 ${STAR_RT / 1000}秒以内</p></div>`;
+    const sc = sceneById(V.id).sc;
+    h += clearBox(sc);
+    h += `<div class="row"><button class="btn" data-a="again">もう一度</button>${sc.boss ? `<button class="btn pri cur" data-a="step" data-v="boss">⑤スピーチ へ</button>` : `<button class="btn pri" data-a="story">ストーリーへ</button>`}</div>`;
+    return { html: h, acts: { again: () => go('scene', { id: V.id, step: 'quick' }), goScene: id => go('scene', { id, step: 'intro' }) } };
+  }
+  h += `</div><div class="row"><button class="btn" data-a="home">タイトルへ</button>${dueKeys().length ? `<button class="btn pri" data-a="more">続けて復習（${dueKeys().length}）</button>` : ''}</div>`;
+  return { html: h, acts: { more: () => startReview() } };
+}
+// 場面クリア枠の「次の場面」ボタン（書き取り結果からも押せるように）
+const _sceneRender = SCREENS.scene;
+SCREENS.scene = () => { const r = _sceneRender(); r.acts = Object.assign({ goScene: id => go('scene', { id, step: 'intro' }) }, r.acts); return r; };
+
+/* ⑤ 30秒スピーチ */
+SCENE_STEPS.boss = ({ sc }) => {
+  const b = sc.boss, list = S.boss.filter(x => x.sid === sc.id);
+  return {
+    html: `
+<div class="win"><h2>👑 ${esc(b.title)}</h2><p>${esc(b.prompt)}</p>
+<h3>使えるフレーズ</h3><ul class="ph">${b.hints.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+${V.recording ? `<div class="timer" id="tm">${b.sec}</div>${meterHTML}<button class="btn red" data-a="stop">■ 終了</button>` :
+  `<button class="btn pri cur" data-a="rec">● 録音スタート（${b.sec}秒）</button>`}
+${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
+<p class="small">台本を作らず、その場で話すのがおすすめです。言えなかった表現は、あとで調べて次回に使いましょう。</p></div>
+<div class="win"><h3>これまでの録音（${list.length}）</h3>
+${list.length ? list.map((x, k) => `<div class="row" style="align-items:center"><span style="flex:1">${k === 0 ? '初回 ' : ''}${esc(x.date)}</span><button class="btn" style="flex:0 0 auto;width:auto" data-a="play" data-v="${esc(x.k)}">▶ 再生</button></div>`).join('') : '<p class="small">まだありません。</p>'}
+${list.length >= 2 ? `<button class="btn" data-a="cmp">🔁 初回 → 最新 を続けて聞く</button>` : ''}
+<p class="small">録音は端末の中だけに保存されます。何週間かおきに録り直すと、変化が分かります。</p></div>`,
+    acts: {
+      rec: async () => {
+        stopAll(); V.err = ''; V.recording = true; render();
+        const t0 = performance.now();
+        tickers.push(setInterval(() => { const e = $('#tm'); if (!e) return; const left = b.sec - (performance.now() - t0) / 1000; e.textContent = Math.max(0, Math.ceil(left)); if (left <= 5) e.style.color = 'var(--ng)'; }, 200));
+        const c = startRec({ calib: 0, max: (b.sec + 3) * 1000, onLevel: meterUpdate });
+        try {
+          const r = await c.done;
+          if (r.blob) {
+            const k = 'boss-' + sc.id + '-' + Date.now();
+            try { await idbPut(k, r.blob); S.boss.push({ k, sid: sc.id, date: today() }); scRec(sc.id).boss = true; save(); }
+            catch (e) { V.err = '録音を保存できませんでした：' + e.message; }
+          } else V.err = '録音データが取れませんでした';
+        } catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
+        tickers.forEach(clearInterval); tickers = [];
+        V.recording = false; if (V.name === 'scene' && V.step === 'boss') render();
+      },
+      stop: () => curRec && curRec.stop(),
+      play: async k => { stopSpeak(); try { playBlob(await idbGet(k)); } catch (e) { V.err = '再生できませんでした'; render(); } },
+      cmp: async () => { stopSpeak(); const tok = playAllTok; try { await playBlob(await idbGet(list[0].k)); if (tok !== playAllTok) return; await sleep(600); await playBlob(await idbGet(list[list.length - 1].k)); } catch (e) {} },
+    },
+  };
+};
+
+/* ---------- 定点録音 ---------- */
+SCREENS.bench = () => {
+  if (V.mode === 'rec') return benchRec();
+  const sets = S.bench, first = sets[0], last = sets[sets.length - 1];
+  let h = topBar('home', '定点録音');
+  h += `<div class="win"><h2>🎙 定点録音とは</h2><p>同じ10文を、月に1回くらい録音します。初回の録音と聞き比べると、上達が耳で分かります。</p>
+<p class="small">お手本は聞かずに、まず自分で読んで録音します（そのほうが変化が分かりやすいため）。録音は端末の中だけに保存されます。</p>
+<p>録音した回数：${sets.length}回${last ? `（前回 ${esc(last.date)}・${diffDays(last.date, today())}日前）` : ''}</p>
+<button class="btn pri cur" data-a="start">● 録音をはじめる（10文・約3分）</button></div>`;
+  if (first) {
+    h += `<div class="win"><h3>聞き比べ</h3><p class="small">初回 ${esc(first.date)}${sets.length > 1 ? ` ／ 最新 ${esc(last.date)}` : ''}</p>`;
+    BENCH.forEach((t, i) => {
+      h += `<div class="ln" style="cursor:default"><div class="en">${i + 1}. ${esc(t)}</div><div class="row"><button class="btn" data-a="model" data-v="${i}">🔊 お手本</button><button class="btn" data-a="pl" data-v="${first.id}:${i}">▶ 初回</button>${sets.length > 1 ? `<button class="btn" data-a="pl" data-v="${last.id}:${i}">▶ 最新</button>` : ''}</div></div>`;
+    });
+    h += `${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}</div>`;
+  }
+  return {
+    html: h,
+    acts: {
+      start: () => go('bench', { mode: 'rec', i: 0, recs: [] }),
+      model: i => speak(BENCH[+i], 'me'),
+      pl: async v => { stopSpeak(); const [id, i] = v.split(':'); try { const b = await idbGet('bench-' + id + '-' + i); if (b) playBlob(b); else { V.err = 'この録音は見つかりませんでした'; render(); } } catch (e) { V.err = '再生できませんでした'; render(); } },
+    },
+  };
+};
+function benchRec() {
+  const i = V.i, t = BENCH[i], rec = V.recs[i];
+  if (i >= BENCH.length) return benchSave();
+  return {
+    html: topBar('bench', '定点録音') + `
+<div class="win"><p class="small">${i + 1} / ${BENCH.length}</p><div class="big">${esc(t)}</div>
+${V.recording ? `${meterHTML}<button class="btn red" data-a="stop">■ 止める</button>` :
+  `<div class="row"><button class="btn red ${rec ? '' : 'cur'}" data-a="rec">● ${rec ? '録り直す' : '録音'}</button><button class="btn" data-a="mine" ${rec ? '' : 'disabled'}>🎧 確認</button></div>`}
+${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
+<button class="btn pri" data-a="next" ${rec && !V.recording ? '' : 'disabled'}>${i < BENCH.length - 1 ? '次の文へ' : '保存して終わる'}</button></div>`,
+    acts: {
+      bench: () => { if (!V.recs.length || confirm('途中の録音は保存されません。やめますか？')) go('bench', { mode: 'list' }); },
+      rec: async () => {
+        stopAll(); V.err = ''; V.recording = true; render();
+        try { const r = await startRec({ calib: 0, autoStop: true, silence: 2000, max: 25000, onLevel: meterUpdate }).done; if (r.blob) V.recs[i] = r.blob; else V.err = '録音データが取れませんでした'; }
+        catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
+        V.recording = false; if (V.name === 'bench') render();
+      },
+      stop: () => curRec && curRec.stop(),
+      mine: () => playBlob(rec),
+      next: () => { stopAll(); V.i++; render(); },
+    },
+  };
+}
+function benchSave() {
+  if (!V.saved) {
+    V.saved = 'saving';
+    (async () => {
+      const id = String(Date.now());
+      try {
+        for (let k = 0; k < BENCH.length; k++) await idbPut('bench-' + id + '-' + k, V.recs[k]);
+        S.bench.push({ id, date: today() }); save(); V.saved = 'ok';
+      } catch (e) { V.saved = 'ng'; V.err = e.message; }
+      if (V.name === 'bench') render();
+    })();
+  }
+  return {
+    html: topBar('bench', '定点録音') + `<div class="win center">${V.saved === 'saving' ? '<p>保存中…</p>' : V.saved === 'ok' ? `<h2>保存しました</h2><p>${S.bench.length}回目の定点録音です。${S.bench.length > 1 ? '初回と聞き比べてみましょう。' : '1か月後くらいにまた録音しましょう。'}</p>` : `<p class="ngc">保存できませんでした：${esc(V.err)}</p>`}</div>
+<button class="btn pri" data-a="bench">聞き比べへ</button>`,
+    acts: { bench: () => go('bench', { mode: 'list' }) },
+  };
+}
+
+/* ---------- きろく ---------- */
+function lineChart(pts, o) {
+  const W = 320, H = 150, P = { l: 34, r: 10, t: 12, b: 22 };
+  if (pts.length < 2) return `<p class="small">2日以上記録がたまるとグラフが出ます。</p>`;
+  const ys = pts.map(p => p.y);
+  const yMin = o.yMin ?? Math.min(...ys), yMax = o.yMax ?? Math.max(...ys);
+  const rg = (yMax - yMin) || 1;
+  const X = i => P.l + i * (W - P.l - P.r) / (pts.length - 1);
+  const Y = y => P.t + (1 - (y - yMin) / rg) * (H - P.t - P.b);
+  const path = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
+  const ticks = [yMin, (yMin + yMax) / 2, yMax];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">
+${ticks.map(t => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="#ffffff22"/><text x="${P.l - 4}" y="${Y(t) + 4}" fill="#b3bce6" font-size="10" text-anchor="end">${o.fmt(t)}</text>`).join('')}
+<path d="${path}" fill="none" stroke="#ffd23f" stroke-width="2.5"/>
+${pts.map((p, i) => `<circle cx="${X(i)}" cy="${Y(p.y)}" r="3" fill="#ffd23f"/>`).join('')}
+<text x="${P.l}" y="${H - 6}" fill="#b3bce6" font-size="10">${fmtDate(pts[0].x)}</text>
+<text x="${W - P.r}" y="${H - 6}" fill="#b3bce6" font-size="10" text-anchor="end">${fmtDate(pts[pts.length - 1].x)}</text>
+</svg>`;
+}
+SCREENS.stats = () => {
+  const ks = Object.keys(S.days).sort().slice(-30);
+  const rtPts = ks.map(k => ({ x: k, y: median(S.days[k].rt) })).filter(p => p.y != null).map(p => ({ x: p.x, y: p.y / 1000 }));
+  const dPts = ks.filter(k => S.days[k].dTot).map(k => ({ x: k, y: S.days[k].dOk / S.days[k].dTot * 100 }));
+  const boxes = [0, 0, 0]; Object.values(S.lines).forEach(L => boxes[L.b <= 1 ? 0 : L.b <= 3 ? 1 : 2]++);
+  const total = Object.values(S.days).reduce((a, d) => a + d.qO + d.qM + d.qX, 0);
+  const firstRt = rtPts[0], lastRt = rtPts[rtPts.length - 1];
+  return {
+    html: topBar('home', 'きろく') + `
+<div class="win"><div class="stat">
+<div><b>${streak()}日</b><span>連続</span></div><div><b>${Object.keys(S.days).length}日</b><span>練習した日</span></div>
+<div><b>${total}</b><span>とっさに言った回数</span></div><div><b>${Object.keys(S.lines).length}</b><span>覚え中の文</span></div></div></div>
+<div class="win"><h3>とっさの反応時間（日ごとの中央値・秒）</h3><p class="small">下がるほど、ぱっと言えています。ヒントを使った回と×の回は除いています。</p>
+${lineChart(rtPts, { fmt: v => v.toFixed(1), yMin: 0 })}
+${firstRt && rtPts.length >= 2 ? `<p class="small">最初 ${firstRt.y.toFixed(1)}秒 → 最近 ${lastRt.y.toFixed(1)}秒</p>` : ''}</div>
+<div class="win"><h3>書き取りの正答率（日ごと・%）</h3>
+${lineChart(dPts, { fmt: v => Math.round(v), yMin: 0, yMax: 100 })}</div>
+<div class="win"><h3>覚え具合</h3>
+<p>うろ覚え ${boxes[0]}文 ／ 定着中 ${boxes[1]}文 ／ 定着 ${boxes[2]}文</p>
+<p class="small">「○言えた」が続くほど、復習の間隔が 1→2→4→7→15→30日と伸び、「定着」に近づきます。</p></div>
+<p class="small center">数字はゲーム内のめやすです。</p>`,
+  };
+};
+
+/* ---------- せってい・動作チェック ---------- */
+SCREENS.settings = () => {
+  const t = V.t, mv = mainVoice();
+  const ok = x => x === true ? '<span class="okc">✅ OK</span>' : x === false ? '<span class="ngc">❌ NG</span>' : '<span class="small">未チェック</span>';
+  return {
+    html: topBar('home', 'せってい・動作チェック') + `
+<div class="win"><h2>① 読み上げ</h2>
+<p>${TTS.ok ? `英語の声：${TTS.voices.length}種類` : '<span class="ngc">このブラウザは読み上げに対応していません</span>'}</p>
+${TTS.voices.length ? `<select data-c="voice">${TTS.voices.map(v => `<option value="${esc(v.name)}" ${mv && v.name === mv.name ? 'selected' : ''}>${esc(v.name)}（${esc(v.lang)}）${v.localService ? '' : ' ☁'}</option>`).join('')}</select>` : ''}
+<p class="small">☁ が付いた声はネット接続が必要なことがあります。</p>
+<p>速さ：<b id="spv">${S.speed.toFixed(2)}倍</b></p>
+<input type="range" min="0.6" max="1.4" step="0.05" value="${S.speed}" data-i="speed" data-c="speedSet">
+<label class="tg"><input type="checkbox" data-c="multi" ${S.multi ? 'checked' : ''}>登場人物ごとに声を変える（端末にあるアクセントの声を使う）</label>
+<button class="btn pri" data-a="tts">🔊 試しに聞く</button>
+<p>結果：${ok(t.tts)}${t.tts === undefined ? '' : `　<button class="btn" style="display:inline-block;width:auto;padding:4px 10px" data-a="ttsNg">聞こえなかった</button>`}</p></div>
+
+<div class="win"><h2>② マイク録音</h2>
+<p class="small">3秒間しゃべって、再生されれば OK です。</p>
+${V.recording ? meterHTML + '<p class="center">録音中…</p>' : `<button class="btn pri" data-a="mic">● 3秒録音して再生</button>`}
+<p>結果：${ok(t.mic)} ${t.micMsg ? `<span class="small">${esc(t.micMsg)}</span>` : ''}</p>
+<p class="small">「とっさに」の反応時間は、マイクの音量で言い始めを判定します。周りがうるさいと早めに反応することがあります。</p></div>
+
+<div class="win"><h2>③ 音声認識（参考・任意）</h2>
+<p>${SR ? 'このブラウザは音声認識に対応しています（オンラインで動作）。' : 'このブラウザは音声認識に対応していません。なくても遊べます。'}</p>
+${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言ってみる</button>
+<p>結果：${ok(t.sr)} ${t.srMsg ? `<span class="small">${esc(t.srMsg)}</span>` : ''}</p>
+<label class="tg"><input type="checkbox" data-c="useSR" ${S.useSR ? 'checked' : ''}>「②まねる」で音声認識の確認ボタンを出す</label>
+<p class="small">認識エンジンは、ありそうな単語に補正して聞き取るため、発音の判定としては甘めに出ます。</p>` : ''}</div>
+
+<div class="win"><h2>④ 保存</h2>
+<button class="btn" data-a="store">💾 保存のテスト</button>
+<p>記録：${ok(t.ls)}　録音：${ok(t.idb)} ${t.stMsg ? `<span class="small">${esc(t.stMsg)}</span>` : ''}</p>
+<hr>
+<p class="small">機種変更に備えて、記録をファイルに書き出せます（録音は含みません）。</p>
+<div class="row"><button class="btn" data-a="exp">⬇ 書き出し</button><label class="btn" style="text-align:center">⬆ 読み込み<input type="file" accept=".json,application/json" data-c="imp" hidden></label></div>
+<button class="btn red" data-a="reset">記録をすべて消す</button></div>
+
+<div class="win"><h2>クレジット</h2>
+<p class="small">教材の英文は、下記の引用を除きこのゲームのオリジナルです。</p>
+<p class="small">講義スライドの2文：<a href="${SOURCES.wpOverfit.url}" target="_blank" rel="noopener">${esc(SOURCES.wpOverfit.title)}</a> より引用（${SOURCES.wpOverfit.lic}）。この2文は CC BY-SA 4.0 で利用できます。</p></div>`,
+    acts: {
+      voice: b => { S.voice = b.value; save(); },
+      speed: b => { S.speed = +b.value; const e = $('#spv'); if (e) e.textContent = S.speed.toFixed(2) + '倍'; },
+      speedSet: () => save(),
+      multi: b => { S.multi = b.checked; save(); },
+      useSR: b => { S.useSR = b.checked; save(); },
+      tts: async () => { t.tts = true; S.checked = true; save(); render(); await speak("Hi, I'm Priya. Let me show you around the lab.", 'priya'); await speak('Today, we are going to talk about overfitting.', 'miller'); },
+      ttsNg: () => { t.tts = false; render(); },
+      mic: async () => {
+        stopAll(); V.recording = true; t.micMsg = ''; render();
+        try {
+          const r = await startRec({ calib: 0, max: 3000, onLevel: meterUpdate }).done;
+          V.recording = false;
+          if (r.blob) { t.mic = true; S.checked = true; save(); render(); await playBlob(r.blob); }
+          else { t.mic = false; t.micMsg = '録音データが空でした'; render(); }
+        } catch (e) { V.recording = false; t.mic = false; t.micMsg = (e.name === 'NotAllowedError' ? 'マイクの使用が許可されていません。' : '') + (e.message || e.name); render(); }
+      },
+      sr: async () => { t.srMsg = '🎤 どうぞ…'; render(); const r = await recognize(); if (r.text != null) { t.sr = true; t.srMsg = '「' + r.text + '」'; } else { t.sr = false; t.srMsg = SR_ERR[r.err] || r.err; } render(); },
+      store: async () => {
+        t.stMsg = '';
+        try { localStorage.setItem('eigoroad_test', '1'); t.ls = localStorage.getItem('eigoroad_test') === '1'; localStorage.removeItem('eigoroad_test'); } catch (e) { t.ls = false; }
+        try { await idbPut('test', new Blob(['x'])); const b = await idbGet('test'); t.idb = !!b; await idbDel('test'); } catch (e) { t.idb = false; t.stMsg = e.message; }
+        render();
+      },
+      exp: () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
+        a.download = 'english-road-' + today() + '.json'; document.body.appendChild(a); a.click(); a.remove();
+      },
+      imp: b => {
+        const f = b.files[0]; if (!f) return;
+        f.text().then(s => { const j = JSON.parse(s); if (!j || j.v !== 1 || typeof j.days !== 'object') throw new Error('形式が違います'); if (!confirm('今の記録を、読み込んだ記録で置き換えます。よろしいですか？')) return; S = Object.assign(DEF(), j); save(); alert('読み込みました'); go('title'); })
+          .catch(e => alert('読み込めませんでした：' + e.message));
+      },
+      reset: () => { if (confirm('記録をすべて消します（録音も消えます）。よろしいですか？')) { S = DEF(); save(); try { indexedDB.deleteDatabase('eigoroad_audio'); DB = null; } catch (e) {} go('title'); } },
+    },
+  };
+};
+
+render();
+</script>
+</body>
+</html>
