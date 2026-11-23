@@ -361,8 +361,10 @@ async function startNew(){
 async function enterTown(arrive){
   mode='town';F=null;B=null;disp=null;busy=false;heldDir=null;showPad(false);
   G.az={}; // あやしい壁は 村に もどると また うまる
+  const st=G.streak||0;G.streak=0; // 連戦ボーナスは 村に もどると 1倍に もどる
   renderParty();updateTop(`ユーカリ村（セーブ${curSlot}）`);save();playMusic('town');
   if(arrive)await talks(arrive);
+  if(st>=5)await talk(`れんせん${st}で 村に もどった。\n（れんせんの けいけんちボーナスは 1倍に もどった）`);
   await checkQuests();
   await raidNews();
   townMenu();
@@ -645,6 +647,7 @@ function fieldIdle(){
   updateTop(`B${F.f} ${AREA_NAME[areaOf(F.f)]}`);renderParty();$('fmap').textContent=G.flags.noMap?'🗺 地図 OFF':'🗺 地図';
   let hint=F.fl.boss&&!G.bossDown[F.f]?'この階の 奥に ぬしが いる！':'下への 階段を さがそう';
   if(GUARDIANS[F.f]&&!G.guardDown[F.f])hint+='\nどこかに 番人つきの 光る宝箱が あるらしい';
+  if(G.streak>0)hint+=`\n🔥 れんせん${G.streak}：つぎの けいけんち ×${streakMul(G.streak)}（村に もどると 1倍）`;
   if(G.lure>0)hint+=`\n🐜 アリの におい：のこり 戦闘${G.lure}回`;else if(G.lureEnd){G.lureEnd=0;hint+='\n🐜 アリの においが きえた';}
   if(G.flags.dig)hint+='\n（土色の かべは ほれる）';
   setMsg(`B${F.f}  ${AREA_NAME[areaOf(F.f)]}\n${hint}`);
@@ -889,13 +892,15 @@ async function endBattle(){
     if(B.opt.raid){await raidWin(B.opt.raid);return;}
     const rw=battleRewards(B);
     if(B.over==='fled'&&!rw.exp){await talk('敵は みんな にげてしまった…');backToField();return;}
+    const sMul=streakMul(G.streak);rw.exp=Math.round(rw.exp*sMul);G.streak=(G.streak||0)+1;const sMax=sMul<STREAK.max&&streakMul(G.streak)>=STREAK.max;
     stopMusic();jingle('C5 E5 G5 C6 - G5 C6 - -',.1);BA.win=now;G.battles++;
     const rareK=B.enemies.reduce((a,e)=>e.hp<=0&&!e.fled?Math.max(a,e.metal||0):a,0);
     if(rareK>=2&&!(B.opt.boss||B.opt.guard)){flashT=performance.now();banner(rareK>=3?'★ おめでとう！ ★':'おめでとう！','けいけんちが どっさり！','#ffd36b',2200);await sleep(900);}
     if(B.opt.boss||B.opt.guard){flashT=performance.now();shakeT=performance.now();banner('VICTORY!',B.enemies[0].name.replace(/ [A-E]$/,'')+'を たおした','#ffd36b',2200);await sleep(900);}
     {const vet=G.party.filter(m=>m.hp>0&&vetBonus(m)&&m.lv<JOBS[m.job].cap).map(m=>m.name);
     const rareE=rareK>=2?B.enemies.find(e=>e.metal===rareK):null;
-    await talk(`${rareE?rareE.name.replace(/ [A-E]$/,'')+'を たおした！':'敵を やっつけた！'}\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:'')+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}
+    await talk(`${rareE?rareE.name.replace(/ [A-E]$/,'')+'を たおした！':'敵を やっつけた！'}\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:'')+(sMul>1?`\n🔥 れんせん${G.streak-1}：けいけんち ×${sMul}`:'')+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}
+    if(sMax){jingle('E5 G5 C6 E6 G6',.08);banner('🔥 れんせん MAX','つぎから けいけんち ×'+STREAK.max,'#ff9a5a',2000);await sleep(700);}
     addGold(rw.gold);
     if(partyHas('itemFind')&&!B.opt.boss&&R()<.25){const f=F?F.f:1,it=f<10?'herb':f<30?'herb2':R()<.5?'herb3':'water2';if(addItem(it,1))await talk(`ほりあての かんで、${ITEMS[it].name}を 見つけた！`);}
     for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
