@@ -67,7 +67,7 @@ a{color:var(--me)}
 .timer{font-family:"Courier New",monospace;font-size:34px;font-weight:900;color:var(--acc);text-align:center}
 input.cz{font:inherit;font-size:17px;background:#fff;color:#111;border:none;border-bottom:3px solid var(--acc);border-radius:3px;padding:1px 4px;margin:2px 1px;min-width:4ch}
 input.cz.ok{background:#c9f7d7}input.cz.ng{background:#ffd6d6}
-.ans{color:var(--ok);font-weight:700}
+.ans{color:var(--ok);font-weight:700;display:inline-block;animation:pop .4s ease-out}
 .ngw{color:var(--ng);text-decoration:line-through}
 .stars{color:var(--acc);letter-spacing:2px}
 .lock{opacity:.45}
@@ -112,6 +112,35 @@ canvas.pix{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .btn.sc{display:flex;align-items:center;gap:8px}
 .btn.sc canvas{flex:0 0 auto}
 .btn.sc .t{flex:1}
+#app.enter>*{animation:enter .3s ease-out both}
+#app.enter>*:nth-child(2){animation-delay:.04s}#app.enter>*:nth-child(3){animation-delay:.08s}#app.enter>*:nth-child(4){animation-delay:.12s}#app.enter>*:nth-child(5){animation-delay:.16s}#app.enter>*:nth-child(n+6){animation-delay:.2s}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stage .actor{position:relative}
+.emo{position:absolute;top:2px;right:-16px;z-index:1;background:#fff;color:#111;border:2px solid #111;border-radius:12px;font-style:normal;font-weight:900;font-size:15px;line-height:1.2;padding:1px 7px;animation:pop .35s ease-out}
+.emo::after{content:"";position:absolute;left:6px;bottom:-7px;border:5px solid transparent;border-top-color:#111}
+.tier{display:inline-block;margin-left:8px;font-weight:900;font-size:15px;padding:1px 10px;border-radius:10px;background:#ffd23f;color:#1a1200;animation:pop .4s ease-out}
+.tier.t2{background:#5fe08a}.tier.t3{background:#b3bce6}.tier.t4{background:#ffb347}.tier.t5{background:#c9a0ff}
+.bar{height:12px;background:#0008;border:2px solid #fff8;border-radius:7px;overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#ffd23f,#ff9f1c);animation:grow .9s ease-out both}
+.bar.goal i{background:linear-gradient(90deg,#5fe08a,#2fbf71)}
+@keyframes grow{from{width:0}}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-30px);opacity:0;background:#ffd23f;color:#1a1200;font-weight:900;padding:6px 16px;border-radius:16px;border:3px solid #fff;box-shadow:0 3px 0 #0008;z-index:50;transition:all .25s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#ov{position:fixed;inset:0;background:#000b;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px}
+.ovbox{width:100%;max-width:420px;background:linear-gradient(var(--win1),var(--win2));border:3px solid #fff;border-radius:10px;padding:10px 14px 14px;text-align:center}
+.lvup{font-family:"Courier New",monospace;font-weight:900;font-size:34px;color:var(--acc);text-shadow:3px 3px 0 #c2410c;letter-spacing:2px;animation:pop .5s ease-out}
+.lvn{font-size:26px;font-weight:900;margin:2px 0 4px}
+input.cz.ng{animation:shake .35s}input.cz.ok{animation:flash .6s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@keyframes flash{0%{background:#fff7a8}100%{background:#c9f7d7}}
+.map{position:relative;padding-left:26px}
+.map::before{content:"";position:absolute;left:10px;top:18px;bottom:18px;border-left:4px dashed #ffd23f80}
+.map .btn.sc{position:relative}
+.map .btn.sc::before{content:"";position:absolute;left:-23px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#6f7fd0;border:2px solid #fff}
+.map .btn.sc.clr::before{background:var(--ok)}
+.map .btn.sc.now{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc),0 3px 0 rgba(0,0,0,.6)}
+.map .btn.sc.now::before{background:var(--acc);animation:blink 1s steps(2) infinite}
+.now-tag{display:inline-block;white-space:nowrap;vertical-align:middle;font-size:11px;font-weight:900;color:#1a1200;background:var(--acc);border-radius:8px;padding:0 6px;margin-left:6px}
 .center{text-align:center}
 hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
 </style>
@@ -301,7 +330,7 @@ function load() {
   return DEF();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { return false; } }
-function dayRec() { const k = today(); return S.days[k] || (S.days[k] = { rt: [], dOk: 0, dTot: 0, qO: 0, qM: 0, qX: 0 }); }
+function dayRec() { const k = today(); if (!S.days[k]) { S.days[k] = { rt: [], dOk: 0, dTot: 0, qO: 0, qM: 0, qX: 0 }; setTimeout(() => { gainExp(20); toast('今日はじめての練習 +20 EXP'); }, 50); } return S.days[k]; }
 function scRec(id) { return S.scenes[id] || (S.scenes[id] = {}); }
 function streak() {
   let n = 0, k = today();
@@ -671,7 +700,7 @@ const BGS = {
   c1s5: 'radial-gradient(circle at 20% 18%,#ffd23f55 0 6%,transparent 7%),radial-gradient(circle at 75% 12%,#ff8fd055 0 5%,transparent 6%),radial-gradient(circle at 50% 25%,#7fe3ff44 0 5%,transparent 6%),linear-gradient(#20214f 0 64%,#3b2a4a 64% 67%,#4e3a5e 67%)',
 };
 function stageHTML(sid, actors, label) {
-  return `<div class="stage" style="background:${BGS[sid] || BGS.c1s1}">${label ? `<span class="lbl">${esc(label)}</span>` : ''}${actors.map(a => `<div class="actor ${a.dim ? 'dim' : ''} ${a.hop ? 'hop' : ''}">${face(a.who, a.px || 96, a)}<span>${esc(CHARS[a.who].name)}</span></div>`).join('')}</div>`;
+  return `<div class="stage" style="background:${BGS[sid] || BGS.c1s1}">${label ? `<span class="lbl">${esc(label)}</span>` : ''}${actors.map(a => `<div class="actor ${a.dim ? 'dim' : ''} ${a.hop ? 'hop' : ''}">${a.emo ? `<i class="emo">${esc(a.emo)}</i>` : ''}${face(a.who, a.px || 96, a)}<span>${esc(CHARS[a.who].name)}</span></div>`).join('')}</div>`;
 }
 const castOf = sc => [...new Set(sc.lines.map(l => l.w))];
 const partnerOf = sc => sc.lines.find(l => l.w !== 'me' && l.w !== 'slide')?.w || 'miller';
@@ -708,13 +737,55 @@ function startRoad() {
   };
   step();
 }
+/* ---------- 経験値・レベル・演出 ---------- */
+const GOAL = 10; // 今日の目標：「とっさに」で言う文の数
+const lvNeed = L => 60 + 30 * (L - 1);
+function lvInfo(exp) { let L = 1, e = exp || 0; while (e >= lvNeed(L)) { e -= lvNeed(L); L++; } return { L, cur: e, need: lvNeed(L) }; }
+const LV_MSG = ['英語力が少し上がった。', 'まわりのウォンバットがざわついている。', '発音が0.3ミリ、ネイティブに近づいた（気がする）。', 'Miller 先生の片眼鏡がきらりと光った。', '草の根っこを1本もらった。', '自信が1ウォンバットぶん増えた。', 'Tom がヘッドホンを外して拍手している。', 'Priya のめがねがずり落ちた。'];
+let expAcc = 0, expT = 0;
+function gainExp(n) {
+  if (!n) return;
+  const before = lvInfo(S.exp).L; S.exp = (S.exp || 0) + n; save();
+  expAcc += n; toast(`+${expAcc} EXP`); clearTimeout(expT); expT = setTimeout(() => { expAcc = 0; }, 1500);
+  const after = lvInfo(S.exp).L; if (after > before) setTimeout(() => levelUp(after), 700);
+}
+function toast(t) {
+  let el = document.getElementById('toast'); if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+  el.textContent = t; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1500);
+}
+function levelUp(L) {
+  if (curRec) { setTimeout(() => levelUp(L), 1000); return; }
+  sfx('clear'); buzz([60, 40, 140]);
+  document.getElementById('ov')?.remove();
+  const ov = document.createElement('div'); ov.id = 'ov';
+  ov.innerHTML = `<div class="ovbox pop">${stageHTML('c1s5', [{ who: 'me', px: 100, eye: 'happy', blush: true, hop: true, emo: '♪' }], 'LEVEL UP')}<div class="lvup">LEVEL UP!</div><div class="lvn">Lv.${L}</div><p>${esc(LV_MSG[(L * 7) % LV_MSG.length])}</p><button class="btn pri" id="ovx" style="text-align:center">つづける</button></div>`;
+  document.body.appendChild(ov); paintFaces();
+  ov.querySelector('#ovx').onclick = () => ov.remove();
+}
+function buzz(p) { if (S.sfx === false) return; try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+const bar = (f, cls = '') => `<div class="bar ${cls}"><i style="width:${Math.max(0, Math.min(100, f * 100)).toFixed(1)}%"></i></div>`;
+const rtTier = rt => rt == null ? null : rt <= 1000 ? ['神速', ''] : rt <= 1500 ? ['俊足', 't2'] : rt <= 2500 ? ['ふつう', 't3'] : rt <= 4000 ? ['のんびり', 't4'] : ['熟考', 't5'];
+// 数字のカウントアップと星の演出（render のたびに実行）
+function animateExtras() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const to = +el.dataset.count, fmt = el.dataset.fmt, t0 = performance.now();
+    const f = v => fmt === 'pct' ? Math.round(v) + '%' : fmt === 'sec' ? (v / 1000).toFixed(1) + '秒' : String(Math.round(v));
+    const step = now => { const k = Math.min(1, (now - t0) / 700), e = 1 - Math.pow(1 - k, 3); el.textContent = f(to * e); if (k < 1 && document.body.contains(el)) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+  document.querySelectorAll('[data-stars]').forEach(el => {
+    const n = +el.dataset.stars; el.textContent = '☆☆☆';
+    for (let i = 1; i <= n; i++) setTimeout(() => { if (!document.body.contains(el)) return; el.textContent = '★'.repeat(i) + '☆'.repeat(3 - i); sfx('star'); }, 350 + i * 380);
+  });
+}
 /* ---------- 効果音（小さな合成音） ---------- */
 function sfx(kind) {
   if (S.sfx === false || curRec) return;
   const c = ac(); if (!c) return;
-  const seq = { ok: [[880, .07], [1320, .12]], ng: [[220, .14]], clear: [[523, .09], [659, .09], [784, .09], [1047, .22]], tap: [[660, .04]] }[kind]; if (!seq) return;
+  const seq = { ok: [[880, .07], [1320, .12]], ng: [[220, .14]], clear: [[523, .09], [659, .09], [784, .09], [1047, .22]], tap: [[660, .04]], star: [[1047, .06], [1568, .1]], type: [[1400, .012]] }[kind]; if (!seq) return;
+  const vol = kind === 'type' ? .015 : .05;
   let t = c.currentTime + .01;
-  for (const [f, d] of seq) { const o = c.createOscillator(), gn = c.createGain(); o.type = 'square'; o.frequency.value = f; gn.gain.setValueAtTime(.05, t); gn.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(gn).connect(c.destination); o.start(t); o.stop(t + d + .02); t += d * .9; }
+  for (const [f, d] of seq) { const o = c.createOscillator(), gn = c.createGain(); o.type = 'square'; o.frequency.value = f; gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(gn).connect(c.destination); o.start(t); o.stop(t + d + .02); t += d * .9; }
 }
 
 /* ---------- 注意ポイント（英文から決まる） ---------- */
@@ -968,14 +1039,16 @@ let V = { name: 'title' };
 let ACTS = {};
 let tickers = [];
 const app = $('#app');
-function go(name, p = {}) { stopAll(); V = Object.assign({ name }, p); render(); window.scrollTo(0, 0); }
+let enterAnim = false;
+function go(name, p = {}) { stopAll(); V = Object.assign({ name }, p); enterAnim = true; render(); window.scrollTo(0, 0); }
 function stopAll() { stopSpeak(); stopAudio(); if (curRec) curRec.stop(); playAllTok++; tickers.forEach(clearInterval); tickers = []; }
 function render() {
   const r = SCREENS[V.name]();
   app.innerHTML = r.html;
+  if (enterAnim) { app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter'); enterAnim = false; } else app.classList.remove('enter');
   ACTS = Object.assign({ home: () => go('title'), story: () => go('story') }, r.acts || {});
   r.after && r.after();
-  paintFaces();
+  paintFaces(); animateExtras();
 }
 app.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; const f = ACTS[b.dataset.a]; if (f) f(b.dataset.v, b, e); });
 app.addEventListener('change', e => { const b = e.target.closest('[data-c]'); if (!b) return; const f = ACTS[b.dataset.c]; if (f) f(b, e); });
@@ -993,7 +1066,7 @@ const SCREENS = {};
 /* ---------- タイトル ---------- */
 SCREENS.title = () => {
   const due = dueKeys().length, st = streak(), d = S.days[today()];
-  const nToday = d ? d.qO + d.qM + d.qX : 0;
+  const nToday = d ? d.qO + d.qM + d.qX : 0, lv = lvInfo(S.exp);
   const lastB = S.bench.length ? S.bench[S.bench.length - 1].date : null;
   const benchNote = !lastB ? '未録音' : diffDays(lastB, today()) >= 28 ? `前回から${diffDays(lastB, today())}日・録り直しどき` : `前回 ${fmtDate(lastB)}`;
   return {
@@ -1003,8 +1076,12 @@ SCREENS.title = () => {
 <div class="road"><canvas id="road" class="pix" width="160" height="40" style="width:100%"></canvas></div>
 <div class="sub">留学生からAIエンジニアへ<br><span class="badge" style="background:#b3261e">試作中</span> 第1章のみ・内容は変わることがあります</div>
 <div class="win">
-  <p>ランク：<b style="color:var(--acc)">${esc(rank())}</b></p>
-  <p class="small">練習した日 ${Object.keys(S.days).length}日 ／ 今日とっさに言った文 ${nToday}</p>
+  <div style="display:flex;gap:10px;align-items:center">${face('me', 76, { eye: nToday >= GOAL ? 'happy' : '', blush: nToday >= GOAL })}<div style="flex:1;min-width:0">
+  <p style="margin:0">Lv.<b style="font-size:22px;color:var(--acc)">${lv.L}</b>　<b>${esc(rank())}</b></p>
+  ${bar(lv.cur / lv.need)}<p class="small" style="margin:0">次のレベルまで ${lv.need - lv.cur} EXP</p></div></div>
+  <hr><p class="small" style="margin:0">今日の目標：「とっさに」で ${GOAL}文　<b style="color:${nToday >= GOAL ? 'var(--ok)' : 'var(--txt)'}">${Math.min(nToday, GOAL)} / ${GOAL}</b>${nToday >= GOAL ? '　✅ 達成' : ''}</p>
+  ${bar(nToday / GOAL, 'goal')}
+  <p class="small" style="margin:4px 0 0">練習した日 ${Object.keys(S.days).length}日</p>
 </div>
 ${!S.checked ? `<div class="win"><h2>はじめに</h2><p>まず「せってい・動作チェック」で、英語の読み上げとマイク録音がこの端末で使えるか確かめてください。録音した声は端末の中だけに保存されます。シャドーイングにはイヤホンがおすすめです。</p></div>` : ''}
 <button class="btn pri cur" data-a="story">ストーリー<span class="r">${esc(nextSceneLabel())}</span></button>
@@ -1028,11 +1105,13 @@ SCREENS.story = () => {
   let h = topBar('home', 'ストーリー');
   CHAPTERS.forEach(ch => {
     if (ch.locked) { h += `<div class="win lock"><h2>${esc(ch.title)}</h2><p class="small">🔒 準備中</p></div>`; return; }
-    h += `<div class="win"><h2>${esc(ch.title)}${chapterClear(ch) ? ' <span class="okc">CLEAR</span>' : ''}</h2>`;
+    h += `<div class="win"><h2>${esc(ch.title)}${chapterClear(ch) ? ' <span class="okc">CLEAR</span>' : ''}</h2><div class="map">`;
+    const nowId = ch.scenes.find((sc, i) => unlocked({ ch, sc, i }) && !S.scenes[sc.id]?.clear)?.id;
     ch.scenes.forEach((sc, i) => {
-      const x = { ch, sc, i }, ok = unlocked(x), r = S.scenes[sc.id] || {};
-      h += `<button class="btn sc" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${face(partnerOf(sc), 44, { eye: r.clear ? 'happy' : '' })}<span class="t">${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}</span><span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span></button>`;
+      const x = { ch, sc, i }, ok = unlocked(x), r = S.scenes[sc.id] || {}, now = sc.id === nowId;
+      h += `<button class="btn sc ${r.clear ? 'clr' : ''} ${now ? 'now' : ''}" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${face(partnerOf(sc), 44, { eye: r.clear ? 'happy' : '' })}<span class="t">${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}${now ? '<span class="now-tag">いまここ</span>' : ''}</span>${now ? `<span class="hop">${face('me', 40)}</span>` : `<span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span>`}</button>`;
     });
+    h += '</div>';
     h += `<p class="small">★1 = 書き取りと「とっさに」を1回ずつ終える／★2 = 書き取り${pct(STAR_DICT)}以上／★3 = 全文「言えた」で反応${STAR_RT / 1000}秒以内（中央値）。基準は仮のめやすです。👑 = 30秒スピーチつき</p></div>`;
   });
   return { html: h, acts: { open: id => go('scene', { id, step: 'intro' }) } };
@@ -1063,13 +1142,19 @@ SCENE_STEPS.intro = ({ sc }) => {
   return {
     html: `
 ${stageHTML(sc.id, castOf(sc).map(w => ({ who: w, px: castOf(sc).length > 3 ? 72 : 88 })), sc.place)}
-<div class="win"><h2>📍 ${esc(sc.place)}</h2><p>${esc(sc.intro)}</p><p class="center small">▼</p></div>
+<div class="win" data-a="twSkip"><h2>📍 ${esc(sc.place)}</h2><p id="tw" style="min-height:4.6em"></p><p class="center small" id="twc" style="visibility:hidden">▼</p></div>
 <div class="win"><h3>この場面の英語</h3>
 <p>${Object.keys(cnt).filter(k => cnt[k]).map(k => `${badge(k)} ${cnt[k]}文`).join('　')}</p>
 <p class="small">あなたのセリフ ${nMe}文が「④とっさに」の課題になります。</p>
 <h3>進め方</h3>
 <p class="small">①台本を見ながら聞く → ②重ねて読む・影読み・録音して聞き比べ → ③穴埋めで書き取り → ④日本語を見て、とっさに英語で言う${sc.boss ? ' → ⑤30秒スピーチ' : ''}</p></div>
 <button class="btn pri cur" data-a="step" data-v="listen">はじめる</button>`,
+    after: () => {
+      const el = $('#tw'), full = sc.intro; let i = 0;
+      const iv = setInterval(() => { i++; el.textContent = full.slice(0, i); if (i % 3 === 0) sfx('type'); if (i >= full.length) { clearInterval(iv); const c = $('#twc'); if (c) c.style.visibility = 'visible'; } }, 45);
+      tickers.push(iv); V._tw = iv;
+    },
+    acts: { twSkip: () => { clearInterval(V._tw); const el = $('#tw'); if (el) el.textContent = sc.intro; const c = $('#twc'); if (c) c.style.visibility = 'visible'; } },
   };
 };
 
@@ -1098,7 +1183,7 @@ SCENE_STEPS.listen = ({ sc }) => {
           await sleep(350);
         }
         if (tok !== playAllTok) return;
-        V.playing = false; V.cur = null; scRec(sc.id).listen = true; save(); render();
+        V.playing = false; V.cur = null; scRec(sc.id).listen = true; save(); gainExp(5); render();
       },
       next: () => { scRec(sc.id).listen = true; save(); go('scene', { id: sc.id, step: 'mimic' }); },
     },
@@ -1158,7 +1243,7 @@ ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
         delete V.sr[id];
         const srP = useSR && S.srBoth ? recognize() : null;
         const c = startRec({ calib: 0, autoStop: true, silence: 1800, max: 20000, onLevel: meterUpdate });
-        try { const r = await c.done; if (r.blob) mimicRecs[id] = r; else V.err = '録音データが取れませんでした'; if (srP) { const x = await srP; V.sr[id] = x; } }
+        try { const r = await c.done; if (r.blob) { mimicRecs[id] = r; gainExp(2); } else V.err = '録音データが取れませんでした'; if (srP) { const x = await srP; V.sr[id] = x; } }
         catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
         V.recording = false; if (V.name === 'scene' && V.step === 'mimic') render();
       },
@@ -1214,7 +1299,7 @@ ${d.checked || noBlank ? `<button class="btn pri cur" data-a="nextQ">次へ</but
       czEnter: b => { const n = +b.dataset.n; const nx = $('#cz' + (n + 1)); if (nx) nx.focus(); else ACTS.check(); },
       check: () => {
         d.res = cl.blanks.map((b, k) => { const v = ($('#cz' + k)?.value || ''); return { v, ok: normW(v) === normW(b.core) }; });
-        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true; sfx(d.res.every(r => r.ok) ? 'ok' : 'ng');
+        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true; const allOk = d.res.every(r => r.ok); sfx(allOk ? 'ok' : 'ng'); buzz(allOk ? 25 : [40, 40, 40]); gainExp(3 * d.res.filter(r => r.ok).length);
         render();
       },
       nextQ: () => {
@@ -1227,21 +1312,21 @@ ${d.checked || noBlank ? `<button class="btn pri cur" data-a="nextQ">次へ</but
   };
 };
 function dictEnd(sc) {
-  const d = V.d, r = S.scenes[sc.id];
+  const d = V.d, r = S.scenes[sc.id], clr = r.justCleared;
   const best = d.prevBest != null && d.acc > d.prevBest ? '<p class="okc">自己ベスト更新！</p>' : '';
   return {
     html: `
+${clr ? clearBox(sc) : stageHTML(sc.id, [{ who: partnerOf(sc), px: 80, eye: d.acc >= STAR_DICT ? 'happy' : '', emo: d.acc >= STAR_DICT ? '！' : '…' }, { who: 'me', px: 96, eye: d.acc >= STAR_DICT ? 'happy' : 'half', hop: d.acc >= STAR_DICT, emo: d.acc >= STAR_DICT ? '♪' : '💦' }], '書き取り おわり')}
 <div class="win center"><h2>書き取り 結果</h2>
-<div class="timer">${pct(d.acc)}</div><p>${d.ok} / ${d.tot} 語</p>${best}
+<div class="timer" data-count="${Math.round(d.acc * 100)}" data-fmt="pct">${pct(d.acc)}</div><p>${d.ok} / ${d.tot} 語</p>${best}
 <p class="small">自己ベスト ${pct(r.dictBest)}　${r.dictBest >= STAR_DICT ? '★2 の基準クリア' : `★2 は ${pct(STAR_DICT)} 以上`}</p></div>
-${clearBox(sc)}
 <div class="row"><button class="btn" data-a="again">もう一度</button><button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button></div>`,
     acts: { again: () => go('scene', { id: sc.id, step: 'dict' }) },
   };
 }
 function checkClear(sc) {
   const r = scRec(sc.id);
-  if (!r.clear && r.dictBest != null && r.quickDone) { r.clear = true; r.justCleared = true; }
+  if (!r.clear && r.dictBest != null && r.quickDone) { r.clear = true; r.justCleared = true; setTimeout(() => gainExp(50), 900); }
 }
 function clearBox(sc) {
   const r = S.scenes[sc.id];
@@ -1249,7 +1334,7 @@ function clearBox(sc) {
   r.justCleared = false; save(); setTimeout(() => sfx('clear'), 250);
   const x = sceneById(sc.id), nx = x.ch.scenes[x.i + 1];
   const chDone = chapterClear(x.ch);
-  return `${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, eye: 'happy' }, { who: 'me', px: 96, eye: 'happy', blush: true, hop: true }], '場面クリア')}<div class="win pop"><h2>🎉 場面クリア！ <span class="stars">${starStr(sceneStars(sc.id))}</span></h2><p>${esc(sc.outro)}</p>
+  return `${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, eye: 'happy' }, { who: 'me', px: 96, eye: 'happy', blush: true, hop: true, emo: '♪' }], '場面クリア')}<div class="win pop"><h2>🎉 場面クリア！ <span class="stars" data-stars="${sceneStars(sc.id)}">☆☆☆</span></h2><p>${esc(sc.outro)}</p>
 ${sc.boss && !r.boss ? '<p>最後に「⑤スピーチ」で30秒自己紹介に挑戦しよう。</p>' : ''}
 ${chDone ? `<p class="okc">${esc(x.ch.title)} クリア！ 次の章は準備中です。</p>` : ''}
 ${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面：${esc(nx.title)}</button>` : ''}</div>`;
@@ -1280,7 +1365,8 @@ function quickView() {
   const head = `<p class="small">${q.i + 1} / ${q.keys.length}　📍${esc(s.sc.title)}　${badge(l.r)}</p>`;
   const pw = prev && prev.w !== 'me' ? prev.w : partnerOf(s.sc);
   const meEye = q.phase === 'judge' ? (q.rt == null ? 'half' : q.rt <= 1500 ? 'happy' : q.rt <= 3000 ? '' : 'half') : '';
-  const stg = stageHTML(s.sc.id, [{ who: pw, px: 88, dim: q.phase === 'rec' }, { who: 'me', px: 96, dim: q.phase === 'cue', eye: meEye, blush: q.phase === 'rec' }]);
+  const lm = q.phase === 'wait' && q.last;
+  const stg = stageHTML(s.sc.id, [{ who: pw, px: 88, dim: q.phase === 'rec', emo: lm ? { o: '！', m: '…', x: '？' }[q.last] : '' }, { who: 'me', px: 96, dim: q.phase === 'cue', eye: meEye || (lm === 'o' ? 'happy' : ''), blush: q.phase === 'rec', emo: lm ? { o: '♪', m: '…', x: '💦' }[q.last] : '' }]);
   let h = '';
   if (q.phase === 'wait') {
     h = `${stg}<div class="win">${head}${ctx}
@@ -1300,7 +1386,7 @@ ${q.manual ? `<p class="small">マイクが使えないため、手動で計り�
 ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))} …</div>` : `<button class="btn" data-a="hint">💡 ヒント（最初の2語）</button>`}</div>`;
   } else if (q.phase === 'judge') {
     h = `${stg}<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
-<p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
+<p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${rtTier(q.rt) && !q.hint ? `<span class="tier ${rtTier(q.rt)[1]}">${rtTier(q.rt)[0]}</span>` : ''}${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
 <div class="big">${hlText(l.en, makePoints(l.en))}</div>${srcTag(l)}
 ${pointsHTML(makePoints(l.en))}
 ${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言い方が人によって違うため、止まった回数だけを声の大きさから推定しています。') : ''}
@@ -1351,7 +1437,8 @@ ${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言
 }
 function judge(mark) {
   const q = V.q, key = q.keys[q.i];
-  sfx(mark === 'o' ? 'ok' : mark === 'x' ? 'ng' : 'tap');
+  sfx(mark === 'o' ? 'ok' : mark === 'x' ? 'ng' : 'tap'); buzz(mark === 'o' ? 30 : mark === 'x' ? [40, 40, 40] : 15);
+  gainExp(mark === 'o' ? 10 : mark === 'm' ? 5 : 2);
   const L = S.lines[key] || (S.lines[key] = { b: 0, d: today(), n: 0 });
   if (mark === 'o') L.b = Math.min(L.b + 1, 6); else if (mark === 'm') L.b = Math.max(1, L.b); else L.b = 0;
   L.d = addDays(today(), INTV[L.b]); L.n = (L.n || 0) + 1; L.last = today();
@@ -1359,7 +1446,8 @@ function judge(mark) {
   if (valid) L.rt = Math.round(q.rt);
   const D = dayRec(); if (mark === 'o') D.qO++; else if (mark === 'm') D.qM++; else D.qX++;
   if (valid) { D.rt.push(Math.round(q.rt)); if (D.rt.length > 400) D.rt.shift(); }
-  q.res.push({ mark, rt: valid ? q.rt : null });
+  q.res.push({ mark, rt: valid ? q.rt : null }); q.last = mark;
+  const nT = D.qO + D.qM + D.qX; if (nT === GOAL) { setTimeout(() => { toast('🎯 今日の目標達成！'); sfx('clear'); buzz([50, 50, 120]); }, 900); setTimeout(() => gainExp(30), 2600); }
   stopAll();
   q.i++; q.phase = 'wait';
   if (q.i >= q.keys.length && q.src === 'scene') {
@@ -1377,16 +1465,16 @@ function quickEnd() {
   const q = V.q, n = k => q.res.filter(x => x.mark === k).length;
   const md = median(q.res.map(x => x.rt).filter(x => x != null));
   const good = q.res.length && n('o') / q.res.length >= .7;
-  let h = `${q.src === 'review' ? stageHTML('c1s1', [{ who: 'me', px: 96, eye: good ? 'happy' : 'half', hop: good }], '復習おわり') : ''}<div class="win center"><h2>${q.src === 'scene' ? 'とっさに 結果' : '復習 結果'}</h2>
-<div class="stat"><div><b>${n('o')}</b><span>○ 言えた</span></div><div><b>${n('m')} / ${n('x')}</b><span>△ / ×</span></div></div>
-<p>反応時間（中央値）<b style="color:var(--acc);font-size:22px">${sec(md)}</b></p>
+  const sid = q.src === 'scene' ? V.id : 'c1s1', clr = q.src === 'scene' && S.scenes[V.id]?.justCleared;
+  let h = `${clr ? '' : stageHTML(sid, [...(q.src === 'scene' ? [{ who: partnerOf(sceneById(V.id).sc), px: 80, eye: good ? 'happy' : '', emo: good ? '！' : '…' }] : []), { who: 'me', px: 96, eye: good ? 'happy' : 'half', hop: good, emo: good ? '♪' : '💦' }], q.src === 'scene' ? 'とっさに おわり' : '復習おわり')}${clr ? clearBox(sceneById(V.id).sc) : ''}<div class="win center"><h2>${q.src === 'scene' ? 'とっさに 結果' : '復習 結果'}</h2>
+<div class="stat"><div><b data-count="${n('o')}">0</b><span>○ 言えた</span></div><div><b>${n('m')} / ${n('x')}</b><span>△ / ×</span></div></div>
+<p>反応時間（中央値）<b style="color:var(--acc);font-size:22px" ${md != null ? `data-count="${md}" data-fmt="sec"` : ''}>${sec(md)}</b>${md != null ? `<span class="tier ${rtTier(md)[1]}">${rtTier(md)[0]}</span>` : ''}</p>
 <p class="small">×の文は今日もう一度、復習に出てきます。○の文は間隔をあけて出てきます。</p>`;
   if (q.src === 'scene') {
     const r = S.scenes[V.id];
     if (q.prevBest != null && r.quickBest < q.prevBest) h += '<p class="okc">自己ベスト更新！</p>';
     h += `<p class="small">★3 の記録（全文○のときの中央値）：${sec(r.quickBest)}　基準 ${STAR_RT / 1000}秒以内</p></div>`;
     const sc = sceneById(V.id).sc;
-    h += clearBox(sc);
     h += `<div class="row"><button class="btn" data-a="again">もう一度</button>${sc.boss ? `<button class="btn pri cur" data-a="step" data-v="boss">⑤スピーチ へ</button>` : `<button class="btn pri" data-a="story">ストーリーへ</button>`}</div>`;
     return { html: h, acts: { again: () => go('scene', { id: V.id, step: 'quick' }), goScene: id => go('scene', { id, step: 'intro' }) } };
   }
@@ -1423,7 +1511,7 @@ ${list.length >= 2 ? `<button class="btn" data-a="cmp">🔁 初回 → 最新 �
           const r = await c.done;
           if (r.blob) {
             const k = 'boss-' + sc.id + '-' + Date.now();
-            try { await idbPut(k, r.blob); S.boss.push({ k, sid: sc.id, date: today() }); scRec(sc.id).boss = true; save(); }
+            try { await idbPut(k, r.blob); S.boss.push({ k, sid: sc.id, date: today() }); scRec(sc.id).boss = true; save(); gainExp(30); sfx('clear'); }
             catch (e) { V.err = '録音を保存できませんでした：' + e.message; }
           } else V.err = '録音データが取れませんでした';
         } catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
@@ -1493,7 +1581,7 @@ function benchSave() {
       const id = String(Date.now());
       try {
         for (let k = 0; k < BENCH.length; k++) await idbPut('bench-' + id + '-' + k, V.recs[k]);
-        S.bench.push({ id, date: today() }); save(); V.saved = 'ok';
+        S.bench.push({ id, date: today() }); save(); V.saved = 'ok'; gainExp(40); sfx('clear');
       } catch (e) { V.saved = 'ng'; V.err = e.message; }
       if (V.name === 'bench') render();
     })();
@@ -1534,7 +1622,7 @@ SCREENS.stats = () => {
   return {
     html: topBar('home', 'きろく') + `
 <div class="win"><div class="stat">
-<div><b>${streak()}日</b><span>連続</span></div><div><b>${Object.keys(S.days).length}日</b><span>練習した日</span></div>
+<div><b>Lv.${lvInfo(S.exp).L}</b><span>累計 ${S.exp || 0} EXP</span></div><div><b>${streak()}日</b><span>連続</span></div><div><b>${Object.keys(S.days).length}日</b><span>練習した日</span></div>
 <div><b>${total}</b><span>とっさに言った回数</span></div><div><b>${Object.keys(S.lines).length}</b><span>覚え中の文</span></div></div></div>
 <div class="win"><h3>とっさの反応時間（日ごとの中央値・秒）</h3><p class="small">下がるほど、ぱっと言えています。ヒントを使った回と×の回は除いています。</p>
 ${lineChart(rtPts, { fmt: v => v.toFixed(1), yMin: 0 })}
