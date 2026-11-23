@@ -73,7 +73,7 @@ section th{background:#1D2A36;color:#FBFCFD;font-weight:700}
 .px .card img{width:100%;aspect-ratio:2/1;object-fit:cover;border:5px solid #fff;image-rendering:auto}
 .px .code{font-family:'DotGothic16',monospace;white-space:pre-wrap;font-size:50px;line-height:1.45}
 .px .flow{display:flex;gap:22px;align-items:stretch}
-.px .flow>.panel{flex:1;padding:24px 28px;font-size:52px}
+.px .flow>.panel{flex:1;padding:64px 28px 24px;font-size:52px;justify-content:flex-start!important}
 .px .num{display:inline-block;background:var(--yel);color:var(--ink);min-width:1.6em;text-align:center;margin-right:10px;padding:0 6px}
 #stage .note{display:none}
 #notebox{position:fixed;left:0;right:0;bottom:0;max-height:55vh;overflow:auto;background:#0b1220f2;color:#e6eefb;font-size:16px;line-height:1.75;padding:16px 20px 72px;padding-bottom:max(72px,calc(env(safe-area-inset-bottom) + 64px));border-top:2px solid #FFD95A;z-index:2;display:none}
