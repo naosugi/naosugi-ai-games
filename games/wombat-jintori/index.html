@@ -295,6 +295,46 @@ details.panel summary{cursor:pointer}
 .stage .anim .spr{width:min(30vw,128px);height:auto;filter:drop-shadow(0 3px 0 rgba(255,255,255,.85))}
 .fx.ghost .spr{width:80%;height:80%}
 .sbtn .tm{margin-left:4px}
+
+/* ===== 最終演出 ===== */
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tmrow{display:flex;align-items:center;gap:1px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px 8px 2px 4px}
+.tmrow.p0{border-color:var(--p0)}.tmrow.p1{border-color:var(--p1);flex-direction:row-reverse;padding:2px 4px 2px 8px}
+.tmu .spr{width:22px;height:22px}
+.tmu.out .spr{filter:grayscale(1) opacity(.35)}
+.tl{font-size:11px;font-weight:800;color:var(--muted);margin:0 2px;white-space:nowrap}
+.tmrow.p0 .tl{margin-left:auto}.tmrow.p1 .tl{margin-right:auto}
+.bwrap>.guide{text-align:center;font-size:12.5px;margin:0;min-height:18px}
+.unit.ready{animation:ready 1.1s ease-in-out infinite}
+@keyframes ready{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.unit.hitflash{filter:brightness(1.8) saturate(.2)}
+.fx.burst::before{content:"";position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle,#fff 0 25%,#FFD36B 26% 45%,rgba(255,140,60,.0) 70%);animation:burst .35s ease-out both}
+@keyframes burst{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.fx.wave{width:60%;height:60%;margin:-20% 0 0 -20%}
+.fx.wave::before{content:"";position:absolute;inset:0;border-radius:50%;border:4px solid rgba(240,140,46,.9);animation:wave .55s ease-out both}
+@keyframes wave{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.15);opacity:0}}
+.fx.spark::before{content:"✦";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ok);font-size:20px;animation:spark .7s ease-out both}
+@keyframes spark{0%{transform:scale(.4) rotate(0);opacity:1}100%{transform:scale(1.4) rotate(90deg);opacity:0}}
+.fx.ghost{animation:ghost2 1s ease-in both}
+@keyframes ghost2{0%{opacity:1;transform:none}30%{transform:translateY(-6px) rotate(-20deg)}100%{opacity:0;transform:translateY(10px) rotate(200deg) scale(.6);filter:grayscale(1)}}
+.cell.fpulse{animation:fpulse2 .7s ease both}
+@keyframes fpulse2{0%{transform:scale(.85);filter:brightness(1.6)}60%{transform:scale(1.04)}100%{transform:none;filter:none}}
+/* 勝敗 */
+.resbox{inset:6% 4%;justify-content:center;gap:6px;overflow:hidden;background:#fff}
+.resbox .rs{font-size:12px;color:var(--muted)}
+.mvp{display:flex;align-items:center;gap:8px;text-align:left;font-size:13px;line-height:1.4;background:var(--paper);border-radius:var(--r-md);padding:6px 12px}
+.s-mvp{width:64px;height:64px}
+.surv{display:flex;gap:2px;justify-content:center}
+.surv span{display:inline-block;animation:hop .9s ease-in-out infinite;animation-delay:calc(var(--i) * .12s)}
+.s-surv{width:40px;height:40px}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+.resbox.lose .surv span{animation:none}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-10px;width:7px;height:11px;border-radius:2px;animation:fall 2.4s linear infinite}
+@keyframes fall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(420px) rotate(540deg)}}
+/* 笛：シルエットから色がつく */
+.gslot .te .spr{animation:sil .6s ease both;animation-delay:calc(var(--d) + .45s)}
+@keyframes sil{from{filter:brightness(0)}to{filter:none}}
 </style>
 </head>
 <body>
@@ -1701,7 +1741,8 @@ function mountWombats(root){ (root||document).querySelectorAll('span.wb').forEac
 function unitHTML(u,sel){
   const T=A[u.type];
   const st=(u.poison&&u.poison.length?`<span class="st">☠${u.poison.length}</span>`:'')+(u.defDown>0?'<span class="st dd">防0</span>':'')+(u.asleep?'<span class="st zz">💤</span>':'')+(u.burrowed?'<span class="st bw">地中</span>':'');
-  return `<div class="unit p${u.owner}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}"><span class="emo">${spr(u.type,'',u.owner===1)}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
+  const ready=G&&!G.over&&UI.humans&&UI.humans[G.turn]&&u.owner===G.turn&&!UI.step&&canAct(G,u);
+  return `<div class="unit p${u.owner}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}${ready?' ready':''}"><span class="emo">${spr(u.type,'',u.owner===1)}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
     `<div class="hpbar"><i style="width:${Math.max(0,u.hp/u.maxHp*100)}%"></i></div><span class="hpn">${u.hp}</span></div>`;
 }
 function boardHTML(fields,getUnit,hl,selId,last){
@@ -1784,28 +1825,63 @@ function takeSnap(){
 }
 function fxAt(layer,x,y,cls,html){ const e=document.createElement('div'); e.className='fx '+cls; e.style.left=(x*20)+'%'; e.style.top=(y*20)+'%'; e.innerHTML=html; layer.appendChild(e); setTimeout(()=>e.remove(),1400); return e; }
 function cellEl(x,y){ return document.querySelector(`#bd .cell[data-x="${x}"][data-y="${y}"]`); }
-function playDiff(sn,actor){
+const RM=(()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } })();
+function cellSize(){ const c=document.querySelector('#bd .cell'); return c?c.getBoundingClientRect().width+3:0; }
+function unitEl(x,y){ const c=cellEl(x,y); return c?c.querySelector('.unit'):null; }
+// 行動の前後を比べて演出する。actor=動いた動物, opt=使ったスキル, dest=移動先
+function playDiff(sn,actor,opt,dest){
   if(!sn||!G) return;
   const bd=$('#bd'); if(!bd) return;
   const layer=document.createElement('div'); layer.className='fxlayer'; bd.appendChild(layer);
-  let dmg=false,heal=false,ko=false,fld=false,st=false;
+  const cs=cellSize(); let t0=0;
+  // 1) 移動：元のマスから新しいマスへすべらせる
   for(const [id,o] of sn.u){
-    const u=byId(G,id)||(G.reserve||[]).find(r=>r.id===id);
-    const onBoard=u&&G.units.includes(u);
-    const revived=u&&o.hp>0&&u.hp===u.maxHp&&(u.x!==o.x||u.y!==o.y)&&pid(u)==='rebirth'&&G.lost[o.owner]>sn.lost[o.owner];
-    if(!u||!onBoard||revived){
-      fxAt(layer,o.x,o.y,'ghost',spr(o.type,'',o.owner===1)); fxAt(layer,o.x,o.y,'num dmg','たおれた'); ko=true;
-      if(revived){ fxAt(layer,u.x,u.y,'num heal','復活！'); }
-      continue;
+    const u=byId(G,id); if(!u||!G.units.includes(u)) continue;
+    if((u.x!==o.x||u.y!==o.y)&&!(pid(u)==='rebirth'&&u.hp===u.maxHp&&G.lost[o.owner]>sn.lost[o.owner])){
+      const el=unitEl(u.x,u.y);
+      if(el&&!RM){ el.animate([{transform:`translate(${(o.x-u.x)*cs}px,${(o.y-u.y)*cs}px)`},{transform:'none'}],{duration:260,easing:'cubic-bezier(.3,.7,.4,1)'}); }
+      if(id===actor) t0=RM?0:260;
     }
-    if(u.hp<o.hp){ fxAt(layer,u.x,u.y,'num dmg','-'+(o.hp-u.hp)); const c=cellEl(u.x,u.y); if(c){ c.classList.add('shake'); } dmg=true; }
-    else if(u.hp>o.hp){ fxAt(layer,u.x,u.y,'num heal','+'+(u.hp-o.hp)); heal=true; }
-    const sts=[]; if((u.poison||[]).length>o.ps) sts.push('毒'); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
-    if(sts.length){ fxAt(layer,u.x,u.y,'num st',sts.join(' ')); st=true; }
   }
-  G.fields.forEach((f,i)=>{ if(f!==sn.f[i]){ const c=cellEl(i%SIZE,Math.floor(i/SIZE)); if(c) c.classList.add('fpulse'); fld=true; } });
-  if(actor!=null){ const a=byId(G,actor); if(a){ const c=cellEl(a.x,a.y); if(c&&c.querySelector('.unit')) c.querySelector('.unit').classList.add('pop'); } }
-  if(ko) se('ko'); else if(dmg) se('hit'); else if(heal) se('heal'); else if(st) se('status'); else if(fld) se('field');
+  // 2) 攻撃：相手に飛びかかって戻る
+  let impact=t0;
+  const a=actor!=null?byId(G,actor):null, ax=a?a.x:(dest?dest.x:null), ay=a?a.y:(dest?dest.y:null);
+  if(opt&&(opt.type==='single'||opt.type==='alt')){
+    const to=sn.u.get(opt.target);
+    if(to&&ax!=null){
+      const el=unitEl(ax,ay), dx=(to.x-ax)*cs*.42, dy=(to.y-ay)*cs*.42;
+      if(el&&!RM) el.animate([{transform:'none'},{transform:`translate(${dx}px,${dy}px) scale(1.12)`,offset:.45},{transform:'none'}],{duration:300,delay:t0,easing:'ease-in-out'});
+      impact=t0+(RM?0:135);
+      setTimeout(()=>{ const f=fxAt(layer,to.x,to.y,'burst',''); },impact);
+    }
+  } else if(opt&&opt.type==='map'&&ax!=null){
+    const el=unitEl(ax,ay); if(el&&!RM) el.animate([{transform:'none'},{transform:'scale(1.25)'},{transform:'none'}],{duration:320,delay:t0});
+    impact=t0+(RM?0:160); setTimeout(()=>fxAt(layer,ax,ay,'wave',''),impact);
+  } else if(opt&&opt.type==='support'){
+    const to=sn.u.get(opt.target); if(to) setTimeout(()=>fxAt(layer,to.x,to.y,'spark',''),t0);
+  } else if(opt&&opt.type==='field'){ impact=t0; }
+  // 3) 当たった結果（数字・揺れ・撃破・状態・フィールド）
+  setTimeout(()=>{
+    if(!G) return;
+    let dmg=false,heal=false,ko=false,fld=false,st=false;
+    for(const [id,o] of sn.u){
+      const u=byId(G,id)||(G.reserve||[]).find(r=>r.id===id);
+      const onBoard=u&&G.units.includes(u);
+      const revived=u&&o.hp>0&&u.hp===u.maxHp&&(u.x!==o.x||u.y!==o.y)&&pid(u)==='rebirth'&&G.lost[o.owner]>sn.lost[o.owner];
+      if(!u||!onBoard||revived){
+        const gx=(id===actor&&dest)?dest.x:o.x, gy=(id===actor&&dest)?dest.y:o.y;
+        fxAt(layer,gx,gy,'ghost',spr(o.type,'',o.owner===1)); fxAt(layer,gx,gy,'num dmg','たおれた'); ko=true;
+        if(revived){ fxAt(layer,u.x,u.y,'num heal','復活！'); }
+        continue;
+      }
+      if(u.hp<o.hp){ fxAt(layer,u.x,u.y,'num dmg','-'+(o.hp-u.hp)); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:360}); if(el){ el.classList.add('hitflash'); setTimeout(()=>el.classList.remove('hitflash'),260); } dmg=true; }
+      else if(u.hp>o.hp){ fxAt(layer,u.x,u.y,'num heal','+'+(u.hp-o.hp)); fxAt(layer,u.x,u.y,'spark',''); heal=true; }
+      const sts=[]; if((u.poison||[]).length>o.ps) sts.push('毒'); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
+      if(sts.length){ fxAt(layer,u.x,u.y,'num st',sts.join(' ')); st=true; }
+    }
+    G.fields.forEach((f,k)=>{ if(f!==sn.f[k]){ const c=cellEl(k%SIZE,Math.floor(k/SIZE)); if(c){ c.style.animationDelay=(RM?0:(Math.abs(k%SIZE-(ax??2))+Math.abs(Math.floor(k/SIZE)-(ay??2)))*60)+'ms'; c.classList.add('fpulse'); } fld=true; } });
+    if(ko) se('ko'); else if(dmg) se('hit'); else if(heal) se('heal'); else if(st) se('status'); else if(fld) se('field');
+  },impact);
 }
 function banner(text,cls,ms){
   const b=$('#banner'); b.className='show '+(cls||''); b.innerHTML=`<div>${text}</div>`;
@@ -2227,11 +2303,18 @@ function renderBattle(){
   if(G.over){
     const me=UI.mode==='hvh'||UI.mode==='ava'?null:(UI.humans[0]?0:1);
     const txt=G.winner==null?'ひきわけ':me==null?`${pname(G.winner)}の勝ち`:G.winner===me?'かち！':'まけ…';
-    res=`<div class="resbox ${G.winner==null?'':me==null||G.winner===me?'win':'lose'}"><div class="rt">${txt}</div><div class="muted">${G.reason}　失ったランク 青${G.lost[0]} / 赤${G.lost[1]}</div></div>`;
+    const w=G.winner, win=w!=null&&(me==null||w===me), all=[...G.units,...G.dead,...(G.reserve||[])];
+    const pool=w!=null?all.filter(u=>u.owner===w):all, mvp=pool.slice().sort((a,b)=>b.dealt-a.dealt||b.kills-a.kills)[0];
+    const surv=w!=null?[...G.units,...(G.reserve||[])].filter(u=>u.owner===w):[];
+    const conf=win&&!RM?`<div class="confetti">${Array.from({length:22},(_,k)=>`<i style="left:${(k*37)%100}%;animation-delay:${(k%7)*0.18}s;background:${['#E3B23C','#4F8A76','#4D9BD1','#E0584F','#D9B958'][k%5]}"></i>`).join('')}</div>`:'';
+    res=`<div class="resbox ${w==null?'':win?'win':'lose'}">${conf}<div class="rt">${txt}</div><div class="rs">${G.reason}　失ったランク 青${G.lost[0]}　赤${G.lost[1]}</div>
+      ${mvp&&mvp.dealt>0?`<div class="mvp">${spr(mvp.type,'s-mvp',mvp.owner===1)}<div><b>いちばん活躍</b><br>${mvp.owner===0?'青':'赤'}の${A[mvp.type].name}<br><span class="muted">ダメージ${mvp.dealt}　たおした数${mvp.kills}</span></div></div>`:''}
+      ${surv.length?`<div class="surv">${surv.map((u,k)=>`<span style="--i:${k}">${spr(u.type,'s-surv',u.owner===1)}</span>`).join('')}</div>`:''}</div>`;
   }
   play(`${hint}<div class="bwrap">
    <div class="status"><span class="rd">R${G.round}/${G.cfg.maxRounds}</span><span class="badge p${G.turn}"><span class="wb" data-f="${G.turn}"></span>${pname(G.turn)}</span><span class="pts">${pts}</span></div>
-   <div class="lostrow muted">失ったランク 青${G.lost[0]}・赤${G.lost[1]}　${guide?`<span class="guide">${guide}</span>`:''}</div>
+   <div class="teams">${[0,1].map(p=>`<div class="tmrow p${p}">${[...G.units,...G.dead,...(G.reserve||[])].filter(u=>u.owner===p).sort((a,b)=>a.id-b.id).map(u=>`<span class="tmu${G.dead.includes(u)?' out':''}">${spr(u.type,'s-tm',p===1)}</span>`).join('')}<span class="tl">失点${G.lost[p]}</span></div>`).join('')}</div>
+   ${guide?`<div class="guide">${guide}</div>`:''}
    <div class="bholder">${boardHTML(G.fields,viewUnitAt,highlights(),UI.sel,UI.last)}${res}</div>
    ${info?infoStrip(info):'<div class="istrip empty muted">動物をタップすると、くわしい情報が出ます</div>'}
    <div class="lastlog" id="logBtn">${last.map(l=>`<div>${l}</div>`).join('')}<span class="lb">ログ</span></div>
@@ -2246,7 +2329,7 @@ function renderBattle(){
   on('back',()=>{ UI.step='move'; UI.dest=null; UI.fprev=null; renderBattle(); });
   on('noPost',()=>finishPost(null));
   on('unsel',()=>{ resetSel(); renderBattle(); });
-  on('endT',()=>{ resetSel(); UI.info=null; const sn=takeSnap(); endTurn(G); UI.last=null; renderBattle(); playDiff(sn,null); runAI(); });
+  on('endT',()=>{ resetSel(); UI.info=null; const sn=takeSnap(); endTurn(G); UI.last=null; renderBattle(); playDiff(sn,null,null,null); runAI(); });
   on('iMore',()=>{ modal(`<div class="card">${infoHTML(info)}</div><button class="b pri" id="ic" style="margin-top:8px">とじる</button>`); $('#ic').onclick=closeModal; });
   on('logBtn',()=>{ modal(`<div class="ghead">ログ</div><div class="log">${G.log.slice(-150).reverse().map(l=>`<div>${l}</div>`).join('')}</div><button class="b pri" id="lc" style="margin-top:8px">とじる</button>`); $('#lc').onclick=closeModal; });
   // 手番の切りかえと勝敗のバナー
@@ -2255,7 +2338,7 @@ function renderBattle(){
     UI.bkey=key;
     if(G.over){ const me=UI.mode==='hvh'||UI.mode==='ava'?null:(UI.humans[0]?0:1), w=G.winner, win=w!=null&&(me==null||w===me);
       const txt=w==null?'ひきわけ':me==null?`${UI.names?UI.names[w]:(w===0?'青':'赤')}の勝ち！`:win?'かち！':'まけ…';
-      setTimeout(()=>{ banner(txt,win?'gold':'',1600); se(win||me==null?'win':'lose'); },500); }
+      setTimeout(()=>{ se(win||me==null?'win':'lose'); },400); }
     else if(!(G.round===1&&G.turn===0&&G.log.length<3&&false)){ const txt=UI.mode==='hvh'||UI.mode==='ava'?`${pname(G.turn)}の番`:UI.humans[G.turn]?'あなたの番':'相手の番'; banner(txt,'p'+G.turn,800); se('turn'); }
   }
 }
@@ -2298,8 +2381,8 @@ function commit(opt){
   const su=selUnit(); const dest=UI.dest, sn=takeSnap();
   const post=actMoveSkill(G,su.id,dest,opt);
   UI.last=dest;
-  if(post){ UI.step='post'; UI.post=post; renderBattle(); playDiff(sn,su.id); return; }
-  const id=su.id; resetSel(); renderBattle(); playDiff(sn,id); runAI();
+  if(post){ UI.step='post'; UI.post=post; renderBattle(); playDiff(sn,su.id,opt,dest); return; }
+  const id=su.id; resetSel(); renderBattle(); playDiff(sn,id,opt,dest); runAI();
 }
 function finishPost(c){ const sn=takeSnap(); actFinish(G,UI.sel,c); resetSel(); renderBattle(); playDiff(sn,null); runAI(); }
 function runAI(){
@@ -2313,7 +2396,7 @@ function runAI(){
       const post=actMoveSkill(G,a.uid,a.dest,a.opt); UI.last=a.dest;
       if(post){ const c=a.post||aiPost(G,a.uid,UI.personas[p],post); actFinish(G,a.uid,c); UI.last=c; }
     }
-    UI.info=null; renderBattle(); playDiff(sn,a?a.uid:null); runAI();
+    UI.info=null; renderBattle(); playDiff(sn,a?a.uid:null,a?a.opt:null,a?a.dest:null); runAI();
   },UI.speed+300);
 }
 const BY_RANK=ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank).concat(ANIMALS.filter(T=>T.special));
