@@ -172,7 +172,14 @@ details.hint summary{cursor:pointer;font-weight:800}
 .fxlayer{position:absolute;inset:4px;pointer-events:none;z-index:3}
 .fx{position:absolute;width:20%;height:20%;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .fx.num{font-weight:900;font-size:19px;-webkit-text-stroke:3px #fff;paint-order:stroke fill;animation:fnum 1.2s ease-out both}
-.fx.num.dmg{color:#D63A30}.fx.num.heal{color:var(--ok)}.fx.num.st{color:#7A4FC2;font-size:14px;animation-delay:.15s}
+.fx.num.dmg{color:#D63A30}.fx.num.decay{color:#7A5FA0}
+.fx.dust{width:20%;height:20%;background:radial-gradient(circle,rgba(138,111,168,.55) 0 30%,transparent 70%);animation:fdust .9s ease-out both;pointer-events:none}
+@keyframes fdust{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.4) translateY(-12%);opacity:0}}
+.unit.hime .emo{animation:halo 2.4s ease-in-out infinite}
+@keyframes halo{0%,100%{filter:drop-shadow(0 0 0 rgba(244,210,90,0))}50%{filter:drop-shadow(0 0 5px rgba(244,210,90,.95))}}
+.fx.halo{width:20%;height:20%;border-radius:50%;box-shadow:0 0 0 3px rgba(244,210,90,.9),0 0 18px 6px rgba(244,210,90,.6);animation:fhalo 1.1s ease-out both;pointer-events:none}
+@keyframes fhalo{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.unit.hime .emo{animation:none;filter:drop-shadow(0 0 4px rgba(244,210,90,.9))}}.fx.num.heal{color:var(--ok)}.fx.num.st{color:#7A4FC2;font-size:14px;animation-delay:.15s}
 .fx.ghost{font-size:30px;animation:ghost 1.1s ease-out both}
 @keyframes fnum{0%{opacity:0;transform:translateY(10px) scale(.6)}20%{opacity:1;transform:translateY(-6px) scale(1.2)}100%{opacity:0;transform:translateY(-30px)}}
 @keyframes ghost{0%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:scale(1.4) rotate(20deg);filter:grayscale(1)}}
@@ -201,6 +208,7 @@ details.hint summary{cursor:pointer;font-weight:800}
 .tile .tn{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .ts{font-size:10px;color:var(--muted)}
 .tile .ti{position:absolute;right:4px;top:8px;width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:11px;line-height:1;padding:0;cursor:pointer}
+.tile.isnew .tb{background:var(--wattle);color:#3A2A00}
 .tile .tb{position:absolute;left:4px;top:8px;min-width:18px;height:18px;border-radius:9px;background:var(--euca);color:#fff;font-size:11px;font-weight:900;line-height:18px;padding:0 5px}
 .pickhead{position:sticky;top:49px;z-index:4;background:var(--paper);padding:6px 0 8px;display:flex;flex-direction:column;gap:6px}
 .opp{font-size:13px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -210,6 +218,8 @@ details.hint summary{cursor:pointer;font-weight:800}
 .slot.on{border:2.5px solid var(--euca);cursor:pointer}
 .slot i{position:absolute;right:-4px;top:-4px;font-size:9px;font-style:normal;font-weight:800;background:var(--ink);color:#fff;border-radius:6px;padding:0 4px}
 .ftabs{gap:6px}.ftabs .b{margin:0}
+.ftabs.sub{margin-top:6px;gap:4px}.ftabs.sub .b{padding:4px 8px;font-size:12px;min-height:30px}
+.ftabs.sub select{font:inherit;font-size:13px;padding:5px 8px;border-radius:10px;border:1px solid #CFD8D3;background:#fff;color:var(--ink);min-height:32px}
 .zhead{font-size:18px;font-weight:800;margin:4px 0}
 .zsec{margin:10px 0}
 .zsec b{color:var(--euca-d);font-size:13px}
@@ -255,6 +265,10 @@ details.hint summary{cursor:pointer;font-weight:800}
 .st-water{background:linear-gradient(#9FD6F2,#E3F4FB 50%,#4D9BD1 50%,#3A7FB2)}
 .st-town{background:linear-gradient(#FFD9A8,#FFF0DA 55%,#C9A07A 55%,#A9805C)}
 .st-night{background:linear-gradient(#2A3570,#5A5A9A 60%,#4A3E3A 60%,#3A302C)}
+.st-cave{background:radial-gradient(circle at 78% 28%,rgba(255,206,120,.65) 0 6%,rgba(255,206,120,.18) 18%,transparent 34%),radial-gradient(ellipse at 50% 0%,#2E241C 0 30%,transparent 31%),linear-gradient(#5A4636,#7A6048 58%,#4A3A2C 58%,#3A2E22)}
+.st-valley{background:radial-gradient(ellipse 60% 70% at 0% 100%,#7EAE62 0 70%,transparent 71%),radial-gradient(ellipse 60% 70% at 100% 100%,#6E9E54 0 70%,transparent 71%),linear-gradient(#BFE6F4,#EAF6FB 55%,#CDBB7E 55%,#B8A468)}
+.st-land{background:linear-gradient(#C9D8E8,#EEF2F6 56%,transparent 56%),linear-gradient(90deg,#D9B958 0 40%,#4C8C5E 40% 60%,#4D9BD1 60%)}
+.st-abyss{background:radial-gradient(ellipse 40% 22% at 50% 70%,rgba(160,130,200,.75) 0 40%,transparent 100%),radial-gradient(circle at 20% 20%,rgba(255,255,255,.5) 0 .6%,transparent 1%),radial-gradient(circle at 70% 12%,rgba(255,255,255,.4) 0 .5%,transparent 1%),linear-gradient(#1E1A2A,#3A2E4A 58%,#2A2218 58%,#1A140E)}
 .dlg{cursor:pointer}
 .dlg .who{font-weight:800;color:var(--euca-d);margin-bottom:2px}
 .dlg .txt{font-size:16.5px;line-height:1.85;min-height:3.4em}
@@ -384,7 +398,7 @@ details.panel summary{cursor:pointer}
 <li><b>ストーリー</b>：ユーカリ村の「どうぶつ陣取り大会」をCPUと戦いながら勝ちあがる。全5章・18戦。勝つたびに「なかま呼びの笛」（ガチャ）を1回ふける。負けても失うものはなく、何度でも挑戦できる。クリアした戦いにも再挑戦でき、勝てば笛がふける（全員そろうまで）。</li>
 <li><b>裏ストーリー</b>：表のストーリー18戦を全部クリアすると開く。全4章・12戦。この大会がなぜ始まったのかを調べる話。章ごとにきまりがちがう（下の「裏ストーリーのきまり」）。勝つたびに笛が1回ふける。最後の戦いに勝つと、まだなかまになっていない動物が全員なかまになり、番外の「ヒメウォンバット」もなかまになる。</li>
 <li><b>はじめから</b>：最初に笛を2回ふける。そのあと、チュートリアルとストーリーのどちらから始めるか選べる。</li>
-<li><b>チュートリアル</b>：3レッスン（動かして攻撃・ptとランク・フィールドと適性）。全部クリアすると笛が1回ふける。</li>
+<li><b>チュートリアル</b>：4レッスン（動かして攻撃・ptとランク・フィールドと適性・毒と衰え）。全部クリアすると笛が1回ふける（レッスン4が増える前に3つクリアしていた人は、そのままクリア済み）。</li>
 <li><b>対戦（2人で1台）</b>：「全部の動物」か「笛で出た動物だけ」を選ぶ。笛は1人3〜10回（おすすめ5回）で、1回ごとに笛の種類を選べる。</li>
 <li><b>図鑑</b>：全動物のゲーム上の能力と、元になった動物の特徴・すんでいる所・大きさ（めやす）・食べものが見られる。</li>
 <li>記録はブラウザ（localStorage、キー <code>wbjintori_save_v1</code>）に保存する。</li>
@@ -417,7 +431,8 @@ details.panel summary{cursor:pointer}
 <li>追加した50種の能力は、今あるスキルの仕組み（毒・群れ・待ち伏せ・飛行・甲羅・再生など）を、それぞれの実際の生態に合わせて割り当てた。新しい仕組みは足していない。</li>
 <li>読み型・ランダム編成3000試合を3回測り、平均から大きく外れたものを直した（ベニクラゲは毒をなくして弱く、チーター・アンデスコンドル・デンキウナギ・アルパカ・ペリカン・ピラニア・カルガモ・メダカ・オオサンショウウオは強く）。</li>
 <li>最後の測定のランク別平均：ランク5が66%、ランク4が54%、ランク3が47%、ランク2が45%、ランク1が46%。ほとんどの動物は各ランクの平均±10ポイント以内。同じ動物でも測るたびに±5ポイントほど変わるので、数ポイントの差は誤差の可能性がある。</li>
-<li>2回以上続けて高めだったもの：ライオン（73〜76%）、シカ（56〜65%）、ヴェロキラプトル（58〜62%）。低めだったもの：タコ（37〜43%）、ダチョウ（38〜43%）。どれも元からいる動物で、今回は直していない。</li>
+<li>2回以上続けて高めだったもの：ライオン（73〜76%）、シカ（56〜65%）、ヴェロキラプトル（58〜62%）。低めだったもの：タコ（37〜43%）、ダチョウ（38〜43%）。</li>
+<li>その後の調整：ライオンはHP42→40・こうげき17→16、タコはHP22→24・こうげき7→9・墨吐きの威力0.8→1.0・反撃0.6→0.7、ダチョウはHP22→24・こうげき9→10・反撃（けり0.7）を追加。調整後の測定で、ライオン67〜71%（ランク5平均64〜65%）、タコ46〜47%・ダチョウ45〜48%（ランク3平均47〜48%）。</li>
 </ul>
 
 <h2>番外：ヒメウォンバット</h2>
@@ -425,8 +440,23 @@ details.panel summary{cursor:pointer}
 <li>ウォンバット☆シリーズ『神に愛されたヒメウォンバット』からのゲスト。裏ストーリーの最後のごほうびで、笛からは出ない。図鑑では128種の外（番外）として数える。</li>
 <li>ウォンバットはふつうコマにならない。この1匹だけは「神さまに愛された特別な子」として例外にしている。</li>
 <li>ランク5。HP26・こうげき9・ぼうぎょ1と低いが、平原・森林・水辺の適性がすべて2.0。スキルはほかの動物の強いものを組み合わせた：攻撃は射程2でぼうぎょ無視（ワシの射程＋ダンクルオステウスのぼうぎょ無視）、反撃も射程2（ヤマアラシ）、パッシブは威圧（ライオン）。</li>
-<li>検証：ランダム編成3000試合での採用時勝率は64%（ランク5平均65%）。フィールドを作る動物（カエル・シカ・ヤギ・ビーバー）と組むと、同じ4匹と組んだライオン64%・シャチ91%に対して79%。フィールドを塗るほど強くなる。</li>
+<li>検証：ランダム編成3000試合での採用時勝率は、4回の測定で55〜64%（ランク5平均64〜65%）。平均よりやや低めだが、フィールドを塗るチームでは強くなる。フィールドを作る動物（カエル・シカ・ヤギ・ビーバー）と組むと、同じ4匹と組んだライオン64%・シャチ91%に対して79%。フィールドを塗るほど強くなる。</li>
 <li>対戦モードの「全部の動物」でも使える（コアラ・ハリモグラと同じ）。</li>
+</ul>
+
+<h2>対戦モード</h2>
+<ul>
+<li>相手は「2人で1台」か「CPU（よわい・ふつう・つよい）」を選べる。CPUの強さは、表のストーリーの相手と同じ考え方（見習い型・慎重型・読み型）。</li>
+<li>「きまり」で、裏ストーリーのきまり（ランク制限・合計ランク・地形が決まった盤・太古の日）を使える。「おまかせ」はどれかひとつになる。</li>
+<li>CPUのチームは、きまりの中で、ランクの高さと盤のフィールドへの適性を見て選ぶ。</li>
+<li>CPUとの対戦では、自分の番のうちなら「1手もどす」で直前の行動を取り消せる（2人対戦では使えない）。手番が終わると取り消せない。</li>
+</ul>
+
+<h2>画面と音</h2>
+<ul>
+<li>動物を選ぶ画面と図鑑で、笛の種類に加えて、ランクと役割（ちかくを攻撃・遠くを攻撃・まとめて攻撃・フィールドを作る・味方を助ける・毒・かたい・速い）で絞りこめる。役割は、スキルとパッシブから自動で分けている。</li>
+<li>図鑑では、新しく来た動物にNEWが付く（くわしく見ると消える）。笛ごとに、集まった数が出る。</li>
+<li>音のボタンは「♪ ON（BGMと効果音）」「♪ 効果音だけ」「♪ OFF」を順に切りかえる。BGMは音のファイルを使わず、その場で鳴らす短いループ（タイトル・バトル・裏ストーリーの3曲）。</li>
 </ul>
 
 <h2>裏ストーリーのきまり</h2>
@@ -740,9 +770,9 @@ const ANIMALS = [
  {id:'porcupine',name:'ヤマアラシ',emoji:'📌',rank:3,hp:22,atk:7,def:3,mv:2,aff:{plain:1.0,forest:1.3,water:0.6},
   attack:{name:'体当たり',kind:'single',range:1,power:0.8},
   counter:{name:'針飛ばし',range:2,power:0.7}, passive:{id:'spines',name:'針の鎧',per:4}},
- {id:'octopus',name:'タコ',emoji:'🐙',rank:3,hp:22,atk:7,def:1,mv:2,aff:{plain:0.6,forest:0.6,water:2.0},
-  attack:{name:'墨吐き',kind:'single',range:1,power:0.8,defDown:true},
-  counter:{name:'からみつく',range:1,power:0.6}, passive:{id:'swap',name:'すり替わり'}},
+ {id:'octopus',name:'タコ',emoji:'🐙',rank:3,hp:24,atk:9,def:1,mv:2,aff:{plain:0.6,forest:0.6,water:2.0},
+  attack:{name:'墨吐き',kind:'single',range:1,power:1.0,defDown:true},
+  counter:{name:'からみつく',range:1,power:0.7}, passive:{id:'swap',name:'すり替わり'}},
  {id:'otter',name:'カワウソ',emoji:'🦦',rank:3,hp:20,atk:8,def:1,mv:2,aff:{plain:0.9,forest:0.9,water:1.7},
   attack:{name:'川へ引き込む',kind:'single',range:1,power:0.9,fx:{shape:'cross',field:'water'}},
   counter:null, passive:{id:'otterheal',name:'水辺の看病'}},
@@ -769,8 +799,8 @@ const ANIMALS = [
   attack:{name:'かみ砕く',kind:'single',range:1,power:1.0}, counter:{name:'かみつく',range:1,power:0.7}, passive:{id:'scavenger',name:'死肉あさり',per:12}},
  {id:'ratel',name:'ラーテル',emoji:'🦡',rank:3,hp:22,atk:8,def:2,mv:2,aff:{plain:1.3,forest:1.1,water:0.6},
   attack:{name:'かみつく',kind:'single',range:1,power:1.0}, counter:{name:'反撃',range:1,power:0.8}, passive:{id:'ratel',name:'怖いもの知らず',per:1}},
- {id:'ostrich',name:'ダチョウ',emoji:'🪶',rank:3,hp:22,atk:9,def:1,mv:3,aff:{plain:1.6,forest:0.8,water:0.6},
-  attack:{name:'キック',kind:'single',range:1,power:1.0,push:1}, counter:null, passive:null},
+ {id:'ostrich',name:'ダチョウ',emoji:'🪶',rank:3,hp:24,atk:10,def:1,mv:3,aff:{plain:1.6,forest:0.8,water:0.6},
+  attack:{name:'キック',kind:'single',range:1,power:1.0,push:1}, counter:{name:'けり',range:1,power:0.7}, passive:null},
  {id:'capybara',name:'カピバラ',emoji:'🐹',rank:3,hp:26,atk:4,def:2,mv:2,aff:{plain:1.0,forest:0.9,water:1.6},
   attack:{name:'水浴び場',kind:'field',range:1,fx:{shape:'square',field:'water'},alt:{name:'かじる',range:1,power:0.8}}, counter:null, passive:{id:'aura',name:'いやしの存在',per:4}},
  {id:'armadillo',name:'アルマジロ',emoji:'🛡',rank:3,hp:22,atk:8,def:7,mv:2,aff:{plain:1.3,forest:1.0,water:0.6},
@@ -942,7 +972,7 @@ const ANIMALS = [
  {id:'elephant',name:'ゾウ',emoji:'🐘',rank:5,hp:46,atk:15,def:3,mv:2,aff:{plain:1.5,forest:1.1,water:1.2},
   attack:{name:'踏みつぶし',kind:'single',range:1,power:1.3},
   counter:{name:'はなではらう',range:1,power:0.9}, passive:{id:'bulk',name:'巨体'}},
- {id:'lion',name:'ライオン',emoji:'🦁',rank:5,hp:42,atk:17,def:3,mv:2,aff:{plain:1.6,forest:1.0,water:0.6},
+ {id:'lion',name:'ライオン',emoji:'🦁',rank:5,hp:40,atk:16,def:3,mv:2,aff:{plain:1.6,forest:1.0,water:0.6},
   attack:{name:'王者の牙',kind:'single',range:1,power:1.3},
   counter:{name:'かみつく',range:1,power:1.0}, passive:{id:'intimidate',name:'威圧'}},
  {id:'croc',name:'ワニ',emoji:'🐊',rank:5,hp:44,atk:15,def:3,mv:2,aff:{plain:0.7,forest:0.8,water:2.0},
@@ -1758,6 +1788,13 @@ const LESSONS=[
          ['オババ','もうひとつ。12ラウンドたっても決着がつかないときは、やられた動物のランク合計が少ない方の勝ちだよ。']],
   hint:'カエルの「雨ごい」で水辺を作り、ワニを水辺に入れてから攻めよう。動物をタップすると、得意なフィールドが下に表示されるよ。',
   teams:[['frog','croc','crab'],['rabbit','wolf','dhole']],cols:[[1,2,3],[1,2,3]],ai:'novice'},
+ {id:'L4',title:'レッスン4 毒と衰え',
+  pages:[['オババ','コブラの「毒牙」は、当たると相手に毒を2つ入れる。毒を受けた動物は、自分の手番のはじめに、毒1つにつき最大HPの20%のダメージを受けるよ。毒は3ターン続いて、重ねるほど強くなる。'],
+         ['オババ','次はティラノサウルス。ずっと昔にいなくなった「絶滅動物」だ。とても強いけれど、自分の手番のはじめに最大HPの10%ずつ弱っていく。これを「衰え」というよ。'],
+         ['オババ','衰えで倒れても、ふつうにやられたのと同じで負けの点になる。だから絶滅動物は、早めに前に出して、長引かせずに決めるのがコツさ。'],
+         ['オババ','さいしょの番は3ptだから、ランク5のティラノは動けない。まずコブラで毒を入れて、2回目の番からティラノで攻めてごらん。']],
+  hint:'コブラで毒を入れる → 2回目の番からティラノサウルスで攻める。ティラノは毎手番弱るので、早めに決めよう。',
+  teams:[['cobra','trex'],['boar','fox']],cols:[[1,3],[1,3]],ai:'novice'}
 ];
 
 
@@ -2063,7 +2100,7 @@ $('#menuBtn').onclick=()=>{
 
 // ---------- 保存 ----------
 const SAVE_KEY='wbjintori_save_v1';
-function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0,uraCleared:[],uraDone:false}; }
+function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0,uraCleared:[],uraDone:false,fresh:[]}; }
 function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s&&s.v===1) return Object.assign(defSave(),s); }catch(e){} return defSave(); }
 function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(SV)); }catch(e){} }
 let SV=loadSave();
@@ -2084,7 +2121,7 @@ function unitHTML(u,sel){
   const T=A[u.type];
   const st=(u.poison&&u.poison.length?`<span class="st">☠${u.poison.length}</span>`:'')+(u.defDown>0?'<span class="st dd">防0</span>':'')+(u.asleep?'<span class="st zz">💤</span>':'')+(u.burrowed?'<span class="st bw">地中</span>':'');
   const ready=G&&!G.over&&UI.humans&&UI.humans[G.turn]&&u.owner===G.turn&&!UI.step&&canAct(G,u);
-  return `<div class="unit p${u.owner}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}${ready?' ready':''}"><span class="emo">${spr(u.type,'',u.owner===1)}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
+  return `<div class="unit p${u.owner}${u.type==='himewombat'?' hime':''}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}${ready?' ready':''}"><span class="emo">${spr(u.type,'',u.owner===1)}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
     `<div class="hpbar"><i style="width:${Math.max(0,u.hp/u.maxHp*100)}%"></i></div><span class="hpn">${u.hp}</span></div>`;
 }
 function boardHTML(fields,getUnit,hl,selId,last){
@@ -2134,9 +2171,52 @@ function rateText(cap){
 }
 // o: {owned:()=>[], cap, title, onGot(ids), onDone}
 // ===== 効果音（ON/OFF は localStorage に保存） =====
-const SND={on:true,a:null};
-try{ SND.on=localStorage.getItem('wbjintori_snd')!=='off'; }catch(e){}
-function sndBtn(){ const b=$('#sndBtn'); if(b) b.textContent=SND.on?'♪ ON':'♪ OFF'; }
+const SND={on:true,bgm:true,a:null,gest:false};
+try{ const v=localStorage.getItem('wbjintori_snd'); SND.on=v!=='off'; SND.bgm=v!=='off'&&v!=='se'; }catch(e){}
+function sndBtn(){ const b=$('#sndBtn'); if(b) b.textContent=SND.bgm?'♪ ON':SND.on?'♪ 効果音だけ':'♪ OFF'; }
+// ===== BGM（WebAudioでその場で鳴らす短いループ。音源ファイルなし） =====
+// 1ステップ＝8分音符。数字はMIDIノート番号、null は休み
+const SONGS={
+ title:{bpm:100,inst:'triangle',bassInst:'triangle',kick:false,
+  mel:[72,null,76,null,79,null,76,74, 72,null,74,76,74,null,null,null, 69,null,72,null,76,null,74,72, 71,null,72,74,72,null,null,null],
+  bass:[48,null,null,null,55,null,null,null, 53,null,null,null,55,null,null,null, 45,null,null,null,52,null,null,null, 43,null,null,null,48,null,null,null]},
+ battle:{bpm:140,inst:'square',bassInst:'triangle',kick:true,
+  mel:[69,null,72,69,76,null,74,72, 71,null,72,74,76,null,null,null, 77,null,76,74,72,null,74,76, 71,null,69,68,69,null,null,null],
+  bass:[45,null,45,null,45,null,45,null, 43,null,43,null,43,null,43,null, 41,null,41,null,41,null,41,null, 40,null,40,null,44,null,40,null]},
+ ura:{bpm:84,inst:'sine',bassInst:'sine',kick:false,
+  mel:[62,null,null,65,69,null,null,67, 65,null,64,null,62,null,null,null, 60,null,null,64,67,null,69,null, 71,null,69,null,67,null,null,null],
+  bass:[38,null,null,null,null,null,null,null, 36,null,null,null,null,null,null,null, 41,null,null,null,null,null,null,null, 43,null,null,null,40,null,null,null]},
+};
+const BGM={want:null,cur:null,timer:null,next:0,step:0,gain:null};
+const midiHz=n=>440*Math.pow(2,(n-69)/12);
+function bgm(name){ BGM.want=name; bgmApply(); }
+function bgmApply(){
+  const name=SND.bgm&&SND.gest?BGM.want:null;
+  if(BGM.cur===name) return;
+  if(BGM.timer){ clearInterval(BGM.timer); BGM.timer=null; }
+  if(BGM.gain&&SND.a){ const g=BGM.gain, t=SND.a.currentTime; try{ g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value,t); g.gain.linearRampToValueAtTime(0,t+.4); setTimeout(()=>{ try{ g.disconnect(); }catch(e){} },600); }catch(e){} }
+  BGM.gain=null; BGM.cur=name; if(!name) return;
+  const a=ac(); if(!a) return;
+  BGM.gain=a.createGain(); BGM.gain.gain.setValueAtTime(0,a.currentTime); BGM.gain.gain.linearRampToValueAtTime(1,a.currentTime+.6); BGM.gain.connect(a.destination);
+  BGM.step=0; BGM.next=a.currentTime+.15;
+  BGM.timer=setInterval(bgmTick,50);
+}
+function bgmNote(f,t,dur,type,vol){ const a=SND.a; if(!a||!BGM.gain) return; const o=a.createOscillator(), g=a.createGain(); o.type=type; o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.02); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(BGM.gain); o.start(t); o.stop(t+dur+.05); }
+function bgmTick(){
+  const a=SND.a, S=SONGS[BGM.cur]; if(!a||!S||!BGM.gain) return;
+  if(BGM.next<a.currentTime-.5) BGM.next=a.currentTime+.05; // タブが裏にいたあとなどで遅れたら追いつく
+  const sp=60/S.bpm/2;
+  while(BGM.next<a.currentTime+.3){
+    const i=BGM.step%S.mel.length, t=BGM.next, m=S.mel[i], b=S.bass[i];
+    if(m) bgmNote(midiHz(m),t,sp*.9,S.inst,S.inst==='square'?.014:.03);
+    if(b) bgmNote(midiHz(b),t,sp*1.8,S.bassInst,.04);
+    if(S.kick&&i%4===0) bgmNote(70,t,.12,'sine',.06);
+    BGM.next+=sp; BGM.step++;
+  }
+}
+document.addEventListener('pointerdown',()=>{ if(!SND.gest){ SND.gest=true; bgmApply(); } },{capture:true});
+document.addEventListener('visibilitychange',()=>{ if(document.hidden){ if(SND.a&&SND.a.state==='running') SND.a.suspend(); } else if(SND.a&&SND.gest) SND.a.resume(); });
 function ac(){ try{ if(!SND.a) SND.a=new (window.AudioContext||window.webkitAudioContext)(); if(SND.a.state==='suspended') SND.a.resume(); return SND.a; }catch(e){ return null; } }
 function tone(f,t0,dur,type,vol,f2){ const a=ac(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type=type||'square'; o.frequency.setValueAtTime(f,a.currentTime+t0); if(f2) o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+t0+dur);
   g.gain.setValueAtTime(0.0001,a.currentTime+t0); g.gain.exponentialRampToValueAtTime(vol||0.05,a.currentTime+t0+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+t0+dur); o.connect(g); g.connect(a.destination); o.start(a.currentTime+t0); o.stop(a.currentTime+t0+dur+0.02); }
@@ -2163,7 +2243,7 @@ function se(k){
 function takeSnap(){
   if(!G) return null;
   return {u:new Map(G.units.map(u=>[u.id,{hp:u.hp,x:u.x,y:u.y,type:u.type,owner:u.owner,ps:(u.poison||[]).length,dd:u.defDown>0,as:!!u.asleep,bw:!!u.burrowed}])),
-    f:G.fields.slice(), lost:G.lost.slice()};
+    f:G.fields.slice(), lost:G.lost.slice(), turn:G.turn, round:G.round};
 }
 function fxAt(layer,x,y,cls,html){ const e=document.createElement('div'); e.className='fx '+cls; e.style.left=(x*20)+'%'; e.style.top=(y*20)+'%'; e.innerHTML=html; layer.appendChild(e); setTimeout(()=>e.remove(),1400); return e; }
 function cellEl(x,y){ return document.querySelector(`#bd .cell[data-x="${x}"][data-y="${y}"]`); }
@@ -2216,6 +2296,7 @@ function playDiff(sn,actor,opt,dest){
         if(revived){ fxAt(layer,u.x,u.y,'num heal','復活！'); }
         continue;
       }
+      if(u.hp<o.hp&&(sn.turn!==G.turn||sn.round!==G.round)&&A[u.type].extinct&&u.owner===G.turn&&!(opt&&opt.target===id)){ fxAt(layer,u.x,u.y,'num decay','⏳-'+(o.hp-u.hp)); fxAt(layer,u.x,u.y,'dust',''); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{filter:'none'},{filter:'grayscale(1) brightness(.75)'},{filter:'none'}],{duration:700}); dmg=true; continue; }
       if(u.hp<o.hp){ fxAt(layer,u.x,u.y,'num dmg','-'+(o.hp-u.hp)); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:360}); if(el){ el.classList.add('hitflash'); setTimeout(()=>el.classList.remove('hitflash'),260); } dmg=true; }
       else if(u.hp>o.hp){ fxAt(layer,u.x,u.y,'num heal','+'+(u.hp-o.hp)); fxAt(layer,u.x,u.y,'spark',''); heal=true; }
       const sts=[]; if((u.poison||[]).length>o.ps) sts.push('毒'); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
@@ -2232,7 +2313,7 @@ function banner(text,cls,ms){
 
 function animalTile(T,o){
   o=o||{};
-  return `<div class="tile th-${T.special?'sp':themeOf(T)}${o.sel?' on':''}${o.dim?' dim':''}" data-id="${T.id}">
+  return `<div class="tile th-${T.special?'sp':themeOf(T)}${o.sel?' on':''}${o.dim?' dim':''}${o.cls?' '+o.cls:''}" data-id="${T.id}">
     ${o.badge?`<span class="tb">${o.badge}</span>`:''}${T.extinct?'<span class="tx">絶滅</span>':''}<button class="ti" data-i="${T.id}" aria-label="くわしく">i</button>
     <div class="te">${spr(T.id)}</div><div class="tn">${T.name}</div>
     <div class="ts">ランク${T.rank}　HP${T.hp} 攻${T.atk}</div></div>`;
@@ -2240,7 +2321,26 @@ function animalTile(T,o){
 function bindTileInfo(root){ (root||document).querySelectorAll('.ti').forEach(b=>b.onclick=e=>{ e.stopPropagation(); zukanDetail(b.dataset.i); }); }
 
 const WOMBAT_NAMES=new Set(['ヒメ','ヨミ','フミ','スミ','コツブ','マメ','チビスケ','ミズハ','コケ','イワオ','ホラ','ヒソカ','ナナシ','オババ','ポコ','ムギ','タンポ','ガンモ','シイ','ドングリ','モリー','コダマ','シズク','ナギ','ミナモ','オオナミ','ライガ','ツキミ','クロガネ','ゴウ']);
-let PK_FILTER='all';
+let PK_FILTER='all', PK_R=0, PK_ROLE='';
+// 役割（絞り込み用）
+const ROLES=[['','役割：全部'],['near','ちかくを攻撃'],['range','遠くを攻撃'],['map','まとめて攻撃'],['field','フィールドを作る'],['support','味方を助ける'],['poison','毒'],['tough','かたい・しぶとい'],['fast','速い・飛ぶ']];
+function roleOf(T){
+  const a=T.attack||{}, r=new Set(), j=JSON.stringify(a), pid=T.passive&&T.passive.id;
+  if(a.kind==='single'&&(a.range||1)<=1&&!a.waterRange&&!a.forestRange) r.add('near');
+  if((a.kind==='single'&&((a.range||1)>=2||a.waterRange||a.forestRange))||(a.alt&&(a.alt.range||1)>=2)) r.add('range');
+  if(a.kind==='map') r.add('map');
+  if(a.kind==='field'||/"fx"/.test(j)) r.add('field');
+  if(a.kind==='support'||/heal|cleanse/.test(j)||pid==='aura') r.add('support');
+  if(/poison/.test(j)||(T.counter&&T.counter.poison)||pid==='toxic') r.add('poison');
+  if(T.def>=4||['shell','bulk','endure','spines','rebirth'].includes(pid)) r.add('tough');
+  if(T.mv>=3||pid==='fly') r.add('fast');
+  return r;
+}
+function subFilter(list,rk,role){ return list.filter(T=>(!rk||T.rank===rk)&&(!role||roleOf(T).has(role))); }
+function subFilterBar(cls,rk,role){
+  return `<div class="row ftabs sub">${[0,1,2,3,4,5].map(n=>`<button class="b small ${cls}r${rk===n?' pri':''}" data-r="${n}">${n?'ランク'+n:'全ランク'}</button>`).join('')}
+    <select class="${cls}role">${ROLES.map(([k,n])=>`<option value="${k}"${role===k?' selected':''}>${n}</option>`).join('')}</select></div>`;
+}
 function infoStrip(u){
   const T=A[u.type], f=G.fields[u.y*SIZE+u.x];
   const st=[(u.poison&&u.poison.length)?`☠毒${u.poison.length}`:'',u.defDown>0?'防0':'',u.asleep?'💤眠り':'',u.burrowed?'地中':'',T.extinct?'⏳衰え':''].filter(Boolean).join(' ');
@@ -2272,8 +2372,9 @@ function renderGacha(o){
   });
 }
 // ---------- 会話 ----------
-function stageOf(title){ title=title||''; return /原っぱ|はじまり/.test(title)?'st-plain':/森/.test(title)?'st-forest':/水辺/.test(title)?'st-water':/本戦/.test(title)?'st-town':/伝説|勝利|チャンピオン/.test(title)?'st-night':'st-plain'; }
+function stageOf(title){ title=title||''; return /はじまりの穴|さいごの記録/.test(title)?'st-abyss':/巣穴|裏ストーリー/.test(title)?'st-cave':/谷/.test(title)?'st-valley':/変わらない/.test(title)?'st-land':/原っぱ|はじまり/.test(title)?'st-plain':/森/.test(title)?'st-forest':/水辺/.test(title)?'st-water':/本戦/.test(title)?'st-town':/伝説|勝利|チャンピオン/.test(title)?'st-night':'st-plain'; }
 function renderDialog(lines,onDone,title){
+  bgm(/^st-(cave|valley|land|abyss)$/.test(stageOf(title))?'ura':'title');
   let i=0, timer=null, full=false;
   const draw=()=>{
     const [who,txt]=lines[i]; full=false;
@@ -2298,10 +2399,12 @@ function renderDialog(lines,onDone,title){
 
 // ---------- タイトルとメニュー ----------
 const MAIN_N=ANIMALS.filter(T=>!T.bangai).length;
+function addOwned(ids){ for(const id of ids) if(!SV.owned.includes(id)){ SV.owned.push(id); if(!SV.fresh.includes(id)) SV.fresh.push(id); } }
 function ownedAll(){ return SV.owned.filter(t=>!A[t].bangai).length; }
 function bangaiTxt(){ return SV.owned.some(t=>A[t].bangai)?'＋番外1':''; }
 const HERO_PATCH=['pl','pl','fo','fo','fo', 'pl','pl','no','fo','wa', 'pl','no','wa','wa','wa'];
 function renderTitle(){
+  bgm('title');
   UI.ctx=null; UI.names=null; UI.pools=null; UI.cpuTeam=null; G=null;
   const total=MAIN_N, done=STORY_BATTLES.filter(b=>SV.cleared.includes(b.id)).length, all=STORY_BATTLES.length;
   const nb=STORY_BATTLES[storyNextIndex()], ch=nb?CHAPTERS.find(c=>c.id===nb.ch):null;
@@ -2318,9 +2421,9 @@ function renderTitle(){
    ${uraOpen()?`<button class="cta ura" id="mUra"><span class="ci">🕳</span><span style="flex:1"><span class="ct">裏ストーリー${SV.uraDone?' ✓':''}</span><span class="cs">${uraSub()}</span>
       <span class="meter"><b style="width:${Math.round(SV.uraCleared.length/URA_BATTLES.length*100)}%"></b></span><span class="cs" style="margin-top:3px">${SV.uraCleared.length}/${URA_BATTLES.length}戦クリア</span></span></button>`:''}
    <div class="mgrid">
-     <button class="mtile" id="mTut"><span class="mi">🎓</span><span class="mt">チュートリアル</span><span class="ms">${SV.tut?'<span class="done">クリア済み</span>':'遊び方を3つのレッスンで'}</span></button>
+     <button class="mtile" id="mTut"><span class="mi">🎓</span><span class="mt">チュートリアル</span><span class="ms">${SV.tut?'<span class="done">クリア済み</span>':'遊び方を4つのレッスンで'}</span></button>
      <button class="mtile" id="mVs"><span class="mi">🤝</span><span class="mt">対戦</span><span class="ms">2人で1台をかわりばんこに</span></button>
-     <button class="mtile" id="mZukan"><span class="mi">📖</span><span class="mt">図鑑</span><span class="ms">${SV.started?`なかま ${ownedAll()}/${total}匹${bangaiTxt()}`:`${total}種の動物`}</span></button>
+     <button class="mtile" id="mZukan"><span class="mi">📖</span><span class="mt">図鑑</span><span class="ms">${SV.started?`なかま ${ownedAll()}/${total}匹${bangaiTxt()}${SV.fresh.length?`　<b style="color:#B8860B">NEW ${SV.fresh.length}</b>`:''}`:`${total}種の動物`}</span></button>
      <button class="mtile" id="mRules"><span class="mi">📏</span><span class="mt">ルール</span><span class="ms">くわしい決まりと検証メモ</span></button>
    </div>
    <div class="minor"><button id="mDev">開発用</button>${SV.started?'<button id="mReset">記録を消す</button>':''}</div>
@@ -2347,7 +2450,7 @@ function startNewGame(){
 }
 function renderFirstChoice(){
   play(`<div class="panel"><p>どちらから始める？</p>
-    <button class="b pri big" id="fcT">チュートリアル（おすすめ）</button><div class="muted">遊び方を3つのレッスンで練習。クリアすると笛が1回ふける。</div>
+    <button class="b pri big" id="fcT">チュートリアル（おすすめ）</button><div class="muted">遊び方を4つのレッスンで練習。クリアすると笛が1回ふける。</div>
     <button class="b big" id="fcS" style="margin-top:10px">ストーリー</button><div class="muted">さっそく大会の予選へ。</div></div>`);
   $('#fcT').onclick=renderTutMenu; $('#fcS').onclick=renderStoryMap;
 }
@@ -2361,10 +2464,11 @@ function storyCap(){ const c=storyChapter(); return c<=1?3:c===2?4:5; }
 function storyGacha(after){
   if(SV.pend<=0||!GACHA_ALL.some(T=>!SV.owned.includes(T.id)&&(storyChapter()>=3||!T.extinct))){ SV.pend=Math.min(SV.pend,0)||0; save(); return after(); }
   renderGacha({owned:()=>SV.owned,cap:storyCap(),ancient:storyChapter()>=3,title:`なかま呼びの笛（あと${SV.pend}回）`,
-    onGot:ids=>{ SV.owned.push(...ids); SV.pend--; save(); },
+    onGot:ids=>{ addOwned(ids); SV.pend--; save(); },
     onDone:()=>storyGacha(after)});
 }
 function renderStoryMap(){
+  bgm('title');
   UI.ctx=null; const next=storyNextIndex();
   let h=`<div class="panel"><div class="ghead">ユーカリ村の どうぶつ陣取り大会</div>
     <div class="muted">なかま ${ownedAll()}/${MAIN_N}匹${bangaiTxt()}。勝つと笛が1回ふける。</div>
@@ -2399,7 +2503,7 @@ function storyEnd(b,w){
   if(w===0){
     const first=!SV.cleared.includes(b.id);
     if(first) SV.cleared.push(b.id);
-    if(b.reward&&!SV.owned.includes(b.reward)) SV.owned.push(b.reward);
+    if(b.reward) addOwned([b.reward]);
     if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
     save();
     renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderStoryMap),'勝利！');
@@ -2426,7 +2530,7 @@ function ruleText(r){
   return '';
 }
 function renderUraMap(){
-  UI.ctx=null; const next=uraNextIndex();
+  bgm('ura'); UI.ctx=null; const next=uraNextIndex();
   let h=`<div class="panel"><div class="ghead">裏ストーリー　はじまりの穴</div>
     <div class="muted">なかま ${ownedAll()}/${MAIN_N}匹${bangaiTxt()}。勝つと笛が1回ふける。</div>
     ${SV.pend?`<button class="b pri" id="umG">笛をふく（あと${SV.pend}回）</button>`:''}</div>`;
@@ -2488,10 +2592,10 @@ function uraEnd(b,w){
     const first=!SV.uraCleared.includes(b.id);
     if(first) SV.uraCleared.push(b.id);
     const last=URA_BATTLES.every(x=>SV.uraCleared.includes(x.id));
-    if(last&&!SV.uraDone){ SV.uraDone=true; for(const T of GACHA_ALL) if(!SV.owned.includes(T.id)) SV.owned.push(T.id); if(!SV.owned.includes('himewombat')) SV.owned.push('himewombat'); SV.pend=0; }
+    if(last&&!SV.uraDone){ SV.uraDone=true; addOwned(GACHA_ALL.map(T=>T.id).concat(['himewombat'])); SV.pend=0; }
     else if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
     save();
-    renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderUraMap),'勝利！');
+    renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderUraMap),`${URA_CHAPTERS.find(c=>c.id===b.ch).title}　勝利！`);
   } else {
     play(`<div class="panel"><div class="ghead">${w==null?'引き分け':'負けてしまった……'}</div>
       <p class="muted">負けても失うものはないよ。${b.rule.type==='flute'?'笛しばりは、吹き直すと別の動物が来る。':'きまりに合うなかまの組み方を変えて、もう一度。'}</p>
@@ -2502,8 +2606,9 @@ function uraEnd(b,w){
 
 // ---------- チュートリアル ----------
 function renderTutMenu(){
+  bgm('title');
   UI.ctx=null;
-  play(`<div class="panel"><div class="ghead">チュートリアル</div><div class="muted">3つのレッスンで遊び方を練習しよう。${SV.tut?'':'全部クリアすると笛が1回ふける。'}</div>
+  play(`<div class="panel"><div class="ghead">チュートリアル</div><div class="muted">4つのレッスンで遊び方を練習しよう。${SV.tut?'':'全部クリアすると笛が1回ふける。'}</div>
     ${LESSONS.map(l=>`<button class="b sbtn${SV.tutDone.includes(l.id)?' done':''}" data-l="${l.id}">${SV.tutDone.includes(l.id)?'✓ ':'▶ '}${l.title}</button>`).join('')}
     <button class="b" id="tBack" style="margin-top:8px">メニューへ</button></div>`);
   document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startLesson(b.dataset.l));
@@ -2537,45 +2642,96 @@ function lessonEnd(L,w){
 }
 
 // ---------- 対戦（2人） ----------
+// きまりつき対戦で選べるきまり（裏ストーリーのきまりを使い回す）
+const VS_RULES=[
+ ['none','なし',null],
+ ['r1','ランク1だけ',{type:'rank',max:1}],['r2','ランク2以下だけ',{type:'rank',max:2}],['r3','ランク3以下だけ',{type:'rank',max:3}],
+ ['s10','合計ランク10まで',{type:'sum',max:10}],['s15','合計ランク15まで',{type:'sum',max:15}],
+ ['fw','全部 水辺の盤',{type:'field',fields:'water',label:'全部 水辺'}],['ff','全部 森林の盤',{type:'field',fields:'forest',label:'全部 森林'}],
+ ['f3','平原・森林・水辺の盤',{type:'field',fields:'three',label:'左から 平原・森林・水辺'}],
+ ['anc','太古の日（絶滅動物だけ）',{type:'ancient'}],
+ ['rand','おまかせ（どれかになる）',null],
+];
+function rulePool(base,rule){ // base: 動物IDの配列
+  if(rule&&rule.type==='ancient') return EXTINCT_IDS.slice();
+  let p=base.slice(); if(rule&&rule.type==='rank') p=p.filter(t=>A[t].rank<=rule.max);
+  return p;
+}
+function teamOk(t,rule){ return t.length===5&&(!rule||rule.type!=='sum'||t.reduce((a,x)=>a+A[x].rank,0)<=rule.max); }
+// CPUのチーム：きまりの中で、ランクの高さとフィールド適性を見て候補から選ぶ
+function cpuPick(pool,rule,persona){
+  const fl=rule&&rule.type==='field'?URA_FIELD[rule.fields]:null;
+  const score=t=>t.reduce((a,x)=>{ const T=A[x]; let v=T.rank*10; if(fl){ const av=fl.reduce((s,f)=>s+affOf(T,f),0)/25; v*=av; } return a+v; },0)+(persona==='novice'?Math.random()*40:Math.random()*8);
+  let best=null,bs=-1; const tries=persona==='novice'?6:persona==='careful'?40:120;
+  for(let k=0;k<tries;k++){ const t=shuffle(pool.slice()).slice(0,5); if(!teamOk(t,rule)) continue; const v=score(t); if(v>bs){bs=v;best=t;} }
+  if(!best){ const t=pool.slice().sort((a,b)=>A[a].rank-A[b].rank).slice(0,5); best=t; }
+  return best;
+}
 function renderVersusSetup(){
+  bgm('title');
   UI.ctx=null;
-  play(`<div class="panel"><div class="ghead">対戦（2人で1台）</div>
+  play(`<div class="panel"><div class="ghead">対戦</div>
+    <label class="f">相手 <select id="vOpp"><option value="hvh">2人で1台（交代で遊ぶ）</option><option value="novice">CPU（よわい）</option><option value="careful">CPU（ふつう）</option><option value="planner">CPU（つよい）</option></select></label>
     <label class="f">使える動物 <select id="vMode"><option value="gacha">笛をふいて出た動物だけ</option><option value="all">全部の動物</option></select></label>
     <label class="f" id="vPullsL">笛をふく回数（1人あたり） <select id="vPulls">${[3,4,5,6,7,8,9,10].map(n=>`<option value="${n}"${n===5?' selected':''}>${n}回${n===5?'（おすすめ）':''}</option>`).join('')}</select></label>
-    <div class="muted">動物は、おたがいに相手に見えないように選びます。選び終わったら公開して、配置も見えないように行います。</div>
+    <label class="f">きまり <select id="vRule">${VS_RULES.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select></label>
+    <div class="muted" id="vNote"></div>
     <button class="b pri big" id="vGo">はじめる</button><button class="b" id="vBack">メニューへ</button></div>`);
-  const upd=()=>{ $('#vPullsL').style.display=$('#vMode').value==='gacha'?'':'none'; }; $('#vMode').onchange=upd; upd();
+  const upd=()=>{ const anc=$('#vRule').value==='anc', hvh=$('#vOpp').value==='hvh';
+    $('#vPullsL').style.display=$('#vMode').value==='gacha'&&!anc?'':'none';
+    $('#vNote').textContent=(anc?'太古の日は、16種の絶滅動物すべてから選びます。':'')+(hvh?'動物は、おたがいに相手に見えないように選びます。選び終わったら公開して、配置も見えないように行います。':'CPUも同じきまりで動物を選びます。CPUの動物は、あなたが選び終わってから見られます。'); };
+  ['vMode','vRule','vOpp'].forEach(id=>$('#'+id).onchange=upd); upd();
   $('#vBack').onclick=renderTitle;
   $('#vGo').onclick=()=>{
-    UI.mode='hvh'; UI.humans=[true,true]; UI.cfg={}; UI.names=['青ウォンバット','赤ウォンバット']; UI.cpuTeam=null; UI.last=null;
-    UI.ctx={kind:'versus',onEnd:()=>renderVersusSetup()};
+    let rk=$('#vRule').value; if(rk==='rand'){ const c=VS_RULES.filter(r=>r[2]); rk=c[Math.floor(Math.random()*c.length)][0]; }
+    const rule=(VS_RULES.find(r=>r[0]===rk)||[])[2]||null, opp=$('#vOpp').value, hvh=opp==='hvh';
+    UI.mode=hvh?'hvh':'hva'; UI.humans=[true,hvh]; UI.personas=['planner',hvh?'planner':opp]; UI.speed=450;
+    UI.cfg=rule&&rule.type==='field'?{fields:URA_FIELD[rule.fields]}:{};
+    UI.names=hvh?['青ウォンバット','赤ウォンバット']:['あなた','CPU']; UI.cpuTeam=null; UI.last=null;
+    UI.ctx={kind:'versus',rule,onEnd:()=>renderVersusSetup()};
     UI.picks=[[],[]]; UI.cols=[[],[]]; UI.pickP=0;
-    if($('#vMode').value==='all'){ UI.pools=null; nextPick(); return; }
-    const N=+$('#vPulls').value; UI.pools=[[],[]];
-    const pullFor=(p,k)=>{
-      if(k>=N){ if(p===0) return cover('赤ウォンバットの人に交代してください。青の人は画面を見ないでね。',()=>pullFor(1,0)); return nextPick(); }
-      renderGacha({owned:()=>UI.pools[p],cap:5,ancient:true,title:`${UI.names[p]}の笛（${k+1}/${N}回目）`,onGot:ids=>UI.pools[p].push(...ids),onDone:()=>pullFor(p,k+1)});
+    const ALL=BY_RANK.map(T=>T.id);
+    const finish=()=>{ // きまりで絞る。足りなければ、きまりに合う動物を足す
+      const src=UI.pools?UI.pools.slice():[null,null];
+      for(const p of [0,1]){ let pl=rulePool(src[p]||ALL,rule);
+        const extra=shuffle(rulePool(ALL,rule).filter(t=>!pl.includes(t)));
+        while((pl.length<5||!cpuPick(pl,rule,'planner')||!teamOk(cpuPick(pl,rule,'planner'),rule))&&extra.length) pl.push(...extra.splice(0,3));
+        if(!UI.pools) UI.pools=[null,null]; UI.pools[p]=pl; }
+      const go=()=>{ if(rule) renderDialog([['',`このバトルのきまり：${ruleText(rule)}`]],nextPick,'きまりつき対戦'); else nextPick(); };
+      go();
     };
-    cover('青ウォンバットの人から笛をふきます。赤の人は画面を見ないでね。',()=>pullFor(0,0));
+    if($('#vMode').value==='all'||(rule&&rule.type==='ancient')){ UI.pools=null; finish(); return; }
+    const N=+$('#vPulls').value, cap=rule&&rule.type==='rank'?rule.max:5; UI.pools=[[],[]];
+    const pullFor=(p,k)=>{
+      if(k>=N){ if(p===0){ if(!hvh){ for(let i=0;i<N;i++) UI.pools[1].push(...drawGacha(['plain','forest','water','ancient'][Math.floor(Math.random()*4)],UI.pools[1],cap,true)); return finish(); }
+        return cover('赤ウォンバットの人に交代してください。青の人は画面を見ないでね。',()=>pullFor(1,0)); } return finish(); }
+      renderGacha({owned:()=>UI.pools[p],cap,ancient:true,title:`${UI.names[p]}の笛（${k+1}/${N}回目）`,onGot:ids=>UI.pools[p].push(...ids),onDone:()=>pullFor(p,k+1)});
+    };
+    if(hvh) cover('青ウォンバットの人から笛をふきます。赤の人は画面を見ないでね。',()=>pullFor(0,0)); else pullFor(0,0);
   };
 }
 
 // ---------- 図鑑 ----------
 const ZK_ORDER=ANIMALS.filter(T=>T.special).concat(ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank));
-let ZK_FILTER='all';
+let ZK_FILTER='all', ZK_R=0, ZK_ROLE='';
 function renderZukan(){
+  bgm('title');
   show('zukan');
-  const own=new Set(SV.owned), fl=[['all','全部'],['special','とくべつ'],['plain','草原'],['forest','森'],['water','水辺'],['ancient','太古']];
-  const list=ZK_ORDER.filter(T=>ZK_FILTER==='all'||(ZK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===ZK_FILTER)));
+  const own=new Set(SV.owned), fr=new Set(SV.fresh), inF=(T,k)=>k==='all'?!T.bangai:k==='special'?T.special:(!T.special&&themeOf(T)===k);
+  const fl=[['all','全部'],['plain','草原'],['forest','森'],['water','水辺'],['ancient','太古'],['special','とくべつ']].map(([k,n])=>{ const L=ANIMALS.filter(T=>inF(T,k)), o=L.filter(T=>own.has(T.id)).length; return [k,`${n} ${o}/${L.length}`+(o===L.length&&L.length?' ✓':'')]; });
+  const list=subFilter(ZK_ORDER.filter(T=>ZK_FILTER==='all'||(ZK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===ZK_FILTER))),ZK_R,ZK_ROLE);
   $('#zukan').innerHTML=`<div class="zhead" style="grid-column:1/-1">図鑑　<span class="muted">なかま ${ownedAll()}/${MAIN_N}${bangaiTxt()}</span></div>
-   <div class="row ftabs" style="grid-column:1/-1">${fl.map(([k,n])=>`<button class="b small zf${ZK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div>`+
-   `<div class="tiles" style="grid-column:1/-1">${list.map(T=>animalTile(T,{badge:own.has(T.id)?'✓':''})).join('')}</div>`;
+   <div class="row ftabs" style="grid-column:1/-1">${fl.map(([k,n])=>`<button class="b small zf${ZK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div><div style="grid-column:1/-1">${subFilterBar('zk',ZK_R,ZK_ROLE)}</div>`+
+   `<div class="tiles" style="grid-column:1/-1">${list.map(T=>animalTile(T,{badge:fr.has(T.id)?'NEW':own.has(T.id)?'✓':'',cls:fr.has(T.id)?'isnew':''})).join('')}</div>`;
   document.querySelectorAll('.zf').forEach(b=>b.onclick=()=>{ ZK_FILTER=b.dataset.f; renderZukan(); });
+  document.querySelectorAll('.zkr').forEach(b=>b.onclick=()=>{ ZK_R=+b.dataset.r; renderZukan(); });
+  if($('.zkrole')) $('.zkrole').onchange=e=>{ ZK_ROLE=e.target.value; renderZukan(); };
   document.querySelectorAll('#zukan .tile').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id));
   bindTileInfo($('#zukan'));
 }
 function zukanDetail(id){
   const T=A[id], F=FACTS[id]||{};
+  if(SV.fresh.includes(id)){ SV.fresh=SV.fresh.filter(x=>x!==id); save(); document.querySelectorAll(`#zukan .tile.isnew[data-id="${id}"]`).forEach(t=>{ t.classList.remove('isnew'); const b=t.querySelector('.tb'); if(b) b.textContent='✓'; }); }
   modal(`<div class="zbig">${spr(T.id,'s-big')}</div><div class="t" style="font-size:18px">${T.name} <span class="muted">ランク${T.rank}　${T.special?'とくべつ':THEMES[themeOf(T)].name.replace('の笛','')}</span>${T.extinct?' <span class="xt">絶滅</span>':''}${T.bangai?' <span class="xt" style="background:var(--wattle)">番外</span>':''}</div>
     <div class="zsec"><b>どんな動物？</b><div>${F.f||''}</div></div>
     <div class="zsec"><b>${T.extinct?'すんでいた所':'すんでいる所'}</b><div>${F.h||''}</div></div>
@@ -2590,6 +2746,7 @@ function zukanDetail(id){
 
 // ---------- フリー対戦（開発用） ----------
 function renderFreeSetup(){
+  bgm('title');
   UI.ctx=null; UI.names=null; UI.pools=null; UI.cpuTeam=null;
   play(`<div class="panel"><b>フリー対戦（開発用）</b>
   <label class="f">モード <select id="sMode"><option value="hva">あなた vs AI</option><option value="hvh">2人で対戦（1台を交代で使う）</option><option value="ava">AI vs AI を観戦</option></select></label>
@@ -2621,7 +2778,7 @@ function cover(msg,next){
 // ---------- 動物えらび ----------
 function teamFromPool(pool){ return shuffle(pool).slice(0,5); }
 function nextPick(){
-  while(UI.pickP<2&&!UI.humans[UI.pickP]){ UI.picks[UI.pickP]=UI.cpuTeam&&UI.pickP===1?UI.cpuTeam.slice():randomTeam(); UI.pickP++; }
+  while(UI.pickP<2&&!UI.humans[UI.pickP]){ const q=UI.pickP; UI.picks[q]=UI.cpuTeam&&q===1?UI.cpuTeam.slice():UI.ctx&&UI.ctx.kind==='versus'?cpuPick(UI.pools&&UI.pools[q]?UI.pools[q]:BY_RANK.map(T=>T.id),UI.ctx.rule,UI.personas[q]):randomTeam(); UI.pickP++; }
   if(UI.pickP>=2){ UI.placeP=0; return nextPlace(); }
   if(UI.mode==='hvh') cover(`${pname(UI.pickP)}の人が動物を選びます。相手に画面を見せないでください。`,renderPick);
   else renderPick();
@@ -2629,17 +2786,19 @@ function nextPick(){
 function renderPick(){
   const p=UI.pickP, pk=UI.picks[p], pool=UI.pools&&UI.pools[p]?UI.pools[p]:null;
   const all=BY_RANK.filter(T=>!pool||pool.includes(T.id));
-  const list=all.filter(T=>PK_FILTER==='all'||(PK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===PK_FILTER)));
+  const list=subFilter(all.filter(T=>PK_FILTER==='all'||(PK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===PK_FILTER))),PK_R,PK_ROLE);
   const opp=UI.ctx&&UI.ctx.showOpp&&UI.cpuTeam?`<div class="opp">相手 ${UI.cpuTeam.map(t=>`<span title="${A[t].name}">${spr(t,'s-opp',true)}</span>`).join('')} <button class="b small" id="oppInfo">相手を見る</button></div>`:'';
   const fl=[['all','全部'],['plain','草原'],['forest','森'],['water','水辺'],['ancient','太古'],['special','とくべつ']].filter(([k])=>k==='all'||all.some(T=>k==='special'?T.special:(!T.special&&themeOf(T)===k)));
-  const rl=UI.ctx&&UI.ctx.rule&&p===0?`<div class="rulebar">きまり：${ruleText(UI.ctx.rule)}</div>`:'', smax=UI.ctx&&UI.ctx.rule&&UI.ctx.rule.type==='sum'&&p===0?UI.ctx.rule.max:99, ssum=pk.reduce((a,t)=>a+A[t].rank,0);
+  const rOn=UI.ctx&&UI.ctx.rule&&(p===0||UI.ctx.kind==='versus'), rl=rOn?`<div class="rulebar">きまり：${ruleText(UI.ctx.rule)}</div>`:'', smax=rOn&&UI.ctx.rule.type==='sum'?UI.ctx.rule.max:99, ssum=pk.reduce((a,t)=>a+A[t].rank,0);
   play(`<div class="pickhead">${rl}<div><b>${pname(p)}</b>：5体えらぶ <span class="muted">${p===0?'（先手はさいしょ3pt）':''}</span></div>${opp}
     <div class="selbar">${[0,1,2,3,4].map(i=>pk[i]?`<span class="slot on" data-i="${i}">${spr(pk[i],'s-slot')}<i>${A[pk[i]].rank}</i></span>`:'<span class="slot"></span>').join('')}<span class="${ssum>smax?'over':'muted'}">合計ランク${ssum}${smax<99?`/${smax}`:''}</span></div>
-    <div class="row ftabs">${fl.map(([k,n])=>`<button class="b small pf${PK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div></div>
-    <div class="tiles">${list.map(T=>animalTile(T,{sel:pk.includes(T.id),badge:pk.includes(T.id)?String(pk.indexOf(T.id)+1):''})).join('')}</div>
+    <div class="row ftabs">${fl.map(([k,n])=>`<button class="b small pf${PK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div>${all.length>12?subFilterBar('pk',PK_R,PK_ROLE):''}</div>
+    <div class="tiles">${list.length?'':'<div class="muted" style="grid-column:1/-1;padding:12px">この条件の動物はいません。</div>'}${list.map(T=>animalTile(T,{sel:pk.includes(T.id),badge:pk.includes(T.id)?String(pk.indexOf(T.id)+1):''})).join('')}</div>
     <div class="actbar"><button class="b" id="pkRand">おまかせ</button><button class="b pri" id="pkOk" ${pk.length<5||ssum>smax?'disabled':''}>決定（${pk.length}/5）</button></div>`);
   document.querySelectorAll('.slot.on').forEach(c=>c.onclick=()=>{ pk.splice(+c.dataset.i,1); renderPick(); });
   document.querySelectorAll('.pf').forEach(b=>b.onclick=()=>{ PK_FILTER=b.dataset.f; renderPick(); });
+  document.querySelectorAll('.pkr').forEach(b=>b.onclick=()=>{ PK_R=+b.dataset.r; renderPick(); });
+  if($('.pkrole')) $('.pkrole').onchange=e=>{ PK_ROLE=e.target.value; renderPick(); };
   document.querySelectorAll('.tiles .tile').forEach(c=>c.onclick=()=>{ const id=c.dataset.id, k=pk.indexOf(id); if(k>=0) pk.splice(k,1); else if(pk.length<5) pk.push(id); se('tap'); renderPick(); });
   bindTileInfo($('#play'));
   if($('#oppInfo')) $('#oppInfo').onclick=()=>{ modal(`<div class="ghead">相手の動物</div><div class="tiles">${UI.cpuTeam.map(t=>animalTile(A[t])).join('')}</div><button class="b pri" id="oc">とじる</button>`); bindTileInfo($('#modal')); $('#modal').querySelectorAll('.tile').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id)); $('#oc').onclick=closeModal; };
@@ -2675,7 +2834,11 @@ function renderPlace(){
 }
 // ---------- バトル ----------
 function startBattle(){
-  G=newGame(UI.picks,UI.cols,UI.cfg); resetSel(); UI.info=null; renderBattle(); runAI();
+  bgm('battle');
+  G=newGame(UI.picks,UI.cols,UI.cfg); resetSel(); UI.info=null; UI.undo=[]; renderBattle();
+  const hm=G.units.filter(u=>u.type==='himewombat');
+  if(hm.length){ const bd=$('#bd'); if(bd){ const layer=document.createElement('div'); layer.className='fxlayer'; bd.appendChild(layer); hm.forEach((u,i)=>setTimeout(()=>{ fxAt(layer,u.x,u.y,'halo',''); fxAt(layer,u.x,u.y,'spark',''); fxAt(layer,u.x,u.y,'num heal','✨'); se('win'); },300+i*250)); } }
+  runAI();
 }
 function resetSel(){ UI.fprev=null; UI.sel=null; UI.dest=null; UI.step=null; UI.opts=[]; UI.post=null; }
 const humanTurn=()=>G&&!G.over&&UI.humans[G.turn];
@@ -2731,7 +2894,7 @@ function renderBattle(){
       if(vo.some(o=>o.type==='burrow')) actions+=`<button class="b pri" id="doBurrow">もぐる</button>`;
       actions+=`<button class="b" id="noAtk">待機</button><button class="b" id="back">もどる</button>`;
     } else if(UI.step==='post') actions=`<span class="muted">脱兎：1マス動ける</span><button class="b" id="noPost">動かない</button>`;
-    else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}<button class="b pri" id="endT">手番を終える</button>`;
+    else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}${!su&&UI.undo&&UI.undo.length&&UI.mode!=='hvh'?'<button class="b" id="undoB">↶ 1手もどす</button>':''}<button class="b pri" id="endT">手番を終える</button>`;
   } else actions='<span class="muted">相手が考えています…</span>';
   const guide=G.over?'':humanTurn()?(UI.step==='move'?'緑のマスへ動かす':UI.step==='skill'?(visOpts().some(o=>o.type==='field')?'紫のマスを2回タップ':visOpts().some(o=>o.type==='support')?'回復する味方をタップ':'赤い相手をタップ'):UI.step==='post'?'1マス動ける':'動物をタップ'):'';
   const hint=UI.ctx&&UI.ctx.hint&&!G.over?`<details class="hint"><summary>💡 ヒント</summary>${UI.ctx.hint}</details>`:'';
@@ -2766,14 +2929,15 @@ function renderBattle(){
   on('back',()=>{ UI.step='move'; UI.dest=null; UI.fprev=null; renderBattle(); });
   on('noPost',()=>finishPost(null));
   on('unsel',()=>{ resetSel(); renderBattle(); });
+  on('undoB',()=>{ if(!UI.undo||!UI.undo.length) return; G=UI.undo.pop(); resetSel(); UI.last=null; UI.info=null; se('tap'); renderBattle(); });
   on('endT',()=>{ resetSel(); UI.info=null; const sn=takeSnap(); endTurn(G); UI.last=null; renderBattle(); playDiff(sn,null,null,null); runAI(); });
   on('iMore',()=>{ modal(`<div class="card">${infoHTML(info)}</div><button class="b pri" id="ic" style="margin-top:8px">とじる</button>`); $('#ic').onclick=closeModal; });
   on('logBtn',()=>{ modal(`<div class="ghead">ログ</div><div class="log">${G.log.slice(-150).reverse().map(l=>`<div>${l}</div>`).join('')}</div><button class="b pri" id="lc" style="margin-top:8px">とじる</button>`); $('#lc').onclick=closeModal; });
   // 手番の切りかえと勝敗のバナー
   const key=G.over?'over':G.round+'-'+G.turn;
   if(UI.bkey!==key){
-    UI.bkey=key;
-    if(G.over){ const me=UI.mode==='hvh'||UI.mode==='ava'?null:(UI.humans[0]?0:1), w=G.winner, win=w!=null&&(me==null||w===me);
+    UI.bkey=key; UI.undo=[];
+    if(G.over){ bgm(null); const me=UI.mode==='hvh'||UI.mode==='ava'?null:(UI.humans[0]?0:1), w=G.winner, win=w!=null&&(me==null||w===me);
       const txt=w==null?'ひきわけ':me==null?`${UI.names?UI.names[w]:(w===0?'青':'赤')}の勝ち！`:win?'かち！':'まけ…';
       setTimeout(()=>{ se(win||me==null?'win':'lose'); },400); }
     else if(!(G.round===1&&G.turn===0&&G.log.length<3&&false)){ const txt=UI.mode==='hvh'||UI.mode==='ava'?`${pname(G.turn)}の番`:UI.humans[G.turn]?'あなたの番':'相手の番'; banner(txt,'p'+G.turn,800); se('turn'); }
@@ -2816,6 +2980,7 @@ function onCell(x,y){
 }
 function commit(opt){
   const su=selUnit(); const dest=UI.dest, sn=takeSnap();
+  if(UI.mode!=='hvh'&&UI.humans[G.turn]){ try{ UI.undo=UI.undo||[]; UI.undo.push(structuredClone(G)); }catch(e){ UI.undo=[]; } }
   const post=actMoveSkill(G,su.id,dest,opt);
   UI.last=dest;
   if(post){ UI.step='post'; UI.post=post; renderBattle(); playDiff(sn,su.id,opt,dest); return; }
@@ -2903,7 +3068,8 @@ function renderSim(games,maxR,evalR,tie){
 }
 
 
-$('#sndBtn').onclick=()=>{ SND.on=!SND.on; try{ localStorage.setItem('wbjintori_snd',SND.on?'on':'off'); }catch(e){} sndBtn(); if(SND.on) se('turn'); };
+$('#sndBtn').onclick=()=>{ SND.gest=true; if(SND.bgm){ SND.bgm=false; } else if(SND.on){ SND.on=false; } else { SND.on=true; SND.bgm=true; }
+  try{ localStorage.setItem('wbjintori_snd',SND.bgm?'on':SND.on?'se':'off'); }catch(e){} sndBtn(); bgmApply(); if(SND.on) se('turn'); };
 sndBtn();
 renderTitle();
 </script>
