@@ -866,7 +866,7 @@ async function playEvents(ev){
           if(!pts.length&&S&&S.kind==='buff')G.party.forEach((m,j)=>{if(m.hp>0)pts.push(partyCenter(j));});
           await bwait(250);spawnFx(kind,pts.slice(0,4));if(kind!=='slash')snd(kind==='heal'?'heal':'magic');}
         await bwait(400);if(e.side==='p')BA.p[e.i].step=0;applyVs();break;}
-      case 'msg':say(e.text);await bwait(420);break;
+      case 'msg':if(e.dbFinal){shakeT=now;flashT=performance.now();banner('さいごの たたかい','ドロップベアが きあいで 立ちあがった','#ff5a4a',2200);jingle('C4 C4 G4 C5',.1);}say(e.text);await bwait(e.dbFinal?900:420);break;
       case 'hit':
         if(e.side==='e'){if(BA.e[e.i]){BA.e[e.i].flash=now;BA.e[e.i].hp=e.hp;}pop(enemyCenter(e.i),e.dmg,e.weak?'#ffe060':'#ffffff',e.weak||e.crit);snd('hit');if(e.weak||e.crit)shakeT=now;}
         else{disp[e.i].hp=e.hp;BA.p[e.i].shake=now;shakeT=now;pop(partyCenter(e.i),e.dmg,e.poison?'#c98bff':e.magic?'#9ad0ff':'#ff8a8a');snd('phit');renderParty(undefined,e.i);}
