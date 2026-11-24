@@ -193,6 +193,10 @@ details.hint summary{cursor:pointer;font-weight:800}
 .xt{font-size:11px;font-weight:900;color:#fff;background:var(--ancient);border-radius:6px;padding:1px 6px;vertical-align:2px}
 .tile.on{border-color:var(--euca);box-shadow:0 0 0 2px var(--euca)}
 .tile.dim{opacity:.4}
+.rulebar{background:#EEE8F6;border:1px solid #CFC2E4;color:#4A3A6A;border-radius:10px;padding:6px 10px;margin-bottom:6px;font-size:13px;font-weight:700}
+.over{color:#D0402F;font-weight:800}
+.cta.ura{background:linear-gradient(135deg,#5A4A78,#3A3050)!important;color:#fff}.cta.ura .cs{color:#E8E0F4}
+.cta.ura .meter b{background:var(--wattle)}
 .tile .te{font-size:30px;line-height:1.15}
 .tile .tn{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .ts{font-size:10px;color:var(--muted)}
@@ -378,6 +382,7 @@ details.panel summary{cursor:pointer}
 <h2>ゲームモード</h2>
 <ul>
 <li><b>ストーリー</b>：ユーカリ村の「どうぶつ陣取り大会」をCPUと戦いながら勝ちあがる。全5章・18戦。勝つたびに「なかま呼びの笛」（ガチャ）を1回ふける。負けても失うものはなく、何度でも挑戦できる。クリアした戦いにも再挑戦でき、勝てば笛がふける（全員そろうまで）。</li>
+<li><b>裏ストーリー</b>：表のストーリー18戦を全部クリアすると開く。全4章・12戦。この大会がなぜ始まったのかを調べる話。章ごとにきまりがちがう（下の「裏ストーリーのきまり」）。勝つたびに笛が1回ふける。最後の戦いに勝つと、まだなかまになっていない動物が全員なかまになる。</li>
 <li><b>はじめから</b>：最初に笛を2回ふける。そのあと、チュートリアルとストーリーのどちらから始めるか選べる。</li>
 <li><b>チュートリアル</b>：3レッスン（動かして攻撃・ptとランク・フィールドと適性）。全部クリアすると笛が1回ふける。</li>
 <li><b>対戦（2人で1台）</b>：「全部の動物」か「笛で出た動物だけ」を選ぶ。笛は1人3〜10回（おすすめ5回）で、1回ごとに笛の種類を選べる。</li>
@@ -413,6 +418,16 @@ details.panel summary{cursor:pointer}
 <li>読み型・ランダム編成3000試合を3回測り、平均から大きく外れたものを直した（ベニクラゲは毒をなくして弱く、チーター・アンデスコンドル・デンキウナギ・アルパカ・ペリカン・ピラニア・カルガモ・メダカ・オオサンショウウオは強く）。</li>
 <li>最後の測定のランク別平均：ランク5が66%、ランク4が54%、ランク3が47%、ランク2が45%、ランク1が46%。ほとんどの動物は各ランクの平均±10ポイント以内。同じ動物でも測るたびに±5ポイントほど変わるので、数ポイントの差は誤差の可能性がある。</li>
 <li>2回以上続けて高めだったもの：ライオン（73〜76%）、シカ（56〜65%）、ヴェロキラプトル（58〜62%）。低めだったもの：タコ（37〜43%）、ダチョウ（38〜43%）。どれも元からいる動物で、今回は直していない。</li>
+</ul>
+
+<h2>裏ストーリーのきまり</h2>
+<ul>
+<li><b>笛しばり</b>（裏1章）：自分のなかまは使えない。その場で笛を4回ふいて（笛の種類は毎回えらべる。ランク上限なし、太古の笛もふける）、来た12匹から5匹えらぶ。吹き直しは1回まで。来た動物はそのバトルだけのなかまで、図鑑には入らない。</li>
+<li><b>ランク制限</b>（裏2章）：「ランク1だけ」「ランク2以下だけ」「5匹のランク合計10まで」。自分のなかまから、きまりに合う動物を選ぶ。</li>
+<li><b>地形が決まった盤</b>（裏3章）：最初から「全部水辺」「全部森林」「左から平原2列・森林1列・水辺2列」になっている。フィールド変更スキルで塗りかえるのはふつうどおりできる。</li>
+<li><b>太古の日</b>（裏4章）：おたがい絶滅動物だけで戦う。自分のなかまにいなくても、16種の絶滅動物すべてから選べる。</li>
+<li>相手は、きまりに合わない動物を連れていることがある（谷の主が太古の動物を連れてくる、など）。相手のチームは強さの調整のために決めている。</li>
+<li>検証（読み型。自分側は、きまりの中で選べる候補から12通りを試して勝ちやすい編成を選ぶ）：勝率のめやすは、裏1章が98%・90%・50%、裏2章が93%・63%・33%、裏3章が63%・57%・50%、裏4章が83%・78%・40%。1戦あたり40〜48試合での測定なので、10ポイントほどの誤差はありうる。</li>
 </ul>
 
 <h2>勝利条件</h2>
@@ -942,7 +957,7 @@ function log(s,m){ if(!s.cfg.quiet) s.log.push(m); }
 function shapeCells(shape,cx,cy){ return SHAPES[shape].cells.map(([dx,dy])=>({x:cx+dx,y:cy+dy})).filter(c=>inB(c.x,c.y)); }
 
 function newGame(teams, cols, cfg){
-  const s={cfg:{...CONFIG,...cfg}, fields:Array(SIZE*SIZE).fill('none'), units:[], dead:[], turn:0, round:1, pts:0,
+  const s={cfg:{...CONFIG,...cfg}, fields:cfg&&cfg.fields?cfg.fields.slice():Array(SIZE*SIZE).fill('none'), units:[], dead:[], turn:0, round:1, pts:0,
     lost:[0,0], teamMax:[0,0], over:false, winner:null, reason:'', log:[], snaps:[], annih:null};
   for(let p=0;p<2;p++) teams[p].forEach((t,i)=>{
     const T=A[t]; s.units.push({id:p*100+i, owner:p, type:t, hp:T.hp, maxHp:T.hp, x:cols[p][i], y:p===0?SIZE-1:0,
@@ -1733,6 +1748,89 @@ const LESSONS=[
   teams:[['frog','croc','crab'],['rabbit','wolf','dhole']],cols:[[1,2,3],[1,2,3]],ai:'novice'},
 ];
 
+
+// ===== 裏ストーリー（はじまりの穴） =====
+// rule: {type:'flute',pulls,reroll} 笛しばり / {type:'rank',max} ランク上限 / {type:'sum',max} 合計ランク上限 / {type:'field',fields} 地形が決まった盤 / {type:'ancient'} 太古の日
+const URA_FIELD={
+ water:Array(25).fill('water'),
+ forest:Array(25).fill('forest'),
+ three:Array.from({length:25},(_,i)=>{const x=i%5;return x<2?'plain':x===2?'forest':'water';}),
+};
+const URA_INTRO=[
+ ['オババ','チャンピオンになったおまえさんに、ひとつ打ち明けたいことがある。'],
+ ['オババ','この大会が、いつ、なぜ始まったのか。……じつは、わしも知らんのじゃ。'],
+ ['ポコ','えっ。オババでも？'],
+ ['オババ','わしのばあさまも知らんかった。気がついたら、毎年やっておったそうな。'],
+ ['ポコ','そういえば、ウォンバットは自分では戦わないのに、なんで陣取りなんだろう。'],
+ ['オババ','村の奥の古い巣穴に、昔の記録が残っているという話がある。ただ、そこを守る者たちは、ふつうの大会とはちがう戦い方を好むそうだ。'],
+ ['オババ','行ってみるかい？ 勝つたびに笛が吹けるのは、表の大会と同じだよ。'],
+];
+const URA_CHAPTERS=[
+ {id:1,title:'裏1章 古い巣穴の記録係',
+  intro:[['','村の奥の古い巣穴。入り口には、すりへった石がいくつも並んでいる。'],
+   ['オババ','ここの記録係たちは「笛しばり」で戦う。自分のなかまは連れて行けない。その場で笛を4回吹いて、来てくれた動物から5匹えらぶんだ。'],
+   ['オババ','どの動物が来るかは運しだい。気に入らなければ、1回だけ吹き直してもいいそうだよ。']],
+  battles:[
+   {id:'U1-1',name:'ヨミ',ai:'careful',rule:{type:'flute',pulls:4,reroll:1},team:['meerkat','tanuki','kingfisher','zebra','hedgehog'],
+    pre:[['ヨミ','ここは記録の巣穴。なかまを選べないのが、ここのしきたりだよ。']],win:[['ヨミ','来た動物で何とかするのも、陣取りの腕だね。'],['ヨミ','奥の部屋に古い石板がある。フミが見張っているよ。']]},
+   {id:'U1-2',name:'フミ',ai:'aggressive',rule:{type:'flute',pulls:4,reroll:1},team:['pelican','chimp','weasel','firefly','alpaca'],
+    pre:[['フミ','石板は、記録係の長しか読めないの。長のスミに勝ったら、見せてくれるかも。']],win:[['フミ','うーん、くやしい。スミはいちばん奥の部屋よ。']]},
+   {id:'U1-3',name:'スミ',ai:'planner',boss:true,rule:{type:'flute',pulls:4,reroll:1},team:['leopard','sealion','redpanda','chimp','orangutan'],
+    pre:[['スミ','記録係の長、スミだ。石板が見たいなら、笛の運と腕を見せてもらおう。']],
+    win:[['スミ','……いいだろう。これが、いちばん古い石板だ。'],['','石板には、かすれた文字でこう書いてあった。「陣地を取りあう。それは……」'],['','その先は、欠けてなくなっている。'],
+     ['スミ','続きは、谷のほうに持っていかれたと聞いている。小さな動物しかいない、ふしぎな谷だ。']]},
+  ]},
+ {id:2,title:'裏2章 小さき者の谷',
+  intro:[['','谷に入ると、大きな動物の足あとがぴたりと消えた。'],
+   ['オババ','この谷では、連れて行ける動物のランクに上限がある。小さな動物の使い方が試されるよ。']],
+  battles:[
+   {id:'U2-1',name:'コツブ',ai:'careful',rule:{type:'rank',max:1},team:['mantis','hermit','beetle','firefly','mole'],
+    pre:[['コツブ','この先は、ランク1の動物しか入れないよ。']],win:[['コツブ','小さくても、組み合わせしだいだね。']]},
+   {id:'U2-2',name:'マメ',ai:'planner',rule:{type:'rank',max:2},team:['jpwolf','redpanda','tanuki','seaotter','medaka'],
+    pre:[['マメ','ここからはランク2まで。石板のかけら？ 谷の主のチビスケが持ってるよ。']],win:[['マメ','チビスケは、合計で勝負するのが好きなんだ。']]},
+   {id:'U2-3',name:'チビスケ',ai:'planner',boss:true,rule:{type:'sum',max:10},team:['raptor','thylacine','jpwolf','fugu','turritopsis'],
+    pre:[['チビスケ','谷の主、チビスケだ。ここでは5匹のランクの合計が10まで。おれは太古の動物も連れてくるぞ。']],
+    win:[['チビスケ','負けたよ。ほら、石板のかけらだ。'],['','かけらには、こう書いてあった。「……最初の陣地は、ひとつの穴だった……」'],
+     ['ポコ','穴？ ウォンバットの巣穴のこと？'],['チビスケ','さあね。残りのかけらは「変わらない土地」にあるらしい。あそこは、何百年も地面の様子が変わらないんだって。']]},
+  ]},
+ {id:3,title:'裏3章 変わらない土地',
+  intro:[['','一面の湖、深い森、そして三つの土地が並ぶ原。ここのマスは、はじめから決まっている。'],
+   ['オババ','ここでは、盤のフィールドが最初から決まっている。どこが得意な動物を連れて行くか、よく考えるんだね。']],
+  battles:[
+   {id:'U3-1',name:'ミズハ',ai:'planner',rule:{type:'field',fields:'water',label:'全部 水辺'},team:['greatwhite','piranha','stingray','sealion','medaka'],
+    pre:[['ミズハ','ここは一面の湖。陸の動物は、泳ぐだけで大変だよ。']],win:[['ミズハ','水の得意な子を、ちゃんと連れてきたのね。']]},
+   {id:'U3-2',name:'コケ',ai:'planner',rule:{type:'field',fields:'forest',label:'全部 森林'},team:['orangutan','lynx','musasabi','panda','firefly'],
+    pre:[['コケ','ここは森しかない。森の中では、森の動物が王さまだ。']],win:[['コケ','森で負けるなんて……。イワオじいさんに会っていきな。']]},
+   {id:'U3-3',name:'イワオ',ai:'planner',boss:true,rule:{type:'field',fields:'three',label:'左から 平原・森林・水辺'},team:['buffalo','tiger','jaguar','eel','frog'],
+    pre:[['イワオ','わしはイワオ。この土地の番をしておる。平原・森・水辺、三つの土地をどう使うかな。']],
+    win:[['イワオ','見事じゃ。かけらは、これで最後のはずじゃよ。'],['','最後のかけらには、こう書いてあった。「……くわしくは、はじまりの穴の記録を見よ」'],
+     ['ポコ','また別の場所！？'],['イワオ','はじまりの穴には、太古の動物たちと、名前もない年寄りがおる。そやつなら、最初の大会を知っておるかもしれん。']]},
+  ]},
+ {id:4,title:'裏4章 はじまりの穴',
+  intro:[['','地面の奥ふかく、大きな穴が口をあけている。中から、太古の笛の音が聞こえる。'],
+   ['オババ','ここは「太古の日」。おたがい絶滅動物だけで戦う。どの絶滅動物も、太古の笛の力で呼べるよ。'],
+   ['オババ','ただし、みんな毎手番弱っていく。長引かせずに決めるんだよ。']],
+  battles:[
+   {id:'U4-1',name:'ホラ',ai:'planner',rule:{type:'ancient'},team:['raptor','jpwolf','trilobite','pteranodon','dimetrodon'],
+    pre:[['ホラ','この穴に来た客は、ひさしぶりだ。太古の動物どうしで戦うのが、ここのならわしさ。']],win:[['ホラ','奥に、ナナシじいさんがいる。ヒソカに勝てたら会えるよ。']]},
+   {id:'U4-2',name:'ヒソカ',ai:'planner',rule:{type:'ancient'},team:['triceratops','thylacine','raptor','pteranodon','anomalocaris'],
+    pre:[['ヒソカ','ナナシじいさんに会いたいの？ じいさんは、いちばん古い動物たちを連れているわよ。']],win:[['ヒソカ','どうぞ。じいさんは、いつも寝てばかりだけど。']]},
+   {id:'U4-3',name:'ナナシ',ai:'planner',boss:true,rule:{type:'ancient'},team:['trex','mammoth','anomalocaris','dodo','pigeon'],
+    pre:[['ナナシ','……ん？ 客か。わしはナナシ。名前は、とうの昔に忘れた。'],['ポコ','最初の大会のこと、知ってる？'],['ナナシ','知っておるとも。……たぶんな。まずは一勝負じゃ。']],
+    win:[['ナナシ','ふう、まいった。約束じゃ、最初の大会の記録を見せよう。'],
+     ['','ナナシが穴の奥から、ぼろぼろの木の皮を出してきた。いちばん古い記録だ。'],
+     ['','そこには、こう書いてあった。'],
+     ['','「きょうも みんなで じんとりをした。たのしかった。」'],
+     ['ポコ','…………それだけ？'],
+     ['ナナシ','それだけじゃ。わしが子どものころには、もう大会はあったからの。始めたやつのことは、わしも知らん。'],
+     ['オババ','……結局、何も分からんかったね。'],
+     ['ポコ','でも、「たのしかった」って書いてあるよ。'],
+     ['オババ','ふふ。始まったわけは分からなくても、続いているわけは、それで十分かもしれんね。'],
+     ['','巣穴から外に出ると、村じゅうの動物たちが集まっていた。古い記録を見つけたお祝いだという。'],
+     ['','まだなかまになっていなかった動物たちが、みんななかまになった！'],
+     ['','なぜウォンバットたちが陣取りをするのか。それは今も、だれにも分からない。']]},
+  ]},
+];
 </script>
 <script id="sprite">
 // ドット絵ウォンバット（ウォンバット☆レガシーRPG 2 の render.js から流用）
@@ -1944,7 +2042,7 @@ $('#menuBtn').onclick=()=>{
 
 // ---------- 保存 ----------
 const SAVE_KEY='wbjintori_save_v1';
-function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0}; }
+function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0,uraCleared:[],uraDone:false}; }
 function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s&&s.v===1) return Object.assign(defSave(),s); }catch(e){} return defSave(); }
 function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(SV)); }catch(e){} }
 let SV=loadSave();
@@ -2120,7 +2218,7 @@ function animalTile(T,o){
 }
 function bindTileInfo(root){ (root||document).querySelectorAll('.ti').forEach(b=>b.onclick=e=>{ e.stopPropagation(); zukanDetail(b.dataset.i); }); }
 
-const WOMBAT_NAMES=new Set(['オババ','ポコ','ムギ','タンポ','ガンモ','シイ','ドングリ','モリー','コダマ','シズク','ナギ','ミナモ','オオナミ','ライガ','ツキミ','クロガネ','ゴウ']);
+const WOMBAT_NAMES=new Set(['ヨミ','フミ','スミ','コツブ','マメ','チビスケ','ミズハ','コケ','イワオ','ホラ','ヒソカ','ナナシ','オババ','ポコ','ムギ','タンポ','ガンモ','シイ','ドングリ','モリー','コダマ','シズク','ナギ','ミナモ','オオナミ','ライガ','ツキミ','クロガネ','ゴウ']);
 let PK_FILTER='all';
 function infoStrip(u){
   const T=A[u.type], f=G.fields[u.y*SIZE+u.x];
@@ -2182,9 +2280,9 @@ function ownedAll(){ return SV.owned.length; }
 const HERO_PATCH=['pl','pl','fo','fo','fo', 'pl','pl','no','fo','wa', 'pl','no','wa','wa','wa'];
 function renderTitle(){
   UI.ctx=null; UI.names=null; UI.pools=null; UI.cpuTeam=null; G=null;
-  const total=ANIMALS.length, done=SV.cleared.length, all=STORY_BATTLES.length;
+  const total=ANIMALS.length, done=STORY_BATTLES.filter(b=>SV.cleared.includes(b.id)).length, all=STORY_BATTLES.length;
   const nb=STORY_BATTLES[storyNextIndex()], ch=nb?CHAPTERS.find(c=>c.id===nb.ch):null;
-  const storySub=!nb?'全18戦クリア！ 再挑戦で笛を集めよう':`次は ${ch.title.replace(/^第\d章 /,'')}　${nb.name}${nb.boss?'（ボス）':''}`;
+  const storySub=!nb?'全18戦クリア！ 裏ストーリーが開いた':`次は ${ch.title.replace(/^第\d章 /,'')}　${nb.name}${nb.boss?'（ボス）':''}`;
   play(`<div class="hero"><div class="patch">${HERO_PATCH.map((c,k)=>`<i class="${c}" style="--k:${k}"></i>`).join('')}</div>
      <div class="wbs"><span class="wb"></span><span class="wb" data-f="1"></span></div></div>
    <div class="hero" style="margin-top:-6px"><h1><span class="sm">ウォンバット☆</span>どうぶつ陣取り</h1>
@@ -2194,6 +2292,8 @@ function renderTitle(){
    ${!SV.started?`<button class="cta" id="mNew"><span class="ci">🌱</span><span style="flex:1"><span class="ct">はじめから</span><span class="cs">笛を2回ふいて、最初のなかまを集めよう</span></span></button>`:
     `<button class="cta" id="mStory"><span class="ci">🏆</span><span style="flex:1"><span class="ct">ストーリー</span><span class="cs">${storySub}</span>
       <span class="meter"><b style="width:${Math.round(done/all*100)}%"></b></span><span class="cs" style="margin-top:3px">${done}/${all}戦クリア　なかま ${ownedAll()}/${total}匹</span></span></button>`}
+   ${uraOpen()?`<button class="cta ura" id="mUra"><span class="ci">🕳</span><span style="flex:1"><span class="ct">裏ストーリー${SV.uraDone?' ✓':''}</span><span class="cs">${uraSub()}</span>
+      <span class="meter"><b style="width:${Math.round(SV.uraCleared.length/URA_BATTLES.length*100)}%"></b></span><span class="cs" style="margin-top:3px">${SV.uraCleared.length}/${URA_BATTLES.length}戦クリア</span></span></button>`:''}
    <div class="mgrid">
      <button class="mtile" id="mTut"><span class="mi">🎓</span><span class="mt">チュートリアル</span><span class="ms">${SV.tut?'<span class="done">クリア済み</span>':'遊び方を3つのレッスンで'}</span></button>
      <button class="mtile" id="mVs"><span class="mi">🤝</span><span class="mt">対戦</span><span class="ms">2人で1台をかわりばんこに</span></button>
@@ -2203,7 +2303,7 @@ function renderTitle(){
    <div class="minor"><button id="mDev">開発用</button>${SV.started?'<button id="mReset">記録を消す</button>':''}</div>
    </div>`);
   const on=(id,f)=>{ const e=$('#'+id); if(e) e.onclick=f; };
-  on('mNew',startNewGame); on('mStory',renderStoryMap); on('mTut',renderTutMenu); on('mVs',renderVersusSetup);
+  on('mNew',startNewGame); on('mStory',renderStoryMap); on('mUra',()=>SV.uraSeen?renderUraMap():(SV.uraSeen=true,save(),renderDialog(URA_INTRO,renderUraMap,'裏ストーリー'))); on('mTut',renderTutMenu); on('mVs',renderVersusSetup);
   on('mZukan',()=>renderZukan()); on('mRules',()=>show('rules')); on('mDev',renderDevMenu);
   on('mPend',()=>storyGacha(renderTitle));
   on('mReset',()=>{ modal(`<p>ストーリーの記録と集めた動物をすべて消します。元にはもどせません。</p><button class="b pri" id="rY">消す</button><button class="b" id="rN">やめる</button>`);
@@ -2285,6 +2385,95 @@ function storyEnd(b,w){
       <p class="muted">負けても失うものはないよ。なかまの組み方や、フィールドの使い方を変えてもう一度。</p>
       <button class="b pri" id="lR">もう一度たたかう</button><button class="b" id="lM">大会の地図へ</button></div>`);
     $('#lR').onclick=()=>startStoryBattle(b.id); $('#lM').onclick=renderStoryMap;
+  }
+}
+
+// ---------- 裏ストーリー ----------
+const URA_BATTLES=URA_CHAPTERS.flatMap(c=>c.battles.map(b=>({...b,ch:c.id})));
+const EXTINCT_IDS=ANIMALS.filter(T=>T.extinct).map(T=>T.id);
+function uraOpen(){ return STORY_BATTLES.every(b=>SV.cleared.includes(b.id)); }
+function uraNextIndex(){ const i=URA_BATTLES.findIndex(b=>!SV.uraCleared.includes(b.id)); return i<0?URA_BATTLES.length:i; }
+function uraSub(){ const nb=URA_BATTLES[uraNextIndex()]; if(!nb) return '全12戦クリア！ 再挑戦で笛を集めよう'; const ch=URA_CHAPTERS.find(c=>c.id===nb.ch); return `次は ${ch.title.replace(/^裏\d章 /,'')}　${nb.name}${nb.boss?'（ボス）':''}`; }
+function ruleText(r){
+  if(r.type==='flute') return `笛しばり（その場で笛を${r.pulls}回ふいて、来た動物から5匹。吹き直し${r.reroll}回まで）`;
+  if(r.type==='rank') return `ランク${r.max}以下の動物だけ`;
+  if(r.type==='sum') return `5匹のランク合計${r.max}まで`;
+  if(r.type==='field') return `盤のフィールドが決まっている（${r.label}）`;
+  if(r.type==='ancient') return '太古の日（おたがい絶滅動物だけ。全部の絶滅動物から選べる）';
+  return '';
+}
+function renderUraMap(){
+  UI.ctx=null; const next=uraNextIndex();
+  let h=`<div class="panel"><div class="ghead">裏ストーリー　はじまりの穴</div>
+    <div class="muted">なかま ${SV.owned.length}/${ANIMALS.length}匹。勝つと笛が1回ふける。</div>
+    ${SV.pend?`<button class="b pri" id="umG">笛をふく（あと${SV.pend}回）</button>`:''}</div>`;
+  for(const c of URA_CHAPTERS){
+    const firstIdx=URA_BATTLES.findIndex(b=>b.ch===c.id), open=firstIdx<=next;
+    const allDone=c.battles.every(b=>SV.uraCleared.includes(b.id));
+    h+=allDone?`<details class="panel"><summary><b>${c.title}</b> ✓</summary>`:`<div class="panel"><b>${c.title}</b>${open?'':' <span class="muted">🔒</span>'}`;
+    if(open) h+=`<div class="muted" style="font-size:12px">${ruleText(c.battles[0].rule).replace(/（.*$/,'')}${c.id===2?'・合計ランク':''}</div>`+c.battles.map(b=>{ const gi=URA_BATTLES.findIndex(x=>x.id===b.id), done=SV.uraCleared.includes(b.id), can=gi<=next;
+      return `<button class="b sbtn${done?' done':''}" data-b="${b.id}" ${can?'':'disabled'}>${done?'✓ ':can?'▶ ':'🔒 '}${b.boss?'★ ':''}${b.name}<span class="tm"> ${b.team.map(t=>spr(t,'s-mini',true)).join('')}</span></button>`; }).join('');
+    h+=allDone?'</details>':'</div>';
+  }
+  h+=`<button class="b" id="umIntro">はじまりの話をもう一度</button>${SV.uraDone?'<button class="b" id="umEnd">さいごの記録をもう一度</button>':''}<button class="b" id="umBack">メニューへ</button>`;
+  play(h);
+  if($('#umG')) $('#umG').onclick=()=>storyGacha(renderUraMap);
+  $('#umBack').onclick=renderTitle; $('#umIntro').onclick=()=>renderDialog(URA_INTRO,renderUraMap,'裏ストーリー');
+  if($('#umEnd')) $('#umEnd').onclick=()=>renderDialog(URA_BATTLES[URA_BATTLES.length-1].win,renderUraMap,'さいごの記録');
+  document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startUraBattle(b.dataset.b));
+}
+function startUraBattle(id){
+  const b=URA_BATTLES.find(x=>x.id===id), ch=URA_CHAPTERS.find(c=>c.id===b.ch), r=b.rule;
+  const firstInCh=ch.battles[0].id===id&&!SV.uraCleared.includes(id);
+  const begin=pool=>{
+    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',b.ai]; UI.speed=450;
+    UI.cfg=r.type==='field'?{fields:URA_FIELD[r.fields]}:{};
+    UI.names=['あなた',b.name]; UI.pools=[pool,null]; UI.cpuTeam=b.team.slice();
+    UI.ctx={kind:'ura',battle:b,rule:r,showOpp:true,onEnd:w=>uraEnd(b,w)};
+    UI.picks=[[],[]]; UI.cols=[[],[]]; UI.last=null; UI.pickP=0; nextPick();
+  };
+  const go=()=>renderDialog(b.pre.concat([['',`このバトルのきまり：${ruleText(r)}`]]),()=>{
+    if(r.type==='flute') return uraFlute(r,r.reroll,begin);
+    if(r.type==='ancient') return begin(EXTINCT_IDS.slice());
+    let pool=SV.owned.slice();
+    if(r.type==='rank') pool=pool.filter(t=>A[t].rank<=r.max);
+    if(r.type==='sum'){ const ok=pool.map(t=>A[t].rank).sort((a,b)=>a-b).slice(0,5); if(pool.length<5||ok.reduce((a,x)=>a+x,0)>r.max) pool=[]; }
+    if(pool.length<5){ play(`<div class="panel"><p>このきまりで出せるなかまが5匹そろっていません。笛をふいてなかまを増やそう。</p><button class="b pri" id="x">もどる</button></div>`); $('#x').onclick=renderUraMap; return; }
+    begin(pool);
+  },`${ch.title}　vs ${b.name}`);
+  if(firstInCh) renderDialog(ch.intro,go,ch.title); else go();
+}
+// 笛しばり：その場かぎりの笛を pulls 回ふく
+function uraFlute(r,left,done){
+  const pool=[]; let k=0;
+  const step=()=>{
+    if(k>=r.pulls) return show2();
+    renderGacha({owned:()=>pool,cap:5,ancient:true,title:`笛しばり（${k+1}/${r.pulls}回目）`,onGot:ids=>{ pool.push(...ids); k++; },onDone:step});
+  };
+  const show2=()=>{
+    play(`<div class="panel"><div class="ghead">来てくれた動物（${pool.length}匹）</div><div class="muted">この中から5匹えらんで戦う。この動物たちは、このバトルだけのなかま。</div>
+      <div class="tiles">${BY_RANK.filter(T=>pool.includes(T.id)).map(T=>animalTile(T)).join('')}</div>
+      <button class="b pri" id="ufGo">この動物で戦う</button>${left>0?`<button class="b" id="ufRe">吹き直す（あと${left}回）</button>`:''}</div>`);
+    bindTileInfo($('#play')); $('#play').querySelectorAll('.tile').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id));
+    $('#ufGo').onclick=()=>done(pool.slice());
+    if($('#ufRe')) $('#ufRe').onclick=()=>uraFlute(r,left-1,done);
+  };
+  step();
+}
+function uraEnd(b,w){
+  if(w===0){
+    const first=!SV.uraCleared.includes(b.id);
+    if(first) SV.uraCleared.push(b.id);
+    const last=URA_BATTLES.every(x=>SV.uraCleared.includes(x.id));
+    if(last&&!SV.uraDone){ SV.uraDone=true; for(const T of GACHA_ALL) if(!SV.owned.includes(T.id)) SV.owned.push(T.id); SV.pend=0; }
+    else if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
+    save();
+    renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderUraMap),'勝利！');
+  } else {
+    play(`<div class="panel"><div class="ghead">${w==null?'引き分け':'負けてしまった……'}</div>
+      <p class="muted">負けても失うものはないよ。${b.rule.type==='flute'?'笛しばりは、吹き直すと別の動物が来る。':'きまりに合うなかまの組み方を変えて、もう一度。'}</p>
+      <button class="b pri" id="lR">もう一度たたかう</button><button class="b" id="lM">裏ストーリーの地図へ</button></div>`);
+    $('#lR').onclick=()=>startUraBattle(b.id); $('#lM').onclick=renderUraMap;
   }
 }
 
@@ -2420,17 +2609,18 @@ function renderPick(){
   const list=all.filter(T=>PK_FILTER==='all'||(PK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===PK_FILTER)));
   const opp=UI.ctx&&UI.ctx.showOpp&&UI.cpuTeam?`<div class="opp">相手 ${UI.cpuTeam.map(t=>`<span title="${A[t].name}">${spr(t,'s-opp',true)}</span>`).join('')} <button class="b small" id="oppInfo">相手を見る</button></div>`:'';
   const fl=[['all','全部'],['plain','草原'],['forest','森'],['water','水辺'],['ancient','太古'],['special','とくべつ']].filter(([k])=>k==='all'||all.some(T=>k==='special'?T.special:(!T.special&&themeOf(T)===k)));
-  play(`<div class="pickhead"><div><b>${pname(p)}</b>：5体えらぶ <span class="muted">${p===0?'（先手はさいしょ3pt）':''}</span></div>${opp}
-    <div class="selbar">${[0,1,2,3,4].map(i=>pk[i]?`<span class="slot on" data-i="${i}">${spr(pk[i],'s-slot')}<i>${A[pk[i]].rank}</i></span>`:'<span class="slot"></span>').join('')}<span class="muted">合計ランク${pk.reduce((a,t)=>a+A[t].rank,0)}</span></div>
+  const rl=UI.ctx&&UI.ctx.rule&&p===0?`<div class="rulebar">きまり：${ruleText(UI.ctx.rule)}</div>`:'', smax=UI.ctx&&UI.ctx.rule&&UI.ctx.rule.type==='sum'&&p===0?UI.ctx.rule.max:99, ssum=pk.reduce((a,t)=>a+A[t].rank,0);
+  play(`<div class="pickhead">${rl}<div><b>${pname(p)}</b>：5体えらぶ <span class="muted">${p===0?'（先手はさいしょ3pt）':''}</span></div>${opp}
+    <div class="selbar">${[0,1,2,3,4].map(i=>pk[i]?`<span class="slot on" data-i="${i}">${spr(pk[i],'s-slot')}<i>${A[pk[i]].rank}</i></span>`:'<span class="slot"></span>').join('')}<span class="${ssum>smax?'over':'muted'}">合計ランク${ssum}${smax<99?`/${smax}`:''}</span></div>
     <div class="row ftabs">${fl.map(([k,n])=>`<button class="b small pf${PK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div></div>
     <div class="tiles">${list.map(T=>animalTile(T,{sel:pk.includes(T.id),badge:pk.includes(T.id)?String(pk.indexOf(T.id)+1):''})).join('')}</div>
-    <div class="actbar"><button class="b" id="pkRand">おまかせ</button><button class="b pri" id="pkOk" ${pk.length<5?'disabled':''}>決定（${pk.length}/5）</button></div>`);
+    <div class="actbar"><button class="b" id="pkRand">おまかせ</button><button class="b pri" id="pkOk" ${pk.length<5||ssum>smax?'disabled':''}>決定（${pk.length}/5）</button></div>`);
   document.querySelectorAll('.slot.on').forEach(c=>c.onclick=()=>{ pk.splice(+c.dataset.i,1); renderPick(); });
   document.querySelectorAll('.pf').forEach(b=>b.onclick=()=>{ PK_FILTER=b.dataset.f; renderPick(); });
   document.querySelectorAll('.tiles .tile').forEach(c=>c.onclick=()=>{ const id=c.dataset.id, k=pk.indexOf(id); if(k>=0) pk.splice(k,1); else if(pk.length<5) pk.push(id); se('tap'); renderPick(); });
   bindTileInfo($('#play'));
   if($('#oppInfo')) $('#oppInfo').onclick=()=>{ modal(`<div class="ghead">相手の動物</div><div class="tiles">${UI.cpuTeam.map(t=>animalTile(A[t])).join('')}</div><button class="b pri" id="oc">とじる</button>`); bindTileInfo($('#modal')); $('#modal').querySelectorAll('.tile').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id)); $('#oc').onclick=closeModal; };
-  $('#pkRand').onclick=()=>{ UI.picks[p]=pool?teamFromPool(pool):randomTeam(); renderPick(); };
+  $('#pkRand').onclick=()=>{ let t; for(let k=0;k<200;k++){ t=pool?teamFromPool(pool):randomTeam(); if(t.reduce((a,x)=>a+A[x].rank,0)<=smax) break; } UI.picks[p]=t; renderPick(); };
   $('#pkOk').onclick=()=>{ UI.pickP++; nextPick(); };
 }
 // ---------- 配置 ----------
@@ -2447,7 +2637,7 @@ function renderPlace(){
   const hl={}; for(let x=0;x<SIZE;x++) hl[row*SIZE+x]={cls:'hl-place'};
   play(`<div class="panel"><b>${pname(p)}：配置</b><div class="muted">下の動物をタップ → ${p===0?'下':'上'}端のマスをタップ</div>
    <div class="row" style="margin:6px 0">相手：${chipList(UI.picks[o],o)}</div>
-   ${boardHTML(Array(25).fill('none'),(x,y)=>units.find(u=>u.x===x&&u.y===y),hl,null,null)}
+   ${boardHTML(UI.cfg&&UI.cfg.fields?UI.cfg.fields:Array(25).fill('none'),(x,y)=>units.find(u=>u.x===x&&u.y===y),hl,null,null)}
    <div class="row">${team.map((t,i)=>`<span class="chip p${p}${UI.placeSel===i?' on':''}${cols[i]!=null?' done':''}" data-i="${i}">${spr(t,'s-chip',p===1)}${A[t].name}</span>`).join('')}</div>
    <button class="b" id="plRand">おまかせ</button><button class="b pri" id="plOk" ${cols.some(c=>c==null)?'disabled':''}>決定</button></div>`);
   document.querySelectorAll('.chip[data-i]').forEach(c=>c.onclick=()=>{ UI.placeSel=+c.dataset.i; renderPlace(); });
