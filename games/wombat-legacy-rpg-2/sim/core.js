@@ -637,17 +637,23 @@ const RAIDS=[
 const RAID_SCALE={r1:{hp:.99,atk:.97},r2:{hp:1.04,atk:1.07},r3:{hp:1.23,atk:1.51},r4:{hp:.96,atk:.83},r5:{hp:.81,atk:.72},r6:{hp:1.01,atk:.77}};
 function raidUnlocked(G,R){return R.unlock==='clear'?!!G.cleared:!!(G.bossDown&&G.bossDown[R.unlock]);}
 function raidEnemies(R){const S=RAID_SCALE[R.id]||{hp:1,atk:1};
-  return R.members.map((o,i)=>{const e=mkEnemy(R.f,'normal',{name:o.name});const v=k=>curve(k,R.f);
+  return R.members.map((o,i)=>raidKoala(o,R.f,S,R.id+'_'+i));}
+function raidKoala(o,f,S,id){{const R={f};const e=mkEnemy(R.f,'normal',{name:o.name});const v=k=>curve(k,R.f);
     e.hp=e.max=Math.round(v('hp')*o.hp*S.hp);e.atk=Math.round(v('atk')*(o.atk||1)*S.atk);e.def=Math.round(v('def')*(o.def||1.2));e.spd=Math.round(v('spd')*1.3);
     e.mag=Math.round(v('atk')*.55*(o.mag||1)*S.atk);e.plan=o.plan;e.moves=o.plan;e.acts=o.acts||1;e.counter=o.counter||0;e.eregen=o.eregen||0;e.statusMul=.55;e.raid=true;
-    e.exp=0;e.gold=0;e.look={spr:'koala',pal:o.pal,s:o.acc==='crown'?1.15:1.05,acc:o.acc||null};e.id=R.id+'_'+i;e.weak=[];return e;});}
+    e.exp=0;e.gold=0;e.look={spr:'koala',pal:o.pal,s:o.acc==='crown'?1.15:1.05,acc:o.acc||null};e.id=id;e.weak=[];return e;}}
 function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)*expFloorMul(f)),gold:Math.round(curve('gold',f)*(first?20:6))};}
 
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
-const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:10560,atk:318,def:95,mag:252},acts:2,
+const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:10560,atk:350,def:95,mag:277},acts:2,
   moves:[{n:'ひっかく',k:'atk',w:3},{n:'木の上から とびかかる',k:'snipe',pow:1.8,w:2},{n:'だきついて はなさない',k:'atk',pow:.9,stun:.45,w:2},
-    {n:'ユーカリの においで ねむくなる',k:'sleepAll',rate:.3,w:1},{n:'あばれまわる',k:'all',pow:.8,w:2},{n:'ふしぎな ちからを かきけす',k:'dispel',w:1}]};
-function secretBoss(){const D=SECRET_BOSS;const e=mkEnemy(50,'normal',{boss:'big',name:D.name,weak:D.weak});Object.assign(e,D.stats);e.max=e.hp;e.acts=D.acts;e.moves=D.moves;e.look=D.look;e.id='dropbear';e.secret=true;return [e];}
+    {n:'ユーカリの においで ねむくなる',k:'sleepAll',rate:.3,w:1},{n:'あばれまわる',k:'all',pow:.8,w:2},{n:'ふしぎな ちからを かきけす',k:'dispel',w:1},{n:'ユーカリの 根で 地面を ふさぐ',k:'noRegen',turns:5,w:6}]};
+// ドロップベアは 超上級職の コアラを 1体ずつ 順番に よぶ（場に 出るのは いつも1体。たおすと 次の 行動で 次を よぶ）。ドロップベアを たおすと 残りは にげる
+// コアラ（HP・攻撃の倍率、guard：コアラが 場に いる あいだ ドロップベアが うける ダメージ×この値）。ドロップベアは どく・デバフが 効きにくい
+const SECRET_DEBUFF_RES=.5;
+const SECRET_CALLS=['kAllK','kNin','kAtk','kIdl','kMagK','kDig'],SECRET_KOALA={hp:.55,atk:.7,guard:.75};
+function secretKoala(n){const pal=SECRET_CALLS[n];const o=RAIDS.flatMap(R=>R.members).find(m=>m.pal===pal);const e=raidKoala(o,50,SECRET_KOALA,'dbk'+n);e.prio=true;return e;}
+function secretBoss(){const D=SECRET_BOSS;const e=mkEnemy(50,'normal',{boss:'big',name:D.name,weak:D.weak});Object.assign(e,D.stats);e.max=e.hp;e.acts=D.acts;e.moves=D.moves;e.look=D.look;e.id='dropbear';e.secret=true;e.callN=1;e.debuffRes=SECRET_DEBUFF_RES;e.poisonRes=.4;return [e,secretKoala(0)];}
 function guardianFor(f){const D=GUARDIANS[f];if(!D)return null;
   const big=10*Math.ceil(f/10);const e=mkEnemy(f,'normal',{boss:'big',name:D.name});
   const B=bossFor(big)[0];e.hp=e.max=Math.round(B.max*D.hp);e.atk=Math.round(B.atk*D.atk);e.def=B.def;e.spd=B.spd;
@@ -832,7 +838,8 @@ function battleTurn(B,cmds,r){
   P.forEach((m,i)=>{if(m.hp>0&&cmds[i]){const c=cmds[i];const S=c.k==='skill'?SKILLS[c.s]:null;
     const pri=(S&&['guard','stance','shelter'].includes(S.kind))||c.k==='defend'?100:0;acts.push({side:'p',i,c,o:pri+memberSpd(B,m)*(.75+r()*.5)});
     const xa=derived(m).p.extraAct;if(xa&&r()<xa)acts.push({side:'p',i,c:{k:'attack',t:c.t},o:memberSpd(B,m)*(.5+r()*.3),extra:true});}});
-  EN.forEach((e,i)=>{if(e.hp>0){const n=e.acts||1;for(let k=0;k<n;k++)acts.push({side:'e',i,o:e.spd*(.75+r()*.5)-k*30});}});
+  EN.forEach((e,i)=>{if(e.hp>0){const n=e.secret&&EN.some(z=>z!==e&&z.hp>0)?1:e.acts||1; // ドロップベアは コアラが いる あいだ 1回（指示を 出している）
+    for(let k=0;k<n;k++)acts.push({side:'e',i,o:e.spd*(.75+r()*.5)-k*30});}});
   acts.sort((a,b)=>b.o-a.o);
   const guard={},defend={},partyP=()=>P.filter(x=>x.hp>0).map(x=>derived(x).p);
   const resist=()=>partyP().some(p=>p.statusResist)?.5:1;
@@ -840,11 +847,12 @@ function battleTurn(B,cmds,r){
   const tryStatus=(m,st,rate)=>{const x=r();if(x<rate*charmMul(m,st))return true;if(x<rate&&charmMul(m,st)<1)ev.push({t:'msg',text:`${m.name}の ${CHARMS[m.charm].name}が ${ST_JP2[st]}を ふせいだ！`});return false;};
   for(const a of acts)if(a.side==='p'&&a.c.k==='defend')defend[a.i]=1;
   const checkEnd=()=>{
+    {const sb=EN.find(z=>z.secret);if(sb&&sb.hp<=0&&!sb.fled){let n=0;for(let j=0;j<EN.length;j++){const z=EN[j];if(z!==sb&&z.hp>0){z.hp=0;z.fled=true;n++;ev.push({t:'die',side:'e',i:j,fled:true});}}if(n)ev.push({t:'msg',text:'コアラたちは あわてて にげていった！'});}}
     if(!aliveEnemies(B).length){B.over=EN.every(e=>e.fled)?'fled':'win';return true;}
     if(!aliveParty(B).length){B.over='lose';return true;}return false;};
   const metalDmg=(e,dmg,crit)=>e.metal?(crit?3:1):dmg;
   const addKiai=(m,n)=>{const p=derived(m).p;if(p.kiai||n)m.kiai=Math.min(kiaiCap(m),(m.kiai||0)+(n||p.kiai));};
-  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;if(e.hidden){ev.push({t:'msg',text:`${e.name}は あなに かくれている！`});return;}if(B.eshelter>0&&!e.metal)dmg=Math.max(1,Math.round(dmg*.5));e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
+  const hitEnemy=(i,dmg,extra)=>{const e=EN[i];if(e.hp<=0)return;if(e.hidden){ev.push({t:'msg',text:`${e.name}は あなに かくれている！`});return;}if(B.eshelter>0&&!e.metal)dmg=Math.max(1,Math.round(dmg*.5));if(e.secret&&EN.some(z=>z!==e&&z.hp>0))dmg=Math.max(1,Math.round(dmg*SECRET_KOALA.guard));e.hp=Math.max(0,e.hp-dmg);ev.push(Object.assign({t:'hit',side:'e',i,dmg,hp:e.hp},extra||{}));
     if(e.st.sleep>0&&e.hp>0&&r()<.5){e.st.sleep=0;ev.push({t:'msg',text:`${e.name}は めをさました！`});}
     if(e.hp<=0){ev.push({t:'die',side:'e',i});
       if(extra&&extra.by){bstOf(extra.by).kills=(bstOf(extra.by).kills||0)+1;}
@@ -1011,6 +1019,7 @@ function battleTurn(B,cmds,r){
       // 決まった順番で動く敵（コアラ討伐の連携）。眠ったり しびれたりすると 順番は すすまない
       if(e.plan){mv=e.plan[(e.pi||0)%e.plan.length];e.pi=(e.pi||0)+1;if(mv.k==='eguard'&&aliveEnemies(B).length<2)mv={n:'こうげき',k:'atk'};}
       if(mv.k==='call'&&EN.filter(z=>z.hp>0).length>=3)mv=moves[0];
+      if(e.secret&&e.callN<SECRET_CALLS.length&&!EN.some(z=>z!==e&&z.hp>0))mv={n:'なかまを よぶ',k:'summon'};
       const al=aliveParty(B);if(!al.length)break;
       // 狙い：戦士系（かばう持ち）を少し狙いやすい。HPの割合は見ない（弱った仲間ばかり狙わない）
       const pick=()=>{if(B.taunt&&B.taunt.turns>0&&P[B.taunt.i].hp>0)return B.taunt.i;const w=al.map(j=>skillsOf(P[j]).some(k=>SKILLS[k].kind==='guard')?4:3);let s=w.reduce((p,q)=>p+q,0)*r();for(let k=0;k<al.length;k++){s-=w[k];if(s<0)return al[k];}return al[0];};
@@ -1049,6 +1058,8 @@ function battleTurn(B,cmds,r){
         if(dead.length){const j=dead[0];EN[j].hp=Math.ceil(EN[j].max/2);EN[j].revivedOnce=true;EN[j].st={};ev.push({t:'add',i:j,text:`${e.name}は ${EN[j].name}を よみがえらせた！`});}
         else{const t=pick();ev.push({t:'act',side:'e',i:a.i,text:`${e.name}の こうげき！`});hitParty(t,physDmg(enemyAtk(e),memberDef(B,P[t]),1,r,'p'),null,0,true,a.i);}}
       else if(mv.k==='charge'){e.charged=true;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ちからを ためている！`});}
+      else if(mv.k==='noRegen'){B.noRegen=mv.turns;ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${mv.n}！ ${mv.turns}ターン、だいちの めぐみが とどかない！`});}
+      else if(mv.k==='summon'){const ne=secretKoala(e.callN++);EN.push(ne);ev.push({t:'act',side:'e',i:a.i,text:`${e.name}は ${ne.name}を よんだ！\n（コアラが いる あいだ、${e.name}は まもられている）`});ev.push({t:'add',i:EN.length-1,summon:ne.name});}
       else if(mv.k==='call'){const ne=e.id&&!e.boss?mkMob(e.f,e.color?'c:'+e.id:e.id):mkEnemy(e.f,'normal',{weak:e.weak});if(!ne.look&&e.look)ne.look=Object.assign({},e.look,{s:1});ne.name=(e.boss?e.name.replace(/の.*$/,'').replace(/ [A-E]$/,''):e.name.replace(/ [A-E]$/,''))+' '+'ABCDE'[EN.length%5];ne.exp=Math.round(ne.exp*.6);ne.gold=Math.round(ne.gold*.6);EN.push(ne);ev.push({t:'add',i:EN.length-1});}
     }
     if(checkEnd())break;
@@ -1056,7 +1067,7 @@ function battleTurn(B,cmds,r){
   if(!B.over){
     for(const i of aliveParty(B)){const m=P[i];if(!m.poison)continue;const dm=Math.min(m.hp-1,Math.max(1,Math.floor(derived(m).maxhp*CONFIG.poisonDot)));if(dm>0){m.hp-=dm;ev.push({t:'hit',side:'p',i,dmg:dm,hp:m.hp,poison:true});}}
     for(const i of aliveEnemies(B)){const e=EN[i];if(!(e.st.poison>0))continue;
-      const dm=Math.max(1,Math.floor(e.max*CONFIG.enemyPoisonDot*(e.boss?CONFIG.bossPoisonDot:1)*(e.poisonPow||1)));hitEnemy(i,dm,{poison:true});}
+      const dm=Math.max(1,Math.floor(e.max*CONFIG.enemyPoisonDot*(e.boss?CONFIG.bossPoisonDot:1)*(e.poisonPow||1)*(e.poisonRes||1)));hitEnemy(i,dm,{poison:true});}
     for(const e of EN)for(const k of ['atkdn','defdn','curse','confuse','blind'])if(e.st[k]>0)e.st[k]--;
     const forever=partyP().some(p=>p.buffForever);
     if(!forever)for(const k in B.buff)if(B.buff[k].turns>0)B.buff[k].turns--;
@@ -1073,7 +1084,7 @@ function battleTurn(B,cmds,r){
       if(m.poison&&dd.p.poisonRegen)m.hp=Math.min(dd.maxhp,m.hp+Math.ceil(dd.maxhp*(dd.p.poisonRegen+CONFIG.poisonDot)));
       if(dd.p.pinchRegen&&m.hp<dd.maxhp*.3)m.hp=Math.min(dd.maxhp,m.hp+Math.ceil(dd.maxhp*dd.p.pinchRegen));}
     // だいちの めぐみ：持っている仲間が 立っていれば、仲間みんなの HP・MP が 毎ターン 回復（何人 持っていても 1回）
-    {const rg=Math.max(0,...aliveParty(B).map(i=>passives(P[i]).partyRegen||0));
+    {const rg=B.noRegen>0?0:Math.max(0,...aliveParty(B).map(i=>passives(P[i]).partyRegen||0));if(B.noRegen>0)B.noRegen--;
      if(rg>0){for(const i of aliveParty(B)){const m=P[i],dd=derived(m);m.hp=Math.min(dd.maxhp,m.hp+Math.ceil(dd.maxhp*rg));m.mp=Math.min(dd.maxmp,m.mp+Math.ceil(dd.maxmp*rg));}ev.push({t:'msg',text:'だいちの めぐみで みんなが すこし 回復した。'});}}
     // コアラの だいちの めぐみ・あなぐら
     {const kd=aliveEnemies(B).map(j=>EN[j]).find(e=>e.eregen);if(kd){for(const j of aliveEnemies(B)){const e=EN[j];e.hp=Math.min(e.max,e.hp+Math.ceil(e.max*kd.eregen));}ev.push({t:'msg',text:`${kd.name}の だいちの めぐみで コアラたちが 回復した。`});}}
@@ -1100,7 +1111,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={STREAK,streakMul,streakOn,streakReady,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={SECRET_DEBUFF_RES,SECRET_CALLS,SECRET_KOALA,secretKoala,raidKoala,STREAK,streakMul,streakOn,streakReady,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,enemyAtk,enemyDef,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;

@@ -365,3 +365,13 @@ test('あなほり王：おたからさがしは Lv1、だいちの めぐみで
   assert.ok(G.party[1].hp>=1+Math.ceil(d.maxhp*.05)-5&&G.party[1].mp>=Math.ceil(d.maxmp*.05),'回復した');
   m.mp=99;const ev=C.battleTurn(B,[{k:'skill',s:'hideHole'},{k:'defend'},{k:'defend'}],C.rng(2));assert.ok(ev.some(x=>/あなぐらに にげこんだ/.test(x.text||'')));
 });
+test('ドロップベア：コアラを 1体ずつ 決まった順に よび、たおされると 残りは にげる',()=>{
+  const en=C.secretBoss();assert.strictEqual(en.length,2);assert.ok(en[1].name.includes('ばんのう'));
+  const order=C.SECRET_CALLS.map((_,n)=>C.secretKoala(n).name);
+  assert.deepStrictEqual(order.map(n=>n.replace(/おうコアラ.*/,'')),['ばんのう','にんじゃ','とつげき','アイドル','まどう','あなほり']);
+  const G=C.newGame();const B=C.newBattle(G,en);en[1].hp=0;const bear=en[0];bear.spd=9999;bear.moves=[{n:'ひっかく',k:'atk',w:1,pow:.01}];
+  const ev=C.battleTurn(B,G.party.map(()=>({k:'defend'})),C.rng(1));assert.ok(ev.some(x=>/にんじゃおうコアラを よんだ/.test(x.text||'')));
+  assert.strictEqual(B.enemies.filter(e=>e.hp>0).length,2);
+  bear.hp=1;C.battleTurn(B,[{k:'atk',t:0},{k:'atk',t:0},{k:'atk',t:0}],C.rng(2));
+  if(bear.hp<=0){assert.ok(B.enemies.slice(1).every(e=>e.hp<=0));assert.strictEqual(B.over,'win');}
+});

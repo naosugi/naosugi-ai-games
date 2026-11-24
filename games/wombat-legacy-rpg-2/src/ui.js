@@ -215,11 +215,13 @@ function drawField(){
 }
 
 // ---------- battle drawing ----------
+// たおれた敵は 場所を とらない（よばれた敵が 画面の 外や 仲間の うしろに 出ないように）。たおれた敵の 位置は そのまま
 function layoutEnemies(){
-  const sprs=B.enemies.map(e=>enemySprite(e.look)),n=sprs.length,sum=sprs.reduce((s,c)=>s+c.width,0),area=132;
+  const live=B.enemies.map((e,i)=>i).filter(i=>B.enemies[i].hp>0||!BA.pos||!BA.pos[i]);
+  const sprs=live.map(i=>enemySprite(B.enemies[i].look)),n=sprs.length,sum=sprs.reduce((s,c)=>s+c.width,0),area=132;
   const sc=sum>area*1.25?area*1.25/sum:1;
   const gap=n>1?Math.min(6,(area-sum*sc)/(n-1)):0;let x=4+Math.max(0,(area-(sum*sc+gap*(n-1)))/2);
-  BA.sc=sc;BA.pos=sprs.map((c,i)=>{const w=c.width*sc,h=c.height*sc;const p={x,y:(n>2&&i%2===1?100:110)-h,w,h};x+=w+gap;return p;});
+  BA.sc=sc;const pos=BA.pos||[];live.forEach((i,k)=>{const c=sprs[k],w=c.width*sc,h=c.height*sc;pos[i]={x,y:(n>2&&k%2===1?100:110)-h,w,h};x+=w+gap;});BA.pos=pos;
 }
 function partyPos(i){return {x:132+i*4,y:4+i*44};}
 function enemyCenter(i){const p=BA.pos[i];return p?[p.x+p.w/2,p.y+p.h/3]:[60,60];}
@@ -881,7 +883,8 @@ async function playEvents(ev){
         if(ch)renderParty();break;}
       case 'die':if(e.side==='e'){if(BA.e[e.i])BA.e[e.i].dead=now;scatter(e.i);snd('die');if(e.fled)say(`${B.enemies[e.i].name}は にげだした！`);}else{disp[e.i].hp=0;disp[e.i].poison=false;renderParty();}await bwait(260);break;
       case 'revive':disp[e.i].hp=e.hp;disp[e.i].poison=false;partySparkle(e.i,'#8aff9a');renderParty();if(e.text)say(e.text);await bwait(450);break;
-      case 'add':if(BA.e[e.i]){BA.e[e.i].dead=0;BA.e[e.i].hp=B.enemies[e.i].hp;BA.e[e.i].show=null;BA.e[e.i].trail=null;}else BA.e.push({flash:-1e9,lunge:-1e9,dead:0,hp:B.enemies[e.i].hp});
+      case 'add':if(e.summon){banner('！','ドロップベアが '+e.summon+'を よんだ','#ff7a6a',1600);snd('enc');}
+        if(BA.e[e.i]){BA.e[e.i].dead=0;BA.e[e.i].hp=B.enemies[e.i].hp;BA.e[e.i].show=null;BA.e[e.i].trail=null;}else BA.e.push({flash:-1e9,lunge:-1e9,dead:0,hp:B.enemies[e.i].hp});
         layoutEnemies();if(B.enemies[e.i].id)G.seen[B.enemies[e.i].id]=1;say(e.text||`${B.enemies[e.i].name}が あらわれた！`);await bwait(500);break;
     }
   }
