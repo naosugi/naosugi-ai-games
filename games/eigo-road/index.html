@@ -140,6 +140,13 @@ input.cz.ng{animation:shake .35s}input.cz.ok{animation:flash .6s}
 .map .btn.sc.clr::before{background:var(--ok)}
 .map .btn.sc.now{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc),0 3px 0 rgba(0,0,0,.6)}
 .map .btn.sc.now::before{background:var(--acc);animation:blink 1s steps(2) infinite}
+.pick{margin:6px 0}
+.pick label{display:flex;gap:8px;align-items:flex-start;padding:7px 4px;border-bottom:1px dashed rgba(255,255,255,.2);cursor:pointer}
+.pick label:last-child{border-bottom:none}
+.pick input{width:20px;height:20px;flex:0 0 auto;margin-top:2px}
+.pick .mk{flex:0 0 1.6em;font-weight:900;text-align:center}
+.pick .tx{flex:1;min-width:0;font-size:14px;line-height:1.4}
+.pick .tx small{display:block;color:var(--sub);font-size:12px}
 .now-tag{display:inline-block;white-space:nowrap;vertical-align:middle;font-size:11px;font-weight:900;color:#1a1200;background:var(--acc);border-radius:8px;padding:0 6px;margin-left:6px}
 .center{text-align:center}
 hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
@@ -1266,10 +1273,10 @@ ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
 
 /* ③ 書き取り */
 SCENE_STEPS.dict = ({ sc }) => {
-  if (!V.d) V.d = { i: 0, ok: 0, tot: 0, cl: makeCloze(sc.lines[0].en), checked: false, res: null };
+  if (!V.d) { const order = V.dOrder || sc.lines.map((_, i) => i); V.d = { order, partial: order.length < sc.lines.length, i: 0, ok: 0, tot: 0, cl: makeCloze(sc.lines[order[0]].en), checked: false, res: null, hist: {} }; }
   const d = V.d;
-  if (d.i >= sc.lines.length) return dictEnd(sc);
-  const l = sc.lines[d.i], cl = d.cl;
+  if (d.i >= d.order.length) return dictEnd(sc);
+  const li = d.order[d.i], l = sc.lines[li], cl = d.cl;
   let bi = 0;
   const body = cl.toks.map((t, ti) => {
     const b = cl.blanks.find(x => x.ti === ti);
@@ -1282,7 +1289,7 @@ SCENE_STEPS.dict = ({ sc }) => {
   return {
     html: `
 <div class="win">
-<p class="small">${d.i + 1} / ${sc.lines.length}　正解 ${d.ok} / ${d.tot}</p>
+<p class="small">${d.i + 1} / ${d.order.length}${d.partial ? '（選んだ文）' : ''}　正解 ${d.ok} / ${d.tot}</p>
 <div style="display:flex;align-items:center;gap:8px">${face(l.w, 64, { eye: d.checked ? (d.res.every(r => r.ok) ? 'happy' : 'half') : '' })}<div>${whoTag(l.w)}${badge(l.r)}</div></div>
 <div class="big">${noBlank && !d.checked ? '（この文は聞くだけ。再生してから「次へ」）' : body}</div>
 ${V.showJa || d.checked ? `<div class="ja">${esc(l.ja)}</div>` : ''}
@@ -1299,18 +1306,47 @@ ${d.checked || noBlank ? `<button class="btn pri cur" data-a="nextQ">次へ</but
       czEnter: b => { const n = +b.dataset.n; const nx = $('#cz' + (n + 1)); if (nx) nx.focus(); else ACTS.check(); },
       check: () => {
         d.res = cl.blanks.map((b, k) => { const v = ($('#cz' + k)?.value || ''); return { v, ok: normW(v) === normW(b.core) }; });
-        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true; const allOk = d.res.every(r => r.ok); sfx(allOk ? 'ok' : 'ng'); buzz(allOk ? 25 : [40, 40, 40]); gainExp(3 * d.res.filter(r => r.ok).length);
+        d.ok += d.res.filter(r => r.ok).length; d.tot += d.res.length; d.checked = true; d.hist[li] = { ok: d.res.filter(r => r.ok).length, tot: d.res.length }; const allOk = d.res.every(r => r.ok); sfx(allOk ? 'ok' : 'ng'); buzz(allOk ? 25 : [40, 40, 40]); gainExp(3 * d.res.filter(r => r.ok).length);
         render();
       },
       nextQ: () => {
         stopSpeak(); d.i++; d.checked = false; d.played = false; V.showJa = false;
-        if (d.i < sc.lines.length) d.cl = makeCloze(sc.lines[d.i].en);
-        else { const D = dayRec(); D.dOk += d.ok; D.dTot += d.tot; const r = scRec(sc.id); const acc = d.tot ? d.ok / d.tot : 1; d.acc = acc; d.prevBest = r.dictBest; r.dictBest = Math.max(r.dictBest ?? 0, acc); checkClear(sc); save(); }
+        if (d.i < d.order.length) d.cl = makeCloze(sc.lines[d.order[d.i]].en);
+        else {
+          const D = dayRec(); D.dOk += d.ok; D.dTot += d.tot; const r = scRec(sc.id); const acc = d.tot ? d.ok / d.tot : 1; d.acc = acc; d.prevBest = r.dictBest;
+          if (!d.partial) { r.dictBest = Math.max(r.dictBest ?? 0, acc); checkClear(sc); }
+          d.sel = new Set(d.order.filter(i => d.hist[i] && d.hist[i].ok < d.hist[i].tot).map(String));
+          save();
+        }
         render(); window.scrollTo(0, 0);
       },
     },
   };
 };
+// やり直す文を選ぶ（書き取り・とっさに 共通）
+function pickerHTML(rows, sel, label) {
+  const nW = rows.filter(r => r.wrong).length;
+  return `<div class="win"><h3>${esc(label)}をやり直す文を選ぶ</h3>
+<p class="small">${nW ? `間違えた ${nW}文 に最初からチェックが入っています。` : 'ぜんぶ正解でした。苦手な文があれば選んでやり直せます。'}</p>
+<div class="row"><button class="btn" data-a="pickWrong" ${nW ? '' : 'disabled'}>間違いだけ</button><button class="btn" data-a="pickAll">全部</button><button class="btn" data-a="pickNone">はずす</button></div>
+<div class="pick">${rows.map(r => `<label><input type="checkbox" data-c="pick" data-v="${esc(r.key)}" ${sel.has(r.key) ? 'checked' : ''}><span class="mk ${r.cls}">${esc(r.mark)}</span><span class="tx">${esc(r.en)}<small>${esc(r.ja)}</small></span></label>`).join('')}</div>
+<button class="btn pri" data-a="retry" ${sel.size ? '' : 'disabled'}>🔁 選んだ ${sel.size}文 をもう一度</button></div>`;
+}
+function pickActs(st, allKeys, isWrong, start) {
+  const norm = () => { st.sel = new Set([...st.sel].map(String)); };
+  // 再描画せずにチェックとボタンだけ更新（結果の演出をくり返さないため）
+  const sync = () => {
+    document.querySelectorAll('.pick input[data-c="pick"]').forEach(el => { el.checked = st.sel.has(el.dataset.v); });
+    const bt = document.querySelector('[data-a="retry"]'); if (bt) { bt.disabled = !st.sel.size; bt.textContent = `🔁 選んだ ${st.sel.size}文 をもう一度`; }
+  };
+  return {
+    pick: b => { norm(); if (b.checked) st.sel.add(b.dataset.v); else st.sel.delete(b.dataset.v); sync(); },
+    pickWrong: () => { st.sel = new Set(allKeys.filter(isWrong)); sync(); },
+    pickAll: () => { st.sel = new Set(allKeys); sync(); },
+    pickNone: () => { st.sel = new Set(); sync(); },
+    retry: () => { norm(); if (st.sel.size) start(st.sel); },
+  };
+}
 function dictEnd(sc) {
   const d = V.d, r = S.scenes[sc.id], clr = r.justCleared;
   const best = d.prevBest != null && d.acc > d.prevBest ? '<p class="okc">自己ベスト更新！</p>' : '';
@@ -1319,9 +1355,10 @@ function dictEnd(sc) {
 ${clr ? clearBox(sc) : stageHTML(sc.id, [{ who: partnerOf(sc), px: 80, eye: d.acc >= STAR_DICT ? 'happy' : '', emo: d.acc >= STAR_DICT ? '！' : '…' }, { who: 'me', px: 96, eye: d.acc >= STAR_DICT ? 'happy' : 'half', hop: d.acc >= STAR_DICT, emo: d.acc >= STAR_DICT ? '♪' : '💦' }], '書き取り おわり')}
 <div class="win center"><h2>書き取り 結果</h2>
 <div class="timer" data-count="${Math.round(d.acc * 100)}" data-fmt="pct">${pct(d.acc)}</div><p>${d.ok} / ${d.tot} 語</p>${best}
-<p class="small">自己ベスト ${pct(r.dictBest)}　${r.dictBest >= STAR_DICT ? '★2 の基準クリア' : `★2 は ${pct(STAR_DICT)} 以上`}</p></div>
-<div class="row"><button class="btn" data-a="again">もう一度</button><button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button></div>`,
-    acts: { again: () => go('scene', { id: sc.id, step: 'dict' }) },
+<p class="small">自己ベスト ${pct(r.dictBest)}　${r.dictBest >= STAR_DICT ? '★2 の基準クリア' : `★2 は ${pct(STAR_DICT)} 以上`}${d.partial ? '<br>選んだ文だけの回は、自己ベストと星には数えません' : ''}</p></div>
+${pickerHTML(d.order.map(i => { const h = d.hist[i], l = sc.lines[i]; return { key: String(i), mark: !h ? 'ー' : h.ok === h.tot ? '○' : '×', cls: !h ? '' : h.ok === h.tot ? 'okc' : 'ngc', en: l.en, ja: l.ja, wrong: h && h.ok < h.tot }; }), d.sel, '書き取り')}
+<div class="row"><button class="btn" data-a="again">最初から全部</button><button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button></div>`,
+    acts: Object.assign(pickActs(d, d.order.map(String), k => d.order.filter(i => d.hist[i] && d.hist[i].ok < d.hist[i].tot).map(String).includes(k), sel => go('scene', { id: sc.id, step: 'dict', dOrder: [...sel].map(Number).sort((a, b) => a - b) })), { again: () => go('scene', { id: sc.id, step: 'dict' }) }),
   };
 }
 function checkClear(sc) {
@@ -1342,7 +1379,7 @@ ${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面�
 
 /* ④ とっさに（場面・復習で共通） */
 SCENE_STEPS.quick = ({ sc }) => {
-  if (!V.q) V.q = newQ(sc.lines.map((l, i) => i).filter(i => sc.lines[i].w === 'me').map(i => lineId(sc.id, i)), 'scene');
+  if (!V.q) { const all = sc.lines.map((l, i) => i).filter(i => sc.lines[i].w === 'me').map(i => lineId(sc.id, i)); V.q = newQ(V.qKeys || all, 'scene'); V.q.partial = !!V.qKeys && V.qKeys.length < all.length; }
   return quickView();
 };
 function newQ(keys, src) { return { keys, i: 0, phase: 'wait', rt: null, blob: null, hint: false, res: [], src }; }
@@ -1450,13 +1487,14 @@ function judge(mark) {
   const nT = D.qO + D.qM + D.qX; if (nT === GOAL) { setTimeout(() => { toast('🎯 今日の目標達成！'); sfx('clear'); buzz([50, 50, 120]); }, 900); setTimeout(() => gainExp(30), 2600); }
   stopAll();
   q.i++; q.phase = 'wait';
+  if (q.i >= q.keys.length) q.sel = new Set(q.keys.filter((k, j) => q.res[j] && q.res[j].mark !== 'o'));
   if (q.i >= q.keys.length && q.src === 'scene') {
     const sc = sceneById(V.id).sc, r = scRec(sc.id);
     r.quickDone = true;
     const allO = q.res.every(x => x.mark === 'o');
     const md = median(q.res.map(x => x.rt).filter(x => x != null));
     q.md = md; q.prevBest = r.quickBest;
-    if (allO && md != null && (r.quickBest == null || md < r.quickBest)) r.quickBest = Math.round(md);
+    if (!q.partial && allO && md != null && (r.quickBest == null || md < r.quickBest)) r.quickBest = Math.round(md);
     checkClear(sc);
   }
   save(); render(); window.scrollTo(0, 0);
@@ -1470,16 +1508,23 @@ function quickEnd() {
 <div class="stat"><div><b data-count="${n('o')}">0</b><span>○ 言えた</span></div><div><b>${n('m')} / ${n('x')}</b><span>△ / ×</span></div></div>
 <p>反応時間（中央値）<b style="color:var(--acc);font-size:22px" ${md != null ? `data-count="${md}" data-fmt="sec"` : ''}>${sec(md)}</b>${md != null ? `<span class="tier ${rtTier(md)[1]}">${rtTier(md)[0]}</span>` : ''}</p>
 <p class="small">×の文は今日もう一度、復習に出てきます。○の文は間隔をあけて出てきます。</p>`;
+  q.sel = q.sel || new Set();
+  const MK = { o: ['○', 'okc'], m: ['△', 'midc'], x: ['×', 'ngc'] };
+  const picker = pickerHTML(q.keys.map((k, j) => { const r = q.res[j] || { mark: 'x' }, x = lineByKey(k); return { key: k, mark: MK[r.mark][0], cls: MK[r.mark][1], en: x.line.en, ja: x.line.ja + (r.rt != null ? `　（反応 ${sec(r.rt)}）` : ''), wrong: r.mark !== 'o' }; }), q.sel, q.src === 'scene' ? 'とっさに' : '復習');
+  const pa = pickActs(q, q.keys, k => (q.res[q.keys.indexOf(k)] || {}).mark !== 'o', sel => {
+    const keys = q.keys.filter(k => sel.has(k));
+    if (q.src === 'scene') go('scene', { id: V.id, step: 'quick', qKeys: keys }); else go('review', { q: newQ(keys, 'review') });
+  });
   if (q.src === 'scene') {
     const r = S.scenes[V.id];
     if (q.prevBest != null && r.quickBest < q.prevBest) h += '<p class="okc">自己ベスト更新！</p>';
-    h += `<p class="small">★3 の記録（全文○のときの中央値）：${sec(r.quickBest)}　基準 ${STAR_RT / 1000}秒以内</p></div>`;
+    h += `<p class="small">★3 の記録（全文○のときの中央値）：${sec(r.quickBest)}　基準 ${STAR_RT / 1000}秒以内${q.partial ? '<br>選んだ文だけの回は、★3 の記録には数えません' : ''}</p></div>`;
     const sc = sceneById(V.id).sc;
-    h += `<div class="row"><button class="btn" data-a="again">もう一度</button>${sc.boss ? `<button class="btn pri cur" data-a="step" data-v="boss">⑤スピーチ へ</button>` : `<button class="btn pri" data-a="story">ストーリーへ</button>`}</div>`;
-    return { html: h, acts: { again: () => go('scene', { id: V.id, step: 'quick' }), goScene: id => go('scene', { id, step: 'intro' }) } };
+    h += picker + `<div class="row"><button class="btn" data-a="again">最初から全部</button>${sc.boss ? `<button class="btn pri cur" data-a="step" data-v="boss">⑤スピーチ へ</button>` : `<button class="btn pri" data-a="story">ストーリーへ</button>`}</div>`;
+    return { html: h, acts: Object.assign(pa, { again: () => go('scene', { id: V.id, step: 'quick' }), goScene: id => go('scene', { id, step: 'intro' }) }) };
   }
-  h += `</div><div class="row"><button class="btn" data-a="home">タイトルへ</button>${dueKeys().length ? `<button class="btn pri" data-a="more">続けて復習（${dueKeys().length}）</button>` : ''}</div>`;
-  return { html: h, acts: { more: () => startReview() } };
+  h += `</div>${picker}<div class="row"><button class="btn" data-a="home">タイトルへ</button>${dueKeys().length ? `<button class="btn pri" data-a="more">続けて復習（${dueKeys().length}）</button>` : ''}</div>`;
+  return { html: h, acts: Object.assign(pa, { more: () => startReview() }) };
 }
 // 場面クリア枠の「次の場面」ボタン（書き取り結果からも押せるように）
 const _sceneRender = SCREENS.scene;
