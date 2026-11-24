@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="ウォンバット☆どうぶつ陣取り（試作中）">
-<meta property="og:description" content="5×5のマスで動物5体を戦わせる陣取りゲーム。ランクに応じたptで動物を動かし、平原・森林・水辺のフィールドを塗り替えて有利をつくる。毒や復活など62種の動物の個性と、AI対戦・自動シミュレーションつき。">
+<meta property="og:description" content="5×5のマスで動物5体を戦わせる陣取りゲーム。ユーカリ村の大会でCPUに勝ち、なかま呼びの笛で動物を集める。平原・森林・水辺を塗りかえて有利をつくる。2人対戦と、元になった動物の図鑑つき。">
 <meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-jintori/">
 <meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-jintori/thumb.jpg">
 <meta property="og:image:width" content="960">
@@ -103,18 +103,37 @@ th:first-child,td:first-child{text-align:left}
 .cover{text-align:center;padding:40px 12px}
 .result{font-size:18px;font-weight:700;text-align:center;padding:8px;color:var(--acc)}
 .zhead{grid-column:1/-1;font-weight:700;margin-top:8px;color:var(--acc)}
+#top #menuBtn{margin-left:auto;font:inherit;font-size:12px;color:var(--acc);background:none;border:1px solid var(--acc);border-radius:6px;padding:3px 10px;white-space:nowrap;cursor:pointer}
+#top{max-width:760px;margin:0 auto;padding:8px 10px}
+#modal{position:fixed;inset:0;z-index:50;background:rgba(5,3,10,.75);display:flex;align-items:center;justify-content:center;padding:16px}
+#modal[hidden]{display:none}
+.mbox{background:var(--win);border:3px solid var(--line);border-radius:8px;padding:14px;max-width:520px;width:100%;max-height:85vh;overflow:auto;line-height:1.6}
+.menu .big{display:block;width:100%;text-align:left;font-size:16px;padding:12px 14px;margin:6px 0}
+button.b.small{font-size:12px;padding:5px 9px}
+.ghead{font-size:17px;font-weight:700;color:var(--acc);margin-bottom:6px}
+.acc{color:var(--acc)}
+.gbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.gbtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 4px!important;margin:0!important}
+.gbtn .gi{font-size:28px}
+.greveal .gcard{animation:gpop .5s ease both;border-color:var(--acc)}
+@keyframes gpop{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
+.chtitle{text-align:center;color:var(--acc);font-weight:700;margin:4px 0 8px;letter-spacing:.05em}
+.dlg .who{font-weight:700;color:var(--acc);margin-bottom:4px}
+.dlg .txt{font-size:16px;line-height:1.8;min-height:3.6em}
+.dlg .txt.nar{color:#d8d0e6;font-style:normal}
+.hint{border-color:var(--acc);font-size:13.5px;line-height:1.6;padding:8px 12px}
+.sbtn{display:block;width:100%;text-align:left}
+.sbtn.done{border-color:var(--soft);color:var(--dim)}
+.owned{float:right;font-size:11px;color:var(--ok);font-weight:700}
+.zsec{margin:8px 0}
+.zsec b{color:var(--acc);font-size:13px}
 </style>
 </head>
 <body>
 <header>
-  <div id="top"><a class="back" href="../../trial/">← ゲーム一覧</a><span class="ttl">ウォンバット☆どうぶつ陣取り（試作中）</span></div>
-  <nav>
-    <button data-tab="play" class="on">対戦</button>
-    <button data-tab="sim">検証</button>
-    <button data-tab="zukan">図鑑</button>
-    <button data-tab="rules">ルール</button>
-  </nav>
+  <div id="top"><a class="back" href="../../trial/">← ゲーム一覧</a><span class="ttl">ウォンバット☆どうぶつ陣取り（試作中）</span><button id="menuBtn">メニュー</button></div>
 </header>
+<div id="modal" hidden></div>
 <main>
 <section id="tab-play" class="tab on"><div id="play"></div></section>
 
@@ -144,6 +163,25 @@ th:first-child,td:first-child{text-align:left}
 <h2>概要</h2>
 <p><b>ウォンバット☆どうぶつ陣取り</b>（仮題）。ウォンバット☆シリーズの1作。舞台はユーカリ村で、村のウォンバットたちが、なかまの動物に声をかけて陣取りあそびをする。プレイヤーはウォンバット（青ウォンバット・赤ウォンバット）で、ウォンバット自身はコマにならない。</p>
 <p>5×5のマス目で、動物コマ5体どうしを戦わせる2人対戦ゲーム。各動物は HP・こうげき・ぼうぎょ と、最大3つのスキル（攻撃スキル・反撃スキル・パッシブスキル）を持つ。</p>
+
+<h2>ゲームモード</h2>
+<ul>
+<li><b>ストーリー</b>：ユーカリ村の「どうぶつ陣取り大会」をCPUと戦いながら勝ちあがる。全5章・18戦。勝つたびに「なかま呼びの笛」（ガチャ）を1回ふける。負けても失うものはなく、何度でも挑戦できる。クリアした戦いにも再挑戦でき、勝てば笛がふける（全員そろうまで）。</li>
+<li><b>はじめから</b>：最初に笛を2回ふける。そのあと、チュートリアルとストーリーのどちらから始めるか選べる。</li>
+<li><b>チュートリアル</b>：3レッスン（動かして攻撃・ptとランク・フィールドと適性）。全部クリアすると笛が1回ふける。</li>
+<li><b>対戦（2人で1台）</b>：「全部の動物」か「笛で出た動物だけ」を選ぶ。笛は1人3〜10回（おすすめ5回）で、1回ごとに笛の種類を選べる。</li>
+<li><b>図鑑</b>：全動物のゲーム上の能力と、元になった動物の特徴・すんでいる所・大きさ（めやす）・食べものが見られる。</li>
+<li>記録はブラウザ（localStorage、キー <code>wbjintori_save_v1</code>）に保存する。</li>
+</ul>
+
+<h2>なかま呼びの笛（ガチャ）</h2>
+<ul>
+<li>笛は「草原の笛」「森の笛」「水辺の笛」の3種類。動物ごとにいちばん得意なフィールドの笛から出る（アライグマは水辺）。</li>
+<li>1回ふくと3匹がなかまになる（3匹とももらえる）。すでになかまの動物は出ない。その笛の動物がいなくなったら、ほかの笛の動物が出る。</li>
+<li>出る確率はランクごとに決める：ランク1が34%、ランク2が30%、ランク3が22%、ランク4が10%、ランク5が4%（出せるランクの中で割合を保って計算する）。</li>
+<li>ストーリーでは、序盤に強い動物が出すぎないように上限がある：第1章まではランク3まで、第2章でランク4、第3章からランク5まで。対戦モードの笛には上限がない。</li>
+<li>とくべつな動物は笛では出ない。ストーリーのごほうび（コアラ＝第2章クリア、ハリモグラ＝最終戦クリア）。</li>
+</ul>
 
 <h2>勝利条件</h2>
 <ul>
@@ -294,6 +332,7 @@ th:first-child,td:first-child{text-align:left}
 <li>フィールド係の効果（読み型）：シカ入りはオオカミ入りに73%、カエル入りはネズミ入りに63〜68%勝つ。</li>
 <li>反撃は何度でも発動する（決定）。回数制限と威力倍率の設定は、検証用に残してある。</li>
 <li>毒・ぼうぎょダウン・パワーアップ導入後（読み型AI、各150試合）：ランク5だけの編成に対する勝率は、毒中心の編成が12〜16%、ぼうぎょダウン・パワーアップ中心の編成は0%。毒を最大HPの25%・30%に強めても改善しなかった（AIの使い方の影響もありうる）。</li>
+<li><b>ストーリーの難しさ</b>（プレイヤー役＝読み型AI、相手を見て編成を工夫した場合）：第2章ボス83%、第3章ボス61%、第4章ボス39%、第5章の1戦目30%、最終戦21%。工夫せずランクの高い順に選んだ場合、途中の戦いはおおむね55〜100%、ボスは10〜30%。</li>
 <li><b>弱い動物の底上げ後（コアラ・ハリモグラを含む62種、読み型・ランダム編成3000試合）</b>：ランク別の平均採用時勝率は、ランク5が66%、ランク4が59%、ランク3が48%、ランク2が44%、ランク1が47%。底上げした動物（ハイエナ・カピバラ・アルマジロ・スカンク・アライグマ・カラス・ミミズ・ヒル・ダンゴムシ・カニ・カンガルー・キツネなど）は、おおむね平均の±4ポイント以内に入った。<b>カメは数値を3回上げても46%（ランク4の平均59%）で、移動力1が原因の可能性</b>。ほかに低めなのはタコ41%、フクロウ40%。高めなのはフグ60%（ランク1）、コモドオオトカゲ69%（ランク4）、ライオン71%。コアラ44%、ハリモグラ52%は各ランクの平均並み。</li>
 <li><b>60種そろった時点</b>（読み型、ランダム編成1500試合）：ランク別の採用時勝率は、ランク5が62〜72%（平均67%）、ランク4が49〜66%（平均58%）、ランク3が41〜58%（平均46%）、ランク2が37〜50%（平均46%）、ランク1が40〜58%（平均47%）。同じランク内で差が大きいのは、ランク3（コブラ58%／ハイエナ41%）、ランク2（リカオン50%／スカンク37%）、ランク1（ドクトカゲ58%／ミミズ40%）。ランク5の5種編成は、カバ・フグ・ドクトカゲ・カエル・イナゴに59%（変化なし）。先手46%・後手50%。</li>
 <li><b>シャチ（射程2は水辺からのみ）・トラ（移動3は森林からのみ）に変更後</b>（読み型）：ランク5の5種編成の勝率は、カバ・フグ・ドクトカゲ・カエル・イナゴに59%、サイ・ヤマアラシ・フグ・カエル・イナゴに71%、カバ・サル・フグ・カエル・イナゴに81%、フグ・コブラ・ゴリラ・カエル・イナゴに85%、シカ・カメレオン・サル・テントウムシ・ドクトカゲに89%。ランダム編成800試合の採用時勝率は、ライオン65%、トラ63%、シャチ63%、フグ63%、サイ63%、ゾウ60%、ワニ59%で、突出した動物はいなくなった。この800試合では先手45%・後手52%で、後手がやや有利（要観察）。</li>
@@ -494,7 +533,7 @@ const ANIMALS = [
   attack:{name:'つつく',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'revenge',name:'仲間を忘れない',per:1}},
  {id:'sloth',name:'ナマケモノ',emoji:'🦥',rank:2,hp:24,atk:6,def:2,mv:1,aff:{plain:0.7,forest:1.6,water:0.8},
   attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:{name:'ひっかく',range:1,power:0.8}, passive:{id:'sloth',name:'のんびり長生き'}},
- {id:'raccoon',name:'アライグマ',emoji:'🦝',rank:2,hp:20,atk:9,def:1,mv:2,aff:{plain:1.2,forest:1.2,water:1.2},
+ {id:'raccoon',name:'アライグマ',emoji:'🦝',rank:2,theme:'water',hp:20,atk:9,def:1,mv:2,aff:{plain:1.2,forest:1.2,water:1.2},
   attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:{name:'かみつく',range:1,power:0.7}, passive:null},
  {id:'spider',name:'クモ',emoji:'🕷',rank:1,hp:9,atk:4,def:0,mv:2,aff:{plain:1.0,forest:1.4,water:0.6},
   attack:{name:'毒の牙',kind:'single',range:1,power:0.5,poison:1}, counter:null, passive:null},
@@ -798,6 +837,7 @@ function afterAction(s){ if(s.planning) return; if(!s.over&&!anyActable(s)) endT
 //  簡易AI（貪欲法：1行動ずつ最も評価の高い行動を選ぶ）
 // ============================================================
 const PERSONAS = {
+  novice:    {name:'見習い', approach:1.0, threat:0.2, aff:0.5, counter:0.4, noise:9},
   aggressive:{name:'積極型', approach:1.2, threat:0.35, aff:1.0, counter:0.5},
   careful:   {name:'慎重型', approach:0.4, threat:1.0,  aff:1.5, counter:1.0},
   planner:   {name:'読み型', plan:true, approach:0.6, threat:0.6, aff:1.0, counter:0.8, next:0.5},
@@ -893,7 +933,7 @@ function aiChoose(s,persona){
     for(const d of reachable(s,u)){
       const pos=positional(s,u,d,W);
       for(const o of [null,...skillOptions(s,u,d.x,d.y)]){
-        const sc=pos+skillScore(s,u,d,o,W)+Math.random()*0.3;
+        const sc=pos+skillScore(s,u,d,o,W)+Math.random()*(W.noise||0.3);
         if(sc>bs){ bs=sc; best={uid:u.id,dest:d,opt:o}; }
       }
     }
@@ -1045,6 +1085,182 @@ function skillText(sk,isCounter){
 if(typeof module!=='undefined') module.exports={positional,skillScore,threatAt,PERSONAS,CONFIG,ANIMALS,A,newGame,simGame,outcomeAt,aiChoose,actMoveSkill,actFinish,reachable,skillOptions,calcDamage,endTurn,unitAt};
 </script>
 
+<script id="facts">
+// 図鑑：実在の動物の情報（大きさはめやす）。f=特徴, h=すんでいる所, s=大きさ, e=食べもの
+const FACTS={
+ mouse:{f:'小さな体で、せまいすき間にもぐりこむ。前歯は一生のびつづける。',h:'世界中（人の住む所の近くにも多い）',s:'体長6〜10cm（ハツカネズミ）',e:'種子・穀物・昆虫など'},
+ sparrow:{f:'人の暮らしの近くにすむ身近な鳥。群れでくらすことが多い。',h:'日本を含むユーラシア大陸',s:'全長約14cm',e:'草の種子・昆虫'},
+ frog:{f:'水辺にすみ、のどをふくらませて鳴く。皮ふで呼吸もする。',h:'日本各地の田んぼや水辺（アマガエルなど）',s:'体長3〜4cm（ニホンアマガエル）',e:'昆虫・クモ'},
+ rabbit:{f:'長い耳でまわりの音を聞き、後ろ足でいっきに逃げる。',h:'世界各地の草原や林',s:'体長40〜50cm（ノウサギ）',e:'草・木の芽・樹皮'},
+ snake:{f:'あしがなく、体をくねらせて進む。獲物に巻きついてしめるヘビもいる。',h:'世界中の森林・草原（日本ではアオダイショウなど）',s:'全長1〜2m（アオダイショウ）',e:'ネズミ・鳥・卵'},
+ beaver:{f:'木をかじりたおし、川をせき止めてダムをつくる。',h:'北アメリカ・ユーラシアの川や湖',s:'体長80〜120cm',e:'木の皮・水草'},
+ wolf:{f:'家族で群れをつくり、協力して狩りをする。',h:'北アメリカ・ユーラシアの森林や草原',s:'体長100〜150cm（タイリクオオカミ）',e:'シカなどの動物'},
+ deer:{f:'オスには角があり、毎年生えかわる。森と草地を行き来してくらす。',h:'日本を含む東アジアの森林（ニホンジカ）',s:'体長90〜190cm',e:'草・木の葉・樹皮'},
+ eagle:{f:'大きなつばさで空高く飛び、するどいツメで獲物をつかむ。',h:'北半球の山地や草原（イヌワシなど）',s:'全長75〜90cm（イヌワシ）',e:'ウサギ・鳥・ヘビ'},
+ bear:{f:'力が強く、木にも登れる。寒い季節は冬ごもりをする。',h:'日本を含むアジアの森林（ツキノワグマ）',s:'体長120〜180cm',e:'木の実・草・昆虫・魚などの雑食'},
+ turtle:{f:'かたい甲らで身を守る。水中と陸を行き来する。',h:'世界各地の川・池・海',s:'甲長20〜30cm（クサガメ）',e:'水草・魚・貝などの雑食'},
+ elephant:{f:'陸でいちばん大きな動物。長い鼻で水を吸ったり物をつかんだりする。',h:'アフリカのサバンナや森林（アフリカゾウ）',s:'体長6〜7.5m、体重最大6t',e:'草・木の葉・樹皮'},
+ lion:{f:'群れ（プライド）でくらすネコの仲間。メスが協力して狩りをする。',h:'アフリカのサバンナ（インドの一部にも）',s:'体長1.4〜2.5m',e:'シマウマ・ヌーなどの大型動物'},
+ croc:{f:'水中で獲物を待ちぶせし、かみついて体をはげしく回す「デスロール」をする。',h:'熱帯の川・湖・海辺（ナイルワニなど）',s:'全長3.5〜5m（ナイルワニ）',e:'魚・水を飲みに来た動物'},
+ gila:{f:'下あごの毒腺から毒を出す、数少ない毒トカゲ。毒はおもに身を守るために使う。',h:'アメリカ南西部・メキシコ北西部の砂漠や荒れ地（アメリカドクトカゲ）',s:'全長約50cm',e:'鳥やは虫類の卵・ヒナ・小型の哺乳類'},
+ bee:{f:'おしりの針で刺して身を守る。巣で役割を分けてくらす。',h:'世界中（ミツバチ・スズメバチなど）',s:'体長1〜4cm',e:'花のみつ・花粉（ミツバチ）'},
+ ant:{f:'大きな巣で何万匹もが協力してくらす。仲間に危険を知らせるにおいを出す。',h:'世界中の土の中や木の中',s:'体長数mm〜1cm程度',e:'昆虫・甘いみつなど'},
+ crab:{f:'大きなはさみで食べ物をつかんだり、割ったりする。横に歩くものが多い。',h:'世界中の海辺・川（サワガニ・イソガニなど）',s:'甲らの幅2〜3cm（サワガニ）',e:'藻・小さな生き物・死がいなど'},
+ dhole:{f:'大きな群れで、長い距離を追いかけて狩りをする。模様は1頭ごとにちがう。',h:'アフリカのサバンナ（リカオン）',s:'体長76〜112cm',e:'インパラなどの草食動物'},
+ cobra:{f:'おどすときに首を平たく広げる毒ヘビ。',h:'アフリカ・南アジア・東南アジア（インドコブラなど）',s:'全長1〜2m（インドコブラ）',e:'ネズミ・カエル・ほかのヘビ'},
+ boar:{f:'鼻で地面を掘り返して食べ物をさがす。突進する力が強い。',h:'日本を含むユーラシアの森林や山',s:'体長110〜160cm（ニホンイノシシ）',e:'木の実・根・ミミズなどの雑食'},
+ gorilla:{f:'家族の群れをつくり、強いオスがリーダーになる。胸をたたく「ドラミング」をする。',h:'アフリカ中部の熱帯林',s:'身長（立った高さ）1.4〜1.8m',e:'葉・茎・果実'},
+ fugu:{f:'体の中にテトロドトキシンという強い毒を持つものが多い。おどろくと体をふくらませる。',h:'日本近海を含む暖かい海（トラフグなど）',s:'全長30〜70cm（トラフグ）',e:'貝・エビ・カニ'},
+ ladybug:{f:'おそわれると、あしの関節から苦い黄色い液を出して身を守る。',h:'世界中の草むらや林（ナナホシテントウなど）',s:'体長5〜9mm',e:'アブラムシ'},
+ locust:{f:'イネ科の葉を食べるバッタの仲間。トノサマバッタなど、条件によって大発生するバッタもいる（ゲームの「大群」はこれをもとにした空想を含む）。',h:'日本各地の田んぼや草地（コバネイナゴ）',s:'体長2〜4cm',e:'イネなどの葉'},
+ monkey:{f:'群れでくらし、毛づくろいで仲間とのつながりを保つ。',h:'日本の森林（ニホンザル）',s:'体長50〜60cm',e:'果実・葉・昆虫などの雑食'},
+ goat:{f:'岩場をすいすい登る。草だけでなく、木の葉や皮まで食べる。',h:'世界中で飼われている（祖先は西アジアの山地）',s:'体長1〜1.5m',e:'草・木の葉'},
+ archer:{f:'口から水を飛ばして、葉の上の虫を撃ち落とす。光の屈折も計算して当てる。',h:'東南アジアからオーストラリア北部のマングローブ域など（日本では西表島）',s:'全長15〜25cm',e:'昆虫・小魚・エビ'},
+ chameleon:{f:'体の色を変え、目を左右べつべつに動かす。長い舌をのばして虫をとらえる。',h:'アフリカ（マダガスカル島に多い）の森林',s:'全長20〜60cm（種類による）',e:'昆虫'},
+ kangaroo:{f:'太い後ろ足でとびはねて進む。オスどうしは前足と後ろ足を使ってけんかする。',h:'オーストラリアの草原や林',s:'体長1〜1.6m（アカカンガルー）',e:'草'},
+ porcupine:{f:'背中の長いとげで身を守る。とげはぬけやすく、相手にささって残る。',h:'アフリカ・アジア・南北アメリカ',s:'体長60〜90cm（アフリカタテガミヤマアラシ）',e:'根・樹皮・果実'},
+ octopus:{f:'墨をはいて逃げる。体の色や形を変えて、まわりにとけこむ。',h:'世界中の海（マダコなど）',s:'全長約60cm（マダコ）',e:'カニ・エビ・貝'},
+ otter:{f:'泳ぎが得意で、川や海で魚をとる。家族でくらすものが多い。',h:'アジアの川や海辺（コツメカワウソなど）',s:'体長40〜65cm（コツメカワウソ）',e:'魚・カニ・貝'},
+ rhino:{f:'鼻の上の角は毛と同じ成分（ケラチン）でできている。走るとかなり速い。',h:'アフリカと南アジアの草原や森林',s:'体長3.5〜4m（シロサイ）',e:'草'},
+ tiger:{f:'しま模様で森にとけこみ、獲物にしのびよって襲う。泳ぎも得意。',h:'アジアの森林（ベンガルトラなど）',s:'体長1.4〜2.8m',e:'シカ・イノシシなど'},
+ orca:{f:'イルカの仲間でいちばん大きい。群れで協力して狩りをする。',h:'世界中の海',s:'体長6〜8m',e:'魚・アザラシ・ほかのクジラなど'},
+ hippo:{f:'昼は水の中ですごし、夜に陸へ上がって草を食べる。なわばり意識が強く、とても危険な動物でもある。',h:'アフリカの川や湖',s:'体長3〜4m、体重1.5〜3t',e:'草'},
+ moose:{f:'シカの仲間でいちばん大きい。水草を食べに水の中にも入る。',h:'北アメリカ・ユーラシア北部の森林や湿地',s:'肩までの高さ1.4〜2.1m',e:'木の枝・葉・水草'},
+ bison:{f:'大きな群れで草原を移動する。体は大きいが走るのも速い。',h:'北アメリカの草原（アメリカバイソン）',s:'体長2.1〜3.5m',e:'草'},
+ giraffe:{f:'いちばん背の高い動物。オスどうしは長い首をぶつけあって争う（ネッキング）。',h:'アフリカのサバンナ',s:'背の高さ4.5〜5.5m',e:'アカシアなどの木の葉'},
+ komodo:{f:'世界最大のトカゲ。かまれた獲物は毒の影響で弱っていく。',h:'インドネシアのコモド島など',s:'全長2〜3m',e:'シカ・イノシシ・死がい'},
+ anaconda:{f:'水辺で獲物を待ちぶせ、巻きついてしめつける。とても重いヘビ。',h:'南アメリカの川や湿地（オオアナコンダ）',s:'全長4〜6m（めやす。もっと大きい記録もある）',e:'魚・鳥・カピバラなど'},
+ hyena:{f:'あごの力がとても強く、骨までかみくだく。自分で狩りもすれば、死がいも食べる。',h:'アフリカのサバンナ（ブチハイエナ）',s:'体長95〜165cm',e:'ヌーなどの動物・死がい'},
+ ratel:{f:'自分より大きな相手にも立ち向かう気の強い動物。毒ヘビにかまれても回復した例が知られている。',h:'アフリカ・西アジア・南アジア（ラーテル＝ミツアナグマ）',s:'体長60〜77cm',e:'小動物・昆虫・ハチの幼虫・はちみつなどの雑食'},
+ ostrich:{f:'飛べないが、鳥の中でいちばん速く走る。キックの力も強い。',h:'アフリカのサバンナや乾燥地',s:'背の高さ2〜2.7m',e:'草・種子・小動物などの雑食'},
+ capybara:{f:'いちばん大きなネズミの仲間。泳ぎが得意で、群れでのんびりくらす。',h:'南アメリカの川や湿地のまわり',s:'体長1〜1.3m',e:'草・水草'},
+ armadillo:{f:'体がかたいよろいのような甲らでおおわれている。穴を掘るのも得意。',h:'南北アメリカ（ココノオビアルマジロなど）',s:'体長35〜57cm（ココノオビアルマジロ）',e:'昆虫・ミミズなど'},
+ falcon:{f:'空から急降下して獲物をとらえる。そのときの速さは時速300kmをこえるといわれる。',h:'世界中（日本にもすむ）',s:'全長38〜51cm',e:'鳥'},
+ fox:{f:'耳がよく、雪や草の下にいる獲物の音を聞いてとびかかる。',h:'日本を含む北半球の森林や草原（アカギツネ）',s:'体長60〜80cm',e:'ネズミ・ウサギ・果実などの雑食'},
+ skunk:{f:'おそわれると、おしりからとても臭い液を相手に吹きかける。',h:'北アメリカ（シマスカンク）',s:'体長30〜45cm（尾は別）',e:'昆虫・小動物・果実などの雑食'},
+ penguin:{f:'飛べないが、つばさをひれのように使って水中をすばやく泳ぐ。',h:'南半球の海や海岸',s:'身長40〜120cm（種類による）',e:'魚・オキアミ・イカ'},
+ owl:{f:'夜に活動し、音をほとんど立てずに飛んで獲物をとらえる。',h:'日本を含むユーラシアの森林（フクロウ）',s:'全長50〜60cm',e:'ネズミ・小鳥'},
+ moray:{f:'岩のすき間にかくれ、近づいた獲物にかみつく。',h:'日本近海を含む暖かい海の岩場',s:'全長60〜80cm（ウツボ）',e:'魚・タコ・エビ'},
+ crow:{f:'とてもかしこく、道具を使ったり、人の顔を見分けたりするといわれる。',h:'日本を含む東アジア（ハシブトガラス）',s:'全長約56cm',e:'果実・昆虫・小動物・残飯などの雑食'},
+ sloth:{f:'木にぶら下がって、ほとんど動かずにくらす。1日の多くを休んですごす。',h:'中南米の熱帯林',s:'体長50〜70cm',e:'木の葉'},
+ raccoon:{f:'前足が器用で、食べ物をさわって調べる。いろいろな環境でくらせる。日本では外来種。',h:'北アメリカ原産（日本にも定着）',s:'体長40〜60cm',e:'果実・魚・カエル・昆虫などの雑食'},
+ spider:{f:'糸で巣をはったり、待ちぶせしたりして獲物をとらえる。毒で獲物を弱らせるものが多い。',h:'世界中',s:'体長数mm〜数cm（種類による）',e:'昆虫'},
+ worm:{f:'土の中で落ち葉などを食べ、土を豊かにする。体が切れても一部が再生する種類がいる。',h:'世界中の土の中',s:'体長10〜20cm（フトミミズの仲間）',e:'落ち葉・土の中の有機物'},
+ pillbug:{f:'さわられると体を丸めて身を守る。昆虫ではなく、エビやカニに近い仲間。',h:'もとは地中海沿岸。今は日本各地にも広く定着（オカダンゴムシ）',s:'体長約1〜1.4cm',e:'落ち葉・枯れ草'},
+ leech:{f:'口の吸ばんで動物にすいつき、血を吸う。血がかたまらないようにする成分を出す。',h:'世界中の水辺や湿った森（チスイビル・ヤマビルなど）',s:'体長2〜5cm（ヤマビル・のびちぢみする）',e:'動物の血'},
+ koala:{f:'1日に18〜22時間ねむる。栄養が少なく毒もあるユーカリの葉を、長い盲腸でゆっくり消化する。',h:'オーストラリア東部・南東部のユーカリの森',s:'体長65〜80cm',e:'ユーカリの葉'},
+ echidna:{f:'哺乳類なのに卵を産む（単孔類）。とげは毛が変化したもの。強い前足で地面をすばやく掘る。',h:'オーストラリア（乾燥地の一部をのぞく）・タスマニア・ニューギニア',s:'体長30〜45cm',e:'アリ・シロアリ（長い舌でなめとる）'},
+};
+
+</script>
+<script id="story">
+// ===== ストーリー（ユーカリ村の どうぶつ陣取り大会） =====
+// 会話は [話し手, セリフ]。話し手が '' ならナレーション
+const STORY_INTRO=[
+ ['','オーストラリアの森のはずれに、ユーカリ村という小さな村がある。'],
+ ['','この村では年に一度、「どうぶつ陣取り大会」がひらかれる。'],
+ ['オババ','おや、今年はおまえさんも出るのかい。'],
+ ['オババ','陣取りは、ウォンバットが自分で戦うんじゃない。なかまの動物に声をかけて、いっしょに陣地を取りあうのさ。'],
+ ['オババ','ほれ、これは「なかま呼びの笛」。草原・森・水辺、吹く笛によって来てくれる動物がちがう。1回吹くと3匹来てくれるよ。'],
+ ['オババ','まずは2回吹いてごらん。'],
+];
+const STORY_AFTER_START=[
+ ['オババ','いいなかまが来たね。'],
+ ['オババ','ルールがわからなければ「チュートリアル」で練習するといい。自信があるなら、さっそく予選に出てみな。'],
+ ['オババ','勝つたびに笛をもう1回吹けるよ。なかまを増やして、大会を勝ちあがるんだ。'],
+];
+const CHAPTERS=[
+ {id:1,title:'第1章 原っぱの予選',
+  intro:[['','大会の予選は、村はずれの原っぱでおこなわれる。'],['オババ','予選の相手は、村の子ウォンバットたちさ。まずは肩ならしだね。']],
+  battles:[
+   {id:'1-1',name:'ポコ',ai:'novice',team:['sparrow','mouse','frog','rabbit','ant'],
+    pre:[['ポコ','ぼくもはじめての大会なんだ。よろしくね！']],win:[['ポコ','うわー、負けちゃった。動物の動かし方、うまいなあ。']]},
+   {id:'1-2',name:'ムギ',ai:'novice',team:['rabbit','goat','sparrow','gila','crab'],
+    pre:[['ムギ','わたしのウサギは原っぱだと速いのよ。']],win:[['ムギ','原っぱだけじゃ勝てないのね……。']]},
+   {id:'1-3',name:'タンポ',ai:'aggressive',team:['dhole','snake','fox','bee','mouse'],
+    pre:[['タンポ','どんどん攻めるのがおれのやり方だ！']],win:[['タンポ','攻めるだけじゃだめなのか。反撃でやられちゃった。']]},
+   {id:'1-4',name:'ガンモ',ai:'aggressive',boss:true,team:['wolf','boar','rabbit','sparrow','ant'],
+    pre:[['ガンモ','予選の最後はおれさまだ。オオカミの群れに勝てるかな？'],['オババ','ガンモは予選のガキ大将さ。オオカミは味方がとなりにいると強くなる。気をつけな。']],
+    win:[['ガンモ','くっ……。本戦に行ったら、おれのぶんまでがんばれよな！'],['オババ','予選突破だね。次はユーカリの森だよ。']]},
+  ]},
+ {id:2,title:'第2章 ユーカリの森',
+  intro:[['','森の中の会場は、木のかげが多くて見通しが悪い。'],['オババ','森が得意な動物は、森の中でぐんと強くなる。相手の得意な場所で戦わないこと。それと、笛からランク4の動物も来るようになるよ。']],
+  battles:[
+   {id:'2-1',name:'シイ',ai:'aggressive',team:['fox','owl','monkey','ladybug','spider'],
+    pre:[['シイ','森はわたしの庭。フクロウは森からなら遠くまで届くのよ。']],win:[['シイ','森の外に出されたら、フクロウも届かないのね。']]},
+   {id:'2-2',name:'ドングリ',ai:'aggressive',team:['boar','fox','chameleon','bee','worm'],
+    pre:[['ドングリ','カメレオンは森にかくれると、遠くからは狙えないんだぜ。']],win:[['ドングリ','近くまで来られたら、かくれても意味ないか……。']]},
+   {id:'2-3',name:'モリー',ai:'careful',team:['cobra','sloth','snake','ant','pillbug'],
+    pre:[['モリー','わたしは毒でじわじわ戦うの。あせらないでね。']],win:[['モリー','毒が回る前に決められちゃった。']]},
+   {id:'2-4',name:'コダマ',ai:'careful',boss:true,reward:'koala',team:['bear','deer','cobra','monkey','ladybug'],
+    pre:[['コダマ','ぼくはユーカリの森の番人。この森で負けたことはないよ。'],['オババ','コダマは守りがかたい。クマはランク4、動かすのに4ptかかるよ。']],
+    win:[['コダマ','……強いね。森の木の上で、ずっと眠っていたコアラが目を覚ましたよ。'],['コダマ','君の戦いを見て、ついて行きたくなったみたい。連れて行ってあげて。'],['','コアラがなかまになった！ 起きる・眠るをくり返す、ふしぎな動物だ。']]},
+  ]},
+ {id:3,title:'第3章 水辺の大会',
+  intro:[['','会場は大きな川のほとり。足もとはすぐに水びたしになる。'],['オババ','水辺の動物は、陸ではたいしたことがなくても、水の中では手がつけられない。笛からはランク5の動物も来るようになるよ。']],
+  battles:[
+   {id:'3-1',name:'シズク',ai:'careful',team:['frog','beaver','otter','fugu','archer'],
+    pre:[['シズク','カエルとビーバーで、すぐに水辺にしてあげる。']],win:[['シズク','水を張る前に攻められちゃった……。']]},
+   {id:'3-2',name:'ナギ',ai:'planner',team:['octopus','penguin','moray','crab','leech'],
+    pre:[['ナギ','タコはなかまと場所を入れかえられるの。どこから来るか、読めるかしら。']],win:[['ナギ','読まれていたのは、わたしのほうだったのね。']]},
+   {id:'3-3',name:'ミナモ',ai:'careful',team:['turtle','capybara','beaver','frog','fugu'],
+    pre:[['ミナモ','カメもカピバラも、水の中ならびくともしないよ。']],win:[['ミナモ','水から引きずり出されたら、こんなものか……。']]},
+   {id:'3-4',name:'オオナミ',ai:'careful',boss:true,team:['hippo','croc','crab','frog','fugu'],
+    pre:[['オオナミ','おれは水辺の王者オオナミ。カバとワニの水しぶきを見せてやる！'],['オババ','カバのMAP攻撃は、まわり8マスに届く。固まっていると一網打尽だよ。']],
+    win:[['オオナミ','……水の上でおれに勝つとはな。本戦でも暴れてこい！'],['オババ','いよいよ本戦だ。ここからは強豪ぞろいだよ。']]},
+  ]},
+ {id:4,title:'第4章 大会の本戦',
+  intro:[['','本戦の会場は、村の広場。たくさんのウォンバットが見に来ている。'],['オババ','ここまで来た相手は、みんな頂点捕食者を連れている。正面からぶつかるだけじゃ勝てないよ。']],
+  battles:[
+   {id:'4-1',name:'ライガ',ai:'planner',team:['lion','dhole','ostrich','sparrow','gila'],
+    pre:[['ライガ','百獣の王ライオンの牙、受けてみな。']],win:[['ライガ','ライオンが草原の外に連れ出されるとは……。']]},
+   {id:'4-2',name:'ツキミ',ai:'planner',team:['tiger','owl','cobra','chameleon','spider'],
+    pre:[['ツキミ','森のトラは、森からならどこまでも跳んでくるわ。']],win:[['ツキミ','森を消されたら、トラも足が止まるのね。']]},
+   {id:'4-3',name:'クロガネ',ai:'planner',team:['rhino','boar','armadillo','bison','pillbug'],
+    pre:[['クロガネ','かたさと重さが、おれの武器だ。']],win:[['クロガネ','かたい相手には、毒とぼうぎょダウンか。参った。']]},
+   {id:'4-4',name:'ゴウ',ai:'planner',boss:true,team:['elephant','orca','monkey','crab','frog'],
+    pre:[['ゴウ','前回のチャンピオン、ゴウだ。ゾウとシャチ、陸と水の王をそろえてきた。'],['オババ','シャチは水辺からだと射程2になる。水辺のそばでは油断しないことだね。']],
+    win:[['ゴウ','……見事だ。今年のチャンピオンはおまえだ。'],['オババ','やったね。……と言いたいところだが、もうひとつ、昔からのしきたりがあるのさ。']]},
+  ]},
+ {id:5,title:'第5章 伝説の挑戦',
+  intro:[['オババ','チャンピオンは、大会のあとに「村の長老」とも戦うのがしきたりでね。'],['オババ','つまり、わしとさ。若いころは、わしも陣取りのチャンピオンだったんだよ。']],
+  battles:[
+   {id:'5-1',name:'森と水の守り手',ai:'planner',team:['bear','hippo','frog','cobra','fugu'],
+    pre:[['オババ','まずは、わしの弟子たちが相手だよ。']],win:[['オババ','ほう、弟子たちを破ったかい。じゃあ、いよいよわしの番だ。']]},
+   {id:'5-2',name:'長老オババ',ai:'planner',boss:true,reward:'echidna',team:['lion','elephant','croc','tiger','orca'],
+    pre:[['オババ','わしのなかまは、頂点捕食者そろいぶみさ。小技はないが、ひとつひとつが強いよ。'],['オババ','さあ、見せておくれ。おまえさんの陣取りを。']],
+    win:[['オババ','……まいった。頂点捕食者がそろっていても、勝てないものだね。'],['オババ','おまえさんは、なかまの得意な場所を知って、その力を引き出した。それが陣取りでいちばん大事なことさ。'],
+     ['','そのとき、広場の地面がもこもこと盛りあがった。'],['','とげだらけの動物が顔を出し、じっとこちらを見ている。'],
+     ['オババ','ほう、めずらしい。地の底にすむハリモグラが、おまえさんを気に入ったようだ。'],['','ハリモグラがなかまになった！ 地中にもぐって身を守る、ふしぎな動物だ。'],
+     ['','こうして、あなたは今年の陣取り大会のチャンピオンになった。'],['オババ','これからも、いろんな相手と戦ってみな。笛はまだまだ吹けるよ。']]},
+  ]},
+];
+// チュートリアル
+const LESSONS=[
+ {id:'L1',title:'レッスン1 動かして攻撃しよう',
+  pages:[['オババ','自分の番では、動物をタップして選び、緑のマスに動かす。今いるマスをタップすれば、動かずにその場で行動できる。'],
+         ['オババ','動いたあと、赤いマスにいる相手をタップすると攻撃する。赤いマスには、与えるダメージ（与）と、反撃で受けるダメージ（反）のめやすが出るよ。'],
+         ['オババ','攻撃は、上下左右のとなり（射程1）に届く。ななめは距離2あつかいだから、射程1では届かないよ。'],
+         ['オババ','相手の動物を全部たおしたら勝ちだ。やってごらん。']],
+  hint:'動物をタップ → 緑のマスをタップ → 赤いマスの相手をタップ。ななめのマスには届かないよ。',
+  teams:[['wolf','mouse'],['sparrow','frog']],cols:[[1,3],[1,3]],ai:'novice'},
+ {id:'L2',title:'レッスン2 ptとランク',
+  pages:[['オババ','自分の番には5ptある。ただし先手のさいしょの番だけは3ptだ。'],
+         ['オババ','動物を動かすと、その動物のランクと同じptを使う。ランク4のクマなら4pt、ランク1のネズミなら1ptだね。'],
+         ['オババ','ptで動かせる動物がいなくなったら、相手の番になる。1回の番で、同じ動物は1回しか動けないよ。'],
+         ['オババ','もうひとつ。攻撃を受けて生き残った動物は、相手が反撃の射程にいれば自動で反撃する。強い相手に弱い動物で攻めると、反撃でやられることもあるよ。']],
+  hint:'さいしょの番は3pt。ランク4のクマは動けないから、ネズミとアリで準備しよう。2回目の番からは5ptあるよ。',
+  teams:[['bear','mouse','ant'],['wolf','boar']],cols:[[2,1,3],[1,3]],ai:'novice'},
+ {id:'L3',title:'レッスン3 フィールドと適性',
+  pages:[['オババ','マスには「平原」「森林」「水辺」のフィールドがある。さいしょは何もない「なし」だ。'],
+         ['オババ','動物ごとにフィールドの得意・苦手（適性）があって、ダメージが大きく変わる。攻める側は自分のいるマス、受ける側も自分のいるマスの適性で計算するよ。'],
+         ['オババ','カエルは水辺を作れる。ワニは水辺がとても得意で、相手の草原の動物たちは水辺が苦手だ。水辺を作ってから、ワニで攻めてごらん。'],
+         ['オババ','もうひとつ。12ラウンドたっても決着がつかないときは、やられた動物のランク合計が少ない方の勝ちだよ。']],
+  hint:'カエルの「雨ごい」で水辺を作り、ワニを水辺に入れてから攻めよう。動物をタップすると、得意なフィールドが下に表示されるよ。',
+  teams:[['frog','croc','crab'],['rabbit','wolf','dhole']],cols:[[1,2,3],[1,2,3]],ai:'novice'},
+];
+
+</script>
 <script id="sprite">
 // ドット絵ウォンバット（ウォンバット☆レガシーRPG 2 の render.js から流用）
 const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
@@ -1227,17 +1443,38 @@ function toCanvas(R){const c=document.createElement('canvas');c.width=R.W;c.heig
 <script id="ui">
 const $=q=>document.querySelector(q);
 let G=null;
-const UI={phase:'setup',mode:'hva',humans:[true,false],personas:['aggressive','aggressive'],picks:[[],[]],cols:[[],[]],
-  pickP:0,placeP:0,placeSel:null,sel:null,dest:null,step:null,opts:[],post:null,info:null,timer:null,speed:500,last:null,cfg:{}};
-
-// ---------- タブ ----------
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+b.dataset.tab));
-});
+const UI={mode:'hva',humans:[true,false],personas:['planner','planner'],picks:[[],[]],cols:[[],[]],
+  pickP:0,placeP:0,placeSel:null,sel:null,dest:null,step:null,opts:[],post:null,info:null,timer:null,speed:450,last:null,cfg:{},
+  ctx:null,names:null,pools:null,cpuTeam:null};
 const opts=(o,sel)=>Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${typeof v==='string'?v:v.name}</option>`).join('');
-const pname=p=>(p===0?'青ウォンバット（先手）':'赤ウォンバット（後手）')+(UI.mode==='hva'?(UI.humans[p]?'・あなた':'・AI'):'');
-// ドット絵ウォンバット：<span class="wb" data-f="1" data-eye="happy"></span> を描画後に canvas へ置き換える
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function pname(p){
+  if(UI.names) return UI.names[p]+(p===0?'（先手）':'（後手）');
+  return (p===0?'青ウォンバット（先手）':'赤ウォンバット（後手）')+(UI.mode==='hva'?(UI.humans[p]?'・あなた':'・AI'):'');
+}
+
+// ---------- 画面の切りかえ ----------
+function show(scr){ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+scr)); window.scrollTo(0,0); }
+function play(html){ show('play'); $('#play').innerHTML=html; mountWombats($('#play')); }
+function modal(html){ const m=$('#modal'); m.innerHTML=`<div class="mbox">${html}</div>`; m.hidden=false; return m; }
+function closeModal(){ $('#modal').hidden=true; $('#modal').innerHTML=''; }
+$('#modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
+$('#menuBtn').onclick=()=>{
+  if(G&&!G.over&&$('#tab-play').classList.contains('on')){
+    modal(`<p>対戦をやめて、メニューにもどりますか？</p><button class="b pri" id="mYes">やめる</button><button class="b" id="mNo">つづける</button>`);
+    $('#mYes').onclick=()=>{ closeModal(); clearTimeout(UI.timer); G=null; renderTitle(); };
+    $('#mNo').onclick=closeModal;
+  } else { clearTimeout(UI.timer); G=null; renderTitle(); }
+};
+
+// ---------- 保存 ----------
+const SAVE_KEY='wbjintori_save_v1';
+function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0}; }
+function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s&&s.v===1) return Object.assign(defSave(),s); }catch(e){} return defSave(); }
+function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(SV)); }catch(e){} }
+let SV=loadSave();
+
+// ---------- ドット絵ウォンバット ----------
 const WB_CACHE={};
 function wombatCanvas(flip,eye){
   const key=(flip?1:0)+'|'+(eye||'');
@@ -1273,63 +1510,308 @@ function animalCard(T,extra){
    (T.counter?`<div>↩ ${T.counter.name}：${skillText(T.counter,true)}</div>`:'<div class="muted">↩ 反撃なし</div>')+
    (T.passive?`<div>★ ${T.passive.name}：${passiveText(T.passive)}</div>`:'<div class="muted">★ パッシブなし</div>')+(extra||'');
 }
+const chipList=(ids,p)=>ids.map(t=>`<span class="chip p${p}">${A[t].emoji}${A[t].name}</span>`).join('');
 
-// ---------- 対戦：設定 ----------
-function renderSetup(){
-  $('#play').innerHTML=`<div class="titlebox"><div class="stars"></div>
+// ---------- ガチャ（なかま呼びの笛） ----------
+const THEMES={plain:{name:'草原の笛',icon:'🌾'},forest:{name:'森の笛',icon:'🌲'},water:{name:'水辺の笛',icon:'💧'}};
+const RATES={1:34,2:30,3:22,4:10,5:4};
+function themeOf(T){ return T.theme||['plain','forest','water'].reduce((b,f)=>T.aff[f]>T.aff[b]?f:b,'plain'); }
+const GACHA_ALL=ANIMALS.filter(T=>!T.special);
+// ランクを排出率で決めてから、そのランクの中で均等に選ぶ（持っている動物と、上限より上のランクは出ない）
+function drawGacha(theme,owned,cap){
+  const got=[];
+  const avail=(th)=>GACHA_ALL.filter(T=>(!th||themeOf(T)===th)&&!owned.includes(T.id)&&!got.includes(T.id));
+  for(let k=0;k<3;k++){
+    let pool=avail(theme).filter(T=>T.rank<=cap);
+    if(!pool.length) pool=avail(null).filter(T=>T.rank<=cap);
+    if(!pool.length) pool=avail(null);
+    if(!pool.length) break;
+    const ranks=[...new Set(pool.map(T=>T.rank))], tot=ranks.reduce((a,r)=>a+RATES[r],0);
+    let x=Math.random()*tot, r=ranks[ranks.length-1];
+    for(const rr of ranks){ x-=RATES[rr]; if(x<=0){ r=rr; break; } }
+    const cand=pool.filter(T=>T.rank===r); got.push(cand[Math.floor(Math.random()*cand.length)].id);
+  }
+  return got;
+}
+function rateText(cap){
+  const ks=[1,2,3,4,5].filter(r=>r<=cap), tot=ks.reduce((a,r)=>a+RATES[r],0);
+  return ks.map(r=>`ランク${r}：${Math.round(RATES[r]/tot*100)}%`).join('　')+(cap<5?`<br>（いまはランク${cap}まで）`:'');
+}
+// o: {owned:()=>[], cap, title, onGot(ids), onDone}
+function renderGacha(o){
+  const owned=o.owned(), left=GACHA_ALL.filter(T=>!owned.includes(T.id));
+  if(!left.length){ play(`<div class="panel"><p>もう全部の動物がなかまになっています。</p><button class="b pri" id="gOk">つぎへ</button></div>`); $('#gOk').onclick=o.onDone; return; }
+  play(`<div class="panel"><div class="ghead">${o.title||'なかま呼びの笛'}</div>
+    <div class="muted">吹く笛をえらぼう。3匹の動物がなかまになる（すでにいる動物は来ない）。</div>
+    <div class="gbtns">${Object.entries(THEMES).map(([k,t])=>{ const n=left.filter(T=>themeOf(T)===k).length; return `<button class="b gbtn" data-t="${k}" ${n?'':'disabled'}><span class="gi">${t.icon}</span>${t.name}<span class="muted">のこり${n}匹</span></button>`; }).join('')}</div>
+    <div class="muted" style="margin-top:8px">出る確率（ランクごと）：<br>${rateText(o.cap)}</div></div>`);
+  document.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{
+    const ids=drawGacha(b.dataset.t,o.owned(),o.cap); o.onGot(ids);
+    play(`<div class="panel"><div class="ghead">${THEMES[b.dataset.t].icon} ${THEMES[b.dataset.t].name}をふいた！</div>
+      <div class="cards greveal">${ids.map((id,i)=>`<div class="card gcard" style="animation-delay:${i*0.35}s">${animalCard(A[id])}</div>`).join('')}</div>
+      <button class="b pri" id="gOk" style="margin-top:10px">つぎへ</button></div>`);
+    $('#gOk').onclick=o.onDone;
+  });
+}
+
+// ---------- 会話 ----------
+function renderDialog(lines,onDone,title){
+  let i=0;
+  const draw=()=>{
+    const [who,txt]=lines[i];
+    play(`${title?`<div class="chtitle">${title}</div>`:''}<div class="panel dlg">
+      ${who?`<div class="who">${esc(who)}</div>`:''}<div class="txt${who?'':' nar'}">${esc(txt)}</div>
+      <div class="row" style="justify-content:space-between;margin-top:10px"><span class="muted">${i+1}/${lines.length}</span>
+      <span><button class="b" id="dSkip">とばす</button><button class="b pri" id="dNext">つぎへ</button></span></div></div>`);
+    $('#dNext').onclick=()=>{ i++; if(i>=lines.length) onDone(); else draw(); };
+    $('#dSkip').onclick=onDone;
+  };
+  if(!lines||!lines.length) return onDone(); draw();
+}
+
+// ---------- タイトルとメニュー ----------
+function ownedAll(){ return SV.owned.length; }
+function renderTitle(){
+  UI.ctx=null; UI.names=null; UI.pools=null; UI.cpuTeam=null; G=null;
+  const total=ANIMALS.length;
+  play(`<div class="titlebox"><div class="stars"></div>
    <h2>ウォンバット☆<br>どうぶつ陣取り</h2><div class="sub">ユーカリ村の 陣取りあそび（試作中）</div>
    <div class="wbs"><div><span class="wb"></span><div class="wbname p0">青ウォンバット</div></div><div><span class="wb" data-f="1"></span><div class="wbname p1">赤ウォンバット</div></div></div></div>
-  <div class="panel muted" style="line-height:1.7">ユーカリ村のウォンバットたちは、なかまの動物に声をかけて陣取りあそびをします。あなたはウォンバット。動物を5体えらんで指示を出し、相手の動物をたおしましょう。</div>
-  <div class="panel">
+   <div class="panel menu">
+   ${!SV.started?`<button class="b pri big" id="mNew">▶ はじめから</button>`:
+    `<div class="muted" style="margin-bottom:6px">なかま ${ownedAll()}/${total}匹　ストーリー ${SV.cleared.length}/${STORY_BATTLES.length}戦クリア${SV.pend?`　<b class="acc">笛があと${SV.pend}回ふける</b>`:''}</div>
+    <button class="b pri big" id="mStory">▶ ストーリー</button>
+    <button class="b big" id="mTut">チュートリアル${SV.tut?' ✓':''}</button>`}
+   <button class="b big" id="mVs">対戦（2人で）</button>
+   <button class="b big" id="mZukan">図鑑</button>
+   <button class="b big" id="mRules">ルール</button>
+   <div class="row" style="margin-top:6px"><button class="b small" id="mDev">開発用</button>${SV.started?'<button class="b small" id="mReset">記録を消す</button>':''}</div>
+   </div>`);
+  const on=(id,f)=>{ const e=$('#'+id); if(e) e.onclick=f; };
+  on('mNew',startNewGame); on('mStory',renderStoryMap); on('mTut',renderTutMenu); on('mVs',renderVersusSetup);
+  on('mZukan',()=>renderZukan()); on('mRules',()=>show('rules')); on('mDev',renderDevMenu);
+  on('mReset',()=>{ modal(`<p>ストーリーの記録と集めた動物をすべて消します。よろしいですか？</p><button class="b pri" id="rY">消す</button><button class="b" id="rN">やめる</button>`);
+    $('#rY').onclick=()=>{ SV=defSave(); save(); closeModal(); renderTitle(); }; $('#rN').onclick=closeModal; });
+}
+function renderDevMenu(){
+  play(`<div class="panel"><b>開発用</b><div class="muted">ルールの調整に使う機能です。</div>
+    <button class="b big" id="dFree">フリー対戦（設定を細かく変える・AI観戦）</button>
+    <button class="b big" id="dSim">検証（AIどうしのシミュレーション）</button>
+    <button class="b big" id="dBack">もどる</button></div>`);
+  $('#dFree').onclick=renderFreeSetup; $('#dSim').onclick=()=>show('sim'); $('#dBack').onclick=renderTitle;
+}
+
+// ---------- はじめから ----------
+function startNewGame(){
+  SV=defSave(); SV.started=true; SV.pend=2; save();
+  renderDialog(STORY_INTRO,()=>storyGacha(()=>renderDialog(STORY_AFTER_START,renderFirstChoice)),'はじまり');
+}
+function renderFirstChoice(){
+  play(`<div class="panel"><p>どちらから始める？</p>
+    <button class="b pri big" id="fcT">チュートリアル（おすすめ）</button><div class="muted">遊び方を3つのレッスンで練習。クリアすると笛が1回ふける。</div>
+    <button class="b big" id="fcS" style="margin-top:10px">ストーリー</button><div class="muted">さっそく大会の予選へ。</div></div>`);
+  $('#fcT').onclick=renderTutMenu; $('#fcS').onclick=renderStoryMap;
+}
+
+// ---------- ストーリー ----------
+const STORY_BATTLES=CHAPTERS.flatMap(c=>c.battles.map(b=>({...b,ch:c.id})));
+function storyNextIndex(){ const i=STORY_BATTLES.findIndex(b=>!SV.cleared.includes(b.id)); return i<0?STORY_BATTLES.length:i; }
+function storyChapter(){ const i=storyNextIndex(); return i>=STORY_BATTLES.length?CHAPTERS.length:STORY_BATTLES[i].ch; }
+function storyCap(){ const c=storyChapter(); return c<=1?3:c===2?4:5; }
+// 笛を pend 回ぶん続けて吹く
+function storyGacha(after){
+  if(SV.pend<=0||!GACHA_ALL.some(T=>!SV.owned.includes(T.id))){ SV.pend=Math.min(SV.pend,0)||0; save(); return after(); }
+  renderGacha({owned:()=>SV.owned,cap:storyCap(),title:`なかま呼びの笛（あと${SV.pend}回）`,
+    onGot:ids=>{ SV.owned.push(...ids); SV.pend--; save(); },
+    onDone:()=>storyGacha(after)});
+}
+function renderStoryMap(){
+  UI.ctx=null; const next=storyNextIndex();
+  let h=`<div class="panel"><div class="ghead">ユーカリ村の どうぶつ陣取り大会</div>
+    <div class="muted">なかま ${SV.owned.length}/${ANIMALS.length}匹。勝つと笛が1回ふける。</div>
+    ${SV.pend?`<button class="b pri" id="smG">笛をふく（あと${SV.pend}回）</button>`:''}</div>`;
+  for(const c of CHAPTERS){
+    const firstIdx=STORY_BATTLES.findIndex(b=>b.ch===c.id), open=firstIdx<=next;
+    h+=`<div class="panel"><b>${c.title}</b>${open?'':' <span class="muted">🔒</span>'}`;
+    if(open) h+=c.battles.map(b=>{ const gi=STORY_BATTLES.findIndex(x=>x.id===b.id), done=SV.cleared.includes(b.id), can=gi<=next;
+      return `<button class="b sbtn${done?' done':''}" data-b="${b.id}" ${can?'':'disabled'}>${done?'✓ ':can?'▶ ':'🔒 '}${b.boss?'★ ':''}${b.name}<span class="muted"> ${b.team.map(t=>A[t].emoji).join('')}</span></button>`; }).join('');
+    h+='</div>';
+  }
+  h+=`<button class="b" id="smBack">メニューへ</button>`;
+  play(h);
+  if($('#smG')) $('#smG').onclick=()=>storyGacha(renderStoryMap);
+  $('#smBack').onclick=renderTitle;
+  document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startStoryBattle(b.dataset.b));
+}
+function startStoryBattle(id){
+  const b=STORY_BATTLES.find(x=>x.id===id), ch=CHAPTERS.find(c=>c.id===b.ch);
+  const firstInCh=ch.battles[0].id===id&&!SV.cleared.includes(id);
+  const go=()=>renderDialog(b.pre,()=>{
+    if(SV.owned.length<5){ play(`<div class="panel"><p>なかまが5匹そろっていません。笛をふいてなかまを増やそう。</p><button class="b pri" id="x">もどる</button></div>`); $('#x').onclick=renderStoryMap; return; }
+    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',b.ai]; UI.cfg={}; UI.speed=450;
+    UI.names=['あなた',b.name]; UI.pools=[SV.owned.slice(),null]; UI.cpuTeam=b.team.slice();
+    UI.ctx={kind:'story',battle:b,showOpp:true,onEnd:w=>storyEnd(b,w)};
+    UI.picks=[[],[]]; UI.cols=[[],[]]; UI.last=null; UI.pickP=0; nextPick();
+  },`${ch.title}　vs ${b.name}`);
+  if(firstInCh) renderDialog(ch.intro,go,ch.title); else go();
+}
+function storyEnd(b,w){
+  if(w===0){
+    const first=!SV.cleared.includes(b.id);
+    if(first) SV.cleared.push(b.id);
+    if(b.reward&&!SV.owned.includes(b.reward)) SV.owned.push(b.reward);
+    if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
+    save();
+    renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderStoryMap),'勝利！');
+  } else {
+    play(`<div class="panel"><div class="ghead">${w==null?'引き分け':'負けてしまった……'}</div>
+      <p class="muted">負けても失うものはないよ。なかまの組み方や、フィールドの使い方を変えてもう一度。</p>
+      <button class="b pri" id="lR">もう一度たたかう</button><button class="b" id="lM">大会の地図へ</button></div>`);
+    $('#lR').onclick=()=>startStoryBattle(b.id); $('#lM').onclick=renderStoryMap;
+  }
+}
+
+// ---------- チュートリアル ----------
+function renderTutMenu(){
+  UI.ctx=null;
+  play(`<div class="panel"><div class="ghead">チュートリアル</div><div class="muted">3つのレッスンで遊び方を練習しよう。${SV.tut?'':'全部クリアすると笛が1回ふける。'}</div>
+    ${LESSONS.map(l=>`<button class="b sbtn${SV.tutDone.includes(l.id)?' done':''}" data-l="${l.id}">${SV.tutDone.includes(l.id)?'✓ ':'▶ '}${l.title}</button>`).join('')}
+    <button class="b" id="tBack" style="margin-top:8px">メニューへ</button></div>`);
+  document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startLesson(b.dataset.l));
+  $('#tBack').onclick=renderTitle;
+}
+function startLesson(id){
+  const L=LESSONS.find(l=>l.id===id);
+  renderDialog(L.pages,()=>{
+    UI.mode='tutorial'; UI.humans=[true,false]; UI.personas=['planner',L.ai]; UI.cfg={}; UI.speed=550;
+    UI.names=['あなた','練習の相手']; UI.pools=null; UI.cpuTeam=null;
+    UI.ctx={kind:'tutorial',hint:L.hint,onEnd:w=>lessonEnd(L,w)};
+    UI.picks=[L.teams[0].slice(),L.teams[1].slice()]; UI.cols=[L.cols[0].slice(),L.cols[1].slice()]; UI.last=null;
+    startBattle();
+  },L.title);
+}
+function lessonEnd(L,w){
+  if(w===0){
+    if(!SV.tutDone.includes(L.id)) SV.tutDone.push(L.id);
+    let msg=[['オババ','よくできたね。']];
+    if(!SV.tut&&LESSONS.every(l=>SV.tutDone.includes(l.id))){
+      SV.tut=true; if(SV.started&&GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
+      msg=[['オババ','チュートリアルは全部クリアだ。ごほうびに笛をもう1回ふいていいよ。'],['オババ','あとはストーリーで、大会を勝ちあがってごらん。']];
+    }
+    save();
+    renderDialog(msg,()=>{ if(SV.started&&SV.pend) storyGacha(renderTutMenu); else renderTutMenu(); },'レッスンクリア');
+  } else {
+    play(`<div class="panel"><div class="ghead">もう一度やってみよう</div><p class="muted">ヒントを読みながら、ゆっくりでだいじょうぶ。</p>
+      <button class="b pri" id="lR">もう一度</button><button class="b" id="lM">レッスン一覧へ</button></div>`);
+    $('#lR').onclick=()=>startLesson(L.id); $('#lM').onclick=renderTutMenu;
+  }
+}
+
+// ---------- 対戦（2人） ----------
+function renderVersusSetup(){
+  UI.ctx=null;
+  play(`<div class="panel"><div class="ghead">対戦（2人で1台）</div>
+    <label class="f">使える動物 <select id="vMode"><option value="gacha">笛をふいて出た動物だけ</option><option value="all">全部の動物</option></select></label>
+    <label class="f" id="vPullsL">笛をふく回数（1人あたり） <select id="vPulls">${[3,4,5,6,7,8,9,10].map(n=>`<option value="${n}"${n===5?' selected':''}>${n}回${n===5?'（おすすめ）':''}</option>`).join('')}</select></label>
+    <div class="muted">動物は、おたがいに相手に見えないように選びます。選び終わったら公開して、配置も見えないように行います。</div>
+    <button class="b pri big" id="vGo">はじめる</button><button class="b" id="vBack">メニューへ</button></div>`);
+  const upd=()=>{ $('#vPullsL').style.display=$('#vMode').value==='gacha'?'':'none'; }; $('#vMode').onchange=upd; upd();
+  $('#vBack').onclick=renderTitle;
+  $('#vGo').onclick=()=>{
+    UI.mode='hvh'; UI.humans=[true,true]; UI.cfg={}; UI.names=['青ウォンバット','赤ウォンバット']; UI.cpuTeam=null; UI.last=null;
+    UI.ctx={kind:'versus',onEnd:()=>renderVersusSetup()};
+    UI.picks=[[],[]]; UI.cols=[[],[]]; UI.pickP=0;
+    if($('#vMode').value==='all'){ UI.pools=null; nextPick(); return; }
+    const N=+$('#vPulls').value; UI.pools=[[],[]];
+    const pullFor=(p,k)=>{
+      if(k>=N){ if(p===0) return cover('赤ウォンバットの人に交代してください。青の人は画面を見ないでね。',()=>pullFor(1,0)); return nextPick(); }
+      renderGacha({owned:()=>UI.pools[p],cap:5,title:`${UI.names[p]}の笛（${k+1}/${N}回目）`,onGot:ids=>UI.pools[p].push(...ids),onDone:()=>pullFor(p,k+1)});
+    };
+    cover('青ウォンバットの人から笛をふきます。赤の人は画面を見ないでね。',()=>pullFor(0,0));
+  };
+}
+
+// ---------- 図鑑 ----------
+const ZK_ORDER=ANIMALS.filter(T=>T.special).concat(ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank));
+let ZK_FILTER='all';
+function renderZukan(){
+  show('zukan');
+  const own=new Set(SV.owned), fl=[['all','全部'],['special','とくべつ'],['plain','草原'],['forest','森'],['water','水辺']];
+  const list=ZK_ORDER.filter(T=>ZK_FILTER==='all'||(ZK_FILTER==='special'?T.special:(!T.special&&themeOf(T)===ZK_FILTER)));
+  $('#zukan').innerHTML=`<div class="zhead" style="grid-column:1/-1">図鑑　<span class="muted">なかまにした動物 ${own.size}/${ANIMALS.length}</span></div>
+   <div class="row" style="grid-column:1/-1">${fl.map(([k,n])=>`<button class="b small zf${ZK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div>
+   <div class="muted" style="grid-column:1/-1">カードをタップすると、元になった動物のくわしい説明が見られます。</div>`+
+   list.map(T=>`<div class="card click zc" data-id="${T.id}" style="${T.special?'border-color:var(--acc)':''}">${own.has(T.id)?'<span class="owned">✓なかま</span>':''}${animalCard(T)}</div>`).join('');
+  document.querySelectorAll('.zf').forEach(b=>b.onclick=()=>{ ZK_FILTER=b.dataset.f; renderZukan(); });
+  document.querySelectorAll('.zc').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id));
+}
+function zukanDetail(id){
+  const T=A[id], F=FACTS[id]||{};
+  modal(`<div class="t" style="font-size:18px">${T.emoji} ${T.name} <span class="muted">ランク${T.rank}・${T.special?'とくべつ':THEMES[themeOf(T)].name.replace('の笛','')}</span></div>
+    <div class="zsec"><b>どんな動物？</b><div>${F.f||''}</div></div>
+    <div class="zsec"><b>すんでいる所</b><div>${F.h||''}</div></div>
+    <div class="zsec"><b>大きさ（めやす）</b><div>${F.s||''}</div></div>
+    <div class="zsec"><b>食べもの</b><div>${F.e||''}</div></div>
+    <div class="zsec card">${animalCard(T)}</div>
+    <div class="muted">ゲームの能力は、実際の生態をヒントにした空想をふくみます。</div>
+    <button class="b pri" id="zClose" style="margin-top:8px">とじる</button>`);
+  $('#zClose').onclick=closeModal;
+}
+
+// ---------- フリー対戦（開発用） ----------
+function renderFreeSetup(){
+  UI.ctx=null; UI.names=null; UI.pools=null; UI.cpuTeam=null;
+  play(`<div class="panel"><b>フリー対戦（開発用）</b>
   <label class="f">モード <select id="sMode"><option value="hva">あなた vs AI</option><option value="hvh">2人で対戦（1台を交代で使う）</option><option value="ava">AI vs AI を観戦</option></select></label>
   <label class="f" id="sSideL">あなたの手番 <select id="sSide"><option value="random">ランダム</option><option value="0">先手</option><option value="1">後手</option></select></label>
   <label class="f" id="sAiL">AIのタイプ <select id="sAi">${opts(PERSONAS,'planner')}</select></label>
   <label class="f">規定ラウンド <input type="number" id="sRounds" value="${CONFIG.maxRounds}" min="1" max="60"></label>
   <label class="f">同点時 <select id="sTie">${opts(TIE_RULES,CONFIG.tieRule)}</select></label>
-  <label class="f">反撃の回数（検証用） <select id="sCL">${opts(COUNTER_LIMITS,String(CONFIG.counterLimit))}</select></label>
-  <label class="f">反撃の威力倍率（検証用） <input type="number" id="sCM" value="${CONFIG.counterMult}" min="0" max="2" step="0.1"></label>
-  <label class="f">AIの速さ <select id="sSpeed"><option value="150">速い</option><option value="500" selected>普通</option><option value="1100">ゆっくり</option></select></label>
-  <button class="b pri" id="sStart">はじめる</button></div>
-  <div class="panel muted">遊び方：動物を5体選ぶ → 相手の編成を見てから端の列に配置 → 対戦。自分の番では、行動させる動物をタップ → 移動先（緑）をタップ → 攻撃対象をタップ、の順です。今いるマスをタップすると移動しません。</div>`;
-  mountWombats($('#play'));
+  <label class="f">反撃の回数 <select id="sCL">${opts(COUNTER_LIMITS,String(CONFIG.counterLimit))}</select></label>
+  <label class="f">反撃の威力倍率 <input type="number" id="sCM" value="${CONFIG.counterMult}" min="0" max="2" step="0.1"></label>
+  <label class="f">AIの速さ <select id="sSpeed"><option value="150">速い</option><option value="450" selected>普通</option><option value="1100">ゆっくり</option></select></label>
+  <button class="b pri" id="sStart">はじめる</button><button class="b" id="sBack">もどる</button></div>`);
   const upd=()=>{ const m=$('#sMode').value; $('#sSideL').style.display=m==='hva'?'':'none'; $('#sAiL').style.display=m==='hvh'?'none':''; };
-  $('#sMode').onchange=upd; upd();
+  $('#sMode').onchange=upd; upd(); $('#sBack').onclick=renderDevMenu;
   $('#sStart').onclick=()=>{
     const m=$('#sMode').value; UI.mode=m;
     let side=$('#sSide').value; side=side==='random'?(Math.random()<.5?0:1):+side;
     UI.humans= m==='hva'?[side===0,side===1]: m==='hvh'?[true,true]:[false,false];
     const ai=$('#sAi').value; UI.personas=[ai,ai];
     UI.cfg={maxRounds:+$('#sRounds').value||CONFIG.maxRounds, tieRule:$('#sTie').value, counterLimit:+$('#sCL').value, counterMult:+$('#sCM').value};
-    UI.speed=+$('#sSpeed').value;
-    UI.picks=[[],[]]; UI.cols=[[],[]]; G=null; UI.last=null;
-    UI.pickP=0; nextPick();
+    UI.speed=+$('#sSpeed').value; UI.ctx={kind:'free',onEnd:()=>renderFreeSetup()};
+    UI.picks=[[],[]]; UI.cols=[[],[]]; G=null; UI.last=null; UI.pickP=0; nextPick();
   };
 }
 function cover(msg,next){
-  $('#play').innerHTML=`<div class="panel cover"><p>${msg}</p><button class="b pri" id="cv">準備OK</button></div>`;
+  play(`<div class="panel cover"><span class="wb"></span><p>${msg}</p><button class="b pri" id="cv">準備OK</button></div>`);
   $('#cv').onclick=next;
 }
-// ---------- 対戦：選択 ----------
+
+// ---------- 動物えらび ----------
+function teamFromPool(pool){ return shuffle(pool).slice(0,5); }
 function nextPick(){
-  while(UI.pickP<2&&!UI.humans[UI.pickP]){ UI.picks[UI.pickP]=randomTeam(); UI.pickP++; }
+  while(UI.pickP<2&&!UI.humans[UI.pickP]){ UI.picks[UI.pickP]=UI.cpuTeam&&UI.pickP===1?UI.cpuTeam.slice():randomTeam(); UI.pickP++; }
   if(UI.pickP>=2){ UI.placeP=0; return nextPlace(); }
   if(UI.mode==='hvh') cover(`${pname(UI.pickP)}の人が動物を選びます。相手に画面を見せないでください。`,renderPick);
   else renderPick();
 }
 function renderPick(){
-  const p=UI.pickP, pk=UI.picks[p];
-  $('#play').innerHTML=`<div class="panel"><b>${pname(p)}：動物を5体選ぶ</b>（同じ動物は1体まで）
-   ${p===0?'<div class="muted">先手は最初の手番だけ3ptです。</div>':''}
+  const p=UI.pickP, pk=UI.picks[p], pool=UI.pools&&UI.pools[p]?UI.pools[p]:null;
+  const list=BY_RANK.filter(T=>!pool||pool.includes(T.id));
+  const opp=UI.ctx&&UI.ctx.showOpp&&UI.cpuTeam?`<div class="row" style="margin:6px 0">相手：${chipList(UI.cpuTeam,1)}</div>`:'';
+  play(`<div class="panel"><b>${pname(p)}：動物を5体選ぶ</b>（同じ動物は1体まで）
+   ${opp}${p===0?'<div class="muted">先手はさいしょの番だけ3ptです。</div>':''}
    <div class="row" style="margin:6px 0">${pk.map((t,i)=>`<span class="chip p${p}" data-i="${i}">${A[t].emoji}${A[t].name} ✕</span>`).join('')||'<span class="muted">未選択</span>'}
    <span class="muted">（${pk.length}/5・ランク合計${pk.reduce((a,t)=>a+A[t].rank,0)}）</span></div>
    <button class="b" id="pkRand">おまかせ</button><button class="b pri" id="pkOk" ${pk.length<5?'disabled':''}>決定</button></div>
-   <div class="cards">${BY_RANK.map(T=>`<div class="card click" data-id="${T.id}" style="${pk.includes(T.id)?'opacity:.35':''}">${animalCard(T)}</div>`).join('')}</div>`;
+   <div class="cards">${list.map(T=>`<div class="card click" data-id="${T.id}" style="${pk.includes(T.id)?'opacity:.35':''}">${animalCard(T)}</div>`).join('')}</div>`);
   document.querySelectorAll('.chip[data-i]').forEach(c=>c.onclick=()=>{ pk.splice(+c.dataset.i,1); renderPick(); });
   document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>{ if(pk.length<5&&!pk.includes(c.dataset.id)){ pk.push(c.dataset.id); renderPick(); } });
-  $('#pkRand').onclick=()=>{ UI.picks[p]=randomTeam(); renderPick(); };
+  $('#pkRand').onclick=()=>{ UI.picks[p]=pool?teamFromPool(pool):randomTeam(); renderPick(); };
   $('#pkOk').onclick=()=>{ UI.pickP++; nextPick(); };
 }
-// ---------- 対戦：配置 ----------
+// ---------- 配置 ----------
 function nextPlace(){
   while(UI.placeP<2&&!UI.humans[UI.placeP]){ UI.cols[UI.placeP]=shuffle([0,1,2,3,4]); UI.placeP++; }
   if(UI.placeP>=2) return startBattle();
@@ -1341,11 +1823,11 @@ function renderPlace(){
   const p=UI.placeP, team=UI.picks[p], cols=UI.cols[p], row=p===0?SIZE-1:0, o=1-p;
   const units=team.map((t,i)=>cols[i]==null?null:{id:i,owner:p,type:t,hp:A[t].hp,maxHp:A[t].hp,x:cols[i],y:row}).filter(Boolean);
   const hl={}; for(let x=0;x<SIZE;x++) hl[row*SIZE+x]={cls:'hl-place'};
-  $('#play').innerHTML=`<div class="panel"><b>${pname(p)}：配置</b><div class="muted">下の動物をタップ → ${p===0?'下':'上'}端のマスをタップ</div>
-   <div class="row" style="margin:6px 0">相手：${UI.picks[o].map(t=>`<span class="chip p${o}">${A[t].emoji}${A[t].name}</span>`).join('')}</div>
+  play(`<div class="panel"><b>${pname(p)}：配置</b><div class="muted">下の動物をタップ → ${p===0?'下':'上'}端のマスをタップ</div>
+   <div class="row" style="margin:6px 0">相手：${chipList(UI.picks[o],o)}</div>
    ${boardHTML(Array(25).fill('none'),(x,y)=>units.find(u=>u.x===x&&u.y===y),hl,null,null)}
    <div class="row">${team.map((t,i)=>`<span class="chip p${p}${UI.placeSel===i?' on':''}${cols[i]!=null?' done':''}" data-i="${i}">${A[t].emoji}${A[t].name}</span>`).join('')}</div>
-   <button class="b" id="plRand">おまかせ</button><button class="b pri" id="plOk" ${cols.some(c=>c==null)?'disabled':''}>決定</button></div>`;
+   <button class="b" id="plRand">おまかせ</button><button class="b pri" id="plOk" ${cols.some(c=>c==null)?'disabled':''}>決定</button></div>`);
   document.querySelectorAll('.chip[data-i]').forEach(c=>c.onclick=()=>{ UI.placeSel=+c.dataset.i; renderPlace(); });
   bindBoard((x,y)=>{
     if(y!==row||UI.placeSel==null) return;
@@ -1356,9 +1838,9 @@ function renderPlace(){
   $('#plRand').onclick=()=>{ UI.cols[p]=shuffle([0,1,2,3,4]); UI.placeSel=null; renderPlace(); };
   $('#plOk').onclick=()=>{ UI.placeP++; nextPlace(); };
 }
-// ---------- 対戦：バトル ----------
+// ---------- バトル ----------
 function startBattle(){
-  G=newGame(UI.picks,UI.cols,UI.cfg); UI.phase='battle'; resetSel(); renderBattle(); runAI();
+  G=newGame(UI.picks,UI.cols,UI.cfg); resetSel(); UI.info=null; renderBattle(); runAI();
 }
 function resetSel(){ UI.fprev=null; UI.sel=null; UI.dest=null; UI.step=null; UI.opts=[]; UI.post=null; }
 const humanTurn=()=>G&&!G.over&&UI.humans[G.turn];
@@ -1393,7 +1875,7 @@ function highlights(){
 function forecast(u,d,t,sk){
   const n=sk.hits||1, dmg=calcDamage(G,u,d,t,t,sk,false), C=A[t.type].counter;
   let txt=`与${dmg}${n>1?'×'+n:''}`;
-  if(dmg*n<t.hp&&C&&dist(t,d)<=C.range&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit)) txt+=` 反${calcDamage(G,t,t,u,d,C,true)}`;
+  if(dmg*n<t.hp&&C&&dist(t,d)<=C.range&&!t.asleep&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit)) txt+=` 反${calcDamage(G,t,t,u,d,C,true)}`;
   return txt;
 }
 function renderBattle(){
@@ -1403,7 +1885,7 @@ function renderBattle(){
   let actions='';
   if(G.over){
     const w=G.winner==null?'引き分け':`${pname(G.winner)}の勝ち`;
-    actions=`<div class="result">${w}（${G.reason}）</div><div class="muted" style="text-align:center">失ったランク合計：青${G.lost[0]} / 赤${G.lost[1]}</div><button class="b pri" id="again">設定に戻る</button>`;
+    actions=`<div class="result">${w}（${G.reason}）</div><div class="muted" style="text-align:center;width:100%">失ったランク合計：青${G.lost[0]} / 赤${G.lost[1]}</div><button class="b pri" id="again">つぎへ</button>`;
   } else if(humanTurn()){
     if(UI.step==='skill'){
       const sk=A[su.type].attack;
@@ -1413,17 +1895,18 @@ function renderBattle(){
       if(UI.opts.some(o=>o.type==='field')) actions+='<div class="muted">紫のマスをタップで範囲を表示、同じマスをもう一度タップで確定</div>';
     } else if(UI.step==='post') actions=`<div class="muted">脱兎：1マス移動できます</div><button class="b" id="noPost">移動しない</button>`;
     else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}<button class="b" id="endT">手番を終える</button>`;
-  } else actions='<div class="muted">AIが考えています…</div>';
-  $('#play').innerHTML=`<div class="panel">
+  } else actions='<div class="muted">相手が考えています…</div>';
+  const hint=UI.ctx&&UI.ctx.hint&&!G.over?`<div class="panel hint">💡 ${UI.ctx.hint}</div>`:'';
+  play(`${hint}<div class="panel">
    <div class="status"><span>ラウンド ${G.round}/${G.cfg.maxRounds}</span><span class="badge p${G.turn}"><span class="wb" data-f="${G.turn}"></span>${pname(G.turn)}</span><span class="pts">${pts}</span></div>
    <div class="muted">失ったランク合計　青 ${G.lost[0]} ／ 赤 ${G.lost[1]}</div>
    ${boardHTML(G.fields,viewUnitAt,highlights(),UI.sel,UI.last)}
    <div class="row">${actions}</div></div>
    ${info?`<div class="panel card">${infoHTML(info)}</div>`:''}
-   <div class="panel"><b>ログ</b><div class="log">${G.log.slice(-120).reverse().map(l=>`<div>${l}</div>`).join('')}</div></div>`;
-  bindBoard(onCell); mountWombats($('#play'));
+   <div class="panel"><b>ログ</b><div class="log">${G.log.slice(-120).reverse().map(l=>`<div>${l}</div>`).join('')}</div></div>`);
+  bindBoard(onCell);
   const on=(id,f)=>{ const e=$('#'+id); if(e) e.onclick=f; };
-  on('again',()=>{ clearTimeout(UI.timer); G=null; renderSetup(); });
+  on('again',()=>{ clearTimeout(UI.timer); const w=G.winner; G=null; if(UI.ctx&&UI.ctx.onEnd) UI.ctx.onEnd(w); else renderTitle(); });
   on('doMap',()=>commit({type:'map'}));
   on('doBurrow',()=>commit({type:'burrow'}));
   on('noAtk',()=>commit(null));
@@ -1432,6 +1915,7 @@ function renderBattle(){
   on('unsel',()=>{ resetSel(); renderBattle(); });
   on('endT',()=>{ resetSel(); UI.info=null; endTurn(G); UI.last=null; renderBattle(); runAI(); });
 }
+
 function infoHTML(u){
   const T=A[u.type], f=G.fields[u.y*SIZE+u.x];
   return `<div class="t">${u.owner===0?'青':'赤'} ${T.emoji}${T.name} <span class="muted">ランク${T.rank}</span>${u.hp<=0?'（倒れた）':''}</div>`+
@@ -1488,11 +1972,8 @@ function runAI(){
   },UI.speed);
 }
 
-// ---------- 図鑑 ----------
-const BY_RANK=ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank).concat(ANIMALS.filter(T=>T.special));
-$('#zukan').innerHTML=`<div class="zhead">とくべつな動物（${ANIMALS.filter(T=>T.special).length}種）</div>`+ANIMALS.filter(T=>T.special).map(T=>`<div class="card" style="border-color:var(--acc)">${animalCard(T)}</div>`).join('')+
-  [1,2,3,4,5].map(r=>`<div class="zhead">ランク${r}（${BY_RANK.filter(T=>T.rank===r&&!T.special).length}種）</div>`+BY_RANK.filter(T=>T.rank===r&&!T.special).map(T=>`<div class="card">${animalCard(T)}</div>`).join('')).join('');
 
+const BY_RANK=ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank).concat(ANIMALS.filter(T=>T.special));
 // ---------- シミュレーション ----------
 $('#simTie').innerHTML=opts(TIE_RULES,CONFIG.tieRule);
 $('#simCL').innerHTML=opts(COUNTER_LIMITS,String(CONFIG.counterLimit));
@@ -1558,7 +2039,8 @@ function renderSim(games,maxR,evalR,tie){
    <div class="muted">ランダム編成では、相手や味方の組み合わせの影響を強く受けます。参考値として見てください。</div></div>`;
 }
 
-renderSetup();
+
+renderTitle();
 </script>
 </body>
 </html>
