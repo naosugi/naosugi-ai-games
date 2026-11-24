@@ -181,6 +181,7 @@ const CHARS = {
   lena:   { name: 'Lena（PM）', acc: ['en-GB'], pitch: 1.2 },
   sam:    { name: 'Sam（新人）', acc: ['en-AU', 'en-NZ'], pitch: 1.25 },
   alex:   { name: 'Alex（候補者）', acc: ['en-CA', 'en-US'], pitch: 1.0 },
+  staff:  { name: 'お店の人', acc: ['en-US'], pitch: 1.1 },
 };
 const SOURCES = {
   wpOverfit: { title: 'Wikipedia「Overfitting」', url: 'https://en.wikipedia.org/wiki/Overfitting', lic: 'CC BY-SA 4.0' },
@@ -220,6 +221,7 @@ const CHAPTERS = [
           { w: 'miller', r: 'formal', en: "Exactly. If the gap keeps growing, that's a clear warning sign.", ja: 'その通り。その差が広がり続けるなら、はっきりした危険信号です。' },
         ],
       },
+      {"id": "c1s6", "bg": "library", "title": "グループ課題の分担", "place": "大学・図書館のグループ学習室", "intro": "授業のグループ課題が出た。同じ授業をとっている Tom と組むことになった。締め切りから逆算して、作業を分けよう。", "outro": "誰が・何を・いつまでに。3つ決めたら、あとは進めるだけ。", "lines": [{"w": "tom", "r": "casual", "en": "Okay, the project is due in two weeks. How should we split the work?", "ja": "よし、課題の締め切りは2週間後。作業をどう分ける？"}, {"w": "me", "r": "casual", "en": "I can handle the data preprocessing, since I did something similar last year.", "ja": "データの前処理は私がやれるよ。去年、似たことをやったから。"}, {"w": "tom", "r": "casual", "en": "Great. Then I'll set up the training code.", "ja": "いいね。じゃあ僕は訓練のコードを用意するよ。"}, {"w": "me", "r": "casual", "en": "Who's going to write the report?", "ja": "レポートは誰が書く？"}, {"w": "tom", "r": "casual", "en": "How about we each write our own section and put them together at the end?", "ja": "それぞれ自分の担当部分を書いて、最後にまとめるのはどう？"}, {"w": "me", "r": "formal", "en": "Sounds good. Let's set a deadline for the first draft. Maybe next Friday?", "ja": "いいね。最初の下書きの締め切りを決めよう。来週の金曜はどう？"}, {"w": "tom", "r": "casual", "en": "Works for me. Let's also meet on Wednesday to check our progress.", "ja": "いいよ。水曜にも集まって、進み具合を確認しよう。"}, {"w": "me", "r": "casual", "en": "Perfect. I'll create a shared doc and send you the link.", "ja": "完璧。共有ドキュメントを作って、リンクを送るね。"}, {"w": "me", "r": "written", "en": "Task split: data preprocessing (me), training code (Tom). First draft due next Friday.", "ja": "（共有ドキュメント）分担：データ前処理（私）、訓練コード（トム）。下書きの締め切りは来週金曜。"}, {"w": "tom", "r": "casual", "en": "Nice. You're really organized.", "ja": "いいね。本当にしっかりしてるね。"}]},
       {
         id: 'c1s3', title: 'オフィスアワー', place: '大学・教授室',
         intro: '講義の「正則化」の話が、いまいち腑に落ちない。まずはメールで面談をお願いして、先生のオフィスアワーに行ってみよう。',
@@ -237,6 +239,8 @@ const CHAPTERS = [
           { w: 'me', r: 'formal', en: 'I will. Thank you for your time.', ja: 'そうします。お時間をいただきありがとうございました。' },
         ],
       },
+      {"id": "c1s7", "bg": "lab", "title": "ペアで実装する", "place": "大学・研究室", "intro": "Tom と2人で、1台のパソコンを使ってコードを書く。打つ人と見る人に分かれる「ペアプログラミング」だ。気づいたことは、その場で言葉にしよう。", "outro": "思ったことを口に出しながら書くと、間違いが早く見つかる。英語の練習にもなる。", "lines": [{"w": "tom", "r": "casual", "en": "Do you want to type, or should I?", "ja": "キーボードを打つ役、やる？ それとも僕がやろうか？"}, {"w": "me", "r": "casual", "en": "I'll type. Could you keep an eye out for mistakes?", "ja": "私が打つよ。間違いがないか見ていてくれる？"}, {"w": "tom", "r": "casual", "en": "Sure. Let's start with the data loader.", "ja": "いいよ。データローダーから始めよう。"}, {"w": "me", "r": "formal", "en": "I'm going to shuffle the data before splitting it into batches.", "ja": "データをバッチに分ける前に、シャッフルするね。"}, {"w": "tom", "r": "casual", "en": "Wait, shouldn't we fix the random seed first?", "ja": "待って、先に乱数シードを固定したほうがよくない？"}, {"w": "me", "r": "casual", "en": "Good catch. Otherwise, we can't reproduce our results.", "ja": "いい指摘。そうしないと、結果を再現できないもんね。"}, {"w": "tom", "r": "casual", "en": "Also, that variable name is a bit confusing. Maybe rename it?", "ja": "それと、その変数名、ちょっと分かりにくいかも。名前を変える？"}, {"w": "me", "r": "casual", "en": "You're right. I'll give it a clearer name.", "ja": "その通り。もっと分かりやすい名前にするね。"}, {"w": "tom", "r": "casual", "en": "Let's run it and see if it works.", "ja": "動かして、ちゃんと動くか見てみよう。"}, {"w": "me", "r": "casual", "en": "It runs! Let's switch. It's your turn to type.", "ja": "動いた！ 交代しよう。次はあなたが打つ番。"}]},
+      {"id": "c1s8", "bg": "lab", "title": "論文の輪読会", "place": "大学・研究室", "intro": "週に一度の論文の輪読会。今日はあなたが、読んできた論文を紹介する番だ。「何をした論文か → 主なアイデア → 弱いところ」の順に話そう。", "outro": "論文を紹介するときは、良いところだけでなく、弱いところも言えると議論が深まる。", "lines": [{"w": "priya", "r": "casual", "en": "Okay, it's your turn. Which paper did you pick?", "ja": "じゃあ、あなたの番。どの論文を選んだの？"}, {"w": "me", "r": "formal", "en": "I chose a paper about making small models almost as accurate as large ones.", "ja": "小さなモデルを、大きなモデルとほぼ同じくらい正確にする、という論文を選びました。"}, {"w": "slide", "r": "written", "en": "Knowledge distillation: a smaller student model is trained to match the outputs of a larger teacher model.", "ja": "（スライド）知識蒸留：小さな生徒モデルを、大きな教師モデルの出力に合わせるように訓練する。"}, {"w": "me", "r": "formal", "en": "The main idea is to train the small model to copy the large model's outputs.", "ja": "主なアイデアは、小さいモデルに、大きいモデルの出力をまねさせるように訓練することです。"}, {"w": "tom", "r": "casual", "en": "So the small model learns from the big one, like a student and a teacher?", "ja": "つまり、小さいモデルが大きいモデルから学ぶってこと？ 生徒と先生みたいに？"}, {"w": "me", "r": "formal", "en": "Exactly. And surprisingly, the student sometimes generalizes better than the teacher.", "ja": "その通りです。しかも驚いたことに、生徒のほうが先生よりうまく汎化することもあるんです。"}, {"w": "priya", "r": "formal", "en": "What do you think are the weaknesses of the paper?", "ja": "この論文の弱点は何だと思う？"}, {"w": "me", "r": "formal", "en": "They only tested it on image tasks, so I'm not sure it works for text.", "ja": "画像のタスクでしか試していないので、テキストでも通用するかは分かりません。"}, {"w": "priya", "r": "casual", "en": "Good point. That's a fair criticism.", "ja": "いい指摘ね。もっともな批判だと思う。"}, {"w": "me", "r": "formal", "en": "If I have time, I'd like to try it on our text data myself.", "ja": "時間があれば、自分たちのテキストデータで試してみたいです。"}]},
       {
         id: 'c1s4', title: '研究室ミーティング', place: '大学・会議室',
         intro: '毎週の研究室ミーティング。今日はあなたが進捗を報告する番だ。指摘を受けたら、受け止めて次の行動を言おう。',
@@ -252,6 +256,7 @@ const CHAPTERS = [
           { w: 'miller', r: 'formal', en: "Sounds like a plan. Let's check back next week.", ja: 'いい計画ですね。また来週確認しましょう。' },
         ],
       },
+      {"id": "c1s9", "bg": "online", "title": "ビデオ会議で共同研究", "place": "研究室・ビデオ会議", "intro": "ミラー先生の紹介で、AI スタートアップのエンジニア Dana とビデオ会議をすることになった。映像が止まったり、音が途切れたり。オンライン会議でよく使う言い回しを覚えよう。", "outro": "「聞こえますか」「もう一度お願いします」。オンライン会議の決まり文句は、言えるだけで落ち着ける。", "lines": [{"w": "dana", "r": "casual", "en": "Hi! Can you hear me okay?", "ja": "こんにちは！ 声、ちゃんと聞こえる？"}, {"w": "me", "r": "casual", "en": "Yes, I can hear you. But your video is frozen.", "ja": "はい、聞こえます。でも映像が止まっています。"}, {"w": "dana", "r": "casual", "en": "Oh, let me turn my camera off and on again. Is that better?", "ja": "あ、カメラを一度切って、つけ直すね。これでどう？"}, {"w": "me", "r": "casual", "en": "Much better. Thanks for making time for this call.", "ja": "だいぶよくなりました。この打ち合わせのために時間をつくってくれて、ありがとうございます。"}, {"w": "dana", "r": "formal", "en": "Of course. Professor Miller told me you're working on model evaluation.", "ja": "もちろん。ミラー先生から、モデルの評価を研究していると聞いたよ。"}, {"w": "me", "r": "formal", "en": "That's right. If possible, I'd love to test our method on your company's data.", "ja": "そうなんです。もし可能なら、御社のデータで私たちの手法を試してみたいです。"}, {"w": "dana", "r": "formal", "en": "That might work. Sorry, you're breaking up a little. Could you say that again?", "ja": "できるかもしれない。ごめん、少し音が途切れてる。もう一度言ってもらえる？"}, {"w": "me", "r": "formal", "en": "Sure. I said I'd like to test our method on your data.", "ja": "はい。御社のデータで、私たちの手法を試したい、と言いました。"}, {"w": "dana", "r": "casual", "en": "Got it. Let me check with my team and get back to you by email.", "ja": "了解。チームに確認して、メールで返事するね。"}, {"w": "me", "r": "written", "en": "Thank you for your time today. As discussed, I've attached a short summary of our method.", "ja": "（メール）本日はお時間をいただきありがとうございました。お話ししたとおり、私たちの手法の簡単な概要を添付します。"}]},
       {
         id: 'c1s5', title: '初めての学会・懇親会', place: '国際学会・レセプション会場',
         intro: '初めての国際学会。昼の発表が終わり、夜は懇親会。グラスを片手に、ひとりで立っている研究者がいる。話しかけて、話を広げて、感じよく切り上げよう。',
@@ -285,6 +290,11 @@ const CHAPTERS = [
           { w: 'wei', r: 'casual', en: 'Likewise. Enjoy the rest of the conference!', ja: 'こちらこそ。学会の残りも楽しんでください！' },
         ],
       },
+      {"id": "c1t1", "kind": "talk", "bg": "lecture", "title": "講義：勾配降下法", "place": "大学・講義室", "intro": "ミラー先生の2回目の講義。今日はモデルがどうやって学習するのか、たとえ話で説明してくれるらしい。まずはテキストを見ずに、話の流れをつかもう。", "outro": "霧の中で丘を下りる話。たとえ話ごと覚えると、専門用語も忘れにくい。", "quiz": [{"q": "霧の中の丘のたとえで、「足もとの傾き」は何にあたる？", "c": ["損失", "勾配", "学習率", "データの量"], "a": 1}, {"q": "歩幅（学習率）が大きすぎると、どうなると言っていた？", "c": ["下りるのにいつまでもかかる", "谷を飛び越えてしまうことがある", "霧が晴れる", "必ずいちばん低い地点に着く"], "a": 1}, {"q": "宿題は何？", "c": ["勾配降下法の説明を書く", "3種類の学習率で損失の曲線を描く", "近くの丘に登る", "論文を1本読む"], "a": 1}], "lines": [{"w": "miller", "r": "formal", "en": "Last time, we talked about overfitting. Today, let's look at how models actually learn.", "ja": "前回は過学習の話をしました。今日は、モデルが実際にどうやって学習するのかを見ていきましょう。"}, {"w": "miller", "r": "formal", "en": "Imagine you're standing on a hill in thick fog, and you want to reach the bottom.", "ja": "濃い霧の中、丘の上に立っていて、ふもとまで下りたいと想像してください。"}, {"w": "miller", "r": "formal", "en": "You can't see the whole landscape, but you can feel the slope under your feet.", "ja": "景色全体は見えませんが、足もとの傾きは感じられます。"}, {"w": "miller", "r": "formal", "en": "So you take a small step in the direction that goes down the most.", "ja": "そこで、いちばん下りになっている方向に、小さく一歩進みます。"}, {"w": "miller", "r": "formal", "en": "Then you check the slope again, and take another step.", "ja": "それからまた傾きを確かめて、もう一歩進みます。"}, {"w": "miller", "r": "formal", "en": "That's basically what gradient descent does.", "ja": "勾配降下法がやっていることは、基本的にこれです。"}, {"w": "miller", "r": "formal", "en": "The height of the hill is the loss, and the slope is the gradient.", "ja": "丘の高さが損失で、傾きが勾配です。"}, {"w": "miller", "r": "formal", "en": "The size of each step is called the learning rate.", "ja": "一歩の大きさは、学習率と呼ばれます。"}, {"w": "miller", "r": "formal", "en": "If your steps are too small, it takes forever to get down.", "ja": "歩幅が小さすぎると、下りるのにいつまでもかかります。"}, {"w": "miller", "r": "formal", "en": "But if they're too big, you might jump right over the valley.", "ja": "でも大きすぎると、谷を飛び越えてしまうかもしれません。"}, {"w": "miller", "r": "formal", "en": "In practice, we often start with larger steps and make them smaller over time.", "ja": "実際には、最初は大きめの歩幅で始めて、だんだん小さくしていくことがよくあります。"}, {"w": "miller", "r": "formal", "en": "One more thing: because of the fog, you might end up in a small dip instead of the lowest point.", "ja": "もう一つ。霧のせいで、いちばん低い地点ではなく、小さなくぼみにたどり着いてしまうこともあります。"}, {"w": "miller", "r": "formal", "en": "Surprisingly, for large neural networks, that's often good enough.", "ja": "意外なことに、大きなニューラルネットワークでは、それで十分なことが多いのです。"}, {"w": "miller", "r": "formal", "en": "For homework, try three different learning rates and plot the loss curves.", "ja": "宿題として、3種類の学習率を試して、損失の曲線をグラフにしてみてください。"}]},
+      {"id": "c1t2", "kind": "talk", "bg": "lab", "title": "研究室のガイダンス", "place": "大学・研究室", "intro": "研究室に来て2日目。先輩の Priya が、研究室のルールをまとめて説明してくれる。早口のくだけた説明を、テキストなしでどこまで聞き取れるか試そう。", "outro": "ルールの説明は、数字・曜日・「〜してね」の部分を聞き逃さないのがコツ。", "quiz": [{"q": "GPU サーバーを使う前にすることは？", "c": ["先生にメールする", "カレンダーで時間を予約する", "チャットで抽選する", "特にない"], "a": 1}, {"q": "研究室ミーティングはいつ？", "c": ["毎週月曜の10時", "毎週火曜の2時", "毎週金曜の2時", "月に1回"], "a": 1}, {"q": "コーヒー豆のルールは？", "c": ["毎週当番が買う", "先生が買う", "使い切った人が次の袋を買う", "持ち込み禁止"], "a": 2}], "lines": [{"w": "priya", "r": "casual", "en": "Okay, let me quickly go over how things work in our lab.", "ja": "じゃあ、この研究室でのやり方を手短に説明するね。"}, {"w": "priya", "r": "casual", "en": "First, the GPU server. Everyone shares it, so please book time on the calendar before you use it.", "ja": "まず GPU サーバー。みんなで共有しているから、使う前にカレンダーで時間を予約してね。"}, {"w": "priya", "r": "casual", "en": "If you need it for more than a day, just give everyone a heads-up in the chat.", "ja": "1日以上使うときは、チャットでみんなにひと声かけておいて。"}, {"w": "priya", "r": "casual", "en": "Second, lab meetings are every Tuesday at two.", "ja": "次に、研究室ミーティングは毎週火曜の2時から。"}, {"w": "priya", "r": "casual", "en": "Each week, two people give updates, and the schedule is on the shared drive.", "ja": "毎週2人が進捗を報告して、その順番表は共有ドライブにあるよ。"}, {"w": "priya", "r": "casual", "en": "Don't worry about making your slides perfect. Professor Miller cares more about your thinking.", "ja": "スライドを完璧にしようとしなくて大丈夫。ミラー先生が大事にしているのは、あなたの考え方だから。"}, {"w": "priya", "r": "casual", "en": "Third, please back up your code. We once lost a month of work, and it wasn't fun.", "ja": "3つ目、コードはバックアップしてね。前に1か月分の作業が消えたことがあって、あれは本当につらかった。"}, {"w": "priya", "r": "casual", "en": "Oh, and the coffee machine is free, but whoever finishes the beans buys the next bag.", "ja": "あ、それとコーヒーマシンは無料だけど、豆を使い切った人が次の袋を買う決まりね。"}, {"w": "priya", "r": "casual", "en": "We take that rule very seriously, by the way.", "ja": "ちなみに、そのルールはかなり本気で守られてるから。"}, {"w": "priya", "r": "casual", "en": "Finally, if you're stuck, just ask. Nobody here expects you to know everything on day one.", "ja": "最後に、困ったら遠慮なく聞いて。初日から全部分かっているなんて、ここでは誰も思ってないから。"}, {"w": "priya", "r": "casual", "en": "Any questions so far?", "ja": "ここまでで質問はある？"}]},
+      {"id": "c1x1", "kind": "side", "bg": "bank", "title": "銀行口座をつくる", "place": "大学近くの銀行", "intro": "留学生活の最初の関門、銀行口座づくり。窓口で必要なものを聞かれても、落ち着いて答えよう。", "outro": "口座ができた。これで家賃も払える。", "lines": [{"w": "staff", "r": "formal", "en": "Hi, how can I help you today?", "ja": "こんにちは。本日はどのようなご用件でしょうか？"}, {"w": "me", "r": "formal", "en": "Hi, I'd like to open a checking account. I'm an international student.", "ja": "こんにちは。普段使い用の口座を開きたいです。留学生です。"}, {"w": "staff", "r": "formal", "en": "Sure. Could I see your passport and your student ID?", "ja": "かしこまりました。パスポートと学生証を見せていただけますか？"}, {"w": "me", "r": "formal", "en": "Here you go. I also have a letter from the university.", "ja": "どうぞ。大学からの書類もあります。"}, {"w": "staff", "r": "formal", "en": "Perfect. Do you have a local address and phone number?", "ja": "ありがとうございます。こちらの住所と電話番号はお持ちですか？"}, {"w": "me", "r": "formal", "en": "Yes, I just moved into an apartment near campus.", "ja": "はい、キャンパスの近くのアパートに引っ越したばかりです。"}, {"w": "staff", "r": "formal", "en": "Great. Would you like a debit card with the account?", "ja": "かしこまりました。口座と一緒に、デビットカードもお作りしますか？"}, {"w": "me", "r": "casual", "en": "Yes, please. How long does it take to arrive?", "ja": "はい、お願いします。届くまで、どのくらいかかりますか？"}, {"w": "staff", "r": "formal", "en": "About five to seven business days. It'll be mailed to your address.", "ja": "5〜7営業日ほどです。ご住所に郵送されます。"}, {"w": "me", "r": "casual", "en": "Got it. Thank you for your help!", "ja": "わかりました。ありがとうございました！"}]},
+      {"id": "c1x2", "kind": "side", "bg": "cafe", "title": "カフェで注文する", "place": "キャンパスのカフェ", "intro": "授業の前にカフェでコーヒーを買う。サイズ、ホットかアイスか、ミルクの種類、名前……聞かれることが多い。テンポよく答えよう。", "outro": "注文の流れは毎回ほぼ同じ。一度覚えれば、朝のカフェがこわくなくなる。", "lines": [{"w": "staff", "r": "casual", "en": "Hi there! What can I get for you?", "ja": "いらっしゃいませ！ ご注文は？"}, {"w": "me", "r": "casual", "en": "Can I get a medium latte, please?", "ja": "M サイズのラテをください。"}, {"w": "staff", "r": "casual", "en": "Sure. Hot or iced?", "ja": "かしこまりました。ホットとアイス、どちらにしますか？"}, {"w": "me", "r": "casual", "en": "Iced, please. And could I get it with oat milk?", "ja": "アイスでお願いします。それと、オーツミルクにできますか？"}, {"w": "staff", "r": "casual", "en": "No problem. Anything else?", "ja": "大丈夫ですよ。ほかにご注文は？"}, {"w": "me", "r": "casual", "en": "That's it, thanks.", "ja": "以上です、ありがとう。"}, {"w": "staff", "r": "casual", "en": "Can I get a name for the order?", "ja": "ご注文用に、お名前をいただけますか？"}, {"w": "me", "r": "casual", "en": "It's Yu. Y, U.", "ja": "ユウです。Y、U です。"}, {"w": "staff", "r": "casual", "en": "Thanks, Yu. That'll be five seventy-five.", "ja": "ありがとう、ユウさん。5ドル75セントです。"}, {"w": "me", "r": "casual", "en": "Can I pay by card?", "ja": "カードで払えますか？"}, {"w": "staff", "r": "casual", "en": "Of course. Just tap it here.", "ja": "もちろん。ここにタッチしてください。"}]},
+      {"id": "c1x3", "kind": "side", "bg": "lab", "title": "週末の予定の雑談", "place": "大学・研究室", "intro": "金曜の夕方、研究室で Priya に週末の予定を聞かれた。雑談は、質問を返すと続く。誘われたら、気持ちよく乗ってみよう。", "outro": "雑談の誘いに乗るのも、留学の大事な勉強。", "lines": [{"w": "priya", "r": "casual", "en": "Any plans for the weekend?", "ja": "週末は何か予定ある？"}, {"w": "me", "r": "casual", "en": "Not really. I was thinking of just catching up on sleep.", "ja": "特にないです。たまった睡眠を取り戻そうかなと思ってて。"}, {"w": "priya", "r": "casual", "en": "Ha, fair enough. A few of us are going hiking on Saturday, if you want to join.", "ja": "はは、それもいいね。土曜に何人かでハイキングに行くんだけど、よかったら来る？"}, {"w": "me", "r": "casual", "en": "Oh, that sounds fun! Where are you going?", "ja": "わあ、楽しそう！ どこに行くんですか？"}, {"w": "priya", "r": "casual", "en": "There's a trail about an hour north of here. The view from the top is amazing.", "ja": "ここから北に1時間くらいのところに山道があるの。頂上からの景色が最高なんだ。"}, {"w": "me", "r": "casual", "en": "I'm in. Is it a hard hike? I haven't exercised in a while.", "ja": "行きます。きついコースですか？ しばらく運動してなくて。"}, {"w": "priya", "r": "casual", "en": "It's pretty easy. Just bring water and comfortable shoes.", "ja": "けっこう楽だよ。水と、歩きやすい靴だけ持ってきて。"}, {"w": "me", "r": "casual", "en": "Got it. Should I bring anything else, like snacks?", "ja": "わかりました。おやつとか、ほかに持っていくものはありますか？"}, {"w": "priya", "r": "casual", "en": "Snacks are always welcome. We'll pick you up at eight.", "ja": "おやつはいつでも大歓迎。8時に迎えに行くね。"}, {"w": "me", "r": "casual", "en": "Thanks for inviting me. See you on Saturday!", "ja": "誘ってくれてありがとうございます。では土曜に！"}]},
     ],
   },
   // ---- 第2〜5章 ----
@@ -352,12 +362,17 @@ function streak() {
   return n;
 }
 function dueKeys() { const t = today(); return Object.keys(S.lines).filter(k => S.lines[k].d <= t && lineByKey(k)); }
+// 場面の種類：main=本編（章の解放に必要）／side=寄り道／talk=じっくり聞く（聞き取り専用）
+const kindOf = sc => sc.kind || 'main';
+const mainsOf = ch => ch.scenes.filter(sc => kindOf(sc) === 'main');
 function sceneStars(id) {
   const r = S.scenes[id]; if (!r || !r.clear) return 0;
-  let n = 1; if ((r.dictBest || 0) >= STAR_DICT) n++; if (r.quickBest != null && r.quickBest <= STAR_RT) n++;
+  const sc = sceneById(id)?.sc;
+  let n = 1; if ((r.dictBest || 0) >= STAR_DICT) n++;
+  if (sc && kindOf(sc) === 'talk') { if (r.quizFirst) n++; } else if (r.quickBest != null && r.quickBest <= STAR_RT) n++;
   return n;
 }
-function chapterClear(ch) { return ch.scenes.length && ch.scenes.every(sc => S.scenes[sc.id]?.clear && (!sc.boss || S.scenes[sc.id]?.boss)); }
+function chapterClear(ch) { const m = mainsOf(ch); return m.length && m.every(sc => S.scenes[sc.id]?.clear && (!sc.boss || S.scenes[sc.id]?.boss)); }
 function rank() {
   let r = '留学生';
   for (const ch of CHAPTERS) { if (!ch.scenes.length) break; r = ch.rank; if (!chapterClear(ch)) return r; r = ch.rank + '（第' + ch.id + '章クリア）'; }
@@ -659,6 +674,7 @@ const FUR = {
   lena: { b: '#b39a78', l: '#cdb593', d: '#80694f', f: '#ddc8a8', m: '#957e60' },
   sam: { b: '#a8683e', l: '#c4824f', d: '#774626', f: '#d49a6c', m: '#8a5430' },
   alex: { b: '#7d6a48', l: '#998460', d: '#574a30', f: '#b09a72', m: '#66573a' },
+  staff: { b: '#8c6f52', l: '#a8896a', d: '#5f4a36', f: '#c2a688', m: '#735a42' },
 };
 // 小物（正面向き 40×32 の上に描く）。ty = 頭の上下
 function accessory(who, img, ty) {
@@ -696,6 +712,10 @@ function accessory(who, img, ty) {
   } else if (who === 'alex') { // 四角いめがね
     const sq = (x0) => { for (let x = x0; x <= x0 + 3; x++) { P(x, ey - 1, 'h'); P(x, ey + 2, 'h'); } for (let y = ey; y <= ey + 1; y++) { P(x0, y, 'h'); P(x0 + 3, y, 'h'); } };
     sq(13); sq(23); for (let x = 17; x <= 22; x++) P(x, ey, 'h');
+  } else if (who === 'staff') { // エプロン
+    P(15, 21, 'gnd'); P(25, 21, 'gnd'); P(16, 22, 'gnd'); P(24, 22, 'gnd');
+    for (let y = 23; y <= 29; y++) for (let x = 14; x <= 26; x++) P(x, y, (x === 14 || x === 26) ? 'gnd' : 'gn');
+    for (let x = 18; x <= 22; x++) P(x, 26, 'gnd'); P(18, 27, 'gnd'); P(22, 27, 'gnd');
   } else if (who === 'wei') { // 学会の名札
     for (let k = 0; k <= 4; k++) { P(15 + k, 22 + k, 'u'); P(25 - k, 22 + k, 'u'); }
     for (let y = 26; y <= 30; y++) for (let x = 17; x <= 23; x++) P(x, y, y === 26 ? 'u' : (x === 17 || x === 23 || y === 30) ? 'sg' : 'sw');
@@ -743,6 +763,10 @@ const BGT = {
   poster: 'linear-gradient(90deg,transparent 0 8%,#ffffffcc 8% 30%,transparent 30% 70%,#ffffffcc 70% 92%,transparent 92%) 0 0/100% 50% no-repeat,linear-gradient(#e9e4d6 0 64%,#7b6a58 64% 67%,#998672 67%)',
   hall: 'radial-gradient(ellipse at 50% 0%,#fff5 0 28%,transparent 29%),linear-gradient(#2b1d3a 0 64%,#7a2e2e 64% 67%,#8f3a3a 67%)',
   party: BGS.c1s5,
+  lab: BGS.c1s1, lecture: BGS.c1s2,
+  library: 'repeating-linear-gradient(90deg,#8b5a3c 0 6px,#c0392b 6px 10px,#2e86c1 10px 15px,#f1c40f 15px 19px,#27ae60 19px 24px) 0 12%/100% 22% no-repeat,linear-gradient(#efe6d2 0 64%,#6b4b32 64% 67%,#8a6440 67%)',
+  online: 'linear-gradient(#0b1430 0 6%,transparent 6%),radial-gradient(circle at 92% 3%,#ff5252 0 1.5%,transparent 2%),linear-gradient(#26324f 0 64%,#1b2236 64%)',
+  bank: 'linear-gradient(#e6edf2 0 64%,#3d5a73 64% 67%,#56738d 67%)',
 };
 function stageHTML(sid, actors, label) {
   return `<div class="stage" style="background:${BGS[sid] || BGT[sceneById(sid)?.sc.bg] || BGS.c1s1}">${label ? `<span class="lbl">${esc(label)}</span>` : ''}${actors.map(a => `<div class="actor ${a.dim ? 'dim' : ''} ${a.hop ? 'hop' : ''}">${a.emo ? `<i class="emo">${esc(a.emo)}</i>` : ''}${face(a.who, a.px || 96, a)}<span>${esc(CHARS[a.who].name)}</span></div>`).join('')}</div>`;
@@ -860,6 +884,13 @@ const STRESS = {
   idea: 'i-DE-a', channel: 'CHAN-nel', evaluates: 'e-VAL-u-ates', separate: 'SEP-a-rate', hesitate: 'HES-i-tate', excited: 'ex-CIT-ed',
   congratulations: 'con-grat-u-LA-tions', coworker: 'CO-work-er', expansion: 'ex-PAN-sion', directions: 'di-REC-tions', direction: 'di-REC-tion',
   external: 'ex-TER-nal', replace: 're-PLACE', recommendation_: '', savings: 'SAV-ings', convinced: 'con-VINCED', processing: 'PRO-cess-ing',
+  preprocessing: 'pre-PRO-cess-ing', organized: 'OR-gan-ized', deadline: 'DEAD-line', progress: 'PROG-ress', variable: 'VAR-i-a-ble',
+  confusing: 'con-FUS-ing', reproduce: 're-pro-DUCE', distillation: 'dis-til-LA-tion', generalizes: 'GEN-er-al-iz-es', criticism: 'CRIT-i-cism',
+  accurate: 'AC-cu-rate', surprisingly: 'sur-PRIS-ing-ly', company: 'COM-pa-ny', summary: 'SUM-ma-ry', attached: 'at-TACHED',
+  landscape: 'LAND-scape', gradient: 'GRA-di-ent', descent: 'de-SCENT', valley: 'VAL-ley', practice: 'PRAC-tice', calendar: 'CAL-en-dar',
+  schedule: 'SCHED-ule', machine_: '', seriously: 'SE-ri-ous-ly', checking: 'CHECK-ing', international: 'in-ter-NA-tion-al', passport: 'PASS-port',
+  apartment: 'a-PART-ment', business: 'BUSI-ness', latte: 'LAT-te', comfortable: 'COM-fort-a-ble', exercised: 'EX-er-cised', inviting: 'in-VIT-ing',
+  weekend: 'WEEK-end', snacks_: '',
   common: 'COM-mon', warning: 'WARN-ing', thirty: 'THIR-ty', forty: 'FOR-ty', minutes: 'MIN-utes', professor_: '', general: 'GEN-er-al', normal: 'NOR-mal',
 };
 const KATA = {
@@ -868,7 +899,8 @@ const KATA = {
   robotics: '「ロボティクス」の「ボ」を強く',
   career: '「キャリア」と違い、後ろの reer を強く', engineer: '「エンジニア」と違い、最後の neer を強く', advice: '後ろの vice を強く',
   alert: '「アラート」と違い、後ろの lert を強く', idea: '「アイデア」と違い、真ん中の de を強く', channel: '「チャンネル」と違い、最初を強く',
-  pipeline: '最初の pipe を強く', percent_: '', machine: '後ろの chine を強く', enjoy: '後ろの joy を強く', compare: '後ろの pare を強く',
+  pipeline: '最初の pipe を強く', percent_: '',
+  calendar: '「カレンダー」と違い、最初の cal を強く', latte: '「ラテ」より最初を強く、t は弾む音に', apartment: '「アパート」と違い、真ん中の part を強く', schedule: 'アメリカ英語では「スケジュール」に近いが、最初を強く', machine: '後ろの chine を強く', enjoy: '後ろの joy を強く', compare: '後ろの pare を強く',
 };
 const FUNC = new Set('a an the to of and or in on at for with is are was were be been am i you he she it we they me my your our their this that these those do does did have has had will would can could should may might not no so but if as by from up out about into than then there here what which who how when where why just also very really too its it\'s i\'m i\'ll i\'d that\'s'.split(' '));
 const NAMES = new Set(['Priya', 'Miller', 'Tom', 'Wei', 'Tokyo', 'Singapore', 'LinkedIn', 'PhD', 'GPU', 'QR', 'Dana', 'Raj', 'Lena', 'Sam', 'Alex', 'API', 'PR', 'JSON', 'UI', 'English']);
@@ -1175,43 +1207,55 @@ ${!S.checked ? `<div class="win"><h2>はじめに</h2><p>まず「せってい�
   };
 };
 function nextSceneLabel() {
-  const n = ALL_SCENES.find(x => !S.scenes[x.sc.id]?.clear);
+  const n = ALL_SCENES.find(x => kindOf(x.sc) === 'main' && !S.scenes[x.sc.id]?.clear);
   return n ? n.sc.title : '全章クリア';
 }
 
 /* ---------- ストーリー（章と場面） ---------- */
+function chapterOpen(ch) { const ci = CHAPTERS.indexOf(ch); return ci <= 0 || mainsOf(CHAPTERS[ci - 1]).every(sc => S.scenes[sc.id]?.clear); }
 function unlocked(x) {
-  if (x.i > 0) return !!S.scenes[x.ch.scenes[x.i - 1].id]?.clear;
-  const ci = CHAPTERS.indexOf(x.ch);
-  return ci <= 0 || CHAPTERS[ci - 1].scenes.every(sc => S.scenes[sc.id]?.clear);
+  if (!chapterOpen(x.ch)) return false;
+  if (kindOf(x.sc) !== 'main') return true; // 寄り道・じっくり聞くは、章が開いていればいつでも
+  const m = mainsOf(x.ch), k = m.indexOf(x.sc);
+  return k <= 0 || !!S.scenes[m[k - 1].id]?.clear;
 }
+function nextMain(sc) { const x = sceneById(sc.id); if (kindOf(sc) !== 'main') return null; const m = mainsOf(x.ch); return m[m.indexOf(sc) + 1] || null; }
 SCREENS.story = () => {
   let h = topBar('home', 'ストーリー');
   CHAPTERS.forEach(ch => {
     if (ch.locked) { h += `<div class="win lock"><h2>${esc(ch.title)}</h2><p class="small">🔒 準備中</p></div>`; return; }
     h += `<div class="win"><h2>${esc(ch.title)}${chapterClear(ch) ? ' <span class="okc">CLEAR</span>' : ''}</h2><div class="map">`;
-    const nowId = ch.scenes.find((sc, i) => unlocked({ ch, sc, i }) && !S.scenes[sc.id]?.clear)?.id;
-    ch.scenes.forEach((sc, i) => {
-      const x = { ch, sc, i }, ok = unlocked(x), r = S.scenes[sc.id] || {}, now = sc.id === nowId;
+    const mains = mainsOf(ch);
+    const nowId = mains.find(sc => unlocked(sceneById(sc.id)) && !S.scenes[sc.id]?.clear)?.id;
+    mains.forEach((sc, i) => {
+      const x = sceneById(sc.id), ok = unlocked(x), r = S.scenes[sc.id] || {}, now = sc.id === nowId;
       h += `<button class="btn sc ${r.clear ? 'clr' : ''} ${now ? 'now' : ''}" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${face(partnerOf(sc), 44, { eye: r.clear ? 'happy' : '' })}<span class="t">${ok ? '' : '🔒 '}${i + 1}. ${esc(sc.title)}${sc.boss ? ' 👑' : ''}${now ? '<span class="now-tag">いまここ</span>' : ''}</span>${now ? `<span class="hop">${face('me', 40)}</span>` : `<span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span>`}</button>`;
     });
     h += '</div>';
-    h += `<p class="small">★1 = 書き取りと「とっさに」を1回ずつ終える／★2 = 書き取り${pct(STAR_DICT)}以上／★3 = 全文「言えた」で反応${STAR_RT / 1000}秒以内（中央値）。基準は仮のめやすです。👑 = 30秒スピーチつき</p></div>`;
+    const extra = (kind, label, note) => {
+      const list = ch.scenes.filter(sc => kindOf(sc) === kind); if (!list.length) return '';
+      return `<h3>${label}</h3><p class="small" style="margin-top:0">${note}</p>` + list.map(sc => { const ok = chapterOpen(ch), r = S.scenes[sc.id] || {};
+        return `<button class="btn sc ${r.clear ? 'clr' : ''}" data-a="open" data-v="${sc.id}" ${ok ? '' : 'disabled'}>${face(partnerOf(sc), 44, { eye: r.clear ? 'happy' : '' })}<span class="t">${ok ? '' : '🔒 '}${esc(sc.title)}</span><span class="stars">${r.clear ? starStr(sceneStars(sc.id)) : ''}</span></button>`; }).join('');
+    };
+    h += extra('talk', '🎧 じっくり聞く', '1〜2分の話を、まずテキストなしで聞いて内容の質問に答えます。章の解放には関係ありません。');
+    h += extra('side', '🍵 寄り道', '仕事以外の日常会話です。いつ遊んでもよく、章の解放には関係ありません。');
+    h += `<p class="small">★1 = 書き取りと「とっさに」を1回ずつ終える／★2 = 書き取り${pct(STAR_DICT)}以上／★3 = 全文「言えた」で反応${STAR_RT / 1000}秒以内（中央値）。「じっくり聞く」の★3 = 内容の質問に1回目で全問正解。基準は仮のめやすです。👑 = スピーチつき</p></div>`;
   });
   return { html: h, acts: { open: id => go('scene', { id, step: 'intro' }) } };
 };
 
 /* ---------- 場面 ---------- */
 const STEPS = [['listen', '聞く'], ['mimic', 'まねる'], ['dict', '書き取り'], ['quick', 'とっさに']];
+const TALK_STEPS = [['gist', '通して聞く'], ['listen', '読みながら'], ['mimic', 'まねる'], ['dict', '書き取り']];
 function sceneTabs(sc) {
   const r = S.scenes[sc.id] || {};
-  const st = sc.boss ? [...STEPS, ['boss', 'スピーチ']] : STEPS;
-  const done = { listen: r.listen, mimic: r.mimic, dict: r.dictBest != null, quick: r.quickDone, boss: r.boss };
+  const st = kindOf(sc) === 'talk' ? TALK_STEPS : sc.boss ? [...STEPS, ['boss', 'スピーチ']] : STEPS;
+  const done = { gist: r.quizDone, listen: r.listen, mimic: r.mimic, dict: r.dictBest != null, quick: r.quickDone, boss: r.boss };
   return `<div class="tabs">${st.map(([k, l]) => `<button class="${V.step === k ? 'on' : ''} ${done[k] ? 'done' : ''}" data-a="step" data-v="${k}">${l}</button>`).join('')}</div>`;
 }
 SCREENS.scene = () => {
   const x = sceneById(V.id), sc = x.sc;
-  const head = topBar('story', `${x.ch.title.split(' ')[0]}-${x.i + 1} ${sc.title}`) + sceneTabs(sc);
+  const kd = kindOf(sc), head = topBar('story', `${x.ch.title.split(' ')[0]}${kd === 'main' ? '-' + (mainsOf(x.ch).indexOf(sc) + 1) : kd === 'talk' ? ' 🎧' : ' 🍵'} ${sc.title}`) + sceneTabs(sc);
   const f = SCENE_STEPS[V.step] || SCENE_STEPS.intro;
   const r = f(x);
   r.html = head + r.html;
@@ -1222,23 +1266,71 @@ const SCENE_STEPS = {};
 
 SCENE_STEPS.intro = ({ sc }) => {
   const cnt = { written: 0, formal: 0, casual: 0 }; sc.lines.forEach(l => cnt[l.r]++);
-  const nMe = sc.lines.filter(l => l.w === 'me').length;
+  const nMe = sc.lines.filter(l => l.w === 'me').length, talk = kindOf(sc) === 'talk';
   return {
     html: `
 ${stageHTML(sc.id, castOf(sc).map(w => ({ who: w, px: castOf(sc).length > 3 ? 72 : 88 })), sc.place)}
 <div class="win" data-a="twSkip"><h2>📍 ${esc(sc.place)}</h2><p id="tw" style="min-height:4.6em"></p><p class="center small" id="twc" style="visibility:hidden">▼</p></div>
 <div class="win"><h3>この場面の英語</h3>
 <p>${Object.keys(cnt).filter(k => cnt[k]).map(k => `${badge(k)} ${cnt[k]}文`).join('　')}</p>
-<p class="small">あなたのセリフ ${nMe}文が「④とっさに」の課題になります。</p>
+${talk ? `<p class="small">${sc.lines.length}文・約${Math.max(1, Math.round(sylOf(sc.lines.map(l => l.en).join(' ')) * 0.22 / 60 / S.speed * 10) / 10)}分の話です。</p>
 <h3>進め方</h3>
-<p class="small">①台本を見ながら聞く → ②重ねて読む・影読み・録音して聞き比べ → ③穴埋めで書き取り → ④日本語を見て、とっさに英語で言う${sc.boss ? ' → ⑤30秒スピーチ' : ''}</p></div>
-<button class="btn pri cur" data-a="step" data-v="listen">はじめる</button>`,
+<p class="small">①テキストなしで通して聞き、内容の質問に答える → ②テキストを読みながら聞く → ③まねる → ④穴埋めで書き取り</p></div>
+<button class="btn pri cur" data-a="step" data-v="gist">はじめる</button>` : `<p class="small">あなたのセリフ ${nMe}文が「④とっさに」の課題になります。</p>
+<h3>進め方</h3>
+<p class="small">①台本を見ながら聞く → ②重ねて読む・影読み・録音して聞き比べ → ③穴埋めで書き取り → ④日本語を見て、とっさに英語で言う${sc.boss ? ` → ⑤${sc.boss.sec}秒スピーチ` : ''}</p></div>
+<button class="btn pri cur" data-a="step" data-v="listen">はじめる</button>`}`,
     after: () => {
       const el = $('#tw'), full = sc.intro; let i = 0;
       const iv = setInterval(() => { i++; el.textContent = full.slice(0, i); if (i % 3 === 0) sfx('type'); if (i >= full.length) { clearInterval(iv); const c = $('#twc'); if (c) c.style.visibility = 'visible'; } }, 45);
       tickers.push(iv); V._tw = iv;
     },
     acts: { twSkip: () => { clearInterval(V._tw); const el = $('#tw'); if (el) el.textContent = sc.intro; const c = $('#twc'); if (c) c.style.visibility = 'visible'; } },
+  };
+};
+
+/* じっくり聞く：テキストなしで通して聞き、内容の質問に答える */
+SCENE_STEPS.gist = ({ sc }) => {
+  const r = S.scenes[sc.id] || {}, sp = sc.lines[0].w, qz = sc.quiz || [];
+  if (!V.g) V.g = { ans: {}, checked: false, ord: qz.map(q => { const o = q.c.map((_, i) => i); for (let i = o.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } return o; }) };
+  const g = V.g, nAns = Object.keys(g.ans).length, nOk = qz.filter((q, i) => g.ans[i] === q.a).length;
+  return {
+    html: `
+${stageHTML(sc.id, [{ who: sp, px: 100 }, { who: 'me', px: 76, dim: true, emo: g.checked ? (nOk === qz.length ? '♪' : '…') : (V.playing ? '' : '？') }], sc.place)}
+<div class="win">
+<p>テキストは見ずに、通して聞いてみよう。何度聞き直してもかまいません。</p>
+<button class="btn pri ${V.playing ? '' : 'cur'}" data-a="all">${V.playing ? '■ 停止' : '▶ 通して聞く（テキストなし）'}</button>
+<p class="small center" id="gp">${V.playing ? `🔊 ${(V.cur ?? 0) + 1} / ${sc.lines.length} 文目` : `全${sc.lines.length}文`}</p>
+</div>
+<div class="win"><h3>内容の質問</h3>
+${qz.map((q, qi) => `<p style="margin:10px 0 4px"><b>Q${qi + 1}.</b> ${esc(q.q)}</p>${g.ord[qi].map(ci => {
+  const sel = g.ans[qi] === ci, cls = g.checked ? (ci === q.a ? 'j-o' : sel ? 'j-x' : '') : (sel ? 'pri' : '');
+  return `<button class="btn ${cls}" style="padding:8px 12px;font-weight:${sel ? 900 : 500}" data-a="ans" data-v="${qi}:${ci}" ${g.checked ? 'disabled' : ''}>${g.checked && ci === q.a ? '✓ ' : ''}${esc(q.c[ci])}</button>`; }).join('')}`).join('')}
+${g.checked ? `<p class="center" style="font-size:20px"><b class="${nOk === qz.length ? 'okc' : 'midc'}">${nOk} / ${qz.length} 問正解</b></p><p class="small center">${r.quizFirst ? '1回目で全問正解（★3 の条件）を達成しています。' : '★3 は、1回目の答え合わせで全問正解。'}</p>
+<div class="row"><button class="btn" data-a="redo">もう一度答える</button><button class="btn pri cur" data-a="step" data-v="listen">②読みながら聞く へ</button></div>${clearBox(sc)}` :
+  `<button class="btn pri" data-a="check" ${nAns === qz.length ? '' : 'disabled'}>答え合わせ</button>`}
+</div>`,
+    acts: {
+      all: async () => {
+        if (V.playing) { playAllTok++; stopSpeak(); V.playing = false; V.cur = null; render(); return; }
+        const tok = ++playAllTok; V.playing = true; V.cur = 0; render();
+        for (let i = 0; i < sc.lines.length; i++) {
+          if (tok !== playAllTok) return;
+          V.cur = i; const e = $('#gp'); if (e) e.textContent = `🔊 ${i + 1} / ${sc.lines.length} 文目`;
+          await speak(sc.lines[i].en, sc.lines[i].w); await sleep(300);
+        }
+        if (tok !== playAllTok) return;
+        V.playing = false; V.cur = null; render();
+      },
+      ans: v => { const [qi, ci] = v.split(':').map(Number); g.ans[qi] = ci; sfx('tap'); render(); },
+      check: () => {
+        g.checked = true; const rr = scRec(sc.id), ok = qz.filter((q, i) => g.ans[i] === q.a).length;
+        if (!rr.quizTries && ok === qz.length) rr.quizFirst = true;
+        rr.quizTries = (rr.quizTries || 0) + 1; rr.quizDone = true; rr.quizBest = Math.max(rr.quizBest || 0, ok / qz.length);
+        sfx(ok === qz.length ? 'ok' : 'ng'); buzz(ok === qz.length ? 30 : [40, 40, 40]); gainExp(5 * ok); checkClear(sc); save(); render();
+      },
+      redo: () => { g.checked = false; g.ans = {}; render(); },
+    },
   };
 };
 
@@ -1278,7 +1370,7 @@ SCENE_STEPS.listen = ({ sc }) => {
 /* ② まねる */
 const mimicRecs = {};
 SCENE_STEPS.mimic = ({ sc }) => {
-  const idxs = sc.lines.map((l, i) => i).filter(i => !V.onlyMe || sc.lines[i].w === 'me');
+  let idxs = sc.lines.map((l, i) => i).filter(i => !V.onlyMe || sc.lines[i].w === 'me'); if (!idxs.length) idxs = sc.lines.map((l, i) => i);
   const k = Math.min(V.mi || 0, idxs.length - 1), i = idxs[k], l = sc.lines[i], id = lineId(sc.id, i);
   const hide = V.hide && !V.reveal, rec = mimicRecs[id];
   const useSR = S.useSR && SR;
@@ -1295,7 +1387,7 @@ SCENE_STEPS.mimic = ({ sc }) => {
 <div class="win">
 <p class="small">練習の順番：1) テキストを見ながら音声に重ねて読む → 2)「テキストをかくす」で影読み（音声を少し遅れて追いかける）→ 3) 録音して、お手本と聞き比べる</p>
 <label class="tg"><input type="checkbox" data-c="hide" ${V.hide ? 'checked' : ''}>テキストをかくす（影読み）</label>
-<label class="tg"><input type="checkbox" data-c="onlyMe" ${V.onlyMe ? 'checked' : ''}>あなたのセリフだけ</label>
+${sc.lines.some(l => l.w === 'me') ? `<label class="tg"><input type="checkbox" data-c="onlyMe" ${V.onlyMe ? 'checked' : ''}>あなたのセリフだけ</label>` : ''}
 </div>
 <div class="win">
 <p class="small">${k + 1} / ${idxs.length}</p>
@@ -1434,24 +1526,25 @@ ${clr ? clearBox(sc) : stageHTML(sc.id, [{ who: partnerOf(sc), px: 80, eye: d.ac
 <div class="timer" data-count="${Math.round(d.acc * 100)}" data-fmt="pct">${pct(d.acc)}</div><p>${d.ok} / ${d.tot} 語</p>${best}
 <p class="small">自己ベスト ${pct(r.dictBest)}　${r.dictBest >= STAR_DICT ? '★2 の基準クリア' : `★2 は ${pct(STAR_DICT)} 以上`}${d.partial ? '<br>選んだ文だけの回は、自己ベストと星には数えません' : ''}</p></div>
 ${pickerHTML(d.order.map(i => { const h = d.hist[i], l = sc.lines[i]; return { key: String(i), mark: !h ? 'ー' : h.ok === h.tot ? '○' : '×', cls: !h ? '' : h.ok === h.tot ? 'okc' : 'ngc', en: l.en, ja: l.ja, wrong: h && h.ok < h.tot }; }), d.sel, '書き取り')}
-<div class="row"><button class="btn" data-a="again">最初から全部</button><button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button></div>`,
+<div class="row"><button class="btn" data-a="again">最初から全部</button>${kindOf(sc) === 'talk' ? `<button class="btn pri cur" data-a="story">ストーリーへ</button>` : `<button class="btn pri cur" data-a="step" data-v="quick">④とっさに へ</button>`}</div>`,
     acts: Object.assign(pickActs(d, d.order.map(String), k => d.order.filter(i => d.hist[i] && d.hist[i].ok < d.hist[i].tot).map(String).includes(k), sel => go('scene', { id: sc.id, step: 'dict', dOrder: [...sel].map(Number).sort((a, b) => a - b) })), { again: () => go('scene', { id: sc.id, step: 'dict' }) }),
   };
 }
 function checkClear(sc) {
   const r = scRec(sc.id);
-  if (!r.clear && r.dictBest != null && r.quickDone) { r.clear = true; r.justCleared = true; setTimeout(() => gainExp(50), 900); }
+  const ok = kindOf(sc) === 'talk' ? r.quizDone : r.quickDone;
+  if (!r.clear && r.dictBest != null && ok) { r.clear = true; r.justCleared = true; setTimeout(() => gainExp(50), 900); }
 }
 function clearBox(sc) {
   const r = S.scenes[sc.id];
   if (!r || !r.justCleared) return '';
   r.justCleared = false; save(); setTimeout(() => sfx('clear'), 250);
-  const x = sceneById(sc.id), nx = x.ch.scenes[x.i + 1];
+  const x = sceneById(sc.id), nx = nextMain(sc);
   const chDone = chapterClear(x.ch);
   return `${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, eye: 'happy' }, { who: 'me', px: 96, eye: 'happy', blush: true, hop: true, emo: '♪' }], '場面クリア')}<div class="win pop"><h2>🎉 場面クリア！ <span class="stars" data-stars="${sceneStars(sc.id)}">☆☆☆</span></h2><p>${esc(sc.outro)}</p>
 ${sc.boss && !r.boss ? '<p>最後に「⑤スピーチ」で30秒自己紹介に挑戦しよう。</p>' : ''}
 ${chDone ? `<p class="okc">${esc(x.ch.title)} クリア！${CHAPTERS[CHAPTERS.indexOf(x.ch) + 1] ? ' 次の章が始まります。' : ' 全章クリア、おめでとうございます！'}</p>` : ''}
-${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面：${esc(nx.title)}</button>` : (CHAPTERS[CHAPTERS.indexOf(x.ch) + 1] && x.ch.scenes.every(s2 => S.scenes[s2.id]?.clear) ? `<button class="btn pri" data-a="goScene" data-v="${CHAPTERS[CHAPTERS.indexOf(x.ch) + 1].scenes[0].id}">次の章へ：${esc(CHAPTERS[CHAPTERS.indexOf(x.ch) + 1].title)}</button>` : '')}</div>`;
+${nx ? `<button class="btn pri" data-a="goScene" data-v="${nx.id}">次の場面：${esc(nx.title)}</button>` : (kindOf(sc) === 'main' && CHAPTERS[CHAPTERS.indexOf(x.ch) + 1] && mainsOf(x.ch).every(s2 => S.scenes[s2.id]?.clear) ? `<button class="btn pri" data-a="goScene" data-v="${CHAPTERS[CHAPTERS.indexOf(x.ch) + 1].scenes[0].id}">次の章へ：${esc(CHAPTERS[CHAPTERS.indexOf(x.ch) + 1].title)}</button>` : '')}</div>`;
 }
 
 /* ④ とっさに（場面・復習で共通） */
