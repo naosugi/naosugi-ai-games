@@ -216,7 +216,7 @@ const TRACKS={
 const NOTE_N={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
 function noteFreq(s){const m=/^([A-G]#?)(\d)$/.exec(s);if(!m)return 0;return 440*Math.pow(2,(NOTE_N[m[1]]+(+m[2]+1)*12-69)/12);}
 const MUS={name:null,timer:null,i:0,t:0,gain:null,toks:null};
-function ensureAudio(){try{if(!SND.a)SND.a=new (window.AudioContext||window.webkitAudioContext)();if(SND.a.state==='suspended')SND.a.resume();if(!MUS.gain){MUS.gain=SND.a.createGain();MUS.gain.gain.value=1;MUS.gain.connect(SND.a.destination);}return true;}catch(e){return false;}}
+function ensureAudio(){try{if(!SND.a)SND.a=new (window.AudioContext||window.webkitAudioContext)();if(SND.a.state==='suspended'&&!document.hidden)SND.a.resume();if(!MUS.gain){MUS.gain=SND.a.createGain();MUS.gain.gain.value=1;MUS.gain.connect(SND.a.destination);}return true;}catch(e){return false;}}
 function playMusic(name){if(MUS.name===name&&MUS.timer)return;MUS.name=name;startMusic();}
 function stopMusic(){clearInterval(MUS.timer);MUS.timer=null;if(MUS.gain&&SND.a){const g=MUS.gain;const t=SND.a.currentTime;g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(0,t+.15);const ng=SND.a.createGain();ng.gain.value=1;ng.connect(SND.a.destination);setTimeout(()=>{try{g.disconnect();}catch(e){}},400);MUS.gain=ng;}}
 function startMusic(){
@@ -237,6 +237,11 @@ function startMusic(){
   },70);
 }
 function jingle(notes,step){if(!SND.on||!ensureAudio())return;const a=SND.a;let t=a.currentTime+.03;for(const n of notes.split(/\s+/)){if(n!=='-'&&n!=='.'){const f=noteFreq(n);const o=a.createOscillator(),g=a.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+step*1.8);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+step*2);}t+=step;}}
+// タブを 切りかえたり 画面を 消したりしたら 音を 止める（AudioContext ごと 一時停止。もどったら 再開）
+function pauseAudio(){try{if(SND.a&&SND.a.state==='running')SND.a.suspend();}catch(e){}}
+function resumeAudio(){try{if(SND.on&&SND.a&&SND.a.state==='suspended')SND.a.resume().then(()=>{if(MUS.name&&!MUS.timer)startMusic();}).catch(()=>{});}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseAudio();else resumeAudio();});
+window.addEventListener('pagehide',pauseAudio);window.addEventListener('blur',()=>{if(document.hidden)pauseAudio();});
 const unlockAudio=()=>{if(!SND.on)return;if(ensureAudio()&&!MUS.timer&&MUS.name){if(SND.a.state==='running')startMusic();else SND.a.resume().then(()=>startMusic()).catch(()=>{});}};
 document.addEventListener('pointerdown',unlockAudio);document.addEventListener('keydown',unlockAudio);
 

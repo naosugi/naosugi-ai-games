@@ -11,7 +11,7 @@ const jobName=j=>JOBS[j].name;
 // ---------- sound ----------
 const SND={on:true,a:null};try{SND.on=localStorage.getItem(SND_KEY)!=='0';}catch(e){}
 function tone(f0,f1,dur,type,vol,delay){const a=SND.a,t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||.05,t+.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02);}
-function snd(k){if(!SND.on)return;try{if(!SND.a)SND.a=new (window.AudioContext||window.webkitAudioContext)();if(SND.a.state==='suspended')SND.a.resume();
+function snd(k){if(!SND.on||document.hidden)return;try{if(!SND.a)SND.a=new (window.AudioContext||window.webkitAudioContext)();if(SND.a.state==='suspended')SND.a.resume();
   switch(k){
     case 'tap':tone(700,0,.04,'square',.025);break;
     case 'hit':tone(260,90,.12,'square',.05);break;
