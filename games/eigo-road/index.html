@@ -147,6 +147,42 @@ input.cz.ng{animation:shake .35s}input.cz.ok{animation:flash .6s}
 .pick .mk{flex:0 0 1.6em;font-weight:900;text-align:center}
 .pick .tx{flex:1;min-width:0;font-size:14px;line-height:1.4}
 .pick .tx small{display:block;color:var(--sub);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{font:inherit;font-size:13px;font-weight:700;padding:4px 10px;border-radius:14px;border:2px solid #6f7fd0;background:#0f1a50;color:var(--sub);cursor:pointer}
+.chip.on{background:var(--acc);color:#1a1200;border-color:#fff3b0}
+.prow{display:flex;gap:8px;align-items:flex-start;padding:8px 2px;border-bottom:1px dashed rgba(255,255,255,.2);cursor:pointer}
+.prow:last-child{border-bottom:none}
+.prow .tx{flex:1;min-width:0}
+.star{font:inherit;font-size:22px;line-height:1;background:none;border:none;color:var(--sub);cursor:pointer;padding:2px 4px}
+.star.on{color:var(--acc)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+.grid2 .btn{text-align:center;padding:10px 6px}
+.coach{display:flex;gap:8px;align-items:flex-start;background:#fff;color:#1a1a2e;border-radius:10px;border:3px solid var(--acc);padding:8px 10px;margin:8px 4px 12px;position:relative}
+.coach p{margin:2px 0;font-size:14px;line-height:1.5}
+.coach .btn{display:inline-block;width:auto;padding:4px 12px;margin:4px 0 0;font-size:13px}
+.new-dot::after{content:"NEW";font-size:10px;font-weight:900;color:#fff;background:#e53935;border-radius:6px;padding:0 4px;margin-left:6px;vertical-align:middle}
+.items{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.item{background:#0006;border:2px solid #6f7fd0;border-radius:8px;padding:4px 2px 6px;text-align:center;cursor:pointer;font:inherit;color:var(--txt)}
+.item.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.item.lock{opacity:.5;cursor:default}
+.item canvas{margin:0 auto}
+.item span{display:block;font-size:11px;font-weight:700;line-height:1.3}
+.ach{display:flex;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px dashed rgba(255,255,255,.2)}
+.ach .ic{font-size:26px;width:36px;text-align:center}
+.ach.lock{opacity:.5}
+.ach .tx{flex:1;min-width:0}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
+.cmp td,.cmp th{border-bottom:1px dashed rgba(255,255,255,.2);padding:5px 4px;text-align:center}
+.cmp th{color:var(--sub);font-size:12px;font-weight:700}
+.cmp td:first-child,.cmp th:first-child{text-align:left}
+.up{color:var(--ok)}.down{color:var(--ng)}
+.cut{position:fixed;inset:0;z-index:70;background:#000d;display:flex;align-items:center;justify-content:center;padding:14px}
+.cut .box{width:100%;max-width:440px;background:linear-gradient(var(--win1),var(--win2));border:3px solid #fff;border-radius:10px;padding:10px 14px 14px}
+.cut .rk{font-family:"Courier New",monospace;font-weight:900;font-size:22px;color:var(--acc);text-align:center;margin:8px 0;animation:pop .5s ease-out}
+.credits{height:340px;overflow:hidden;position:relative;mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent)}
+.credits .roll{position:absolute;left:0;right:0;text-align:center;animation:roll 28s linear forwards}
+.credits .roll p{margin:6px 0}.credits .roll h3{margin:18px 0 6px}
+@keyframes roll{from{transform:translateY(340px)}to{transform:translateY(-100%)}}
 .now-tag{display:inline-block;white-space:nowrap;vertical-align:middle;font-size:11px;font-weight:900;color:#1a1200;background:var(--acc);border-radius:8px;padding:0 6px;margin-left:6px}
 .center{text-align:center}
 hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:10px 0}
@@ -237,13 +273,14 @@ const lineByKey = k => { const p = k.lastIndexOf('-'); const s = sceneById(k.sli
 
 /* ---------- 保存 ---------- */
 const KEY = 'eigoroad_save';
-const DEF = () => ({ v: 1, speed: 1, voice: '', multi: true, useSR: false, srBoth: false, cue: true, scenes: {}, lines: {}, days: {}, bench: [], boss: [], checked: false });
+const DEF = () => ({ v: 1, speed: 1, voice: '', multi: true, useSR: false, srBoth: false, cue: true, scenes: {}, lines: {}, days: {}, bench: [], boss: [], checked: false,
+  revCap: 20, fav: {}, outfit: { neck: 'scarf_red', face: '', head: '' }, ach: {}, itemSeen: {}, fs: 1, tips: {}, noise: 2, nz: {}, cut: {}, cnt: { shin: 0, rv: 0 }, bestStreak: 0 });
 let S = load();
 function load() {
   try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j && j.v === 1) return Object.assign(DEF(), j); } catch (e) {}
   return DEF();
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); return true; } catch (e) { return false; } }
+function save() { let ok = true; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { ok = false; } if (typeof checkProgress === 'function') checkProgress(); return ok; }
 function dayRec() { const k = today(); if (!S.days[k]) { S.days[k] = { rt: [], dOk: 0, dTot: 0, qO: 0, qM: 0, qX: 0 }; setTimeout(() => { gainExp(20); toast('今日はじめての練習 +20 EXP'); }, 50); } return S.days[k]; }
 function scRec(id) { return S.scenes[id] || (S.scenes[id] = {}); }
 function streak() {
@@ -568,50 +605,36 @@ const FUR = {
   staff: { b: '#8c6f52', l: '#a8896a', d: '#5f4a36', f: '#c2a688', m: '#735a42' },
 };
 // 小物（正面向き 40×32 の上に描く）。ty = 頭の上下
-function accessory(who, img, ty) {
+// 小物の描き方（正面向き 40×32）。P=点を打つ, ty=頭の上下, ey=目の高さ
+const DRAW = {
+  scarf_red: (P) => { for (let x = 11; x <= 29; x++) { P(x, 23, 'r'); P(x, 24, x % 3 ? 'r' : 'rd'); } for (let y = 25; y <= 28; y++) { P(25, y, 'r'); P(26, y, y % 2 ? 'rd' : 'r'); } },
+  scarf_blue: (P) => { for (let x = 11; x <= 29; x++) { P(x, 23, 'u'); P(x, 24, x % 3 ? 'u' : 'ud'); } for (let y = 25; y <= 28; y++) { P(25, y, 'u'); P(26, y, y % 2 ? 'ud' : 'u'); } },
+  bowtie: (P) => { [[17, 23], [18, 23], [22, 23], [23, 23], [16, 24], [17, 24], [18, 24], [19, 24], [21, 24], [22, 24], [23, 24], [24, 24], [17, 25], [18, 25], [22, 25], [23, 25]].forEach(([x, y]) => P(x, y, 'r')); P(20, 24, 'rd'); },
+  tie_blue: (P) => { for (let x = 19; x <= 21; x++) P(x, 23, 'ud'); for (let y = 24; y <= 29; y++) { P(20, y, 'u'); if (y >= 25 && y <= 28) { P(19, y, 'u'); P(21, y, 'ud'); } } },
+  badge: (P) => { for (let k = 0; k <= 4; k++) { P(15 + k, 22 + k, 'u'); P(25 - k, 22 + k, 'u'); } for (let y = 26; y <= 30; y++) for (let x = 17; x <= 23; x++) P(x, y, y === 26 ? 'u' : (x === 17 || x === 23 || y === 30) ? 'sg' : 'sw'); P(19, 28, 'sg'); P(20, 28, 'sg'); P(21, 28, 'sg'); },
+  apron: (P) => { P(15, 21, 'gnd'); P(25, 21, 'gnd'); P(16, 22, 'gnd'); P(24, 22, 'gnd'); for (let y = 23; y <= 29; y++) for (let x = 14; x <= 26; x++) P(x, y, (x === 14 || x === 26) ? 'gnd' : 'gn'); for (let x = 18; x <= 22; x++) P(x, 26, 'gnd'); P(18, 27, 'gnd'); P(22, 27, 'gnd'); },
+  glasses_purple: (P, ty, ey, ring) => { ring(13, 'pu'); ring(23, 'pu'); for (let x = 17; x <= 22; x++) P(x, ey, 'pu'); },
+  glasses_round: (P, ty, ey, ring) => { ring(13, 'g'); ring(23, 'g'); for (let x = 17; x <= 22; x++) P(x, ey, 'g'); },
+  glasses_square: (P, ty, ey) => { const sq = (x0) => { for (let x = x0; x <= x0 + 3; x++) { P(x, ey - 1, 'h'); P(x, ey + 2, 'h'); } for (let y = ey; y <= ey + 1; y++) { P(x0, y, 'h'); P(x0 + 3, y, 'h'); } }; sq(13); sq(23); for (let x = 17; x <= 22; x++) P(x, ey, 'h'); },
+  sunglasses: (P, ty, ey) => { for (const x0 of [12, 23]) for (let x = x0; x <= x0 + 4; x++) for (let y = ey - 1; y <= ey + 1; y++) P(x, y, (y === ey - 1 && x === x0 + 1) ? 'hl' : 'h'); for (let x = 17; x <= 22; x++) P(x, ey - 1, 'h'); },
+  monocle: (P, ty, ey, ring) => { ring(23, 'g'); for (let k = 0; k < 6; k++) P(27 + (k >> 1), ey + 3 + k, 'gd'); },
+  headphones: (P, ty) => { for (let x = 13; x <= 27; x++) P(x, 2 + ty, 'h'); P(12, 3 + ty, 'h'); P(28, 3 + ty, 'h'); P(11, 4 + ty, 'h'); P(29, 4 + ty, 'h'); for (let y = 5; y <= 10; y++) for (const x0 of [9, 28]) for (let x = x0; x <= x0 + 2; x++) P(x, y + ty, x === x0 + 1 && y > 5 && y < 10 ? 'hl' : 'h'); },
+  knit: (P, ty) => { for (let x = 18; x <= 22; x++) P(x, 1 + ty, 'gnl'); for (let y = 2; y <= 4; y++) for (let x = 14 - (y - 2); x <= 26 + (y - 2); x++) P(x, y + ty, (x + y) % 3 ? 'gn' : 'gnd'); for (let x = 12; x <= 28; x++) P(x, 5 + ty, 'gnd'); },
+  flower: (P, ty) => { const fx = 28, fy = 6 + ty; [[0, -1], [-1, 0], [1, 0], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]].forEach(([dx, dy], k) => P(fx + dx, fy + dy, k < 4 ? 'pk' : 'r')); P(fx, fy, 'yl'); },
+  propeller: (P, ty) => { for (let x = 15; x <= 25; x++) P(x, 1 + ty, x === 20 ? 'h' : 'yl'); P(20, 2 + ty, 'h'); P(20, 3 + ty, 'h'); for (let y = 4; y <= 5; y++) for (let x = 15 - (y - 4); x <= 25 + (y - 4); x++) P(x, y + ty, Math.floor((x - 13) / 3) % 2 ? 'r' : 'u'); },
+  mortar: (P, ty) => { for (let x = 11; x <= 29; x++) P(x, 3 + ty, 'h'); for (let x = 13; x <= 27; x++) P(x, 2 + ty, 'h'); for (let y = 4; y <= 5; y++) for (let x = 15; x <= 25; x++) P(x, y + ty, 'h'); P(20, 2 + ty, 'yl'); for (let y = 3; y <= 7; y++) P(28, y + ty, 'yl'); P(27, 3 + ty, 'yl'); },
+  leaf: (P, ty) => { [[23, 1], [24, 1], [22, 2], [23, 2], [24, 2], [25, 2], [22, 3], [23, 3], [24, 3], [23, 4]].forEach(([x, y]) => P(x, y + ty, 'gn')); P(24, 2 + ty, 'gnd'); P(23, 3 + ty, 'gnd'); P(22, 5 + ty, 'gnd'); P(21, 6 + ty, 'gnd'); },
+  crown: (P, ty) => { for (let x = 14; x <= 26; x++) { P(x, 4 + ty, 'g'); P(x, 5 + ty, x % 4 === 2 ? 'r' : 'g'); } [14, 17, 20, 23, 26].forEach(x => { P(x, 3 + ty, 'g'); P(x, 2 + ty, 'yl'); }); [15, 16, 18, 19, 21, 22, 24, 25].forEach(x => P(x, 3 + ty, (x % 3) ? 'gd' : 'g')); },
+};
+const NPC_ITEMS = { priya: ['glasses_purple'], miller: ['monocle', 'bowtie'], tom: ['headphones'], dana: ['knit'], raj: ['tie_blue'], lena: ['flower'], sam: ['propeller'], alex: ['glasses_square'], staff: ['apron'], wei: ['badge'] };
+const outfitList = o => [o.neck, o.face, o.head].filter(Boolean);
+const outfitSig = o => outfitList(o).join('+');
+function accessory(who, img, ty, outfit) {
   const W = 40, P = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < 32) img[y * W + x] = c; };
   const ey = 12 + ty;
   const ring = (x0, c) => { for (let x = x0 + 1; x <= x0 + 2; x++) { P(x, ey - 1, c); P(x, ey + 2, c); } for (let y = ey; y <= ey + 1; y++) { P(x0, y, c); P(x0 + 3, y, c); } };
-  if (who === 'me') { // 赤いマフラー
-    for (let x = 11; x <= 29; x++) { P(x, 23, 'r'); P(x, 24, x % 3 ? 'r' : 'rd'); }
-    for (let y = 25; y <= 28; y++) { P(25, y, 'r'); P(26, y, y % 2 ? 'rd' : 'r'); }
-  } else if (who === 'priya') { // 丸めがね
-    ring(13, 'pu'); ring(23, 'pu'); for (let x = 17; x <= 22; x++) P(x, ey, 'pu');
-  } else if (who === 'miller') { // 片眼鏡と蝶ネクタイ
-    ring(23, 'g'); for (let k = 0; k < 6; k++) P(27 + (k >> 1), ey + 3 + k, 'gd');
-    [[17, 23], [18, 23], [22, 23], [23, 23], [16, 24], [17, 24], [18, 24], [19, 24], [21, 24], [22, 24], [23, 24], [24, 24], [17, 25], [18, 25], [22, 25], [23, 25]].forEach(([x, y]) => P(x, y, 'r'));
-    P(20, 24, 'rd');
-  } else if (who === 'tom') { // ヘッドホン
-    for (let x = 13; x <= 27; x++) P(x, 2 + ty, 'h');
-    P(12, 3 + ty, 'h'); P(28, 3 + ty, 'h'); P(11, 4 + ty, 'h'); P(29, 4 + ty, 'h');
-    for (let y = 5; y <= 10; y++) for (const x0 of [9, 28]) for (let x = x0; x <= x0 + 2; x++) P(x, y + ty, x === x0 + 1 && y > 5 && y < 10 ? 'hl' : 'h');
-  } else if (who === 'dana') { // 緑のニット帽
-    for (let x = 18; x <= 22; x++) P(x, 1 + ty, 'gnl');
-    for (let y = 2; y <= 4; y++) for (let x = 14 - (y - 2); x <= 26 + (y - 2); x++) P(x, y + ty, (x + y) % 3 ? 'gn' : 'gnd');
-    for (let x = 12; x <= 28; x++) P(x, 5 + ty, 'gnd');
-  } else if (who === 'raj') { // 青いネクタイ
-    for (let x = 19; x <= 21; x++) P(x, 23, 'ud');
-    for (let y = 24; y <= 29; y++) { P(20, y, 'u'); if (y >= 25 && y <= 28) { P(19, y, 'u'); P(21, y, 'ud'); } }
-  } else if (who === 'lena') { // 耳もとの花
-    const fx = 28, fy = 6 + ty;
-    [[0, -1], [-1, 0], [1, 0], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]].forEach(([dx, dy], k) => P(fx + dx, fy + dy, k < 4 ? 'pk' : 'r'));
-    P(fx, fy, 'yl');
-  } else if (who === 'sam') { // プロペラ帽
-    for (let x = 15; x <= 25; x++) P(x, 1 + ty, x === 20 ? 'h' : 'yl');
-    P(20, 2 + ty, 'h'); P(20, 3 + ty, 'h');
-    for (let y = 4; y <= 5; y++) for (let x = 15 - (y - 4); x <= 25 + (y - 4); x++) P(x, y + ty, Math.floor((x - 13) / 3) % 2 ? 'r' : 'u');
-  } else if (who === 'alex') { // 四角いめがね
-    const sq = (x0) => { for (let x = x0; x <= x0 + 3; x++) { P(x, ey - 1, 'h'); P(x, ey + 2, 'h'); } for (let y = ey; y <= ey + 1; y++) { P(x0, y, 'h'); P(x0 + 3, y, 'h'); } };
-    sq(13); sq(23); for (let x = 17; x <= 22; x++) P(x, ey, 'h');
-  } else if (who === 'staff') { // エプロン
-    P(15, 21, 'gnd'); P(25, 21, 'gnd'); P(16, 22, 'gnd'); P(24, 22, 'gnd');
-    for (let y = 23; y <= 29; y++) for (let x = 14; x <= 26; x++) P(x, y, (x === 14 || x === 26) ? 'gnd' : 'gn');
-    for (let x = 18; x <= 22; x++) P(x, 26, 'gnd'); P(18, 27, 'gnd'); P(22, 27, 'gnd');
-  } else if (who === 'wei') { // 学会の名札
-    for (let k = 0; k <= 4; k++) { P(15 + k, 22 + k, 'u'); P(25 - k, 22 + k, 'u'); }
-    for (let y = 26; y <= 30; y++) for (let x = 17; x <= 23; x++) P(x, y, y === 26 ? 'u' : (x === 17 || x === 23 || y === 30) ? 'sg' : 'sw');
-    P(19, 28, 'sg'); P(20, 28, 'sg'); P(21, 28, 'sg');
-  }
+  const items = who === 'me' ? outfitList(outfit || S.outfit) : (NPC_ITEMS[who] || []);
+  items.forEach(id => DRAW[id] && DRAW[id](P, ty, ey, ring));
 }
 // 講義スライド（過学習のグラフ）
 function slideImg(st) {
@@ -625,12 +648,13 @@ function slideImg(st) {
 }
 const wbCache = {};
 function wbImg(who, st) {
-  const key = who + '|' + (st.side ? 's' + st.wp : '') + (st.eye || '') + (st.chew ? 'c' : '') + (st.bob || 0) + (st.blush ? 'b' : '');
+  const of = who === 'me' ? (st.outfit || S.outfit) : null;
+  const key = who + '|' + (st.side ? 's' + st.wp : '') + (st.eye || '') + (st.chew ? 'c' : '') + (st.bob || 0) + (st.blush ? 'b' : '') + (of ? '|' + outfitSig(of) : '');
   if (wbCache[key]) return wbCache[key];
   let R;
   if (who === 'slide') R = slideImg(st);
   else if (st.side) R = WB.renderWombat({ walk: true, wp: st.wp, bob: st.bob || 0, eye: st.eye, chew: st.chew });
-  else { R = WB.renderFront({ eye: st.eye, chew: st.chew, bob: st.bob || 0, blush: st.blush }); R = { W: R.W, H: R.H, img: R.img.slice() }; accessory(who, R.img, Math.round(st.bob || 0)); }
+  else { R = WB.renderFront({ eye: st.eye, chew: st.chew, bob: st.bob || 0, blush: st.blush }); R = { W: R.W, H: R.H, img: R.img.slice() }; accessory(who, R.img, Math.round(st.bob || 0), of); }
   const pal = Object.assign({}, WB.PAL, FUR[who] || {}, XPAL);
   const c = document.createElement('canvas'); c.width = R.W; c.height = R.H; const x = c.getContext('2d');
   for (let y = 0; y < R.H; y++) for (let i = 0; i < R.W; i++) { const k = R.img[y * R.W + i]; if (k && pal[k]) { x.fillStyle = pal[k]; x.fillRect(i, y, 1, 1); } }
@@ -638,7 +662,7 @@ function wbImg(who, st) {
 }
 const SPK = { who: null }, MIC = { on: false, loud: false };
 // 顔のキャンバス。eye: 目の形（happy/half/closed）、blush: ほっぺ
-const face = (who, px, o = {}) => `<canvas class="pix wb${o.cls ? ' ' + o.cls : ''}" data-who="${who}" data-eye="${o.eye || ''}" data-blush="${o.blush ? 1 : ''}" width="40" height="32" style="width:${px}px;height:${Math.round(px * .8)}px"></canvas>`;
+const face = (who, px, o = {}) => `<canvas class="pix wb${o.cls ? ' ' + o.cls : ''}" data-who="${who}" data-eye="${o.eye || ''}" data-blush="${o.blush ? 1 : ''}"${o.outfit ? ` data-outfit='${esc(JSON.stringify(o.outfit))}'` : ''} width="40" height="32" style="width:${px}px;height:${Math.round(px * .8)}px"></canvas>`;
 const BGS = {
   c1s1: 'linear-gradient(#cfe0f0 0 64%,#8b6f4e 64% 67%,#a8865f 67%)',
   c1s2: 'linear-gradient(#e6e1d2 0 64%,#6b4b32 64% 67%,#8a6440 67%)',
@@ -674,6 +698,7 @@ function paintFaces() {
     const seed = who.length * 7 + (cv.dataset.eye ? 3 : 0);
     const blink = !talking && !cv.dataset.eye && (animT + seed) % 29 === 0;
     const st = { eye: blink ? 'closed' : (cv.dataset.eye || undefined), chew: talking && animT % 2 === 0, bob: talking && animT % 4 < 2 ? -1 : 0, blush: cv.dataset.blush === '1' };
+    if (who === 'me') st.outfit = cv.dataset.outfit ? JSON.parse(cv.dataset.outfit) : S.outfit;
     const k = JSON.stringify(st); if (cv._k === k) return; cv._k = k;
     const g = cv.getContext('2d'); g.clearRect(0, 0, 40, 32); g.drawImage(wbImg(who, st), 0, 0);
   });
@@ -1062,7 +1087,9 @@ function render() {
   const r = SCREENS[V.name]();
   app.innerHTML = r.html;
   if (enterAnim) { app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter'); enterAnim = false; } else app.classList.remove('enter');
-  ACTS = Object.assign({ home: () => go('title'), story: () => go('story') }, r.acts || {});
+  ACTS = Object.assign({ home: () => go('title'), story: () => go('story'), tipok: k => { S.tips[k] = 1; save(); document.getElementById('coach-' + k)?.remove(); } }, r.acts || {});
+  app.style.zoom = S.fs || 1;
+  noiseSet(r.noise === true);
   r.after && r.after();
   paintFaces(); animateExtras();
 }
@@ -1101,13 +1128,20 @@ SCREENS.title = () => {
 </div>
 ${!S.checked ? `<div class="win"><h2>はじめに</h2><p>まず「せってい・動作チェック」で、英語の読み上げとマイク録音がこの端末で使えるか確かめてください。録音した声は端末の中だけに保存されます。シャドーイングにはイヤホンがおすすめです。</p></div>` : ''}
 <button class="btn pri cur" data-a="story">ストーリー<span class="r">${esc(nextSceneLabel())}</span></button>
-<button class="btn" data-a="review" ${due ? '' : 'disabled'}>🔁 復習<span class="r">今日 ${due}文</span></button>
-<button class="btn" data-a="bench">🎙 定点録音<span class="r">${benchNote}</span></button>
+<button class="btn" data-a="review" ${due ? '' : 'disabled'}>🔁 復習<span class="r">${due ? (revLeft() ? `今日 ${Math.min(due, revLeft())}文` : '今日の分は完了') : 'なし'}</span></button>
+<div class="grid2">
+<button class="btn" data-a="phrases">📖 フレーズ帳</button>
+<button class="btn ${hasNewItem() ? 'new-dot' : ''}" data-a="closet">👕 着せ替え</button>
+<button class="btn" data-a="achieve">🏆 実績 ${ACH.filter(a => S.ach[a.id]).length}/${ACH.length}</button>
+<button class="btn" data-a="week">📅 今週</button>
 <button class="btn" data-a="stats">📈 きろく</button>
+<button class="btn" data-a="bench">🎙 定点録音</button>
+</div>
+<p class="small" style="margin:0 4px">定点録音：${benchNote}</p>
 <button class="btn" data-a="settings">⚙ せってい・動作チェック</button>
 <p class="small center">数字や星の基準はゲーム内のめやすです。</p>`,
     after: startRoad,
-    acts: { review: () => startReview(), bench: () => go('bench', { mode: 'list' }), stats: () => go('stats'), settings: () => go('settings', { t: {} }) },
+    acts: { review: () => startReview(), bench: () => go('bench', { mode: 'list' }), stats: () => go('stats'), settings: () => go('settings', { t: {} }), phrases: () => go('phrases'), closet: () => go('closet'), achieve: () => go('achieve'), week: () => go('week') },
   };
 };
 function nextSceneLabel() {
@@ -1162,8 +1196,10 @@ SCREENS.scene = () => {
   const kd = kindOf(sc), head = topBar('story', `${x.ch.title.split(' ')[0]}${kd === 'main' ? '-' + (mainsOf(x.ch).indexOf(sc) + 1) : kd === 'talk' ? ' 🎧' : ' 🍵'} ${sc.title}`) + sceneTabs(sc);
   const f = SCENE_STEPS[V.step] || SCENE_STEPS.intro;
   const r = f(x);
-  r.html = head + r.html;
-  r.acts = Object.assign({ step: k => go('scene', { id: V.id, step: k }) }, r.acts || {});
+  const listenish = ['listen', 'dict', 'gist'].includes(V.step);
+  r.html = head + coach(V.step) + (listenish ? `<div>${noiseChip(sc)}</div>` : '') + r.html;
+  if (listenish) r.noise = nzOn(sc);
+  r.acts = Object.assign({ step: k => go('scene', { id: V.id, step: k }) }, noiseAct(sc), r.acts || {});
   return r;
 };
 const SCENE_STEPS = {};
@@ -1296,7 +1332,7 @@ ${sc.lines.some(l => l.w === 'me') ? `<label class="tg"><input type="checkbox" d
 <div class="win">
 <p class="small">${k + 1} / ${idxs.length}</p>
 ${stageHTML(sc.id, l.w === 'me' ? [{ who: 'me', px: 104 }] : [{ who: l.w, px: 96 }, { who: 'me', px: 80, dim: !V.recording }])}
-${whoTag(l.w)}${badge(l.r)}
+${whoTag(l.w)}${badge(l.r)} <button class="star ${S.fav[id] ? 'on' : ''}" data-a="favL" data-v="${id}" title="お気に入り">${S.fav[id] ? '★' : '☆'}</button>
 ${hide ? `<div class="big" style="color:var(--sub)" data-a="reveal">（テキストをかくしています。タップで表示）</div>` : `<div class="big">${hlText(l.en, pts)}</div>`}
 ${V.showJa ? `<div class="ja">${esc(l.ja)}</div>` : `<button class="btn" style="padding:4px 8px;font-size:13px;width:auto;display:inline-block" data-a="ja">日本語訳</button>`}
 ${srcTag(l)}
@@ -1312,6 +1348,7 @@ ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
 </div>
 <div class="row"><button class="btn" data-a="prev" ${k > 0 ? '' : 'disabled'}>◀ 前</button>${k < idxs.length - 1 ? `<button class="btn pri" data-a="nextL">次 ▶</button>` : `<button class="btn pri cur" data-a="done">③書き取り へ</button>`}</div>`,
     acts: {
+      favL: (k, b) => { toggleFav(k); b.textContent = S.fav[k] ? '★' : '☆'; b.classList.toggle('on', !!S.fav[k]); },
       hide: b => { V.hide = b.checked; V.reveal = false; render(); },
       onlyMe: b => { V.onlyMe = b.checked; V.mi = 0; render(); },
       reveal: () => { V.reveal = true; render(); },
@@ -1445,6 +1482,7 @@ function clearBox(sc) {
   r.justCleared = false; save(); setTimeout(() => sfx('clear'), 250);
   const x = sceneById(sc.id), nx = nextMain(sc);
   const chDone = chapterClear(x.ch);
+  if (chDone && !S.cut[x.ch.id]) { S.cut[x.ch.id] = today(); save(); setTimeout(() => showCut(CHAPTERS.indexOf(x.ch)), 1600); }
   return `${stageHTML(sc.id, [{ who: partnerOf(sc), px: 84, eye: 'happy' }, { who: 'me', px: 96, eye: 'happy', blush: true, hop: true, emo: '♪' }], '場面クリア')}<div class="win pop"><h2>🎉 場面クリア！ <span class="stars" data-stars="${sceneStars(sc.id)}">☆☆☆</span></h2><p>${esc(sc.outro)}</p>
 ${sc.boss && !r.boss ? '<p>最後に「⑤スピーチ」で30秒自己紹介に挑戦しよう。</p>' : ''}
 ${chDone ? `<p class="okc">${esc(x.ch.title)} クリア！${CHAPTERS[CHAPTERS.indexOf(x.ch) + 1] ? ' 次の章が始まります。' : ' 全章クリア、おめでとうございます！'}</p>` : ''}
@@ -1457,18 +1495,26 @@ SCENE_STEPS.quick = ({ sc }) => {
   return quickView();
 };
 function newQ(keys, src) { return { keys, i: 0, phase: 'wait', rt: null, blob: null, hint: false, res: [], src }; }
-function startReview() {
-  const keys = dueKeys().sort((a, b) => (S.lines[a].b - S.lines[b].b) || (S.lines[a].d < S.lines[b].d ? -1 : 1)).slice(0, 15);
-  go('review', { q: newQ(keys, 'review') });
+// 復習：1日の上限まで。苦手な文（箱が小さい・×が多い・期限が古い）から出す
+function revLeft() { const d = S.days[today()]; return Math.max(0, (S.revCap || 20) - ((d && d.rv) || 0)); }
+function dueSorted() { return dueKeys().sort((a, b) => (S.lines[a].b - S.lines[b].b) || ((S.lines[b].xc || 0) - (S.lines[a].xc || 0)) || (S.lines[a].d < S.lines[b].d ? -1 : 1)); }
+function startReview(force) {
+  const n = force ? 15 : Math.min(15, revLeft());
+  go('review', { q: newQ(dueSorted().slice(0, n), 'review') });
 }
 SCREENS.review = () => {
   const r = quickView();
-  r.html = topBar('home', '復習') + r.html;
+  r.html = topBar('home', V.q.label || '復習') + (V.q.src === 'review' ? coach('review') : '') + r.html;
+  r.acts = Object.assign({ force: () => startReview(true) }, r.acts || {});
   return r;
 };
 function quickView() {
   const q = V.q;
-  if (!q.keys.length) return { html: `<div class="win"><p>今日の復習はありません。</p></div><button class="btn" data-a="home">タイトルへ</button>` };
+  if (!q.keys.length) {
+    const due = dueKeys().length;
+    if (q.src === 'review' && due) return { html: `${stageHTML('c1s1', [{ who: 'me', px: 96, eye: 'happy', emo: '♪' }], '今日の復習')}<div class="win"><p>今日の復習の上限（${S.revCap}文）に達しました。おつかれさまでした。</p><p class="small">期限が来ている文はあと ${due}文あります。明日に回しても大丈夫です。上限は「せってい」で変えられます。</p></div><div class="row"><button class="btn" data-a="home">タイトルへ</button><button class="btn pri" data-a="force">上限を超えて続ける</button></div>` };
+    return { html: `<div class="win"><p>今日の復習はありません。</p></div><button class="btn" data-a="home">タイトルへ</button>` };
+  }
   if (q.i >= q.keys.length) return quickEnd();
   const { s, i, line: l } = lineByKey(q.keys[q.i]);
   const prev = i > 0 ? s.sc.lines[i - 1] : null;
@@ -1498,7 +1544,7 @@ ${q.hint ? `<div class="hint">💡 ${esc(l.en.split(' ').slice(0, 2).join(' '))}
   } else if (q.phase === 'judge') {
     h = `${stg}<div class="win">${head}<div class="ja">${esc(l.ja)}</div>
 <p>反応 <b class="${q.rt == null ? '' : q.rt <= 1500 ? 'okc' : q.rt <= 3000 ? 'midc' : 'ngc'}" style="font-size:22px">${q.rt == null ? '—' : sec(q.rt)}</b>${rtTier(q.rt) && !q.hint ? `<span class="tier ${rtTier(q.rt)[1]}">${rtTier(q.rt)[0]}</span>` : ''}${q.hint ? '（ヒントあり）' : ''}${L(q) ? `　<span class="small">前回 ${sec(L(q))}</span>` : ''}</p>
-<div class="big">${hlText(l.en, makePoints(l.en))}</div>${srcTag(l)}
+<div class="big">${hlText(l.en, makePoints(l.en))} <button class="star ${S.fav[q.keys[q.i]] ? 'on' : ''}" data-a="favQ" data-v="${q.keys[q.i]}">${S.fav[q.keys[q.i]] ? '★' : '☆'}</button></div>${srcTag(l)}
 ${pointsHTML(makePoints(l.en))}
 ${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言い方が人によって違うため、止まった回数だけを声の大きさから推定しています。') : ''}
 <div class="row"><button class="btn pri" data-a="model">🔊 お手本</button><button class="btn" data-a="mine" ${q.blob ? '' : 'disabled'}>🎧 自分</button><button class="btn" data-a="cmp" ${q.blob ? '' : 'disabled'}>🔁 比べる</button></div>
@@ -1542,6 +1588,7 @@ ${q.rec ? findingsHTML(analyzeRec(q.rec, l, false), '「とっさに」では言
       mine: () => { stopSpeak(); playBlob(q.blob); },
       cmp: async () => { stopAudio(); const tok = playAllTok; await speak(l.en, l.w); if (tok !== playAllTok) return; await sleep(300); playBlob(q.blob); },
       j: m => judge(m),
+      favQ: (k, b) => { toggleFav(k); b.textContent = S.fav[k] ? '★' : '☆'; b.classList.toggle('on', !!S.fav[k]); },
     },
   };
   function L(q) { return S.lines[q.keys[q.i]]?.rt; }
@@ -1551,12 +1598,14 @@ function judge(mark) {
   sfx(mark === 'o' ? 'ok' : mark === 'x' ? 'ng' : 'tap'); buzz(mark === 'o' ? 30 : mark === 'x' ? [40, 40, 40] : 15);
   gainExp(mark === 'o' ? 10 : mark === 'm' ? 5 : 2);
   const L = S.lines[key] || (S.lines[key] = { b: 0, d: today(), n: 0 });
-  if (mark === 'o') L.b = Math.min(L.b + 1, 6); else if (mark === 'm') L.b = Math.max(1, L.b); else L.b = 0;
+  if (mark === 'o') L.b = Math.min(L.b + 1, 6); else if (mark === 'm') L.b = Math.max(1, L.b); else { L.b = 0; L.xc = (L.xc || 0) + 1; }
+  S.cnt = S.cnt || { shin: 0, rv: 0 };
   L.d = addDays(today(), INTV[L.b]); L.n = (L.n || 0) + 1; L.last = today();
   const valid = q.rt != null && mark !== 'x' && !q.hint;
   if (valid) L.rt = Math.round(q.rt);
   const D = dayRec(); if (mark === 'o') D.qO++; else if (mark === 'm') D.qM++; else D.qX++;
-  if (valid) { D.rt.push(Math.round(q.rt)); if (D.rt.length > 400) D.rt.shift(); }
+  if (valid) { D.rt.push(Math.round(q.rt)); if (D.rt.length > 400) D.rt.shift(); if (q.rt <= 1000) S.cnt.shin = (S.cnt.shin || 0) + 1; }
+  if (q.src === 'review') { D.rv = (D.rv || 0) + 1; S.cnt.rv = (S.cnt.rv || 0) + 1; }
   q.res.push({ mark, rt: valid ? q.rt : null }); q.last = mark;
   const nT = D.qO + D.qM + D.qX; if (nT === GOAL) { setTimeout(() => { toast('🎯 今日の目標達成！'); sfx('clear'); buzz([50, 50, 120]); }, 900); setTimeout(() => gainExp(30), 2600); }
   stopAll();
@@ -1587,7 +1636,7 @@ function quickEnd() {
   const picker = pickerHTML(q.keys.map((k, j) => { const r = q.res[j] || { mark: 'x' }, x = lineByKey(k); return { key: k, mark: MK[r.mark][0], cls: MK[r.mark][1], en: x.line.en, ja: x.line.ja + (r.rt != null ? `　（反応 ${sec(r.rt)}）` : ''), wrong: r.mark !== 'o' }; }), q.sel, q.src === 'scene' ? 'とっさに' : '復習');
   const pa = pickActs(q, q.keys, k => (q.res[q.keys.indexOf(k)] || {}).mark !== 'o', sel => {
     const keys = q.keys.filter(k => sel.has(k));
-    if (q.src === 'scene') go('scene', { id: V.id, step: 'quick', qKeys: keys }); else go('review', { q: newQ(keys, 'review') });
+    if (q.src === 'scene') go('scene', { id: V.id, step: 'quick', qKeys: keys }); else go('review', { q: Object.assign(newQ(keys, q.src), { label: q.label }) });
   });
   if (q.src === 'scene') {
     const r = S.scenes[V.id];
@@ -1597,8 +1646,10 @@ function quickEnd() {
     h += picker + `<div class="row"><button class="btn" data-a="again">最初から全部</button>${sc.boss ? `<button class="btn pri cur" data-a="step" data-v="boss">⑤スピーチ へ</button>` : `<button class="btn pri" data-a="story">ストーリーへ</button>`}</div>`;
     return { html: h, acts: Object.assign(pa, { again: () => go('scene', { id: V.id, step: 'quick' }), goScene: id => go('scene', { id, step: 'intro' }) }) };
   }
-  h += `</div>${picker}<div class="row"><button class="btn" data-a="home">タイトルへ</button>${dueKeys().length ? `<button class="btn pri" data-a="more">続けて復習（${dueKeys().length}）</button>` : ''}</div>`;
-  return { html: h, acts: Object.assign(pa, { more: () => startReview() }) };
+  const due = dueKeys().length, left = revLeft();
+  const more = q.src !== 'review' || !due ? '' : left ? `<button class="btn pri" data-a="more">続けて復習（${Math.min(due, left, 15)}）</button>` : `<button class="btn" data-a="moreF">上限を超えて続ける</button>`;
+  h += `${q.src === 'review' && due && !left ? `<p class="small">今日の復習の上限（${S.revCap}文）に達しました。</p>` : ''}</div>${picker}<div class="row"><button class="btn" data-a="home">タイトルへ</button>${more}</div>`;
+  return { html: h, acts: Object.assign(pa, { more: () => startReview(), moreF: () => startReview(true) }) };
 }
 // 場面クリア枠の「次の場面」ボタン（書き取り結果からも押せるように）
 const _sceneRender = SCREENS.scene;
@@ -1619,18 +1670,23 @@ ${V.err ? `<p class="ngc small">${esc(V.err)}</p>` : ''}
 <div class="win"><h3>これまでの録音（${list.length}）</h3>
 ${list.length ? list.map((x, k) => `<div class="row" style="align-items:center"><span style="flex:1">${k === 0 ? '初回 ' : ''}${esc(x.date)}</span><button class="btn" style="flex:0 0 auto;width:auto" data-a="play" data-v="${esc(x.k)}">▶ 再生</button></div>`).join('') : '<p class="small">まだありません。</p>'}
 ${list.length >= 2 ? `<button class="btn" data-a="cmp">🔁 初回 → 最新 を続けて聞く</button>` : ''}
-<p class="small">録音は端末の中だけに保存されます。何週間かおきに録り直すと、変化が分かります。</p></div>`,
+<p class="small">録音は端末の中だけに保存されます。何週間かおきに録り直すと、変化が分かります。</p></div>
+${list.some(x => x.m) ? `<div class="win"><h3>📊 スピーチの振り返り</h3>${speechTable(list)}${list[list.length - 1].m && list[list.length - 1].m.text ? `<h3>最新の録音の音声認識（参考）</h3><p class="small">${esc(list[list.length - 1].m.text)}</p>` : ''}${!(S.useSR && S.srBoth) ? '<p class="small">「せってい」で音声認識と「録音と同時に音声認識する」をオンにすると、語数と1分あたりの語数も出ます（試験的）。</p>' : ''}</div>` : ''}`,
     acts: {
       rec: async () => {
         stopAll(); V.err = ''; V.recording = true; render();
         const t0 = performance.now();
         tickers.push(setInterval(() => { const e = $('#tm'); if (!e) return; const left = b.sec - (performance.now() - t0) / 1000; e.textContent = Math.max(0, Math.ceil(left)); if (left <= 5) e.style.color = 'var(--ng)'; }, 200));
-        const c = startRec({ calib: 0, max: (b.sec + 3) * 1000, onLevel: meterUpdate });
+        const lsr = S.useSR && S.srBoth ? recognizeLong() : null;
+        const c = startRec({ calib: 300, max: (b.sec + 3) * 1000, onLevel: meterUpdate });
         try {
           const r = await c.done;
+          const m = speechStats(r) || {};
+          if (lsr) { const x = await lsr.stop(); const w = words(x.text || ''); if (w.length) { m.words = w.length; m.wpm = m.dur ? Math.round(w.length / (m.dur / 60)) : null; m.text = x.text.trim(); } else if (x.err) m.srErr = x.err; }
           if (r.blob) {
             const k = 'boss-' + sc.id + '-' + Date.now();
-            try { await idbPut(k, r.blob); S.boss.push({ k, sid: sc.id, date: today() }); scRec(sc.id).boss = true; save(); gainExp(30); sfx('clear'); }
+            try { await idbPut(k, r.blob); S.boss.push({ k, sid: sc.id, date: today(), m }); scRec(sc.id).boss = true; save(); gainExp(30); sfx('clear');
+              const ch = sceneById(sc.id).ch; if (chapterClear(ch) && !S.cut[ch.id]) { S.cut[ch.id] = today(); save(); setTimeout(() => showCut(CHAPTERS.indexOf(ch)), 1200); } }
             catch (e) { V.err = '録音を保存できませんでした：' + e.message; }
           } else V.err = '録音データが取れませんでした';
         } catch (e) { V.err = 'マイクが使えません：' + (e.message || e.name); }
@@ -1786,6 +1842,18 @@ ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言って�
 <label class="tg"><input type="checkbox" data-c="srBoth" ${S.srBoth ? 'checked' : ''}>録音と同時に音声認識する（試験的。端末によっては録音か認識が失敗します。そのときはオフにすると、認識用にもう一度言う方式になります）</label>
 <p class="small">認識エンジンは、ありそうな単語に補正して聞き取るため、発音の判定としては甘めに出ます。</p>` : ''}</div>
 
+<div class="win"><h2>⑤ 練習と表示</h2>
+<p>1日の復習の上限</p>
+<select data-c="revCap">${[10, 20, 30, 50, 9999].map(n => `<option value="${n}" ${S.revCap === n ? 'selected' : ''}>${n === 9999 ? '上限なし' : n + '文'}</option>`).join('')}</select>
+<p class="small">上限をこえた分は、翌日以降に回ります。苦手な文から順に出ます。</p>
+<p>「ざわざわ」（懇親会などの環境音）の大きさ</p>
+<select data-c="noise">${['なし', '小', '中', '大'].map((l, i) => `<option value="${i}" ${S.noise === i ? 'selected' : ''}>${l}</option>`).join('')}</select>
+<p class="small">聞き取りの画面の「🍻 ざわざわ」で、場面ごとにオン・オフできます。録音中は自動で止まります。</p>
+<p>文字の大きさ</p>
+<select data-c="fs">${[[0.9, '小'], [1, '標準'], [1.15, '大'], [1.3, '特大']].map(([v, l]) => `<option value="${v}" ${(S.fs || 1) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+<button class="btn" data-a="tipsReset">💡 ヒントをもう一度表示する</button>
+</div>
+
 <div class="win"><h2>④ 保存</h2>
 <button class="btn" data-a="store">💾 保存のテスト</button>
 <p>記録：${ok(t.ls)}　録音：${ok(t.idb)} ${t.stMsg ? `<span class="small">${esc(t.stMsg)}</span>` : ''}</p>
@@ -1803,6 +1871,10 @@ ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言って�
       speed: b => { S.speed = +b.value; const e = $('#spv'); if (e) e.textContent = S.speed.toFixed(2) + '倍'; },
       speedSet: () => save(),
       multi: b => { S.multi = b.checked; save(); },
+      revCap: b => { S.revCap = +b.value; save(); },
+      noise: b => { S.noise = +b.value; save(); },
+      fs: b => { S.fs = +b.value; save(); render(); },
+      tipsReset: () => { S.tips = {}; save(); toast('ヒントをまた表示します'); },
       sfx: b => { S.sfx = b.checked; save(); if (b.checked) sfx('ok'); },
       useSR: b => { S.useSR = b.checked; save(); },
       srBoth: b => { S.srBoth = b.checked; save(); },
@@ -1839,7 +1911,333 @@ ${SR ? `<button class="btn" data-a="sr">🗣 「machine learning」と言って�
   };
 };
 
+/* =========================================================
+   追加機能：フレーズ帳・環境音・スピーチの振り返り・着せ替え・実績・章の演出・週の振り返り・ヒント
+   ========================================================= */
+
+/* ---------- お気に入り・フレーズ帳 ---------- */
+function toggleFav(k) { if (S.fav[k]) delete S.fav[k]; else S.fav[k] = 1; save(); sfx('tap'); }
+const PTAGS = [
+  ['ask', 'お願いする', /\b(could you|can you|would you|could I|can I|may I|would it be possible|do you have a (minute|few minutes)|mind if I|please)\b/i],
+  ['q', '質問・確認', l => /\?\s*$/.test(l.en)],
+  ['agree', 'あいづち・同意', /^(sure|got it|sounds good|that makes sense|exactly|i agree|good point|good idea|good catch|good question|agreed|of course|i see|okay|great|perfect|will do|that's a fair|you're right|i'm in|interesting|really)\b/i],
+  ['concern', '反対・懸念', /\b(but I'm|concerned|however|worried|I'm not sure|not quite|not yet|risk|honestly)\b/i],
+  ['suggest', '提案する', /\b(how about|what if|let's|I'd suggest|we could|maybe we|why don't|I recommend|I'd like to)\b/i],
+  ['report', '報告・説明', /\b(this week|yesterday|today,|first,|then,|the main|in short|to sum up|to put it simply|basically|update|summary|result|the problem|the bottom line|for example|compared to)\b/i],
+  ['thanks', 'お礼・あいさつ', /\b(thank|thanks|nice to meet|welcome|good luck|congratulations|great to see|how have you been)\b/i],
+  ['close', '会話を切り上げる', /\b(let you mingle|great talking|see you|catch up later|keep in touch|it was great)\b/i],
+  ['written', 'メール・チャット・文書', l => l.r === 'written'],
+];
+const tagsOf = l => PTAGS.filter(([, , t]) => typeof t === 'function' ? t(l) : t.test(l.en)).map(x => x[0]);
+function phraseList() {
+  const out = [];
+  ALL_SCENES.forEach(x => { if (!unlocked(x)) return; x.sc.lines.forEach((l, i) => { const k = lineId(x.sc.id, i); if (l.w === 'me' || S.fav[k]) out.push({ k, l, sc: x.sc }); }); });
+  return out;
+}
+function phraseFilter(list) {
+  const q = (V.pq || '').trim().toLowerCase();
+  return list.filter(r => (V.pf === 'all' || (V.pf === 'fav' ? S.fav[r.k] : tagsOf(r.l).includes(V.pf))) && (!q || r.l.en.toLowerCase().includes(q) || r.l.ja.includes(q)));
+}
+function phraseListHTML() {
+  const list = phraseFilter(phraseList());
+  if (!list.length) return `<p class="small">${V.pf === 'fav' ? 'お気に入りはまだありません。文の横の ☆ を押すと追加できます。' : '当てはまる文がありません。'}</p>`;
+  return `<p class="small">${list.length}文</p><button class="btn pri" data-a="ppractice">🗣 この中から「とっさに」で練習（最大15文）</button>` +
+    list.slice(0, 200).map(r => `<div class="prow" data-a="play" data-v="${r.k}"><div class="tx"><div class="en">${esc(r.l.en)}</div><div class="ja">${esc(r.l.ja)}</div><div class="src">📍${esc(r.sc.title)}　${badge(r.l.r)}</div></div><button class="star ${S.fav[r.k] ? 'on' : ''}" data-a="fav" data-v="${r.k}">${S.fav[r.k] ? '★' : '☆'}</button></div>`).join('');
+}
+SCREENS.phrases = () => {
+  V.pf = V.pf || 'all';
+  return {
+    html: topBar('home', 'フレーズ帳') + coach('phrases') + `<div class="win">
+<p class="small">ストーリーで出てきた「あなた」のセリフを、使う場面ごとにまとめています。文をタップすると読み上げます。</p>
+<input class="cz" style="width:100%;font-size:16px;padding:6px" placeholder="英語か日本語で検索" data-i="pq" value="${esc(V.pq || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div class="chips">${[['all', 'すべて'], ['fav', '★ お気に入り'], ...PTAGS.map(t => [t[0], t[1]])].map(([id, lb]) => `<button class="chip ${V.pf === id ? 'on' : ''}" data-a="pf" data-v="${id}">${lb}</button>`).join('')}</div>
+<p class="small">分類は文の形から自動で付けたもので、ずれることがあります。</p></div>
+<div class="win" id="plist">${phraseListHTML()}</div>`,
+    acts: {
+      pf: v => { V.pf = v; render(); },
+      pq: b => { V.pq = b.value; const el = $('#plist'); if (el) el.innerHTML = phraseListHTML(); },
+      play: k => { const x = lineByKey(k); speak(x.line.en, x.line.w); },
+      fav: (k, b) => { toggleFav(k); b.textContent = S.fav[k] ? '★' : '☆'; b.classList.toggle('on', !!S.fav[k]); },
+      ppractice: () => {
+        const keys = phraseFilter(phraseList()).map(r => r.k);
+        for (let i = keys.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [keys[i], keys[j]] = [keys[j], keys[i]]; }
+        go('review', { q: Object.assign(newQ(keys.slice(0, 15), 'phrase'), { label: 'フレーズ練習' }) });
+      },
+    },
+  };
+};
+
+/* ---------- ざわざわ（懇親会などの環境音） ---------- */
+const NOISE = { src: null, gain: null, on: false, clink: 0 };
+const NOISE_VOL = [0, 0.05, 0.1, 0.18];
+const noisyScene = sc => ['party', 'poster', 'hall', 'cafe'].includes(sc.bg) || ['c1s5'].includes(sc.id);
+const nzOn = sc => S.nz[sc.id] ?? noisyScene(sc);
+function noiseBuild() {
+  const c = ac(); if (!c || NOISE.src) return;
+  const len = c.sampleRate * 6, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1; b0 = 0.99765 * b0 + w * 0.099046; b1 = 0.963 * b1 + w * 0.2965164; b2 = 0.57 * b2 + w * 1.0526913;
+    const t = i / c.sampleRate;
+    // 人の話し声のような、ゆっくりした強弱を重ねる
+    const env = 0.5 + 0.25 * Math.sin(2 * Math.PI * 0.9 * t + 2 * Math.sin(2 * Math.PI * 0.31 * t)) + 0.25 * Math.sin(2 * Math.PI * 1.7 * t + 1.3 * Math.sin(2 * Math.PI * 0.17 * t));
+    d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11 * env;
+  }
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 800; bp.Q.value = 0.5;
+  const g = c.createGain(); g.gain.value = 0;
+  src.connect(bp).connect(g).connect(c.destination); src.start();
+  NOISE.src = src; NOISE.gain = g;
+}
+function noiseClink() { // グラスの音をときどき
+  const c = ac(); if (!c || !NOISE.on || MIC.on || Math.random() > 0.35) return;
+  const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+  o.type = 'sine'; o.frequency.value = 2400 + Math.random() * 1400;
+  g.gain.setValueAtTime(NOISE_VOL[S.noise] * 0.25, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.4);
+}
+function noiseSet(on) {
+  on = !!on && S.noise > 0;
+  if (on === NOISE.on) return;
+  NOISE.on = on;
+  if (on) { noiseBuild(); clearInterval(NOISE.clink); NOISE.clink = setInterval(noiseClink, 900); } else clearInterval(NOISE.clink);
+}
+setInterval(() => { if (!NOISE.gain) return; const target = NOISE.on && !MIC.on ? NOISE_VOL[S.noise] : 0; NOISE.gain.gain.setTargetAtTime(target, AC.currentTime, 0.15); }, 150);
+const noiseChip = sc => `<button class="chip ${nzOn(sc) ? 'on' : ''}" data-a="nz" style="margin:4px 4px 0">🍻 ざわざわ ${nzOn(sc) ? 'ON' : 'OFF'}</button>`;
+const noiseAct = sc => ({ nz: () => { S.nz[sc.id] = !nzOn(sc); save(); render(); } });
+
+/* ---------- スピーチの振り返り ---------- */
+function speechStats(rec) {
+  if (!rec || !rec.env || rec.env.length < 10) return null;
+  const env = rec.env, thr = rec.thr, T = i => env[i][0];
+  const s = env.map((e, i) => { let a = 0, n = 0; for (let k = i - 1; k <= i + 1; k++) if (env[k]) { a += env[k][1]; n++; } return a / n; });
+  const first = s.findIndex(v => v > thr); let last = -1; for (let i = s.length - 1; i >= 0; i--) if (s[i] > thr) { last = i; break; }
+  if (first < 0 || last <= first) return null;
+  let loud = 0, pauses = 0, gs = null, peaks = 0, lastPk = -1;
+  for (let i = first; i <= last; i++) {
+    const dt = i > 0 ? T(i) - T(i - 1) : 30;
+    if (s[i] > thr) { loud += dt; if (gs !== null && T(i) - T(gs) >= 600) pauses++; gs = null; } else if (gs === null) gs = i;
+    if (i > 0 && i < s.length - 1 && s[i] >= s[i - 1] && s[i] > s[i + 1] && s[i] > thr * 1.3 && (lastPk < 0 || T(i) - T(lastPk) >= 90)) { peaks++; lastPk = i; }
+  }
+  const span = T(last) - T(first);
+  return { dur: Math.round(span / 100) / 10, talk: Math.round(loud / span * 100), pauses, sps: Math.round(peaks / (loud / 1000) * 10) / 10 };
+}
+function recognizeLong() { // 録音と同時の長い音声認識（試験的）
+  if (!SR) return null;
+  const r = new SR(); r.lang = 'en-US'; r.continuous = true; r.interimResults = false;
+  const ctl = { text: '', err: null, done: false };
+  r.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) ctl.text += e.results[i][0].transcript + ' '; };
+  r.onerror = e => { ctl.err = e.error; };
+  r.onend = () => { ctl.done = true; };
+  ctl.stop = () => new Promise(res => { if (ctl.done) return res(ctl); r.onend = () => { ctl.done = true; res(ctl); }; try { r.stop(); } catch (e) { res(ctl); } setTimeout(() => res(ctl), 2500); });
+  try { r.start(); } catch (e) { ctl.err = String(e); ctl.done = true; }
+  return ctl;
+}
+function speechTable(list) {
+  const withM = list.filter(x => x.m); if (!withM.length) return '';
+  const a = withM[0], p = withM.length > 2 ? withM[withM.length - 2] : null, z = withM[withM.length - 1];
+  const cols = [['初回', a], ...(p && p !== a ? [['前回', p]] : []), ...(z !== a ? [['最新', z]] : [])];
+  const row = (label, f, better) => `<tr><td>${label}</td>${cols.map(([, x], i) => { const v = f(x.m); const prev = i > 0 ? f(cols[0][1].m) : null; const cls = prev == null || v == null || v === prev ? '' : (better(v, prev) ? 'up' : 'down'); return `<td class="${cls}">${v == null ? '—' : v}</td>`; }).join('')}</tr>`;
+  return `<table class="cmp"><tr><th></th>${cols.map(([l, x]) => `<th>${l}<br>${esc(x.date.slice(5))}</th>`).join('')}</tr>
+${row('話していた割合', m => m.talk != null ? m.talk + '%' : null, (v, p) => parseInt(v) > parseInt(p))}
+${row('0.6秒以上の間', m => m.pauses != null ? m.pauses + '回' : null, (v, p) => parseInt(v) < parseInt(p))}
+${row('速さ（音節/秒・推定）', m => m.sps != null ? m.sps : null, (v, p) => v > p)}
+${row('語数（音声認識）', m => m.words != null ? m.words + '語' : null, (v, p) => parseInt(v) > parseInt(p))}
+${row('1分あたりの語数', m => m.wpm != null ? m.wpm : null, (v, p) => v > p)}
+</table><p class="small">緑は初回より良くなった項目です。どれも声の大きさなどから機械的に出した目安で、正確な値ではありません。速さの目安：英語の会話はおよそ毎分120〜160語と言われます。</p>`;
+}
+
+/* ---------- 着せ替え ---------- */
+const ITEMS = [
+  { id: 'scarf_red', slot: 'neck', name: '赤いマフラー', cond: () => true, label: '最初から' },
+  { id: 'scarf_blue', slot: 'neck', name: '青いマフラー', cond: () => lvInfo(S.exp).L >= 3, label: 'Lv.3' },
+  { id: 'bowtie', slot: 'neck', name: '蝶ネクタイ', cond: () => lvInfo(S.exp).L >= 6, label: 'Lv.6' },
+  { id: 'badge', slot: 'neck', name: '学会の名札', cond: () => chapterClear(CHAPTERS[1]), label: '第2章クリア' },
+  { id: 'tie_blue', slot: 'neck', name: '青いネクタイ', cond: () => chapterClear(CHAPTERS[2]), label: '第3章クリア' },
+  { id: 'glasses_round', slot: 'face', name: '金の丸めがね', cond: () => chapterClear(CHAPTERS[0]), label: '第1章クリア' },
+  { id: 'glasses_square', slot: 'face', name: '四角いめがね', cond: () => P_().talks >= 3, label: 'じっくり聞くを3本クリア' },
+  { id: 'sunglasses', slot: 'face', name: 'サングラス', cond: () => (S.cnt.shin || 0) >= 10, label: '「神速」を10回' },
+  { id: 'monocle', slot: 'face', name: '片眼鏡', cond: () => P_().stars >= 60, label: '★を60個' },
+  { id: 'knit', slot: 'head', name: 'ニット帽', cond: () => P_().best >= 7, label: '7日連続で練習' },
+  { id: 'flower', slot: 'head', name: '耳もとの花', cond: () => P_().sides >= 5, label: '寄り道を5つクリア' },
+  { id: 'headphones', slot: 'head', name: 'ヘッドホン', cond: () => P_().talks >= 8, label: 'じっくり聞くを8本クリア' },
+  { id: 'leaf', slot: 'head', name: '草（好物）', cond: () => (S.cnt.rv || 0) >= 100, label: '復習を100回' },
+  { id: 'mortar', slot: 'head', name: '角帽', cond: () => S.boss.length >= 3, label: 'スピーチを3回録音' },
+  { id: 'propeller', slot: 'head', name: 'プロペラ帽', cond: () => lvInfo(S.exp).L >= 10, label: 'Lv.10' },
+  { id: 'crown', slot: 'head', name: '王冠', cond: () => CHAPTERS.every(chapterClear), label: '全章クリア' },
+];
+const SLOTS = [['head', '頭'], ['face', '顔'], ['neck', '首']];
+let _P = null, _PT = 0;
+function P_() { // 実績や小物の判定に使う集計（短時間はキャッシュ）
+  if (_P && performance.now() - _PT < 200) return _P;
+  let stars = 0, talks = 0, sides = 0, clears = 0;
+  ALL_SCENES.forEach(({ sc }) => { const r = S.scenes[sc.id]; if (!r || !r.clear) return; clears++; stars += sceneStars(sc.id); if (kindOf(sc) === 'talk') talks++; if (kindOf(sc) === 'side') sides++; });
+  const days = Object.values(S.days);
+  _P = { stars, talks, sides, clears, best: Math.max(S.bestStreak || 0, streak()), quick: days.reduce((a, d) => a + d.qO + d.qM + d.qX, 0), dok: days.reduce((a, d) => a + d.dOk, 0), items: 0 };
+  _PT = performance.now();
+  _P.items = ITEMS.filter(it => it.cond()).length; // 小物の条件は上の集計（キャッシュ済み）を使う
+  return _P;
+}
+SCREENS.closet = () => {
+  V.slot = V.slot || 'head';
+  const of = S.outfit, list = ITEMS.filter(it => it.slot === V.slot);
+  ITEMS.forEach(it => { if (it.cond()) S.itemSeen[it.id] = 1; }); save();
+  return {
+    html: topBar('home', '着せ替え') + coach('closet') + `
+${stageHTML('c1s1', [{ who: 'me', px: 130, eye: 'happy', hop: true }], 'あなたのウォンバット')}
+<div class="win"><div class="chips">${SLOTS.map(([k, l]) => `<button class="chip ${V.slot === k ? 'on' : ''}" data-a="slot" data-v="${k}">${l}</button>`).join('')}</div>
+<div class="items">
+<button class="item ${!of[V.slot] ? 'on' : ''}" data-a="wear" data-v="">${face('me', 72, { outfit: Object.assign({}, of, { [V.slot]: '' }) })}<span>なし</span></button>
+${list.map(it => { const ok = it.cond(); return `<button class="item ${of[V.slot] === it.id ? 'on' : ''} ${ok ? '' : 'lock'}" data-a="wear" data-v="${it.id}" ${ok ? '' : 'disabled'}>${face('me', 72, { outfit: Object.assign({}, of, { [V.slot]: it.id }) })}<span>${ok ? esc(it.name) : '🔒 ' + esc(it.label)}</span></button>`; }).join('')}
+</div><p class="small">小物は、レベルや実績で手に入ります。</p></div>`,
+    acts: {
+      slot: v => { V.slot = v; render(); },
+      wear: v => { S.outfit = Object.assign({}, S.outfit, { [V.slot]: v }); save(); sfx('tap'); render(); },
+    },
+  };
+};
+
+/* ---------- 実績 ---------- */
+const ACH = [
+  { id: 'first', ic: '🌱', name: 'はじめの一歩', desc: '場面を1つクリア', t: () => P_().clears >= 1 },
+  { id: 'ch1', ic: '🎓', name: '留学生、卒業', desc: '第1章をクリア', t: () => chapterClear(CHAPTERS[0]) },
+  { id: 'ch2', ic: '💼', name: '一人前のインターン', desc: '第2章をクリア', t: () => chapterClear(CHAPTERS[1]) },
+  { id: 'ch3', ic: '🛠', name: 'ジュニアの壁を越えて', desc: '第3章をクリア', t: () => chapterClear(CHAPTERS[2]) },
+  { id: 'ch4', ic: '🧭', name: '頼れる中堅', desc: '第4章をクリア', t: () => chapterClear(CHAPTERS[3]) },
+  { id: 'ch5', ic: '👑', name: 'リードエンジニア', desc: '全章をクリア', t: () => chapterClear(CHAPTERS[4]) },
+  { id: 'shin10', ic: '⚡', name: '神速の舌', desc: '「とっさに」で神速（1秒以内）を10回', t: () => (S.cnt.shin || 0) >= 10, p: () => [S.cnt.shin || 0, 10] },
+  { id: 'shin100', ic: '🌩', name: '神速マスター', desc: '神速を100回', t: () => (S.cnt.shin || 0) >= 100, p: () => [S.cnt.shin || 0, 100] },
+  { id: 'st7', ic: '🔥', name: '三日坊主を卒業', desc: '7日連続で練習', t: () => P_().best >= 7, p: () => [P_().best, 7] },
+  { id: 'st30', ic: '🏔', name: '習慣の人', desc: '30日連続で練習', t: () => P_().best >= 30, p: () => [P_().best, 30] },
+  { id: 'talk5', ic: '🎧', name: '聞き上手', desc: '「じっくり聞く」を5本クリア', t: () => P_().talks >= 5, p: () => [P_().talks, 5] },
+  { id: 'talk10', ic: '📻', name: '傾聴の達人', desc: '「じっくり聞く」を全10本クリア', t: () => P_().talks >= 10, p: () => [P_().talks, 10] },
+  { id: 'side15', ic: '🍵', name: '寄り道の達人', desc: '寄り道を全15場面クリア', t: () => P_().sides >= 15, p: () => [P_().sides, 15] },
+  { id: 'star60', ic: '⭐', name: '星あつめ', desc: '★を60個', t: () => P_().stars >= 60, p: () => [P_().stars, 60] },
+  { id: 'star150', ic: '🌟', name: '星の収集家', desc: '★を150個', t: () => P_().stars >= 150, p: () => [P_().stars, 150] },
+  { id: 'dict500', ic: '✍', name: '書き取り職人', desc: '書き取りで500語正解', t: () => P_().dok >= 500, p: () => [P_().dok, 500] },
+  { id: 'q500', ic: '🗣', name: '口が覚えた', desc: '「とっさに」で500回答える', t: () => P_().quick >= 500, p: () => [P_().quick, 500] },
+  { id: 'rv100', ic: '🔁', name: '復習の鬼', desc: '復習で100回答える', t: () => (S.cnt.rv || 0) >= 100, p: () => [S.cnt.rv || 0, 100] },
+  { id: 'bench3', ic: '🎙', name: '定点観測者', desc: '定点録音を3回', t: () => S.bench.length >= 3, p: () => [S.bench.length, 3] },
+  { id: 'boss5', ic: '🎤', name: '名スピーカー', desc: 'スピーチを5回録音', t: () => S.boss.length >= 5, p: () => [S.boss.length, 5] },
+  { id: 'items5', ic: '👕', name: 'おしゃれウォンバット', desc: '小物を5つ手に入れる', t: () => P_().items >= 5, p: () => [P_().items, 5] },
+  { id: 'lv10', ic: '🏅', name: 'Lv.10', desc: 'レベル10になる', t: () => lvInfo(S.exp).L >= 10, p: () => [lvInfo(S.exp).L, 10] },
+];
+let progT = 0, booting = true;
+function checkProgress() {
+  if (booting) return;
+  clearTimeout(progT);
+  progT = setTimeout(() => {
+    _P = null;
+    S.bestStreak = Math.max(S.bestStreak || 0, streak());
+    const news = [];
+    ACH.forEach(a => { if (!S.ach[a.id] && a.t()) { S.ach[a.id] = today(); news.push('🏆 実績：' + a.name); } });
+    ITEMS.forEach(it => { if (!S.itemSeen[it.id] && it.cond()) { S.itemSeen[it.id] = 'new'; news.push('👕 新しい小物：' + it.name); } });
+    if (!news.length) return;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    const show = news.length > 3 ? [...news.slice(0, 2), `ほかにも ${news.length - 2}件の実績・小物が増えました`] : news;
+    show.forEach((t, i) => setTimeout(() => { toast(t); sfx('star'); }, 1800 + i * 1700));
+  }, 400);
+}
+const hasNewItem = () => Object.values(S.itemSeen).includes('new');
+SCREENS.achieve = () => {
+  const n = ACH.filter(a => S.ach[a.id]).length;
+  return {
+    html: topBar('home', '実績') + `<div class="win"><p>達成 <b style="color:var(--acc);font-size:20px">${n}</b> / ${ACH.length}</p>${bar(n / ACH.length)}</div>
+<div class="win">${ACH.map(a => { const ok = !!S.ach[a.id], pr = a.p ? a.p() : null;
+  return `<div class="ach ${ok ? '' : 'lock'}"><div class="ic">${ok ? a.ic : '🔒'}</div><div class="tx"><b>${esc(a.name)}</b><div class="small">${esc(a.desc)}${ok ? `　<span class="okc">達成 ${esc(S.ach[a.id].slice(5))}</span>` : pr ? `　（${Math.min(pr[0], pr[1])} / ${pr[1]}）` : ''}</div>${!ok && pr ? bar(pr[0] / pr[1]) : ''}</div></div>`; }).join('')}</div>`,
+  };
+};
+
+/* ---------- 章クリアの演出とエンディング ---------- */
+const CUTS = {
+  1: [{ actors: ['miller', 'me'], ja: '修士課程を修了した。卒業式のあと、ミラー先生が声をかけてくれた。', w: 'miller', en: "Congratulations. I'm proud of you, and I can't wait to see what you do next." },
+      { actors: ['dana', 'me'], ja: 'ビデオ会議で知り合った Dana の会社から、インターンの誘いが届いた。', w: 'dana', en: "We'd love to have you on our team this summer." }],
+  2: [{ actors: ['dana', 'raj', 'me'], ja: 'インターン最終日。Dana と Raj に呼ばれた。', w: 'raj', en: "We'd like to offer you a full-time position. Welcome to the team!" }],
+  3: [{ actors: ['raj', 'me'], ja: '入社して1年。評価面談で、Raj から知らせがあった。', w: 'raj', en: "You've grown a lot this year. You're ready for more responsibility." }],
+  4: [{ actors: ['raj', 'lena', 'me'], ja: '口頭発表から戻ると、Raj と Lena が待っていた。', w: 'raj', en: "We'd like you to lead the team. We think you're ready." }],
+};
+function showCut(chIdx) {
+  const ch = CHAPTERS[chIdx], next = CHAPTERS[chIdx + 1], seq = CUTS[ch.id];
+  if (ch.id === 5) { showEnding(); return; }
+  if (!seq) return;
+  let k = 0;
+  const el = document.createElement('div'); el.className = 'cut';
+  const draw = () => {
+    const c = seq[k], last = k === seq.length - 1;
+    el.innerHTML = `<div class="box pop">${stageHTML(c.actors.includes('dana') && ch.id === 1 ? 'c1s9' : 'c1s4', c.actors.map(w => ({ who: w, px: c.actors.length > 2 ? 78 : 96, eye: 'happy', blush: w === 'me' })), ch.title + ' クリア')}
+<p>${esc(c.ja)}</p><div class="hint">${whoTag(c.w)}${esc(c.en)}</div>
+${last && next ? `<div class="rk">RANK UP!<br>${esc(ch.rank)} → ${esc(next.rank)}</div>` : ''}
+<button class="btn pri" data-k="nx" style="text-align:center">${last ? (next ? `${esc(next.title)} へ` : 'とじる') : 'つぎへ ▶'}</button></div>`;
+    paintFaces(); setTimeout(() => speak(c.en, c.w), 400);
+    el.querySelector('[data-k=nx]').onclick = () => { stopSpeak(); if (last) { el.remove(); sfx('clear'); } else { k++; draw(); } };
+  };
+  document.body.appendChild(el); draw(); sfx('clear'); buzz([60, 40, 140]);
+}
+function showEnding() {
+  const P = P_(), lv = lvInfo(S.exp).L;
+  const cast = ['me', 'priya', 'miller', 'tom', 'wei', 'dana', 'raj', 'lena', 'sam', 'alex', 'staff'];
+  const el = document.createElement('div'); el.className = 'cut';
+  el.innerHTML = `<div class="box pop">${stageHTML('c1s5', [{ who: 'tom', px: 64, eye: 'happy' }, { who: 'me', px: 90, eye: 'happy', blush: true, hop: true, emo: '♪' }, { who: 'priya', px: 64, eye: 'happy' }], 'ENDING')}
+<div class="credits"><div class="roll">
+<h3 style="color:var(--acc)">ENGLISH ROAD</h3><p>留学生からAIエンジニアへ</p>
+<h3>登場人物</h3>${cast.map(w => `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0">${face(w, 44, { eye: 'happy' })}<span>${esc(CHARS[w].name)}</span></div>`).join('')}
+<h3>あなたの記録</h3><p>Lv.${lv}　★${P.stars}</p><p>練習した日 ${Object.keys(S.days).length}日</p><p>「とっさに」で答えた回数 ${P.quick}回</p><p>書き取りで正解した語 ${P.dok}語</p>
+<h3>ドット絵</h3><p>「神に愛されたヒメウォンバット」の描画プログラムより</p>
+<h3 style="color:var(--acc)">Thank you for playing!</h3><p>英語の道は、まだまだ続く。</p>
+</div></div><button class="btn pri" data-k="x" style="text-align:center">とじる</button></div>`;
+  document.body.appendChild(el); paintFaces(); sfx('clear'); buzz([60, 40, 140]);
+  setTimeout(() => speak("Thank you for playing. See you on the road!", 'me'), 800);
+  el.querySelector('[data-k=x]').onclick = () => { stopSpeak(); el.remove(); };
+}
+
+/* ---------- 週の振り返り ---------- */
+function weekAgg(from, to) { // from〜to（日付キー、両端含む）
+  const ks = Object.keys(S.days).filter(k => k >= from && k <= to), ds = ks.map(k => S.days[k]);
+  const rt = median(ds.flatMap(d => d.rt)), dTot = ds.reduce((a, d) => a + d.dTot, 0), dOk = ds.reduce((a, d) => a + d.dOk, 0);
+  return { days: ks.length, quick: ds.reduce((a, d) => a + d.qO + d.qM + d.qX, 0), rt, acc: dTot ? dOk / dTot : null };
+}
+SCREENS.week = () => {
+  const t = today(), a = weekAgg(addDays(t, -6), t), b = weekAgg(addDays(t, -13), addDays(t, -7));
+  const arrow = (x, y, lower) => x == null || y == null || x === y ? '' : ((lower ? x < y : x > y) ? ' <span class="up">▲</span>' : ' <span class="down">▼</span>');
+  const weak = Object.keys(S.lines).filter(k => lineByKey(k) && S.lines[k].last && S.lines[k].last >= addDays(t, -13)).sort((x, y) => (S.lines[y].xc || 0) - (S.lines[x].xc || 0) || S.lines[x].b - S.lines[y].b).slice(0, 5);
+  const achs = ACH.filter(x => S.ach[x.id] && S.ach[x.id] >= addDays(t, -6));
+  const good = a.days >= 4;
+  return {
+    html: topBar('home', '今週の振り返り') + `${stageHTML('c1s4', [{ who: 'dana', px: 80, eye: good ? 'happy' : '', emo: good ? '！' : '…' }, { who: 'me', px: 96, eye: good ? 'happy' : '', hop: good }], 'この7日間')}
+<div class="win"><table class="cmp"><tr><th></th><th>今週</th><th>先週</th></tr>
+<tr><td>練習した日</td><td>${a.days}日${arrow(a.days, b.days)}</td><td>${b.days}日</td></tr>
+<tr><td>「とっさに」で答えた数</td><td>${a.quick}${arrow(a.quick, b.quick)}</td><td>${b.quick}</td></tr>
+<tr><td>反応時間（中央値）</td><td>${sec(a.rt)}${arrow(a.rt, b.rt, true)}</td><td>${sec(b.rt)}</td></tr>
+<tr><td>書き取りの正答率</td><td>${pct(a.acc)}${arrow(a.acc, b.acc)}</td><td>${pct(b.acc)}</td></tr></table>
+<p class="small">▲は先週より良くなった項目です。</p>
+<p>${a.days === 0 ? '今週はまだ練習していません。1場面だけでも始めてみましょう。' : good ? 'よく続けられています。この調子！' : '少しずつでも、毎日さわると耳と口が慣れていきます。'}</p></div>
+${weak.length ? `<div class="win"><h3>最近つまずいた文</h3>${weak.map(k => { const x = lineByKey(k); return `<div class="prow" data-a="play" data-v="${k}"><div class="tx"><div class="en">${esc(x.line.en)}</div><div class="ja">${esc(x.line.ja)}</div><div class="src">×${S.lines[k].xc || 0}回</div></div></div>`; }).join('')}<button class="btn pri" data-a="weakgo">🗣 この${weak.length}文を練習する</button></div>` : ''}
+${achs.length ? `<div class="win"><h3>今週の実績</h3>${achs.map(x => `<p>${x.ic} ${esc(x.name)}</p>`).join('')}</div>` : ''}`,
+    acts: {
+      play: k => { const x = lineByKey(k); speak(x.line.en, x.line.w); },
+      weakgo: () => go('review', { q: Object.assign(newQ(weak, 'phrase'), { label: '苦手な文の練習' }) }),
+    },
+  };
+};
+
+/* ---------- 初回のヒント（Priya 先輩から） ---------- */
+const TIPS = {
+  listen: '最初は台本を見ながら聞くだけで大丈夫。文をタップすると、その文だけ聞けるよ。',
+  mimic: 'まずは音声に重ねて読んで、慣れたら「テキストをかくす」で影読み。最後に録音して聞き比べてね。',
+  dict: '聞こえた単語を空欄に入れてね。分からなければ「ゆっくり」で何度聞いてもOK。',
+  quick: '日本語が出たら、すぐ英語で言ってみて。完璧じゃなくても、言い始めるのが大事。',
+  gist: 'まずはテキストなしで全体の流れをつかんでね。細かいところは分からなくて大丈夫。',
+  review: '復習は1日の上限まで。苦手な文から順に出てくるよ。',
+  phrases: '使いたい場面のフレーズを探して、☆を付けておくと、あとでまとめて練習できるよ。',
+  closet: 'レベルや実績で小物が増えていくよ。好きな組み合わせを探してみて。',
+};
+function coach(key) {
+  if (!TIPS[key] || S.tips[key]) return '';
+  return `<div class="coach" id="coach-${key}">${face('priya', 48, { eye: 'happy' })}<div><p><b>Priya 先輩からのヒント</b></p><p>${esc(TIPS[key])}</p><button class="btn pri" data-a="tipok" data-v="${key}">わかった</button></div></div>`;
+}
+
 render();
+booting = false;
 </script>
 </body>
 </html>
