@@ -355,6 +355,48 @@ details.panel summary{cursor:pointer}
 /* 笛：シルエットから色がつく */
 .gslot .te .spr{animation:sil .6s ease both;animation-delay:calc(var(--d) + .45s)}
 @keyframes sil{from{filter:brightness(0)}to{filter:none}}
+/* ===== スタート画面 ===== */
+#splash{position:fixed;inset:0;z-index:9999;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;
+  background:linear-gradient(#7CC6EE 0%,#BFE6F7 38%,#FFF4CF 62%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#splash .rays{position:absolute;left:50%;top:38%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;
+  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.38) 0 7deg,rgba(255,255,255,0) 7deg 18deg);animation:spin 40s linear infinite;
+  -webkit-mask:radial-gradient(circle,#000 0 18%,transparent 48%);mask:radial-gradient(circle,#000 0 18%,transparent 48%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#splash .ground{position:absolute;left:0;right:0;bottom:0;height:26%;display:flex}
+#splash .ground i{flex:1}
+#splash .ground i:nth-child(1){background:#D9B958}#splash .ground i:nth-child(2){background:#4C8C5E}#splash .ground i:nth-child(3){background:#4D9BD1}
+#splash .ground::before{content:"";position:absolute;left:0;right:0;top:-10px;height:10px;background:linear-gradient(90deg,#E2C46A 0 33.3%,#5FA06E 33.3% 66.6%,#6AB0DE 66.6%)}
+#splash .sp-title{position:relative;text-align:center;margin-top:-14vh;color:#1E2B2F}
+#splash .sp-sub{font-weight:900;font-size:clamp(18px,5.4vw,30px);color:#4F8A76;letter-spacing:.06em;animation:pop .6s .1s both}
+#splash .sp-main{font-weight:900;font-size:clamp(46px,15vw,96px);line-height:1.02;letter-spacing:.02em;
+  -webkit-text-stroke:7px #fff;paint-order:stroke fill;filter:drop-shadow(0 6px 0 rgba(30,43,47,.18))}
+#splash .sp-main span{display:inline-block;animation:drop .55s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes drop{0%{transform:translateY(-70vh) rotate(-12deg);opacity:0}70%{opacity:1}100%{transform:none}}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
+#splash .sp-wb{position:relative;display:flex;gap:min(16vw,90px);margin-top:3vh;align-items:flex-end}
+#splash .sp-wb canvas{width:min(26vw,128px);image-rendering:pixelated;filter:drop-shadow(0 4px 0 rgba(255,255,255,.9))}
+#splash .sp-wb canvas:first-child{animation:hopL 1.1s ease-in-out infinite}
+#splash .sp-wb canvas:last-child{animation:hopR 1.1s .55s ease-in-out infinite}
+#splash .sp-vs{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);font-weight:900;font-size:clamp(20px,6vw,34px);color:#E0584F;-webkit-text-stroke:4px #fff;paint-order:stroke fill;animation:pulse 1.1s ease-in-out infinite}
+@keyframes hopL{0%,100%{transform:none}40%{transform:translate(6px,-14px)}}
+@keyframes hopR{0%,100%{transform:none}40%{transform:translate(-6px,-14px)}}
+#splash .lane{position:absolute;left:0;display:flex;width:max-content;gap:10px}
+#splash .lane .spr{width:44px;height:44px;image-rendering:pixelated}
+#splash .lane.l1{bottom:calc(26% + 2px);animation:marchR 70s linear infinite}
+#splash .lane.l2{bottom:4%;animation:marchL 80s linear infinite}
+#splash .lane.l2 .spr{width:38px;height:38px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.18))}
+#splash .lane .spr{animation:step .5s steps(2) infinite}
+@keyframes step{50%{transform:translateY(-3px)}}
+@keyframes marchR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+@keyframes marchL{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#splash .sp-tap{position:absolute;bottom:calc(26% + 66px);font-weight:900;font-size:clamp(18px,5.4vw,26px);color:#fff;background:#E0584F;border-radius:999px;padding:10px 26px;
+  box-shadow:0 5px 0 #A93A33,0 10px 24px rgba(0,0,0,.18);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:translateX(var(--tx,0)) scale(1)}50%{transform:translateX(var(--tx,0)) scale(1.07)}}
+#splash .sp-cnt{position:absolute;top:max(14px,env(safe-area-inset-top));font-size:13px;font-weight:800;color:#2F5F50;background:rgba(255,255,255,.75);border-radius:999px;padding:4px 14px;animation:pop .5s 1.1s both}
+#splash.out{animation:spOut .55s ease-in forwards;pointer-events:none}
+@keyframes spOut{to{opacity:0;transform:scale(1.15)}}
+#splash:focus-visible{outline:4px solid #E3B23C;outline-offset:-6px}
+@media (prefers-reduced-motion:reduce){#splash *,#splash{animation:none!important}}
 </style>
 </head>
 <body>
@@ -456,6 +498,7 @@ details.panel summary{cursor:pointer}
 <ul>
 <li>動物を選ぶ画面と図鑑で、笛の種類に加えて、ランクと役割（ちかくを攻撃・遠くを攻撃・まとめて攻撃・フィールドを作る・味方を助ける・毒・かたい・速い）で絞りこめる。役割は、スキルとパッシブから自動で分けている。</li>
 <li>図鑑では、新しく来た動物にNEWが付く（くわしく見ると消える）。笛ごとに、集まった数が出る。</li>
+<li>ページを開くと「タップしてはじめる」画面が出る。ブラウザは、画面を一度さわるまで音を出せない決まりなので、このタップでBGMが鳴り始める。タブを切りかえたり画面を消したりすると音は止まり、もどると続きから鳴る。</li>
 <li>音のボタンは「♪ ON（BGMと効果音）」「♪ 効果音だけ」「♪ OFF」を順に切りかえる。BGMは音のファイルを使わず、その場で鳴らす短いループ（タイトル・バトル・裏ストーリーの3曲）。</li>
 </ul>
 
@@ -2216,12 +2259,16 @@ function bgmTick(){
   }
 }
 document.addEventListener('pointerdown',()=>{ if(!SND.gest){ SND.gest=true; bgmApply(); } },{capture:true});
-document.addEventListener('visibilitychange',()=>{ if(document.hidden){ if(SND.a&&SND.a.state==='running') SND.a.suspend(); } else if(SND.a&&SND.gest) SND.a.resume(); });
-function ac(){ try{ if(!SND.a) SND.a=new (window.AudioContext||window.webkitAudioContext)(); if(SND.a.state==='suspended') SND.a.resume(); return SND.a; }catch(e){ return null; } }
+// タブを切りかえた・画面を消したときは音を止め、もどったら続きから鳴らす
+function audioPause(){ if(BGM.timer){ clearInterval(BGM.timer); BGM.timer=null; } try{ if(SND.a&&SND.a.state==='running') SND.a.suspend(); }catch(e){} }
+function audioResume(){ if(document.hidden||!SND.gest) return; try{ if(SND.a) SND.a.resume(); }catch(e){} if(BGM.cur&&!BGM.timer&&SND.a){ BGM.next=SND.a.currentTime+.1; BGM.timer=setInterval(bgmTick,50); } }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) audioPause(); else audioResume(); });
+window.addEventListener('pagehide',audioPause); window.addEventListener('pageshow',audioResume);
+function ac(){ try{ if(!SND.a) SND.a=new (window.AudioContext||window.webkitAudioContext)(); if(SND.a.state==='suspended'&&!document.hidden) SND.a.resume(); return SND.a; }catch(e){ return null; } }
 function tone(f,t0,dur,type,vol,f2){ const a=ac(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type=type||'square'; o.frequency.setValueAtTime(f,a.currentTime+t0); if(f2) o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+t0+dur);
   g.gain.setValueAtTime(0.0001,a.currentTime+t0); g.gain.exponentialRampToValueAtTime(vol||0.05,a.currentTime+t0+0.01); g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+t0+dur); o.connect(g); g.connect(a.destination); o.start(a.currentTime+t0); o.stop(a.currentTime+t0+dur+0.02); }
 function se(k){
-  if(!SND.on) return;
+  if(!SND.on||document.hidden) return;
   const S={
     tap:()=>tone(880,0,.05,'square',.025),
     hit:()=>{ tone(220,0,.12,'sawtooth',.06,90); tone(140,0,.1,'square',.03); },
@@ -3072,6 +3119,28 @@ $('#sndBtn').onclick=()=>{ SND.gest=true; if(SND.bgm){ SND.bgm=false; } else if(
   try{ localStorage.setItem('wbjintori_snd',SND.bgm?'on':SND.on?'se':'off'); }catch(e){} sndBtn(); bgmApply(); if(SND.on) se('turn'); };
 sndBtn();
 renderTitle();
+
+// ---------- スタート画面（最初のタップで音を出せるようにする） ----------
+function showSplash(){
+  if(/[?&]nosplash/.test(location.search)) return;
+  const pick=shuffle(BY_RANK.map(T=>T.id)), half=Math.ceil(pick.length/2);
+  const lane=(ids,flip)=>{ const h=ids.map(t=>spr(t,'',flip)).join(''); return h+h; };
+  const title='どうぶつ陣取り'.split('').map((c,i)=>`<span style="animation-delay:${.25+i*.09}s">${c}</span>${i===3?'<br>':''}`).join('');
+  const d=document.createElement('div'); d.id='splash'; d.setAttribute('role','button'); d.setAttribute('tabindex','0'); d.setAttribute('aria-label','タップしてはじめる');
+  d.innerHTML=`<div class="rays"></div><div class="ground"><i></i><i></i><i></i></div>
+    <div class="lane l1">${lane(pick.slice(0,half),false)}</div><div class="lane l2">${lane(pick.slice(half),true)}</div>
+    <div class="sp-cnt">${MAIN_N}種の動物が待っている！</div>
+    <div class="sp-title"><div class="sp-sub">ウォンバット☆</div><div class="sp-main">${title}</div></div>
+    <div class="sp-wb"><span class="wb"></span><span class="wb" data-f="1"></span></div>
+    <div class="sp-tap">タップしてはじめる</div>`;
+  document.body.appendChild(d); mountWombats(d);
+  let done=false;
+  const go=e=>{ if(done) return; done=true; if(e) e.preventDefault();
+    SND.gest=true; ac(); bgmApply(); se('flute');
+    d.classList.add('out'); setTimeout(()=>d.remove(),560); };
+  d.addEventListener('pointerdown',go); const kd=e=>{ if(e.key==='Enter'||e.key===' '){ document.removeEventListener('keydown',kd); go(e); } }; document.addEventListener('keydown',kd);
+}
+showSplash();
 </script>
 </body>
 </html>
