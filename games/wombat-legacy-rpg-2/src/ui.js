@@ -361,7 +361,7 @@ async function startNew(){
 async function enterTown(arrive){
   mode='town';F=null;B=null;disp=null;busy=false;heldDir=null;showPad(false);
   G.az={}; // あやしい壁は 村に もどると また うまる
-  const st=G.streak||0;G.streak=0; // 連戦ボーナスは 村に もどると 1倍に もどる
+  const st=streakOn(G)?G.streak||0:0;G.streak=0; // 連戦ボーナスは 村に もどると 1倍に もどる
   renderParty();updateTop(`ユーカリ村（セーブ${curSlot}）`);save();playMusic('town');
   if(arrive)await talks(arrive);
   if(st>=5)await talk(`れんせん${st}で 村に もどった。\n（れんせんの けいけんちボーナスは 1倍に もどった）`);
@@ -938,7 +938,7 @@ const RAID_NEWS={
 const STREAK_TALK=['長老「それと、もう1つ 教えておこう。そなたらも ずいぶん 深くまで もぐれるように なったのう」',
   '長老「穴の 中で 休まず 戦いつづけると、体が どんどん 戦いを おぼえていく。勝つたびに 身に つく けいけんちが ふえて、さいごは 3倍じゃ」',
   '長老「ただし、村に もどって 休むと 元どおり。どこまで ねばるかは、そなたら しだいじゃ」\n（🔥 れんせんボーナス：村に もどらずに 1勝するごとに けいけんち +10%、20連勝で 3倍）'];
-async function streakNews(){if(!streakOn(G)||G.flags.streakTold)return;G.flags.streakTold=1;G.streak=0;save();banner('解放！','🔥 れんせんボーナス','#ff9a5a',2000);snd('quest');await talks(STREAK_TALK);}
+async function streakNews(){if(!streakReady(G)||G.flags.streakTold)return;G.flags.streakTold=1;G.streak=0;save();banner('解放！','🔥 れんせんボーナス','#ff9a5a',2000);snd('quest');await talks(STREAK_TALK);}
 async function raidNews(){for(const R of RAIDS){if(!raidUnlocked(G,R)||G.raidNews[R.id])continue;G.raidNews[R.id]=1;save();banner('依頼','コアラ討伐：'+R.name,'#ffb070',2000);snd('quest');await talks(RAID_NEWS[R.id]);}}
 function raidMenu(){
   const list=RAIDS.map(R=>{const un=raidUnlocked(G,R),n=G.raids[R.id]||0;

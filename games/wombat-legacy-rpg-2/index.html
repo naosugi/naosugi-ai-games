@@ -1226,8 +1226,9 @@ function battleRewards(B){let exp=0,gold=0;for(const e of B.enemies){if(e.fled||
 // 勝ったら、生きている仲間それぞれに経験値（倒れた仲間には入らない）
 // 連戦ボーナス：村に もどらずに 勝ちつづけると 経験値が ふえる（1勝ごとに +10%、最大3倍）。村に もどる・全滅で 1倍に もどる
 const STREAK={step:.1,max:3};
-// B20の ぬしを たおすと 解放（長老が 教えてくれる）
-const streakOn=G=>!!(G.bossDown&&G.bossDown[20]);
+// B20の ぬしを たおしたあと、村で 長老に 教えてもらった ときから 有効（G.flags.streakTold）
+const streakReady=G=>!!(G.bossDown&&G.bossDown[20]);
+const streakOn=G=>!!(G.flags&&G.flags.streakTold);
 const streakMul=n=>Math.min(STREAK.max,Math.round((1+STREAK.step*(n||0))*10)/10);
 function giveRewards(G,B,mul=1){let {exp,gold}=battleRewards(B);exp=Math.round(exp*mul);G.gold+=gold;const msgs=[];for(const m of G.party)if(m.hp>0)msgs.push(...gainExp(m,exp));return {exp,gold,msgs};}
 
@@ -1236,7 +1237,7 @@ function newGame(){
     gold:100,inv:{herb:3,antidote:1},shopTier:1,reached:0,checkpoints:[0],bossDown:{},flags:{},battles:0};
 }
 
-const CORE={STREAK,streakMul,streakOn,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
+const CORE={STREAK,streakMul,streakOn,streakReady,KAMAE,METAL,METAL_RATE,LURE_MUL,expFloorMul,vetBonus,VET_MUL,RAIDS,RAID_SCALE,raidUnlocked,raidEnemies,raidReward,CHARMS,charmMul,SECRET_BOSS,secretBoss,ANIMALS,POOL20,mkMob,SHOP_TOP,AREA_COLOR,GUARDIANS,guardianFor,BOSS_DEF,DMG_STATS,CONFIG,floorScale,curve,rng,JOBS,BASIC_JOBS,SKILLS,SLOT_MAX,ITEMS,WEAPONS,WEAPON_POW,WEAPON_PRICE,WEAPON_LINES,weaponName,bestLine,ARMORS,ARCH,expNext,jobSkills,slotCandidates,skillsOf,setSlots,passives,derived,
   newMember,learnUpTo,jobUnlocked,canChangeJob,changeJob,jobStartLv,gainExp,mkEnemy,floorGroups,rollGroup,bossFor,newBattle,battleTurn,visState,autoCmd,battleRewards,giveRewards,
   aliveParty,aliveEnemies,statusChance,enemyAtk,enemyDef,newGame,ST_NAME,EL_NAME};
 if(typeof module!=='undefined')module.exports=CORE;
@@ -2647,7 +2648,7 @@ async function startNew(){
 async function enterTown(arrive){
   mode='town';F=null;B=null;disp=null;busy=false;heldDir=null;showPad(false);
   G.az={}; // あやしい壁は 村に もどると また うまる
-  const st=G.streak||0;G.streak=0; // 連戦ボーナスは 村に もどると 1倍に もどる
+  const st=streakOn(G)?G.streak||0:0;G.streak=0; // 連戦ボーナスは 村に もどると 1倍に もどる
   renderParty();updateTop(`ユーカリ村（セーブ${curSlot}）`);save();playMusic('town');
   if(arrive)await talks(arrive);
   if(st>=5)await talk(`れんせん${st}で 村に もどった。\n（れんせんの けいけんちボーナスは 1倍に もどった）`);
@@ -3224,7 +3225,7 @@ const RAID_NEWS={
 const STREAK_TALK=['長老「それと、もう1つ 教えておこう。そなたらも ずいぶん 深くまで もぐれるように なったのう」',
   '長老「穴の 中で 休まず 戦いつづけると、体が どんどん 戦いを おぼえていく。勝つたびに 身に つく けいけんちが ふえて、さいごは 3倍じゃ」',
   '長老「ただし、村に もどって 休むと 元どおり。どこまで ねばるかは、そなたら しだいじゃ」\n（🔥 れんせんボーナス：村に もどらずに 1勝するごとに けいけんち +10%、20連勝で 3倍）'];
-async function streakNews(){if(!streakOn(G)||G.flags.streakTold)return;G.flags.streakTold=1;G.streak=0;save();banner('解放！','🔥 れんせんボーナス','#ff9a5a',2000);snd('quest');await talks(STREAK_TALK);}
+async function streakNews(){if(!streakReady(G)||G.flags.streakTold)return;G.flags.streakTold=1;G.streak=0;save();banner('解放！','🔥 れんせんボーナス','#ff9a5a',2000);snd('quest');await talks(STREAK_TALK);}
 async function raidNews(){for(const R of RAIDS){if(!raidUnlocked(G,R)||G.raidNews[R.id])continue;G.raidNews[R.id]=1;save();banner('依頼','コアラ討伐：'+R.name,'#ffb070',2000);snd('quest');await talks(RAID_NEWS[R.id]);}}
 function raidMenu(){
   const list=RAIDS.map(R=>{const un=raidUnlocked(G,R),n=G.raids[R.id]||0;
