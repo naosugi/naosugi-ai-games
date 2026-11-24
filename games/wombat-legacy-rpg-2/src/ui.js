@@ -47,7 +47,8 @@ function deleteSlot(n){try{localStorage.removeItem(slotKey(n));}catch(e){}setSlo
 function saves(){return slotList().map(n=>({n,g:load(n)})).filter(x=>x.g);}
 function slotSummary(x){const g=x.g,d=g.savedAt?new Date(g.savedAt):null,p=v=>String(v).padStart(2,'0');
   return {label:`セーブ${x.n}　${g.party.map(m=>m.name).join('・')}`,sub:`いちばん深い B${g.reached||0}`+(g.secretDown?'  ★★完全クリア':g.cleared?'  ★クリア':'')+(d?`  ${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`:'')};}
-function fixSave(s){for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats','raids','raidNews'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
+function fixSave(s){if(s&&s.party)for(const m of s.party)if(Array.isArray(m.slots))m.slots=[...new Set(m.slots.map(k=>k==='horiate'?'digLuck':k))]; // ほりあては おたからさがしに まとめた（2026-11-25）
+  for(const k of ['seen','opened','bossDown','guardDown','dug','az','maps','flags','qdone','qcount','qflag','earned','hints','mats','raids','raidNews'])s[k]=s[k]||{};s.inv=s.inv||{};return s;}
 function prevLevel(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return 0;const s=JSON.parse(t);if(s&&s.party)return Math.max(...s.party.map(m=>+m.lv||0));}catch(e){}return 0;}
 function prevNames(){try{const t=localStorage.getItem(PREV_SAVE_KEY);if(!t)return null;const s=JSON.parse(t);if(s&&s.party&&s.party.length===3)return s.party.map(m=>m.name);}catch(e){}return null;}
 
@@ -904,7 +905,7 @@ async function endBattle(){
     await talk(`${rareE?rareE.name.replace(/ [A-E]$/,'')+'を たおした！':'敵を やっつけた！'}\n${rw.exp}の けいけんちを 手に入れた！`+(rw.gold?`\n${rw.gold}ウォンを ひろった！`:'')+(sMul>1?`\n🔥 れんせん${G.streak-1}：けいけんち ×${sMul}`:'')+(vet.length?`\n（経験者ボーナス ×${VET_MUL}：${vet.join('・')}）`:''));}
     if(sMax){jingle('E5 G5 C6 E6 G6',.08);banner('🔥 れんせん MAX','つぎから けいけんち ×'+STREAK.max,'#ff9a5a',2000);await sleep(700);}
     addGold(rw.gold);
-    if(partyHas('itemFind')&&!B.opt.boss&&R()<.25){const f=F?F.f:1,it=f<10?'herb':f<30?'herb2':R()<.5?'herb3':'water2';if(addItem(it,1))await talk(`ほりあての かんで、${ITEMS[it].name}を 見つけた！`);}
+    if(partyHas('itemFind')&&!B.opt.boss&&R()<.25){const f=F?F.f:1,it=f<10?'herb':f<30?'herb2':R()<.5?'herb3':'water2';if(addItem(it,1))await talk(`おたからさがしの かんで、${ITEMS[it].name}を 見つけた！`);}
     for(const m of G.party){if(m.hp<=0)continue;const ms=gainExp(m,rw.exp),mi=G.party.indexOf(m);
       for(const s of ms){if(s.includes('レベル')){jingle('G5 C6 E6 G6',.08);banner('LEVEL UP!',`${m.name}  Lv${(s.match(/レベル(\d+)/)||[0,m.lv])[1]}`,'#7cf0ff',1700);partySparkle(mi);}
         else if(s.includes('転職できる')){const sup=/王に 転職/.test(s);jingle(sup?'C5 E5 G5 C6 E6 G6 C7':'E5 G5 C6 E6',.08);banner(sup?'★ 超上級職 解放 ★':'解放！',s.replace(/^.*は /,'').replace('に 転職できるように なった！',''),sup?'#ffd36b':'#7cf0ff',2200);partySparkle(mi,sup?'#ffd36b':'#7cf0ff');}

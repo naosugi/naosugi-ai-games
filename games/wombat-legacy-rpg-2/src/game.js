@@ -233,7 +233,7 @@ const EFF_JP={hp:v=>`最大HP+${pc(v)}%`,def:v=>`ぼうぎょ+${pc(v)}%`,mag:v=>
   statusResist:()=>'仲間みんな 状態異常に かかりにくい（確率半分。何人 持っていても 同じ）',songHeal:v=>`歌うと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,itemPow:v=>`戦闘中の どうぐの 回復量+${pc(v)}%`,
   poisonKillHeal:v=>`どくの敵を たおすと 仲間みんなの HPを 最大HPの${pc(v)}% 回復`,startCure:()=>'戦闘の はじめに 仲間みんなの どくを なおす',
   extraAct:v=>`${pc(v)}%で もう1回 こうげき`,pinch:v=>`HPが 3割より少ないとき こうげき・ぼうぎょ・まりょく・すばやさ+${pc(v)}%`,pinchRegen:v=>`HPが 3割より少ないとき 毎ターン 最大HPの${pc(v)}% 回復`,startKiai:()=>'戦闘の はじめから きあい最大',
-  killAtk:v=>`この戦闘で 敵を たおすたび こうげき+${pc(v)}%`,buffForever:()=>'歌の効果が 戦闘中ずっと つづく（敵に さげられると 消える）',itemFind:()=>'掘ったときと 戦闘のあとに どうぐが 見つかりやすい',digLuck:()=>'掘ると どうぐが 出やすく、まれに 最強装備の 素材が 出る'};
+  killAtk:v=>`この戦闘で 敵を たおすたび こうげき+${pc(v)}%`,buffForever:()=>'歌の効果が 戦闘中ずっと つづく（敵に さげられると 消える）',itemFind:()=>'掘ったときと 戦闘のあとに どうぐが 見つかりやすい',digLuck:()=>'B31より 深くで 掘ると、最強装備の 素材が 見つかる',partyRegen:v=>`持っている仲間が 立っていれば、仲間みんなの HP・MPが 毎ターン 最大の${pc(v)}% 回復`};
 function skillDesc(S){
   const T=S.tgt==='enemies'?'敵ぜんたい':S.tgt==='enemy'?'敵1体':S.tgt==='allies'?'仲間みんな':S.tgt==='ally'?'仲間1匹':S.tgt==='dead'?'たおれた仲間':'自分';
   switch(S.kind){
@@ -248,6 +248,7 @@ function skillDesc(S){
     case 'revive':return 'たおれた仲間を おこす（HP半分）';
     case 'mark':return 'えらんだ仲間が この戦闘で たおれたとき、1度だけ HP半分で おきる';
     case 'guard':return `仲間を かばう（うけるダメージ ${Math.round((S.cut||.5)*100)}%）`;
+    case 'shelter':return `このターン、仲間みんなの うける ダメージが ${Math.round(S.cut*100)}%に なる（先に 動く）`;
     case 'stance':return S.stance==='counter'?(S.turns?`${S.turns}ターン、うける 物理ダメージ${Math.round((1-KAMAE.cut)*100)}%カット。物理こうげきを うけると 必ず ${KAMAE.pow}倍の はんげき（全体こうげき・かわしたときも）`:'このターン、うけた こうげきに 必ず はんげき'):'このターン、こうげきを うけない';
     case 'status':return `${T}を ${ST_JP[S.st]}に（${Math.round(S.rate*100)}%）`+(S.pow?'＋こうげき':'')+(S.st2?`・${ST_JP[S.st2]}も`:'');
     case 'buff':return `3ターン、仲間みんなの ${BUFF_JP[S.buff]}↑`;

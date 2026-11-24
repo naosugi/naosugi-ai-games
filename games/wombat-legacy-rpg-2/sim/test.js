@@ -356,3 +356,12 @@ test('連戦ボーナス：B20の ぬしを たおして 長老に 聞くと 解
   const G=C.newGame();const e=C.mkEnemy(10,'normal');e.hp=0;const B=C.newBattle(G,[e]);
   assert.strictEqual(C.giveRewards(G,B,2).exp,Math.round(C.battleRewards(B).exp*2));
 });
+test('あなほり王：おたからさがしは Lv1、だいちの めぐみで 毎ターン HP・MP 回復、あなぐらで ダメージ半分',()=>{
+  assert.strictEqual(C.SKILLS.digLuck.lv,1);assert.ok(!C.SKILLS.digLuck.master);
+  const G=C.newGame();const m=G.party[0];m.mastered={kDig:true};m.slots=['daichi','hideHole'];m.mp=99;
+  const d=C.derived(G.party[1]);G.party[1].hp=1;G.party[1].mp=0;
+  const e=C.mkEnemy(10,'tank');e.hp=e.max=99999;e.atk=1;const B=C.newBattle(G,[e]);
+  C.battleTurn(B,[{k:'defend'},{k:'defend'},{k:'defend'}],C.rng(1));
+  assert.ok(G.party[1].hp>=1+Math.ceil(d.maxhp*.05)-5&&G.party[1].mp>=Math.ceil(d.maxmp*.05),'回復した');
+  m.mp=99;const ev=C.battleTurn(B,[{k:'skill',s:'hideHole'},{k:'defend'},{k:'defend'}],C.rng(2));assert.ok(ev.some(x=>/あなぐらに にげこんだ/.test(x.text||'')));
+});
