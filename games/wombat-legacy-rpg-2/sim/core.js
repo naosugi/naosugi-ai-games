@@ -645,7 +645,7 @@ function raidKoala(o,f,S,id){{const R={f};const e=mkEnemy(R.f,'normal',{name:o.n
 function raidReward(R,first){const f=R.f;return {exp:Math.round(curve('exp',f)*(first?15:4)*expFloorMul(f)),gold:Math.round(curve('gold',f)*(first?20:6))};}
 
 // クリア後の隠しボス（STAGE3.md）。前作の最後のぬし ドロップベア（旅行者をからかう作り話の動物）。超上級職Lv40・最強装備で勝率4〜6割をめやすにする
-const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:10560,atk:254,def:95,mag:202},acts:2,
+const SECRET_BOSS={name:'ドロップベア',look:{spr:'koala',pal:'koala',s:1.6},weak:['light'],stats:{hp:10560,atk:413,def:95,mag:328},acts:2,
   moves:[{n:'ひっかく',k:'atk',w:3},{n:'木の上から とびかかる',k:'snipe',pow:1.8,w:2},{n:'だきついて はなさない',k:'atk',pow:.9,stun:.45,w:2},
     {n:'ユーカリの においで ねむくなる',k:'sleepAll',rate:.3,w:1},{n:'あばれまわる',k:'all',pow:.8,w:2},{n:'ふしぎな ちからを かきけす',k:'dispel',w:1}]};
 // ドロップベアは 超上級職の コアラを 1体ずつ 順番に よぶ（場に 出るのは いつも1体。たおすと 次の 行動で 次を よぶ）
