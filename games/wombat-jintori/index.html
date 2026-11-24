@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ウォンバット☆どうぶつ陣取り（試作中）</title>
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ウォンバット☆どうぶつ陣取り（試作中）">
+<meta property="og:description" content="5×5のマスで動物5体を戦わせる陣取りゲーム。ランクに応じたptで動物を動かし、平原・森林・水辺のフィールドを塗り替えて有利をつくる。毒や復活など62種の動物の個性と、AI対戦・自動シミュレーションつき。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-jintori/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-jintori/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<style>
+/* ウォンバット☆シリーズの配色（ウォンバット☆レガシーRPG 2 に合わせる） */
+:root{--bg:#14101c;--win:#0d0a16;--line:#efe6d2;--txt:#f7f1e3;--dim:#a79db5;--acc:#ffd36b;--p0:#5aa9ff;--p1:#ff6b6b;--ok:#6fdc7c;--soft:#4a4258}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic","Meiryo",sans-serif;font-size:15px}
+a{color:var(--acc)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--soft);padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#top{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
+#top .back{font-size:12px;color:var(--dim);text-decoration:none;border:1px solid var(--soft);border-radius:6px;padding:3px 8px;white-space:nowrap}
+#top .ttl{font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+nav{display:flex;gap:2px;padding:0 6px;max-width:760px;margin:0 auto}
+nav button{flex:1;border:0;background:none;padding:8px 2px;font:inherit;font-size:14px;white-space:nowrap;border-bottom:3px solid transparent;color:var(--dim)}
+nav button.on{border-color:var(--acc);color:var(--acc);font-weight:700}
+main{max-width:760px;margin:0 auto;padding:10px max(10px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+.tab{display:none}.tab.on{display:block}
+.panel{background:var(--win);border:3px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px}
+label.f{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0}
+select,input[type=number],input[type=text]{font:inherit;font-size:15px;padding:5px;border:1px solid #5a5068;border-radius:6px;background:#1c1628;color:var(--txt)}
+input[type=text]{width:100%}
+button.b{font:inherit;font-size:15px;padding:9px 14px;border-radius:8px;border:2px solid var(--line);background:var(--win);color:var(--txt);margin:3px 3px 3px 0;cursor:pointer;touch-action:manipulation}
+button.b:active{background:#2a2440}
+button.b.pri{border-color:var(--acc);color:var(--acc)}
+button.b:disabled{opacity:.35}
+.row{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.muted{color:var(--dim);font-size:13px}
+/* タイトル */
+.titlebox{position:relative;border:3px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px;background:linear-gradient(#1a1440,#3a2a5a 70%,#5a3a3a);padding:16px 10px 10px;text-align:center}
+.titlebox .stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 30% 8%,#fff,transparent),radial-gradient(1px 1px at 55% 25%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#fff,transparent),radial-gradient(1px 1px at 90% 30%,#fff,transparent),radial-gradient(1px 1px at 42% 15%,#fff,transparent);opacity:.8}
+.titlebox h2{position:relative;margin:0;font-size:clamp(24px,7.5vw,34px);color:var(--acc);text-shadow:2px 2px 0 #4a2a10,-1px -1px 0 #4a2a10,1px -1px 0 #4a2a10,-1px 1px 0 #4a2a10;letter-spacing:.02em;line-height:1.25}
+.titlebox .sub{position:relative;color:#e6dcff;font-size:13px;margin-top:6px}
+.titlebox .wbs{position:relative;display:flex;justify-content:space-around;align-items:flex-end;margin-top:8px;padding-bottom:6px;background:linear-gradient(transparent 70%,#3a2a20 70%)}
+.titlebox canvas{width:96px;image-rendering:pixelated}
+.wbname{font-size:11px;font-weight:700}
+.wbname.p0{color:var(--p0)}.wbname.p1{color:var(--p1)}
+/* 盤 */
+.board{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:3px;width:100%;max-width:440px;margin:6px auto;aspect-ratio:1;touch-action:manipulation;background:#000;border:3px solid var(--line);border-radius:8px;padding:3px}
+.cell{position:relative;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid transparent}
+.cell .fname{position:absolute;left:3px;top:1px;font-size:10px;color:rgba(255,255,255,.6)}
+.cell.hl-move{border-color:var(--ok);box-shadow:inset 0 0 0 3px rgba(111,220,124,.35)}
+.cell.hl-target{border-color:#ff6b6b;box-shadow:inset 0 0 0 3px rgba(255,107,107,.4)}
+.cell.hl-area{border-color:#ffa94d;box-shadow:inset 0 0 0 3px rgba(255,169,77,.4)}
+.cell.hl-field{border-color:#c49cff;box-shadow:inset 0 0 0 3px rgba(196,156,255,.35)}
+.cell.hl-place{border-color:var(--ok);border-style:dashed}
+.cell.last{outline:2px dashed var(--acc);outline-offset:-4px}
+.cell .hlabel{position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;background:rgba(13,10,22,.85);color:var(--acc)}
+.unit{width:88%;height:88%;border-radius:50%;background:#f7f1e3;color:#2d2a26;border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.unit.p0{border-color:var(--p0);box-shadow:0 0 0 1px #0d2a4a}.unit.p1{border-color:var(--p1);box-shadow:0 0 0 1px #4a0d0d}
+.unit.acted{opacity:.45}
+.unit.sel{box-shadow:0 0 0 3px var(--acc)}
+.unit .emo{font-size:clamp(18px,6vw,28px);line-height:1}
+.unit .sts{position:absolute;top:-4px;left:-4px;display:flex;gap:1px}
+.unit .st{font-size:9px;background:#6b46c1;color:#fff;border-radius:6px;padding:0 3px;line-height:1.4}
+.unit .st.dd{background:#c05621}
+.unit .st.zz{background:#2c5282}.unit .st.bw{background:#744210}
+.unit.under{opacity:.5;border-style:dashed}
+.unit .rk{position:absolute;top:-4px;right:-4px;font-size:10px;background:#2d2a26;color:#fff;border-radius:8px;padding:0 4px}
+.unit .hpn{font-size:10px;line-height:1.1}
+.hpbar{width:70%;height:4px;background:#d8d0c0;border-radius:2px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:#38a169}
+.status{display:flex;justify-content:space-between;align-items:center;font-size:14px;flex-wrap:wrap;gap:4px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;color:#0d0a16;font-size:13px;font-weight:700}
+.badge canvas{width:28px;image-rendering:pixelated}
+.badge.p0{background:var(--p0)}.badge.p1{background:var(--p1)}
+.pts i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--acc);margin-right:2px;vertical-align:middle}
+.pts i.off{background:#3a3448}
+.log{max-height:180px;overflow:auto;font-size:12.5px;line-height:1.5;color:#d8d0e6}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.card{border:2px solid var(--soft);border-radius:8px;padding:6px;background:var(--win);font-size:12.5px;line-height:1.45}
+.card .t{font-size:14px;font-weight:700}
+.card .sp{font-size:11px;color:var(--acc)}
+.card.click{cursor:pointer}
+.card.click:active{background:#2a2440}
+.chip{display:inline-flex;align-items:center;gap:3px;border:2px solid var(--soft);border-radius:14px;padding:2px 8px;font-size:13px;background:var(--win)}
+.chip.p0{border-color:var(--p0)}.chip.p1{border-color:var(--p1)}
+.chip.on{background:#5c4a16}
+.chip.done{opacity:.45}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{border-bottom:1px solid var(--soft);padding:4px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.scroll{overflow-x:auto}
+.rules h2{font-size:16px;margin:16px 0 6px;border-left:4px solid var(--acc);padding-left:6px;color:var(--acc)}
+.rules h3{font-size:14px;margin:10px 0 4px}
+.rules p,.rules li{line-height:1.65}
+.rules .tbd{background:#2a2212;border:1px solid #8a7020;border-radius:8px;padding:8px 12px}
+.cover{text-align:center;padding:40px 12px}
+.result{font-size:18px;font-weight:700;text-align:center;padding:8px;color:var(--acc)}
+.zhead{grid-column:1/-1;font-weight:700;margin-top:8px;color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <div id="top"><a class="back" href="../../trial/">← ゲーム一覧</a><span class="ttl">ウォンバット☆どうぶつ陣取り（試作中）</span></div>
+  <nav>
+    <button data-tab="play" class="on">対戦</button>
+    <button data-tab="sim">検証</button>
+    <button data-tab="zukan">図鑑</button>
+    <button data-tab="rules">ルール</button>
+  </nav>
+</header>
+<main>
+<section id="tab-play" class="tab on"><div id="play"></div></section>
+
+<section id="tab-sim" class="tab">
+  <div class="panel">
+    <div class="muted">AI同士で対戦させ、規定ラウンドの候補ごとの勝率や、動物ごとの成績を集計します。AIは規定ラウンドを意識しないので、1回の実行で全候補を同時に評価できます。</div>
+    <label class="f">試合数 <input type="number" id="simN" value="200" min="10" max="5000" step="10"></label>
+    <label class="f">観測する最大ラウンド <input type="number" id="simMax" value="30" min="2" max="60"></label>
+    <label class="f">評価に使う規定ラウンド <input type="number" id="simEval" value="12" min="1" max="60"></label>
+    <label class="f">同点時の扱い <select id="simTie"></select></label>
+    <label class="f">反撃の回数 <select id="simCL"></select></label>
+    <label class="f">反撃の威力倍率 <input type="number" id="simCM" value="1" min="0" max="2" step="0.1"></label>
+    <label class="f">先手AI <select id="simP0"></select></label>
+    <label class="f">後手AI <select id="simP1"></select></label>
+    <div class="muted" style="margin-top:6px">編成（空欄ならランダム。例：ライオン,ライオン,カエル,シカ,ネズミ）</div>
+    <label class="f" style="display:block">先手 <input type="text" id="simT0" placeholder="ランダム"></label>
+    <label class="f" style="display:block">後手 <input type="text" id="simT1" placeholder="ランダム"></label>
+    <div class="row"><button class="b pri" id="simRun">実行</button><button class="b" id="simStop" disabled>中止</button><span id="simProg" class="muted"></span></div>
+  </div>
+  <div id="simOut"></div>
+</section>
+
+<section id="tab-zukan" class="tab"><div id="zukan" class="cards"></div></section>
+
+<section id="tab-rules" class="tab"><div class="panel rules" id="rules">
+<!-- ================= ルール（基本形・見直し前提） ================= -->
+<h2>概要</h2>
+<p><b>ウォンバット☆どうぶつ陣取り</b>（仮題）。ウォンバット☆シリーズの1作。舞台はユーカリ村で、村のウォンバットたちが、なかまの動物に声をかけて陣取りあそびをする。プレイヤーはウォンバット（青ウォンバット・赤ウォンバット）で、ウォンバット自身はコマにならない。</p>
+<p>5×5のマス目で、動物コマ5体どうしを戦わせる2人対戦ゲーム。各動物は HP・こうげき・ぼうぎょ と、最大3つのスキル（攻撃スキル・反撃スキル・パッシブスキル）を持つ。</p>
+
+<h2>勝利条件</h2>
+<ul>
+<li>相手の動物コマを全滅させたら勝ち。</li>
+<li><b>規定ラウンドは12</b>。終わった時点で決着がついていなければ、<b>やられた動物のランク合計が少ない方</b>の勝ち。</li>
+<li>ランク合計が同点なら、<b>先に相手の動物を倒した方</b>（＝先に動物をやられた方の負け）の勝ち。どちらも1体もやられていなければ引き分け。毒や「食べたら毒」で倒した場合も、倒したものとして扱う。</li>
+<li>1ラウンド＝先手の手番＋後手の手番。</li>
+</ul>
+
+<h2>準備</h2>
+<ol>
+<li>先手・後手を決める。</li>
+<li>お互いに非公開で動物を5体選ぶ。ランク上限なし。<b>同じ動物は1チームに1体まで</b>（相手と同じ動物を選ぶのは可）。</li>
+<li>選んだ動物を公開する。</li>
+<li>お互いに非公開で、自陣の端1列（5マス）に配置する。先手は下端、後手は上端。</li>
+<li>配置を公開してゲーム開始。全マスのフィールドは「なし」から始まる。</li>
+</ol>
+
+<h2>手番</h2>
+<ul>
+<li>手番ごとに5ptを持つ。ただし<b>先手の最初の手番だけ3pt</b>。</li>
+<li>動物のランク（1〜5）と同じptを払って、その動物を行動させる。</li>
+<li>行動は「移動 → 攻撃スキル」の順（どちらも省略可）。例外はパッシブスキルで許す（例：ウサギは攻撃後に1マス移動）。</li>
+<li>1手番に同じ動物は1回だけ行動できる。</li>
+<li>残りptで行動できる動物がいなくなったら、自動的に手番交代。残ったptは捨てる（持ち越しなし）。自分から手番を終えることもできる。</li>
+</ul>
+
+<h2>距離・移動</h2>
+<ul>
+<li>距離はすべて<b>マンハッタン距離</b>（縦横の歩数の合計）。斜め隣は距離2。</li>
+<li>移動力は基本2（まれに1や3）。上下左右に1歩ずつ進み、合計歩数が移動力以下のマスへ移動できる。</li>
+<li>コマ（敵・味方とも）は原則として通り抜けられない。通り抜けはパッシブスキルで許す。</li>
+</ul>
+
+<h2>攻撃と反撃</h2>
+<ul>
+<li>攻撃スキルの射程は基本1（上下左右の隣）。まれに射程2。</li>
+<li>MAP攻撃：決められた形の範囲にいる敵全員に当たる。形はマンハッタン距離に縛られない。<b>ランク5はMAP攻撃を持たない</b>（強すぎるため）。ランク4のMAP攻撃が強いくらいを目安にする。</li>
+<li>反撃スキル：攻撃を受けて<b>生き残ったとき</b>、攻撃してきた相手が反撃の射程内にいれば自動で1回発動する。
+  <ul>
+    <li>2回攻撃を受けても反撃は1回だけ。</li>
+    <li>MAP攻撃では、生き残った対象それぞれが反撃できる。</li>
+    <li>反撃に対する反撃はない。</li>
+    <li>反撃の射程外からの攻撃には反撃できない（長距離反撃は一部の動物の個性）。</li>
+  </ul>
+</li>
+</ul>
+
+<h2>ダメージ計算</h2>
+<p><b>ダメージ ＝ 切り捨て（（こうげき × 威力 − ぼうぎょ）× 攻撃側の適性 ÷ 防御側の適性）</b>、最低1</p>
+<ul>
+<li>攻撃側の適性：攻撃する動物が<b>いるマス</b>のフィールドに対する、その動物の適性。</li>
+<li>防御側の適性：攻撃される動物が<b>いるマス</b>のフィールドに対する、その動物の適性。2.0ならダメージ半分、0.5なら2倍。</li>
+<li>適性は0.5〜2.0。フィールド「なし」は全動物1.0。</li>
+<li>「ぼうぎょ無視」のスキルは、ぼうぎょを0として計算する。</li>
+<li>2回攻撃は、1回ごとにぼうぎょが引かれる（ぼうぎょが高い相手には効きにくい）。</li>
+<li>パッシブスキルによる補正（こうげき±、ぼうぎょ+、被ダメージ−）は上の式の中で適用する。</li>
+</ul>
+
+<h2>状態異常</h2>
+<ul>
+<li>攻撃スキル・反撃スキルが当たり、対象が<b>生き残ったとき</b>に付与される。</li>
+<li><b>毒</b>：1重につき、毒を受けた動物の手番開始時に<b>最大HPの20%</b>のダメージ（最低1）。3ターン続く。<b>重ねがけ可</b>（重なった数だけダメージが増える）。<b>毒で倒すこともできる</b>（倒した場合、記録は毒を与えた動物に付く）。</li>
+<li><b>ぼうぎょダウン</b>：ぼうぎょが0になる。付与された動物の手番開始ごとに残りが1減り、0で元に戻る（既定は2＝付与した側の手番の残りと、その次の手番まで有効）。重ねがけはせず、残りが2に戻る。</li>
+<li>行動不能・移動不能の状態異常は作らない（足止めは不採用）。</li>
+</ul>
+
+<h2>小動物の生存戦略（パッシブ）</h2>
+<ul>
+<li><b>食べたら毒</b>：自分を攻撃した相手（反撃してきた相手も含む）に毒を与える。自分が倒されても発動する。</li>
+<li><b>復活（多産）</b>：倒されると、自陣の端の列の空きマスにHP満タンで復活する。倒されるたびに失点（ランク）が入る。空きマスがなければ、空いた時点の自分の手番開始時に復活する。復活した手番は行動できない。この動物がいる限り全滅はしないが、判定では負けやすい。</li>
+<li>復活する動物の失点は、仲間のパワーアップ（リベンジ）の対象にもなる。</li>
+</ul>
+
+<h2>そのほかの仕組み</h2>
+<ul>
+<li><b>回復</b>：支援スキルで味方1体のHPを回復する（サル）。状態異常も治せる。パッシブで手番開始時に回復するものもある（シカ、カワウソ）。</li>
+<li><b>押し出し</b>：攻撃が当たった相手を、攻撃者から遠ざかる向きに1マス押す。壁やコマがあれば押せない。押し出しの後に反撃の距離を判定するので、押し出しで反撃を避けられることがある。</li>
+<li><b>位置入れ替え</b>：移動の代わりに、距離2以内の味方と場所を入れ替える（タコ）。</li>
+<li><b>擬態</b>：森林にいる間、距離2以上からの攻撃・反撃の対象にならない（カメレオン）。MAP攻撃は受ける。</li>
+<li><b>射程アップ</b>：水辺にいると攻撃の射程+1（テッポウウオ）。</li>
+<li><b>棘</b>：攻撃してきた相手に固定ダメージを与える。倒されても発動する（ヤマアラシ）。</li>
+</ul>
+
+<h2>動物づくりの方針</h2>
+<ul>
+<li>基本は1体につき「はっきりした役割1つ＋ひねり1つ」。能力は実際の生態と結びつける。</li>
+<li>パッシブ枠は1つ。2役割の動物は、1つのパッシブに2つの効果をまとめてよい（例：ラーテル＝毒無効＋リベンジ）。</li>
+<li>特定の動物だけに刺さるメタ能力は作らない（例：アライグマは「どこでも暮らせる」＝全フィールド適性1.2の万能枠）。</li>
+<li>2つの役割を持つ動物も作る。その分、ステータスの割にランクを高めにする。1つ1つの役割は、単役割の動物より弱めにする。</li>
+<li>フィールドを「なし」に戻す役は作らない（上書きで対抗できるため）。</li>
+<li>同じ動物は1チームに1体まで。</li>
+</ul>
+
+<h2>パワーアップ（リベンジ系パッシブ）</h2>
+<ul>
+<li>やられた仲間の<b>ランク合計</b>×係数だけ、こうげきが上がる（足し算）。</li>
+<li>序盤の不利を緩和するためのもので、持つ動物は同じランク帯の中で基礎能力を低めにする。</li>
+<li>ランク5には付けない。</li>
+</ul>
+
+<h2>フィールド</h2>
+<ul>
+<li>種類：なし／平原／森林／水辺。</li>
+<li>フィールドを変えるスキルは、決められた形（十字5マス、3×3、ひし形13マスなど）でまとめて変える。1マス単位のパッチワークにはしない。</li>
+<li>アシスト役のフィールド変更は、離れた位置から「味方の攻撃側のマス」と「敵の被攻撃側のマス」の両方に届く広さにする（自分が敵に隣接しなくてよい）。</li>
+<li>フィールドは上書き可能で、効果は永続。</li>
+<li>攻撃とフィールド変更を兼ねるスキルは、ダメージを計算した後にフィールドを変える。</li>
+<li>フィールドはスキルの発動条件にもなる（例：シカは森林で回復、ワニは水辺から移動すると移動力アップ）。</li>
+</ul>
+
+<h2>とくべつな動物</h2>
+<ul>
+<li>ウォンバットと同じオーストラリアの動物で、ほかの動物にない唯一無二の能力を持つ。60種とは別枠。</li>
+<li><b>コアラ</b>（ランク2）「ユーカリのねむり」：自分の手番ごとに「起きる→眠る」を交互にくり返す（最初の手番は起きている）。眠っている間は行動も反撃もできないが、受けるダメージが半分になり、眠りに入るときにHP+4（森林ならHP+8）。眠っている手番はptを使わないので、ほかの動物にptを回せる。</li>
+<li><b>ハリモグラ</b>（ランク3）「穴掘り名人」：攻撃の代わりに地中にもぐれる。次の自分の手番まで、攻撃・MAP攻撃・反撃を受けない（毒は続く）。地上に出る手番は移動力+2で、コマを無視して動ける。</li>
+</ul>
+
+<h2>動物の種類（予定）</h2>
+<p>最終的にはランク5が5種、ランク4が10種、ランク3・2・1が各15種の合計60種。試作版で60種がそろった（図鑑タブ参照）。</p>
+
+<h2>設計方針（メモ）</h2>
+<ul>
+<li>フィールド倍率の振れ幅は大きくてよい。フィールド操作や特化型が、数値の高い動物に勝てる余地を残す。</li>
+<li>ぼうぎょの高い動物は珍しい存在にする。ぼうぎょ無視や2回攻撃などで相性を作る。</li>
+<li>ランク5だけの編成は、よく組まれた混成編成より<b>少し強い</b>くらいにする（AIより人間の方が強い混成を組める可能性があるため）。絶対的に強い状態にはしない。目安：強い混成に対して、ランク5編成の勝率が55〜65%程度。現状は59%（カバ・フグ・ドクトカゲ・カエル・イナゴ相手）。</li>
+<li>フィールド操作で一か所に固まる戦術が強くなりすぎないよう、味方も通り抜けられないこととMAP攻撃で釣り合いを取る。</li>
+<li>先手は1手番目が3ptなので、先手には3pt以下の動物を選ぶ動機がある。</li>
+<li>ランク5は頂点捕食者。まずは小技（状態異常・パワーアップなど）を少なめにする。</li>
+<li>毒は小動物の生存戦略として強力にする。重ねがけで暴走することも許容する。</li>
+<li>パワーアップは足し算。強すぎる場合は、数値全体の桁を増やして刻みを細かくして調整する。</li>
+</ul>
+
+<h2>検証中の項目</h2>
+<div class="tbd">
+<ul>
+<li>【決定】規定ラウンド12：判定の結果が、30ラウンドまで続けた場合の結果と約90%一致（読み型・ランダム編成600試合）。15ラウンドで約95%。</li>
+<li>【決定】同点時は先に倒した方の勝ち：12ラウンドでの勝率は先手49.9%・後手50.1%・引き分け0%（800試合）。「引き分け」扱いでは引き分け4%、「残りHP割合」では後手51%。先に倒した側が最終的にも勝つ割合は56%で、最初の1体で勝負が決まりすぎることはない。</li>
+<li>膠着：速いAI（1手先だけ読む）ではライオン5体 vs オオカミ5体が全試合引き分けになったが、読み型AIでは全試合が全滅で決着した。膠着の主因はAIの弱さだった可能性が高い。</li>
+<li>規定ラウンドの目安（読み型どうし・ランダム編成400試合）：全滅で決着する割合は 10R 41%／12R 60%／15R 74%／20R 84%。勝率は先手46〜47%、後手50〜52%でほぼ一定。</li>
+<li>ランク5の強さ：読み型AIでも、ランク5だけの編成が混成編成に95%以上勝つ。要因の候補：
+  <ul>
+  <li>射程1の攻撃で1体を同時に囲めるのは最大4体（盤の端なら3体、角なら2体）。HPの多い1体を、低ランクの数で1手番に倒しきれない。</li>
+  <li>引き算式では、ぼうぎょや威圧（こうげき-3）の数ポイントで、低ランクのダメージがほぼ消える。</li>
+  <li>ptは行動の回数しか制限せず、HP・ぼうぎょ・反撃にはコストがかからない。</li>
+  </ul>
+  ランク5の「ぼうぎょ1」「威圧・巨体なし」「HP約30」「反撃0.5倍または1回まで」を組み合わせても95%以上だった。数値調整だけでは届かず、ルール側の手当てが必要な可能性がある。</li>
+<li>フィールド係の効果（読み型）：シカ入りはオオカミ入りに73%、カエル入りはネズミ入りに63〜68%勝つ。</li>
+<li>反撃は何度でも発動する（決定）。回数制限と威力倍率の設定は、検証用に残してある。</li>
+<li>毒・ぼうぎょダウン・パワーアップ導入後（読み型AI、各150試合）：ランク5だけの編成に対する勝率は、毒中心の編成が12〜16%、ぼうぎょダウン・パワーアップ中心の編成は0%。毒を最大HPの25%・30%に強めても改善しなかった（AIの使い方の影響もありうる）。</li>
+<li><b>弱い動物の底上げ後（コアラ・ハリモグラを含む62種、読み型・ランダム編成3000試合）</b>：ランク別の平均採用時勝率は、ランク5が66%、ランク4が59%、ランク3が48%、ランク2が44%、ランク1が47%。底上げした動物（ハイエナ・カピバラ・アルマジロ・スカンク・アライグマ・カラス・ミミズ・ヒル・ダンゴムシ・カニ・カンガルー・キツネなど）は、おおむね平均の±4ポイント以内に入った。<b>カメは数値を3回上げても46%（ランク4の平均59%）で、移動力1が原因の可能性</b>。ほかに低めなのはタコ41%、フクロウ40%。高めなのはフグ60%（ランク1）、コモドオオトカゲ69%（ランク4）、ライオン71%。コアラ44%、ハリモグラ52%は各ランクの平均並み。</li>
+<li><b>60種そろった時点</b>（読み型、ランダム編成1500試合）：ランク別の採用時勝率は、ランク5が62〜72%（平均67%）、ランク4が49〜66%（平均58%）、ランク3が41〜58%（平均46%）、ランク2が37〜50%（平均46%）、ランク1が40〜58%（平均47%）。同じランク内で差が大きいのは、ランク3（コブラ58%／ハイエナ41%）、ランク2（リカオン50%／スカンク37%）、ランク1（ドクトカゲ58%／ミミズ40%）。ランク5の5種編成は、カバ・フグ・ドクトカゲ・カエル・イナゴに59%（変化なし）。先手46%・後手50%。</li>
+<li><b>シャチ（射程2は水辺からのみ）・トラ（移動3は森林からのみ）に変更後</b>（読み型）：ランク5の5種編成の勝率は、カバ・フグ・ドクトカゲ・カエル・イナゴに59%、サイ・ヤマアラシ・フグ・カエル・イナゴに71%、カバ・サル・フグ・カエル・イナゴに81%、フグ・コブラ・ゴリラ・カエル・イナゴに85%、シカ・カメレオン・サル・テントウムシ・ドクトカゲに89%。ランダム編成800試合の採用時勝率は、ライオン65%、トラ63%、シャチ63%、フグ63%、サイ63%、ゾウ60%、ワニ59%で、突出した動物はいなくなった。この800試合では先手45%・後手52%で、後手がやや有利（要観察）。</li>
+<li><b>動物37種・重複禁止の時点</b>（読み型）：ランク5の5種編成（ライオン・ゾウ・ワニ・トラ・シャチ）の勝率は、カバ・フグ・ドクトカゲ・カエル・イナゴに77%、サイ・ヤマアラシ・フグ・カエル・イナゴに88%、フグ・コブラ・ゴリラ・カエル・イナゴに91%。ランダム編成800試合の採用時勝率は、シャチ75%が首位、ゾウ67%、トラ66%、ライオン63%、サイ63%。下位はタコ33%、テッポウウオ36%、カンガルー39%。シャチを射程1（威力×1.2）、トラを移動2にすると、上の3編成への勝率は57%・70%・87%（未反映）。</li>
+<li><b>ランク5のMAP攻撃を廃止し、ランク4にカバ（MAP攻撃）を追加した後</b>（読み型、各150試合）：ランク5編成（ライオン2・ゾウ・ワニ2）の勝率は、カバ＋フグ＋ドクトカゲ＋カエル＋イナゴに対して40%（引き分け5%）、カバ×2＋フグ＋カエル＋イナゴに対して40%（引き分け8%）、フグ・コブラ・ゴリラ・カエル・イナゴに対して75%、カバ＋コブラ＋フグ＋カエル＋テントウムシに対して98%。編成によってはランク5が負け越すようになった。ランダム編成500試合の採用時勝率は、ライオン68%、ワニ67%、ゾウ63%、フグ62%、カバ59%で、ゾウの突出は解消した。</li>
+<li>（以下はゾウにMAP攻撃があった時点の記録）食べたら毒・復活の導入後（読み型、各150試合）：ランク5編成（ライオン2・ゾウ・ワニ2）の勝率は、混成（フグ・コブラ・ゴリラ・カエル・イナゴ）に対して80%（引き分け9%）。ほかの編成には98〜100%。ゾウを抜くと71%、ゾウのMAP攻撃を上下左右4マスに縮めると69%（引き分け7%）。</li>
+<li>ランダム編成500試合の採用時勝率：ゾウ79%、ライオン65%、フグ64%、ワニ63%、クマ62%。フグはランク1としては強め。</li>
+<li>ランダム編成600試合の採用時勝率では、ゾウが83%で突出（ライオン63%、ワニ60%）。ただし、ゾウ抜きのランク5編成でも上記の結果はほぼ同じ。</li>
+<li>各動物の数値。</li>
+</ul>
+<p class="muted">AIについて：「読み型」は、1手番内の行動の組み合わせと順番を探索し、手番終了時の盤面（残りの戦力、次の相手手番で受けそうな被害、次の自分の攻撃機会）で評価する。相手の手番までは深く読まないので、数字は傾向を見る参考値。「積極型」「慎重型」は1手先だけを見る速いAIで、比較用。</p>
+</div>
+<!-- ================= ルールここまで ================= -->
+</div></section>
+</main>
+
+<script id="engine">
+// ============================================================
+//  データ定義（数値はここを編集して調整）
+// ============================================================
+// counterLimit: 1手番あたりの反撃回数上限（0=無制限）/ counterMult: 反撃ダメージの全体倍率
+// poisonPct: 毒1スタックあたり毎ターン最大HPの何割 / poisonTurns: 毒の持続ターン / defDownTurns: ぼうぎょダウンの持続
+const CONFIG = { ptsPerTurn:5, firstTurnPts:3, maxRounds:12, minDamage:1, tieRule:'firstblood', teamSize:5, counterLimit:0, counterMult:1.0,
+  poisonPct:0.2, poisonTurns:3, defDownTurns:2 };
+const SIZE = 5;
+const FIELDS = {
+  none:  {name:'なし', color:'#2c2638'},
+  plain: {name:'平原', color:'#8a7a3a'},
+  forest:{name:'森林', color:'#2f6b3a'},
+  water: {name:'水辺', color:'#245c8a'},
+};
+const SQ = []; for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)SQ.push([dx,dy]);
+const SHAPES = {
+  cross: {name:'十字5マス', cells:[[0,0],[1,0],[-1,0],[0,1],[0,-1]]},
+  square:{name:'3×3', cells:SQ},
+  ring8: {name:'周囲8マス', cells:SQ.filter(([x,y])=>x||y)},
+  diamond2:{name:'ひし形13マス（距離2以内）', cells:(()=>{const r=[];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)if(Math.abs(dx)+Math.abs(dy)<=2)r.push([dx,dy]);return r;})()},
+};
+const COUNTER_LIMITS = {'0':'無制限', '1':'相手の手番中に1回まで'};
+const TIE_RULES = {firstblood:'先に倒した方', draw:'引き分け', second:'後手の勝ち', first:'先手の勝ち', hp:'残りHP割合が多い方'};
+const PASSIVES = {
+  squeeze:'移動時に味方のコマを通り抜けられる（味方のマスには止まれない）',
+  fly:'移動時に敵味方のコマを飛び越えられる',
+  webfoot:'水辺のマスから移動を始めると移動力+1',
+  hitrun:'攻撃スキルを使った後、1マス移動できる',
+  ambush:'{field}にいるとき、反撃の威力が1.5倍',
+  pack:'距離1に味方がいると こうげき+3',
+  forestheal:'自分の手番開始時に森林にいるとHP+3',
+  endure:'1試合に1回、倒されるダメージを受けてもHP1で耐える',
+  shell:'水辺にいるとき ぼうぎょ+3',
+  bulk:'受けるダメージ-2（最低1）',
+  intimidate:'距離1にいる敵の こうげき-3',
+  swim:'水辺のマスから移動を始めると移動力+2',
+  forestrun:'森林のマスから移動を始めると移動力+1',
+  scavenger:'相手を倒すとHP+{per}',
+  koala:'自分の手番ごとに「起きる→眠る」を交互にくり返す（最初の手番は起きている）。眠っている間は行動も反撃もできないが、受けるダメージが半分。眠りに入るときHP+4（森林ならHP+8）',
+  echidna:'攻撃の代わりに地中にもぐれる。次の自分の手番まで、攻撃・MAP攻撃・反撃を受けない。地上に出る手番は移動力+2で、コマを無視して動ける',
+  ratel:'毒が効かない。やられた仲間のランク合計×{per}だけ こうげきアップ',
+  aura:'自分の手番開始時、距離1の味方のHP+{per}',
+  sloth:'1試合に1回、倒されるダメージを受けてもHP1で耐える。自分の手番開始時に森林にいるとHP+3',
+  revenge:'やられた仲間のランク合計×{per}だけ こうげきアップ',
+  toxic:'自分を攻撃した相手（反撃してきた相手も含む）に毒×{per}を与える。自分が倒されても発動する',
+  sniper:'水辺にいるとき、攻撃スキルの射程+1',
+  camo:'森林にいる間、距離2以上からの攻撃・反撃の対象にならない（MAP攻撃は受ける）',
+  spines:'自分を攻撃した相手（反撃してきた相手も含む）に{per}ダメージ。自分が倒されても発動する',
+  otterheal:'自分の手番開始時、自分と距離1の味方のうち水辺にいる者のHP+3',
+  swap:'移動の代わりに、距離2以内の味方と位置を入れ替えられる',
+  rebirth:'倒されると、自陣の端の列の空きマスにHP満タンで復活する（失点は毎回入る。空きがなければ空いたときに復活）',
+};
+function passiveText(p){ return (PASSIVES[p.id]||'').replace('{per}',p.per).replace('{field}',FIELDS[p.field||'forest'].name); }
+// attack.kind: single=単体 / map=MAP攻撃(area=自分基準の形) / field=フィールド変更のみ
+// fx: {shape, field} フィールド変更（single=対象中心, map=自分中心, field=指定マス中心）
+const ANIMALS = [
+ {id:'mouse',name:'ネズミ',emoji:'🐭',rank:1,hp:14,atk:8,def:0,mv:3,aff:{plain:1.0,forest:1.3,water:0.6},
+  attack:{name:'かじる',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'squeeze',name:'すきま走り'}},
+ {id:'sparrow',name:'スズメ',emoji:'🐦',rank:1,hp:12,atk:7,def:0,mv:3,aff:{plain:1.2,forest:1.2,water:0.8},
+  attack:{name:'つつく',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'fly',name:'飛行'}},
+ {id:'frog',name:'カエル',emoji:'🐸',rank:1,hp:15,atk:6,def:1,mv:2,aff:{plain:0.8,forest:1.0,water:1.8},
+  attack:{name:'雨ごい',kind:'field',range:2,fx:{shape:'square',field:'water'}},
+  counter:{name:'したでっぽう',range:2,power:0.8}, passive:{id:'webfoot',name:'水かき'}},
+ {id:'rabbit',name:'ウサギ',emoji:'🐰',rank:2,hp:18,atk:9,def:1,mv:3,aff:{plain:1.5,forest:1.0,water:0.6},
+  attack:{name:'けりつけ',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'hitrun',name:'脱兎'}},
+ {id:'snake',name:'ヘビ',emoji:'🐍',rank:2,hp:18,atk:8,def:1,mv:2,aff:{plain:0.8,forest:1.6,water:1.2},
+  attack:{name:'まきつき',kind:'single',range:1,power:0.8,hits:2},
+  counter:{name:'かみつき',range:1,power:0.9}, passive:{id:'ambush',name:'待ち伏せ'}},
+ {id:'beaver',name:'ビーバー',emoji:'🦫',rank:2,hp:20,atk:7,def:2,mv:2,aff:{plain:0.9,forest:1.2,water:1.6},
+  attack:{name:'かじり倒し',kind:'single',range:1,power:0.9,fx:{shape:'cross',field:'water'}},
+  counter:null, passive:{id:'webfoot',name:'およぎ上手'}},
+ {id:'wolf',name:'オオカミ',emoji:'🐺',rank:3,hp:24,atk:11,def:2,mv:2,aff:{plain:1.4,forest:1.2,water:0.7},
+  attack:{name:'かみつく',kind:'single',range:1,power:1.0},
+  counter:{name:'ひっかく',range:1,power:0.8}, passive:{id:'pack',name:'群れ'}},
+ {id:'deer',name:'シカ',emoji:'🦌',rank:3,hp:24,atk:9,def:2,mv:2,aff:{plain:1.2,forest:1.5,water:0.8},
+  attack:{name:'森のめぐみ',kind:'field',range:2,fx:{shape:'diamond2',field:'forest'}},
+  counter:{name:'つのつき',range:1,power:1.0}, passive:{id:'forestheal',name:'森のいやし'}},
+ {id:'eagle',name:'ワシ',emoji:'🦅',rank:3,hp:20,atk:11,def:1,mv:3,aff:{plain:1.3,forest:0.9,water:1.0},
+  attack:{name:'急降下',kind:'single',range:2,power:1.0}, counter:null, passive:{id:'fly',name:'飛行'}},
+ {id:'bear',name:'クマ',emoji:'🐻',rank:4,hp:36,atk:14,def:3,mv:2,aff:{plain:1.0,forest:1.4,water:1.1},
+  attack:{name:'ベアクロー',kind:'single',range:1,power:1.2},
+  counter:{name:'はたく',range:1,power:1.0}, passive:{id:'endure',name:'不屈'}},
+ {id:'turtle',name:'カメ',emoji:'🐢',rank:4,hp:44,atk:13,def:7,mv:1,aff:{plain:0.8,forest:0.8,water:1.8},
+  attack:{name:'かみつき',kind:'single',range:1,power:1.0},
+  counter:{name:'こうらアタック',range:1,power:1.2}, passive:{id:'shell',name:'甲羅'}},
+ {id:'gila',name:'ドクトカゲ',emoji:'🦎',rank:1,hp:11,atk:4,def:0,mv:2,aff:{plain:1.3,forest:1.0,water:0.6},
+  attack:{name:'毒の咬みつき',kind:'single',range:1,power:0.5,poison:1},
+  counter:{name:'どくの一咬み',range:1,power:0.3,poison:1}, passive:{id:'endure',name:'しぶとさ'}},
+ {id:'bee',name:'ハチ',emoji:'🐝',rank:1,hp:9,atk:5,def:0,mv:3,aff:{plain:1.2,forest:1.3,water:0.6},
+  attack:{name:'毒針',kind:'single',range:1,power:0.6,poison:1}, counter:null, passive:{id:'fly',name:'飛行'}},
+ {id:'ant',name:'アリ',emoji:'🐜',rank:1,hp:12,atk:6,def:0,mv:2,aff:{plain:1.2,forest:1.3,water:0.6},
+  attack:{name:'大あごでかむ',kind:'single',range:1,power:1.0},
+  counter:{name:'かみつく',range:1,power:0.6}, passive:{id:'revenge',name:'仲間の仇',per:1}},
+ {id:'crab',name:'カニ',emoji:'🦀',rank:1,hp:13,atk:6,def:1,mv:2,aff:{plain:0.8,forest:0.7,water:1.6},
+  attack:{name:'はさみ砕き',kind:'single',range:1,power:0.9,defDown:true}, counter:null, passive:{id:'webfoot',name:'横歩き'}},
+ {id:'dhole',name:'リカオン',emoji:'🐕',rank:2,hp:17,atk:7,def:1,mv:2,aff:{plain:1.4,forest:0.9,water:0.7},
+  attack:{name:'食らいつく',kind:'single',range:1,power:1.0,defDown:true},
+  counter:{name:'かみつく',range:1,power:0.7}, passive:{id:'revenge',name:'群れの恨み',per:1}},
+ {id:'cobra',name:'コブラ',emoji:'⚕',rank:3,hp:21,atk:9,def:1,mv:2,aff:{plain:1.2,forest:1.3,water:0.8},
+  attack:{name:'毒牙',kind:'single',range:1,power:0.8,poison:2},
+  counter:{name:'毒の一咬み',range:1,power:0.6,poison:1}, passive:{id:'ambush',name:'待ち伏せ'}},
+ {id:'boar',name:'イノシシ',emoji:'🐗',rank:3,hp:24,atk:9,def:2,mv:2,aff:{plain:1.2,forest:1.4,water:0.8},
+  attack:{name:'突進',kind:'single',range:1,power:1.1},
+  counter:{name:'牙でかち上げ',range:1,power:0.8}, passive:{id:'revenge',name:'手負いの猛進',per:1}},
+ {id:'gorilla',name:'ゴリラ',emoji:'🦍',rank:4,hp:33,atk:11,def:3,mv:2,aff:{plain:1.0,forest:1.5,water:0.7},
+  attack:{name:'ドラミング殴打',kind:'single',range:1,power:1.2},
+  counter:{name:'はたく',range:1,power:0.9}, passive:{id:'revenge',name:'群れの長',per:1}},
+ {id:'fugu',name:'フグ',emoji:'🐡',rank:1,hp:12,atk:4,def:1,mv:2,aff:{plain:0.5,forest:0.6,water:2.0},
+  attack:{name:'体当たり',kind:'single',range:1,power:0.8}, counter:null, passive:{id:'toxic',name:'猛毒の身',per:2}},
+ {id:'ladybug',name:'テントウムシ',emoji:'🐞',rank:1,hp:10,atk:4,def:1,mv:3,aff:{plain:1.2,forest:1.4,water:0.6},
+  attack:{name:'かじる',kind:'single',range:1,power:0.8}, counter:null, passive:{id:'toxic',name:'にがい体液',per:1}},
+ {id:'locust',name:'イナゴ',emoji:'🦗',rank:1,hp:9,atk:5,def:0,mv:3,aff:{plain:1.5,forest:1.1,water:0.5},
+  attack:{name:'かじる',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'rebirth',name:'大群'}},
+ {id:'hippo',name:'カバ',emoji:'🦛',rank:4,hp:34,atk:12,def:3,mv:2,aff:{plain:0.9,forest:0.7,water:1.8},
+  attack:{name:'大暴れ',kind:'map',area:'ring8',power:0.8},
+  counter:{name:'かみつく',range:1,power:0.9}, passive:{id:'webfoot',name:'水かき'}},
+ {id:'monkey',name:'サル',emoji:'🐒',rank:2,hp:17,atk:6,def:1,mv:2,aff:{plain:1.0,forest:1.5,water:0.6},
+  attack:{name:'毛づくろい',kind:'support',range:1,heal:7,cleanse:true},
+  counter:{name:'ひっかく',range:1,power:0.6}, passive:null},
+ {id:'goat',name:'ヤギ',emoji:'🐐',rank:2,hp:19,atk:7,def:2,mv:2,aff:{plain:1.5,forest:0.9,water:0.6},
+  attack:{name:'食べ尽くす',kind:'field',range:1,fx:{shape:'square',field:'plain'}},
+  counter:{name:'頭突き',range:1,power:0.8}, passive:null},
+ {id:'archer',name:'テッポウウオ',emoji:'🐟',rank:1,hp:10,atk:6,def:0,mv:2,aff:{plain:0.5,forest:0.6,water:2.0},
+  attack:{name:'みずでっぽう',kind:'single',range:2,power:0.8}, counter:null, passive:{id:'sniper',name:'狙い撃ち'}},
+ {id:'chameleon',name:'カメレオン',emoji:'🍃',rank:2,hp:16,atk:8,def:1,mv:2,aff:{plain:0.8,forest:1.6,water:0.6},
+  attack:{name:'舌のばし',kind:'single',range:2,power:0.9}, counter:null, passive:{id:'camo',name:'擬態'}},
+ {id:'kangaroo',name:'カンガルー',emoji:'🦘',rank:3,hp:26,atk:11,def:1,mv:2,aff:{plain:1.5,forest:0.9,water:0.6},
+  attack:{name:'キック',kind:'single',range:1,power:1.0,push:1},
+  counter:{name:'ボクシング',range:1,power:0.7}, passive:{id:'fly',name:'ジャンプ'}},
+ {id:'porcupine',name:'ヤマアラシ',emoji:'📌',rank:3,hp:22,atk:7,def:3,mv:2,aff:{plain:1.0,forest:1.3,water:0.6},
+  attack:{name:'体当たり',kind:'single',range:1,power:0.8},
+  counter:{name:'針飛ばし',range:2,power:0.7}, passive:{id:'spines',name:'針の鎧',per:4}},
+ {id:'octopus',name:'タコ',emoji:'🐙',rank:3,hp:22,atk:7,def:1,mv:2,aff:{plain:0.6,forest:0.6,water:2.0},
+  attack:{name:'墨吐き',kind:'single',range:1,power:0.8,defDown:true},
+  counter:{name:'からみつく',range:1,power:0.6}, passive:{id:'swap',name:'すり替わり'}},
+ {id:'otter',name:'カワウソ',emoji:'🦦',rank:3,hp:20,atk:8,def:1,mv:2,aff:{plain:0.9,forest:0.9,water:1.7},
+  attack:{name:'川へ引き込む',kind:'single',range:1,power:0.9,fx:{shape:'cross',field:'water'}},
+  counter:null, passive:{id:'otterheal',name:'水辺の看病'}},
+ {id:'rhino',name:'サイ',emoji:'🦏',rank:4,hp:36,atk:13,def:3,mv:2,aff:{plain:1.6,forest:0.9,water:0.8},
+  attack:{name:'突進',kind:'single',range:1,power:1.1,push:1,fx:{shape:'cross',field:'plain'}},
+  counter:{name:'つの',range:1,power:0.8}, passive:null},
+ {id:'tiger',name:'トラ',emoji:'🐯',rank:5,hp:42,atk:16,def:2,mv:2,aff:{plain:1.2,forest:1.8,water:1.0},
+  attack:{name:'奇襲',kind:'single',range:1,power:1.3},
+  counter:{name:'かみつく',range:1,power:0.9}, passive:{id:'forestrun',name:'森の狩人'}},
+ {id:'orca',name:'シャチ',emoji:'🐋',rank:5,hp:46,atk:17,def:2,mv:2,aff:{plain:0.5,forest:0.5,water:2.0},
+  attack:{name:'ブリーチング',kind:'single',range:1,waterRange:2,power:1.1},
+  counter:{name:'かみつく',range:1,power:1.0}, passive:{id:'swim',name:'水中移動'}},
+ {id:'moose',name:'ヘラジカ',emoji:'🫎',rank:4,hp:38,atk:13,def:2,mv:2,aff:{plain:1.0,forest:1.5,water:1.5},
+  attack:{name:'角で突き飛ばす',kind:'single',range:1,power:1.0,push:1}, counter:{name:'つの',range:1,power:0.8}, passive:null},
+ {id:'bison',name:'バイソン',emoji:'🦬',rank:4,hp:36,atk:12,def:3,mv:2,aff:{plain:1.6,forest:0.9,water:0.7},
+  attack:{name:'突進',kind:'single',range:1,power:1.1}, counter:{name:'つの',range:1,power:0.8}, passive:{id:'pack',name:'群れ'}},
+ {id:'giraffe',name:'キリン',emoji:'🦒',rank:4,hp:34,atk:11,def:2,mv:2,aff:{plain:1.5,forest:1.1,water:0.6},
+  attack:{name:'ネッキング',kind:'single',range:2,power:1.0}, counter:{name:'蹴り',range:1,power:0.8}, passive:null},
+ {id:'komodo',name:'コモドオオトカゲ',emoji:'🐉',rank:4,hp:34,atk:11,def:2,mv:2,aff:{plain:1.3,forest:1.2,water:0.9},
+  attack:{name:'毒の咬みつき',kind:'single',range:1,power:0.9,poison:2}, counter:{name:'かみつく',range:1,power:0.7}, passive:null},
+ {id:'anaconda',name:'アナコンダ',emoji:'➰',rank:4,hp:34,atk:10,def:2,mv:2,aff:{plain:0.7,forest:1.2,water:1.8},
+  attack:{name:'締め付け',kind:'single',range:1,power:0.7,hits:3}, counter:{name:'かみつく',range:1,power:0.8}, passive:{id:'webfoot',name:'泳ぎ'}},
+ {id:'hyena',name:'ハイエナ',emoji:'🦴',rank:3,hp:24,atk:10,def:1,mv:2,aff:{plain:1.4,forest:0.9,water:0.7},
+  attack:{name:'かみ砕く',kind:'single',range:1,power:1.0}, counter:{name:'かみつく',range:1,power:0.7}, passive:{id:'scavenger',name:'死肉あさり',per:12}},
+ {id:'ratel',name:'ラーテル',emoji:'🦡',rank:3,hp:22,atk:8,def:2,mv:2,aff:{plain:1.3,forest:1.1,water:0.6},
+  attack:{name:'かみつく',kind:'single',range:1,power:1.0}, counter:{name:'反撃',range:1,power:0.8}, passive:{id:'ratel',name:'怖いもの知らず',per:1}},
+ {id:'ostrich',name:'ダチョウ',emoji:'🪶',rank:3,hp:22,atk:9,def:1,mv:3,aff:{plain:1.6,forest:0.8,water:0.6},
+  attack:{name:'キック',kind:'single',range:1,power:1.0,push:1}, counter:null, passive:null},
+ {id:'capybara',name:'カピバラ',emoji:'🐹',rank:3,hp:26,atk:6,def:2,mv:2,aff:{plain:1.0,forest:0.9,water:1.6},
+  attack:{name:'水浴び場',kind:'field',range:1,fx:{shape:'square',field:'water'}}, counter:null, passive:{id:'aura',name:'いやしの存在',per:4}},
+ {id:'armadillo',name:'アルマジロ',emoji:'🛡',rank:3,hp:22,atk:8,def:7,mv:2,aff:{plain:1.3,forest:1.0,water:0.6},
+  attack:{name:'体当たり',kind:'single',range:1,power:0.9}, counter:{name:'こうらで弾く',range:1,power:0.8}, passive:null},
+ {id:'falcon',name:'ハヤブサ',emoji:'🕊',rank:3,hp:22,atk:12,def:0,mv:3,aff:{plain:1.2,forest:1.0,water:1.0},
+  attack:{name:'急降下',kind:'single',range:2,power:0.9}, counter:null, passive:{id:'fly',name:'飛行'}},
+ {id:'fox',name:'キツネ',emoji:'🦊',rank:2,hp:19,atk:9,def:1,mv:2,aff:{plain:1.1,forest:1.5,water:0.7},
+  attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'hitrun',name:'化かして逃げる'}},
+ {id:'skunk',name:'スカンク',emoji:'💨',rank:2,hp:19,atk:6,def:1,mv:2,aff:{plain:1.2,forest:1.2,water:0.6},
+  attack:{name:'悪臭',kind:'map',area:'ring8',power:0.5,defDown:true}, counter:{name:'かみつく',range:1,power:0.5}, passive:null},
+ {id:'penguin',name:'ペンギン',emoji:'🐧',rank:2,hp:18,atk:7,def:1,mv:2,aff:{plain:0.8,forest:0.5,water:1.8},
+  attack:{name:'つつく',kind:'single',range:1,power:1.0}, counter:{name:'つつく',range:1,power:0.6}, passive:{id:'pack',name:'群れ'}},
+ {id:'owl',name:'フクロウ',emoji:'🦉',rank:2,hp:18,atk:9,def:1,mv:2,aff:{plain:1.0,forest:1.6,water:0.7},
+  attack:{name:'夜襲',kind:'single',range:1,forestRange:2,power:0.9}, counter:null, passive:{id:'fly',name:'飛行'}},
+ {id:'moray',name:'ウツボ',emoji:'〰',rank:2,hp:18,atk:8,def:1,mv:2,aff:{plain:0.5,forest:0.5,water:2.0},
+  attack:{name:'かみつく',kind:'single',range:1,power:0.9}, counter:{name:'岩陰からの一咬み',range:1,power:1.0}, passive:{id:'ambush',name:'岩陰の待ち伏せ',field:'water'}},
+ {id:'crow',name:'カラス',emoji:'🌑',rank:2,hp:17,atk:8,def:1,mv:3,aff:{plain:1.2,forest:1.2,water:0.8},
+  attack:{name:'つつく',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'revenge',name:'仲間を忘れない',per:1}},
+ {id:'sloth',name:'ナマケモノ',emoji:'🦥',rank:2,hp:24,atk:6,def:2,mv:1,aff:{plain:0.7,forest:1.6,water:0.8},
+  attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:{name:'ひっかく',range:1,power:0.8}, passive:{id:'sloth',name:'のんびり長生き'}},
+ {id:'raccoon',name:'アライグマ',emoji:'🦝',rank:2,hp:20,atk:9,def:1,mv:2,aff:{plain:1.2,forest:1.2,water:1.2},
+  attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:{name:'かみつく',range:1,power:0.7}, passive:null},
+ {id:'spider',name:'クモ',emoji:'🕷',rank:1,hp:9,atk:4,def:0,mv:2,aff:{plain:1.0,forest:1.4,water:0.6},
+  attack:{name:'毒の牙',kind:'single',range:1,power:0.5,poison:1}, counter:null, passive:null},
+ {id:'worm',name:'ミミズ',emoji:'🪱',rank:1,hp:9,atk:5,def:0,mv:2,aff:{plain:1.0,forest:1.3,water:1.0},
+  attack:{name:'かじる',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'rebirth',name:'再生'}},
+ {id:'pillbug',name:'ダンゴムシ',emoji:'🐛',rank:1,hp:16,atk:5,def:5,mv:1,aff:{plain:1.0,forest:1.3,water:0.6},
+  attack:{name:'体当たり',kind:'single',range:1,power:0.9}, counter:null, passive:null},
+ {id:'leech',name:'ヒル',emoji:'🩸',rank:1,hp:12,atk:6,def:0,mv:2,aff:{plain:0.6,forest:1.0,water:1.8},
+  attack:{name:'吸血',kind:'single',range:1,power:1.0,drain:true}, counter:null, passive:null},
+ {id:'koala',name:'コアラ',emoji:'🐨',rank:2,special:true,hp:22,atk:10,def:2,mv:2,aff:{plain:0.7,forest:1.8,water:0.6},
+  attack:{name:'ひっかく',kind:'single',range:1,power:1.0}, counter:{name:'しがみつき',range:1,power:0.8}, passive:{id:'koala',name:'ユーカリのねむり'}},
+ {id:'echidna',name:'ハリモグラ',emoji:'🦔',rank:3,special:true,hp:24,atk:9,def:3,mv:2,aff:{plain:1.2,forest:1.2,water:0.6},
+  attack:{name:'ツメで掘り返す',kind:'single',range:1,power:1.0}, counter:{name:'針で突く',range:1,power:0.8}, passive:{id:'echidna',name:'穴掘り名人'}},
+ {id:'elephant',name:'ゾウ',emoji:'🐘',rank:5,hp:46,atk:15,def:3,mv:2,aff:{plain:1.5,forest:1.1,water:1.2},
+  attack:{name:'踏みつぶし',kind:'single',range:1,power:1.3},
+  counter:{name:'はなではらう',range:1,power:0.9}, passive:{id:'bulk',name:'巨体'}},
+ {id:'lion',name:'ライオン',emoji:'🦁',rank:5,hp:42,atk:17,def:3,mv:2,aff:{plain:1.6,forest:1.0,water:0.6},
+  attack:{name:'王者の牙',kind:'single',range:1,power:1.3},
+  counter:{name:'かみつく',range:1,power:1.0}, passive:{id:'intimidate',name:'威圧'}},
+ {id:'croc',name:'ワニ',emoji:'🐊',rank:5,hp:44,atk:15,def:3,mv:2,aff:{plain:0.7,forest:0.8,water:2.0},
+  attack:{name:'デスロール',kind:'single',range:1,power:1.0,ignoreDef:true},
+  counter:{name:'かみつく',range:1,power:1.0}, passive:{id:'swim',name:'水中移動'}},
+];
+const A = Object.fromEntries(ANIMALS.map(a=>[a.id,a]));
+
+// ============================================================
+//  ルール処理
+// ============================================================
+const inB=(x,y)=>x>=0&&y>=0&&x<SIZE&&y<SIZE;
+const dist=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+const pid=(u)=>A[u.type].passive&&A[u.type].passive.id;
+const hasEndure=(u)=>pid(u)==='endure'||pid(u)==='sloth';
+const hasForestHeal=(u)=>pid(u)==='forestheal'||pid(u)==='sloth';
+function affOf(T,f){ return f==='none'?1:(T.aff[f]??1); }
+function fieldAt(s,x,y){ return s.fields[y*SIZE+x]; }
+function unitAt(s,x,y){ return s.units.find(u=>u.x===x&&u.y===y); }
+function byId(s,id){ return s.units.find(u=>u.id===id); }
+function nm(u){ return (u.owner===0?'青':'赤')+A[u.type].name; }
+function log(s,m){ if(!s.cfg.quiet) s.log.push(m); }
+function shapeCells(shape,cx,cy){ return SHAPES[shape].cells.map(([dx,dy])=>({x:cx+dx,y:cy+dy})).filter(c=>inB(c.x,c.y)); }
+
+function newGame(teams, cols, cfg){
+  const s={cfg:{...CONFIG,...cfg}, fields:Array(SIZE*SIZE).fill('none'), units:[], dead:[], turn:0, round:1, pts:0,
+    lost:[0,0], teamMax:[0,0], over:false, winner:null, reason:'', log:[], snaps:[], annih:null};
+  for(let p=0;p<2;p++) teams[p].forEach((t,i)=>{
+    const T=A[t]; s.units.push({id:p*100+i, owner:p, type:t, hp:T.hp, maxHp:T.hp, x:cols[p][i], y:p===0?SIZE-1:0,
+      acted:false, endureUsed:false, dealt:0, kills:0});
+    s.teamMax[p]+=T.hp;
+  });
+  log(s,'— ゲーム開始 —');
+  startTurn(s);
+  return s;
+}
+function hpRatio(s,p){ return s.units.filter(u=>u.owner===p).reduce((a,u)=>a+u.hp,0)/s.teamMax[p]; }
+function canAct(s,u){ return u.owner===s.turn && !u.acted && !u.asleep && A[u.type].rank<=s.pts; }
+function anyActable(s){ return s.units.some(u=>canAct(s,u)); }
+
+function startTurn(s){
+  s.pts = (s.round===1&&s.turn===0) ? s.cfg.firstTurnPts : s.cfg.ptsPerTurn;
+  log(s,`【ラウンド${s.round}】${s.turn===0?'先手（青）':'後手（赤）'}の手番（${s.pts}pt）`);
+  for(const u of s.units.slice()){
+    u.countered=0;
+    if(u.owner!==s.turn) continue;
+    u.acted=false;
+    if(pid(u)==='echidna'){ u.emerging=!!u.burrowed; if(u.burrowed) log(s,`${nm(u)}が地中から出てくる（この手番は移動力+2、コマを無視して動ける）`); u.burrowed=false; }
+    if(pid(u)==='koala'){
+      u.kturn=(u.kturn||0)+1; u.asleep=u.kturn%2===0;
+      if(u.asleep){ const hv=Math.min(fieldAt(s,u.x,u.y)==='forest'?8:4,u.maxHp-u.hp); u.hp+=hv; log(s,`${nm(u)}は眠った${hv?`（HP+${hv}）`:''}`); }
+      else if(u.kturn>1) log(s,`${nm(u)}が目を覚ました`);
+    }
+    if(u.defDown>0){ u.defDown--; if(!u.defDown) log(s,`${nm(u)}のぼうぎょが元に戻った`); }
+    if(u.poison&&u.poison.length){
+      for(const st of u.poison){ if(u.hp<=0||u._rev) break; applyDamage(s,findAny(s,st.src),u,poisonTick(u,s),'毒で'); st.t--; }
+      u.poison=u.poison.filter(st=>st.t>0);
+      if(u.hp<=0) continue;
+    }
+    if(hasForestHeal(u) && fieldAt(s,u.x,u.y)==='forest' && u.hp<u.maxHp){
+      const h=Math.min(3,u.maxHp-u.hp); u.hp+=h; log(s,`${nm(u)}は森でHPが${h}回復`);
+    }
+  }
+  for(const u of s.units) if(u.owner===s.turn&&pid(u)==='aura'){
+    for(const a of s.units) if(a.owner===u.owner&&a!==u&&dist(a,u)<=1&&a.hp<a.maxHp){ const hv=Math.min(A[u.type].passive.per,a.maxHp-a.hp); a.hp+=hv; log(s,`${nm(u)}のそばで${nm(a)}のHPが${hv}回復`); }
+  }
+  for(const u of s.units) if(u.owner===s.turn&&pid(u)==='otterheal'){
+    for(const a of s.units) if(a.owner===u.owner&&dist(a,u)<=1&&fieldAt(s,a.x,a.y)==='water'&&a.hp<a.maxHp){ const hv=Math.min(3,a.maxHp-a.hp); a.hp+=hv; log(s,`${nm(u)}の看病で${nm(a)}のHPが${hv}回復`); }
+  }
+  for(const x of s.units) x._rev=false;
+  if(s.reserve&&s.reserve.length){
+    for(const r of s.reserve.filter(r=>r.owner===s.turn)){ const c=reviveCell(s,r.owner,null); if(c){ r.x=c.x; r.y=c.y; r.acted=true; s.units.push(r); s.reserve=s.reserve.filter(x=>x!==r); log(s,`${nm(r)}が端の列に復活した`); } }
+  }
+  checkWin(s); if(s.over) return;
+  if(!anyActable(s)){ log(s,'行動できる動物がいないため手番終了'); endTurn(s); }
+}
+function endTurn(s){
+  if(s.over) return;
+  if(s.turn===1){
+    s.snaps.push({l:[...s.lost], h:[hpRatio(s,0),hpRatio(s,1)], fb:s.firstLoss});
+    if(s.round>=s.cfg.maxRounds){ judge(s); return; }
+    s.round++;
+  }
+  s.turn=1-s.turn;
+  startTurn(s);
+}
+function judgeWinner(lost,h,rule,fb){
+  if(lost[0]<lost[1]) return 0;
+  if(lost[0]>lost[1]) return 1;
+  if(rule==='firstblood') return fb==null?null:1-fb; // fb=先に動物をやられた側。誰もやられていなければ引き分け
+  if(rule==='first') return 0;
+  if(rule==='second') return 1;
+  if(rule==='hp') return h[0]>h[1]?0:h[1]>h[0]?1:null;
+  return null;
+}
+function judge(s){
+  s.over=true; s.reason='判定';
+  s.winner=judgeWinner(s.lost,[hpRatio(s,0),hpRatio(s,1)],s.cfg.tieRule,s.firstLoss);
+  log(s,`規定ラウンド終了。失ったランク合計 青${s.lost[0]} / 赤${s.lost[1]}`);
+}
+function checkWin(s){
+  const R=s.reserve||[];
+  const c0=s.units.some(u=>u.owner===0)||R.some(u=>u.owner===0), c1=s.units.some(u=>u.owner===1)||R.some(u=>u.owner===1);
+  if(c0&&c1) return;
+  s.over=true;
+  if(!c0&&!c1){ s.reason='相討ち'; s.winner=judgeWinner(s.lost,[0,0],s.cfg.tieRule,s.firstLoss); }
+  else { s.reason='全滅'; s.winner=c0?0:1; }
+  s.annih={round:s.round, winner:s.winner};
+}
+
+function moveBudget(s,u){
+  let b=A[u.type].mv; const f=fieldAt(s,u.x,u.y);
+  if(pid(u)==='webfoot'&&f==='water') b+=1;
+  if(pid(u)==='swim'&&f==='water') b+=2;
+  if(pid(u)==='forestrun'&&f==='forest') b+=1;
+  if(u.emerging) b+=2;
+  return b;
+}
+function reachable(s,u){
+  const budget=moveBudget(s,u), p=pid(u);
+  const occ=new Map(); for(const o of s.units) if(o!==u) occ.set(o.y*SIZE+o.x,o);
+  const seen=new Set([u.y*SIZE+u.x]); let fr=[[u.x,u.y]]; const res=[{x:u.x,y:u.y}];
+  for(let st=0;st<budget;st++){
+    const nx=[];
+    for(const [x,y] of fr) for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const X=x+dx,Y=y+dy; if(!inB(X,Y)) continue; const k=Y*SIZE+X; if(seen.has(k)) continue;
+      const o=occ.get(k);
+      if(o){ if(p==='fly'||u.emerging||(p==='squeeze'&&o.owner===u.owner)){ seen.add(k); nx.push([X,Y]); } }
+      else { seen.add(k); nx.push([X,Y]); res.push({x:X,y:Y}); }
+    }
+    fr=nx;
+  }
+  if(p==='swap') for(const o of s.units) if(o!==u&&o.owner===u.owner&&!o.burrowed&&dist(o,u)<=2) res.push({x:o.x,y:o.y,swap:true});
+  return res;
+}
+function rangeOf(s,u,P,sk){ const f=fieldAt(s,P.x,P.y), w=f==='water'; return (w&&sk.waterRange?sk.waterRange:(f==='forest'&&sk.forestRange?sk.forestRange:sk.range))+(pid(u)==='sniper'&&w?1:0); }
+// 擬態：森林にいる t は、距離2以上の位置 P から狙えない
+function hiddenFrom(s,t,P){ return pid(t)==='camo'&&fieldAt(s,t.x,t.y)==='forest'&&dist(t,P)>=2; }
+function skillOptions(s,u,px,py){
+  const sk=A[u.type].attack; if(!sk) return [];
+  const P={x:px,y:py};
+  const extra=pid(u)==='echidna'?[{type:'burrow'}]:[];
+  if(sk.kind==='single') return s.units.filter(e=>e.owner!==u.owner&&!e.burrowed&&dist(P,e)<=rangeOf(s,u,P,sk)&&!hiddenFrom(s,e,P)).map(e=>({type:'single',target:e.id})).concat(extra);
+  if(sk.kind==='support') return s.units.filter(a=>a.owner===u.owner&&a.id!==u.id&&dist(P,a)<=sk.range).map(a=>({type:'support',target:a.id}));
+  if(sk.kind==='map') return [{type:'map'}];
+  if(sk.kind==='field'){ const r=[]; for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++) if(dist(P,{x,y})<=sk.range) r.push({type:'field',x,y}); return r; }
+  return [];
+}
+// att/def: ユニット, aP/dP: 位置（仮の位置で計算できるよう分離）
+function calcDamage(s,att,aP,def,dP,sk,isCounter){
+  const AT=A[att.type], DT=A[def.type];
+  let atk=AT.atk;
+  if(pid(att)==='revenge'||pid(att)==='ratel') atk+=AT.passive.per*s.lost[att.owner];
+  if(pid(att)==='pack' && s.units.some(o=>o.owner===att.owner&&o.id!==att.id&&o.id!==def.id&&dist(o,aP)===1)) atk+=3;
+  if(s.units.some(o=>o.owner!==att.owner&&pid(o)==='intimidate'&&dist(o.id===def.id?dP:o,aP)===1)) atk-=3;
+  let dv=(sk.ignoreDef||def.defDown>0)?0:DT.def;
+  if(pid(def)==='shell'&&fieldAt(s,dP.x,dP.y)==='water') dv+=3;
+  let pw=sk.power*(isCounter?s.cfg.counterMult:1);
+  if(isCounter&&pid(att)==='ambush'&&fieldAt(s,aP.x,aP.y)===(AT.passive.field||'forest')) pw*=1.5;
+  const mult=affOf(AT,fieldAt(s,aP.x,aP.y))/affOf(DT,fieldAt(s,dP.x,dP.y));
+  let dmg=Math.floor((atk*pw-dv)*mult);
+  if(pid(def)==='bulk') dmg-=2;
+  if(def.asleep) dmg=Math.floor(dmg*0.5);
+  return Math.max(s.cfg.minDamage,dmg);
+}
+function applyDamage(s,a,t,dmg,pre){
+  const before=t.hp; t.hp-=dmg; let txt=`→ ${pre||''}${nm(t)}に${dmg}ダメージ`;
+  if(t.hp<=0&&hasEndure(t)&&!t.endureUsed){ t.hp=1; t.endureUsed=true; txt+='（不屈でHP1で耐えた）'; }
+  if(a) a.dealt+=Math.min(dmg,before);
+  if(t.hp<=0){
+    s.lost[t.owner]+=A[t.type].rank; if(a) a.kills++;
+    if(a&&pid(a)==='scavenger'&&a.hp>0&&a.hp<a.maxHp){ const hv=Math.min(A[a.type].passive.per,a.maxHp-a.hp); a.hp+=hv; txt+=`（${nm(a)}はHPが${hv}回復）`; }
+    if(s.firstLoss==null) s.firstLoss=t.owner;
+    if(pid(t)==='rebirth'){
+      t.deaths=(t.deaths||0)+1; t.hp=t.maxHp; t.poison=[]; t.defDown=0; t.acted=true; t._rev=true;
+      const c=reviveCell(s,t.owner,t);
+      if(c){ t.x=c.x; t.y=c.y; txt+=`、${nm(t)}は倒れたが、端の列に復活した`; }
+      else { s.units=s.units.filter(x=>x!==t); (s.reserve=s.reserve||[]).push(t); txt+=`、${nm(t)}は倒れた（端の列が空いたら復活）`; }
+    } else {
+      s.units=s.units.filter(x=>x!==t); s.dead.push(t);
+      txt+=`、${nm(t)}は倒れた`;
+    }
+  }
+  log(s,txt);
+}
+function reviveCell(s,owner,self){
+  const y=owner===0?SIZE-1:0;
+  for(const x of [2,1,3,0,4]){ const o=unitAt(s,x,y); if(!o||o===self) { if(!o||o===self) return {x,y}; } }
+  return null;
+}
+function applyPoison(s,src,t,n){
+  if(t.hp<=0||t._rev||!n) return;
+  if(pid(t)==='ratel'){ log(s,`→ ${nm(t)}に毒は効かない`); return; }
+  t.poison=(t.poison||[]).concat(Array.from({length:n},()=>({t:s.cfg.poisonTurns,src:src.id})));
+  log(s,`→ ${nm(t)}は毒を受けた（${t.poison.length}重）`);
+}
+// 食べたら毒：被攻撃側 t が toxic なら攻撃者 a に毒
+function spinesCheck(s,t,a){ if(pid(t)==='spines'&&a.hp>0&&!a._rev){ applyDamage(s,t,a,A[t.type].passive.per,`「${A[t.type].passive.name}」で`); } }
+function pushUnit(s,a,t,n){
+  if(t.hp<=0||t._rev) return;
+  let dx=Math.sign(t.x-a.x), dy=Math.sign(t.y-a.y);
+  if(dx&&dy){ if(Math.abs(t.x-a.x)>=Math.abs(t.y-a.y)) dy=0; else dx=0; }
+  const X=t.x+dx*n, Y=t.y+dy*n;
+  if(!inB(X,Y)||unitAt(s,X,Y)){ log(s,`→ ${nm(t)}は押し出されなかった（壁かコマ）`); return; }
+  t.x=X; t.y=Y; log(s,`→ ${nm(t)}を押し出した`);
+}
+function toxicCheck(s,t,a){ if(pid(t)==='toxic'&&a.hp>0){ log(s,`${nm(t)}の「${A[t.type].passive.name}」`); applyPoison(s,t,a,A[t.type].passive.per); } }
+function findAny(s,id){ return s.units.find(u=>u.id===id)||s.dead.find(u=>u.id===id); }
+function poisonTick(t,s){ return Math.max(1,Math.floor(t.maxHp*s.cfg.poisonPct)); }
+// 状態異常の付与（対象が生き残っている場合のみ）
+function applyStatus(s,src,t,sk){
+  if(t.hp<=0||t._rev||!sk) return;
+  if(sk.poison) applyPoison(s,src,t,sk.poison);
+  if(sk.defDown){ t.defDown=s.cfg.defDownTurns; log(s,`→ ${nm(t)}のぼうぎょが0になった`); }
+}
+function hit(s,a,t,sk,isC){
+  const before=t.hp, dmg=calcDamage(s,a,a,t,t,sk,isC); applyDamage(s,a,t,dmg);
+  if(sk.drain&&a.hp>0&&a.hp<a.maxHp){ const hv=Math.min(Math.min(dmg,before),a.maxHp-a.hp); a.hp+=hv; log(s,`→ ${nm(a)}は血を吸ってHPが${hv}回復`); }
+}
+function counterAttack(s,d,a){
+  const C=A[d.type].counter;
+  if(!C||d.hp<=0||d._rev||d.asleep||d.burrowed||a.hp<=0||dist(d,a)>C.range||hiddenFrom(s,a,d)) return;
+  if(s.cfg.counterLimit&&(d.countered||0)>=s.cfg.counterLimit) return;
+  d.countered=(d.countered||0)+1;
+  log(s,`${nm(d)}の反撃「${C.name}」`); hit(s,d,a,C,true); applyStatus(s,d,a,C); toxicCheck(s,a,d); spinesCheck(s,a,d);
+}
+function applyField(s,fx,cx,cy){
+  for(const c of shapeCells(fx.shape,cx,cy)) s.fields[c.y*SIZE+c.x]=fx.field;
+  log(s,`→ ${FIELDS[fx.field].name}が広がった`);
+}
+function performSkill(s,u,opt){
+  if(opt.type==='burrow'){ u.burrowed=true; log(s,`${nm(u)}は地中にもぐった（次の自分の手番まで攻撃を受けない）`); return; }
+  const sk=A[u.type].attack;
+  log(s,`${nm(u)}の「${sk.name}」`);
+  if(sk.kind==='single'){
+    const t=byId(s,opt.target); if(!t) return; const tx=t.x,ty=t.y;
+    for(let i=0;i<(sk.hits||1);i++){ if(t.hp<=0||t._rev) break; hit(s,u,t,sk,false); }
+    applyStatus(s,u,t,sk); toxicCheck(s,t,u); spinesCheck(s,t,u);
+    if(sk.fx) applyField(s,sk.fx,tx,ty);
+    if(sk.push&&u.hp>0) pushUnit(s,u,t,sk.push);
+    if(t.hp>0&&!t._rev&&u.hp>0) counterAttack(s,t,u);
+  } else if(sk.kind==='support'){
+    const t=byId(s,opt.target); if(!t) return;
+    const hv=Math.min(sk.heal,t.maxHp-t.hp); t.hp+=hv; log(s,`→ ${nm(t)}のHPが${hv}回復`);
+    if(sk.cleanse&&(t.poison&&t.poison.length||t.defDown>0)){ t.poison=[]; t.defDown=0; log(s,`→ ${nm(t)}の状態異常が治った`); }
+  } else if(sk.kind==='map'){
+    const cells=shapeCells(sk.area,u.x,u.y);
+    const ts=s.units.filter(e=>e.owner!==u.owner&&!e.burrowed&&cells.some(c=>c.x===e.x&&c.y===e.y));
+    if(!ts.length) log(s,'→ 範囲に敵はいなかった');
+    ts.forEach(t=>{ hit(s,u,t,sk,false); applyStatus(s,u,t,sk); toxicCheck(s,t,u); spinesCheck(s,t,u); });
+    if(sk.fx) applyField(s,sk.fx,u.x,u.y);
+    for(const t of ts) if(t.hp>0&&u.hp>0) counterAttack(s,t,u);
+  } else if(sk.kind==='field'){
+    applyField(s,sk.fx,opt.x,opt.y);
+  }
+}
+function postMoves(s,u){
+  const r=[{x:u.x,y:u.y}];
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const X=u.x+dx,Y=u.y+dy; if(inB(X,Y)&&!unitAt(s,X,Y)) r.push({x:X,y:Y}); }
+  return r;
+}
+// 移動＋スキル。脱兎の追加移動がある場合は候補マスを返す（その後 actFinish を呼ぶ）
+function actMoveSkill(s,uid,dest,opt){
+  const u=byId(s,uid), T=A[u.type];
+  const o=unitAt(s,dest.x,dest.y);
+  if(o&&o!==u){ o.x=u.x; o.y=u.y; log(s,`${nm(u)}が${nm(o)}と位置を入れ替えた`); }
+  else if(dest.x!==u.x||dest.y!==u.y) log(s,`${nm(u)}が移動`);
+  u.x=dest.x; u.y=dest.y;
+  if(opt) performSkill(s,u,opt); else log(s,`${nm(u)}は待機`);
+  for(const x of s.units) x._rev=false;
+  u.acted=true; s.pts-=T.rank;
+  checkWin(s);
+  if(!s.over&&u.hp>0&&opt&&pid(u)==='hitrun') return postMoves(s,u);
+  afterAction(s); return null;
+}
+function actFinish(s,uid,cell){
+  const u=byId(s,uid);
+  if(u&&cell&&(cell.x!==u.x||cell.y!==u.y)){ u.x=cell.x; u.y=cell.y; log(s,`${nm(u)}は脱兎で移動`); }
+  afterAction(s);
+}
+function afterAction(s){ if(s.planning) return; if(!s.over&&!anyActable(s)) endTurn(s); }
+
+// ============================================================
+//  簡易AI（貪欲法：1行動ずつ最も評価の高い行動を選ぶ）
+// ============================================================
+const PERSONAS = {
+  aggressive:{name:'積極型', approach:1.2, threat:0.35, aff:1.0, counter:0.5},
+  careful:   {name:'慎重型', approach:0.4, threat:1.0,  aff:1.5, counter:1.0},
+  planner:   {name:'読み型', plan:true, approach:0.6, threat:0.6, aff:1.0, counter:0.8, next:0.5},
+};
+function hitValue(t,dmg,hp,used){ // 戻り値 {v, hp, used}
+  const R=A[t.type].rank;
+  if(dmg>=hp&&hasEndure(t)&&!used) return {v:(hp-1)/t.maxHp*R*10, hp:1, used:true};
+  // 削れている相手ほど価値を高く（集中攻撃を促す）
+  const focus=1+0.8*(1-hp/t.maxHp);
+  return {v:Math.min(dmg,hp)/t.maxHp*R*10*focus+(dmg>=hp?R*10:0), hp:hp-dmg, used};
+}
+function threatAt(s,u,d){
+  const arr=[];
+  for(const e of s.units){
+    if(e.owner===u.owner||e.asleep) continue; const sk=A[e.type].attack;
+    if(!sk||sk.kind==='field'||sk.kind==='support') continue;
+    const reach=A[e.type].mv+(sk.kind==='map'?2:rangeOf(s,e,e,sk));
+    if(dist(e,d)<=reach&&!(pid(u)==='camo'&&fieldAt(s,d.x,d.y)==='forest'&&sk.kind!=='map'&&rangeOf(s,e,e,sk)>=2&&dist(e,d)>A[e.type].mv+1)) arr.push(calcDamage(s,e,e,u,d,sk,false)*(sk.hits||1));
+  }
+  arr.sort((a,b)=>b-a);
+  return (arr[0]||0)+0.4*(arr[1]||0);
+}
+function positional(s,u,d,W){
+  const T=A[u.type]; let sc=0, minD=99, mapE=false;
+  for(const e of s.units) if(e.owner!==u.owner){ minD=Math.min(minD,dist(e,d)); if(A[e.type].attack?.kind==='map') mapE=true; }
+  if(minD<99) sc-=W.approach*minD;
+  const th=threatAt(s,u,d);
+  sc-=W.threat*(Math.min(th,u.hp)/u.maxHp*T.rank*10+(th>=u.hp?T.rank*6:0));
+  sc+=W.aff*(affOf(T,fieldAt(s,d.x,d.y))-1)*T.rank*2;
+  if(mapE){ const n=s.units.filter(o=>o.owner===u.owner&&o.id!==u.id&&Math.abs(o.x-d.x)<=1&&Math.abs(o.y-d.y)<=1).length; sc-=W.threat*n*2; }
+  return sc;
+}
+function fieldScore(s,u,d,cells,f){
+  let sc=0, ally=[], enemy=[];
+  for(const o of s.units){ if(o.id===u.id) continue; (o.owner===u.owner?ally:enemy).push(o); }
+  ally.push({...u,x:d.x,y:d.y});
+  const avg=(arr)=>arr.length?arr.reduce((a,o)=>a+A[o.type].aff[f],0)/arr.length:1;
+  let changed=0;
+  for(const c of cells){
+    const old=fieldAt(s,c.x,c.y); if(old===f) continue; changed++;
+    const o=ally.find(a=>a.x===c.x&&a.y===c.y)||enemy.find(e=>e.x===c.x&&e.y===c.y);
+    if(o){ const dl=affOf(A[o.type],f)-affOf(A[o.type],old); sc+=(o.owner===u.owner?1:-1)*dl*A[o.type].rank*4; }
+  }
+  sc+=changed*(avg(ally)-avg(enemy))*0.8;
+  return sc;
+}
+function skillScore(s,u,d,o,W){
+  if(!o) return 0;
+  const sk=A[u.type].attack;
+  let v=0, cd=0;
+  const evalTarget=(t)=>{
+    let st={hp:t.hp,used:t.endureUsed};
+    for(let i=0;i<(sk.hits||1);i++){ if(st.hp<=0) break; const r=hitValue(t,calcDamage(s,u,d,t,t,sk,false),st.hp,st.used); v+=r.v; st=r; }
+    if(st.hp>0){ const R=A[t.type].rank;
+      if(sk.poison) v+=Math.min(st.hp,sk.poison*s.cfg.poisonTurns*Math.max(1,Math.floor(t.maxHp*s.cfg.poisonPct)))/t.maxHp*R*10*0.7;
+      if(sk.defDown&&!(t.defDown>0)) v+=A[t.type].def*R*0.8; }
+    if(pid(t)==='spines'){ const R=A[u.type].rank; v-=W.counter*Math.min(u.hp,A[t.type].passive.per)/u.maxHp*R*10; }
+    if(pid(t)==='toxic'){ const R=A[u.type].rank, tk=Math.max(1,Math.floor(u.maxHp*s.cfg.poisonPct)); v-=W.counter*Math.min(u.hp,A[t.type].passive.per*s.cfg.poisonTurns*tk)/u.maxHp*R*10*0.7; }
+    const C=A[t.type].counter;
+    if(st.hp>0&&C&&dist(t,d)<=C.range&&!(s.cfg.counterLimit&&(t.countered||0)>=s.cfg.counterLimit)) cd+=calcDamage(s,t,t,u,d,C,true);
+  };
+  if(o.type==='burrow'){ const th=threatAt(s,u,d), R=A[u.type].rank; return W.threat*(Math.min(th,u.hp)/u.maxHp*R*10+(th>=u.hp?R*6:0))+0.5; }
+  if(o.type==='support'){ const t=byId(s,o.target), R=A[t.type].rank;
+    v+=Math.min(sk.heal,t.maxHp-t.hp)/t.maxHp*R*10*1.2+(sk.cleanse?poisonPending(t)/t.maxHp*R*10*0.7+(t.defDown>0?A[t.type].def*R*0.5:0):0); }
+  else if(o.type==='single'){ const t=byId(s,o.target); evalTarget(t); if(sk.fx) v+=fieldScore(s,u,d,shapeCells(sk.fx.shape,t.x,t.y),sk.fx.field); }
+  else if(o.type==='map'){
+    const cells=shapeCells(sk.area,d.x,d.y);
+    s.units.filter(e=>e.owner!==u.owner&&cells.some(c=>c.x===e.x&&c.y===e.y)).forEach(evalTarget);
+    if(sk.fx) v+=fieldScore(s,u,d,shapeCells(sk.fx.shape,d.x,d.y),sk.fx.field);
+  }
+  else if(o.type==='field') v+=fieldScore(s,u,d,shapeCells(sk.fx.shape,o.x,o.y),sk.fx.field);
+  if(cd>0){ // 反撃で受けるダメージ（倒される場合は満額の損失）
+    const R=A[u.type].rank, dies=cd>=u.hp&&!(hasEndure(u)&&!u.endureUsed);
+    v-=W.counter*Math.min(cd,u.hp)/u.maxHp*R*10+(dies?R*10:0);
+  }
+  return v;
+}
+// 各動物の「最善の行動による得点の伸び」を出し、ptの範囲で合計が最大になる組み合わせを選ぶ。
+// その組み合わせの中で伸びが最大の動物の行動を返す（1行動ごとに再計算）。
+function aiChoose(s,persona){
+  const W=PERSONAS[persona]||PERSONAS.aggressive;
+  if(W.plan){
+    const key=s.round+'-'+s.turn;
+    if(!s.aiPlan||s.aiPlan.key!==key) s.aiPlan={key,steps:planTurn(s,persona)};
+    while(s.aiPlan.steps.length){ const st=s.aiPlan.steps.shift(); const u=byId(s,st.uid); if(u&&canAct(s,u)) return st; }
+    return null;
+  }
+  const cand=[];
+  for(const u of s.units){
+    if(!canAct(s,u)) continue;
+    const base=positional(s,u,{x:u.x,y:u.y},W);
+    let best=null, bs=-1e9;
+    for(const d of reachable(s,u)){
+      const pos=positional(s,u,d,W);
+      for(const o of [null,...skillOptions(s,u,d.x,d.y)]){
+        const sc=pos+skillScore(s,u,d,o,W)+Math.random()*0.3;
+        if(sc>bs){ bs=sc; best={uid:u.id,dest:d,opt:o}; }
+      }
+    }
+    if(best&&bs-base>0.05) cand.push({act:best,gain:bs-base,rank:A[u.type].rank});
+  }
+  if(!cand.length) return null;
+  let bestSet=null, bestSum=-1;
+  for(let m=1;m<(1<<cand.length);m++){
+    let r=0,g=0; for(let i=0;i<cand.length;i++) if(m>>i&1){ r+=cand[i].rank; g+=cand[i].gain; }
+    if(r<=s.pts&&g>bestSum){ bestSum=g; bestSet=m; }
+  }
+  let pick=null; for(let i=0;i<cand.length;i++) if(bestSet>>i&1&&(!pick||cand[i].gain>pick.gain)) pick=cand[i];
+  return pick.act;
+}
+function aiPost(s,uid,persona,cands){
+  const W={...(PERSONAS[persona]||PERSONAS.aggressive)}; W.approach*=0.3; W.threat=Math.max(W.threat,0.8);
+  const u=byId(s,uid); let best=cands[0], bs=-1e9;
+  for(const c of cands){ const v=positional(s,u,c,W); if(v>bs){bs=v;best=c;} }
+  return best;
+}
+function aiFullTurn(s,p,persona){
+  let g=0;
+  while(!s.over&&s.turn===p&&g++<20){
+    const a=aiChoose(s,persona);
+    if(!a){ endTurn(s); break; }
+    const post=actMoveSkill(s,a.uid,a.dest,a.opt);
+    if(post) actFinish(s,a.uid,a.post||aiPost(s,a.uid,persona,post));
+  }
+}
+// ============================================================
+//  読み型AI：1手番内の行動の並びをビーム探索し、手番終了時の盤面を評価する
+// ============================================================
+const PLAN_BEAM=5, PLAN_K=5;
+function cloneState(s){
+  return {...s, cfg:{...s.cfg,quiet:true}, fields:s.fields.slice(), units:s.units.map(u=>({...u,poison:u.poison?u.poison.map(p=>({...p})):u.poison})), dead:[], lost:s.lost.slice(), reserve:(s.reserve||[]).map(u=>({...u})),
+    log:[], snaps:[], planning:true, aiPlan:null};
+}
+// HPが減るほど1ダメージの価値が上がる形（削りかけの相手への集中攻撃を選びやすくする）
+function poisonPending(u){ if(!u.poison||!u.poison.length) return 0; const tk=Math.max(1,Math.floor(u.maxHp*CONFIG.poisonPct)); return u.poison.reduce((a,p)=>a+p.t*tk,0); }
+function worth(u){ const R=A[u.type].rank; const eh=u.hp-poisonPending(u)*0.8; if(eh<=0) return pid(u)==='rebirth'?R*3-R*10:R*2; return R*5+R*10*Math.sqrt(eh/u.maxHp); }
+// 敵eが次の機会に foes のどれかへ与えられる価値（移動後の位置は近似：今いるマスの適性で計算）
+function approxBest(s,e,foes,W){
+  const sk=A[e.type].attack; if(!sk||sk.kind==='field'||sk.kind==='support') return 0;
+  const reach=moveBudget(s,e)+(sk.kind==='map'?2:rangeOf(s,e,e,sk)), ER=A[e.type].rank;
+  let best=0;
+  if(e.asleep) return 0;
+  for(const t of foes){
+    if(dist(e,t)>reach||t.burrowed) continue;
+    const R=A[t.type].rank; let hp=t.hp, v=0;
+    for(let i=0;i<(sk.hits||1)&&hp>0;i++){
+      const d=calcDamage(s,e,e,t,t,sk,false); v+=Math.min(d,hp)/t.maxHp*R*10; hp-=d;
+      if(hp<=0){ if(hasEndure(t)&&!t.endureUsed){ hp=1; v-=R*10/t.maxHp; } else v+=R*10; }
+    }
+    const C=A[t.type].counter;
+    if(hp>0&&C){ const cd=calcDamage(s,t,t,e,e,C,true); v-=W.counter*(Math.min(cd,e.hp)/e.maxHp*ER*10+(cd>=e.hp?ER*10:0)); }
+    if(pid(t)==='spines') v-=W.counter*Math.min(e.hp,A[t.type].passive.per)/e.maxHp*ER*10;
+    if(pid(t)==='toxic'){ const tk=Math.max(1,Math.floor(e.maxHp*s.cfg.poisonPct)); v-=W.counter*Math.min(e.hp,A[t.type].passive.per*s.cfg.poisonTurns*tk)/e.maxHp*ER*10*0.7; }
+    if(sk.kind==='map') v*=1.3;
+    if(v>best) best=v;
+  }
+  return best;
+}
+function knap(items,pts){
+  let best=0; const n=Math.min(items.length,10);
+  for(let m=1;m<(1<<n);m++){ let r=0,v=0; for(let i=0;i<n;i++) if(m>>i&1){ r+=items[i].r; v+=items[i].v; } if(r<=pts&&v>best) best=v; }
+  return best;
+}
+function evalState(s,p,W){
+  if(s.over) return {v:s.winner===p?1e5:s.winner==null?0:-1e5, now:0};
+  const own=s.units.filter(u=>u.owner===p), foe=s.units.filter(u=>u.owner!==p);
+  let v=0; own.forEach(u=>v+=worth(u)); foe.forEach(u=>v-=worth(u));
+  v-=10*(s.lost[p]-s.lost[1-p]);
+  v-=W.threat*knap(foe.map(e=>({v:approxBest(s,e,own,W),r:A[e.type].rank})),s.cfg.ptsPerTurn);
+  v+=W.next*knap(own.map(u=>({v:approxBest(s,u,foe,W),r:A[u.type].rank})),s.cfg.ptsPerTurn);
+  let sd=0; for(const u of own){ let m=99; for(const e of foe) m=Math.min(m,dist(u,e)); if(m<99) sd+=m; }
+  v-=W.approach*0.5*sd;
+  const now=knap(own.filter(u=>canAct(s,u)).map(u=>({v:approxBest(s,u,foe,W),r:A[u.type].rank})),s.pts);
+  return {v, now};
+}
+function topActions(s,u,W,K){
+  const all=[], bestByType={};
+  for(const d of reachable(s,u)){
+    const pos=positional(s,u,d,W);
+    for(const o of [null,...skillOptions(s,u,d.x,d.y)]){
+      const sc=pos+skillScore(s,u,d,o,W), ty=o?o.type:'none';
+      const a={uid:u.id,dest:d,opt:o,sc}; all.push(a);
+      if(!bestByType[ty]||sc>bestByType[ty].sc) bestByType[ty]=a;
+    }
+  }
+  all.sort((a,b)=>b.sc-a.sc);
+  const r=all.slice(0,K);
+  for(const a of Object.values(bestByType)) if(!r.includes(a)) r.push(a);
+  return r;
+}
+function planTurn(s,persona){
+  const W=PERSONAS[persona], p=s.turn, root=cloneState(s);
+  const r0=evalState(root,p,W);
+  let beam=[{st:root,steps:[],sc:r0.v+0.9*r0.now}], best={steps:[],v:r0.v};
+  for(let depth=0;depth<6&&beam.length;depth++){
+    const next=[];
+    for(const node of beam){
+      for(const u of node.st.units){
+        if(!canAct(node.st,u)) continue;
+        for(const c of topActions(node.st,u,W,PLAN_K)){
+          const st=cloneState(node.st);
+          const post=actMoveSkill(st,c.uid,c.dest,c.opt); let pc=null;
+          if(post){ pc=aiPost(st,c.uid,persona,post); actFinish(st,c.uid,pc); }
+          const steps=[...node.steps,{uid:c.uid,dest:c.dest,opt:c.opt,post:pc}];
+          const e=evalState(st,p,W), v=e.v+Math.random()*0.2;
+          if(v>best.v) best={steps,v};
+          if(!st.over) next.push({st,steps,sc:v+0.9*e.now});
+        }
+      }
+    }
+    next.sort((a,b)=>b.sc-a.sc);
+    beam=next.slice(0,PLAN_BEAM);
+  }
+  return best.steps;
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+// 同じ動物は1チームに1体まで（相手と同じ動物は可）
+function randomTeam(n){ return shuffle(ANIMALS.map(a=>a.id)).slice(0,n||CONFIG.teamSize); }
+function simGame(cfg,specs,personas){
+  const teams=specs.map(sp=>sp&&sp.length?sp.slice():randomTeam());
+  const cols=[shuffle([0,1,2,3,4]),shuffle([0,1,2,3,4])];
+  const s=newGame(teams,cols,{...cfg,quiet:true});
+  let g=0; while(!s.over&&g++<5000) aiFullTurn(s,s.turn,personas[s.turn]);
+  return s;
+}
+// 規定ラウンドLだった場合の結果
+function outcomeAt(s,L,tie){
+  if(s.annih&&s.annih.round<=L) return {winner:s.annih.winner, annih:true};
+  const sn=s.snaps[Math.min(L,s.snaps.length)-1];
+  if(!sn) return {winner:s.winner, annih:!!s.annih};
+  return {winner:judgeWinner(sn.l,sn.h,tie,sn.fb), annih:false};
+}
+function skillText(sk,isCounter){
+  if(!sk) return '';
+  if(isCounter) return `射程${sk.range} 威力×${sk.power}${sk.poison?` 毒×${sk.poison}`:''}${sk.defDown?' ぼうぎょダウン':''}`;
+  let t='';
+  if(sk.kind==='single') t=`単体 射程${sk.range}${sk.waterRange?`（水辺からは${sk.waterRange}）`:''}${sk.forestRange?`（森林からは${sk.forestRange}）`:''}${sk.drain?' 与えたダメージ分回復':''} 威力×${sk.power}${sk.hits?` ${sk.hits}回攻撃`:''}${sk.ignoreDef?' ぼうぎょ無視':''}${sk.poison?` 毒×${sk.poison}`:''}${sk.defDown?' ぼうぎょダウン':''}${sk.push?' 1マス押し出し':''}`;
+  if(sk.kind==='support') t=`味方1体（射程${sk.range}）のHP+${sk.heal}${sk.cleanse?'、毒とぼうぎょダウンを治す':''}`;
+  if(sk.kind==='map') t=`MAP攻撃：${SHAPES[sk.area].name}の敵全員 威力×${sk.power}${sk.defDown?' ぼうぎょダウン':''}${sk.poison?` 毒×${sk.poison}`:''}`;
+  if(sk.kind==='field') t=`射程${sk.range}のマスを中心に`;
+  if(sk.fx) t+=(sk.kind==='field'?'':'。その後')+`${sk.kind==='single'?'対象中心に':sk.kind==='map'?'自分中心に':''}${SHAPES[sk.fx.shape].name}を${FIELDS[sk.fx.field].name}に変える`;
+  if(sk.kind==='field') t+='（ダメージなし）';
+  return t;
+}
+if(typeof module!=='undefined') module.exports={positional,skillScore,threatAt,PERSONAS,CONFIG,ANIMALS,A,newGame,simGame,outcomeAt,aiChoose,actMoveSkill,actFinish,reachable,skillOptions,calcDamage,endTurn,unitAt};
+</script>
+
+<script id="sprite">
+// ドット絵ウォンバット（ウォンバット☆レガシーRPG 2 の render.js から流用）
+const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
+
+// ---------- shared pixel helpers ----------
+function mkGrid(W,H){
+  const g=new Array(W*H).fill(0),pt=new Uint8Array(W*H);
+  const S=(x,y,c,p=9)=>{x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=W||y>=H)return;g[y*W+x]=c;pt[y*W+x]=p;};
+  const SE=(cx,cy,rx,ry,n,p,fn)=>{
+    for(let y=Math.floor(cy-ry-1);y<=cy+ry+1;y++)for(let x=Math.floor(cx-rx-1);x<=cx+rx+1;x++){
+      const dx=Math.abs((x+.5-cx)/rx),dy=(y+.5-cy)/ry;if(Math.pow(dx,n)+Math.pow(Math.abs(dy),n)<=1)S(x,y,fn(x,y,dy),p);}
+  };
+  const E=(cx,cy,rx,ry,p,fn)=>SE(cx,cy,rx,ry,2,p,fn);
+  return {W,H,g,pt,S,SE,E};
+}
+// fluffy silhouette: little tufts on upper edges of fur parts
+function fuzz(G,pids,maxY){
+  const {W,H,g,pt}=G,add=[];
+  for(let y=1;y<Math.min(H,maxY);y++)for(let x=1;x<W-1;x++){
+    const i=y*W+x;if(!pids.includes(pt[i]))continue;
+    if(!g[i-W]&&((x*5+y*3)%7===0))add.push([i-W,g[i]==='f'?'l':g[i],pt[i]]);
+    else if(!g[i-1]&&((y*5+x)%6===0))add.push([i-1,g[i],pt[i]]);
+    else if(!g[i+1]&&((y*7+x)%6===0))add.push([i+1,g[i],pt[i]]);
+  }
+  for(const [i,c,p] of add){g[i]=c;pt[i]=p;}
+}
+function outline(G){
+  const {W,H}=G,out=G.g,fin=out.slice();
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=y*W+x;if(out[i])continue;
+    if((x>0&&out[i-1])||(x<W-1&&out[i+1])||(y>0&&out[i-W])||(y<H-1&&out[i+W]))fin[i]='o';
+  }
+  return fin;
+}
+// grizzled frosting on fur: light tips scattered on the upper part
+const hash=(x,y)=>{let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296;};
+const frost=(x,y,r)=>r<.6&&hash(x,y)<(r<.3?.11:.05);
+
+// ---------- side view ----------
+const WW=48,WH=32,AX=20;
+function renderWombat(o){
+  const G=mkGrid(WW,WH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,low=o.low||0,bob=o.bob||0;
+  const bcx=19,bcy=18+bob+low,brx=14.5*(1+sq),bry=7.6+(o.br||0)-sq*6;
+  const hcx=29.5+(o.hx||0),hcy=bcy-.5+(o.hy||0);
+  const claws=[];
+  if(!o.noLegs){
+    const legs=[[7,'d',0,0],[23,'d',1,1],[11,'b',1,0],[27,'b',0,1]];
+    for(const [lx,c,ph,fr] of legs){
+      let lift=0,sx=0;
+      if(o.walk&&(!o.dig||fr)){ if(ph===o.wp){lift=1;sx=1;} }
+      for(let y=Math.floor(bcy+5);y<=27-lift;y++)for(let x=lx+sx;x<lx+sx+3;x++)S(x,y,y>=26-lift?'d':c,1);
+      if(fr)claws.push([lx+sx+3,27-lift],[lx+sx+3,26-lift]); else claws.push([lx+sx+3,27-lift]);
+    }
+  }
+  const bsh=(x,y)=>{const r=(y+.5-(bcy-8))/16;return r<.22?(frost(x,y,r)?'f':'l'):r>.78?'d':(frost(x,y,r)?'f':'b');};
+  const rearX=bcx-brx+1.2;
+  E(bcx,bcy,brx,bry,2,(x,y)=>bsh(x,y));
+  SE(bcx-6.5,bcy-.8,8.6,bry+1.1,2.25,2,(x,y)=>bsh(x,y));
+  for(let y=0;y<WH;y++)for(let x=0;x<Math.floor(rearX);x++)if(pt[y*WW+x]===2){g[y*WW+x]=0;pt[y*WW+x]=0;}
+  const K=1.28;
+  // far ear
+  E(hcx-5.6*K,hcy-5.6*K+(o.ear||0)*.6,1.5*K,2*K,4,()=>'d');
+  // head
+  const hsh=(x,y)=>{const r=(y+.5-(hcy-6*K))/(12*K);return r<.25?(frost(x,y,r)?'f':'l'):r>.8?'d':(frost(x,y,r)&&x<hcx+2?'f':'b');};
+  E(hcx-1.5*K,hcy,6.3*K,5.7*K,3,hsh);
+  SE(hcx+3.6*K,hcy+1.3*K,4.4*K,4*K,3.2,3,hsh);
+  fuzz(G,[2,3],bcy+2);
+  // near ear: small, pale rim
+  const ey0=hcy-5.7*K-(o.ear>0?1:0)+(o.ear<0?1.4:0);
+  E(hcx-3.4*K,ey0,1.6*K,2.1*K,4,(x,y,dy)=>dy<-.3?'p':'d');S(hcx-3.4*K-.6,ey0-2.1*K,'p',4);
+  // nose: big bare matte nose
+  const ncx=hcx+6.6*K,ncy=hcy+.4*K;
+  SE(ncx,ncy,2.4*K,2.8*K,3,5,()=>'n');
+  S(ncx-1.6,ncy-2.4,'nh',5);S(ncx-.6,ncy-2.4,'nh',5);S(ncx-1.6,ncy-1.4,'nh',5);
+  S(ncx+1.5,ncy+.8,'e',5);S(ncx+.5,ncy+.8,'e',5);
+  // eye: small round beady
+  const ex=Math.floor(hcx+.8*K),ey=Math.floor(hcy-2.6*K);
+  if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='half'){S(ex-1,ey,'e');S(ex,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='happy'){S(ex-1,ey+1,'e');S(ex,ey,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='strain'){S(ex-1,ey,'e');S(ex,ey+1,'e');S(ex-1,ey+2,'e');}
+  else {S(ex,ey,'w');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  if(o.blush){S(hcx+1.4*K,hcy+2*K,'c');S(hcx+1.4*K+1,hcy+2*K,'c');}
+  // mouth
+  S(ncx-2.5,ncy+3.8,'o');S(ncx-1.5,ncy+3.8,'o');if(o.chew){S(ncx-2.5,ncy+4.8,'o');S(ncx-1.5,ncy+4.8,'o');}
+  // joey
+  if(o.joey>0){
+    const jx=bcx+.5,jy=bcy+bry+2.5-o.joey;
+    E(jx,jy,3.4,2.9,6,(x,y,dy)=>dy>.6?'b':'l');
+    S(jx-2,jy-3,'p',6);S(jx-1,jy-3,'l',6);
+    S(jx+1,jy-1,'e',6);S(jx+3,jy+.2,'n',6);S(jx+2,jy+.2,'n',6);
+  }
+  // inner edges
+  const out=g.slice();
+  for(let y=0;y<WH;y++)for(let x=0;x<WW;x++){
+    const i=y*WW+x,p=pt[i];if(!p)continue;
+    for(const [qx,qy] of [[x-1,y],[x+1,y],[x,y+1],[x,y-1]]){
+      if(qx<0||qy<0||qx>=WW||qy>=WH)continue;const q=pt[qy*WW+qx];
+      if(p===3&&q===2&&(qx<x||qy>y)){out[i]='d';break;}
+      if(p===6&&(q===2||q===1)){out[i]='o';break;}
+      if(p===2&&q===1&&qy>y){out[i]='d';break;}
+    }
+  }
+  G.g=out;
+  const fin=outline(G);
+  // claws & whiskers drawn over the outline
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<WW&&y<WH)fin[y*WW+x]=c;};
+  for(const [x,y] of claws)P(x,y,'k');
+  P(ncx-2.5,ncy+2.4,'v');P(ncx-1.5,ncy+3,'v');
+  P(ncx-3,ncy+1.6,'v');P(ncx-4,ncy+1.8,'v');
+  return {W:WW,H:WH,ax:AX,img:fin};
+}
+
+// ---------- front view ----------
+const FW=40,FH=32,FAX=20;
+function renderFront(o){
+  const G=mkGrid(FW,FH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,cx=20,ty=o.bob||0;
+  const bry=10.6+(o.br||0)-sq*8,brx=14*(1+sq);
+  const bcy=27.5-bry;
+  // paws (behind body first)
+  const pawY=26;
+  // body
+  const fsh=(x,y)=>{const r=(y+.5-(bcy-bry))/(2*bry);return r<.18?(frost(x,y,r)?'f':'l'):r>.82?'d':(frost(x,y,r)?'f':'b');};
+  E(cx,bcy,brx,bry,2,fsh);
+  // head merges with body (no neck)
+  const hcy=bcy-3.2+ty+(o.hy||0),hrx=10.4*(1+sq*.5),hry=8.6;
+  E(cx,hcy,hrx,hry,3,(x,y,dy)=>dy<-.55?(frost(x,y,0)?'f':'l'):'b');
+  // ears: small, wide-set, pale rims
+  const eo=o.ear>0?1:0;
+  for(const s of [-1,1]){
+    const ex=cx+s*7.6,ey=hcy-7.4-eo;
+    E(ex,ey,2.2,2.6,4,(x,y,dy)=>dy<-.25||Math.abs(x+.5-ex)>1.4?'p':'d');
+  }
+  fuzz(G,[2,3],bcy);
+  // face: slightly lighter muzzle
+  E(cx,hcy+3.8,6,3.6,5,()=>'l');
+  // eyes: small, round, beady, wide-set
+  for(const s of [-1,1]){
+    const ex=Math.floor(cx+s*4.6-(s<0?1:0)),ey=Math.floor(hcy-1);
+    if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+    else if(o.eye==='half'){S(ex,ey,'d');S(ex+1,ey,'d');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:1),ey+1,'e');}
+    else if(o.eye==='happy'){S(ex,ey+1,'e');S(ex+1,ey,'e');S(ex+2,ey+1,'e');}
+    else {S(ex,ey,'e');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:0),ey,'w');}
+  }
+  if(o.blush){S(cx-7,hcy+2,'c');S(cx-6,hcy+2,'c');S(cx+6,hcy+2,'c');S(cx+7,hcy+2,'c');}
+  // big bare nose
+  // big bare nose: wide top, rounded bottom (shield shape), nostrils at the lower sides
+  const ny=hcy+3.4+(o.nw||0);
+  for(let y=Math.floor(ny-2.9);y<=ny+2.9;y++){const t=(y+.5-(ny-2.9))/5.8;let hw=4.7-2.4*t*t;if(t<.22)hw-=(.22-t)*6;
+    for(let x=Math.floor(cx-hw);x<cx+hw;x++)S(x,y,t<.25?'nh':'n',6);}
+  S(cx-3,ny+.6,'e',6);S(cx-2,ny+1.4,'e',6);S(cx+2,ny+.6,'e',6);S(cx+1,ny+1.4,'e',6);
+  S(cx-.5,ny+2.2,'o',6);
+  // mouth
+  S(cx-.5,ny+3.3,'o');S(cx-1.5,ny+4,'o');S(cx+.5,ny+4,'o');
+  if(o.chew){S(cx-.5,ny+4.2,'o');}
+  G.g=g;
+  const fin=outline(G);
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<FW&&y<FH)fin[y*FW+x]=c;};
+  // front paws with long pale claws, turned slightly inward
+  for(const s of [-1,1]){
+    const px=cx+s*5.5;
+    for(let y=pawY;y<=27;y++)for(let x=Math.floor(px-2);x<=Math.floor(px+1);x++)P(x,y,'d');
+    P(px-2,28,'o');P(px+1,28,'o');
+    const c0=s<0?px:px-2;P(c0-1,28,'k');P(c0,28,'k');P(c0+1,28,'k');
+    P(px-3,pawY,'o');P(px+2,pawY,'o');P(px-3,27,'o');P(px+2,27,'o');
+  }
+  // whiskers
+  for(const s of [-1,1]){
+    const b=s<0?-1:0;
+    P(cx+s*6.5+b,hcy+3.6,'v');P(cx+s*7.5+b,hcy+3.1,'v');P(cx+s*8.5+b,hcy+2.8,'v');
+    P(cx+s*6.5+b,hcy+5,'v');P(cx+s*7.5+b,hcy+5.4,'v');P(cx+s*8.5+b,hcy+6,'v');
+  }
+  return {W:FW,H:FH,ax:FAX,img:fin};
+}
+function toCanvas(R){const c=document.createElement('canvas');c.width=R.W;c.height=R.H;const x=c.getContext('2d');for(let y=0;y<R.H;y++)for(let i=0;i<R.W;i++){const k=R.img[y*R.W+i];if(!k)continue;x.fillStyle=PAL[k]||k;x.fillRect(i,y,1,1);}return c;}
+
+</script>
+<script id="ui">
+const $=q=>document.querySelector(q);
+let G=null;
+const UI={phase:'setup',mode:'hva',humans:[true,false],personas:['aggressive','aggressive'],picks:[[],[]],cols:[[],[]],
+  pickP:0,placeP:0,placeSel:null,sel:null,dest:null,step:null,opts:[],post:null,info:null,timer:null,speed:500,last:null,cfg:{}};
+
+// ---------- タブ ----------
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='tab-'+b.dataset.tab));
+});
+const opts=(o,sel)=>Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${typeof v==='string'?v:v.name}</option>`).join('');
+const pname=p=>(p===0?'青ウォンバット（先手）':'赤ウォンバット（後手）')+(UI.mode==='hva'?(UI.humans[p]?'・あなた':'・AI'):'');
+// ドット絵ウォンバット：<span class="wb" data-f="1" data-eye="happy"></span> を描画後に canvas へ置き換える
+const WB_CACHE={};
+function wombatCanvas(flip,eye){
+  const key=(flip?1:0)+'|'+(eye||'');
+  if(!WB_CACHE[key]){ let c; try{ c=toCanvas(renderWombat({eye})); }catch(e){ c=document.createElement('canvas'); }
+    if(flip){ const m=document.createElement('canvas'); m.width=c.width; m.height=c.height; const x=m.getContext('2d'); x.translate(c.width,0); x.scale(-1,1); x.drawImage(c,0,0); c=m; }
+    WB_CACHE[key]=c; }
+  const src=WB_CACHE[key], out=document.createElement('canvas'); out.width=src.width; out.height=src.height; out.getContext('2d').drawImage(src,0,0); return out;
+}
+function mountWombats(root){ (root||document).querySelectorAll('span.wb').forEach(s=>s.replaceWith(wombatCanvas(s.dataset.f==='1',s.dataset.eye))); }
+
+// ---------- 共通表示 ----------
+function unitHTML(u,sel){
+  const T=A[u.type];
+  const st=(u.poison&&u.poison.length?`<span class="st">☠${u.poison.length}</span>`:'')+(u.defDown>0?'<span class="st dd">防0</span>':'')+(u.asleep?'<span class="st zz">💤</span>':'')+(u.burrowed?'<span class="st bw">地中</span>':'');
+  return `<div class="unit p${u.owner}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}"><span class="emo">${T.emoji}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
+    `<div class="hpbar"><i style="width:${Math.max(0,u.hp/u.maxHp*100)}%"></i></div><span class="hpn">${u.hp}</span></div>`;
+}
+function boardHTML(fields,getUnit,hl,selId,last){
+  let h='<div class="board" id="bd">';
+  for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
+    const i=y*SIZE+x,f=fields[i],H=hl[i],u=getUnit(x,y);
+    h+=`<div class="cell ${H?H.cls:''}${last&&last.x===x&&last.y===y?' last':''}" data-x="${x}" data-y="${y}" style="background:${FIELDS[f].color}">`+
+      `<span class="fname">${f!=='none'?FIELDS[f].name:''}</span>${u?unitHTML(u,u.id===selId):''}${H&&H.label?`<span class="hlabel">${H.label}</span>`:''}</div>`;
+  }
+  return h+'</div>';
+}
+function bindBoard(fn){ const bd=$('#bd'); if(bd) bd.onclick=e=>{ const c=e.target.closest('.cell'); if(c) fn(+c.dataset.x,+c.dataset.y); }; }
+function animalCard(T,extra){
+  const aff=['plain','forest','water'].map(f=>`${FIELDS[f].name}×${T.aff[f]}`).join(' ');
+  return `<div class="t">${T.emoji} ${T.name} <span class="muted">ランク${T.rank}</span>${T.special?' <span class="sp">★とくべつ</span>':''}</div>`+
+   `<div>HP${T.hp} 攻${T.atk} 防${T.def} 移動${T.mv}</div><div class="muted">${aff}</div>`+
+   `<div>⚔ ${T.attack.name}：${skillText(T.attack)}</div>`+
+   (T.counter?`<div>↩ ${T.counter.name}：${skillText(T.counter,true)}</div>`:'<div class="muted">↩ 反撃なし</div>')+
+   (T.passive?`<div>★ ${T.passive.name}：${passiveText(T.passive)}</div>`:'<div class="muted">★ パッシブなし</div>')+(extra||'');
+}
+
+// ---------- 対戦：設定 ----------
+function renderSetup(){
+  $('#play').innerHTML=`<div class="titlebox"><div class="stars"></div>
+   <h2>ウォンバット☆<br>どうぶつ陣取り</h2><div class="sub">ユーカリ村の 陣取りあそび（試作中）</div>
+   <div class="wbs"><div><span class="wb"></span><div class="wbname p0">青ウォンバット</div></div><div><span class="wb" data-f="1"></span><div class="wbname p1">赤ウォンバット</div></div></div></div>
+  <div class="panel muted" style="line-height:1.7">ユーカリ村のウォンバットたちは、なかまの動物に声をかけて陣取りあそびをします。あなたはウォンバット。動物を5体えらんで指示を出し、相手の動物をたおしましょう。</div>
+  <div class="panel">
+  <label class="f">モード <select id="sMode"><option value="hva">あなた vs AI</option><option value="hvh">2人で対戦（1台を交代で使う）</option><option value="ava">AI vs AI を観戦</option></select></label>
+  <label class="f" id="sSideL">あなたの手番 <select id="sSide"><option value="random">ランダム</option><option value="0">先手</option><option value="1">後手</option></select></label>
+  <label class="f" id="sAiL">AIのタイプ <select id="sAi">${opts(PERSONAS,'planner')}</select></label>
+  <label class="f">規定ラウンド <input type="number" id="sRounds" value="${CONFIG.maxRounds}" min="1" max="60"></label>
+  <label class="f">同点時 <select id="sTie">${opts(TIE_RULES,CONFIG.tieRule)}</select></label>
+  <label class="f">反撃の回数（検証用） <select id="sCL">${opts(COUNTER_LIMITS,String(CONFIG.counterLimit))}</select></label>
+  <label class="f">反撃の威力倍率（検証用） <input type="number" id="sCM" value="${CONFIG.counterMult}" min="0" max="2" step="0.1"></label>
+  <label class="f">AIの速さ <select id="sSpeed"><option value="150">速い</option><option value="500" selected>普通</option><option value="1100">ゆっくり</option></select></label>
+  <button class="b pri" id="sStart">はじめる</button></div>
+  <div class="panel muted">遊び方：動物を5体選ぶ → 相手の編成を見てから端の列に配置 → 対戦。自分の番では、行動させる動物をタップ → 移動先（緑）をタップ → 攻撃対象をタップ、の順です。今いるマスをタップすると移動しません。</div>`;
+  mountWombats($('#play'));
+  const upd=()=>{ const m=$('#sMode').value; $('#sSideL').style.display=m==='hva'?'':'none'; $('#sAiL').style.display=m==='hvh'?'none':''; };
+  $('#sMode').onchange=upd; upd();
+  $('#sStart').onclick=()=>{
+    const m=$('#sMode').value; UI.mode=m;
+    let side=$('#sSide').value; side=side==='random'?(Math.random()<.5?0:1):+side;
+    UI.humans= m==='hva'?[side===0,side===1]: m==='hvh'?[true,true]:[false,false];
+    const ai=$('#sAi').value; UI.personas=[ai,ai];
+    UI.cfg={maxRounds:+$('#sRounds').value||CONFIG.maxRounds, tieRule:$('#sTie').value, counterLimit:+$('#sCL').value, counterMult:+$('#sCM').value};
+    UI.speed=+$('#sSpeed').value;
+    UI.picks=[[],[]]; UI.cols=[[],[]]; G=null; UI.last=null;
+    UI.pickP=0; nextPick();
+  };
+}
+function cover(msg,next){
+  $('#play').innerHTML=`<div class="panel cover"><p>${msg}</p><button class="b pri" id="cv">準備OK</button></div>`;
+  $('#cv').onclick=next;
+}
+// ---------- 対戦：選択 ----------
+function nextPick(){
+  while(UI.pickP<2&&!UI.humans[UI.pickP]){ UI.picks[UI.pickP]=randomTeam(); UI.pickP++; }
+  if(UI.pickP>=2){ UI.placeP=0; return nextPlace(); }
+  if(UI.mode==='hvh') cover(`${pname(UI.pickP)}の人が動物を選びます。相手に画面を見せないでください。`,renderPick);
+  else renderPick();
+}
+function renderPick(){
+  const p=UI.pickP, pk=UI.picks[p];
+  $('#play').innerHTML=`<div class="panel"><b>${pname(p)}：動物を5体選ぶ</b>（同じ動物は1体まで）
+   ${p===0?'<div class="muted">先手は最初の手番だけ3ptです。</div>':''}
+   <div class="row" style="margin:6px 0">${pk.map((t,i)=>`<span class="chip p${p}" data-i="${i}">${A[t].emoji}${A[t].name} ✕</span>`).join('')||'<span class="muted">未選択</span>'}
+   <span class="muted">（${pk.length}/5・ランク合計${pk.reduce((a,t)=>a+A[t].rank,0)}）</span></div>
+   <button class="b" id="pkRand">おまかせ</button><button class="b pri" id="pkOk" ${pk.length<5?'disabled':''}>決定</button></div>
+   <div class="cards">${BY_RANK.map(T=>`<div class="card click" data-id="${T.id}" style="${pk.includes(T.id)?'opacity:.35':''}">${animalCard(T)}</div>`).join('')}</div>`;
+  document.querySelectorAll('.chip[data-i]').forEach(c=>c.onclick=()=>{ pk.splice(+c.dataset.i,1); renderPick(); });
+  document.querySelectorAll('.card[data-id]').forEach(c=>c.onclick=()=>{ if(pk.length<5&&!pk.includes(c.dataset.id)){ pk.push(c.dataset.id); renderPick(); } });
+  $('#pkRand').onclick=()=>{ UI.picks[p]=randomTeam(); renderPick(); };
+  $('#pkOk').onclick=()=>{ UI.pickP++; nextPick(); };
+}
+// ---------- 対戦：配置 ----------
+function nextPlace(){
+  while(UI.placeP<2&&!UI.humans[UI.placeP]){ UI.cols[UI.placeP]=shuffle([0,1,2,3,4]); UI.placeP++; }
+  if(UI.placeP>=2) return startBattle();
+  UI.cols[UI.placeP]=Array(5).fill(null); UI.placeSel=0;
+  if(UI.mode==='hvh') cover(`${pname(UI.placeP)}の人が配置します。相手に画面を見せないでください。`,renderPlace);
+  else renderPlace();
+}
+function renderPlace(){
+  const p=UI.placeP, team=UI.picks[p], cols=UI.cols[p], row=p===0?SIZE-1:0, o=1-p;
+  const units=team.map((t,i)=>cols[i]==null?null:{id:i,owner:p,type:t,hp:A[t].hp,maxHp:A[t].hp,x:cols[i],y:row}).filter(Boolean);
+  const hl={}; for(let x=0;x<SIZE;x++) hl[row*SIZE+x]={cls:'hl-place'};
+  $('#play').innerHTML=`<div class="panel"><b>${pname(p)}：配置</b><div class="muted">下の動物をタップ → ${p===0?'下':'上'}端のマスをタップ</div>
+   <div class="row" style="margin:6px 0">相手：${UI.picks[o].map(t=>`<span class="chip p${o}">${A[t].emoji}${A[t].name}</span>`).join('')}</div>
+   ${boardHTML(Array(25).fill('none'),(x,y)=>units.find(u=>u.x===x&&u.y===y),hl,null,null)}
+   <div class="row">${team.map((t,i)=>`<span class="chip p${p}${UI.placeSel===i?' on':''}${cols[i]!=null?' done':''}" data-i="${i}">${A[t].emoji}${A[t].name}</span>`).join('')}</div>
+   <button class="b" id="plRand">おまかせ</button><button class="b pri" id="plOk" ${cols.some(c=>c==null)?'disabled':''}>決定</button></div>`;
+  document.querySelectorAll('.chip[data-i]').forEach(c=>c.onclick=()=>{ UI.placeSel=+c.dataset.i; renderPlace(); });
+  bindBoard((x,y)=>{
+    if(y!==row||UI.placeSel==null) return;
+    const other=cols.indexOf(x); if(other>=0) cols[other]=cols[UI.placeSel];
+    cols[UI.placeSel]=x;
+    const nx=cols.findIndex(c=>c==null); UI.placeSel=nx>=0?nx:null; renderPlace();
+  });
+  $('#plRand').onclick=()=>{ UI.cols[p]=shuffle([0,1,2,3,4]); UI.placeSel=null; renderPlace(); };
+  $('#plOk').onclick=()=>{ UI.placeP++; nextPlace(); };
+}
+// ---------- 対戦：バトル ----------
+function startBattle(){
+  G=newGame(UI.picks,UI.cols,UI.cfg); UI.phase='battle'; resetSel(); renderBattle(); runAI();
+}
+function resetSel(){ UI.fprev=null; UI.sel=null; UI.dest=null; UI.step=null; UI.opts=[]; UI.post=null; }
+const humanTurn=()=>G&&!G.over&&UI.humans[G.turn];
+function selUnit(){ return UI.sel!=null?byId(G,UI.sel):null; }
+function viewUnitAt(x,y){
+  const su=selUnit();
+  if(su&&UI.dest&&UI.step==='skill'){
+    if(x===UI.dest.x&&y===UI.dest.y) return su;
+    if(x===su.x&&y===su.y){ const o=unitAt(G,UI.dest.x,UI.dest.y); return o&&o!==su?o:null; }
+  }
+  return unitAt(G,x,y);
+}
+function highlights(){
+  const hl={}, su=selUnit(); if(!su) return hl;
+  if(UI.step==='move') for(const c of reachable(G,su)) hl[c.y*SIZE+c.x]={cls:'hl-move'};
+  if(UI.step==='post') for(const c of UI.post) hl[c.y*SIZE+c.x]={cls:'hl-move'};
+  if(UI.step==='skill'){
+    const sk=A[su.type].attack, d=UI.dest;
+    for(const o of UI.opts){
+      if(o.type==='single'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk)}; }
+      if(o.type==='field') hl[o.y*SIZE+o.x]={cls:'hl-field'};
+      if(o.type==='support'){ const t=byId(G,o.target); const p=(t.x===d.x&&t.y===d.y)?{x:su.x,y:su.y}:t; hl[p.y*SIZE+p.x]={cls:'hl-move',label:`回復+${Math.min(sk.heal,t.maxHp-t.hp)}`}; }
+      if(o.type==='map') for(const c of shapeCells(sk.area,d.x,d.y)){ const t=unitAt(G,c.x,c.y); hl[c.y*SIZE+c.x]={cls:'hl-area',label:t&&t.owner!==su.owner&&t.id!==su.id?forecast(su,d,t,sk):''}; }
+    }
+  }
+  if(UI.step==='skill'&&UI.fprev){
+    for(const c of shapeCells(A[su.type].attack.fx.shape,UI.fprev.x,UI.fprev.y)) hl[c.y*SIZE+c.x]={cls:'hl-area',label:FIELDS[A[su.type].attack.fx.field].name};
+    hl[UI.fprev.y*SIZE+UI.fprev.x].label='もう一度で確定';
+  }
+  return hl;
+}
+function forecast(u,d,t,sk){
+  const n=sk.hits||1, dmg=calcDamage(G,u,d,t,t,sk,false), C=A[t.type].counter;
+  let txt=`与${dmg}${n>1?'×'+n:''}`;
+  if(dmg*n<t.hp&&C&&dist(t,d)<=C.range&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit)) txt+=` 反${calcDamage(G,t,t,u,d,C,true)}`;
+  return txt;
+}
+function renderBattle(){
+  if(!G) return;
+  const su=selUnit(), info=UI.info!=null?(byId(G,UI.info)||G.dead.find(u=>u.id===UI.info)):su;
+  const pts=Array.from({length:CONFIG.ptsPerTurn},(_,i)=>`<i class="${i<G.pts?'':'off'}"></i>`).join('');
+  let actions='';
+  if(G.over){
+    const w=G.winner==null?'引き分け':`${pname(G.winner)}の勝ち`;
+    actions=`<div class="result">${w}（${G.reason}）</div><div class="muted" style="text-align:center">失ったランク合計：青${G.lost[0]} / 赤${G.lost[1]}</div><button class="b pri" id="again">設定に戻る</button>`;
+  } else if(humanTurn()){
+    if(UI.step==='skill'){
+      const sk=A[su.type].attack;
+      if(UI.opts.some(o=>o.type==='map')) actions+=`<button class="b pri" id="doMap">「${sk.name}」発動</button>`;
+      if(UI.opts.some(o=>o.type==='burrow')) actions+=`<button class="b pri" id="doBurrow">地中にもぐる</button>`;
+      actions+=`<button class="b" id="noAtk">スキルを使わず待機</button><button class="b" id="back">移動からやり直す</button>`;
+      if(UI.opts.some(o=>o.type==='field')) actions+='<div class="muted">紫のマスをタップで範囲を表示、同じマスをもう一度タップで確定</div>';
+    } else if(UI.step==='post') actions=`<div class="muted">脱兎：1マス移動できます</div><button class="b" id="noPost">移動しない</button>`;
+    else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}<button class="b" id="endT">手番を終える</button>`;
+  } else actions='<div class="muted">AIが考えています…</div>';
+  $('#play').innerHTML=`<div class="panel">
+   <div class="status"><span>ラウンド ${G.round}/${G.cfg.maxRounds}</span><span class="badge p${G.turn}"><span class="wb" data-f="${G.turn}"></span>${pname(G.turn)}</span><span class="pts">${pts}</span></div>
+   <div class="muted">失ったランク合計　青 ${G.lost[0]} ／ 赤 ${G.lost[1]}</div>
+   ${boardHTML(G.fields,viewUnitAt,highlights(),UI.sel,UI.last)}
+   <div class="row">${actions}</div></div>
+   ${info?`<div class="panel card">${infoHTML(info)}</div>`:''}
+   <div class="panel"><b>ログ</b><div class="log">${G.log.slice(-120).reverse().map(l=>`<div>${l}</div>`).join('')}</div></div>`;
+  bindBoard(onCell); mountWombats($('#play'));
+  const on=(id,f)=>{ const e=$('#'+id); if(e) e.onclick=f; };
+  on('again',()=>{ clearTimeout(UI.timer); G=null; renderSetup(); });
+  on('doMap',()=>commit({type:'map'}));
+  on('doBurrow',()=>commit({type:'burrow'}));
+  on('noAtk',()=>commit(null));
+  on('back',()=>{ UI.step='move'; UI.dest=null; UI.fprev=null; renderBattle(); });
+  on('noPost',()=>finishPost(null));
+  on('unsel',()=>{ resetSel(); renderBattle(); });
+  on('endT',()=>{ resetSel(); UI.info=null; endTurn(G); UI.last=null; renderBattle(); runAI(); });
+}
+function infoHTML(u){
+  const T=A[u.type], f=G.fields[u.y*SIZE+u.x];
+  return `<div class="t">${u.owner===0?'青':'赤'} ${T.emoji}${T.name} <span class="muted">ランク${T.rank}</span>${u.hp<=0?'（倒れた）':''}</div>`+
+    `<div>HP ${Math.max(0,u.hp)}/${u.maxHp}　攻${T.atk}${pid(u)==='revenge'&&G.lost[u.owner]?`<b>+${T.passive.per*G.lost[u.owner]}</b>`:''} 防${u.defDown>0?'<b>0</b>':T.def} 移動${T.mv}</div>`+
+    (u.poison&&u.poison.length?`<div>☠ 毒${u.poison.length}重（毎ターン${u.poison.length*poisonTick(u,G)}ダメージ、残り${u.poison.map(p=>p.t).join('/')}ターン）</div>`:'')+
+    (u.defDown>0?`<div>ぼうぎょダウン（残り${u.defDown}）</div>`:'')+
+    (u.asleep?'<div>💤 眠っている（次の自分の手番で目を覚ます）</div>':'')+
+    (u.burrowed?'<div>地中にいる（次の自分の手番まで攻撃を受けない）</div>':'')+
+    `<div class="muted">いまのマス：${FIELDS[f].name}（適性×${affOf(T,f)}）／ ${['plain','forest','water'].map(k=>`${FIELDS[k].name}×${T.aff[k]}`).join(' ')}</div>`+
+    `<div>⚔ ${T.attack.name}：${skillText(T.attack)}</div>`+
+    (T.counter?`<div>↩ ${T.counter.name}：${skillText(T.counter,true)}</div>`:'<div class="muted">↩ 反撃なし</div>')+
+    (T.passive?`<div>★ ${T.passive.name}：${passiveText(T.passive)}${hasEndure(u)&&u.endureUsed?'（使用済み）':''}</div>`:'<div class="muted">★ パッシブなし</div>');
+}
+function onCell(x,y){
+  const u=viewUnitAt(x,y);
+  UI.info=u?u.id:null;
+  if(!humanTurn()){ renderBattle(); return; }
+  const su=selUnit();
+  if(UI.step==='post'){ const c=UI.post.find(c=>c.x===x&&c.y===y); if(c) return finishPost(c); renderBattle(); return; }
+  if(UI.step==='skill'){
+    const o=UI.opts.find(o=>((o.type==='single'||o.type==='support')&&u&&o.target===u.id)||(o.type==='field'&&o.x===x&&o.y===y));
+    if(o&&o.type==='field'&&!(UI.fprev&&UI.fprev.x===x&&UI.fprev.y===y)){ UI.fprev={x,y}; renderBattle(); return; }
+    if(o) return commit(o);
+    UI.fprev=null;
+    renderBattle(); return;
+  }
+  if(UI.step==='move'&&su){
+    const c=reachable(G,su).find(c=>c.x===x&&c.y===y);
+    if(c){ UI.dest=c; UI.step='skill'; UI.opts=skillOptions(G,su,c.x,c.y); UI.info=su.id; renderBattle(); return; }
+  }
+  if(u&&canAct(G,u)){ UI.sel=u.id; UI.step='move'; UI.dest=null; }
+  renderBattle();
+}
+function commit(opt){
+  const su=selUnit(); const dest=UI.dest;
+  const post=actMoveSkill(G,su.id,dest,opt);
+  UI.last=dest;
+  if(post){ UI.step='post'; UI.post=post; renderBattle(); return; }
+  resetSel(); renderBattle(); runAI();
+}
+function finishPost(c){ actFinish(G,UI.sel,c); resetSel(); renderBattle(); runAI(); }
+function runAI(){
+  clearTimeout(UI.timer);
+  if(!G||G.over||UI.humans[G.turn]) return;
+  UI.timer=setTimeout(()=>{
+    if(!G||G.over||UI.humans[G.turn]) return;
+    const p=G.turn, a=aiChoose(G,UI.personas[p]);
+    if(!a){ endTurn(G); UI.last=null; }
+    else {
+      const post=actMoveSkill(G,a.uid,a.dest,a.opt); UI.last=a.dest;
+      if(post){ const c=a.post||aiPost(G,a.uid,UI.personas[p],post); actFinish(G,a.uid,c); UI.last=c; }
+    }
+    UI.info=null; renderBattle(); runAI();
+  },UI.speed);
+}
+
+// ---------- 図鑑 ----------
+const BY_RANK=ANIMALS.filter(T=>!T.special).sort((a,b)=>a.rank-b.rank).concat(ANIMALS.filter(T=>T.special));
+$('#zukan').innerHTML=`<div class="zhead">とくべつな動物（${ANIMALS.filter(T=>T.special).length}種）</div>`+ANIMALS.filter(T=>T.special).map(T=>`<div class="card" style="border-color:var(--acc)">${animalCard(T)}</div>`).join('')+
+  [1,2,3,4,5].map(r=>`<div class="zhead">ランク${r}（${BY_RANK.filter(T=>T.rank===r&&!T.special).length}種）</div>`+BY_RANK.filter(T=>T.rank===r&&!T.special).map(T=>`<div class="card">${animalCard(T)}</div>`).join('')).join('');
+
+// ---------- シミュレーション ----------
+$('#simTie').innerHTML=opts(TIE_RULES,CONFIG.tieRule);
+$('#simCL').innerHTML=opts(COUNTER_LIMITS,String(CONFIG.counterLimit));
+$('#simP0').innerHTML=opts(PERSONAS,'planner'); $('#simP1').innerHTML=opts(PERSONAS,'planner');
+let simStop=false;
+function parseTeam(txt){
+  txt=txt.trim(); if(!txt) return null;
+  const parts=txt.split(/[,、\s]+/).filter(Boolean), r=[];
+  for(const w of parts){ const T=ANIMALS.find(a=>a.name===w||a.id===w||a.emoji===w); if(!T) throw new Error(`「${w}」という動物はいません`); r.push(T.id); }
+  if(r.length!==CONFIG.teamSize) throw new Error(`編成は${CONFIG.teamSize}体で指定してください（今は${r.length}体）`);
+  if(new Set(r).size!==r.length) throw new Error('同じ動物は1チームに1体までです');
+  return r;
+}
+$('#simStop').onclick=()=>simStop=true;
+$('#simRun').onclick=()=>{
+  let specs; try{ specs=[parseTeam($('#simT0').value),parseTeam($('#simT1').value)]; }catch(e){ $('#simProg').textContent=e.message; return; }
+  const N=+$('#simN').value||100, maxR=+$('#simMax').value||30, evalR=Math.min(+$('#simEval').value||12,maxR), tie=$('#simTie').value;
+  const personas=[$('#simP0').value,$('#simP1').value];
+  const games=[]; simStop=false; $('#simRun').disabled=true; $('#simStop').disabled=false;
+  const step=()=>{
+    const t0=performance.now();
+    while(games.length<N&&performance.now()-t0<40) games.push(simGame({maxRounds:maxR,tieRule:tie,counterLimit:+$('#simCL').value,counterMult:+$('#simCM').value},specs,personas));
+    $('#simProg').textContent=`${games.length}/${N}`;
+    if(games.length<N&&!simStop) setTimeout(step,0);
+    else { $('#simRun').disabled=false; $('#simStop').disabled=true; renderSim(games,maxR,evalR,tie); }
+  };
+  step();
+};
+function pct(a,b){ return b?(a/b*100).toFixed(1)+'%':'-'; }
+function renderSim(games,maxR,evalR,tie){
+  const n=games.length; if(!n) return;
+  // 規定ラウンド別
+  let rows='';
+  const Ls=[]; for(let L=2;L<=maxR;L++) if(L<=20||L%2===0||L===maxR) Ls.push(L);
+  for(const L of Ls){
+    let w0=0,w1=0,dr=0,an=0;
+    for(const s of games){ const o=outcomeAt(s,L,tie); if(o.annih) an++; if(o.winner===0) w0++; else if(o.winner===1) w1++; else dr++; }
+    rows+=`<tr${L===evalR?' style="background:#fefcbf"':''}><td>${L}</td><td>${pct(an,n)}</td><td>${pct(w0,n)}</td><td>${pct(w1,n)}</td><td>${pct(dr,n)}</td></tr>`;
+  }
+  const ann=games.filter(s=>s.annih), avgR=ann.length?(ann.reduce((a,s)=>a+s.annih.round,0)/ann.length).toFixed(1):'-';
+  const lost=games.reduce((a,s)=>[a[0]+s.lost[0],a[1]+s.lost[1]],[0,0]);
+  // 動物別
+  const st={}; ANIMALS.forEach(T=>st[T.id]={n:0,teams:0,win:0,dealt:0,kills:0,died:0});
+  for(const s of games){
+    const o=outcomeAt(s,evalR,tie);
+    for(let p=0;p<2;p++){
+      const us=[...s.units,...s.dead,...(s.reserve||[])].filter(u=>u.owner===p);
+      const seen=new Set();
+      for(const u of us){ const r=st[u.type]; r.n++; r.dealt+=u.dealt; r.kills+=u.kills; if(u.hp<=0) r.died++;
+        if(!seen.has(u.type)){ seen.add(u.type); r.teams++; r.win+=o.winner===p?1:o.winner==null?0.5:0; } }
+    }
+  }
+  const arows=ANIMALS.map(T=>({T,r:st[T.id]})).filter(x=>x.r.n).sort((a,b)=>b.r.win/b.r.teams-a.r.win/a.r.teams)
+    .map(({T,r})=>`<tr><td>${T.emoji}${T.name}<span class="muted">(${T.rank})</span></td><td>${r.n}</td><td>${pct(r.win,r.teams)}</td><td>${(r.dealt/r.n).toFixed(1)}</td><td>${(r.kills/r.n).toFixed(2)}</td><td>${pct(r.n-r.died,r.n)}</td></tr>`).join('');
+  $('#simOut').innerHTML=`<div class="panel"><b>概要（${n}試合）</b>
+   <div>${maxR}ラウンドまでに全滅で決着：${pct(ann.length,n)}（決着時の平均ラウンド ${avgR}）</div>
+   <div>平均の失ったランク合計：先手 ${(lost[0]/n).toFixed(1)} ／ 後手 ${(lost[1]/n).toFixed(1)}</div>
+   <div class="muted">ここでの「勝ち」は、全滅で決着した試合はその結果、それ以外は各ラウンド終了時点で判定した結果です。</div></div>
+   <div class="panel scroll"><b>規定ラウンド別の結果</b>（黄色＝評価用の規定ラウンド）
+   <table><tr><th>規定R</th><th>全滅決着</th><th>先手勝</th><th>後手勝</th><th>引分</th></tr>${rows}</table></div>
+   <div class="panel scroll"><b>動物別の成績</b>（勝率は規定${evalR}ラウンドで判定、引分は0.5勝）
+   <table><tr><th>動物</th><th>出場数</th><th>採用時勝率</th><th>平均与ダメ</th><th>撃破/体</th><th>生存率</th></tr>${arows}</table>
+   <div class="muted">ランダム編成では、相手や味方の組み合わせの影響を強く受けます。参考値として見てください。</div></div>`;
+}
+
+renderSetup();
+</script>
+</body>
+</html>

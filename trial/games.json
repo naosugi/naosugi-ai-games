@@ -17,6 +17,22 @@
       "controls": "タップ・マイク / クリック・マイク",
       "playtime": "1場面 約10分",
       "added": "2026-11-23"
+    },
+    {
+      "id": "wombat-jintori",
+      "title": "ウォンバット☆どうぶつ陣取り（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "5×5のマスで動物5体を戦わせる陣取りゲーム。ランクに応じたptで動物を動かし、平原・森林・水辺のフィールドを塗り替えて有利をつくる。毒や復活など62種の動物の個性と、AI対戦・自動シミュレーションつき。",
+      "path": "../games/wombat-jintori/",
+      "thumbnail": "../games/wombat-jintori/thumb.jpg",
+      "tags": [
+        "戦略",
+        "対戦",
+        "シミュレーション"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "1試合 約10分",
+      "added": "2026-11-24"
     }
   ]
 }
