@@ -383,6 +383,7 @@ details.hint summary{cursor:pointer;color:var(--acc);font-weight:700}
 <li>特定の動物だけに刺さるメタ能力は作らない（例：アライグマは「どこでも暮らせる」＝全フィールド適性1.2の万能枠）。</li>
 <li>2つの役割を持つ動物も作る。その分、ステータスの割にランクを高めにする。1つ1つの役割は、単役割の動物より弱めにする。</li>
 <li>フィールドを「なし」に戻す役は作らない（上書きで対抗できるため）。</li>
+<li><b>自分から攻撃できない動物は作らない</b>（賢い相手なら最後まで放置できてしまうため）。攻撃の枠がフィールド変更や回復の動物（カエル・ヤギ・サル・シカ）は、代わりに弱い単体攻撃も選べる。カピバラは「攻撃しながら3×3を水辺にする」（こうげきはとても低い）。</li>
 <li>同じ動物は1チームに1体まで。</li>
 </ul>
 
@@ -442,6 +443,7 @@ details.hint summary{cursor:pointer;color:var(--acc);font-weight:700}
 <li>フィールド係の効果（読み型）：シカ入りはオオカミ入りに73%、カエル入りはネズミ入りに63〜68%勝つ。</li>
 <li>反撃は何度でも発動する（決定）。回数制限と威力倍率の設定は、検証用に残してある。</li>
 <li>毒・ぼうぎょダウン・パワーアップ導入後（読み型AI、各150試合）：ランク5だけの編成に対する勝率は、毒中心の編成が12〜16%、ぼうぎょダウン・パワーアップ中心の編成は0%。毒を最大HPの25%・30%に強めても改善しなかった（AIの使い方の影響もありうる）。</li>
+<li><b>弱い代わりの攻撃を追加した後</b>（ランダム編成2500試合）：カピバラ44%（ランク3平均46%）、カエル55%（ランク1平均46%）、ヤギ55%（ランク2平均46%）、シカ56%（ランク3平均46%）。フィールド係はやや強め。</li>
 <li><b>ストーリーの難しさ</b>（プレイヤー役＝読み型AI、相手を見て編成を工夫した場合）：第2章ボス83%、第3章ボス61%、第4章ボス39%、第5章の1戦目30%、最終戦21%。工夫せずランクの高い順に選んだ場合、途中の戦いはおおむね55〜100%、ボスは10〜30%。</li>
 <li><b>弱い動物の底上げ後（コアラ・ハリモグラを含む62種、読み型・ランダム編成3000試合）</b>：ランク別の平均採用時勝率は、ランク5が66%、ランク4が59%、ランク3が48%、ランク2が44%、ランク1が47%。底上げした動物（ハイエナ・カピバラ・アルマジロ・スカンク・アライグマ・カラス・ミミズ・ヒル・ダンゴムシ・カニ・カンガルー・キツネなど）は、おおむね平均の±4ポイント以内に入った。<b>カメは数値を3回上げても46%（ランク4の平均59%）で、移動力1が原因の可能性</b>。ほかに低めなのはタコ41%、フクロウ40%。高めなのはフグ60%（ランク1）、コモドオオトカゲ69%（ランク4）、ライオン71%。コアラ44%、ハリモグラ52%は各ランクの平均並み。</li>
 <li><b>60種そろった時点</b>（読み型、ランダム編成1500試合）：ランク別の採用時勝率は、ランク5が62〜72%（平均67%）、ランク4が49〜66%（平均58%）、ランク3が41〜58%（平均46%）、ランク2が37〜50%（平均46%）、ランク1が40〜58%（平均47%）。同じランク内で差が大きいのは、ランク3（コブラ58%／ハイエナ41%）、ランク2（リカオン50%／スカンク37%）、ランク1（ドクトカゲ58%／ミミズ40%）。ランク5の5種編成は、カバ・フグ・ドクトカゲ・カエル・イナゴに59%（変化なし）。先手46%・後手50%。</li>
@@ -521,7 +523,7 @@ const ANIMALS = [
  {id:'sparrow',name:'スズメ',emoji:'🐦',rank:1,hp:12,atk:7,def:0,mv:3,aff:{plain:1.2,forest:1.2,water:0.8},
   attack:{name:'つつく',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'fly',name:'飛行'}},
  {id:'frog',name:'カエル',emoji:'🐸',rank:1,hp:15,atk:6,def:1,mv:2,aff:{plain:0.8,forest:1.0,water:1.8},
-  attack:{name:'雨ごい',kind:'field',range:2,fx:{shape:'square',field:'water'}},
+  attack:{name:'雨ごい',kind:'field',range:2,fx:{shape:'square',field:'water'},alt:{name:'たいあたり',range:1,power:0.6}},
   counter:{name:'したでっぽう',range:2,power:0.8}, passive:{id:'webfoot',name:'水かき'}},
  {id:'rabbit',name:'ウサギ',emoji:'🐰',rank:2,hp:18,atk:9,def:1,mv:3,aff:{plain:1.5,forest:1.0,water:0.6},
   attack:{name:'けりつけ',kind:'single',range:1,power:1.0}, counter:null, passive:{id:'hitrun',name:'脱兎'}},
@@ -535,7 +537,7 @@ const ANIMALS = [
   attack:{name:'かみつく',kind:'single',range:1,power:1.0},
   counter:{name:'ひっかく',range:1,power:0.8}, passive:{id:'pack',name:'群れ'}},
  {id:'deer',name:'シカ',emoji:'🦌',rank:3,hp:24,atk:9,def:2,mv:2,aff:{plain:1.2,forest:1.5,water:0.8},
-  attack:{name:'森のめぐみ',kind:'field',range:2,fx:{shape:'diamond2',field:'forest'}},
+  attack:{name:'森のめぐみ',kind:'field',range:2,fx:{shape:'diamond2',field:'forest'},alt:{name:'つのでつく',range:1,power:0.9}},
   counter:{name:'つのつき',range:1,power:1.0}, passive:{id:'forestheal',name:'森のいやし'}},
  {id:'eagle',name:'ワシ',emoji:'🦅',rank:3,hp:20,atk:11,def:1,mv:3,aff:{plain:1.3,forest:0.9,water:1.0},
   attack:{name:'急降下',kind:'single',range:2,power:1.0}, counter:null, passive:{id:'fly',name:'飛行'}},
@@ -577,10 +579,10 @@ const ANIMALS = [
   attack:{name:'大暴れ',kind:'map',area:'ring8',power:0.8},
   counter:{name:'かみつく',range:1,power:0.9}, passive:{id:'webfoot',name:'水かき'}},
  {id:'monkey',name:'サル',emoji:'🐒',rank:2,hp:17,atk:6,def:1,mv:2,aff:{plain:1.0,forest:1.5,water:0.6},
-  attack:{name:'毛づくろい',kind:'support',range:1,heal:7,cleanse:true},
+  attack:{name:'毛づくろい',kind:'support',range:1,heal:7,cleanse:true,alt:{name:'ひっかく',range:1,power:0.7}},
   counter:{name:'ひっかく',range:1,power:0.6}, passive:null},
  {id:'goat',name:'ヤギ',emoji:'🐐',rank:2,hp:19,atk:7,def:2,mv:2,aff:{plain:1.5,forest:0.9,water:0.6},
-  attack:{name:'食べ尽くす',kind:'field',range:1,fx:{shape:'square',field:'plain'}},
+  attack:{name:'食べ尽くす',kind:'field',range:1,fx:{shape:'square',field:'plain'},alt:{name:'頭突き',range:1,power:0.8}},
   counter:{name:'頭突き',range:1,power:0.8}, passive:null},
  {id:'archer',name:'テッポウウオ',emoji:'🐟',rank:1,hp:10,atk:6,def:0,mv:2,aff:{plain:0.5,forest:0.6,water:2.0},
   attack:{name:'みずでっぽう',kind:'single',range:2,power:0.8}, counter:null, passive:{id:'sniper',name:'狙い撃ち'}},
@@ -623,8 +625,8 @@ const ANIMALS = [
   attack:{name:'かみつく',kind:'single',range:1,power:1.0}, counter:{name:'反撃',range:1,power:0.8}, passive:{id:'ratel',name:'怖いもの知らず',per:1}},
  {id:'ostrich',name:'ダチョウ',emoji:'🪶',rank:3,hp:22,atk:9,def:1,mv:3,aff:{plain:1.6,forest:0.8,water:0.6},
   attack:{name:'キック',kind:'single',range:1,power:1.0,push:1}, counter:null, passive:null},
- {id:'capybara',name:'カピバラ',emoji:'🐹',rank:3,hp:26,atk:6,def:2,mv:2,aff:{plain:1.0,forest:0.9,water:1.6},
-  attack:{name:'水浴び場',kind:'field',range:1,fx:{shape:'square',field:'water'}}, counter:null, passive:{id:'aura',name:'いやしの存在',per:4}},
+ {id:'capybara',name:'カピバラ',emoji:'🐹',rank:3,hp:26,atk:4,def:2,mv:2,aff:{plain:1.0,forest:0.9,water:1.6},
+  attack:{name:'水浴びにさそう',kind:'single',range:1,power:0.8,fx:{shape:'square',field:'water'}}, counter:null, passive:{id:'aura',name:'いやしの存在',per:4}},
  {id:'armadillo',name:'アルマジロ',emoji:'🛡',rank:3,hp:22,atk:8,def:7,mv:2,aff:{plain:1.3,forest:1.0,water:0.6},
   attack:{name:'体当たり',kind:'single',range:1,power:0.9}, counter:{name:'こうらで弾く',range:1,power:0.8}, passive:null},
  {id:'falcon',name:'ハヤブサ',emoji:'🕊',rank:3,hp:22,atk:12,def:0,mv:3,aff:{plain:1.2,forest:1.0,water:1.0},
@@ -803,10 +805,11 @@ function skillOptions(s,u,px,py){
   const sk=A[u.type].attack; if(!sk) return [];
   const P={x:px,y:py};
   const extra=pid(u)==='echidna'?[{type:'burrow'}]:[];
+  if(sk.alt) extra.push(...s.units.filter(e=>e.owner!==u.owner&&!e.burrowed&&dist(P,e)<=sk.alt.range&&!hiddenFrom(s,e,P)).map(e=>({type:'alt',target:e.id})));
   if(sk.kind==='single') return s.units.filter(e=>e.owner!==u.owner&&!e.burrowed&&dist(P,e)<=rangeOf(s,u,P,sk)&&!hiddenFrom(s,e,P)).map(e=>({type:'single',target:e.id})).concat(extra);
-  if(sk.kind==='support') return s.units.filter(a=>a.owner===u.owner&&a.id!==u.id&&dist(P,a)<=sk.range).map(a=>({type:'support',target:a.id}));
-  if(sk.kind==='map') return [{type:'map'}];
-  if(sk.kind==='field'){ const r=[]; for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++) if(dist(P,{x,y})<=sk.range) r.push({type:'field',x,y}); return r; }
+  if(sk.kind==='support') return s.units.filter(a=>a.owner===u.owner&&a.id!==u.id&&dist(P,a)<=sk.range).map(a=>({type:'support',target:a.id})).concat(extra);
+  if(sk.kind==='map') return [{type:'map'}].concat(extra);
+  if(sk.kind==='field'){ const r=[]; for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++) if(dist(P,{x,y})<=sk.range) r.push({type:'field',x,y}); return r.concat(extra); }
   return [];
 }
 // att/def: ユニット, aP/dP: 位置（仮の位置で計算できるよう分離）
@@ -893,6 +896,7 @@ function applyField(s,fx,cx,cy){
 }
 function performSkill(s,u,opt){
   if(opt.type==='burrow'){ u.burrowed=true; log(s,`${nm(u)}は地中にもぐった（次の自分の手番まで攻撃を受けない）`); return; }
+  if(opt.type==='alt'){ const ak=A[u.type].attack.alt, t=byId(s,opt.target); if(!t) return; log(s,`${nm(u)}の「${ak.name}」`); hit(s,u,t,ak,false); toxicCheck(s,t,u); spinesCheck(s,t,u); if(t.hp>0&&!t._rev&&u.hp>0) counterAttack(s,t,u); return; }
   const sk=A[u.type].attack;
   log(s,`${nm(u)}の「${sk.name}」`);
   if(sk.kind==='single'){
@@ -962,8 +966,9 @@ function hitValue(t,dmg,hp,used){ // 戻り値 {v, hp, used}
 function threatAt(s,u,d){
   const arr=[];
   for(const e of s.units){
-    if(e.owner===u.owner||e.asleep) continue; const sk=A[e.type].attack;
-    if(!sk||sk.kind==='field'||sk.kind==='support') continue;
+    if(e.owner===u.owner||e.asleep) continue; let sk=A[e.type].attack;
+    if(sk&&(sk.kind==='field'||sk.kind==='support')) sk=sk.alt;
+    if(!sk) continue;
     const reach=A[e.type].mv+(sk.kind==='map'?2:rangeOf(s,e,e,sk));
     if(dist(e,d)<=reach&&!(pid(u)==='camo'&&fieldAt(s,d.x,d.y)==='forest'&&sk.kind!=='map'&&rangeOf(s,e,e,sk)>=2&&dist(e,d)>A[e.type].mv+1)) arr.push(calcDamage(s,e,e,u,d,sk,false)*(sk.hits||1));
   }
@@ -996,7 +1001,7 @@ function fieldScore(s,u,d,cells,f){
 }
 function skillScore(s,u,d,o,W){
   if(!o) return 0;
-  const sk=A[u.type].attack;
+  const sk=o.type==='alt'?A[u.type].attack.alt:A[u.type].attack;
   let v=0, cd=0;
   const evalTarget=(t)=>{
     let st={hp:t.hp,used:t.endureUsed};
@@ -1012,7 +1017,7 @@ function skillScore(s,u,d,o,W){
   if(o.type==='burrow'){ const th=threatAt(s,u,d), R=A[u.type].rank; return W.threat*(Math.min(th,u.hp)/u.maxHp*R*10+(th>=u.hp?R*6:0))+0.5; }
   if(o.type==='support'){ const t=byId(s,o.target), R=A[t.type].rank;
     v+=Math.min(sk.heal,t.maxHp-t.hp)/t.maxHp*R*10*1.2+(sk.cleanse?poisonPending(t)/t.maxHp*R*10*0.7+(t.defDown>0?A[t.type].def*R*0.5:0):0); }
-  else if(o.type==='single'){ const t=byId(s,o.target); evalTarget(t); if(sk.fx) v+=fieldScore(s,u,d,shapeCells(sk.fx.shape,t.x,t.y),sk.fx.field); }
+  else if(o.type==='single'||o.type==='alt'){ const t=byId(s,o.target); evalTarget(t); if(sk.fx) v+=fieldScore(s,u,d,shapeCells(sk.fx.shape,t.x,t.y),sk.fx.field); }
   else if(o.type==='map'){
     const cells=shapeCells(sk.area,d.x,d.y);
     s.units.filter(e=>e.owner!==u.owner&&cells.some(c=>c.x===e.x&&c.y===e.y)).forEach(evalTarget);
@@ -1086,7 +1091,7 @@ function poisonPending(u){ if(!u.poison||!u.poison.length) return 0; const tk=Ma
 function worth(u){ const R=A[u.type].rank; const eh=u.hp-poisonPending(u)*0.8; if(eh<=0) return pid(u)==='rebirth'?R*3-R*10:R*2; return R*5+R*10*Math.sqrt(eh/u.maxHp); }
 // 敵eが次の機会に foes のどれかへ与えられる価値（移動後の位置は近似：今いるマスの適性で計算）
 function approxBest(s,e,foes,W){
-  const sk=A[e.type].attack; if(!sk||sk.kind==='field'||sk.kind==='support') return 0;
+  let sk=A[e.type].attack; if(sk&&(sk.kind==='field'||sk.kind==='support')) sk=sk.alt; if(!sk) return 0;
   const reach=moveBudget(s,e)+(sk.kind==='map'?2:rangeOf(s,e,e,sk)), ER=A[e.type].rank;
   let best=0;
   if(e.asleep) return 0;
@@ -1190,6 +1195,7 @@ function skillText(sk,isCounter){
   if(sk.kind==='field') t=`射程${sk.range}のマスを中心に`;
   if(sk.fx) t+=(sk.kind==='field'?'':'。その後')+`${sk.kind==='single'?'対象中心に':sk.kind==='map'?'自分中心に':''}${SHAPES[sk.fx.shape].name}を${FIELDS[sk.fx.field].name}に変える`;
   if(sk.kind==='field') t+='（ダメージなし）';
+  if(sk.alt) t+=`。代わりに「${sk.alt.name}」（単体 射程${sk.alt.range} 威力×${sk.alt.power}）も使える`;
   return t;
 }
 if(typeof module!=='undefined') module.exports={positional,skillScore,threatAt,PERSONAS,CONFIG,ANIMALS,A,newGame,simGame,outcomeAt,aiChoose,actMoveSkill,actFinish,reachable,skillOptions,calcDamage,endTurn,unitAt};
@@ -2065,14 +2071,16 @@ function viewUnitAt(x,y){
   }
   return unitAt(G,x,y);
 }
+function visOpts(){ return UI.opts.filter(o=>UI.skMode==='alt'?o.type==='alt':o.type!=='alt'); }
 function highlights(){
   const hl={}, su=selUnit(); if(!su) return hl;
   if(UI.step==='move') for(const c of reachable(G,su)) hl[c.y*SIZE+c.x]={cls:'hl-move'};
   if(UI.step==='post') for(const c of UI.post) hl[c.y*SIZE+c.x]={cls:'hl-move'};
   if(UI.step==='skill'){
     const sk=A[su.type].attack, d=UI.dest;
-    for(const o of UI.opts){
+    for(const o of visOpts()){
       if(o.type==='single'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk)}; }
+      if(o.type==='alt'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk.alt)}; }
       if(o.type==='field') hl[o.y*SIZE+o.x]={cls:'hl-field'};
       if(o.type==='support'){ const t=byId(G,o.target); const p=(t.x===d.x&&t.y===d.y)?{x:su.x,y:su.y}:t; hl[p.y*SIZE+p.x]={cls:'hl-move',label:`回復+${Math.min(sk.heal,t.maxHp-t.hp)}`}; }
       if(o.type==='map') for(const c of shapeCells(sk.area,d.x,d.y)){ const t=unitAt(G,c.x,c.y); hl[c.y*SIZE+c.x]={cls:'hl-area',label:t&&t.owner!==su.owner&&t.id!==su.id?forecast(su,d,t,sk):''}; }
@@ -2100,13 +2108,15 @@ function renderBattle(){
   } else if(humanTurn()){
     if(UI.step==='skill'){
       const sk=A[su.type].attack;
-      if(UI.opts.some(o=>o.type==='map')) actions+=`<button class="b pri" id="doMap">「${sk.name}」</button>`;
-      if(UI.opts.some(o=>o.type==='burrow')) actions+=`<button class="b pri" id="doBurrow">もぐる</button>`;
+      const vo=visOpts();
+      if(sk.alt) actions+=UI.skMode==='alt'?`<button class="b" id="skSw">「${sk.name}」にする</button>`:`<button class="b" id="skSw">「${sk.alt.name}」で攻撃</button>`;
+      if(vo.some(o=>o.type==='map')) actions+=`<button class="b pri" id="doMap">「${sk.name}」</button>`;
+      if(vo.some(o=>o.type==='burrow')) actions+=`<button class="b pri" id="doBurrow">もぐる</button>`;
       actions+=`<button class="b" id="noAtk">待機</button><button class="b" id="back">もどる</button>`;
     } else if(UI.step==='post') actions=`<span class="muted">脱兎：1マス動ける</span><button class="b" id="noPost">動かない</button>`;
     else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}<button class="b pri" id="endT">手番を終える</button>`;
   } else actions='<span class="muted">相手が考えています…</span>';
-  const guide=G.over?'':humanTurn()?(UI.step==='move'?'緑のマスへ動かす':UI.step==='skill'?(UI.opts.some(o=>o.type==='field')?'紫のマスを2回タップ':'赤い相手をタップ'):UI.step==='post'?'1マス動ける':'動物をタップ'):'';
+  const guide=G.over?'':humanTurn()?(UI.step==='move'?'緑のマスへ動かす':UI.step==='skill'?(visOpts().some(o=>o.type==='field')?'紫のマスを2回タップ':visOpts().some(o=>o.type==='support')?'回復する味方をタップ':'赤い相手をタップ'):UI.step==='post'?'1マス動ける':'動物をタップ'):'';
   const hint=UI.ctx&&UI.ctx.hint&&!G.over?`<details class="hint"><summary>💡 ヒント</summary>${UI.ctx.hint}</details>`:'';
   const last=G.log.slice(-2).reverse();
   let res='';
@@ -2127,6 +2137,7 @@ function renderBattle(){
   on('again',()=>{ clearTimeout(UI.timer); const w=G.winner; G=null; if(UI.ctx&&UI.ctx.onEnd) UI.ctx.onEnd(w); else renderTitle(); });
   on('doMap',()=>commit({type:'map'}));
   on('doBurrow',()=>commit({type:'burrow'}));
+  on('skSw',()=>{ UI.skMode=UI.skMode==='alt'?'main':'alt'; UI.fprev=null; renderBattle(); });
   on('noAtk',()=>commit(null));
   on('back',()=>{ UI.step='move'; UI.dest=null; UI.fprev=null; renderBattle(); });
   on('noPost',()=>finishPost(null));
@@ -2164,7 +2175,7 @@ function onCell(x,y){
   const su=selUnit();
   if(UI.step==='post'){ const c=UI.post.find(c=>c.x===x&&c.y===y); if(c) return finishPost(c); renderBattle(); return; }
   if(UI.step==='skill'){
-    const o=UI.opts.find(o=>((o.type==='single'||o.type==='support')&&u&&o.target===u.id)||(o.type==='field'&&o.x===x&&o.y===y));
+    const o=visOpts().find(o=>((o.type==='single'||o.type==='support'||o.type==='alt')&&u&&o.target===u.id)||(o.type==='field'&&o.x===x&&o.y===y));
     if(o&&o.type==='field'&&!(UI.fprev&&UI.fprev.x===x&&UI.fprev.y===y)){ UI.fprev={x,y}; renderBattle(); return; }
     if(o) return commit(o);
     UI.fprev=null;
@@ -2172,7 +2183,9 @@ function onCell(x,y){
   }
   if(UI.step==='move'&&su){
     const c=reachable(G,su).find(c=>c.x===x&&c.y===y);
-    if(c){ UI.dest=c; UI.step='skill'; UI.opts=skillOptions(G,su,c.x,c.y); UI.info=su.id; renderBattle(); return; }
+    if(c){ UI.dest=c; UI.step='skill'; UI.opts=skillOptions(G,su,c.x,c.y); UI.fprev=null;
+      UI.skMode=(A[su.type].attack.alt&&!UI.opts.some(o=>o.type!=='alt')&&UI.opts.some(o=>o.type==='alt'))?'alt':'main';
+      UI.info=su.id; renderBattle(); return; }
   }
   if(u&&canAct(G,u)){ UI.sel=u.id; UI.step='move'; UI.dest=null; }
   renderBattle();
