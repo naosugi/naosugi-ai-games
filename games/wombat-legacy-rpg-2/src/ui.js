@@ -429,6 +429,16 @@ function itemShop(){
   setCmds([...list,{label:'← もどる',fn:townMenu,cls:'wide sub'}]);
 }
 function weaponLabel(m){return `${WEAPON_LINES[m.wl].names[m.w]}（${WEAPON_LINES[m.wl].name}）`;}
+// ---------- そうびの くらべかた（2026-11-25）----------
+// 武器を かえたときの 能力値。職業の 得意（こうげき・まりょくの 倍率）で 重みを つけた 強さで くらべる
+const LINES=['claw','staff','flute'];
+function withWeapon(m,l,t){return derived({...m,wl:l,w:t});}
+function weaponValue(m,l,t){const d=withWeapon(m,l,t),M=JOBS[m.job].mult;return d.atk*M.atk*M.atk+d.mag*M.mag*M.mag;} // 倍率の 2乗で 重みづけ（得意な ほうを 強く 見る）
+function bestOwnedLine(m){let b=m.wl,bv=-1;for(const l of LINES){const t=l===m.wl?Math.max(m.w,m.own[l]||0):(m.own[l]||0);if(t<=0&&l!==m.wl)continue;const v=weaponValue(m,l,t);if(v>bv){bv=v;b=l;}}return b;}
+// 「こうげき 120→150 ▲30」のような 差分の 文
+function statDiff(a,b,keys=['atk','mag']){const N={atk:'こうげき',mag:'まりょく',def:'ぼうぎょ',maxhp:'HP',maxmp:'MP',spd:'すばやさ'};
+  const out=keys.filter(k=>a[k]!==b[k]).map(k=>`${N[k]} ${a[k]}→${b[k]}${b[k]>a[k]?' ▲'+(b[k]-a[k]):' ▼'+(a[k]-b[k])}`);return out.join('　')||'かわらない';}
+function equipTo(m,l,t){m.own[l]=Math.max(m.own[l]||0,t);m.wl=l;m.w=t;const d=derived(m);m.hp=Math.min(m.hp,d.maxhp);m.mp=Math.min(m.mp,d.maxmp);}
 async function equipShop(){
   const t=await pickMember('武器屋「だれの そうびを 見る？」',()=>true);if(t<0){townMenu();return;}
   equipFor(t);
@@ -437,20 +447,20 @@ function equipFor(t){
   const m=G.party[t],mx=shopMax(G.shopTier),best=bestLine(m.job),list=[];
   for(const l of ['claw','staff','flute']){const L=WEAPON_LINES[l],own=m.own[l]||0;
     const idx=mx,cost=WEAPON_PRICE[idx]-Math.floor(WEAPON_PRICE[own]/2),have=own>=idx;
-    const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
-    list.push({label:(l===best?'★おすすめ ':'')+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている（つよさ画面で つけかえ）'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:l===best?'wide hi':'',
+    const stat=statDiff(derived(m),withWeapon(m,l,idx));
+    list.push({label:(l===best?'★おすすめ ':'')+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている（「そうび」で つけかえ）'):`${cost}ウォン｜${stat}`,dis:have||G.gold<cost,cls:l===best?'wide hi':'',
       fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;const d=derived(m);m.hp=Math.min(m.hp,d.maxhp);updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！\n（同じ系統の 古い武器は 半額で 下取り）`);}});}
   for(const l of ['claw','staff','flute']){if(!G.mats[l])continue;const L=WEAPON_LINES[l],idx=WEAPON_POW.length-1,own=m.own[l]||0,cost=WEAPON_PRICE[idx]-Math.floor(WEAPON_PRICE[own]/2),have=own>=idx;
-    const stat=l==='claw'?`こうげき+${WEAPON_POW[idx]}`:l==='staff'?`まりょく+${WEAPON_POW[idx]}`:`こうげき・まりょく+${Math.floor(WEAPON_POW[idx]*.7)}`;
-    list.push({label:'⛏ '+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている'):`${stat}  ${cost}ウォン`,dis:have||G.gold<cost,cls:'wide',
+    const stat=statDiff(derived(m),withWeapon(m,l,idx));
+    list.push({label:'⛏ '+L.names[idx],sub:have?(m.wl===l?'そうびずみ':'持っている'):`${cost}ウォン｜${stat}`,dis:have||G.gold<cost,cls:'wide',
       fn:()=>{G.gold-=cost;m.own[l]=idx;m.wl=l;m.w=idx;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${L.names[idx]}を そうびした！`);}});}
   if(G.mats.armor){const ti=ARMORS.length-1,tc=ARMORS[ti][2]-Math.floor(ARMORS[m.a][2]/2),th=m.a>=ti;
-    list.push({label:'⛏ '+ARMORS[ti][0],sub:th?'そうびずみ':`ぼうぎょ+${ARMORS[ti][1]}  ${tc}ウォン`,dis:th||G.gold<tc,cls:'wide',fn:()=>{G.gold-=tc;m.a=ti;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ti][0]}を そうびした！`);}});}
+    list.push({label:'⛏ '+ARMORS[ti][0],sub:th?'そうびずみ':`${tc}ウォン｜ぼうぎょ ${derived(m).def}→${derived({...m,a:ti}).def}`,dis:th||G.gold<tc,cls:'wide',fn:()=>{G.gold-=tc;m.a=ti;updateTop();save();snd('quest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ti][0]}を そうびした！`);}});}
   if(G.shopTier>=3){m.charms=m.charms||{};for(const k of Object.keys(CHARMS)){const C=CHARMS[k],own=!!m.charms[k],on=m.charm===k;
     list.push({label:`🔰 ${C.name}`,sub:on?'つけている（はずす）':own?'持っている（つける）':`${ST_JP2[C.st]}に かかりにくい  ${C.price}ウォン`,dis:!own&&G.gold<C.price,cls:'',
       fn:()=>{if(on)m.charm=null;else{if(!own){G.gold-=C.price;m.charms[k]=1;}m.charm=k;}updateTop();save();snd('chest');equipFor(t);setMsg(on?`${m.name}は ${C.name}を はずした。`:`${m.name}は ${C.name}を つけた！\n（${ST_JP2[C.st]}に かかる確率が 4分の1に なる。おまもりは 1匹 1つまで）`);}});}}
   const ai=mx,cur=m.a,acost=ARMORS[ai][2]-Math.floor(ARMORS[cur][2]/2),ahave=cur>=ai;
-  list.push({label:ARMORS[ai][0],sub:ahave?'そうびずみ':`ぼうぎょ+${ARMORS[ai][1]}（いま+${ARMORS[cur][1]}）  ${acost}ウォン`,dis:ahave||G.gold<acost,
+  list.push({label:ARMORS[ai][0],sub:ahave?'そうびずみ':`${acost}ウォン｜ぼうぎょ ${derived(m).def}→${derived({...m,a:ai}).def}`,dis:ahave||G.gold<acost,
     fn:()=>{G.gold-=acost;m.a=ai;updateTop();save();snd('chest');equipFor(t);setMsg(`${m.name}は ${ARMORS[ai][0]}を そうびした！`);}});
   setMsg(`武器屋「${m.name}（${jobName(m.job)}）なら ${WEAPON_LINES[best].name}が おすすめだよ。\nいまの武器：${weaponLabel(m)}」`);
   setCmds([...list,{label:'← ほかの仲間',fn:equipShop,cls:'sub'},{label:'← もどる',fn:townMenu,cls:'sub'}]);
@@ -504,9 +514,10 @@ async function jobChangeMenu(){
     $('overlay').innerHTML='';
     if(k!==0)continue;
     changeJob(m,j);if(J.tier===3)G.qflag.superJob=true;
-    const bl=bestLine(j);if((m.own[bl]||0)>0||m.w===0){m.wl=bl;m.w=m.own[bl]||0;}
+    // 持っている 武器の 中から、新しい 職業で いちばん 強くなる ものに つけかえる
+    const wl0=m.wl,w0=m.w,bl=bestOwnedLine(m);if(bl!==m.wl){m.wl=bl;m.w=m.own[bl]||0;}const sw=m.wl!==wl0||m.w!==w0;
     renderParty();save();await jobChangeFx(m,J);
-    await talk(`${m.name}は ${J.name}に なった！（Lv${m.lv}）`+(m.wl===bl?`\n（武器を ${weaponLabel(m)}に つけかえた）`:''));
+    await talk(`${m.name}は ${J.name}に なった！（Lv${m.lv}）`+(sw?`\n（${J.name}に あう ${weaponLabel(m)}に つけかえた）`:''));
     return;
   }
 }
@@ -556,24 +567,50 @@ function nameEditor(first){return new Promise(res=>{
 // ---------- party menu ----------
 async function partyMenu(back){
   const healer=G.party.some(m=>m.hp>0&&skillsOf(m).some(k=>['heal','revive','cure','cureAll','mpheal'].includes(SKILLS[k].kind)));
-  const c=await ask('なにを しますか？',[{label:'📊 つよさを見る',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 武器の つけかえ',cls:''},{label:'✏️ 名前を かえる',cls:''},{label:'← もどる',cls:'sub'}]);
-  if(c===0){for(const m of G.party){const d=derived(m),J=JOBS[m.job];
-      await talk(`${m.name}（${J.name}${m.mastered[m.job]?'★':''}）Lv${m.lv}  次まで ${m.lv>=J.cap?'-':expNext(m.job,m.lv)-m.exp}\nHP ${m.hp}/${d.maxhp}  MP ${m.mp}/${d.maxmp}${m.poison?'  【どく】':''}\nこうげき${d.atk} ぼうぎょ${d.def} まりょく${d.mag} すばやさ${d.spd}\n${weaponLabel(m)} ／ ${ARMORS[m.a][0]}`+(m.charm?` ／ ${CHARMS[m.charm].name}`:''));
-      const own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
-      await talk(`【${m.name}の わざ】\n${J.name}：${own.join('・')||'なし'}\n引き継ぎ：${sl.join('・')||'なし'}`);}
-    return partyMenu(back);}
+  const c=await ask('なにを しますか？',[{label:'📊 つよさ',cls:''},{label:'🎒 どうぐを使う',cls:''},{label:'💚 回復の とくぎ',cls:'',dis:!healer},{label:'🗡 そうび',cls:''},{label:'✏️ 名前を かえる',cls:''},{label:'← もどる',cls:'sub'}]);
+  if(c===0){await strengthView();return partyMenu(back);}
   if(c===1){await fieldItemMenu();return partyMenu(back);}
   if(c===2){await fieldSkillMenu();return partyMenu(back);}
-  if(c===3){await weaponSwap();return partyMenu(back);}
+  if(c===3){const t=await pickMember('だれの そうびを かえる？',()=>true);if(t>=0)await equipView(G.party[t]);return partyMenu(back);}
   if(c===4){await nameEditor(false);return partyMenu(back);}
   back();
 }
 function pickMember(text,filter){return new Promise(res=>{partyPick={ok:i=>filter(G.party[i]),cb:i=>{renderParty();res(i);}};renderParty();setMsg(text+'\n↓ 仲間の カードを おしてね');setCmds([{label:'← もどる',cls:'wide sub',fn:()=>{partyPick=null;renderParty();res(-1);}}]);});}
-async function weaponSwap(){
-  const t=await pickMember('だれの 武器を つけかえる？',()=>true);if(t<0)return;const m=G.party[t];
-  const ls=['claw','staff','flute'].filter(l=>(m.own[l]||0)>0||l===m.wl);
-  const c=await ask(`${m.name}の 武器（いま ${weaponLabel(m)}）`,[...ls.map(l=>({label:`${WEAPON_LINES[l].names[m.own[l]||0]}（${WEAPON_LINES[l].name}）`,sub:l===bestLine(m.job)?'いまの職業に おすすめ':'',cls:'wide',dis:l===m.wl})),{label:'← もどる',cls:'wide sub'}]);
-  if(c<ls.length){m.wl=ls[c];m.w=m.own[ls[c]]||0;save();renderParty();}
+// ---------- つよさ（3匹 ならべて 見る）----------
+function strengthHTML(){
+  const P=G.party,dd=P.map(derived),N=[['HP','maxhp'],['MP','maxmp'],['こうげき','atk'],['ぼうぎょ','def'],['まりょく','mag'],['すばやさ','spd']];
+  const col=(m,d)=>{const J=JOBS[m.job],nx=m.lv>=J.cap?'—':expNext(m.job,m.lv)-m.exp;
+    return `<div class="sv"><b>${esc(m.name)}</b><small>${esc(J.name)}${m.mastered[m.job]?'★':''} Lv${m.lv}</small><small>つぎ ${nx}</small>`+
+      N.map(([n,k])=>`<i><span>${n}</span>${k==='maxhp'?m.hp+'/':k==='maxmp'?m.mp+'/':''}${d[k]}</i>`).join('')+
+      `<em>${esc(WEAPON_LINES[m.wl].names[m.w])}</em><em>${esc(ARMORS[m.a][0])}</em><em>${m.charm&&CHARMS[m.charm]?esc(CHARMS[m.charm].name):'おまもり なし'}</em></div>`;};
+  return `<div class="svw">${P.map((m,i)=>col(m,dd[i])).join('')}</div>`;}
+async function strengthView(){
+  while(true){$('overlay').innerHTML=strengthHTML();
+    const c=await ask('つよさ（だれかを えらぶと わざと そうびを 見られる）',[...G.party.map(m=>({label:`${m.name}の わざ`,cls:''})),{label:'🗡 そうびを かえる',cls:''},{label:'← もどる',cls:'wide sub'}]);
+    $('overlay').innerHTML='';
+    if(c<G.party.length){const m=G.party[c],J=JOBS[m.job],own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
+      await talk(`【${m.name}の わざ】\n${J.name}：${own.join('・')||'なし'}\n引き継ぎ：${sl.join('・')||'なし'}`);continue;}
+    if(c===G.party.length){const t=await pickMember('だれの そうびを かえる？',()=>true);if(t>=0)await equipView(G.party[t]);continue;}
+    return;}
+}
+// ---------- そうび（武器・おまもり。つけかえ前後の 能力値を 出す）----------
+function equipHTML(m){const d=derived(m),N=[['こうげき','atk'],['ぼうぎょ','def'],['まりょく','mag']];
+  return `<div class="spanel"><div class="sp1"><b>${esc(m.name)}</b>（${esc(jobName(m.job))} Lv${m.lv}）の そうび</div>`+
+    `<div class="eqg"><span>武器</span><span>${esc(weaponLabel(m))}</span><span>よろい</span><span>${esc(ARMORS[m.a][0])}</span><span>おまもり</span><span>${m.charm&&CHARMS[m.charm]?esc(CHARMS[m.charm].name):'なし'}</span></div>`+
+    `<div class="spg">${N.map(([n,k])=>`<span>${n}</span><span>${d[k]}</span>`).join('')}</div>`+
+    `<div class="sp2">${esc(jobName(m.job))}が 得意なのは ${JOBS[m.job].mult.mag>JOBS[m.job].mult.atk?'まりょく（まほう）':JOBS[m.job].mult.atk>JOBS[m.job].mult.mag?'こうげき（ぶつり）':'こうげきと まりょく'}。★が いまの 職業に いちばん あう 武器</div></div>`;}
+async function equipView(m){
+  while(true){$('overlay').innerHTML=equipHTML(m);
+    const best=bestOwnedLine(m),now=derived(m);
+    const ws=LINES.filter(l=>(m.own[l]||0)>0||l===m.wl).map(l=>{const t=l===m.wl?m.w:m.own[l]||0;return {l,t,on:l===m.wl&&t===m.w};});
+    const cs=Object.keys(m.charms||{}).filter(k=>m.charms[k]);
+    const opts=[...ws.map(x=>({label:`${x.l===best?'★ ':''}${WEAPON_LINES[x.l].names[x.t]}（${WEAPON_LINES[x.l].name}）`,sub:x.on?'そうびちゅう':statDiff(now,withWeapon(m,x.l,x.t)),dis:x.on,cls:x.l===best&&!x.on?'wide hi':'wide'})),
+      ...cs.map(k=>({label:`🔰 ${CHARMS[k].name}`,sub:m.charm===k?'つけている（はずす）':`${ST_JP2[CHARMS[k].st]}に かかりにくい（つける）`,cls:''})),
+      {label:'← もどる',cls:'wide sub'}];
+    const c=await ask(`${m.name}の そうびを えらぼう（武器は 能力値の かわりかたを 見て えらべる。よろいは いちばん いいものを つけている）`,opts);
+    if(c<ws.length){const x=ws[c];equipTo(m,x.l,x.t);snd('chest');renderParty();save();continue;}
+    if(c<ws.length+cs.length){const k=cs[c-ws.length];m.charm=m.charm===k?null:k;snd('tap');renderParty();save();continue;}
+    $('overlay').innerHTML='';return;}
 }
 async function fieldItemMenu(){
   while(true){
@@ -714,15 +751,26 @@ async function changeFloor(f){
   F.since=0;await sleep(150);await areaIntro(areaOf(f));fieldIdle();
 }
 function leaveDungeon(){fadeT=now;enterTown();}
+// 見つけた 武器を だれに 持たせるか。能力値が どれだけ 上がるかを 並べて えらぶ（2026-11-25）
+// 持たせた仲間は、いまの 武器より 強くなる ときだけ その場で つけかえる
+async function giveFoundWeapon(l,t,head){
+  const nm=WEAPON_LINES[l].names[t],price=Math.floor(WEAPON_PRICE[t]/2);
+  const rows=G.party.map(m=>{const has=(m.own[l]||0)>=t,now=derived(m),nv=withWeapon(m,l,t),up=!has&&weaponValue(m,l,t)>weaponValue(m,m.wl,m.w);
+    return {m,has,up,sub:has?'同じか もっと いい ものを 持っている':up?statDiff(now,nv):`持っておく（いまの 武器の ほうが 強い：${statDiff(now,nv)}）`};});
+  if(rows.every(x=>x.has)){addGold(price);await talk(`${head}\n${nm}を 見つけたけど、みんな もっと いいものを 持っているので ${price}ウォンに かえた。`);return;}
+  const c=await ask(`${head}\n${nm}（${WEAPON_LINES[l].name}）を 見つけた！ だれに 持たせる？`,[...rows.map(x=>({label:`${x.m.name}（${jobName(x.m.job)}）${x.up?' ★':''}`,sub:x.sub,dis:x.has,cls:x.up?'wide hi':'wide'})),{label:`${price}ウォンに かえる`,cls:'wide sub'}]);
+  if(c>=rows.length){addGold(price);await talk(`${nm}を ${price}ウォンに かえた。`);return;}
+  const x=rows[c],m=x.m;m.own[l]=t;
+  if(x.up){equipTo(m,l,t);renderParty();await talk(`${m.name}は ${nm}を そうびした！`);}
+  else await talk(`${m.name}が ${nm}を 持っておくことにした。（「そうび」で つけかえられる）`);
+}
 async function openChest(){
   G.opened[chestKey(F.px,F.py)]=1;snd('chest');sparkle(F.px*16+8,F.py*16+6,14);
   const L=chestLoot(F.f,F.px,F.py);
   FFX.push({k:'txt',x:F.px*16+8,y:F.py*16,t0:now,life:1300,col:'#ffe27a',text:L.gold?`+${L.gold}ウォン`:L.item?ITEMS[L.item].name:'ぶき!'});
   if(L.gold){addGold(L.gold);await talk(`宝箱を あけた！\n${L.gold}ウォン 手に入れた！`);}
   else if(L.item){const n=addItem(L.item,L.n);await talk(`宝箱を あけた！\n${ITEMS[L.item].name}を ${L.n}こ 見つけた！`+(n<L.n?`\n（持ちきれない分は おいていった）`:''));}
-  else if(L.eq){const m=G.party.find(x=>bestLine(x.job)===L.eq)||G.party[0],nm=WEAPON_LINES[L.eq].names[L.tier];
-    if((m.own[L.eq]||0)<L.tier){m.own[L.eq]=L.tier;if(m.wl===L.eq||bestLine(m.job)===L.eq){m.wl=L.eq;m.w=L.tier;}await talk(`宝箱を あけた！\n${nm}を 見つけた！ ${m.name}が 持つことにした。`);}
-    else{const p=Math.floor(WEAPON_PRICE[L.tier]/2);addGold(p);await talk(`宝箱を あけた！\n${nm}を 見つけたけど、もっと いいものを 持っているので ${p}ウォンに かえた。`);}}
+  else if(L.eq){await giveFoundWeapon(L.eq,L.tier,'宝箱を あけた！');}
   renderParty();save();
 }
 async function onGuard(){
@@ -973,7 +1021,7 @@ async function raidWin(r){
   if(first){
     if(R.id==='r6'){G.title='村の まもりて';snd('quest');banner('★ 称号 ★','村の まもりて','#ffd36b',2600);await talk('★ コアラの 王たちを すべて 追いかえした！ ★\n長老から「村の まもりて」の 称号を もらった！');}
     else{const tier=Math.min(SHOP_TOP,shopMax(G.shopTier)+2);const m=G.party.slice().sort((a,b)=>(a.own[bestLine(a.job)]||0)-(b.own[bestLine(b.job)]||0))[0],l=bestLine(m.job);
-      if((m.own[l]||0)<tier){m.own[l]=tier;m.wl=l;m.w=tier;banner('★ GET ★',WEAPON_LINES[l].names[tier],'#d098ff',2200);await talk(`お礼に、長老から「${WEAPON_LINES[l].names[tier]}」を もらった！\n${m.name}が そうびした！`);}
+      if(G.party.some(x=>(x.own[l]||0)<tier)){banner('★ GET ★',WEAPON_LINES[l].names[tier],'#d098ff',2200);await giveFoundWeapon(l,tier,`お礼に、長老から 武器を もらった！`);}
       else{const g=Math.floor(WEAPON_PRICE[tier]/2);addGold(g);await talk(`お礼に ${g}ウォン もらった！`);}}}
   B=null;BA=null;disp=null;save();fadeT=now;enterTown();
 }
