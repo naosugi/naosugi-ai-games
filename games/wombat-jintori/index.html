@@ -77,7 +77,10 @@ th:first-child,td:first-child{text-align:left}
 .patch .pl{background:var(--plain)}.patch .fo{background:var(--forest)}.patch .wa{background:var(--water)}.patch .no{background:var(--none)}
 .patch i{animation:ptile .5s ease both;animation-delay:calc(var(--k) * 35ms)}
 @keyframes ptile{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
-.hero .wbs{position:absolute;left:0;right:0;bottom:8%;display:flex;justify-content:space-around;pointer-events:none}
+.hero .duel{position:absolute;inset:0;pointer-events:none}
+.duel canvas{position:absolute;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(255,255,255,.85))}
+.hero .duel .far{right:16%;top:12%;width:min(20vw,96px);animation:bob 2.4s ease-in-out infinite}
+.hero .duel .near{left:10%;bottom:4%;width:min(34vw,160px);animation:bob 2.4s 1.2s ease-in-out infinite}
 .hero canvas{width:min(26vw,118px);image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(255,255,255,.9)) drop-shadow(0 6px 8px rgba(30,43,47,.25))}
 .hero h1{font-size:clamp(28px,8.6vw,40px);line-height:1.12;margin:14px 2px 2px;font-weight:900;letter-spacing:-.01em}
 .hero h1 .sm{display:block;font-size:.5em;font-weight:800;color:var(--euca-d);letter-spacing:.02em;margin-bottom:2px}
@@ -253,7 +256,11 @@ details.hint summary{cursor:pointer;font-weight:800}
 /* 会話 */
 .stage{position:relative;border-radius:var(--r-lg);overflow:hidden;height:min(42dvh,300px);margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow)}
 .stage .sttl{position:absolute;left:12px;top:10px;font-weight:900;color:#fff;background:rgba(30,43,47,.55);border-radius:999px;padding:3px 12px;font-size:13px;z-index:2}
-.stage .actors{position:absolute;left:0;right:0;bottom:12%;display:flex;justify-content:space-around;align-items:flex-end}
+.stage .actors{position:absolute;inset:0}
+.stage .act.me{position:absolute;left:6%;bottom:6%}
+.stage .act.me canvas{width:min(36vw,150px)}
+.stage .act.far{position:absolute;right:10%;top:16%}
+.stage .act.far canvas{width:min(22vw,96px)}
 .stage .act{text-align:center;opacity:.55;transition:opacity .2s}
 .stage .act.talk{opacity:1;animation:bob 1.2s ease-in-out infinite}
 .stage canvas{display:block;margin:0 auto;width:min(30vw,130px);image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(255,255,255,.85))}
@@ -366,17 +373,21 @@ details.panel summary{cursor:pointer}
 #splash .ground i{flex:1}
 #splash .ground i:nth-child(1){background:#D9B958}#splash .ground i:nth-child(2){background:#4C8C5E}#splash .ground i:nth-child(3){background:#4D9BD1}
 #splash .ground::before{content:"";position:absolute;left:0;right:0;top:-10px;height:10px;background:linear-gradient(90deg,#E2C46A 0 33.3%,#5FA06E 33.3% 66.6%,#6AB0DE 66.6%)}
-#splash .sp-title{position:relative;text-align:center;margin-top:-14vh;color:#1E2B2F}
+#splash .sp-title{position:absolute;left:0;right:0;top:max(9vh,52px);text-align:center;color:#1E2B2F}
 #splash .sp-sub{font-weight:900;font-size:clamp(18px,5.4vw,30px);color:#4F8A76;letter-spacing:.06em;animation:pop .6s .1s both}
-#splash .sp-main{font-weight:900;font-size:clamp(46px,15vw,96px);line-height:1.02;letter-spacing:.02em;
+#splash .sp-main{font-weight:900;font-size:clamp(40px,min(15vw,9.5vh),96px);line-height:1.02;letter-spacing:.02em;
   -webkit-text-stroke:7px #fff;paint-order:stroke fill;filter:drop-shadow(0 6px 0 rgba(30,43,47,.18))}
 #splash .sp-main span{display:inline-block;animation:drop .55s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes drop{0%{transform:translateY(-70vh) rotate(-12deg);opacity:0}70%{opacity:1}100%{transform:none}}
 @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
-#splash .sp-wb{position:relative;display:flex;gap:min(16vw,90px);margin-top:3vh;align-items:flex-end}
+#splash .sp-wb{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(26% + 104px);width:min(86vw,420px);height:min(40vw,25vh,200px)}
+#splash .sp-wb canvas.far{position:absolute;right:12%;top:0;width:min(18vw,11vh,90px)!important}
+#splash .sp-wb canvas.near{position:absolute;left:8%;bottom:0;width:min(30vw,18vh,146px)!important}
 #splash .sp-wb canvas{width:min(26vw,128px);image-rendering:pixelated;filter:drop-shadow(0 4px 0 rgba(255,255,255,.9))}
-#splash .sp-wb canvas:first-child{animation:hopL 1.1s ease-in-out infinite}
-#splash .sp-wb canvas:last-child{animation:hopR 1.1s .55s ease-in-out infinite}
+#splash .sp-wb canvas.far{animation:hopF 1.1s ease-in-out infinite}
+#splash .sp-wb canvas.near{animation:hopN 1.1s .55s ease-in-out infinite}
+@keyframes hopF{0%,100%{transform:none}40%{transform:translateY(-10px)}}
+@keyframes hopN{0%,100%{transform:none}40%{transform:translateY(-12px) scale(1.03)}}
 #splash .sp-vs{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);font-weight:900;font-size:clamp(20px,6vw,34px);color:#E0584F;-webkit-text-stroke:4px #fff;paint-order:stroke fill;animation:pulse 1.1s ease-in-out infinite}
 @keyframes hopL{0%,100%{transform:none}40%{transform:translate(6px,-14px)}}
 @keyframes hopR{0%,100%{transform:none}40%{transform:translate(-6px,-14px)}}
@@ -389,7 +400,7 @@ details.panel summary{cursor:pointer}
 @keyframes step{50%{transform:translateY(-3px)}}
 @keyframes marchR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 @keyframes marchL{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-#splash .sp-tap{position:absolute;bottom:calc(26% + 66px);font-weight:900;font-size:clamp(18px,5.4vw,26px);color:#fff;background:#E0584F;border-radius:999px;padding:10px 26px;
+#splash .sp-tap{position:absolute;bottom:calc(26% + 44px);font-weight:900;font-size:clamp(18px,5.4vw,26px);color:#fff;background:#E0584F;border-radius:999px;padding:10px 26px;
   box-shadow:0 5px 0 #A93A33,0 10px 24px rgba(0,0,0,.18);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:translateX(var(--tx,0)) scale(1)}50%{transform:translateX(var(--tx,0)) scale(1.07)}}
 #splash .sp-cnt{position:absolute;top:max(14px,env(safe-area-inset-top));font-size:13px;font-weight:800;color:#2F5F50;background:rgba(255,255,255,.75);border-radius:999px;padding:4px 14px;animation:pop .5s 1.1s both}
@@ -2109,6 +2120,35 @@ function renderFront(o){
   }
   return {W:FW,H:FH,ax:FAX,img:fin};
 }
+
+// ---------- back view（後ろ姿。手前にいる自分のウォンバット用） ----------
+function renderBack(o){
+  const G=mkGrid(FW,FH),{g,pt,S,SE,E}=G;
+  const cx=20, bry=10.6, brx=14, bcy=27.5-bry;
+  // 体：背中は上が明るく、下（おしり）が暗い
+  const bsh=(x,y)=>{const r=(y+.5-(bcy-bry))/(2*bry);return r<.2?(frost(x,y,r)?'f':'l'):r>.78?'d':(frost(x,y,r)?'f':'b');};
+  E(cx,bcy,brx,bry,2,bsh);
+  // 頭：体の上にのっかる。顔は見えない
+  const hcy=bcy-5.4,hrx=9.8,hry=7.6;
+  E(cx,hcy,hrx,hry,3,(x,y,dy)=>dy<-.45?(frost(x,y,0)?'f':'l'):dy>.55?'d':'b');
+  // 耳：後ろから見ると、ふちが濃い
+  for(const sd of [-1,1]){ const ex=cx+sd*7,ey=hcy-6.6; E(ex,ey,2.2,2.6,4,(x,y,dy)=>dy<-.3?'d':'b'); }
+  fuzz(G,[2,3],bcy+4);
+  // 首まわりの毛の境目
+  for(let x=cx-7;x<=cx+7;x++){ const y=Math.round(hcy+hry-1.2+Math.abs(x-cx)*.12); S(x,y,'d',3); }
+  // 背中の毛の流れ（すこし白っぽい）
+  for(const [dx,dy] of [[-4,-2],[3,-1],[-1,2],[5,3],[-6,3]]) S(cx+dx,bcy+dy,'f',2);
+  G.g=g;
+  const fin=outline(G);
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<FW&&y<FH)fin[y*FW+x]=c;};
+  // 小さなしっぽ
+  P(cx-1,bcy+bry-2,'d');P(cx,bcy+bry-2,'d');P(cx-1,bcy+bry-1,'m');P(cx,bcy+bry-1,'m');
+  // 後ろあしの裏
+  for(const sd of [-1,1]){ const px=cx+sd*7;
+    for(let y=26;y<=28;y++)for(let x=Math.floor(px-2);x<=Math.floor(px+1);x++)P(x,y,y===28?'o':'d');
+    P(px-1,27,'p');P(px,27,'p'); }
+  return {W:FW,H:FH,ax:FAX,img:fin};
+}
 function toCanvas(R){const c=document.createElement('canvas');c.width=R.W;c.height=R.H;const x=c.getContext('2d');for(let y=0;y<R.H;y++)for(let i=0;i<R.W;i++){const k=R.img[y*R.W+i];if(!k)continue;x.fillStyle=PAL[k]||k;x.fillRect(i,y,1,1);}return c;}
 
 </script>
@@ -2150,14 +2190,14 @@ let SV=loadSave();
 
 // ---------- ドット絵ウォンバット ----------
 const WB_CACHE={};
-function wombatCanvas(flip,eye){
-  const key=(flip?1:0)+'|'+(eye||'');
-  if(!WB_CACHE[key]){ let c; try{ c=toCanvas(renderWombat({eye})); }catch(e){ c=document.createElement('canvas'); }
+function wombatCanvas(flip,eye,view){
+  const key=(flip?1:0)+'|'+(eye||'')+'|'+(view||'');
+  if(!WB_CACHE[key]){ let c; try{ c=toCanvas(view==='front'?renderFront({eye}):view==='back'?renderBack({}):renderWombat({eye})); }catch(e){ c=document.createElement('canvas'); }
     if(flip){ const m=document.createElement('canvas'); m.width=c.width; m.height=c.height; const x=m.getContext('2d'); x.translate(c.width,0); x.scale(-1,1); x.drawImage(c,0,0); c=m; }
     WB_CACHE[key]=c; }
   const src=WB_CACHE[key], out=document.createElement('canvas'); out.width=src.width; out.height=src.height; out.getContext('2d').drawImage(src,0,0); return out;
 }
-function mountWombats(root){ (root||document).querySelectorAll('span.wb').forEach(s=>s.replaceWith(wombatCanvas(s.dataset.f==='1',s.dataset.eye))); }
+function mountWombats(root){ (root||document).querySelectorAll('span.wb').forEach(s=>{ const c=wombatCanvas(s.dataset.f==='1',s.dataset.eye,s.dataset.v); if(s.className!=='wb') c.className=s.className.replace(/\bwb\b/,'').trim(); s.replaceWith(c); }); }
 
 // ---------- 共通表示 ----------
 function unitHTML(u,sel){
@@ -2427,8 +2467,8 @@ function renderDialog(lines,onDone,title){
     const [who,txt]=lines[i]; full=false;
     const isW=WOMBAT_NAMES.has(who);
     play(`<div class="stage ${stageOf(title)}">${title?`<div class="sttl">${title}</div>`:''}
-      <div class="actors"><div class="act me${who===''||!isW?' talk':''}"><span class="wb"></span><div class="an">あなた</div></div>
-      ${isW?`<div class="act talk"><span class="wb" data-f="1" data-eye="${who==='オババ'?'half':''}"></span><div class="an">${esc(who)}</div></div>`:who?`<div class="act talk"><div class="anim">${(()=>{ const T=ANIMALS.find(T=>T.name===who); return T?spr(T.id,'',true):'❔'; })()}</div><div class="an">${esc(who)}</div></div>`:''}</div></div>
+      <div class="actors"><div class="act me${who===''||!isW?' talk':''}"><span class="wb" data-v="back"></span><div class="an">あなた</div></div>
+      ${isW?`<div class="act far talk"><span class="wb" data-v="front" data-eye="${who==='オババ'?'half':''}"></span><div class="an">${esc(who)}</div></div>`:who?`<div class="act talk"><div class="anim">${(()=>{ const T=ANIMALS.find(T=>T.name===who); return T?spr(T.id,'',true):'❔'; })()}</div><div class="an">${esc(who)}</div></div>`:''}</div></div>
       <div class="panel dlg" id="dlg">${who?`<div class="who">${esc(who)}</div>`:''}<div class="txt${who?'':' nar'}" id="dtxt"></div>
       <div class="row" style="justify-content:space-between;margin-top:6px"><span class="muted">${i+1}/${lines.length}　タップで進む ▼</span>
       <button class="b small" id="dSkip">とばす</button></div></div>`);
@@ -2457,7 +2497,7 @@ function renderTitle(){
   const nb=STORY_BATTLES[storyNextIndex()], ch=nb?CHAPTERS.find(c=>c.id===nb.ch):null;
   const storySub=!nb?'全18戦クリア！ 裏ストーリーが開いた':`次は ${ch.title.replace(/^第\d章 /,'')}　${nb.name}${nb.boss?'（ボス）':''}`;
   play(`<div class="hero"><div class="patch">${HERO_PATCH.map((c,k)=>`<i class="${c}" style="--k:${k}"></i>`).join('')}</div>
-     <div class="wbs"><span class="wb"></span><span class="wb" data-f="1"></span></div></div>
+     <div class="duel"><span class="wb far" data-v="front"></span><span class="wb near" data-v="back"></span></div></div>
    <div class="hero" style="margin-top:-6px"><h1><span class="sm">ウォンバット☆</span>どうぶつ陣取り</h1>
      <p class="sub">ユーカリ村の陣取り大会。なかまの動物と、5×5のマスを取りあおう。</p></div>
    <div class="menu">
@@ -3131,7 +3171,7 @@ function showSplash(){
     <div class="lane l1">${lane(pick.slice(0,half),false)}</div><div class="lane l2">${lane(pick.slice(half),true)}</div>
     <div class="sp-cnt">${MAIN_N}種の動物が待っている！</div>
     <div class="sp-title"><div class="sp-sub">ウォンバット☆</div><div class="sp-main">${title}</div></div>
-    <div class="sp-wb"><span class="wb"></span><span class="wb" data-f="1"></span></div>
+    <div class="sp-wb"><span class="wb far" data-v="front"></span><span class="wb near" data-v="back"></span></div>
     <div class="sp-tap">タップしてはじめる</div>`;
   document.body.appendChild(d); mountWombats(d);
   let done=false;
