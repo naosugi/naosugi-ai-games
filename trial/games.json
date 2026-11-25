@@ -48,6 +48,21 @@
       "controls": "タップ / クリック",
       "playtime": "1話 約5分（全3話）",
       "added": "2026-11-25"
+    },
+    {
+      "id": "wombat-kintore",
+      "title": "ウォンバット☆きんトレ探検隊（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "運動不足のデスクワーカー向けの、道具なし10分きんトレ。朝か夜にウォンバットコーチの音声案内でスクワットやプランクをこなし、レベルアップで覚えたスキルで探検して動物図鑑を集める。週刊・月刊レポートつき。",
+      "path": "../games/wombat-kintore/",
+      "thumbnail": "../games/wombat-kintore/thumb.jpg",
+      "tags": [
+        "育成",
+        "音声"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "1回 約10分",
+      "added": "2026-11-26"
     }
   ]
 }
