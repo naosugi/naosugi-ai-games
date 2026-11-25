@@ -14,12 +14,13 @@
 
 ## キャラクター
 
-- 主人公：ウォンバット（シリーズの色に、たんていの帽子）
+- 主人公：ウォンバット。シリーズ共通の描画コード（`games/kami-wombat`・`tokei-wombat` と同じ `renderFront` / `renderWombat`）をそのまま使う。待っているときは正面顔、歩くときは横向き
 - 相棒：フクロモモンガの「モモ」。オレンジのスカーフで、高いところへ飛んで調べる。明るく元気な空の相棒という役どころだけを参考にした、オリジナルのキャラクター
 
 ## ドット絵
 
-- 主人公・モモ・カード・いいわけの絵は `src/sprites.py`（`assets/animal-sprites/src/raster.py` の描画部品を使用）
+- ウォンバットは index.html の中の共通描画コードで、起動時に描く
+- モモ・カード・いいわけの絵は `src/sprites.py`（`assets/animal-sprites/src/raster.py` の描画部品を使用）
 - ほかの動物は `assets/animal-sprites` のもの
 - 描き直したら `python3 src/build.py` で `index.html` の `/*PX*/` 〜 `/*/PX*/` を書き換える
 

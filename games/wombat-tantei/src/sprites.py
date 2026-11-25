@@ -9,38 +9,7 @@ def sp(id_, n):
     def deco(f): S[id_]=(n,f); return f
     return deco
 
-# ---- 主人公：ウォンバット（シリーズの色）＋たんていぼうし ----
-WA='#9A7A5A'; WD='#6A4E36'; WL='#C8A884'; WN='#4A3626'
-CAP='#3E7A8C'; CAPD='#2C5866'; CAPL='#6FB0C0'
-def wombat_body(c, shout=False, blink=False):
-    c.ell(13,21,10,6.4,WA); c.ell(12,18.5,7,2.6,WL)          # からだ
-    # あし
-    for x in (5,9):  c.rect(x,25,x+2,28,WD)
-    if shout:
-        c.rect(17,25,19,28,WD)
-    else:
-        for x in (16,19): c.rect(x,25,x+2,28,WD)
-    c.circ(23,17,6.2,WA)                                    # あたま
-    c.ell(20,11.6,2,2.2,WA); c.ell(20,11.9,1,1.2,WL)        # みみ
-    c.ell(26.5,19.5,2.6,2.1,WN); c.px(27,18,'#7A5E48')      # はな
-    c.ell(21.5,19.5,1.5,1,'#E8A0A0')                         # ほっぺ
-    if shout:
-        c.ell(24.6,22.8,2,1.5,'#7A2A2A'); c.px(24,23,'#E07070'); c.px(25,23,'#E07070')
-    # ぼうし（つば付き）
-    c.ell(22.5,11.5,5.6,3.2,CAP); c.rect(17,12,28,13,CAP)
-    c.rect(26,12,30,13,CAPD)                                 # つば
-    c.line(18,10,27,10,CAPL); c.px(22,8,CAPL)
-    c.rect(17,13,27,13,CAPD)
-    if blink: c.rect(22,16,24,16,K)
-    else: c.rect(23,15,24,16,K); c.px(23,15,W)               # め
-@sp('wombat',32)
-def _(c): wombat_body(c)
-@sp('wombat_blink',32)
-def _(c): wombat_body(c, blink=True)
-@sp('wombat_shout',32)
-def _(c):
-    wombat_body(c,True)
-    c.path([(20,25),(25,26),(30,24)],WD,2.6)                 # 前足をつきだす
+# 主人公のウォンバットは シリーズ共通の描画コード（index.html 内、games/kami-wombat と同じ）を使う
 
 # ---- 相棒：フクロモモンガの「モモ」（オリジナル） ----
 MG='#B8B4C8'; MD='#7C7890'; ML='#F6F0F4'; MS='#4A4458'; SC='#FF8C5A'; SCD='#D9603A'; PK='#F4A6B8'
