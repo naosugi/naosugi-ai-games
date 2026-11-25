@@ -593,6 +593,28 @@ async function strengthView(){let i=0;
     if(c===2){await equipView(m);continue;}
     return;}
 }
+// ---------- 仲間と そうびを 交換（2026-11-25）----------
+// 武器は 同じ系統どうしで 入れかえる（系統ごとに いちばん いい ものを 1つ 持つ しくみ のため。持っていない 系統は 木の 武器）。
+// よろいは 入れかえ、おまもりは わたす／もらう。つけている 武器が かわったら、その系統の 新しい 武器を つける
+function wName(l,t){return WEAPON_LINES[l].names[t];}
+function afterTrade(x){const d0=derived(x);if(x.wl){x.w=x.own[x.wl]||0;}const d=derived(x);x.hp=Math.min(x.hp,d.maxhp);x.mp=Math.min(x.mp,d.maxmp);return d0;}
+async function tradeView(m){
+  while(true){const offers=[];
+    for(const o of G.party){if(o===m)continue;
+      for(const l of LINES){const a=m.own[l]||0,b=o.own[l]||0;if(a===b)continue;
+        const mi=m.wl===l?statDiff(derived(m),withWeapon(m,l,b)):'つけていない 系統',oi=o.wl===l?statDiff(derived(o),withWeapon(o,l,a)):'つけていない 系統';
+        offers.push({label:`${o.name}の ${wName(l,b)} ⇄ ${wName(l,a)}`,sub:`${m.name}：${mi}／${o.name}：${oi}`,fn:()=>{m.own[l]=b;o.own[l]=a;afterTrade(m);afterTrade(o);return `${m.name}と ${o.name}は ${WEAPON_LINES[l].name}を 交換した！`;}});}
+      if(m.a!==o.a)offers.push({label:`${o.name}の ${ARMORS[o.a][0]} ⇄ ${ARMORS[m.a][0]}`,sub:`${m.name}：ぼうぎょ ${derived(m).def}→${derived({...m,a:o.a}).def}／${o.name}：ぼうぎょ ${derived(o).def}→${derived({...o,a:m.a}).def}`,
+        fn:()=>{const t=m.a;m.a=o.a;o.a=t;afterTrade(m);afterTrade(o);return `${m.name}と ${o.name}は よろいを 交換した！`;}});
+      for(const k of Object.keys(CHARMS)){const mh=!!(m.charms&&m.charms[k]),oh=!!(o.charms&&o.charms[k]);
+        if(oh&&!mh)offers.push({label:`${o.name}から 🔰${CHARMS[k].name}を もらう`,sub:`${ST_JP2[CHARMS[k].st]}に かかりにくい`,fn:()=>{o.charms[k]=0;if(o.charm===k)o.charm=null;m.charms=m.charms||{};m.charms[k]=1;if(!m.charm)m.charm=k;return `${m.name}は ${CHARMS[k].name}を もらった！`;}});
+        if(mh&&!oh)offers.push({label:`${o.name}に 🔰${CHARMS[k].name}を わたす`,sub:`${ST_JP2[CHARMS[k].st]}に かかりにくい`,fn:()=>{m.charms[k]=0;if(m.charm===k)m.charm=null;o.charms=o.charms||{};o.charms[k]=1;if(!o.charm)o.charm=k;return `${o.name}は ${CHARMS[k].name}を うけとった！`;}});}}
+    if(!offers.length){await talk('交換できる そうびが ない。（みんな 同じ ものを 持っている）');return;}
+    $('overlay').innerHTML=equipHTML(m);
+    const c=await ask(`${m.name}と だれの そうびを 交換する？（▲▼は 能力値の かわりかた）`,[...offers.map(x=>({label:x.label,sub:x.sub,cls:'wide'})),{label:'← もどる',cls:'wide sub'}]);
+    if(c>=offers.length)return;
+    const msg=offers[c].fn();snd('chest');renderParty();save();await talk(msg);}
+}
 // ---------- そうび（武器・おまもり。つけかえ前後の 能力値を 出す）----------
 function equipHTML(m){const d=derived(m),N=[['こうげき','atk'],['ぼうぎょ','def'],['まりょく','mag']];
   return `<div class="spanel"><div class="sp1"><b>${esc(m.name)}</b>（${esc(jobName(m.job))} Lv${m.lv}）の そうび</div>`+
@@ -606,10 +628,11 @@ async function equipView(m){
     const cs=Object.keys(m.charms||{}).filter(k=>m.charms[k]);
     const opts=[...ws.map(x=>({label:`${x.l===best?'★ ':''}${WEAPON_LINES[x.l].names[x.t]}（${WEAPON_LINES[x.l].name}）`,sub:x.on?'そうびちゅう':statDiff(now,withWeapon(m,x.l,x.t)),dis:x.on,cls:x.l===best&&!x.on?'wide hi':'wide'})),
       ...cs.map(k=>({label:`🔰 ${CHARMS[k].name}`,sub:m.charm===k?'つけている（はずす）':`${ST_JP2[CHARMS[k].st]}に かかりにくい（つける）`,cls:''})),
-      {label:'← もどる',cls:'wide sub'}];
+      {label:'🔁 仲間と 交換',cls:'wide',dis:G.party.length<2},{label:'← もどる',cls:'wide sub'}];
     const c=await ask(`${m.name}の そうびを えらぼう（武器は 能力値の かわりかたを 見て えらべる。よろいは いちばん いいものを つけている）`,opts);
     if(c<ws.length){const x=ws[c];equipTo(m,x.l,x.t);snd('chest');renderParty();save();continue;}
     if(c<ws.length+cs.length){const k=cs[c-ws.length];m.charm=m.charm===k?null:k;snd('tap');renderParty();save();continue;}
+    if(c===ws.length+cs.length){await tradeView(m);continue;}
     $('overlay').innerHTML='';return;}
 }
 async function fieldItemMenu(){
