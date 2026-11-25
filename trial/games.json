@@ -19,10 +19,26 @@
       "added": "2026-11-23"
     },
     {
+      "id": "wombat-rhythm",
+      "title": "ウォンバット☆リズムバトン（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "3つの切り株をたたく、ウォンバットの音ゲー。ふたりで1台をかわりばんこに使い、片方が作った曲をもう片方がたたいて再現する。上手な人には曲の長さやノーツが消えるハンデを付けられる。ひとりでも村の動物とリズム修行ができる。",
+      "path": "../games/wombat-rhythm/",
+      "thumbnail": "../games/wombat-rhythm/thumb.jpg",
+      "tags": [
+        "音ゲー",
+        "対戦",
+        "スコアアタック"
+      ],
+      "controls": "タップ",
+      "playtime": "1対戦 約10分",
+      "added": "2026-11-25"
+    },
+    {
       "id": "wombat-tantei",
       "title": "ウォンバット☆さがしものたんてい（試作中）",
       "author": "@naoya_oosugi",
-      "description": "ひらがなを覚えはじめた子ども向けの、なくしもの探し推理ゲーム。現場をしらべて「ことばカード」を集め、たいけつで犯人のいいわけのうそにカードをつきつける。読み上げなしで、絵とひらがなだけで遊べる。",
+      "description": "ひらがなを覚えはじめた子ども向けの、なくしもの探し推理ゲーム。現場をしらべて「ことばカード」を集め、たいけつで犯人のいいわけのうそにカードをつきつける。読み上げなしで、ひらがなの会話と絵だけで遊べる。",
       "path": "../games/wombat-tantei/",
       "thumbnail": "../games/wombat-tantei/thumb.jpg",
       "tags": [
