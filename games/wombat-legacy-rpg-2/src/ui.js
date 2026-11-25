@@ -594,7 +594,7 @@ async function strengthView(){let i=0;
     return;}
 }
 // ---------- 仲間と そうびを 交換（2026-11-25）----------
-// 武器は 同じ系統どうしで 入れかえる（系統ごとに いちばん いい ものを 1つ 持つ しくみ のため。持っていない 系統は 木の 武器）。
+// 武器は 同じ系統どうしの 入れかえと、系統を またいだ 交換（手ばなした 系統は 木の 武器に もどる）。系統ごとに いちばん いい ものを 1つ 持つ しくみ のため。
 // よろいは 入れかえ、おまもりは わたす／もらう。つけている 武器が かわったら、その系統の 新しい 武器を つける
 function wName(l,t){return WEAPON_LINES[l].names[t];}
 function afterTrade(x){const d0=derived(x);if(x.wl){x.w=x.own[x.wl]||0;}const d=derived(x);x.hp=Math.min(x.hp,d.maxhp);x.mp=Math.min(x.mp,d.maxmp);return d0;}
@@ -604,6 +604,13 @@ async function tradeView(m){
       for(const l of LINES){const a=m.own[l]||0,b=o.own[l]||0;if(a===b)continue;
         const mi=m.wl===l?statDiff(derived(m),withWeapon(m,l,b)):'つけていない 系統',oi=o.wl===l?statDiff(derived(o),withWeapon(o,l,a)):'つけていない 系統';
         offers.push({label:`${o.name}の ${wName(l,b)} ⇄ ${wName(l,a)}`,sub:`${m.name}：${mi}／${o.name}：${oi}`,fn:()=>{m.own[l]=b;o.own[l]=a;afterTrade(m);afterTrade(o);return `${m.name}と ${o.name}は ${WEAPON_LINES[l].name}を 交換した！`;}});}
+      // 系統を またいだ 交換：m の la と o の lb を 取りかえる。手ばなした 系統は 木の 武器に もどる。そのあと 2匹とも いまの 職業で いちばん 強い 武器を つける
+      for(const la of LINES)for(const lb of LINES){if(la===lb)continue;const ta=m.own[la]||0,tb=o.own[lb]||0;
+        if(ta<=(o.own[la]||0)||tb<=(m.own[lb]||0))continue; // どちらかが 得を しない 交換は 出さない
+        const sim=(x,give,get,gt)=>{const y={...x,own:{...x.own}};y.own[give]=0;y.own[get]=Math.max(y.own[get]||0,gt);y.wl=bestOwnedLine({...y,wl:get,w:y.own[get]});y.w=y.own[y.wl]||0;return y;};
+        const m2=sim(m,la,lb,tb),o2=sim(o,lb,la,ta);
+        offers.push({label:`${o.name}の ${wName(lb,tb)} ⇄ ${wName(la,ta)}`,sub:`${m.name}：${statDiff(derived(m),derived(m2))}／${o.name}：${statDiff(derived(o),derived(o2))}`,
+          fn:()=>{for(const [x,y] of [[m,m2],[o,o2]]){x.own=y.own;x.wl=y.wl;x.w=y.w;afterTrade(x);}return `${m.name}は ${wName(la,ta)}を、${o.name}は ${wName(lb,tb)}を わたして 交換した！`;}});}
       if(m.a!==o.a)offers.push({label:`${o.name}の ${ARMORS[o.a][0]} ⇄ ${ARMORS[m.a][0]}`,sub:`${m.name}：ぼうぎょ ${derived(m).def}→${derived({...m,a:o.a}).def}／${o.name}：ぼうぎょ ${derived(o).def}→${derived({...o,a:m.a}).def}`,
         fn:()=>{const t=m.a;m.a=o.a;o.a=t;afterTrade(m);afterTrade(o);return `${m.name}と ${o.name}は よろいを 交換した！`;}});
       for(const k of Object.keys(CHARMS)){const mh=!!(m.charms&&m.charms[k]),oh=!!(o.charms&&o.charms[k]);
