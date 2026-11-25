@@ -113,12 +113,18 @@ th:first-child,td:first-child{text-align:left}
 .cell.hl-area{border-color:#F08C2E;box-shadow:inset 0 0 0 3px rgba(240,140,46,.35)}
 .cell.hl-field{border-color:#8A5CD6;box-shadow:inset 0 0 0 3px rgba(138,92,214,.3)}
 .cell.hl-place{border-color:var(--ok);border-style:dashed}
-.cell.last{outline:2px dashed var(--wattle);outline-offset:-5px}
+.cell.last{outline:2px dashed rgba(30,43,47,.35);outline-offset:-5px}
 .cell .hlabel{position:absolute;bottom:1px;left:2px;right:2px;text-align:center;font-size:10px;font-weight:800;background:rgba(255,255,255,.92);color:var(--ink);border-radius:5px}
 .unit{width:86%;height:86%;border-radius:50%;background:#fff;color:var(--ink);border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 2px 4px rgba(30,43,47,.2)}
 .unit.p0{border-color:var(--p0)}.unit.p1{border-color:var(--p1)}
 .unit.acted{opacity:.45}
-.unit.sel{box-shadow:0 0 0 3px var(--wattle),0 2px 4px rgba(30,43,47,.2)}
+.unit.sel{transform:translateY(-8%) scale(1.14);box-shadow:0 0 0 3px #fff,0 0 0 6px #FFC928,0 8px 14px rgba(30,43,47,.35);z-index:4;animation:selglow 1s ease-in-out infinite}
+@keyframes selglow{50%{box-shadow:0 0 0 3px #fff,0 0 0 9px #FFC928,0 8px 14px rgba(30,43,47,.35)}}
+.cell.selcell{box-shadow:inset 0 0 0 3px #FFC928,inset 0 0 16px rgba(255,201,40,.7);z-index:3}
+.board.selmode.sp0 .unit.p0:not(.sel),.board.selmode.sp1 .unit.p1:not(.sel){opacity:.5;filter:saturate(.4)}
+.selname{display:inline-flex;align-items:center;gap:4px;background:#FFF3C4;border:2px solid #FFC928;border-radius:999px;padding:1px 10px 1px 4px;font-weight:800;margin-right:6px}
+.selname .spr{width:24px;height:24px}
+@media (prefers-reduced-motion:reduce){.unit.sel{animation:none}}
 .unit .emo{font-size:clamp(18px,6vw,28px);line-height:1}
 .unit .sts{position:absolute;top:-5px;left:-5px;display:flex;gap:1px}
 .unit .st{font-size:9px;background:#7A4FC2;color:#fff;border-radius:6px;padding:0 3px;line-height:1.45}
@@ -451,7 +457,7 @@ details.panel summary{cursor:pointer}
 <li><b>ストーリー</b>：ユーカリ村の「どうぶつ陣取り大会」をCPUと戦いながら勝ちあがる。全5章・18戦。勝つたびに「なかま呼びの笛」（ガチャ）を1回ふける。負けても失うものはなく、何度でも挑戦できる。クリアした戦いにも再挑戦でき、勝てば笛がふける（全員そろうまで）。</li>
 <li><b>裏ストーリー</b>：表のストーリー18戦を全部クリアすると開く。全4章・12戦。この大会がなぜ始まったのかを調べる話。章ごとにきまりがちがう（下の「裏ストーリーのきまり」）。勝つたびに笛が1回ふける。最後の戦いに勝つと、まだなかまになっていない動物が全員なかまになり、番外の「ヒメウォンバット」もなかまになる。</li>
 <li><b>はじめから</b>：最初に笛を2回ふける。そのあと、チュートリアルとストーリーのどちらから始めるか選べる。</li>
-<li><b>チュートリアル</b>：4レッスン（動かして攻撃・ptとランク・フィールドと適性・毒と衰え）。全部クリアすると笛が1回ふける（レッスン4が増える前に3つクリアしていた人は、そのままクリア済み）。</li>
+<li><b>チュートリアル</b>：4レッスン（動かして攻撃・ptとランク・フィールドと適性・毒と衰え）。レッスン1はオオカミ1匹とネズミ1匹だけで、動かし方と攻撃のしかただけを練習する。全部クリアすると笛が1回ふける（レッスン4が増える前に3つクリアしていた人は、そのままクリア済み）。</li>
 <li><b>対戦（2人で1台）</b>：「全部の動物」か「笛で出た動物だけ」を選ぶ。笛は1人3〜10回（おすすめ5回）で、1回ごとに笛の種類を選べる。</li>
 <li><b>図鑑</b>：全動物のゲーム上の能力と、元になった動物の特徴・すんでいる所・大きさ（めやす）・食べものが見られる。</li>
 <li>記録はブラウザ（localStorage、キー <code>wbjintori_save_v1</code>）に保存する。</li>
@@ -495,6 +501,15 @@ details.panel summary{cursor:pointer}
 <li>ランク5。HP26・こうげき9・ぼうぎょ1と低いが、平原・森林・水辺の適性がすべて2.0。スキルはほかの動物の強いものを組み合わせた：攻撃は射程2でぼうぎょ無視（ワシの射程＋ダンクルオステウスのぼうぎょ無視）、反撃も射程2（ヤマアラシ）、パッシブは威圧（ライオン）。</li>
 <li>検証：ランダム編成3000試合での採用時勝率は、4回の測定で55〜64%（ランク5平均64〜65%）。平均よりやや低めだが、フィールドを塗るチームでは強くなる。フィールドを作る動物（カエル・シカ・ヤギ・ビーバー）と組むと、同じ4匹と組んだライオン64%・シャチ91%に対して79%。フィールドを塗るほど強くなる。</li>
 <li>対戦モードの「全部の動物」でも使える（コアラ・ハリモグラと同じ）。</li>
+</ul>
+
+<h2>負けたときのおたすけ（ストーリー・裏ストーリー）</h2>
+<ul>
+<li>同じ相手に2回負けるごとに「はげましの笛」が1回ふける（まだ勝っていない相手のときだけ）。負け続けて、なかまが増えないままになるのを防ぐため。</li>
+<li>2回負けると「おたすけで再挑戦」が選べる。相手のいちばんランクの高い動物が1匹へり、相手は見習い型の考え方になる。勝てば、ふつうに勝ったのと同じあつかい。</li>
+<li>ストーリーの「おまかせ」は、なかまの中からランクの高い順に5匹を選ぶ。</li>
+<li>検証（初心者のかわりに、見習い型のCPUを自分側にして、最初の笛2回で集まる動物から選んだ場合。150試合ずつ）：第1章の勝率は、ふつう 87%・60%・63%・34%、おたすけ 93%・86%・97%・77%。</li>
+<li>第1章のムギのチームは、毒を使うアメリカドクトカゲを、同じランク1のミミズにかえた（2戦目で毒が出てくると、初心者には分かりにくいため）。</li>
 </ul>
 
 <h2>対戦モード</h2>
@@ -1759,7 +1774,7 @@ const CHAPTERS=[
   battles:[
    {id:'1-1',name:'ポコ',ai:'novice',team:['sparrow','mouse','frog','rabbit','ant'],
     pre:[['ポコ','ぼくもはじめての大会なんだ。よろしくね！']],win:[['ポコ','うわー、負けちゃった。動物の動かし方、うまいなあ。']]},
-   {id:'1-2',name:'ムギ',ai:'novice',team:['rabbit','goat','sparrow','gila','crab'],
+   {id:'1-2',name:'ムギ',ai:'novice',team:['rabbit','goat','sparrow','worm','crab'],
     pre:[['ムギ','わたしのウサギは原っぱだと速いのよ。']],win:[['ムギ','原っぱだけじゃ勝てないのね……。']]},
    {id:'1-3',name:'タンポ',ai:'aggressive',team:['dhole','snake','fox','bee','mouse'],
     pre:[['タンポ','どんどん攻めるのがおれのやり方だ！']],win:[['タンポ','攻めるだけじゃだめなのか。反撃でやられちゃった。']]},
@@ -1822,14 +1837,15 @@ const CHAPTERS=[
 // チュートリアル
 const LESSONS=[
  {id:'L1',title:'レッスン1 動かして攻撃しよう',
-  pages:[['オババ','自分の番では、動物をタップして選び、緑のマスに動かす。今いるマスをタップすれば、動かずにその場で行動できる。'],
-         ['オババ','動いたあと、赤いマスにいる相手をタップすると攻撃する。赤いマスには、与えるダメージ（与）と、反撃で受けるダメージ（反）のめやすが出るよ。'],
-         ['オババ','攻撃は、上下左右のとなり（射程1）に届く。ななめは距離2あつかいだから、射程1では届かないよ。'],
-         ['オババ','相手の動物を全部たおしたら勝ちだ。やってごらん。']],
-  hint:'動物をタップ → 緑のマスをタップ → 赤いマスの相手をタップ。ななめのマスには届かないよ。',
-  teams:[['wolf','mouse'],['sparrow','frog']],cols:[[1,3],[1,3]],ai:'novice'},
+  pages:[['オババ','まずは動かし方だけ覚えよう。下にいるのがおまえさんのオオカミ、上にいるのが相手のネズミだ。'],
+         ['オババ','オオカミをタップすると、黄色く光って「選んでいる」しるしが付く。緑のマスをタップすると、そこへ動くよ。'],
+         ['オババ','動いたあと、となりに相手がいれば、そのマスが赤くなる。赤いマスをタップすると攻撃だ。届かないときは「待機」をおせばいい。'],
+         ['オババ','ネズミをたおしたら勝ち。やってごらん。']],
+  hint:'オオカミをタップ → 緑のマスをタップ → となりに相手がいたら赤いマスをタップ。届かないときは「待機」。',
+  teams:[['wolf'],['mouse']],cols:[[2],[2]],ai:'novice'},
  {id:'L2',title:'レッスン2 ptとランク',
-  pages:[['オババ','自分の番には5ptある。ただし先手のさいしょの番だけは3ptだ。'],
+  pages:[['オババ','攻撃は、上下左右のとなり（射程1）に届く。ななめは距離2あつかいだから、射程1では届かないよ。赤いマスには、与えるダメージ（与）と、反撃で受けるダメージ（反）のめやすが出る。'],
+         ['オババ','自分の番には5ptある。ただし先手のさいしょの番だけは3ptだ。'],
          ['オババ','動物を動かすと、その動物のランクと同じptを使う。ランク4のクマなら4pt、ランク1のネズミなら1ptだね。'],
          ['オババ','ptで動かせる動物がいなくなったら、相手の番になる。1回の番で、同じ動物は1回しか動けないよ。'],
          ['オババ','もうひとつ。攻撃を受けて生き残った動物は、相手が反撃の射程にいれば自動で反撃する。強い相手に弱い動物で攻めると、反撃でやられることもあるよ。']],
@@ -2183,7 +2199,7 @@ $('#menuBtn').onclick=()=>{
 
 // ---------- 保存 ----------
 const SAVE_KEY='wbjintori_save_v1';
-function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0,uraCleared:[],uraDone:false,fresh:[]}; }
+function defSave(){ return {v:1,started:false,owned:[],tutDone:[],tut:false,cleared:[],pend:0,uraCleared:[],uraDone:false,fresh:[],loss:{}}; }
 function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s&&s.v===1) return Object.assign(defSave(),s); }catch(e){} return defSave(); }
 function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(SV)); }catch(e){} }
 let SV=loadSave();
@@ -2211,7 +2227,7 @@ function boardHTML(fields,getUnit,hl,selId,last){
   let h='<div class="board" id="bd">';
   for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
     const i=y*SIZE+x,f=fields[i],H=hl[i],u=getUnit(x,y);
-    h+=`<div class="cell ${H?H.cls:''}${last&&last.x===x&&last.y===y?' last':''}" data-x="${x}" data-y="${y}" style="background:${FIELDS[f].color}">`+
+    h+=`<div class="cell ${H?H.cls:''}${last&&last.x===x&&last.y===y?' last':''}${u&&selId!=null&&u.id===selId?' selcell':''}" data-x="${x}" data-y="${y}" style="background:${FIELDS[f].color}">`+
       `<span class="fname">${f!=='none'?FIELDS[f].name:''}</span>${u?unitHTML(u,u.id===selId):''}${H&&H.label?`<span class="hlabel">${H.label}</span>`:''}</div>`;
   }
   return h+'</div>';
@@ -2574,32 +2590,57 @@ function renderStoryMap(){
   $('#smBack').onclick=renderTitle;
   document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startStoryBattle(b.dataset.b));
 }
-function startStoryBattle(id){
+// おたすけ：相手のいちばん強い動物を1匹へらし、相手の考えもやさしくする
+function assistTeam(team){ const t=team.slice(); let k=0; t.forEach((x,q)=>{ if(A[x].rank>A[t[k]].rank) k=q; }); t.splice(k,1); return t; }
+function startStoryBattle(id,assist){
   const b=STORY_BATTLES.find(x=>x.id===id), ch=CHAPTERS.find(c=>c.id===b.ch);
   const firstInCh=ch.battles[0].id===id&&!SV.cleared.includes(id);
   const go=()=>renderDialog(b.pre,()=>{
     if(SV.owned.length<5){ play(`<div class="panel"><p>なかまが5匹そろっていません。笛をふいてなかまを増やそう。</p><button class="b pri" id="x">もどる</button></div>`); $('#x').onclick=renderStoryMap; return; }
-    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',b.ai]; UI.cfg={}; UI.speed=450;
-    UI.names=['あなた',b.name]; UI.pools=[SV.owned.slice(),null]; UI.cpuTeam=b.team.slice();
-    UI.ctx={kind:'story',battle:b,showOpp:true,onEnd:w=>storyEnd(b,w)};
+    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',assist?'novice':b.ai]; UI.cfg={}; UI.speed=450;
+    UI.names=['あなた',b.name+(assist?'（おたすけ）':'')]; UI.pools=[SV.owned.slice(),null]; UI.cpuTeam=assist?assistTeam(b.team):b.team.slice();
+    UI.ctx={kind:'story',battle:b,assist:!!assist,showOpp:true,onEnd:w=>storyEnd(b,w)};
     UI.picks=[[],[]]; UI.cols=[[],[]]; UI.last=null; UI.pickP=0; nextPick();
   },`${ch.title}　vs ${b.name}`);
+  if(assist) return renderDialog([['オババ',`おたすけだよ。${b.name}の動物を1匹へらして、考えもやさしくしてもらった。勝てば、ふつうに勝ったのと同じあつかいさ。`]],go,`${ch.title}　vs ${b.name}`);
   if(firstInCh) renderDialog(ch.intro,go,ch.title); else go();
 }
 function storyEnd(b,w){
   if(w===0){
     const first=!SV.cleared.includes(b.id);
     if(first) SV.cleared.push(b.id);
+    if(SV.loss) delete SV.loss[b.id];
     if(b.reward) addOwned([b.reward]);
     if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
     save();
     renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderStoryMap),'勝利！');
   } else {
-    play(`<div class="panel"><div class="ghead">${w==null?'引き分け':'負けてしまった……'}</div>
-      <p class="muted">負けても失うものはないよ。なかまの組み方や、フィールドの使い方を変えてもう一度。</p>
-      <button class="b pri" id="lR">もう一度たたかう</button><button class="b" id="lM">大会の地図へ</button></div>`);
-    $('#lR').onclick=()=>startStoryBattle(b.id); $('#lM').onclick=renderStoryMap;
+    lossScreen(b,'story',false);
   }
+}
+
+// 負けたとき：2回負けるごとに「はげましの笛」、2回目からは「おたすけ」で再挑戦できる
+function lossScreen(b,kind,again){
+  { const bn=$('#banner'); if(bn) bn.className=''; }
+  SV.loss=SV.loss||{}; let flute=false;
+  if(!again){
+    SV.loss[b.id]=(SV.loss[b.id]||0)+1;
+    const cleared=kind==='story'?SV.cleared.includes(b.id):SV.uraCleared.includes(b.id);
+    flute=!cleared&&SV.loss[b.id]%2===0&&GACHA_ALL.some(T=>!SV.owned.includes(T.id));
+    if(flute) SV.pend++;
+    save();
+  }
+  const n=SV.loss[b.id];
+  const retry=kind==='story'?a=>startStoryBattle(b.id,a):a=>startUraBattle(b.id,a), map=kind==='story'?renderStoryMap:renderUraMap;
+  const tip=kind==='ura'&&b.rule.type==='flute'?'笛しばりは、吹き直すと別の動物が来る。':'なかまの組み方や、フィールドの使い方を変えてもう一度。';
+  play(`<div class="panel"><div class="ghead">${UI.ctx&&UI.ctx.assist?'おしい！':'負けてしまった……'}</div>
+    <p class="muted">負けても失うものはないよ。${tip}</p>
+    ${flute?`<div class="panel" style="background:#FFF7DD;border-color:#F0D58A"><b>🎵 はげましの笛</b><div class="muted">くじけないで、とオババが笛をくれた。新しいなかまを呼べるよ。</div><button class="b pri" id="lF">笛をふく</button></div>`:''}
+    ${n>=2?`<div class="panel" style="background:#EEF6F2;border-color:#BFDCCF"><b>🤝 おたすけ</b><div class="muted">相手の動物が1匹へって、相手の考えもやさしくなる。勝てば、ふつうに勝ったのと同じあつかい。</div><button class="b pri" id="lA">おたすけで再挑戦</button></div>`:''}
+    <button class="b${n>=2||flute?'':' pri'}" id="lR">もう一度たたかう</button><button class="b" id="lM">${kind==='story'?'大会の地図へ':'裏ストーリーの地図へ'}</button></div>`);
+  $('#lR').onclick=()=>retry(false); $('#lM').onclick=map;
+  if($('#lA')) $('#lA').onclick=()=>retry(true);
+  if($('#lF')) $('#lF').onclick=()=>storyGacha(()=>lossScreen(b,kind,true));
 }
 
 // ---------- 裏ストーリー ----------
@@ -2636,14 +2677,14 @@ function renderUraMap(){
   if($('#umEnd')) $('#umEnd').onclick=()=>renderDialog(URA_BATTLES[URA_BATTLES.length-1].win,renderUraMap,'さいごの記録');
   document.querySelectorAll('.sbtn').forEach(b=>b.onclick=()=>startUraBattle(b.dataset.b));
 }
-function startUraBattle(id){
+function startUraBattle(id,assist){
   const b=URA_BATTLES.find(x=>x.id===id), ch=URA_CHAPTERS.find(c=>c.id===b.ch), r=b.rule;
   const firstInCh=ch.battles[0].id===id&&!SV.uraCleared.includes(id);
   const begin=pool=>{
-    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',b.ai]; UI.speed=450;
+    UI.mode='story'; UI.humans=[true,false]; UI.personas=['planner',assist?'novice':b.ai]; UI.speed=450;
     UI.cfg=r.type==='field'?{fields:URA_FIELD[r.fields]}:{};
-    UI.names=['あなた',b.name]; UI.pools=[pool,null]; UI.cpuTeam=b.team.slice();
-    UI.ctx={kind:'ura',battle:b,rule:r,showOpp:true,onEnd:w=>uraEnd(b,w)};
+    UI.names=['あなた',b.name+(assist?'（おたすけ）':'')]; UI.pools=[pool,null]; UI.cpuTeam=assist?assistTeam(b.team):b.team.slice();
+    UI.ctx={kind:'ura',battle:b,rule:r,assist:!!assist,showOpp:true,onEnd:w=>uraEnd(b,w)};
     UI.picks=[[],[]]; UI.cols=[[],[]]; UI.last=null; UI.pickP=0; nextPick();
   };
   const go=()=>renderDialog(b.pre.concat([['',`このバトルのきまり：${ruleText(r)}`]]),()=>{
@@ -2678,16 +2719,14 @@ function uraEnd(b,w){
   if(w===0){
     const first=!SV.uraCleared.includes(b.id);
     if(first) SV.uraCleared.push(b.id);
+    if(SV.loss) delete SV.loss[b.id];
     const last=URA_BATTLES.every(x=>SV.uraCleared.includes(x.id));
     if(last&&!SV.uraDone){ SV.uraDone=true; addOwned(GACHA_ALL.map(T=>T.id).concat(['himewombat'])); SV.pend=0; }
     else if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
     save();
     renderDialog(first?b.win:[['',`${b.name}に勝った！`]],()=>storyGacha(renderUraMap),`${URA_CHAPTERS.find(c=>c.id===b.ch).title}　勝利！`);
   } else {
-    play(`<div class="panel"><div class="ghead">${w==null?'引き分け':'負けてしまった……'}</div>
-      <p class="muted">負けても失うものはないよ。${b.rule.type==='flute'?'笛しばりは、吹き直すと別の動物が来る。':'きまりに合うなかまの組み方を変えて、もう一度。'}</p>
-      <button class="b pri" id="lR">もう一度たたかう</button><button class="b" id="lM">裏ストーリーの地図へ</button></div>`);
-    $('#lR').onclick=()=>startUraBattle(b.id); $('#lM').onclick=renderUraMap;
+    lossScreen(b,'ura',false);
   }
 }
 
@@ -2863,7 +2902,7 @@ function cover(msg,next){
 }
 
 // ---------- 動物えらび ----------
-function teamFromPool(pool){ return shuffle(pool).slice(0,5); }
+function teamFromPool(pool){ if(UI.ctx&&(UI.ctx.kind==='story'||UI.ctx.kind==='ura')) return shuffle(pool.slice()).sort((a,b)=>A[b].rank-A[a].rank).slice(0,5); return shuffle(pool).slice(0,5); }
 function nextPick(){
   while(UI.pickP<2&&!UI.humans[UI.pickP]){ const q=UI.pickP; UI.picks[q]=UI.cpuTeam&&q===1?UI.cpuTeam.slice():UI.ctx&&UI.ctx.kind==='versus'?cpuPick(UI.pools&&UI.pools[q]?UI.pools[q]:BY_RANK.map(T=>T.id),UI.ctx.rule,UI.personas[q]):randomTeam(); UI.pickP++; }
   if(UI.pickP>=2){ UI.placeP=0; return nextPlace(); }
@@ -2889,7 +2928,12 @@ function renderPick(){
   document.querySelectorAll('.tiles .tile').forEach(c=>c.onclick=()=>{ const id=c.dataset.id, k=pk.indexOf(id); if(k>=0) pk.splice(k,1); else if(pk.length<5) pk.push(id); se('tap'); renderPick(); });
   bindTileInfo($('#play'));
   if($('#oppInfo')) $('#oppInfo').onclick=()=>{ modal(`<div class="ghead">相手の動物</div><div class="tiles">${UI.cpuTeam.map(t=>animalTile(A[t])).join('')}</div><button class="b pri" id="oc">とじる</button>`); bindTileInfo($('#modal')); $('#modal').querySelectorAll('.tile').forEach(c=>c.onclick=()=>zukanDetail(c.dataset.id)); $('#oc').onclick=closeModal; };
-  $('#pkRand').onclick=()=>{ let t; for(let k=0;k<200;k++){ t=pool?teamFromPool(pool):randomTeam(); if(t.reduce((a,x)=>a+A[x].rank,0)<=smax) break; } UI.picks[p]=t; renderPick(); };
+  $('#pkRand').onclick=()=>{ let t;
+    if(smax<99&&pool){ // 合計ランクの上限があるとき：上限に収まる範囲で強い順に入れる
+      const srt=shuffle(pool.slice()).sort((a,b)=>A[b].rank-A[a].rank), minR=Math.min(...pool.map(x=>A[x].rank)); t=[]; let sum=0;
+      for(const x of srt){ if(t.length>=5) break; const left=4-t.length; if(sum+A[x].rank+left*minR<=smax){ t.push(x); sum+=A[x].rank; } }
+    } else { for(let k=0;k<200;k++){ t=pool?teamFromPool(pool):randomTeam(); if(t.reduce((a,x)=>a+A[x].rank,0)<=smax) break; } }
+    UI.picks[p]=t; renderPick(); };
   $('#pkOk').onclick=()=>{ UI.pickP++; nextPick(); };
 }
 // ---------- 配置 ----------
@@ -2983,6 +3027,7 @@ function renderBattle(){
     } else if(UI.step==='post') actions=`<span class="muted">脱兎：1マス動ける</span><button class="b" id="noPost">動かない</button>`;
     else actions=`${su?'<button class="b" id="unsel">選択解除</button>':''}${!su&&UI.undo&&UI.undo.length&&UI.mode!=='hvh'?'<button class="b" id="undoB">↶ 1手もどす</button>':''}<button class="b pri" id="endT">手番を終える</button>`;
   } else actions='<span class="muted">相手が考えています…</span>';
+  const sg=su&&humanTurn()&&UI.step?`<span class="selname">${spr(su.type,'',su.owner===1)}${A[su.type].name}</span>`:'';
   const guide=G.over?'':humanTurn()?(UI.step==='move'?'緑のマスへ動かす':UI.step==='skill'?(visOpts().some(o=>o.type==='field')?'紫のマスを2回タップ':visOpts().some(o=>o.type==='support')?'回復する味方をタップ':'赤い相手をタップ'):UI.step==='post'?'1マス動ける':'動物をタップ'):'';
   const hint=UI.ctx&&UI.ctx.hint&&!G.over?`<details class="hint"><summary>💡 ヒント</summary>${UI.ctx.hint}</details>`:'';
   const last=G.log.slice(-2).reverse();
@@ -3001,11 +3046,12 @@ function renderBattle(){
   play(`${hint}<div class="bwrap">
    <div class="status"><span class="rd">R${G.round}/${G.cfg.maxRounds}</span><span class="badge p${G.turn}"><span class="wb" data-f="${G.turn}"></span>${pname(G.turn)}</span><span class="pts">${pts}</span></div>
    <div class="teams">${[0,1].map(p=>`<div class="tmrow p${p}">${[...G.units,...G.dead,...(G.reserve||[])].filter(u=>u.owner===p).sort((a,b)=>a.id-b.id).map(u=>`<span class="tmu${G.dead.includes(u)?' out':''}">${spr(u.type,'s-tm',p===1)}</span>`).join('')}<span class="tl">失点${G.lost[p]}</span></div>`).join('')}</div>
-   ${guide?`<div class="guide">${guide}</div>`:''}
+   ${guide?`<div class="guide">${sg}${guide}</div>`:''}
    <div class="bholder">${boardHTML(G.fields,viewUnitAt,highlights(),UI.sel,UI.last)}${res}</div>
    ${info?infoStrip(info):'<div class="istrip empty muted">動物をタップすると、くわしい情報が出ます</div>'}
    <div class="lastlog" id="logBtn">${last.map(l=>`<div>${l}</div>`).join('')}<span class="lb">ログ</span></div>
    <div class="actbar">${actions}</div></div>`);
+  { const bd=$('#bd'); if(bd&&su&&UI.step&&humanTurn()) bd.classList.add('selmode','sp'+su.owner); }
   bindBoard(onCell);
   const on=(id,f)=>{ const e=$('#'+id); if(e) e.onclick=f; };
   on('again',()=>{ clearTimeout(UI.timer); const w=G.winner; G=null; if(UI.ctx&&UI.ctx.onEnd) UI.ctx.onEnd(w); else renderTitle(); });
