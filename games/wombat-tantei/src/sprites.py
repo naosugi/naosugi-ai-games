@@ -12,7 +12,7 @@ def sp(id_, n):
 # ---- 主人公：ウォンバット（シリーズの色）＋たんていぼうし ----
 WA='#9A7A5A'; WD='#6A4E36'; WL='#C8A884'; WN='#4A3626'
 CAP='#3E7A8C'; CAPD='#2C5866'; CAPL='#6FB0C0'
-def wombat_body(c, shout=False):
+def wombat_body(c, shout=False, blink=False):
     c.ell(13,21,10,6.4,WA); c.ell(12,18.5,7,2.6,WL)          # からだ
     # あし
     for x in (5,9):  c.rect(x,25,x+2,28,WD)
@@ -31,9 +31,12 @@ def wombat_body(c, shout=False):
     c.rect(26,12,30,13,CAPD)                                 # つば
     c.line(18,10,27,10,CAPL); c.px(22,8,CAPL)
     c.rect(17,13,27,13,CAPD)
-    c.rect(23,15,24,16,K); c.px(23,15,W)                     # め
+    if blink: c.rect(22,16,24,16,K)
+    else: c.rect(23,15,24,16,K); c.px(23,15,W)               # め
 @sp('wombat',32)
 def _(c): wombat_body(c)
+@sp('wombat_blink',32)
+def _(c): wombat_body(c, blink=True)
 @sp('wombat_shout',32)
 def _(c):
     wombat_body(c,True)
@@ -41,22 +44,28 @@ def _(c):
 
 # ---- 相棒：フクロモモンガの「モモ」（オリジナル） ----
 MG='#B8B4C8'; MD='#7C7890'; ML='#F6F0F4'; MS='#4A4458'; SC='#FF8C5A'; SCD='#D9603A'; PK='#F4A6B8'
-def momo_head(c,cx,cy):
+def momo_head(c,cx,cy,blink=False):
     c.ell(cx-3.2,cy-4.6,2.2,2.8,MG); c.ell(cx-3.2,cy-4.3,1.1,1.6,PK)   # みみ
     c.ell(cx+2.6,cy-4.8,2.2,2.8,MG); c.ell(cx+2.6,cy-4.5,1.1,1.6,PK)
     c.ell(cx,cy,5.4,4.6,MG); c.ell(cx+.4,cy+1.8,3.6,2.4,ML)
     c.line(cx,cy-4.6,cx,cy-1,MS,1)                                      # しま
-    c.circ(cx-2.2,cy-.2,1.5,K); c.px(int(cx-2.6),int(cy-1),W)            # 大きな目
-    c.circ(cx+2.6,cy-.2,1.5,K); c.px(int(cx+2.2),int(cy-1),W)
+    if blink:
+        c.line(cx-3.4,cy,cx-1,cy,K); c.line(cx+1.4,cy,cx+3.8,cy,K)
+    else:
+        c.circ(cx-2.2,cy-.2,1.5,K); c.px(int(cx-2.6),int(cy-1),W)        # 大きな目
+        c.circ(cx+2.6,cy-.2,1.5,K); c.px(int(cx+2.2),int(cy-1),W)
     c.px(int(cx+.3),int(cy+1.6),'#C06A7A')
     c.px(int(cx-4),int(cy+1.6),PK); c.px(int(cx+4.6),int(cy+1.6),PK)
-@sp('momo',32)
-def _(c):
+def momo_sit(c,blink=False):
     c.path([(10,26),(5,24),(3,19),(4,14)],MD,3.2); c.px(4,13,MS)        # しっぽ
     c.ell(15,23,5.4,5,MG); c.ell(15.6,24,3.4,3.6,ML)
     c.rect(11,27,13,28,MD); c.rect(17,27,19,28,MD)
-    momo_head(c,16,13)
+    momo_head(c,16,13,blink)
     c.ell(16,18.6,5,1.4,SC); c.poly([(11,18),(8,22),(10,23),(13,19)],SC); c.px(9,22,SCD); c.line(12,19.5,19,19.5,SCD)
+@sp('momo',32)
+def _(c): momo_sit(c)
+@sp('momo_blink',32)
+def _(c): momo_sit(c,True)
 @sp('momo_fly',32)
 def _(c):
     c.poly([(3,14),(14,10),(26,14),(28,19),(16,21),(4,19)],MG)          # ひまく
@@ -131,3 +140,7 @@ def _(c):
 @sp('i_hill',16)
 def _(c):
     c.poly([(0,14),(6,4),(10,8),(12,6),(16,14)],'#6A9A4A'); c.poly([(6,4),(8,6.5),(4.5,6.5)],'#F4F4F4')
+
+@sp('i_loupe',16)
+def _(c):
+    c.line(10,10,14,14,'#7A4E2A',2.4); c.circ(6.5,6.5,5,'#5E6A78'); c.circ(6.5,6.5,3.6,'#CDEBFA'); c.px(4,4,W); c.px(5,4,W); c.px(4,5,W)

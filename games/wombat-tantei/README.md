@@ -23,6 +23,10 @@
 - ほかの動物は `assets/animal-sprites` のもの
 - 描き直したら `python3 src/build.py` で `index.html` の `/*PX*/` 〜 `/*/PX*/` を書き換える
 
+## 音
+
+効果音もBGMも Web Audio で合成している（音声ファイルなし）。BGMは「⚙ おとな」で切れる
+
 ## 保存
 
 `localStorage` の `wtantei_save`（クリアしたおはなし、途中の状態、設定）
