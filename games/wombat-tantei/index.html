@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>ウォンバット☆さがしものたんてい（試作中）</title>
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ウォンバット☆さがしものたんてい（試作中）">
+<meta property="og:description" content="ひらがなを覚えはじめた子ども向けの、なくしもの探し推理ゲーム。現場をしらべて「ことばカード」を集め、たいけつで犯人のいいわけのうそにカードをつきつける。読み上げなしで、絵とひらがなだけで遊べる。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-tantei/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-tantei/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:#f4ead8;color:#3a2a1e;font-family:system-ui,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;display:flex;justify-content:center;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;overflow:hidden}
+#wrap{width:min(100vw,480px);height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+img.px,canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+header{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:13px}
+header a{color:#7a5a3c;text-decoration:none}
+header .sp{flex:1}
+.hb{border:none;background:#e6d6bc;border-radius:12px;padding:4px 10px;font:inherit;font-size:16px;color:#5e4128;position:relative;cursor:pointer}
+.hb b{position:absolute;right:-4px;top:-4px;background:#e8a33a;color:#fff;border-radius:9px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center}
+.hb.pop{animation:pop .35s ease-out}
+#scene{position:relative;width:100%;aspect-ratio:4/3;flex:0 0 auto;overflow:hidden;background:#cfe8f4}
+#scene canvas{position:absolute;inset:0;width:100%;height:100%}
+#scene.dim canvas{filter:brightness(.7) saturate(.8)}
+#layer{position:absolute;inset:0}
+.ob{position:absolute;display:block;pointer-events:none}
+.tap{pointer-events:auto;cursor:pointer}
+.actor{transition:left .7s ease-in-out,top .7s ease-in-out,transform .2s}
+.spot{position:absolute;pointer-events:auto;cursor:pointer;border-radius:8px}
+.spot::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;background:radial-gradient(circle,#fff 0 25%,rgba(255,240,150,.9) 26% 45%,transparent 46%);animation:tw 1.4s infinite ease-in-out}
+.spot.done::after{display:none}
+.spot.hi::before{content:"";position:absolute;inset:0;border:3px dashed rgba(255,255,255,.9);border-radius:10px;animation:blink .5s infinite alternate}
+@keyframes tw{0%,100%{transform:scale(.5);opacity:.4}50%{transform:scale(1.25);opacity:1}}
+@keyframes blink{to{opacity:.3}}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-14%)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8%)}40%{transform:translateX(8%)}60%{transform:translateX(-6%)}80%{transform:translateX(5%)}}
+.hop{animation:hop .45s ease-in-out 2}
+.shake{animation:shake .45s}
+.bubble{position:absolute;transform:translate(-50%,-100%);background:#fffdf6;border:3px solid #5e4128;border-radius:14px;padding:4px 8px;display:flex;align-items:center;gap:4px;white-space:nowrap;animation:pop .3s ease-out;z-index:5;pointer-events:none;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;margin-left:-7px;border:7px solid transparent;border-top-color:#5e4128;border-bottom:0}
+.bubble img{width:34px;height:34px}
+.bubble .e{font-size:26px;line-height:1}
+.bubble .t{font-size:24px;font-weight:800}
+#hand{position:absolute;font-size:36px;z-index:8;pointer-events:none;display:none;animation:hand .8s infinite ease-in-out;transform:translate(-30%,0)}
+@keyframes hand{0%,100%{margin-top:0}50%{margin-top:-12px}}
+#panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:8px 10px 10px;position:relative;overflow-y:auto}
+#story{font-size:13px;line-height:1.5;color:#7a5a3c;background:#fffaf0;border:2px dashed #e0cfb2;border-radius:10px;padding:6px 10px;min-height:2.2em}
+#story:empty{display:none}
+#story.off{display:none}
+#next{align-self:center;font-size:34px;color:#c25a2a;animation:hop .8s infinite;display:none;cursor:pointer;background:none;border:none}
+.bigbtn{align-self:center;border:none;border-radius:20px;background:#e8a33a;color:#fff;font:inherit;font-weight:800;font-size:26px;padding:10px 24px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 0 #b87a20;cursor:pointer;animation:pop .4s ease-out}
+.bigbtn img{width:44px;height:44px}
+.bigbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #b87a20}
+.bigbtn.glow{animation:pop .4s ease-out,glow 1s infinite alternate .4s}
+@keyframes glow{to{box-shadow:0 5px 0 #b87a20,0 0 0 8px rgba(232,163,58,.35)}}
+/* たいけつ */
+.sts{display:flex;flex-direction:column;gap:8px}
+.st{display:flex;align-items:center;gap:8px;background:#fffdf6;border:3px solid #d8c4a4;border-radius:16px;padding:6px 10px;cursor:pointer;font:inherit;color:inherit;text-align:left;position:relative;transition:transform .15s}
+.st img.who{width:36px;height:36px}
+.st img.ic{width:44px;height:44px}
+.st .w{font-size:30px;font-weight:800;flex:1;letter-spacing:2px}
+.st .m{font-size:34px;line-height:1}
+.st.sel{border-color:#e8a33a;background:#fff3dc;transform:scale(1.03);box-shadow:0 0 0 4px rgba(232,163,58,.3)}
+.st.hint{animation:hintb .5s infinite alternate}
+@keyframes hintb{to{border-color:#ff7a3a;box-shadow:0 0 0 6px rgba(255,122,58,.35)}}
+.st.broke .w{text-decoration:line-through;text-decoration-color:#d84a4a;text-decoration-thickness:4px}
+.st .stamp{position:absolute;right:52px;top:50%;transform:translateY(-50%) rotate(-12deg);width:48px;height:48px;background:#fff;border:3px solid #d84a4a;border-radius:10px;padding:3px;animation:pop .3s}
+.tray{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.card{min-width:78px;background:#fff;border:3px solid #e0cfb2;border-radius:12px;padding:4px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font:inherit;color:inherit;transition:transform .15s}
+.card img{width:52px;height:52px}
+.card .w{font-size:19px;font-weight:800;white-space:nowrap}
+.card .w i{font-style:normal;color:#c25a2a}
+.card.big .w{font-size:22px;padding:14px 4px}
+.mc{display:inline-flex;align-items:center;justify-content:center;width:26px;height:32px;background:#fff;border:2px solid #e0cfb2;border-radius:6px;font-size:16px;font-weight:800;color:#3a2a1e}
+.card.sel{border-color:#e8a33a;transform:translateY(-8px);box-shadow:0 6px 0 rgba(232,163,58,.4)}
+.card.hint{animation:hintb .5s infinite alternate}
+.guide{display:flex;justify-content:center;align-items:center;gap:6px;font-size:22px;color:#a08060}
+.guide img{width:30px;height:30px}
+#shout{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-6deg);font-size:64px;font-weight:900;color:#fff;-webkit-text-stroke:3px #c2301a;text-shadow:0 5px 0 #c2301a;z-index:20;pointer-events:none;display:none;white-space:nowrap}
+#shout.on{display:block;animation:pop .35s ease-out}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:19}
+#flash.on{animation:fl .5s}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+/* モーダル */
+.modal{position:absolute;inset:0;background:rgba(58,42,30,.55);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.mbox{background:#fffaf0;border:4px solid #e0cfb2;border-radius:20px;padding:16px;max-width:420px;width:100%;max-height:100%;overflow:auto;text-align:center;animation:pop .3s}
+.bigcard img{width:min(46vw,180px);height:auto;aspect-ratio:1}
+.letters{display:flex;justify-content:center;gap:4px;margin-top:8px;min-height:72px}
+.letters span{font-size:min(15vw,62px);font-weight:900;color:#3a2a1e;background:#fff;border:3px solid #e0cfb2;border-radius:12px;padding:0 6px;opacity:0;line-height:1.15}
+.letters span.on{opacity:1;animation:pop .3s}
+.mbox .row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.mbox button.b{border:none;border-radius:14px;background:#e6d6bc;color:#5e4128;font:inherit;font-size:18px;font-weight:700;padding:10px 16px;cursor:pointer}
+.mbox button.b.main{background:#e8a33a;color:#fff}
+.tapnote{font-size:28px;color:#c25a2a;margin-top:6px;animation:hop .8s infinite;display:inline-block}
+.set{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #eadcc4;text-align:left;font-size:15px}
+.set small{display:block;color:#9a8068;font-size:12px}
+/* タイトル */
+#title{position:absolute;inset:0;background:#f4ead8;z-index:25;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 12px);overflow-y:auto}
+#title .top{width:100%;display:flex;justify-content:space-between;font-size:13px}
+#title .top a{color:#7a5a3c;text-decoration:none}
+#title h1{margin:10px 0 0;font-size:min(8vw,34px);line-height:1.25;text-align:center;color:#5e4128}
+#title h1 small{display:block;font-size:.5em;color:#c25a2a}
+.logo{display:flex;align-items:flex-end;gap:4px;margin:8px 0 4px}
+.logo img{width:120px;height:120px}
+.logo img.m{width:90px;height:90px;animation:hop 1.6s infinite}
+.eps{display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px;margin-top:8px}
+.ep{display:flex;align-items:center;gap:8px;background:#fffaf0;border:3px solid #e0cfb2;border-radius:18px;padding:8px 12px;font:inherit;color:inherit;cursor:pointer;position:relative}
+.ep img{width:56px;height:56px}
+.ep .n{font-size:28px;font-weight:900;color:#e8a33a;width:34px}
+.ep .q{font-size:28px}
+.ep .st2{margin-left:auto;font-size:30px}
+.ep.lock{opacity:.45}
+.ep.next{border-color:#e8a33a;animation:glow 1s infinite alternate}
+</style>
+</head>
+<body>
+<div id="wrap">
+<header>
+  <a href="../../trial/">← ゲーム一覧</a>
+  <span class="sp"></span>
+  <button class="hb" id="b-bag" aria-label="かばん">🎒<b id="bagn">0</b></button>
+  <button class="hb" id="b-home" aria-label="もどる">🏠</button>
+</header>
+<div id="scene"><canvas id="bg" width="160" height="120"></canvas><div id="layer"></div><div id="hand">👆</div><div id="flash"></div><div id="shout">ちがう！</div></div>
+<div id="panel"></div>
+
+<div id="title">
+  <div class="top"><a href="../../trial/">← ゲーム一覧</a><button class="hb" id="b-set" aria-label="おとなのせってい">⚙ おとな</button></div>
+  <h1><small>ウォンバット☆シリーズ</small>さがしもの たんてい</h1>
+  <div class="logo"><img class="px" id="logo-w" alt=""><img class="px m" id="logo-m" alt=""></div>
+  <div class="eps" id="eps"></div>
+</div>
+</div>
+
+<script>
+'use strict';
+/* ===== ドット絵（src/build.py が書き込む。主役・相棒・カードは src/sprites.py、動物は assets/animal-sprites） ===== */
+const PX=/*PX*/{"wombat":{"n":32,"pal":["#2B2220","#3E7A8C","#6FB0C0","#2C5866","#9A7A5A","#FFFFFF","#151515","#C8A884","#4A3626","#E8A0A0","#7A5E48","#6A4E36"],"rows":["................................","................................","................................","................................","................................","................................","................................",".....................000........","..................000121000.....",".................01111111110....","................0122222222220...","................011111111111000.","................0111111111333330","................0333333333333330","........00000000044441114444400.","......004444444444444445644440..",".....0447777777744444446644440..","....04777777777774444444448440..","...047777777777774444944888a80..","..0444777777777774449994888880..","..0444447777777744444944888880..","..044444444444444444444444800...","..0444444444444444444444440.....","...04444444444444444440000......","....044444444444444440..........","....0bbb4bbb4444bbbbbb0.........","....0bbb4bbb4444bbbbbb0.........","....0bbb0bbb0000bbbbbb0.........","....0bbb0bbb0..0bbbbbb0.........",".....000.000....000000..........","................................","................................"]},"wombat_shout":{"n":32,"pal":["#2B2220","#3E7A8C","#6FB0C0","#2C5866","#9A7A5A","#FFFFFF","#151515","#C8A884","#4A3626","#E8A0A0","#7A5E48","#7A2A2A","#E07070","#6A4E36"],"rows":["................................","................................","................................","................................","................................","................................","................................",".....................000........","..................000121000.....",".................01111111110....","................0122222222220...","................011111111111000.","................0111111111333330","................0333333333333330","........00000000044441114444400.","......004444444444444445644440..",".....0447777777744444446644440..","....04777777777774444444448440..","...047777777777774444944888a80..","..0444777777777774449994888880..","..0444447777777744444944888880..","..0444444444444444444444bb800...","..044444444444444444444bbbb0000.","...04444444444444444440bcc00ddd0","....044444444444444ddddd0dddddd0","....0ddd4ddd44444ddddddddddddd0.","....0ddd4ddd44444ddd0dddddd000..","....0ddd0ddd00000ddd0000000.....","....0ddd0ddd0...0ddd0...........",".....000.000.....000............","................................","................................"]},"momo":{"n":32,"pal":["#2B2220","#B8B4C8","#F4A6B8","#4A4458","#151515","#7C7890","#FFFFFF","#F6F0F4","#C06A7A","#FF8C5A","#D9603A"],"rows":["................................","................................","................................","................................","..................0.............","...........000...010............","..........01110.01110...........","..........012210112110..........","..........012211312210..........","..........011111311110..........","..........011111311110..........","...00.....011441314110..........","..0550....014647346410..........",".055350...014447744410..........",".055550...012777877720..........",".05550....011777777710..........",".05550.....0117777710...........",".05550.....0099999900...........","055550....099999999990..........","055550...099aaaaaaaa0...........",".05550..0999111711110...........",".05555009991177777110...........","..0555000a11177777710...........","..0555550011777777710...........","..0555555511777777710...........","...055555511177777710...........","....0005555117777710............",".......00555551715550...........",".........005550005550...........","...........000...000............","................................","................................"]},"momo_fly":{"n":32,"pal":["#2B2220","#B8B4C8","#F4A6B8","#4A4458","#151515","#FFFFFF","#F6F0F4","#C06A7A","#FF8C5A","#7C7890","#D9603A"],"rows":["................................","...................0............","............000...010...........","...........01110.01110..........","...........012210112110.........","...........012211312210.........","...........011111311110.........","...........011111311110.........","...........011441314110.........","...........014546345410.........","..........0014446644410.........",".......0001112666766620.........","....00011111116666666100........","...0111811111116666611110000....","..099118a88668888888811111990...","..099116888888888888866111990...","..01166666666666666666666110....","...0999666666666666666666610....","...09991111666666666611111110...","..0999911111111111111111100990..",".099999000000111111000000.0990..","0999900......000000........00...","09990...........................","99990...........................","9990............................","9990............................","9990............................","990.............................","00..............................","................................","................................","................................"]},"i_hat":{"n":16,"pal":["#2B2220","#F0D080","#E05A6A","#E8C26A","#D0A850"],"rows":["................","................","................",".......00.......",".....001100.....","....01111110....","...0111111110...","...01111111100..","..0011111111220.",".03322222222230.","0333444444442330","0333444444443330",".03333333333330.","..000033330000..","......0000......","................"]},"i_feather":{"n":16,"pal":["#2B2220","#3A3A48","#7A7A90"],"rows":["................","...........0....","..........010...",".........01220..","........01210...",".......012210...","......012210....",".....0112110....",".....012110.....","....0121110.....","....022110......","...022110.......","...02110........","..02210.........","..0200..........","...0............"]},"i_acorn":{"n":16,"pal":["#2B2220","#5A3A20","#7A5030","#A0703E","#C07A3A","#E0A060"],"rows":["........0.......",".......010......","......0010......","....00221200....","...0222222220...","..022232232220..","..022222222220..","...0022222200...","...0445544440...","...0445544440...","...0445544440...","...0444444440...","....04444440....","....04444440....",".....004400.....",".......00......."]},"i_hoof":{"n":16,"pal":["#2B2220","#6A4E36"],"rows":["................","................","....00....00....","...0110..0110...","...0110..0110...","..011110011110..","..011110011110..","..011110011110..","..011110011110..","..011110011110..","...0110..0110...","...0110..0110...","....00....00....","...00.......00..","..0110.....0110.","...00.......00.."]},"i_apple":{"n":16,"pal":["#2B2220","#6A4020","#5EAE4A","#E0403A","#F49080"],"rows":["........00......",".......011000...",".......0122220..","......00122220..","....003313000...","...0333333330...","..033443333330..","..033443333330..","..033443333330..","..033333333330..","..033333333330..","..033333333330..","...0333333330...","...0333333330...","....00333300....","......0000......"]},"i_fur":{"n":16,"pal":["#2B2220","#F08A3A","#FFE6CC"],"rows":["...........00...",".........00110..","........011110..",".......011110...","......01110000..",".....01110.0110.",".....0111001110.","....01110111100.","...0111011100220","..01110111022220",".01111111022200.",".011101102220...","011101112220....","01101110220.....",".000110.00......","....00.........."]},"i_sticks":{"n":16,"pal":["#2B2220","#F4E6D0","#C8964A"],"rows":["...........00...","..........0110..","..........01110.",".........0211110","........02211111","........02201111",".......022022110","......022002200.",".....02200220...","....02200220....","...02200220.....","..02200220......",".02220220.......","022202220.......","02202220........",".000220........."]},"i_drum":{"n":16,"pal":["#2B2220","#F4E6D0","#D04040","#F4D25A"],"rows":["................","................","....0000000.....","..00111111100...",".0111111111110..",".01111111111120.",".02311311312320.",".02322322322320.",".02322322322320.",".02322322322320.",".02232232232230.",".02232232232230.","022232232232230.",".0022222222200..","...000000000....","................"]},"i_sound":{"n":16,"pal":["#2B2220","#3A3A58","#F4D25A"],"rows":["...........00...",".0......000110..","020...001111110.",".00..0111111110.",".020.0111111010.","..0..0110000010.",".....010....010.",".....010....010.",".....010..00010.","....0010.011110.","..0010100111110.",".01111100111110.",".0111110.01110.0",".0111110..000.02","..00100........0","....0..........."]},"i_nest":{"n":16,"pal":["#2B2220","#8A6038","#4A3020","#B08050"],"rows":["................","................","................","................","................","......0000......","...0001111000...","..012222222210..",".01222222222210.","0131232223223110","0113113111311310",".011311311131130","..01131131113003","...0001111000..0","......0000......","................"]},"i_tree":{"n":16,"pal":["#2B2220","#4E9A3E","#7CC060","#7A5030"],"rows":[".....001100.....","....01111110....","...0111111110...","..011221111110..","..012222111110..",".01122221111110.",".01112211111110.","..011111112210..","..011111112210..","...0111111110...","....01111110....",".....001130.....","......03330.....","......03330.....","......03330.....","......03330....."]},"i_stump":{"n":16,"pal":["#2B2220","#E0B070","#B07A40","#8A5A30","#6A4020"],"rows":["................","................","................","................","....0000000.....","...011111110....","..01112221110...","..011122211130..","..031111111330..","..033333334330..","..033433334330..","..033433334330..","..033433334330..","..033433334330..","..033333333330..","...0000000000..."]},"i_house":{"n":16,"pal":["#2B2220","#D05A4A","#F0E0C0","#8A5A30"],"rows":["................","................",".......00.......","......0110......",".....011110.....","....01111110....","...0111111110...","..011111111110..",".01111111111110.","..022222222220..","..022233332220..","..022233332220..","..022233332220..","..022233332220..","..022233332220..","...0000000000..."]},"i_cloud":{"n":16,"pal":["#2B2220","#FFFFFF","#D8E8F4"],"rows":["................","................","................","........0000....","....000011110...","...01111111110..","..011111111110..","..011111111110..",".01111111111110.",".01111111111110.",".01111111111110.",".01122222222110.","..002222222200..","....00000000....","................","................"]},"i_moon":{"n":16,"pal":["#2B2220","#F4D25A"],"rows":["................","......00........","....00110.......","...01110........","..011110........","..01110.........",".011110.........",".0111110........",".0111110........",".011111100..0...","..011111110010..","..011111111110..","...0111111110...","....00111100....","......0000......","................"]},"i_sleep":{"n":16,"pal":["#2B2220","#5A6ABE"],"rows":["................","................",".000000.........","01111110........",".000100.........","..010...........",".010............","0100000..00000..","011111100111110.",".000000..00100..",".........010....","........010000..","........0111110.",".........00000..","................","................"]},"i_hill":{"n":16,"pal":["#2B2220","#F4F4F4","#6A9A4A"],"rows":["................","................","................","................",".....00.........","....0110........","....02220..00...","...02222200220..","..022222222220..","..0222222222220.",".02222222222220.",".022222222222220","0222222222222220","2222222222222222","0000000000000000","................"]},"koala":{"n":24,"pal":["#2B2220","#9AA0A6","#D8DCE0","#151515","#2A2A2A","#5E9E52","#3E7A36"],"rows":["........................","........................","........................","........................",".......0000......0000...","......011110.00.011110..",".....011221101101122110.",".....012222111111222210.",".....011221111111122110.","......0111111111111110..",".......00111314113100...",".......0011114441110....","......0111111444110.....",".....01111111444110.....",".....0111111111110......",".....011122221110.......",".....0112222222100000...",".....01122222221055550..",".....01122222221066660..","......0112222210.000060.",".......00111100......0..",".........0000...........","........................","........................"]},"crow":{"n":24,"pal":["#2B2220","#25252E","#FFFFFF","#3A3A3A","#3E4A6A"],"rows":["........................","........................","........................","........................","........................","........................","...............000......","..............01110.....",".............0111110....",".......000000111111100..","......01111111111213330.",".....014444441111113330.","....014444444411111000..","..00014444444411110.....",".01111144444411110......","011111111111111110......",".0111011111111110.......","..000.0111111110........",".......00001010.........","..........01010.........","..........01010.........","..........01010.........","...........0.0..........","........................"]},"sparrow":{"n":24,"pal":["#2B2220","#7A4E2A","#A8733C","#151515","#4A4A4A","#5E3D1E","#EADBC0","#C99A60","#C07A3A"],"rows":["........................","........................","........................","........................","........................","........................","..............0000......",".............011110.....","............01111110....",".........000011111100...",".0.....002222222232440..","05000.0255552226662440..","055550555555552666200...","0555525557555522220.....","055552555557556220......",".00552225555666620......","...000226666666660......","......02266666660.......",".......002666660........",".........008080.........","..........08080.........","..........08080.........","...........0.0..........","........................"]},"hedgehog":{"n":24,"pal":["#2B2220","#3E3028","#6E5A48","#D8B890","#151515"],"rows":["........................","........................","........................","........................","........................","........................",".........0..............","......0.010.0...........",".....010010010..........","...0.0122112100.........","..01022112212110........","..012122122122120.......","..0211222122122120......",".0122212222222223300....",".01222222222223333330...","..0122222222223333430000","...022222222223333333334","....02222222223333333000",".....0032222203033000...","......030000003000......","......030....030........","......030....030........",".......0......0.........","........................"]},"boar":{"n":24,"pal":["#2B2220","#3A2A20","#5A4535","#151515","#FFFFFF","#B89A88"],"rows":["........................","........................","........................","........................","........................","........................","........................","................0.......",".......00000000010......","......011111111110......",".....011111111111000....","....02211111111222220...","...0222222222222223220..","..022222222222222222220.",".0202222222222222222450.","..002222222222222224510.","....022222222222222200..",".....021212221210000....","......01012201010.......","......01010001010.......","......01010.01010.......","......01010.01010.......",".......0.0...0.0........","........................"]},"rabbit":{"n":24,"pal":["#2B2220","#C9B39A","#F2B5C0","#151515","#FFFFFF","#EDE2D3","#9A8268"],"rows":["........................","..............00........",".............01100......",".............011010.....",".............0121110....",".............0121210....",".............0121210....",".............0121210....",".............0121210....",".............0111110....",".......0000000111110....","....00011111111111310...","...044111111111111110...","..04411111111111111020..","..0441111111111111100...","...0411111555511100.....","....01115555555510......",".....011555555550.......",".....066665555660.......",".....066666600060.......","......000000..0660......","...............00.......","........................","........................"]},"fox":{"n":24,"pal":["#2B2220","#E07A2E","#151515","#FFF3E4","#3A2A20"],"rows":["........................","........................","........................","........................","...............0...0....","..............010.010...","..............0110010...","..............0111110...","..............011110....","....00.00000001111110...",".000110111111111112100..","033111111111111111111100","333311111111111111133304","3333111111111111100000.0","03311111113333330.......",".0001101113331310.......","....0001010001010.......","......01010.01010.......","......01010.01010.......","......04040.04040.......","......04040.04040.......","......04040.04040.......",".......0.0...0.0........","........................"]},"owl":{"n":24,"pal":["#2B2220","#9A7A55","#E8D8B8","#F2C230","#151515","#C08A30","#6E4A2C"],"rows":["........................","........................","........................","........0.......0.......",".......010.....010......","......0111000001110.....",".......00012220000......",".......0122222220.......","......012232223220......","......012333233320......",".....01123432343210.....",".....01122325232210.....",".....01112225222110.....",".....01111122211110.....",".....01111111111110.....",".....01111611161110.....","......011111111110......","......011611611610......",".......0111111110.......","..00000000511150000000..",".0666666666666666666660.",".0666666666666666666660.","..00000000000000000000..","........................"]},"frog":{"n":24,"pal":["#2B2220","#5DBB4A","#FFFFFF","#151515","#3E8F33","#D7F0B4"],"rows":["........................","........................","........................","........................","........................","........................","........................","..............0000......",".............011110.....",".............012210.....","........000000122300....","......001111111111110...",".....01111111111111110..","....011111111111111110..","....011111111111111110..","....0111111111111444440.","...0411115555555511000..","...0441155555555440.....","....044415555555540.....",".....044440000000440....","......00440......00.....","........00..............","........................","........................"]},"snail":{"n":24,"pal":["#2B2220","#B07A3A","#D09A5A","#151515","#C8B89A","#6E4A22"],"rows":["........................","........................","........................","........................","........................","........................","........................",".......000000...........","......01111110..........",".....0111111110...0..0..","....011122221110.030030.","....011222222110.040040.","...01112255221110040040.","...0112255552211004040..","...0111225522111004040..","....011222222110044440..","....011122221110044440..","...0001111111144444440..","..04444111111444444440..","..04444444444444444440..","...000444444444444000...","......000000000000......","........................","........................"]}}/*/PX*/;
+const KEYS='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const _spr={};
+function spr(id,flip,sil){
+  const k=id+'|'+(flip?1:0)+'|'+(sil||'');
+  if(_spr[k]) return _spr[k];
+  const s=PX[id]; if(!s) return '';
+  const c=document.createElement('canvas'); c.width=c.height=s.n; const g=c.getContext('2d');
+  for(let y=0;y<s.n;y++){const row=s.rows[y];for(let x=0;x<s.n;x++){const ch=row[x];if(ch==='.')continue;
+    g.fillStyle=sil||s.pal[KEYS.indexOf(ch)];g.fillRect(flip?s.n-1-x:x,y,1,1);}}
+  return _spr[k]=c.toDataURL();
+}
+function img(id,cls,flip,sil){const i=document.createElement('img');i.className='px '+(cls||'');i.src=spr(id,flip,sil);i.alt='';i.draggable=false;return i;}
+const $=s=>document.querySelector(s);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ===== 保存 ===== */
+const SKEY='wtantei_save';
+let save={cleared:[],story:true,sound:true,unlock:false,cur:null};
+try{const t=JSON.parse(localStorage.getItem(SKEY)||'null');if(t&&typeof t==='object')save=Object.assign(save,t);}catch(e){}
+function store(){try{localStorage.setItem(SKEY,JSON.stringify(save));}catch(e){}}
+
+/* ===== 音（ブラウザで合成。音声ファイルなし） ===== */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function tone(f,t0,d,type,vol){const a=ac();if(!a||!save.sound)return;const o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.value=f;
+  const t=a.currentTime+(t0||0);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.08,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02);}
+function slide(f1,f2,d,type,vol){const a=ac();if(!a||!save.sound)return;const o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';const t=a.currentTime;
+  o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(vol||.1,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02);}
+const SE={
+  tap(){tone(880,0,.06,'square',.05);},
+  talk(){tone(620,0,.05,'square',.05);tone(740,.07,.05,'square',.05);},
+  none(){slide(400,220,.18,'triangle',.08);},
+  find(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.08,.16,'square',.07));},
+  letter(i){tone([523,587,659,698,784,880][i%6],0,.14,'triangle',.12);},
+  fly(){slide(300,900,.35,'sine',.07);},
+  wrong(){slide(300,120,.3,'sawtooth',.06);},
+  boing(){slide(200,500,.12,'triangle',.1);setTimeout(()=>slide(500,200,.15,'triangle',.1),120);},
+  hit(){tone(196,0,.08,'sawtooth',.12);tone(392,.06,.25,'square',.1);tone(784,.1,.3,'square',.06);},
+  clear(){[523,659,784,659,784,1047].forEach((f,i)=>tone(f,i*.12,.2,'square',.07));},
+  battle(){[392,392,523].forEach((f,i)=>tone(f,i*.14,.12,'square',.08));}
+};
+
+/* ===== ことばカード ===== */
+const CARDS={
+  hat:{w:'ぼうし',s:'i_hat'}, feather:{w:'はね',s:'i_feather'}, apple:{w:'りんご',s:'i_apple'},
+  hoof:{w:'あしあと',s:'i_hoof'}, acorn:{w:'どんぐり',s:'i_acorn'},
+  fur:{w:'け',s:'i_fur'}, sticks:{w:'ばち',s:'i_sticks'}, sound:{w:'どんどん',s:'i_sound'}
+};
+
+/* ===== おはなし =====
+  b: ふきだし [['s',ドット絵] / ['e',絵文字] / ['t',文字]]
+  story: おとなが読む文（せっていで消せる）
+  lv: 1=カードに絵 2=カードはかげ絵 3=カードは文字だけ（しらべるときは毎回絵を見せる） */
+const EPS=[
+{ id:'hat', lv:1, bg:'park', victim:'koala', item:'i_hat', suspect:'crow',
+  actors:[
+    {id:'koala',x:64,y:62,flip:true,talk:[['s','i_hat'],['e','❓'],['e','😢']],story:'コアラさん「ぼうしが ないの。ベンチに おいておいたのに」'},
+    {id:'sparrow',x:22,y:66,flip:false,talk:[['s','crow'],['e','➡️'],['s','i_tree']],story:'すずめ「からすくんが きの ほうへ とんでいったよ」'},
+    {id:'crow',x:100,y:72,flip:true,talk:[['s','i_hat'],['e','❌'],['e','😤']],story:'からす「ぼうし？ しらないよーだ」'}
+  ],
+  spots:[
+    {id:'bench',x:56,y:84,w:44,h:14,card:'apple',story:'ベンチの したに りんごが あった。コアラさんの おべんとうかな？'},
+    {id:'root',x:116,y:98,w:34,h:16,card:'feather',story:'きの したに くろい はねが おちていた'},
+    {id:'nest',x:120,y:4,w:32,h:24,high:true,card:'hat',story:'モモが きの うえの すで ぼうしを みつけた！'},
+    {id:'grass',x:16,y:98,w:26,h:16,story:'くさむらには なにも なかった'}
+  ],
+  need:['feather','hat'],
+  intro:[{who:'koala',b:[['s','i_hat'],['e','❓'],['e','😢']],story:'こうえんで コアラさんが こまっています。だいじな ぼうしが なくなったみたい。ウォンバットたんていと モモで さがそう！'}],
+  battles:[
+    {st:[{ic:'i_cloud',w:'そら',m:'o'},{ic:'i_tree',w:'き',m:'x',c:'feather'}],
+     after:{b:[['e','💦'],['s','i_hat'],['e','❌']],story:'からす「き、きの そばには いたけど… ぼうしは しらないもん！」'}},
+    {st:[{ic:'i_hat',w:'ぼうし',m:'x',c:'hat'},{ic:'i_apple',w:'りんご',m:'x'}]}
+  ],
+  ending:[
+    {who:'crow',b:[['e','😢'],['s','i_hat'],['e','✨']],story:'からす「りぼんが きれいで、ほしくなっちゃったの。ごめんなさい」'},
+    {who:'koala',b:[['s','i_hat'],['e','😊'],['e','💕']],story:'ぼうしは コアラさんの ところに もどりました。コアラさん「ありがとう！ たんていさん」',give:true}
+  ]
+},
+{ id:'acorn', lv:2, bg:'forest', victim:'hedgehog', item:'i_acorn', suspect:'boar',
+  actors:[
+    {id:'hedgehog',x:34,y:74,flip:true,talk:[['s','i_acorn'],['e','❓'],['e','😢']],story:'はりねずみ「あつめた どんぐりが ぜんぶ なくなっちゃった」'},
+    {id:'frog',x:120,y:94,flip:true,talk:[['s','boar'],['e','➡️'],['s','i_hill']],story:'かえる「いのししさんが やまの ほうへ はしっていったよ」'},
+    {id:'boar',x:96,y:68,flip:true,talk:[['s','i_acorn'],['e','❌'],['e','😤']],story:'いのしし「どんぐり？ ぼくは しらないね」'}
+  ],
+  spots:[
+    {id:'stump',x:56,y:90,w:30,h:16,card:'hoof',story:'きりかぶの まわりに おおきな あしあとが ついていた'},
+    {id:'bush',x:4,y:94,w:28,h:20,card:'apple',story:'しげみの なかに りんごが ひとつ'},
+    {id:'den',x:116,y:6,w:40,h:30,high:true,card:'acorn',story:'モモが そらから みると、やまの うえに どんぐりの やまが！'},
+    {id:'mush',x:88,y:100,w:22,h:14,story:'きのこが はえているだけだった'}
+  ],
+  need:['hoof','acorn'],
+  intro:[{who:'hedgehog',b:[['s','i_acorn'],['e','❓'],['e','😢']],story:'もりの はりねずみさんが ないています。ふゆの ために あつめた どんぐりが なくなったんだって。'}],
+  battles:[
+    {st:[{ic:'i_hill',w:'やま',m:'o'},{ic:'i_stump',w:'きりかぶ',m:'x',c:'hoof'}],
+     after:{b:[['e','💦'],['s','i_acorn'],['e','❌']],story:'いのしし「きりかぶの ところは とおったかも。でも どんぐりは しらないぞ！」'}},
+    {st:[{ic:'i_apple',w:'りんご',m:'o'},{ic:'i_acorn',w:'どんぐり',m:'x',c:'acorn'}]}
+  ],
+  ending:[
+    {who:'boar',b:[['e','😢'],['s','i_acorn'],['e','😋']],story:'いのしし「おなかが すいて、つい もっていっちゃった。ごめんね」'},
+    {who:'hedgehog',b:[['s','i_acorn'],['s','i_apple'],['e','😊']],story:'どんぐりは もどってきました。はりねずみさん「いっしょに たべよう！」 みんなで りんごと どんぐりを わけっこしました',give:true}
+  ]
+},
+{ id:'drum', lv:3, bg:'night', victim:'rabbit', item:'i_drum', suspect:'fox',
+  actors:[
+    {id:'rabbit',x:60,y:76,flip:true,talk:[['s','i_drum'],['e','❓'],['e','😢']],story:'うさぎ「あしたの おまつりで たたく たいこが ないの」'},
+    {id:'owl',x:77,y:40,flip:false,talk:[['s','i_moon'],['s','i_sound'],['e','➡️'],['s','fox']],give:'sound',story:'ふくろう「よなかに きつねさんの いえの ほうから どんどん おとが したよ」'},
+    {id:'fox',x:108,y:78,flip:true,talk:[['s','i_drum'],['e','❌'],['e','😏']],story:'きつね「たいこ？ ふふん、しらないなあ」'}
+  ],
+  spots:[
+    {id:'door',x:22,y:68,w:16,h:24,card:'fur',story:'うさぎさんの いえの ドアに オレンジいろの けが ついていた'},
+    {id:'roof',x:112,y:30,w:44,h:20,high:true,card:'sticks',story:'モモが きつねさんの やねの うえで ばちを みつけた！'},
+    {id:'under',x:84,y:96,w:24,h:18,card:'acorn',story:'きの したに どんぐりが おちていた'},
+    {id:'well',x:2,y:98,w:20,h:16,story:'くさの かげには なにも なかった'}
+  ],
+  need:['fur','sticks','sound'],
+  intro:[{who:'rabbit',b:[['s','i_drum'],['e','❓'],['e','😢']],story:'よるの もり。うさぎさんの たいこが なくなりました。あしたは おまつりなのに…'}],
+  battles:[
+    {st:[{ic:'i_moon',w:'つき',m:'o'},{ic:'i_house',w:'いえ',m:'x',c:'fur'}],
+     after:{b:[['e','💦'],['s','i_sleep'],['e','⭕']],story:'きつね「うさぎさんの いえに よったのは ほんとう。でも よるは ずっと ねてたよ！」'}},
+    {st:[{ic:'i_sleep',w:'ねてた',m:'o',c:'sound'},{ic:'i_acorn',w:'どんぐり',m:'x'}],
+     after:{b:[['e','💦💦'],['s','i_drum'],['e','❌']],story:'きつね「お、おとは した。でも たいこなんて もってないもん！」'}},
+    {st:[{ic:'i_tree',w:'き',m:'o'},{ic:'i_drum',w:'たいこ',m:'x',c:'sticks'}]}
+  ],
+  ending:[
+    {who:'fox',b:[['e','😢'],['s','i_drum'],['e','🎵']],story:'きつね「ぼくも たいこを たたいてみたかったんだ。ごめんなさい」'},
+    {who:'rabbit',b:[['s','i_drum'],['s','fox'],['e','🎶']],story:'たいこは もどりました。うさぎさん「じゃあ あした いっしょに たたこう！」 おまつりは にぎやかに なりました',give:true}
+  ]
+}
+];
+
+/* ===== はいけい（160x120 のドット） ===== */
+const SW=160,SH=120;
+const bg=$('#bg').getContext('2d');
+function R(x,y,w,h,c){bg.fillStyle=c;bg.fillRect(x,y,w,h);}
+function D(cx,cy,rx,c,ry){ry=ry||rx;bg.fillStyle=c;for(let y=-ry;y<=ry;y++){const h=Math.floor(rx*Math.sqrt(Math.max(0,1-(y/ry)*(y/ry))));bg.fillRect(cx-h,cy+y,h*2+1,1);}}
+function rnd(seed){let s=seed;return()=>((s=(s*9301+49297)%233280)/233280);}
+function tufts(y0,y1,c,n,seed){const r=rnd(seed);for(let i=0;i<n;i++){const x=Math.floor(r()*SW),y=Math.floor(y0+r()*(y1-y0));R(x,y,1,2,c);R(x+1,y+1,1,1,c);}}
+const BG={
+  park(st){
+    R(0,0,SW,24,'#a8ddf2');R(0,24,SW,22,'#b8e4f4');R(0,46,SW,24,'#c8ecf6');
+    D(30,16,12,'#fff',4);D(40,13,8,'#fff',4);D(84,26,10,'#fff',3);
+    D(30,76,46,'#a6d07a',14);D(110,78,56,'#98c86c',14);
+    R(0,68,SW,52,'#8cc860');tufts(70,118,'#76b04c',60,3);
+    R(0,104,SW,9,'#e6d29a');R(0,104,SW,1,'#d0b878');
+    for(let x=2;x<48;x+=10){R(x,62,3,16,'#d8b888');R(x,62,3,1,'#f0d8a8');}R(0,66,48,2,'#d8b888');R(0,72,48,2,'#d8b888');
+    R(131,26,12,80,'#7a5030');R(131,26,3,80,'#9a6a40');R(140,26,3,80,'#5a3a20');
+    D(136,20,24,'#3e8a34',16);D(122,30,10,'#3e8a34',8);D(150,32,10,'#3e8a34',8);D(130,14,9,'#5eaa48',6);D(146,24,6,'#5eaa48',4);
+    D(137,18,9,'#7a5030',4);R(129,15,17,2,'#4a3020');
+    if(!st.found.includes('hat')){R(132,12,10,3,'#e8c26a');R(134,10,6,2,'#f0d080');R(134,12,6,1,'#e05a6a');}
+    R(56,74,44,3,'#c07a40');R(56,79,44,3,'#c07a40');R(56,86,44,4,'#d08a50');R(56,89,44,1,'#a05a2a');
+    R(60,74,3,24,'#7a4a2a');R(93,74,3,24,'#7a4a2a');
+  },
+  forest(st){
+    R(0,0,SW,30,'#cfe8d0');R(0,30,SW,30,'#b8dcc0');
+    D(136,40,34,'#7aa060',30);D(140,16,6,'#888',4);R(128,20,22,10,'#8a8478');D(139,20,10,'#9a948a',6);R(132,22,14,8,'#4a4038');
+    if(!st.found.includes('acorn')){for(let i=0;i<5;i++){R(126+i*3,30-(i%2)*2,2,2,'#c07a3a');}}
+    for(const[x,w,c]of[[8,8,'#5a4030'],[34,6,'#6a4a34'],[70,10,'#5a4030'],[104,7,'#6a4a34']]){R(x,0,w,92,c);R(x,0,2,92,'rgba(255,255,255,.12)');}
+    D(12,6,20,'#4e8a3e',12);D(44,10,18,'#5a9a46',10);D(76,4,22,'#4e8a3e',12);D(106,10,16,'#5a9a46',10);
+    R(0,84,SW,36,'#6aa84f');tufts(86,118,'#5a9640',70,7);
+    D(70,94,13,'#e0b070',3);R(57,94,27,10,'#8a5a30');R(57,94,27,1,'#e0b070');R(62,96,1,8,'#6a4020');R(76,96,1,8,'#6a4020');
+    if(!st.found.includes('hoof')){R(66,108,2,3,'#4a3420');R(69,108,2,3,'#4a3420');}
+    D(18,102,16,'#3e7a34',10);D(10,98,8,'#4e8a3e',6);
+    R(94,104,2,6,'#f4e6d0');D(95,103,4,'#d84a3a',2);R(102,106,2,5,'#f4e6d0');D(103,105,3,'#d84a3a',2);
+  },
+  night(st){
+    R(0,0,SW,30,'#1a2248');R(0,30,SW,30,'#24305a');R(0,60,SW,20,'#2e3c66');
+    const r=rnd(11);for(let i=0;i<34;i++)R(Math.floor(r()*SW),Math.floor(r()*60),1,1,r()>.7?'#fff8c0':'#c8d0f0');
+    D(22,16,9,'#f4d25a');D(26,13,8,'#1a2248');
+    R(0,82,SW,38,'#3e5a3a');tufts(84,118,'#34502f',60,5);
+    R(6,52,44,40,'#e8d8b8');R(6,52,44,2,'#c8b898');bg.fillStyle='#b04040';for(let y=0;y<14;y++)bg.fillRect(28-y*2-4,38+y,y*4+8,1);
+    R(22,68,14,24,'#8a5a30');R(33,80,2,2,'#f4d25a');R(40,60,7,7,'#f4d25a');R(43,60,1,7,'#8a7a5a');R(40,63,7,1,'#8a7a5a');
+    if(!st.found.includes('fur')){R(36,74,2,2,'#f08a3a');}
+    R(84,28,10,64,'#4a3426');D(89,24,18,'#2a4a30',14);D(80,30,8,'#2a4a30',6);
+    D(132,78,28,'#6a5038',18);R(104,78,56,14,'#6a5038');bg.fillStyle='#c8a050';for(let y=0;y<12;y++)bg.fillRect(132-y*2-6,36+y,y*4+12,1);
+    D(132,84,8,'#20160e',10);R(124,84,17,8,'#20160e');
+    if(!st.found.includes('sticks')){R(128,40,10,1,'#c8964a');R(130,38,10,1,'#c8964a');}
+    D(10,104,10,'#2c4a2c',6);
+  }
+};
+
+/* ===== 画面の部品 ===== */
+const layer=$('#layer'),panel=$('#panel');
+function place(el,x,y,w,h){el.style.left=(x/SW*100)+'%';el.style.top=(y/SH*100)+'%';if(w!=null)el.style.width=(w/SW*100)+'%';if(h!=null)el.style.height=(h/SH*100)+'%';}
+let EP=null,ST=null,busy=false,objs={},wombatEl,momoEl,idleT=null,hintLv=0,wrongs=0,selSt=-1,selCard=null;
+const MOMO_HOME=[30,90];
+
+function bubbleAt(x,y,toks,ms){
+  const b=document.createElement('div');b.className='bubble';
+  for(const[k,v]of toks){if(k==='s')b.appendChild(img(v));else{const s=document.createElement('span');s.className=k==='e'?'e':'t';s.textContent=v;b.appendChild(s);}}
+  x=Math.max(14,Math.min(SW-14,x));y=Math.max(30,y);
+  place(b,x,y);layer.appendChild(b);
+  // はみ出し調整
+  requestAnimationFrame(()=>{const L=layer.getBoundingClientRect(),r=b.getBoundingClientRect();
+    if(r.left<L.left+2)b.style.left=(parseFloat(b.style.left)+(L.left+2-r.left)/L.width*100)+'%';
+    if(r.right>L.right-2)b.style.left=(parseFloat(b.style.left)-(r.right-L.right+2)/L.width*100)+'%';});
+  if(ms)setTimeout(()=>b.remove(),ms);
+  return b;
+}
+function actorTop(id){const a=objs[id];if(!a)return[80,40];const n=PX[a.dataset.spr].n;return[+a.dataset.x+n/2,+a.dataset.y+2];}
+function addActor(id,sprId,x,y,flip,w){
+  const n=w||PX[sprId].n;const el=img(sprId,'ob actor',flip);el.dataset.spr=sprId;el.dataset.x=x;el.dataset.y=y;place(el,x,y,n,n);layer.appendChild(el);objs[id]=el;return el;
+}
+function setStory(t){const s=$('#story');if(s)s.textContent=t||'';}
+function flash(){const f=$('#flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}
+function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+
+function showHand(el){
+  const h=$('#hand');if(!el){h.style.display='none';return;}
+  const W=$('#wrap').getBoundingClientRect(),r=el.getBoundingClientRect();
+  if(h.parentNode!==$('#wrap'))$('#wrap').appendChild(h);
+  h.style.display='block';h.style.left=(r.left-W.left+r.width/2)+'px';h.style.top=(r.top-W.top+r.height*0.55)+'px';
+}
+function resetIdle(){clearTimeout(idleT);showHand(null);document.querySelectorAll('.spot.hi').forEach(e=>e.classList.remove('hi'));
+  if(!EP||busy)return;const first=EP.lv===1&&ST.found.length===0&&ST.talked.length===0;idleT=setTimeout(idleHint,first?3500:14000);}
+
+/* ===== タイトル ===== */
+function showTitle(){
+  EP=null;busy=false;clearTimeout(idleT);showHand(null);
+  $('#title').style.display='flex';
+  $('#logo-w').src=spr('wombat');$('#logo-m').src=spr('momo');
+  const box=$('#eps');box.innerHTML='';
+  EPS.forEach((e,i)=>{
+    const ok=save.unlock||i===0||save.cleared.includes(EPS[i-1].id);
+    const done=save.cleared.includes(e.id);
+    const b=document.createElement('button');b.className='ep'+(ok?'':' lock')+(ok&&!done&&(i===0||save.cleared.includes(EPS[i-1].id))?' next':'');
+    b.innerHTML='<span class="n">'+(i+1)+'</span>';
+    b.appendChild(img(e.victim));const q=document.createElement('span');q.className='q';q.textContent='＋';b.appendChild(q);b.appendChild(img(e.item));
+    const s=document.createElement('span');s.className='st2';s.textContent=done?'⭐':(ok?'':'🔒');b.appendChild(s);
+    b.onclick=()=>{ac();if(!ok){SE.wrong();anim(b,'shake');return;}SE.tap();startEp(i);};
+    box.appendChild(b);
+  });
+}
+
+/* ===== エピソード ===== */
+function startEp(i){
+  EP=EPS[i];
+  if(!save.cur||save.cur.ep!==EP.id)save.cur={ep:EP.id,found:[],talked:[],seen:[],phase:'intro',battle:0};
+  ST=save.cur;store();
+  $('#title').style.display='none';
+  hintLv=0;wrongs=0;
+  if(ST.phase==='battle')startBattle(true);
+  else if(ST.phase==='end')ending();
+  else{buildScene();if(ST.phase==='intro')runIntro();else investigate();}
+}
+function buildScene(battle){
+  BG[EP.bg](ST);layer.innerHTML='';objs={};
+  $('#scene').classList.toggle('dim',!!battle);
+  if(!battle){
+    for(const s of EP.spots){const d=document.createElement('div');d.className='spot'+(ST.seen.includes(s.id)?' done':'');place(d,s.x,s.y,s.w,s.h);d.onclick=()=>onSpot(s,d);layer.appendChild(d);objs['spot_'+s.id]=d;}
+    for(const a of EP.actors){const el=addActor(a.id,a.id,a.x,a.y,a.flip);el.classList.add('tap');el.onclick=()=>onActor(a,el);}
+    wombatEl=addActor('wombat','wombat',0,84);momoEl=addActor('momo','momo',MOMO_HOME[0],MOMO_HOME[1],false,26);
+    momoEl.classList.add('tap');momoEl.onclick=()=>{if(busy)return;ac();SE.talk();anim(momoEl,'hop');idleHint(true);};
+  }
+  updBag();
+}
+function panelBase(){panel.innerHTML='<div id="story" class="'+(save.story?'':'off')+'"></div>';}
+async function playSeq(seq){
+  busy=true;clearTimeout(idleT);showHand(null);
+  for(const s of seq){
+    const[x,y]=actorTop(s.who);const b=bubbleAt(x,y,s.b);SE.talk();setStory(s.story);
+    if(s.give){giveBack();}
+    await waitTap();b.remove();
+  }
+  busy=false;
+}
+function waitTap(){return new Promise(res=>{
+  const n=document.createElement('button');n.id='next';n.textContent='▼';n.style.display='block';panel.appendChild(n);
+  const sc=$('#scene');let done=false;
+  const go=e=>{if(done)return;done=true;ac();SE.tap();n.remove();sc.removeEventListener('click',go,true);res();e&&e.stopPropagation();};
+  setTimeout(()=>{n.onclick=go;sc.addEventListener('click',go,true);},350);
+});}
+async function runIntro(){
+  panelBase();await wait(300);await playSeq(EP.intro);ST.phase='inv';store();investigate();
+}
+function investigate(){
+  panelBase();setStory('ひかっている ところを タップして しらべよう。たかい ところは モモが とんで いきます。');
+  checkReady();resetIdle();
+}
+function onSpot(s,d){
+  if(busy)return;ac();resetIdle();
+  if(ST.seen.includes(s.id)){SE.tap();if(s.card)bubbleAt(s.x+s.w/2,s.y,[['s',CARDS[s.card].s],['e','✅']],1200);else bubbleAt(s.x+s.w/2,s.y,[['e','💨']],1000);return;}
+  (async()=>{
+    busy=true;
+    if(s.high)await momoFly(s.x+s.w/2-13,s.y+s.h/2-13);
+    else{wombatEl.style.transform='translateX(4%)';await wait(150);wombatEl.style.transform='';}
+    ST.seen.push(s.id);d.classList.add('done');store();
+    if(s.card){SE.find();setStory(s.story);await cardPopup(s.card);gain(s.card);}
+    else{SE.none();setStory(s.story);bubbleAt(s.x+s.w/2,s.y,[['e','💨']],1100);await wait(500);}
+    if(s.high)await momoHome();
+    busy=false;checkReady();resetIdle();
+  })();
+}
+function onActor(a,el){
+  if(busy)return;ac();resetIdle();
+  (async()=>{
+    busy=true;anim(el,'hop');SE.talk();const[x,y]=actorTop(a.id);const b=bubbleAt(x,y,a.talk);setStory(a.story);
+    if(!ST.talked.includes(a.id)){ST.talked.push(a.id);store();}
+    await wait(1700);
+    if(a.give&&!ST.found.includes(a.give)){b.remove();SE.find();await cardPopup(a.give);gain(a.give);}
+    else setTimeout(()=>b.remove(),900);
+    busy=false;checkReady();resetIdle();
+  })();
+}
+async function momoFly(x,y){
+  SE.fly();momoEl.src=spr('momo_fly');momoEl.style.zIndex=6;place(momoEl,x,y);await wait(800);
+}
+async function momoHome(){momoEl.src=spr('momo_fly',true);place(momoEl,MOMO_HOME[0],MOMO_HOME[1]);await wait(750);momoEl.src=spr('momo');momoEl.style.zIndex='';}
+function gain(id){if(!ST.found.includes(id)){ST.found.push(id);store();}BG[EP.bg](ST);updBag(true);}
+function updBag(p){const n=ST?ST.found.length:0;$('#bagn').textContent=n;if(p)anim($('#b-bag'),'pop');}
+function ready(){return EP.need.every(c=>ST.found.includes(c))&&ST.talked.includes(EP.suspect);}
+function checkReady(){
+  if(!ready()||$('#bbtn'))return;
+  const b=document.createElement('button');b.id='bbtn';b.className='bigbtn glow';b.appendChild(img(EP.suspect,'',true));
+  b.appendChild(document.createTextNode('⚡ たいけつ'));b.onclick=()=>{if(busy)return;ac();SE.battle();startBattle();};
+  panel.appendChild(b);setStory('てがかりが そろった！ 「たいけつ」で、ほんとうの ことを きこう。');
+}
+function idleHint(fromMomo){
+  if(!EP||busy)return;
+  if(ST.phase==='battle'){battleHint();return;}
+  let t=null;
+  const sp=EP.spots.find(s=>s.card&&EP.need.includes(s.card)&&!ST.seen.includes(s.id));
+  const giver=EP.actors.find(a=>a.give&&EP.need.includes(a.give)&&!ST.found.includes(a.give));
+  if(!ST.talked.includes(EP.actors[0].id))t=objs[EP.actors[0].id];
+  else if(sp)t=objs['spot_'+sp.id];
+  else if(giver)t=objs[giver.id];
+  else if(!ST.talked.includes(EP.suspect))t=objs[EP.suspect];
+  else t=$('#bbtn');
+  if(!t)return;
+  if(t.classList.contains('spot'))t.classList.add('hi');
+  anim(momoEl,'hop');
+  showHand(t);
+}
+
+/* ===== カードを見る ===== */
+function cardHTML(id,mode,first){
+  const c=CARDS[id];const b=document.createElement('button');b.className='card'+(mode===3?' big':'');b.dataset.id=id;
+  if(mode===1)b.appendChild(img(c.s));else if(mode===2)b.appendChild(img(c.s,'',false,'#6a5848'));
+  const w=document.createElement('span');w.className='w';
+  if(mode===2){w.innerHTML='<i>'+c.w[0]+'</i>'+c.w.slice(1);}else w.textContent=c.w;
+  b.appendChild(w);return b;
+}
+function cardPopup(id){return new Promise(res=>{
+  const c=CARDS[id];const m=document.createElement('div');m.className='modal';
+  m.innerHTML='<div class="mbox bigcard"><div class="letters"></div><div class="tapnote" style="visibility:hidden">👆</div></div>';
+  const box=m.querySelector('.mbox');box.insertBefore(img(c.s),box.firstChild);
+  const L=m.querySelector('.letters');[...c.w].forEach(ch=>{const s=document.createElement('span');s.textContent=ch;L.appendChild(s);});
+  $('#wrap').appendChild(m);let ok=false;
+  (async()=>{await wait(500);const sp=L.querySelectorAll('span');for(let i=0;i<sp.length;i++){sp[i].classList.add('on');SE.letter(i);await wait(380);}
+    ok=true;m.querySelector('.tapnote').style.visibility='visible';})();
+  m.onclick=()=>{if(!ok)return;SE.tap();m.remove();res();};
+});}
+function letterShow(id){return cardPopup(id);}
+function showBag(){
+  if(!EP)return;ac();SE.tap();
+  const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="mbox"><div style="font-size:30px">🎒</div><div class="row tray"></div><div class="row"><button class="b main">とじる</button></div></div>';
+  const t=m.querySelector('.tray');
+  if(!ST.found.length)t.innerHTML='<span style="font-size:40px">💨</span>';
+  ST.found.forEach(id=>{const b=cardHTML(id,1);b.onclick=e=>{e.stopPropagation();m.remove();letterShow(id);};t.appendChild(b);});
+  m.querySelector('.b').onclick=()=>{SE.tap();m.remove();};
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  $('#wrap').appendChild(m);
+}
+
+/* ===== たいけつ ===== */
+let susEl=null;
+function startBattle(resume){
+  if(!resume){ST.phase='battle';ST.battle=0;store();}
+  BG[EP.bg](ST);layer.innerHTML='';objs={};$('#scene').classList.add('dim');
+  susEl=addActor(EP.suspect,EP.suspect,90,34,true,60);
+  wombatEl=addActor('wombat','wombat',2,62,false,52);
+  momoEl=addActor('momo','momo',44,80,false,34);momoEl.classList.add('tap');momoEl.onclick=()=>{if(busy)return;ac();SE.talk();anim(momoEl,'hop');battleHint();};
+  updBag();hintLv=0;wrongs=0;renderBattle();
+}
+function renderBattle(){
+  const bt=EP.battles[ST.battle];selSt=-1;selCard=null;
+  panelBase();
+  const g=document.createElement('div');g.className='guide';g.innerHTML='<span>👆</span>';g.appendChild(img(EP.suspect,'',true));g.insertAdjacentHTML('beforeend','<span>➡️</span><span class="mc">あ</span>');panel.insertBefore(g,panel.firstChild);
+  const sts=document.createElement('div');sts.className='sts';
+  bt.st.forEach((s,i)=>{const b=document.createElement('button');b.className='st';b.appendChild(img(EP.suspect,'who',true));b.appendChild(img(s.ic,'ic'));
+    b.insertAdjacentHTML('beforeend','<span class="w">'+s.w+'</span><span class="m">'+(s.m==='o'?'⭕':'❌')+'</span>');
+    b.onclick=()=>{if(busy)return;ac();SE.tap();selSt=i;updSel();tryJudge();};sts.appendChild(b);});
+  panel.appendChild(sts);
+  const tray=document.createElement('div');tray.className='tray';
+  ST.found.forEach(id=>{const c=cardHTML(id,EP.lv);c.onclick=()=>{if(busy)return;ac();SE.tap();selCard=id;updSel();tryJudge();};tray.appendChild(c);});
+  panel.appendChild(tray);
+  setStory(ST.battle===0?'いいわけの なかに うそが あるよ。おかしい ところを えらんで、うそを みやぶる カードを だそう。':'まだ いいわけを しているよ。おかしい ところに カードを つきつけよう！');
+  bubbleAt(120,36,[['e','😤']],1500);
+  resetIdleB();
+}
+function updSel(){
+  panel.querySelectorAll('.st').forEach((e,i)=>e.classList.toggle('sel',i===selSt));
+  panel.querySelectorAll('.card').forEach(e=>e.classList.toggle('sel',e.dataset.id===selCard));
+}
+function resetIdleB(){clearTimeout(idleT);showHand(null);if(busy)return;idleT=setTimeout(()=>{if(EP&&ST.phase==='battle'&&!busy){hintLv=Math.max(hintLv,1);applyHint();}},EP.lv===1&&ST.battle===0?6000:20000);}
+function battleHint(){hintLv=Math.min(2,hintLv+1);applyHint();}
+function applyHint(){
+  const bt=EP.battles[ST.battle];const i=bt.st.findIndex(s=>s.c);const sts=panel.querySelectorAll('.st');
+  sts.forEach(e=>e.classList.remove('hint'));panel.querySelectorAll('.card').forEach(e=>e.classList.remove('hint'));
+  if(hintLv>=1&&sts[i]){sts[i].classList.add('hint');showHand(sts[i]);}
+  if(hintLv>=2){const c=panel.querySelector('.card[data-id="'+bt.st[i].c+'"]');if(c){c.classList.add('hint');
+    if(EP.lv>1&&!c.querySelector('img')){c.classList.remove('big');c.insertBefore(img(CARDS[c.dataset.id].s),c.firstChild);}
+    else if(EP.lv===2){const im=c.querySelector('img');if(im)im.src=spr(CARDS[c.dataset.id].s);}
+    showHand(c);}}
+  anim(momoEl,'hop');
+  bubbleAt(60,78,[['e','💡']],1200);
+}
+async function tryJudge(){
+  resetIdleB();
+  if(selSt<0||!selCard){
+    if(selSt>=0)panel.querySelectorAll('.card').forEach(e=>anim(e,'hop'));
+    else panel.querySelectorAll('.st').forEach(e=>anim(e,'hop'));
+    return;
+  }
+  const bt=EP.battles[ST.battle],s=bt.st[selSt],card=selCard;busy=true;clearTimeout(idleT);showHand(null);
+  const stEl=panel.querySelectorAll('.st')[selSt];
+  if(s.c===card){
+    flash();SE.hit();wombatEl.src=spr('wombat_shout');const sh=$('#shout');sh.classList.remove('on');void sh.offsetWidth;sh.classList.add('on');
+    const st=document.createElement('img');st.className='px stamp';st.src=spr(CARDS[card].s);stEl.appendChild(st);stEl.classList.add('broke');
+    await wait(400);anim(susEl,'shake');bubbleAt(120,36,[['e','💦'],['e','😱']],1400);
+    await wait(1400);sh.classList.remove('on');wombatEl.src=spr('wombat');
+    ST.battle++;store();hintLv=0;wrongs=0;
+    if(bt.after){
+      busy=false;await playSeqAt(0,bt.after);
+    }
+    busy=false;
+    if(ST.battle>=EP.battles.length)ending();else{SE.battle();renderBattle();}
+  }else{
+    wrongs++;
+    SE.boing();anim(susEl,'hop');
+    bubbleAt(120,36,s.c?[['e','😏'],['t','ふふーん']]:[['e','😤'],['e','⭕'],['t','ほんと']],1500);
+    anim(stEl,'shake');
+    await wait(1000);selSt=-1;selCard=null;updSel();busy=false;
+    if(wrongs>=2){hintLv=Math.max(hintLv,wrongs>=3?2:1);applyHint();}
+    resetIdleB();
+  }
+}
+async function playSeqAt(_,step){
+  busy=true;const b=bubbleAt(120,36,step.b);SE.talk();setStory(step.story);
+  panel.querySelectorAll('.st,.card').forEach(e=>e.style.pointerEvents='none');
+  await waitTap();b.remove();busy=false;
+}
+async function ending(){
+  ST.phase='end';store();
+  buildScene();panelBase();layer.querySelectorAll('.spot').forEach(e=>e.remove());
+  await wait(300);
+  await playSeq(EP.ending);
+  if(!save.cleared.includes(EP.id))save.cleared.push(EP.id);
+  const found=ST.found.slice();save.cur=null;store();
+  SE.clear();reward(found);
+}
+function giveBack(){
+  const v=objs[EP.victim];if(!v)return;const it=img(EP.item,'ob');const[x,y]=actorTop(EP.victim);place(it,x-8,y-22,16,16);it.style.animation='pop .4s';layer.appendChild(it);
+  anim(v,'hop');for(let i=0;i<5;i++)setTimeout(()=>bubbleAt(x-14+Math.random()*28,y-10-Math.random()*16,[['e','✨']],700),i*160);
+}
+function reward(found){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML='<div class="mbox"><div style="font-size:64px;animation:pop .5s">⭐</div><div style="font-size:30px;font-weight:900;color:#c25a2a">できた！</div><div class="logo" style="justify-content:center"></div><div style="font-size:20px;margin-top:6px">👆 ことばを みてみよう</div><div class="row tray"></div><div class="row"><button class="b main">🏠</button></div></div>';
+  const lg=m.querySelector('.logo');lg.appendChild(img('wombat'));const mm=img('momo','m');lg.appendChild(mm);lg.querySelectorAll('img').forEach(i=>{i.style.width='84px';i.style.height='84px';});
+  const t=m.querySelector('.tray');found.forEach(id=>{const b=cardHTML(id,1);b.onclick=e=>{e.stopPropagation();letterShow(id);};t.appendChild(b);});
+  m.querySelector('.b').onclick=()=>{SE.tap();m.remove();showTitle();};
+  $('#wrap').appendChild(m);
+}
+
+/* ===== せってい ===== */
+function showSettings(){
+  ac();SE.tap();
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML='<div class="mbox" style="text-align:left"><div style="font-weight:800;font-size:17px;margin-bottom:6px">おとなの せってい</div>'+
+  '<label class="set"><span>おはなしの文を出す<small>大人が読み聞かせるための文。ひとりで遊ぶようになったら消せます</small></span><input type="checkbox" id="s-story"></label>'+
+  '<label class="set"><span>音<small>効果音（ブラウザで作った音。読み上げはありません）</small></span><input type="checkbox" id="s-sound"></label>'+
+  '<label class="set"><span>ぜんぶのおはなしを遊べるようにする<small>ふだんは前のおはなしをクリアすると次が出ます</small></span><input type="checkbox" id="s-unlock"></label>'+
+  '<div class="set"><span>きろくを消す<small>クリアのしるしと途中の状態を消します</small></span><button class="b" id="s-reset" style="border:none;border-radius:10px;padding:6px 12px;background:#f0d0c0;font:inherit">消す</button></div>'+
+  '<div style="font-size:12px;color:#9a8068;margin-top:8px;line-height:1.6">遊び方：光っているところや動物をタップして「ことばカード」を集めます。高いところはモモが飛んで調べます。てがかりがそろったら「たいけつ」。いいわけの中のおかしいところを選び、うそを見やぶるカードを出します。モモをタップするとヒント。<br>おはなし1は絵つきカード、2はかげ絵、3は文字だけのカードになります。</div>'+
+  '<div class="row"><button class="b main">とじる</button></div></div>';
+  $('#wrap').appendChild(m);
+  const S=m.querySelector('#s-story'),Sn=m.querySelector('#s-sound'),U=m.querySelector('#s-unlock');
+  S.checked=save.story;Sn.checked=save.sound;U.checked=save.unlock;
+  S.onchange=()=>{save.story=S.checked;store();};Sn.onchange=()=>{save.sound=Sn.checked;store();};U.onchange=()=>{save.unlock=U.checked;store();showTitle();};
+  m.querySelector('#s-reset').onclick=()=>{if(confirmReset(m.querySelector('#s-reset'))){save.cleared=[];save.cur=null;store();showTitle();}};
+  m.querySelector('.b.main').onclick=()=>{m.remove();showTitle();};
+}
+function confirmReset(btn){if(btn.dataset.c){return true;}btn.dataset.c=1;btn.textContent='もう一度おすと消えます';return false;}
+
+$('#b-bag').onclick=showBag;
+$('#b-home').onclick=()=>{ac();SE.tap();showTitle();};
+$('#b-set').onclick=showSettings;
+$('#scene').addEventListener('pointerdown',()=>{if(EP&&ST&&ST.phase==='inv')resetIdle();});
+window.addEventListener('resize',()=>showHand(null));
+showTitle();
+</script>
+</body>
+</html>

@@ -17,6 +17,21 @@
       "controls": "タップ・マイク / クリック・マイク",
       "playtime": "1場面 約10分（全5章）",
       "added": "2026-11-23"
+    },
+    {
+      "id": "wombat-tantei",
+      "title": "ウォンバット☆さがしものたんてい（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "ひらがなを覚えはじめた子ども向けの、なくしもの探し推理ゲーム。現場をしらべて「ことばカード」を集め、たいけつで犯人のいいわけのうそにカードをつきつける。読み上げなしで、絵とひらがなだけで遊べる。",
+      "path": "../games/wombat-tantei/",
+      "thumbnail": "../games/wombat-tantei/thumb.jpg",
+      "tags": [
+        "知育",
+        "こども"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "1話 約5分（全3話）",
+      "added": "2026-11-25"
     }
   ]
 }
