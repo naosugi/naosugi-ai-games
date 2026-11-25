@@ -78,11 +78,8 @@ body{display:flex;justify-content:center;overscroll-behavior:none;-webkit-user-s
 .sp1{font-size:clamp(12px,3.4vw,14px);color:#ddd;margin-bottom:4px}.sp1 b{color:var(--acc)}
 .spg{display:grid;grid-template-columns:auto auto auto auto auto auto auto auto;gap:1px 6px;font-size:clamp(11px,3.2vw,13px);color:#eee;justify-content:start}
 .spg .up{color:#8ef08a}.spg .dn{color:#ff9a8a}
-.svw{position:absolute;left:2%;right:2%;top:3%;bottom:3%;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;pointer-events:none}
-.sv{background:rgba(10,8,20,.93);border:2px solid var(--line);border-radius:6px;padding:3px 5px;text-align:left;font-size:clamp(10px,2.9vw,13px);color:#eee;display:flex;flex-direction:column;gap:0;overflow:hidden;animation:acard .4s ease both}
-.sv b{color:var(--acc);font-size:1.05em}.sv small{color:#bbb;font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sv i{font-style:normal;display:flex;justify-content:space-between;gap:4px;white-space:nowrap}.sv i span{color:#aab}
-.sv em{font-style:normal;color:#ffd98a;font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stp{top:4%;bottom:4%;overflow:auto}
+.stg{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:1px 10px;font-size:clamp(12px,3.5vw,15px);color:#aab;margin:2px 0 5px}.stg b{color:#fff;font-weight:normal}
 .eqg{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;font-size:clamp(11px,3.1vw,13px);color:#ffd98a;margin-bottom:4px}.eqg span:nth-child(odd){color:#aab}
 .sp2{font-size:clamp(10px,2.9vw,12px);color:#c4e8ff;margin-top:5px;line-height:1.35}
 #cmd .nmrow{grid-column:1/-1;display:flex;align-items:center;gap:8px;background:var(--win);border:2px solid var(--line);border-radius:8px;padding:5px 8px}
@@ -2902,21 +2899,21 @@ async function partyMenu(back){
   back();
 }
 function pickMember(text,filter){return new Promise(res=>{partyPick={ok:i=>filter(G.party[i]),cb:i=>{renderParty();res(i);}};renderParty();setMsg(text+'\n↓ 仲間の カードを おしてね');setCmds([{label:'← もどる',cls:'wide sub',fn:()=>{partyPick=null;renderParty();res(-1);}}]);});}
-// ---------- つよさ（3匹 ならべて 見る）----------
-function strengthHTML(){
-  const P=G.party,dd=P.map(derived),N=[['HP','maxhp'],['MP','maxmp'],['こうげき','atk'],['ぼうぎょ','def'],['まりょく','mag'],['すばやさ','spd']];
-  const col=(m,d)=>{const J=JOBS[m.job],nx=m.lv>=J.cap?'—':expNext(m.job,m.lv)-m.exp;
-    return `<div class="sv"><b>${esc(m.name)}</b><small>${esc(J.name)}${m.mastered[m.job]?'★':''} Lv${m.lv}</small><small>つぎ ${nx}</small>`+
-      N.map(([n,k])=>`<i><span>${n}</span>${k==='maxhp'?m.hp+'/':k==='maxmp'?m.mp+'/':''}${d[k]}</i>`).join('')+
-      `<em>${esc(WEAPON_LINES[m.wl].names[m.w])}</em><em>${esc(ARMORS[m.a][0])}</em><em>${m.charm&&CHARMS[m.charm]?esc(CHARMS[m.charm].name):'おまもり なし'}</em></div>`;};
-  return `<div class="svw">${P.map((m,i)=>col(m,dd[i])).join('')}</div>`;}
-async function strengthView(){
-  while(true){$('overlay').innerHTML=strengthHTML();
-    const c=await ask('つよさ（だれかを えらぶと わざと そうびを 見られる）',[...G.party.map(m=>({label:`${m.name}の わざ`,cls:''})),{label:'🗡 そうびを かえる',cls:''},{label:'← もどる',cls:'wide sub'}]);
+// ---------- つよさ（1匹ずつ。◀ ▶ で 切りかえ）----------
+function strengthHTML(m){const d=derived(m),J=JOBS[m.job],nx=m.lv>=J.cap?'—（上限）':expNext(m.job,m.lv)-m.exp;
+  const st=[['HP',`${m.hp}/${d.maxhp}`],['MP',`${m.mp}/${d.maxmp}`],['こうげき',d.atk],['ぼうぎょ',d.def],['まりょく',d.mag],['すばやさ',d.spd]];
+  const own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
+  return `<div class="spanel stp"><div class="sp1"><b>${esc(m.name)}</b>　${esc(J.name)}${m.mastered[m.job]?'★':''} Lv${m.lv}　<small>つぎまで ${nx}</small>${m.poison?'　<span class="dn">どく</span>':''}</div>`+
+    `<div class="stg">${st.map(([n,v])=>`<span>${n}</span><b>${v}</b>`).join('')}</div>`+
+    `<div class="eqg"><span>武器</span><span>${esc(weaponLabel(m))}</span><span>よろい</span><span>${esc(ARMORS[m.a][0])}</span><span>おまもり</span><span>${m.charm&&CHARMS[m.charm]?esc(CHARMS[m.charm].name):'なし'}</span></div>`+
+    `<div class="sp2">わざ：${esc(own.join('・')||'なし')}<br>引き継ぎ：${esc(sl.join('・')||'なし')}</div></div>`;}
+async function strengthView(){let i=0;
+  while(true){const m=G.party[i];$('overlay').innerHTML=strengthHTML(m);
+    const c=await ask(`つよさ（${i+1}/${G.party.length}）`,[{label:'◀ まえ',cls:''},{label:'つぎ ▶',cls:''},{label:`🗡 ${m.name}の そうび`,cls:'wide'},{label:'← もどる',cls:'wide sub'}]);
     $('overlay').innerHTML='';
-    if(c<G.party.length){const m=G.party[c],J=JOBS[m.job],own=jobSkills(m).map(k=>SKILLS[k].name),sl=m.slots.map(k=>SKILLS[k].name);
-      await talk(`【${m.name}の わざ】\n${J.name}：${own.join('・')||'なし'}\n引き継ぎ：${sl.join('・')||'なし'}`);continue;}
-    if(c===G.party.length){const t=await pickMember('だれの そうびを かえる？',()=>true);if(t>=0)await equipView(G.party[t]);continue;}
+    if(c===0){i=(i+G.party.length-1)%G.party.length;continue;}
+    if(c===1){i=(i+1)%G.party.length;continue;}
+    if(c===2){await equipView(m);continue;}
     return;}
 }
 // ---------- そうび（武器・おまもり。つけかえ前後の 能力値を 出す）----------
