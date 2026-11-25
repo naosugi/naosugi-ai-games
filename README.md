@@ -31,6 +31,7 @@
 | [ウォンバット☆レガシーRPG](games/wombat-legacy-rpg/) | ウォンバット3匹のコマンド選択式RPG。迷路のダンジョンで宝箱とボスに挑む。RPG未経験でも遊べる作り |
 | [ウォンバット☆レガシーRPG 2](games/wombat-legacy-rpg-2/) | 前作の子どもたちが地下50階の穴に挑む、やりこみ型の続編。転職・技の引き継ぎ・壁掘りで進む |
 | [ウォンバット☆どうぶつ陣取り](games/wombat-jintori/) | 動物5体で戦う5×5の陣取り。大会でCPUに勝ち、笛で128種の動物を集める。2人対戦・図鑑つき |
+| [ウォンバット☆たま旅すごろく](games/wombat-tama-sugoroku/) | 多摩30市町村をめぐるすごろく。物件を買い、名物で強くなって駅の動物とバトル。最大4人・チーム戦・図鑑つき |
 
 ## 試作中のゲーム
 
@@ -115,3 +116,7 @@ QRコードの生成には [segno](https://github.com/heuer/segno)（BSD 3-Claus
 - **three.js**（MIT License, Copyright © 2010-2021 Three.js Authors）— `games/blue-dash/index.html` に r128 を埋め込み（ダウンロードしてオフラインでも遊べるようにするため）。
 - **Phaser**（MIT License, Copyright © 2020 Richard Davey, Photon Storm Ltd.）— `games/ouchi-hiragana/index.html` に v3.60.0 を埋め込み。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
 - **Matter.js**（MIT License, Copyright © Liam Brummitt and contributors）— `games/tsumiki-dokaan/index.html` に v0.20.0 を埋め込み（物理演算。ダウンロードしてオフラインでも遊べるようにするため）。ライセンス全文は同ファイル内のスクリプト冒頭に記載しています。
+
+利用しているデータ:
+
+- `games/wombat-tama-sugoroku/index.html` の地図は、国土交通省「[国土数値情報（行政区域データ）](https://nlftp.mlit.go.jp/ksj/)」を加工して作成しています（[JapanCityGeoJson](https://github.com/niiyz/JapanCityGeoJson) で配布されている形式から、形を簡略化して埋め込み）。ゲーム内にも出典を表示しています。
