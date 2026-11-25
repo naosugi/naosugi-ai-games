@@ -38,7 +38,8 @@ header a{color:#f6e7cf;text-decoration:none;white-space:nowrap;font-size:12px;op
 .hb b{position:absolute;right:-5px;top:-5px;background:#e8a33a;color:#fff;border-radius:9px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center;border:2px solid #5e4128}
 /* 場面 */
 #wrap{--need:250px}
-#wrap.battle{--need:445px}
+#wrap.battle{--need:460px}
+@media (max-width:400px){.st .w{font-size:18px;letter-spacing:0}#tb .tx{font-size:18px}}
 #scene{container-type:inline-size;position:relative;width:min(100%,calc((100dvh - var(--need)) * 4 / 3));min-width:150px;aspect-ratio:4/3;flex:0 0 auto;overflow:hidden;background:#cfe8f4;margin:0 auto;border-bottom:4px solid #3e2a18}
 #scene canvas{position:absolute;inset:0;width:100%;height:100%}
 #scene.dim canvas{filter:brightness(.55) saturate(.7)}
@@ -97,7 +98,7 @@ header a{color:#f6e7cf;text-decoration:none;white-space:nowrap;font-size:12px;op
   background:repeating-linear-gradient(#fbf4e6 0 27px,#eadcc2 27px 28px);box-shadow:inset 0 6px 8px -6px rgba(62,42,24,.4)}
 #panel::before{content:"";position:absolute;left:22px;top:0;bottom:0;width:2px;background:rgba(216,120,100,.35);pointer-events:none}
 #panel>*{flex-shrink:0}
-#tb{position:relative;display:flex;gap:8px;align-items:flex-start;background:#fffdf6;border:3px solid #3e2a18;border-radius:14px;padding:6px 26px 8px 6px;min-height:80px;box-shadow:0 4px 0 rgba(62,42,24,.25);cursor:pointer}
+#tb{position:sticky;top:0;z-index:3;display:flex;gap:8px;align-items:flex-start;background:#fffdf6;border:3px solid #3e2a18;border-radius:14px;padding:6px 26px 8px 6px;min-height:80px;box-shadow:0 4px 0 rgba(62,42,24,.25);cursor:pointer}
 #tb.tbin{animation:tbin .18s ease-out}
 @keyframes tbin{from{transform:translateY(4px);opacity:.6}}
 #tb .pf{flex:0 0 54px;height:54px;border-radius:10px;background:#efe3cc;border:2px solid #d8c4a4;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -127,17 +128,18 @@ header a{color:#f6e7cf;text-decoration:none;white-space:nowrap;font-size:12px;op
 .st.sel{background:#fff0d0;transform:scale(1.03);box-shadow:0 0 0 4px #ffb84a,0 4px 0 rgba(62,42,24,.25)}
 .st.hint{animation:hintb .5s infinite alternate}
 @keyframes hintb{to{box-shadow:0 0 0 7px rgba(255,122,58,.45)}}
-.st.broke{background:#ffe8e0}
+.st.broke{background:#ffe8e0;padding-right:56px}
 .st.broke .w{text-decoration:line-through;text-decoration-color:#d84a4a;text-decoration-thickness:4px}
-.st .stamp{position:absolute;right:8px;top:50%;transform:translateY(-50%) rotate(-12deg);width:50px;height:50px;background:#fff;border:3px solid #d84a4a;border-radius:10px;padding:3px;animation:stampin .35s cubic-bezier(.2,1.6,.4,1)}
+.st .stamp{position:absolute;right:6px;top:50%;transform:translateY(-50%) rotate(-12deg);width:44px;height:44px;background:#fff;border:3px solid #d84a4a;border-radius:10px;padding:3px;animation:stampin .35s cubic-bezier(.2,1.6,.4,1)}
 @keyframes stampin{from{transform:translateY(-50%) rotate(-30deg) scale(2.2);opacity:0}}
 .tray{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.card{min-width:70px;background:#fff;border:3px solid #c8b08a;border-radius:12px;padding:4px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:inherit;transition:transform .15s;box-shadow:0 4px 0 #c8b08a;animation:cin .35s ease-out both;background:linear-gradient(#fff 70%,#fff6e4)}
+.card{min-width:64px;background:#fff;border:3px solid #c8b08a;border-radius:12px;padding:4px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:inherit;transition:transform .15s;box-shadow:0 4px 0 #c8b08a;animation:cin .35s ease-out both;background:linear-gradient(#fff 70%,#fff6e4)}
 @keyframes cin{from{transform:translateY(30px);opacity:0}}
 .card img{width:44px;height:44px}
 .card .w{font-size:19px;font-weight:900;white-space:nowrap}
 .card .w i{font-style:normal;color:#c25a2a}
-.card.big .w{font-size:22px;padding:14px 4px}
+.card.big .w{font-size:18px;padding:10px 0}
+.card.big{min-width:56px;padding:4px 3px 6px}
 .card.sel{border-color:#e8a33a;transform:translateY(-8px) rotate(-3deg);box-shadow:0 8px 0 #e8a33a}
 .card.hint{animation:hintb .5s infinite alternate}
 .cflyer{position:absolute;z-index:40;margin:0;transition:transform .33s cubic-bezier(.5,0,.8,.6);pointer-events:none;animation:none}
@@ -509,13 +511,13 @@ const EPS=[
 { id:'hat', lv:1, bg:'park', victim:'koala', item:'i_hat', suspect:'crow',
   actors:[
     {id:'koala',x:64,y:62,flip:true,e:'😢',say:'ぼうしが ないの。 さがして くれる？'},
-    {id:'sparrow',x:22,y:66,flip:false,e:'👀',say:'からすくんが きの ほうへ とんで いったよ'},
+    {id:'sparrow',x:22,y:66,flip:false,e:'👀',say:'からすくんの おうちは あの きの うえの すだよ。 さっき とんで いったよ'},
     {id:'crow',x:100,y:72,flip:true,e:'😤',say:'ぼうし？ しらないよーだ'}
   ],
   spots:[
     {id:'bench',x:56,y:84,w:44,h:14,card:'apple',say:'りんごが あった！ こあらさんの おべんとう かな？'},
-    {id:'root',x:116,y:98,w:34,h:16,card:'feather',say:'くろい はねが おちてる！'},
-    {id:'nest',x:120,y:4,w:32,h:24,high:true,card:'hat',say:'きの うえの すに ぼうしが あったよ！'},
+    {id:'root',x:116,y:98,w:34,h:16,card:'feather',say:'からすくんみたいな くろい はねが おちてる！'},
+    {id:'nest',x:120,y:4,w:32,h:24,high:true,card:'hat',say:'からすくんの すの なかに ぼうしが あった！'},
     {id:'grass',x:16,y:98,w:26,h:16,say:'ここには なにも ないね'}
   ],
   need:['feather','hat'],
@@ -525,9 +527,9 @@ const EPS=[
     {who:'momo',e:'✨',say:'たんていさん、 いっしょに さがそう！'}
   ],
   battles:[
-    {st:[{ic:'i_cloud',t:'そらを とんでた'},{ic:'i_tree',t:'きには いってない',c:'feather'}],
-     after:{e:'💦',say:'き、 きの そばには いたけど… ぼうしは しらないもん！'}},
-    {st:[{ic:'i_hat',t:'ぼうしは しらない',c:'hat'},{ic:'i_apple',t:'りんごは たべてない'}]}
+    {st:[{ic:'i_cloud',t:'そらを とんでた'},{ic:'i_tree',t:'きには いってない',c:'feather',why:'きの したに からすくんの くろい はねが おちてたよ！'}],
+     after:{e:'💦',say:'き、 きには いったけど… ぼくの すには なにも ないもん！'}},
+    {st:[{ic:'i_nest',t:'ぼくの すには なにも ない',c:'hat',why:'からすくんの すの なかに ぼうしが あったよ！'},{ic:'i_apple',t:'りんごは たべてない'}]}
   ],
   ending:[
     {who:'crow',e:'😢',say:'りぼんが きれいで、 ほしく なっちゃったの。 ごめんね'},
@@ -537,13 +539,13 @@ const EPS=[
 { id:'acorn', lv:2, bg:'forest', victim:'hedgehog', item:'i_acorn', suspect:'boar',
   actors:[
     {id:'hedgehog',x:34,y:74,flip:true,e:'😢',say:'あつめた どんぐりが ないの'},
-    {id:'frog',x:120,y:94,flip:true,e:'👀',say:'いのししさんが やまの ほうへ はしって いったよ'},
+    {id:'frog',x:120,y:94,flip:true,e:'👀',say:'いのししさんが やまの うえの おうちへ はしって いったよ'},
     {id:'boar',x:96,y:68,flip:true,e:'😤',say:'どんぐり？ しらないね'}
   ],
   spots:[
-    {id:'stump',x:56,y:90,w:30,h:16,card:'hoof',say:'きりかぶの まわりに おおきな あしあと！'},
+    {id:'stump',x:56,y:90,w:30,h:16,card:'hoof',say:'きりかぶの まわりに いのししさんみたいな おおきな あしあと！'},
     {id:'bush',x:4,y:94,w:28,h:20,card:'apple',say:'しげみに りんごが あった'},
-    {id:'den',x:116,y:6,w:40,h:30,high:true,card:'acorn',say:'やまの うえに どんぐりが いっぱい！'},
+    {id:'den',x:116,y:6,w:40,h:30,high:true,card:'acorn',say:'いのししさんの おうちの まえに どんぐりが いっぱい！'},
     {id:'mush',x:88,y:100,w:22,h:14,say:'きのこが あるだけ だね'}
   ],
   need:['hoof','acorn'],
@@ -553,9 +555,9 @@ const EPS=[
     {who:'momo',e:'✨',say:'たんていさん、 もりを しらべよう！'}
   ],
   battles:[
-    {st:[{ic:'i_hill',t:'やまに いたよ'},{ic:'i_stump',t:'きりかぶには いってない',c:'hoof'}],
-     after:{e:'💦',say:'と、 とおった かも… でも どんぐりは しらないぞ！'}},
-    {st:[{ic:'i_apple',t:'りんごを たべてた'},{ic:'i_acorn',t:'どんぐりは もってない',c:'acorn'}]}
+    {st:[{ic:'i_hill',t:'やまに いたよ'},{ic:'i_stump',t:'きりかぶには いってない',c:'hoof',why:'きりかぶの まわりに いのししさんの あしあとが あったよ！'}],
+     after:{e:'💦',say:'と、 とおった かも… でも ぼくの おうちに どんぐりは ないぞ！'}},
+    {st:[{ic:'i_apple',t:'りんごを たべてた'},{ic:'i_hill',t:'ぼくの いえに どんぐりは ない',c:'acorn',why:'いのししさんの おうちの まえに どんぐりが いっぱい あったよ！'}]}
   ],
   ending:[
     {who:'boar',e:'😢',say:'おなかが すいて、 つい… ごめんね'},
@@ -565,12 +567,12 @@ const EPS=[
 { id:'drum', lv:3, bg:'night', victim:'rabbit', item:'i_drum', suspect:'fox',
   actors:[
     {id:'rabbit',x:60,y:76,flip:true,e:'😢',say:'おまつりで たたく たいこが ないの'},
-    {id:'owl',x:77,y:40,flip:false,e:'🌙',say:'よなかに どんどん おとが したよ。 きつねさんの いえの ほうから',give:'sound'},
+    {id:'owl',x:77,y:40,flip:false,e:'🌙',say:'よなかに きつねさんの おうちから どんどん たいこの おとが したよ',give:'sound'},
     {id:'fox',x:108,y:78,flip:true,e:'😏',say:'たいこ？ ふふん、 しらないなあ'}
   ],
   spots:[
-    {id:'door',x:22,y:68,w:16,h:24,card:'fur',say:'どあに おれんじいろの けが ついてる！'},
-    {id:'roof',x:112,y:30,w:44,h:20,high:true,card:'sticks',say:'やねの うえに たいこの ばちが あった！'},
+    {id:'door',x:22,y:68,w:16,h:24,card:'fur',say:'うさぎさんの どあに きつねさんみたいな おれんじいろの けが ついてる！'},
+    {id:'roof',x:112,y:30,w:44,h:20,high:true,card:'sticks',say:'きつねさんの おうちの やねに たいこの ばちが あった！'},
     {id:'under',x:84,y:96,w:24,h:18,card:'acorn',say:'どんぐりが おちてた'},
     {id:'well',x:2,y:98,w:20,h:16,say:'ここには なにも ないね'}
   ],
@@ -581,11 +583,11 @@ const EPS=[
     {who:'momo',e:'✨',say:'よるの もりを しらべよう！'}
   ],
   battles:[
-    {st:[{ic:'i_moon',t:'つきを みてた'},{ic:'i_house',t:'うさぎの いえには いってない',c:'fur'}],
+    {st:[{ic:'i_moon',t:'つきを みてた'},{ic:'i_house',t:'うさぎの いえには いってない',c:'fur',why:'うさぎさんの どあに きつねさんの けが ついてたよ！'}],
      after:{e:'💦',say:'よったのは ほんと。 でも よるは ずっと ねてたよ！'}},
-    {st:[{ic:'i_sleep',t:'よるは ずっと ねてた',c:'sound'},{ic:'i_acorn',t:'どんぐりは ひろってない'}],
-     after:{e:'💦',say:'お、 おとは した… でも たいこは もってないもん！'}},
-    {st:[{ic:'i_tree',t:'きの したで あそんだ'},{ic:'i_drum',t:'たいこは もってない',c:'sticks'}]}
+    {st:[{ic:'i_sleep',t:'よるは ずっと ねてた',c:'sound',why:'よなかに きつねさんの おうちから たいこの おとが したって ふくろうさんが いってたよ！'},{ic:'i_acorn',t:'どんぐりは ひろってない'}],
+     after:{e:'💦',say:'お、 おとは した… でも うちには たいこの ものなんて ないもん！'}},
+    {st:[{ic:'i_tree',t:'きの したで あそんだ'},{ic:'i_drum',t:'うちに たいこの ものは ない',c:'sticks',why:'きつねさんの おうちの やねに たいこの ばちが あったよ！'}]}
   ],
   ending:[
     {who:'fox',e:'😢',say:'ぼくも たいこを たたいて みたかったんだ。 ごめんなさい'},
@@ -1108,11 +1110,12 @@ async function tryJudge(){
     f.remove();
     const sc=$('#scene');anim(sc,'quake');anim($('#flash'),'on');SE.hit();setBase(wombatEl,'wombat_shout');anim(wombatEl,'lunge');
     const ln=layer.querySelector('.lines');if(ln)anim(ln,'on');
-    const sh=$('#shout');anim(sh,'on');say('wombat','ちがう！ これが しょうこだ！');burst(...center(sh),30,['#fff','#ffd84a','#ff5a3a'],8,'star');
+    const sh=$('#shout');anim(sh,'on');const whyP=say('wombat','ちがう！ '+s.why);burst(...center(sh),30,['#fff','#ffd84a','#ff5a3a'],8,'star');
     const st=document.createElement('img');st.className='px stamp';st.src=spr(CARDS[card].s);stEl.appendChild(st);stEl.classList.add('broke');burst(...center(stEl),14,['#d84a4a','#fff'],4);
     await wait(380);anim(susEl,'hurt');bubbleAt(120,36,[['e','💦'],['e','😱']],1400);SE.wrong();
     await wait(1400);sh.classList.remove('on');setBase(wombatEl,'wombat');
     ST.battle++;store();hintLv=0;wrongs=0;updClues();anim($('#clues'),'pop');
+    await whyP;await waitTap();
     if(bt.after){busy=false;await playSeqAt(bt.after);}
     busy=false;
     if(ST.battle>=EP.battles.length)ending();else{SE.battle();renderBattle();}
