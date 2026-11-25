@@ -17,6 +17,22 @@
       "controls": "タップ・マイク / クリック・マイク",
       "playtime": "1場面 約10分（全5章）",
       "added": "2026-11-23"
+    },
+    {
+      "id": "wombat-rhythm",
+      "title": "ウォンバット☆リズムバトン（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "3つの切り株をたたく、ウォンバットの音ゲー。ふたりで1台をかわりばんこに使い、片方が作った曲をもう片方がたたいて再現する。上手な人には曲の長さやノーツが消えるハンデを付けられる。ひとりでも村の動物とリズム修行ができる。",
+      "path": "../games/wombat-rhythm/",
+      "thumbnail": "../games/wombat-rhythm/thumb.jpg",
+      "tags": [
+        "音ゲー",
+        "対戦",
+        "スコアアタック"
+      ],
+      "controls": "タップ",
+      "playtime": "1対戦 約10分",
+      "added": "2026-11-25"
     }
   ]
 }

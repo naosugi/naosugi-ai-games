@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F3F7F4">
+<title>ウォンバット☆リズムバトン（試作中）</title>
+<!-- OGP: tools/build.py が書き出します -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ウォンバット☆リズムバトン（試作中）">
+<meta property="og:description" content="3つの切り株をたたく、ウォンバットの音ゲー。ふたりで1台をかわりばんこに使い、片方が作った曲をもう片方がたたいて再現する。上手な人には曲の長さやノーツが消えるハンデを付けられる。ひとりでも村の動物とリズム修行ができる。">
+<meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-rhythm/">
+<meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-rhythm/thumb.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /OGP -->
+<style>
+/* ===== ウォンバット☆リズムバトン：ユーカリ村の昼の配色（シリーズ共通）＋夕暮れの野外ステージ ===== */
+:root{
+  --paper:#F3F7F4;--surface:#FFFFFF;--ink:#1E2B2F;--muted:#5D6E70;--line:#D6E2DC;
+  --euca:#4F8A76;--euca-d:#3C6F5E;--wattle:#E3B23C;--wattle-l:#FFF3CF;
+  --p0:#2F7DD1;--p1:#E0584F;--ok:#2E9E5B;--ng:#D2453B;
+  --l0:#E8774A;--l1:#E3B23C;--l2:#4D9BD1;
+  --r-lg:20px;--r-md:14px;--r-sm:10px;
+  --shadow:0 1px 2px rgba(30,43,47,.06),0 6px 18px rgba(30,43,47,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","BIZ UDPGothic","Noto Sans JP","Yu Gothic","Meiryo",system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;touch-action:manipulation}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--wattle);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+img.px,canvas.px{image-rendering:pixelated;image-rendering:crisp-edges}
+header{position:sticky;top:0;z-index:5;background:rgba(243,247,244,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#top{display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto;padding:8px 12px}
+#top a,#top button.bk{font-size:12px;color:var(--muted);text-decoration:none;white-space:nowrap;background:none;border:0;padding:4px 0;cursor:pointer}
+#top .ttl{flex:1;min-width:0;text-align:right;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{max-width:520px;margin:0 auto;padding:12px max(12px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+h2{font-size:20px;font-weight:800;margin:4px 0 8px;line-height:1.3}
+h3{font-size:15px;font-weight:800;margin:14px 0 6px}
+.muted{color:var(--muted);font-size:13px}
+.b{display:block;width:100%;font-size:16px;font-weight:700;padding:13px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);margin:8px 0;cursor:pointer;transition:transform .08s;box-shadow:var(--shadow)}
+.b:active{transform:scale(.97)}
+.b.pri{background:var(--euca);border-color:var(--euca);color:#fff}
+.b.wat{background:var(--wattle);border-color:var(--wattle);color:#3a2a00}
+.b:disabled{opacity:.4;transform:none}
+.b.sm{display:inline-block;width:auto;font-size:13px;padding:7px 13px;margin:6px 4px 0 0;box-shadow:none}
+.row{display:flex;gap:8px}.row>*{flex:1}
+label.f{display:block;margin:12px 0 5px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:58px;padding:9px 6px;font-size:14px;line-height:1.25;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;cursor:pointer}
+.seg button.on{background:var(--wattle-l);border-color:var(--wattle);font-weight:800}
+.seg button small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+input[type=text],textarea{width:100%;font:inherit;font-size:16px;padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--line);background:#fff;color:var(--ink);-webkit-user-select:text;user-select:text}
+textarea{height:120px;font-size:12px}
+.wsm{width:50px;height:40px;flex:none}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--muted);margin:2px 4px 2px 0}
+/* タイトル */
+.hero{position:relative;border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:#2b4a52}
+.hero canvas{display:block;width:100%;aspect-ratio:16/10}
+h1{text-align:center;font-size:30px;font-weight:900;margin:14px 0 2px;line-height:1.15;letter-spacing:.02em}
+h1 .sm{display:block;font-size:14px;color:var(--euca-d);letter-spacing:.1em;margin-bottom:2px}
+h1 .l0{color:var(--l0)}h1 .l1{color:#C99511}h1 .l2{color:var(--l2)}
+.sub{text-align:center;color:var(--muted);margin:0 0 14px;font-size:13px}
+.cta{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;border-radius:var(--r-lg);border:0;background:var(--euca);color:#fff;cursor:pointer;box-shadow:var(--shadow);margin-bottom:10px}
+.cta:active{transform:scale(.98)}
+.cta .ci{width:56px;height:45px;flex:none}
+.cta .ct{display:block;font-size:18px;font-weight:800}
+.cta .cs{display:block;font-size:12px;opacity:.9}
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mtile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 6px;text-align:center;cursor:pointer;box-shadow:var(--shadow)}
+.mtile:active{transform:scale(.97)}
+.mtile img{width:48px;height:48px;display:block;margin:0 auto 2px}
+.mtile .mt{display:block;font-weight:800;font-size:14px}
+.mtile .ms{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.meter{display:block;height:6px;border-radius:99px;background:rgba(255,255,255,.3);margin-top:6px;overflow:hidden}
+.meter b{display:block;height:100%;background:var(--wattle)}
+/* キャラと吹き出し */
+.talk{display:flex;gap:10px;align-items:flex-end;margin:6px 0 10px}
+.talk img{width:72px;height:72px;flex:none}
+.bubble{position:relative;flex:1;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:10px 12px;font-size:14px;box-shadow:var(--shadow)}
+.bubble:before{content:"";position:absolute;left:-8px;bottom:14px;border:7px solid transparent;border-right-color:var(--line);border-left:0}
+.bubble b{display:block;font-size:12px;color:var(--euca-d)}
+.stg{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.stg img{width:48px;height:48px;flex:none}
+.stg .nm{flex:1;min-width:0}
+.stg .nm b{display:block}
+.stg.lock{opacity:.45}
+.stg .st{font-size:20px;font-weight:900;width:30px;text-align:center}
+/* 結果 */
+.res{text-align:center}
+.res .wbig{width:160px;height:128px;display:block;margin:0 auto -6px}
+.rank{display:inline-block;font-size:56px;font-weight:900;line-height:1;width:84px;height:84px;padding-top:12px;border-radius:50%;color:#fff;transform:rotate(-8deg);box-shadow:0 4px 0 rgba(0,0,0,.15);animation:stamp .4s cubic-bezier(.2,1.6,.4,1) both}
+.rank.S{background:linear-gradient(135deg,#F2C14E,#E08A2E)}.rank.A{background:var(--l0)}.rank.B{background:var(--euca)}.rank.C{background:#8A9A9C}
+@keyframes stamp{from{transform:scale(2.4) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+.pct{font-size:40px;font-weight:900;margin:6px 0 0}
+.cnt{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+.cnt b{display:block;font-size:20px;color:var(--ink)}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;gap:6px}
+.vs img{width:96px;height:77px;display:block;margin:0 auto}
+.vs .sc{font-size:26px;font-weight:900}
+.vs .win{color:#B8860B}
+.crown{font-size:13px;font-weight:800;color:#B8860B;min-height:20px}
+.pcol0{color:var(--p0)}.pcol1{color:var(--p1)}
+.hand{text-align:center}
+.hand img{width:144px;height:115px;display:block;margin:4px auto;animation:hop 1s ease-in-out infinite}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+/* プレイ画面 */
+#play{position:fixed;inset:0;background:#13282A;display:flex;flex-direction:column;touch-action:none;z-index:8}
+#hud{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 6px calc(10px + env(safe-area-inset-left));font-size:13px;color:#cfe1dc;max-width:520px;width:100%;margin:0 auto;background:#13282A}
+#hud button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:999px;font-size:12px;padding:5px 12px}
+#hudC{font-weight:800;color:#fff;text-align:center;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hudR{text-align:right;min-width:72px}
+#cv{flex:1;width:100%;max-width:520px;margin:0 auto;display:block;touch-action:none}
+/* ダイアログ */
+.dlg{position:fixed;inset:0;background:rgba(30,43,47,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.dlgb{background:var(--surface);border-radius:var(--r-lg);padding:16px;width:100%;max-width:360px;box-shadow:var(--shadow)}
+.dlgb p{margin:0 0 10px;white-space:pre-line}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><div id="top"><a href="../../trial/">← ゲーム一覧</a><span class="ttl">ウォンバット☆リズムバトン</span></div></header>
+<main id="ui"></main>
+<div id="play" hidden>
+  <div id="hud"><button id="quit">中断</button><div id="hudC"></div><div id="hudR"></div></div>
+  <canvas id="cv"></canvas>
+</div>
+<script>
+'use strict';
+// ============ ウォンバットの絵（神に愛されたヒメウォンバットの描画コードを流用） ============
+const PAL={o:'#2a1a12',b:'#86613f',l:'#a17a53',d:'#5e4128',f:'#a9845d',n:'#3f3230',nh:'#64544f',e:'#0d0806',w:'#ffffff',p:'#d1b796',c:'#c98a7a',k:'#e2d9ca',m:'#6e4f34',v:'#b89c7c'};
+
+// ---------- shared pixel helpers ----------
+function mkGrid(W,H){
+  const g=new Array(W*H).fill(0),pt=new Uint8Array(W*H);
+  const S=(x,y,c,p=9)=>{x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=W||y>=H)return;g[y*W+x]=c;pt[y*W+x]=p;};
+  const SE=(cx,cy,rx,ry,n,p,fn)=>{
+    for(let y=Math.floor(cy-ry-1);y<=cy+ry+1;y++)for(let x=Math.floor(cx-rx-1);x<=cx+rx+1;x++){
+      const dx=Math.abs((x+.5-cx)/rx),dy=(y+.5-cy)/ry;if(Math.pow(dx,n)+Math.pow(Math.abs(dy),n)<=1)S(x,y,fn(x,y,dy),p);}
+  };
+  const E=(cx,cy,rx,ry,p,fn)=>SE(cx,cy,rx,ry,2,p,fn);
+  return {W,H,g,pt,S,SE,E};
+}
+// fluffy silhouette: little tufts on upper edges of fur parts
+function fuzz(G,pids,maxY){
+  const {W,H,g,pt}=G,add=[];
+  for(let y=1;y<Math.min(H,maxY);y++)for(let x=1;x<W-1;x++){
+    const i=y*W+x;if(!pids.includes(pt[i]))continue;
+    if(!g[i-W]&&((x*5+y*3)%7===0))add.push([i-W,g[i]==='f'?'l':g[i],pt[i]]);
+    else if(!g[i-1]&&((y*5+x)%6===0))add.push([i-1,g[i],pt[i]]);
+    else if(!g[i+1]&&((y*7+x)%6===0))add.push([i+1,g[i],pt[i]]);
+  }
+  for(const [i,c,p] of add){g[i]=c;pt[i]=p;}
+}
+function outline(G){
+  const {W,H}=G,out=G.g,fin=out.slice();
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=y*W+x;if(out[i])continue;
+    if((x>0&&out[i-1])||(x<W-1&&out[i+1])||(y>0&&out[i-W])||(y<H-1&&out[i+W]))fin[i]='o';
+  }
+  return fin;
+}
+// grizzled frosting on fur: light tips scattered on the upper part
+const hash=(x,y)=>{let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296;};
+const frost=(x,y,r)=>r<.6&&hash(x,y)<(r<.3?.11:.05);
+
+// ---------- side view ----------
+const WW=48,WH=32,AX=20;
+function renderWombat(o){
+  const G=mkGrid(WW,WH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,low=o.low||0,bob=o.bob||0;
+  const bcx=19,bcy=18+bob+low,brx=14.5*(1+sq),bry=7.6+(o.br||0)-sq*6;
+  const hcx=29.5+(o.hx||0),hcy=bcy-.5+(o.hy||0);
+  const claws=[];
+  if(!o.noLegs){
+    const legs=[[7,'d',0,0],[23,'d',1,1],[11,'b',1,0],[27,'b',0,1]];
+    for(const [lx,c,ph,fr] of legs){
+      let lift=0,sx=0;
+      if(o.walk&&(!o.dig||fr)){ if(ph===o.wp){lift=1;sx=1;} }
+      for(let y=Math.floor(bcy+5);y<=27-lift;y++)for(let x=lx+sx;x<lx+sx+3;x++)S(x,y,y>=26-lift?'d':c,1);
+      if(fr)claws.push([lx+sx+3,27-lift],[lx+sx+3,26-lift]); else claws.push([lx+sx+3,27-lift]);
+    }
+  }
+  const bsh=(x,y)=>{const r=(y+.5-(bcy-8))/16;return r<.22?(frost(x,y,r)?'f':'l'):r>.78?'d':(frost(x,y,r)?'f':'b');};
+  const rearX=bcx-brx+1.2;
+  E(bcx,bcy,brx,bry,2,(x,y)=>bsh(x,y));
+  SE(bcx-6.5,bcy-.8,8.6,bry+1.1,2.25,2,(x,y)=>bsh(x,y));
+  for(let y=0;y<WH;y++)for(let x=0;x<Math.floor(rearX);x++)if(pt[y*WW+x]===2){g[y*WW+x]=0;pt[y*WW+x]=0;}
+  const K=1.28;
+  // far ear
+  E(hcx-5.6*K,hcy-5.6*K+(o.ear||0)*.6,1.5*K,2*K,4,()=>'d');
+  // head
+  const hsh=(x,y)=>{const r=(y+.5-(hcy-6*K))/(12*K);return r<.25?(frost(x,y,r)?'f':'l'):r>.8?'d':(frost(x,y,r)&&x<hcx+2?'f':'b');};
+  E(hcx-1.5*K,hcy,6.3*K,5.7*K,3,hsh);
+  SE(hcx+3.6*K,hcy+1.3*K,4.4*K,4*K,3.2,3,hsh);
+  fuzz(G,[2,3],bcy+2);
+  // near ear: small, pale rim
+  const ey0=hcy-5.7*K-(o.ear>0?1:0)+(o.ear<0?1.4:0);
+  E(hcx-3.4*K,ey0,1.6*K,2.1*K,4,(x,y,dy)=>dy<-.3?'p':'d');S(hcx-3.4*K-.6,ey0-2.1*K,'p',4);
+  // nose: big bare matte nose
+  const ncx=hcx+6.6*K,ncy=hcy+.4*K;
+  SE(ncx,ncy,2.4*K,2.8*K,3,5,()=>'n');
+  S(ncx-1.6,ncy-2.4,'nh',5);S(ncx-.6,ncy-2.4,'nh',5);S(ncx-1.6,ncy-1.4,'nh',5);
+  S(ncx+1.5,ncy+.8,'e',5);S(ncx+.5,ncy+.8,'e',5);
+  // eye: small round beady
+  const ex=Math.floor(hcx+.8*K),ey=Math.floor(hcy-2.6*K);
+  if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='half'){S(ex-1,ey,'e');S(ex,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='happy'){S(ex-1,ey+1,'e');S(ex,ey,'e');S(ex+1,ey+1,'e');}
+  else if(o.eye==='strain'){S(ex-1,ey,'e');S(ex,ey+1,'e');S(ex-1,ey+2,'e');}
+  else {S(ex,ey,'w');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+  if(o.blush){S(hcx+1.4*K,hcy+2*K,'c');S(hcx+1.4*K+1,hcy+2*K,'c');}
+  // mouth
+  S(ncx-2.5,ncy+3.8,'o');S(ncx-1.5,ncy+3.8,'o');if(o.chew){S(ncx-2.5,ncy+4.8,'o');S(ncx-1.5,ncy+4.8,'o');}
+  // joey
+  if(o.joey>0){
+    const jx=bcx+.5,jy=bcy+bry+2.5-o.joey;
+    E(jx,jy,3.4,2.9,6,(x,y,dy)=>dy>.6?'b':'l');
+    S(jx-2,jy-3,'p',6);S(jx-1,jy-3,'l',6);
+    S(jx+1,jy-1,'e',6);S(jx+3,jy+.2,'n',6);S(jx+2,jy+.2,'n',6);
+  }
+  // inner edges
+  const out=g.slice();
+  for(let y=0;y<WH;y++)for(let x=0;x<WW;x++){
+    const i=y*WW+x,p=pt[i];if(!p)continue;
+    for(const [qx,qy] of [[x-1,y],[x+1,y],[x,y+1],[x,y-1]]){
+      if(qx<0||qy<0||qx>=WW||qy>=WH)continue;const q=pt[qy*WW+qx];
+      if(p===3&&q===2&&(qx<x||qy>y)){out[i]='d';break;}
+      if(p===6&&(q===2||q===1)){out[i]='o';break;}
+      if(p===2&&q===1&&qy>y){out[i]='d';break;}
+    }
+  }
+  G.g=out;
+  const fin=outline(G);
+  // claws & whiskers drawn over the outline
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<WW&&y<WH)fin[y*WW+x]=c;};
+  for(const [x,y] of claws)P(x,y,'k');
+  P(ncx-2.5,ncy+2.4,'v');P(ncx-1.5,ncy+3,'v');
+  P(ncx-3,ncy+1.6,'v');P(ncx-4,ncy+1.8,'v');
+  return {W:WW,H:WH,ax:AX,img:fin};
+}
+
+// ---------- front view ----------
+const FW=40,FH=32,FAX=20;
+function renderFront(o){
+  const G=mkGrid(FW,FH),{g,pt,S,SE,E}=G;
+  const sq=o.sq||0,cx=20,ty=o.bob||0;
+  const bry=10.6+(o.br||0)-sq*8,brx=14*(1+sq);
+  const bcy=27.5-bry;
+  // paws (behind body first)
+  const pawY=26;
+  // body
+  const fsh=(x,y)=>{const r=(y+.5-(bcy-bry))/(2*bry);return r<.18?(frost(x,y,r)?'f':'l'):r>.82?'d':(frost(x,y,r)?'f':'b');};
+  E(cx,bcy,brx,bry,2,fsh);
+  // head merges with body (no neck)
+  const hcy=bcy-3.2+ty+(o.hy||0),hrx=10.4*(1+sq*.5),hry=8.6;
+  E(cx,hcy,hrx,hry,3,(x,y,dy)=>dy<-.55?(frost(x,y,0)?'f':'l'):'b');
+  // ears: small, wide-set, pale rims
+  const eo=o.ear>0?1:0;
+  for(const s of [-1,1]){
+    const ex=cx+s*7.6,ey=hcy-7.4-eo;
+    E(ex,ey,2.2,2.6,4,(x,y,dy)=>dy<-.25||Math.abs(x+.5-ex)>1.4?'p':'d');
+  }
+  fuzz(G,[2,3],bcy);
+  // face: slightly lighter muzzle
+  E(cx,hcy+3.8,6,3.6,5,()=>'l');
+  // eyes: small, round, beady, wide-set
+  for(const s of [-1,1]){
+    const ex=Math.floor(cx+s*4.6-(s<0?1:0)),ey=Math.floor(hcy-1);
+    if(o.eye==='closed'){S(ex,ey+1,'e');S(ex+1,ey+1,'e');}
+    else if(o.eye==='half'){S(ex,ey,'d');S(ex+1,ey,'d');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:1),ey+1,'e');}
+    else if(o.eye==='happy'){S(ex,ey+1,'e');S(ex+1,ey,'e');S(ex+2,ey+1,'e');}
+    else {S(ex,ey,'e');S(ex+1,ey,'e');S(ex,ey+1,'e');S(ex+1,ey+1,'e');S(ex+(s<0?0:0),ey,'w');}
+  }
+  if(o.blush){S(cx-7,hcy+2,'c');S(cx-6,hcy+2,'c');S(cx+6,hcy+2,'c');S(cx+7,hcy+2,'c');}
+  // big bare nose
+  // big bare nose: wide top, rounded bottom (shield shape), nostrils at the lower sides
+  const ny=hcy+3.4+(o.nw||0);
+  for(let y=Math.floor(ny-2.9);y<=ny+2.9;y++){const t=(y+.5-(ny-2.9))/5.8;let hw=4.7-2.4*t*t;if(t<.22)hw-=(.22-t)*6;
+    for(let x=Math.floor(cx-hw);x<cx+hw;x++)S(x,y,t<.25?'nh':'n',6);}
+  S(cx-3,ny+.6,'e',6);S(cx-2,ny+1.4,'e',6);S(cx+2,ny+.6,'e',6);S(cx+1,ny+1.4,'e',6);
+  S(cx-.5,ny+2.2,'o',6);
+  // mouth
+  S(cx-.5,ny+3.3,'o');S(cx-1.5,ny+4,'o');S(cx+.5,ny+4,'o');
+  if(o.chew){S(cx-.5,ny+4.2,'o');}
+  G.g=g;
+  const fin=outline(G);
+  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<FW&&y<FH)fin[y*FW+x]=c;};
+  // front paws with long pale claws, turned slightly inward
+  for(const s of [-1,1]){
+    const px=cx+s*5.5;
+    for(let y=pawY;y<=27;y++)for(let x=Math.floor(px-2);x<=Math.floor(px+1);x++)P(x,y,'d');
+    P(px-2,28,'o');P(px+1,28,'o');
+    const c0=s<0?px:px-2;P(c0-1,28,'k');P(c0,28,'k');P(c0+1,28,'k');
+    P(px-3,pawY,'o');P(px+2,pawY,'o');P(px-3,27,'o');P(px+2,27,'o');
+  }
+  // whiskers
+  for(const s of [-1,1]){
+    const b=s<0?-1:0;
+    P(cx+s*6.5+b,hcy+3.6,'v');P(cx+s*7.5+b,hcy+3.1,'v');P(cx+s*8.5+b,hcy+2.8,'v');
+    P(cx+s*6.5+b,hcy+5,'v');P(cx+s*7.5+b,hcy+5.4,'v');P(cx+s*8.5+b,hcy+6,'v');
+  }
+  return {W:FW,H:FH,ax:FAX,img:fin};
+}
+
+// ============ 動物のドット絵（ウォンバット☆どうぶつ陣取りの絵を流用） ============
+const ANIMALS={"koala":{"name":"コアラ","pal":["#2B2220","#9AA0A6","#D8DCE0","#151515","#2A2A2A","#5E9E52","#3E7A36"],"rows":["........................","........................","........................","........................",".......0000......0000...","......011110.00.011110..",".....011221101101122110.",".....012222111111222210.",".....011221111111122110.","......0111111111111110..",".......00111314113100...",".......0011114441110....","......0111111444110.....",".....01111111444110.....",".....0111111111110......",".....011122221110.......",".....0112222222100000...",".....01122222221055550..",".....01122222221066660..","......0112222210.000060.",".......00111100......0..",".........0000...........","........................","........................"]},"kangaroo":{"name":"カンガルー","pal":["#2B2220","#C68A55","#151515","#EBC9A0","#8A5A30"],"rows":["............0000........","...........011110.......","...........011110.......","...........011110.......","...........011110.......","...........011110.......","..........0111121000....",".........000111111120...","........011111110000....",".......011111100........",".......01111110.........","......0111133310........","......01111333110.......","......0111333330........","......0111333330........","......0111333330........","......0111333330........",".....0011113330.........","....011111133300........","..0011100144444400......","0011110044444444440.....","111100..0044444400......","1100......000000........","00......................"]},"sparrow":{"name":"スズメ","pal":["#2B2220","#7A4E2A","#A8733C","#151515","#4A4A4A","#5E3D1E","#EADBC0","#C99A60","#C07A3A"],"rows":["........................","........................","........................","........................","........................","........................","..............0000......",".............011110.....","............01111110....",".........000011111100...",".0.....002222222232440..","05000.0255552226662440..","055550555555552666200...","0555525557555522220.....","055552555557556220......",".00552225555666620......","...000226666666660......","......02266666660.......",".......002666660........",".........008080.........","..........08080.........","..........08080.........","...........0.0..........","........................"]},"sloth":{"name":"ナマケモノ","pal":["#2B2220","#7A5535","#9C8F7A","#E6DCC4","#5A4A3A","#151515"],"rows":["........................","........................","000000000000000000000000","111111111111111111111111","111111221111111122111111","000000220000000022000000",".....0220......0220.....",".....0220......0220.....","......020.0000.020......","......022022220220......","......022222233330......","......0222223444330.....",".....02222223454350.....",".....02222223333330.....",".....02222223333430.....",".....02222222333320.....","......022222222220......",".......0222222220.......","........02222220........","........02000020........",".......0220..0220.......",".......0220..0220.......","........00....00........","........................"]},"frog":{"name":"カエル","pal":["#2B2220","#5DBB4A","#FFFFFF","#151515","#3E8F33","#D7F0B4"],"rows":["........................","........................","........................","........................","........................","........................","........................","..............0000......",".............011110.....",".............012210.....","........000000122300....","......001111111111110...",".....01111111111111110..","....011111111111111110..","....011111111111111110..","....0111111111111444440.","...0411115555555511000..","...0441155555555440.....","....044415555555540.....",".....044440000000440....","......00440......00.....","........00..............","........................","........................"]},"crab":{"name":"カニ","pal":["#2B2220","#FFFFFF","#151515","#E0503A","#F07A60","#A8321F"],"rows":["........................","........................","........................","........................","........00....00........",".......0110..0110.......","...0...0120..0120...0...","..030..0110..0110..030..",".03330.0330..0330.03330.","033330.0330000330.033330",".0333000333333330003330.","..03333333333333333330..","...033333333333333330...","....0333333333333330....","....0333344444433330....","....0334444444444330....",".....03444444444430.....","....0555544444435050....","....0505000000005050....","....05050......05050....","....05050......05050....","....05050.......05050...",".....0.0.........0.0....","........................"]},"rabbit":{"name":"ウサギ","pal":["#2B2220","#C9B39A","#F2B5C0","#151515","#FFFFFF","#EDE2D3","#9A8268"],"rows":["........................","..............00........",".............01100......",".............011010.....",".............0121110....",".............0121210....",".............0121210....",".............0121210....",".............0121210....",".............0111110....",".......0000000111110....","....00011111111111310...","...044111111111111110...","..04411111111111111020..","..0441111111111111100...","...0411111555511100.....","....01115555555510......",".....011555555550.......",".....066665555660.......",".....066666600060.......","......000000..0660......","...............00.......","........................","........................"]},"bee":{"name":"ハチ","pal":["#2B2220","#DCEFFF","#2A2A2A","#F4C430","#FFFFFF"],"rows":["........................","........................","........................","........................","........................",".......00000000.........","......0111111110...000..",".....011111111110.02220.",".....01111111111002200..",".....01111111110.020....","......011111000.0020....","......03223322302220....",".....0332233223222220...","....03332233223222420...","...023332233223222220...","..022333223322332220....","...0003322332233000.....","......0322332230........",".......02220220.........","........020.020.........","........020.020.........","........020..020........",".........0....0.........","........................"]},"monkey":{"name":"サル","pal":["#2B2220","#9A6A42","#E58A7A","#151515","#B05A50","#B88A62","#6E4A2C"],"rows":["........................","........................","........................","........................","........................","............0000........","...........011110.......","..........01111110......",".........0211222210.....","........02222222220.....",".........0212223230.....",".......001112222220.....","......011111122240......",".....011111111110.......",".....011115555110.......",".....0111555551110......",".....01115555551110.....",".....011155555511110....",".....011155555510110....",".....00661555660000.....","....06666666666660......",".....006600006600.......",".......00....00.........","........................"]},"echidna":{"name":"ハリモグラ","pal":["#2B2220","#E8DCC0","#5A4030","#151515","#3A2A20"],"rows":["........................","........................","........................","........................","........................","........................","........................","........................","........................",".........0.0.0..........",".......001010100........","......01012121010.......",".....0212222222100......","....012222121222210.....","...0222212222212220.....","...02212222222221220....","...02222212221222232000.","...022222222222222222220","....0222222222222220000.",".....02244222244000.....","......00442220440.......",".......0440000440.......","........00....00........","........................"]}};
+</script>
+<script>
+'use strict';
+// ============ 保存 ============
+const LS={get(k,d){try{const v=localStorage.getItem('wbrhythm_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+          set(k,v){try{localStorage.setItem('wbrhythm_'+k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+function dlg(msg,btns,input){btns=btns||['OK'];return new Promise(res=>{const d=document.createElement('div');d.className='dlg';
+  d.innerHTML=`<div class="dlgb"><p>${esc(msg)}</p>${input!=null?`<input type="text" id="dlgi" maxlength="30" value="${esc(input)}">`:''}<div class="row">${btns.map((b,i)=>`<button class="b ${i===btns.length-1?'pri':''}" data-i="${i}">${esc(b)}</button>`).join('')}</div></div>`;
+  document.body.appendChild(d);d.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;const v=input!=null?d.querySelector('#dlgi').value:null;d.remove();res({i:+b.dataset.i,v})})})}
+
+// ============ ドット絵の道具 ============
+const AK='0123456789abcdefghijklmnopqrstuvwxyz';
+const SPR=new Map();const cached=(k,f)=>{if(!SPR.has(k))SPR.set(k,f());return SPR.get(k)};
+function rToCanvas(R){const c=document.createElement('canvas');c.width=R.W;c.height=R.H;const x=c.getContext('2d');
+  for(let y=0;y<R.H;y++)for(let i=0;i<R.W;i++){const k=R.img[y*R.W+i];if(!k)continue;x.fillStyle=PAL[k]||k;x.fillRect(i,y,1,1)}return c}
+function animalCv(id,flip){return cached('a|'+id+'|'+(flip?1:0),()=>{const s=ANIMALS[id],n=24,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d');
+  if(s)for(let r=0;r<n;r++)for(let q=0;q<n;q++){const ch=s.rows[r][q];if(ch==='.')continue;x.fillStyle=s.pal[AK.indexOf(ch)];x.fillRect(flip?n-1-q:q,r,1,1)}return c})}
+// プレイヤーの色：青・赤のスカーフ（陣取りの青ウォンバット・赤ウォンバットに合わせる）
+const SCARF=[['#2F7DD1','#1D5BA3'],['#E0584F','#A9372F']];
+function wombatCv(o){return cached('w|'+JSON.stringify(o),()=>{
+  const R=renderFront(o);
+  if(o.scarf!=null){const [c1,c2]=SCARF[o.scarf],W=R.W,img=R.img;
+    const sq=o.sq||0,bry=10.6+(o.br||0)-sq*8,bcy=27.5-bry,hcy=bcy-3.2+(o.bob||0)+(o.hy||0),y0=Math.round(hcy+8.6);
+    for(let y=y0;y<=y0+1;y++)for(let x=1;x<W-1;x++){const i=y*W+x,v=img[i];if(v&&v!=='o'&&v!=='k'&&Math.abs(x+.5-20)<=11.5)img[i]=y===y0?c1:c2}
+    const P=(x,y,c)=>{if(x>=0&&y>=0&&x<W&&y<R.H)img[y*W+x]=c};
+    for(let x=18;x<=21;x++)P(x,y0+2,c1);P(19,y0+3,c2);P(20,y0+3,c2);P(17,y0+2,'o');P(22,y0+2,'o');P(18,y0+3,'o');P(21,y0+3,'o');P(19,y0+4,'o');P(20,y0+4,'o')}
+  return rToCanvas(R)})}
+const dataURL=(key,cv)=>cached('u|'+key,()=>cv.toDataURL('image/png'));
+const wbImg=(o,cls)=>`<img class="px ${cls||''}" src="${dataURL('w'+JSON.stringify(o),wombatCv(o))}" alt="ウォンバット" draggable="false">`;
+const anImg=(id,cls,flip)=>`<img class="px ${cls||''}" src="${dataURL('a'+id+(flip?1:0),animalCv(id,flip))}" alt="${esc((ANIMALS[id]||{}).name||'')}" draggable="false">`;
+// 切り株ドラム（判定の目印）とノーツ
+function stumpCv(lane,lit){return cached('s|'+lane+'|'+lit,()=>{const W=26,H=16,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const top=lit?LANEL[lane]:'#D8B47A',ring=lit?LANEC[lane]:'#B08850';
+  for(let y=0;y<H;y++)for(let i=0;i<W;i++){const dx=(i+.5-13)/12,dyT=(y+.5-5)/4.4;let col=null;
+    if(y>=5&&y<=13&&Math.abs(dx)<=1)col=(i%4===1)?'#4E3420':(y>=12?'#4E3420':'#6E4B2D');
+    if(dx*dx+dyT*dyT<=1){const rr=Math.sqrt(dx*dx*1+dyT*dyT);col=rr>0.82?'#8A6238':(Math.abs(rr-0.5)<0.09||rr<0.12)?ring:top}
+    if(col){x.fillStyle=col;x.fillRect(i,y,1,1)}}
+  const d=x.getImageData(0,0,W,H),o=x.createImageData(W,H);
+  for(let y=0;y<H;y++)for(let i=0;i<W;i++){const k=(y*W+i)*4;if(d.data[k+3])continue;
+    const nb=[[i-1,y],[i+1,y],[i,y-1],[i,y+1]].some(([a,b])=>a>=0&&b>=0&&a<W&&b<H&&d.data[(b*W+a)*4+3]);if(nb){o.data[k]=42;o.data[k+1]=26;o.data[k+2]=18;o.data[k+3]=255}}
+  const t=document.createElement('canvas');t.width=W;t.height=H;t.getContext('2d').putImageData(o,0,0);x.drawImage(t,0,0);return c})}
+function noteCv(lane){return cached('n|'+lane,()=>{const W=18,H=7,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle='#1E2B2F';x.fillRect(1,0,W-2,H);x.fillRect(0,1,W,H-2);
+  x.fillStyle=LANEC[lane];x.fillRect(1,1,W-2,H-2);x.fillStyle=LANEL[lane];x.fillRect(2,1,W-4,2);x.fillStyle=LANED[lane];x.fillRect(2,H-2,W-4,1);
+  x.fillStyle='#fff';x.fillRect(3,1,3,1);return c})}
+
+// ============ 音楽データ ============
+const PROGS=[
+  {name:'王道',chords:['F','G','Em','Am'],mood:'切ない'},
+  {name:'50s',chords:['C','Am','F','G'],mood:'明るい'},
+  {name:'カノン',chords:['C','G','Am','Em','F','C','F','G'],mood:'壮大'},
+  {name:'哀愁',chords:['Am','F','C','G'],mood:'哀しい'},
+];
+const CHD={C:[0,4,7],Dm:[2,5,9],Em:[4,7,11],F:[5,9,0],G:[7,11,2],Am:[9,0,4]};
+const KEYS=[['C',0],['D',2],['E',4],['F',5],['G',7],['A',9]];
+const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const BPMS=[80,100,120,140];
+const LENS=[{n:'短い',bars:4},{n:'ふつう',bars:8},{n:'長い',bars:16}];
+const HIDE=[{n:'なし',at:9},{n:'直前で消える',at:0.72},{n:'半分で消える',at:0.5},{n:'すぐ消える',at:0.22}];
+const PTS={P:100,G:70,D:40,M:0};
+const WIN={P:0.05,G:0.10,D:0.15};
+const JNAME={P:'PERFECT',G:'GREAT',D:'GOOD',M:'MISS'};
+const PASS=70;
+const LANEC=['#E8774A','#E3B23C','#4D9BD1'],LANEL=['#FFB08A','#FFE08A','#9FD3F5'],LANED=['#A84E2A','#A87E1C','#2F6E9E'];
+const rankOf=p=>p>=95?'S':p>=85?'A':p>=70?'B':'C';
+
+const vcache=new Map();
+function voice(pcs){
+  const k=pcs.join(',');if(vcache.has(k))return vcache.get(k);
+  const T=[60,64,67];let best=null,bs=1e9;
+  for(let i=0;i<3;i++){const r=[pcs[i],pcs[(i+1)%3],pcs[(i+2)%3]];
+    for(let base=48;base<=60;base+=12){const n=[base+r[0]];
+      for(let j=1;j<3;j++){let q=base+r[j];while(q<=n[j-1])q+=12;n.push(q)}
+      const s=n.reduce((a,x,j)=>a+Math.abs(x-T[j]),0);if(s<bs){bs=s;best=n}}}
+  vcache.set(k,best);return best}
+function chordAt(song,bar){
+  const pr=PROGS[song.prog],L=pr.chords.length,nm=pr.chords[((bar%L)+L)%L];
+  const pcs=CHD[nm].map(x=>(x+song.key)%12);
+  return {name:NN[pcs[0]]+(nm.endsWith('m')?'m':''),v:voice(pcs),root:pcs[0]}}
+const spb=song=>song.grid*4;
+function pitchAt(song,step,lane){const bar=Math.min(song.bars-1,Math.max(0,Math.floor(step/spb(song))));return chordAt(song,bar).v[lane]+12}
+
+// ============ オーディオ ============
+let AC=null,master=null;
+function ac(){
+  if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;AC=new C();master=AC.createGain();master.gain.value=0.9;master.connect(AC.destination)}
+  if(AC.state!=='running'){try{AC.resume()}catch(e){}}
+  return AC}
+document.addEventListener('pointerdown',()=>ac(),true);
+function outLat(){const l=AC.outputLatency;return (typeof l==='number'&&l>0&&l<0.5)?l:(AC.baseLatency||0)}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function tone(dest,t,m,dur,type,vol,att){att=att||0.005;const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=mtof(m);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+0.05)}
+function lead(dest,t,m){tone(dest,t,m,0.5,'triangle',0.32);tone(dest,t,m+12,0.22,'sine',0.10)}
+function click(dest,t,acc){tone(dest,t,acc?96:88,0.04,'square',acc?0.07:0.045)}
+function newBus(){const g=AC.createGain();g.connect(master);return g}
+function killBus(b){try{b.gain.cancelScheduledValues(0);b.gain.setValueAtTime(b.gain.value,AC.currentTime);b.gain.linearRampToValueAtTime(0,AC.currentTime+0.05);setTimeout(()=>{try{b.disconnect()}catch(e){}},200)}catch(e){}}
+function jingle(ok){if(!AC)return;const t=AC.currentTime+0.05;(ok?[72,76,79,84]:[72,69,65]).forEach((m,i)=>tone(master,t+i*0.11,m,ok&&i===3?0.6:0.25,'square',0.05))}
+function scheduleBacking(bus,song,t0,withClick){
+  const bd=60/song.bpm*4;
+  const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=1100;f.connect(bus);
+  for(let b=0;b<song.bars;b++){const c=chordAt(song,b),tb=t0+b*bd;
+    c.v.forEach(n=>tone(f,tb,n-12,bd*0.98,'sawtooth',0.03,0.06));
+    tone(bus,tb,36+c.root,bd*0.45,'triangle',0.28,0.01);
+    tone(bus,tb+bd/2,36+c.root,bd*0.45,'triangle',0.22,0.01);
+    if(withClick)for(let i=0;i<4;i++)click(bus,tb+i*bd/4,i===0)}
+  const c0=chordAt(song,0),te=t0+song.bars*bd;
+  c0.v.forEach(n=>tone(f,te,n-12,1.6,'sawtooth',0.03,0.02));tone(bus,te,36+c0.root,1.4,'triangle',0.28,0.01)}
+
+// ============ 設定 ============
+let OFFMS=LS.get('offset',0);
+const OFF=()=>OFFMS/1000;
+
+// ============ 演奏セッション ============
+let P=null;
+const cv=$('#cv'),cx=cv.getContext('2d');
+let CW=0,CHH=0,BG=null;
+function resize(){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;CW=r.width;CHH=r.height;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);cx.setTransform(d,0,0,d,0,0);BG=null}
+window.addEventListener('resize',()=>{if(P)resize()});
+
+// o: {mode:'play'|'preview'|'compose'|'calib', song, hide, who(0/1:スカーフ色), mate(先生の動物id), label, onEnd, onAbort}
+function startSession(o){
+  if(!ac()){dlg('このブラウザは音の再生に対応していません');return}
+  stopPlay();
+  const song=o.song,sd=60/song.bpm/song.grid,bd=60/song.bpm*4;
+  const bus=newBus();
+  const pre=(o.mode==='compose'||o.mode==='calib')?bd+0.4:2.2;
+  const t0=AC.currentTime+pre;
+  P={mode:o.mode,song,hide:o.hide||0,who:o.who==null?0:o.who,mate:o.mate||null,onEnd:o.onEnd,onAbort:o.onAbort,bus,sd,bd,t0,end:t0+song.bars*bd,
+     total:song.bars*spb(song),notes:[],rec:[],hits:{P:0,G:0,D:0,M:0},empty:0,combo:0,maxc:0,sum:0,
+     flash:[-9,-9,-9],msg:'',msgT:-9,msgL:1,mood:'',moodT:-9,taps:[],parts:[],rings:[],travel:1.5,label:o.label||''};
+  if(o.mode==='calib'){for(let i=0;i<4+4*song.bars;i++)click(bus,t0-bd+i*bd/4,i%4===0)}
+  else{scheduleBacking(bus,song,t0,o.mode==='compose');
+    if(o.mode==='compose')for(let i=0;i<4;i++)click(bus,t0-bd+i*bd/4,i===0)}
+  if(o.mode==='play'||o.mode==='preview'){
+    P.notes=song.notes.map(([s,l])=>({t:t0+s*sd,l,s,j:null})).sort((a,b)=>a.t-b.t);
+    if(o.mode==='preview')P.notes.forEach(n=>lead(bus,n.t,pitchAt(song,n.s,n.l)))}
+  $('#play').hidden=false;resize();
+  requestAnimationFrame(frame)}
+function stopPlay(){if(P){killBus(P.bus);P=null}$('#play').hidden=true}
+$('#quit').addEventListener('click',()=>{const a=P&&P.onAbort;stopPlay();if(a)a()});
+
+function burst(lane,now,big){const L=geom(),x=lane*L.lw+L.lw/2;
+  for(let i=0;i<(big?14:8);i++){const a=-Math.PI*(0.1+0.8*Math.random()),v=120+Math.random()*(big?260:160);
+    P.parts.push({x,y:L.jy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:Math.random()<0.3?'#fff':LANEC[lane],t:now,life:0.5+Math.random()*0.3})}
+  P.rings.push({x,y:L.jy,t:now,c:LANEC[lane]})}
+function judge(n,r,now){n.j=r;P.hits[r]++;P.sum+=PTS[r];
+  if(r==='M'){P.combo=0;P.mood='miss';P.moodT=now}else{P.combo++;if(P.combo>P.maxc)P.maxc=P.combo;burst(n.l,now,r==='P');if(r==='P'){P.mood='happy';P.moodT=now}}
+  P.msg=JNAME[r];P.msgT=now;P.msgL=n.l}
+function resultOf(){const N=P.notes.length;const raw=Math.max(0,P.sum-30*P.empty);
+  return {pct:N?Math.round(raw/(100*N)*1000)/10:0,hits:{...P.hits},empty:P.empty,maxc:P.maxc,n:N,rec:P.rec.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]),taps:P.taps.slice()}}
+
+function onTap(lane){
+  if(!P)return;const nowA=AC.currentTime,now=nowA-outLat(),t=now-OFF();
+  P.flash[lane]=now;const song=P.song;
+  if(P.mode==='calib'){P.taps.push(t-P.t0);return}
+  if(P.mode==='compose'){
+    const s=Math.round((t-P.t0)/P.sd);
+    if(s>=0&&s<P.total&&!P.rec.some(r=>r[0]===s&&r[1]===lane)&&P.rec.filter(r=>r[0]===s).length<2){P.rec.push([s,lane]);burst(lane,now,false);P.mood='happy';P.moodT=now}
+    lead(P.bus,nowA,pitchAt(song,Math.max(0,Math.min(P.total-1,s)),lane));return}
+  if(P.mode==='preview')return;
+  let best=null,bdist=9;
+  for(const n of P.notes){if(n.j||n.l!==lane)continue;const d=Math.abs(t-n.t);if(d<bdist){bdist=d;best=n}if(n.t-t>0.3)break}
+  if(best&&bdist<=WIN.D){judge(best,bdist<=WIN.P?'P':bdist<=WIN.G?'G':'D',now);lead(P.bus,nowA,pitchAt(song,best.s,lane))}
+  else{const s=Math.round((t-P.t0)/P.sd);lead(P.bus,nowA,pitchAt(song,s,lane));
+    if(t>P.t0-0.5&&t<P.end+0.2){P.empty++;P.combo=0;P.msg='空打ち';P.msgT=now;P.msgL=lane;P.mood='miss';P.moodT=now}}}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();const r=cv.getBoundingClientRect();
+  const lane=Math.max(0,Math.min(2,Math.floor((e.clientX-r.left)/(r.width/3))));onTap(lane)},{passive:false});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+
+function frame(){
+  if(!P)return;const now=AC.currentTime-outLat();
+  if(P.mode==='play'){for(const n of P.notes){if(n.t>now)break;if(!n.j&&now-n.t>WIN.D)judge(n,'M',now)}}
+  else if(P.mode==='preview'){for(const n of P.notes){if(n.t>now)break;if(!n.j){n.j='A';P.flash[n.l]=now;burst(n.l,now,false);P.mood='happy';P.moodT=now}}}
+  draw(now);hud(now);
+  if(now>P.end+(P.mode==='calib'?0.3:0.9)){const cb=P.onEnd,res=resultOf();stopPlay();if(cb)cb(res);return}
+  requestAnimationFrame(frame)}
+
+function hud(now){
+  const bar=Math.floor((now-P.t0)/P.bd),song=P.song;
+  let c='';
+  if(P.mode==='calib')c='カウントのあと、クリック音に合わせてタップ';
+  else if(now<P.t0)c=P.label||'まもなく開始';
+  else if(bar<song.bars)c=`${bar+1} / ${song.bars} 小節`;
+  else c='おしまい';
+  $('#hudC').textContent=c;
+  $('#hudR').textContent=P.mode==='compose'?`${P.rec.length} ノーツ`:P.mode==='preview'?'お手本':P.mode==='play'?(P.hide?'ハンデ：'+HIDE[P.hide].n:''):''}
+
+// ---- 描画 ----
+function geom(){const W=CW,H=CHH,sh=Math.round(Math.min(H*0.27,W*0.5));return {W,H,sh,lw:W/3,jy:Math.round(H-Math.max(96,H*0.16))}}
+function bgCanvas(L){
+  const c=document.createElement('canvas'),k=Math.max(2,Math.floor(L.sh/40)),w=Math.ceil(L.W/k),h=Math.ceil(L.sh/k);c.width=w;c.height=h;const x=c.getContext('2d');
+  // 夕暮れの空
+  const sky=['#2E4C5A','#3F6070','#5E7A84','#8E8D86','#C79A7A','#E6B07A'];
+  for(let y=0;y<h;y++){x.fillStyle=sky[Math.min(sky.length-1,Math.floor(y/h*sky.length*1.1))];x.fillRect(0,y,w,1)}
+  // 星
+  x.fillStyle='#F3E9C8';for(let i=0;i<18;i++){const sx=(i*37+11)%w,sy=(i*13+3)%Math.floor(h*0.35);x.fillRect(sx,sy,1,1)}
+  // 遠くの丘
+  x.fillStyle='#3E5E4F';for(let i=0;i<w;i++){const y=Math.round(h*0.62+Math.sin(i*0.09)*2+Math.sin(i*0.031)*3);x.fillRect(i,y,1,h-y)}
+  // ユーカリの木
+  const tree=(tx,s)=>{x.fillStyle='#E9E2D6';x.fillRect(tx,Math.round(h*0.4),2,Math.round(h*0.36));x.fillStyle='#CFC4B2';x.fillRect(tx+1,Math.round(h*0.4),1,Math.round(h*0.36));
+    x.fillStyle='#2F5444';for(let j=0;j<5;j++){const bx=tx-6*s+((j*7)%11)*s,by=Math.round(h*0.18)+((j*5)%4)*3;x.fillRect(bx,by,8*s,4)}
+    x.fillStyle='#4F8A76';for(let j=0;j<4;j++){const bx=tx-4*s+((j*5)%9)*s,by=Math.round(h*0.2)+((j*3)%3)*3;x.fillRect(bx,by,6*s,2)}};
+  tree(Math.round(w*0.08),1);tree(Math.round(w*0.9),1);
+  // ステージの床
+  const fy=Math.round(h*0.78);x.fillStyle='#7A5634';x.fillRect(0,fy,w,h-fy);x.fillStyle='#9A7046';x.fillRect(0,fy,w,1);
+  x.fillStyle='#5E4128';for(let i=0;i<w;i+=7)x.fillRect(i,fy+1,1,h-fy);
+  return {c,k,fy:fy*k}}
+function draw(now){
+  const L=geom(),{W,H,sh,lw,jy}=L,tr=P.travel,song=P.song;
+  cx.imageSmoothingEnabled=false;
+  // レーン
+  cx.fillStyle='#13282A';cx.fillRect(0,sh,W,H-sh);
+  for(let l=0;l<3;l++){cx.fillStyle=l%2?'#173335':'#142D2F';cx.fillRect(l*lw,sh,lw,H-sh);
+    const a=Math.max(0,1-(now-P.flash[l])/0.2);
+    if(a>0){const g=cx.createLinearGradient(0,jy-220,0,jy+40);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,LANEC[l]);cx.globalAlpha=a*0.4;cx.fillStyle=g;cx.fillRect(l*lw,Math.max(sh,jy-220),lw,260);cx.globalAlpha=1}}
+  cx.fillStyle='rgba(255,255,255,.06)';cx.fillRect(lw-1,sh,2,H-sh);cx.fillRect(2*lw-1,sh,2,H-sh);
+  // 拍線
+  const beat=P.bd/4,span=jy-sh,yOf=t=>jy-(t-now)/tr*span;
+  const b0=Math.floor((now-P.t0)/beat)-1,b1=Math.ceil((now+tr-P.t0)/beat)+1;
+  for(let b=b0;b<=b1;b++){const tb=P.t0+b*beat;if(tb>P.end+0.001)break;if(b<(P.mode==='compose'||P.mode==='calib'?-4:0))continue;
+    const y=yOf(tb);if(y<sh||y>jy)continue;const bar=((b%4)+4)%4===0;
+    cx.fillStyle=bar?'rgba(255,255,255,.22)':'rgba(255,255,255,.07)';cx.fillRect(0,Math.round(y),W,bar?2:1)}
+  // 判定ライン＋切り株ドラム
+  cx.fillStyle='rgba(255,255,255,.85)';cx.fillRect(0,jy-1,W,3);
+  const sk=Math.max(2,Math.floor(lw*0.62/26));
+  for(let l=0;l<3;l++){const lit=now-P.flash[l]<0.12,s=stumpCv(l,lit),w=26*sk,h=16*sk;cx.drawImage(s,Math.round(l*lw+lw/2-w/2),Math.round(jy-5*sk+(lit?sk:0)),w,h)}
+  // ノーツ
+  const nk=Math.max(2,Math.floor(lw*0.66/18)),nw=18*nk,nh=7*nk;
+  if(P.mode==='play'||P.mode==='preview'){
+    const hideAt=HIDE[P.hide].at;
+    for(const n of P.notes){const dt=n.t-now;if(dt>tr)break;
+      if(n.j&&n.j!=='M')continue;if(dt<-0.35)continue;
+      const p=1-dt/tr;let a=1;if(p>hideAt)a=Math.max(0,1-(p-hideAt)/0.07);if(n.j==='M')a=0.3;if(a<=0)continue;
+      const y=yOf(n.t);if(y<sh-nh)continue;cx.globalAlpha=a;cx.drawImage(noteCv(n.l),Math.round(n.l*lw+lw/2-nw/2),Math.round(y-nh/2),nw,nh);cx.globalAlpha=1}}
+  if(P.mode==='compose'){
+    for(const [s,l] of P.rec){const t=P.t0+s*P.sd;const y=jy-(now-t)/tr*span;if(y<sh-nh||y>jy+20)continue;
+      cx.globalAlpha=Math.max(0.2,(y-sh)/span);cx.drawImage(noteCv(l),Math.round(l*lw+lw/2-nw/2),Math.round(y-nh/2),nw,nh);cx.globalAlpha=1}}
+  // 波紋と粒
+  for(const r of P.rings){const e=(now-r.t)/0.35;if(e>1)continue;cx.globalAlpha=1-e;cx.strokeStyle=r.c;cx.lineWidth=4*(1-e)+1;cx.beginPath();cx.ellipse(r.x,r.y,lw*0.25+e*lw*0.3,(lw*0.25+e*lw*0.3)*0.4,0,0,Math.PI*2);cx.stroke();cx.globalAlpha=1}
+  P.rings=P.rings.filter(r=>now-r.t<0.4);
+  for(const q of P.parts){const e=now-q.t;if(e>q.life)continue;const x=q.x+q.vx*e,y=q.y+q.vy*e+400*e*e;cx.globalAlpha=1-e/q.life;cx.fillStyle=q.c;const s=Math.max(3,nk*1.5);cx.fillRect(Math.round(x),Math.round(y),s,s);cx.globalAlpha=1}
+  P.parts=P.parts.filter(q=>now-q.t<q.life);
+  // 判定の文字
+  if(now-P.msgT<0.5){const e=(now-P.msgT)/0.5,sc=e<0.12?1+(0.12-e)*3:1;cx.globalAlpha=1-Math.max(0,e-0.5)*2;
+    cx.font=`900 ${Math.round(20*sc)}px "Hiragino Maru Gothic ProN",system-ui,sans-serif`;cx.textAlign='center';cx.lineJoin='round';cx.lineWidth=5;cx.strokeStyle='#13282A';
+    const col=P.msg==='MISS'||P.msg==='空打ち'?'#FF8A80':P.msg==='PERFECT'?'#FFE08A':P.msg==='GREAT'?'#9FE3C6':'#fff',yy=jy-sk*14-e*24;
+    cx.strokeText(P.msg,P.msgL*lw+lw/2,yy);cx.fillStyle=col;cx.fillText(P.msg,P.msgL*lw+lw/2,yy);cx.globalAlpha=1}
+  // コンボ
+  if(P.mode==='play'&&P.combo>=5){cx.textAlign='center';cx.fillStyle='rgba(255,255,255,.13)';cx.font=`900 ${Math.round(W*0.2)}px system-ui,sans-serif`;cx.fillText(P.combo,W/2,sh+(jy-sh)*0.45);
+    cx.font='800 13px system-ui,sans-serif';cx.fillText('COMBO',W/2,sh+(jy-sh)*0.45+20)}
+  // 録音中
+  if(P.mode==='compose'&&now>=P.t0&&now<P.end&&Math.floor(now*2)%2===0){cx.fillStyle='#FF6B5E';cx.beginPath();cx.arc(16,sh+16,6,0,Math.PI*2);cx.fill();cx.font='800 13px system-ui,sans-serif';cx.textAlign='left';cx.fillText('録音中',27,sh+21)}
+  // レーンの名前
+  cx.fillStyle='rgba(255,255,255,.4)';cx.font='12px system-ui,sans-serif';cx.textAlign='center';
+  ['低','中','高'].forEach((s,l)=>cx.fillText(s,l*lw+lw/2,Math.min(H-8,jy+11*sk+16)));
+  drawStage(now,L);
+  // カウント
+  if(now<P.t0){const n=P.mode==='compose'||P.mode==='calib'?Math.ceil((P.t0-now)/beat):Math.ceil(P.t0-now);
+    if(n>0&&n<=4){const f=(P.mode==='compose'||P.mode==='calib'?((P.t0-now)/beat):(P.t0-now))%1,sc=1+f*0.4;cx.globalAlpha=0.4+0.6*(1-f*0.5);cx.font=`900 ${Math.round(72*sc)}px system-ui,sans-serif`;cx.textAlign='center';cx.lineWidth=8;cx.strokeStyle='#13282A';cx.strokeText(n,W/2,sh+(jy-sh)*0.5);cx.fillStyle='#FFE08A';cx.fillText(n,W/2,sh+(jy-sh)*0.5);cx.globalAlpha=1}}
+  // 進行バー
+  const prog=Math.max(0,Math.min(1,(now-P.t0)/(P.end-P.t0)));cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(0,sh-4,W,4);cx.fillStyle='#E3B23C';cx.fillRect(0,sh-4,W*prog,4)}
+function drawStage(now,L){
+  const {W,sh}=L;if(!BG)BG=bgCanvas(L);
+  cx.drawImage(BG.c,0,0,BG.c.width*BG.k,BG.c.height*BG.k);
+  const beat=P.bd/4,bt=(now-P.t0)/beat,bi=Math.floor(bt),bp=bt-bi,on=now>=P.t0-(P.mode==='compose'||P.mode==='calib'?P.bd:0)&&now<P.end;
+  // ちょうちん（拍で光る）
+  const nb=9;for(let i=0;i<nb;i++){const x=Math.round((i+.5)*W/nb),y=Math.round(sh*0.12+Math.sin((i+.5)/nb*Math.PI)*sh*0.06);
+    cx.fillStyle='rgba(30,30,30,.5)';if(i<nb-1)cx.fillRect(x,y-3,Math.round(W/nb),1);
+    const lit=on&&((bi%3+3)%3===i%3);cx.fillStyle=lit?LANEL[i%3]:'#5E6A66';const s=Math.max(4,BG.k*2);cx.fillRect(x-s/2,y,s,s+2);
+    if(lit&&bp<0.5){cx.globalAlpha=(0.5-bp)*0.8;cx.fillStyle=LANEC[i%3];cx.beginPath();cx.arc(x,y+s/2,s*1.8,0,Math.PI*2);cx.fill();cx.globalAlpha=1}}
+  // コードの看板
+  if(P.mode!=='calib'){const bar=Math.max(0,Math.min(P.song.bars-1,Math.floor((now-P.t0)/P.bd))),c=chordAt(P.song,bar).name;
+    const bw=Math.max(54,W*0.17),bh=30,bx=Math.round(W*0.06),by=Math.round(BG.fy-bh-14);
+    cx.fillStyle='#5E4128';cx.fillRect(bx+bw/2-2,by+bh,4,14);cx.fillStyle='#2a1a12';cx.fillRect(bx-2,by-2,bw+4,bh+4);cx.fillStyle='#C9A26B';cx.fillRect(bx,by,bw,bh);cx.fillStyle='#E3C796';cx.fillRect(bx,by,bw,3);
+    cx.fillStyle='#3a2410';cx.font='900 17px system-ui,sans-serif';cx.textAlign='center';cx.fillText(c,bx+bw/2,by+21)}
+  // 先生の動物
+  if(P.mate){const k=Math.max(2,Math.floor(sh*0.36/24)),s=24*k,jump=on&&bp<0.15?k:0;cx.drawImage(animalCv(P.mate,true),Math.round(W*0.94-s),Math.round(BG.fy-s+2*k-jump),s,s)}
+  // ウォンバット
+  const k=Math.max(2,Math.floor(sh*0.62/32)),w=40*k,h=32*k;
+  const mood=now-P.moodT<0.35?P.mood:'';const eye=mood==='happy'?'happy':mood==='miss'?'closed':(on&&bi%8===7&&bp>0.6?'closed':undefined);
+  const sq=on&&bp<0.18?0.06:0,hop=on&&bp>0.18&&bp<0.6?Math.round(Math.sin((bp-0.18)/0.42*Math.PI)*k*2):0;
+  const o={scarf:P.who};if(eye)o.eye=eye;if(sq)o.sq=sq;
+  cx.drawImage(wombatCv(o),Math.round(W*0.56-w/2),Math.round(BG.fy-h+3*k-hop),w,h);
+  // 影
+  cx.fillStyle='rgba(0,0,0,.25)';cx.fillRect(Math.round(W*0.56-w*0.3),Math.round(BG.fy+k),Math.round(w*0.6),k);
+}
+
+// ============ 画面 ============
+let HERO=null;
+function show(html){stopPlay();HERO=null;$('#ui').innerHTML=html;scrollTo(0,0)}
+function seg(name,opts,val){return `<div class="seg" data-seg="${name}">`+opts.map((o,i)=>`<button type="button" data-v="${i}" class="${i===val?'on':''}">${o}</button>`).join('')+'</div>'}
+document.addEventListener('click',e=>{const b=e.target.closest('.seg button');if(!b)return;b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))});
+const segv=name=>{const b=document.querySelector(`[data-seg="${name}"] .on`);return b?+b.dataset.v:0};
+const back=(fn,label)=>`<button class="b sm" style="margin:0 0 8px" onclick="${fn}">← ${label||'もどる'}</button>`;
+function hitsHtml(r){return `<div class="cnt"><div><b style="color:#C99511">${r.hits.P}</b>PERFECT</div><div><b>${r.hits.G}</b>GREAT</div><div><b>${r.hits.D}</b>GOOD</div><div><b style="color:var(--ng)">${r.hits.M}</b>MISS</div></div>
+  <p class="muted" style="text-align:center;margin:6px 0 0">最大コンボ ${r.maxc} ・ 空打ち ${r.empty}</p>`}
+function resultHtml(r,who,head){const rk=rankOf(r.pct);
+  return `<div class="panel res">${head||''}${wbImg({scarf:who,eye:r.pct>=PASS?'happy':'closed'},'wbig')}
+  <div><span class="rank ${rk}">${rk}</span></div><div class="pct">${r.pct}%</div>${hitsHtml(r)}</div>`}
+function songTags(s){return `<span class="tag">${s.bpm}BPM</span><span class="tag">${PROGS[s.prog].name}</span><span class="tag">${s.bars}小節</span><span class="tag">${s.notes.length}ノーツ</span>`}
+
+// ---- タイトル ----
+function home(){
+  const best=LS.get('story',{}),done=STAGES.filter((s,i)=>(best[i]||0)>=PASS).length,songs=LS.get('songs',[]).length;
+  show(`<div class="hero"><canvas id="hero" class="px"></canvas></div>
+  <h1><span class="sm">ウォンバット☆</span><span class="l0">リズム</span><span class="l1">バ</span><span class="l2">トン</span></h1>
+  <p class="sub">ユーカリ村の音楽会。曲を作って、たたいて、受けわたそう。</p>
+  <button class="cta" onclick="battleSetup()"><span class="ci">${wbImg({scarf:0,eye:'happy'},'ci')}</span><span style="flex:1"><span class="ct">ふたりで対戦</span><span class="cs">交代で作曲して、相手の曲をたたく。1台をかわりばんこに</span></span></button>
+  <div class="mgrid">
+    <button class="mtile" onclick="story()">${anImg('koala')}<span class="mt">リズム修行</span><span class="ms">${done}/${STAGES.length} クリア</span></button>
+    <button class="mtile" onclick="free()">${anImg('echidna')}<span class="mt">フリープレイ</span><span class="ms">保存した曲 ${songs}</span></button>
+    <button class="mtile" onclick="settings()">${anImg('sloth')}<span class="mt">設定</span><span class="ms">補正・あそびかた</span></button>
+  </div>
+  <p class="muted" style="margin-top:14px">音が出ないときは、端末の音量とマナーモードを確認してください。スマホ・タブレットのタッチ操作向けです。</p>`);
+  heroStart()}
+function heroStart(){
+  const c=$('#hero');if(!c)return;const W=160,H=100;c.width=W;c.height=H;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  const bg=bgCanvas({W:W,sh:H});const t0=performance.now(),me={};HERO=me;
+  const notes=[];
+  const loop=()=>{if(HERO!==me||!document.body.contains(c))return;const t=(performance.now()-t0)/1000,beat=0.6,bt=t/beat,bi=Math.floor(bt),bp=bt-bi;
+    x.drawImage(bg.c,0,0,bg.c.width*bg.k,bg.c.height*bg.k);const fy=bg.fy;
+    // ちょうちん
+    for(let i=0;i<7;i++){const lx=Math.round((i+.5)*W/7),ly=10+Math.round(Math.sin((i+.5)/7*Math.PI)*5);x.fillStyle=(bi%3===i%3)?LANEL[i%3]:'#5E6A66';x.fillRect(lx-2,ly,4,5)}
+    // ふたりのウォンバット（交互に跳ねる）
+    [0,1].forEach(p=>{const act=(bi%2===p),hop=act&&bp<0.5?Math.round(Math.sin(bp/0.5*Math.PI)*4):0,o={scarf:p};if(act&&bp<0.5)o.eye='happy';
+      x.drawImage(wombatCv(o),p?W-60:20,fy-29-hop,40,32);
+      if(act&&bp<0.03&&notes.length<20)notes.push({x:p?W-40:40,y:fy-30,l:(bi*7+p)%3,t})});
+    for(const n of notes){const e=t-n.t;x.globalAlpha=Math.max(0,1-e/1.6);x.drawImage(noteCv(n.l),Math.round(n.x+(n.x<W/2?1:-1)*e*14-9),Math.round(n.y-e*26),18,7)}x.globalAlpha=1;
+    while(notes.length&&t-notes[0].t>1.6)notes.shift();
+    // まんなかの切り株
+    for(let l=0;l<3;l++)x.drawImage(stumpCv(l,bi%3===l&&bp<0.3),W/2-39+l*26,fy-8,26,16);
+    requestAnimationFrame(loop)};
+  loop()}
+
+// ---- 作曲フロー ----
+const App={};
+// cfg: {who(名前), col(0/1), bars(固定ならnumber), onDone(song), onCancel, draft}
+function composeSetup(cfg){
+  const d=cfg.draft||{bpm:1,prog:1,key:0,grid:0,bars:1};
+  show(back('composeCancel()','やめる')+`<div class="talk">${wbImg({scarf:cfg.col,eye:'happy'})}<div class="bubble"><b>${esc(cfg.who)}の作曲</b>どんな曲にしよう？ 伴奏を選んでから録音するよ。</div></div>
+  <div class="panel">
+  <label class="f">テンポ</label>${seg('bpm',BPMS.map(b=>b+''),d.bpm)}
+  <label class="f">コード進行</label>${seg('prog',PROGS.map(p=>p.name+'<small>'+p.mood+'</small>'),d.prog)}
+  <label class="f">キー</label>${seg('key',KEYS.map(k=>k[0]),d.key)}
+  <label class="f">リズムの細かさ（タップをそろえる単位）</label>${seg('grid',['8分','16分'],d.grid)}
+  ${cfg.bars?`<p class="muted" style="margin:12px 0 0">長さ：<b>${cfg.bars}小節</b>（相手のハンデ設定で決まります）</p>`:`<label class="f">長さ</label>${seg('bars',LENS.map(l=>l.n+'<small>'+l.bars+'小節</small>'),d.bars)}`}
+  </div>
+  <p class="muted">1小節のカウントのあと録音が始まります。3つの切り株（低・中・高）をタップすると、そのときのコードに合った音が鳴り、拍にそろえて記録されます。同時押しは2つまで。</p>
+  <button class="b pri" onclick="composeStart()">録音スタート</button>`);
+  App.cfg=cfg}
+function composeCancel(){App.cfg.onCancel()}
+function composeStart(){
+  const c=App.cfg;
+  const d=document.querySelector('[data-seg="bpm"]')?{bpm:segv('bpm'),prog:segv('prog'),key:segv('key'),grid:segv('grid'),bars:c.bars?1:segv('bars')}:c.draft;c.draft=d;
+  const song={bpm:BPMS[d.bpm],prog:d.prog,key:KEYS[d.key][1],grid:d.grid?4:2,bars:c.bars||LENS[d.bars].bars,notes:[]};
+  App.song=song;
+  startSession({mode:'compose',song,who:c.col,label:c.who+'の作曲',onEnd:r=>{song.notes=r.rec;composeReview()},onAbort:()=>composeSetup(c)})}
+function composeReview(){
+  const s=App.song,c=App.cfg,ok=s.notes.length>=4;
+  show(`<div class="talk">${wbImg({scarf:c.col,eye:ok?'happy':'closed'})}<div class="bubble"><b>録音できた！</b>${ok?'まず聴いてみる？ 自分でたたいて試走したら完成だよ。':'ノーツが少なすぎる…（4つ以上必要）。撮り直そう。'}</div></div>
+  <div class="panel">${songTags(s)}</div>
+  <button class="b" onclick="previewSong(App.song,composeReview,App.cfg.col)" ${ok?'':'disabled'}>聴いてみる</button>
+  <button class="b pri" onclick="testRun()" ${ok?'':'disabled'}>試走する（${PASS}%以上で完成）</button>
+  <button class="b" onclick="composeStart()">同じ設定で撮り直す</button>
+  <button class="b" onclick="composeSetup(App.cfg)">設定から作り直す</button>
+  <p class="muted">試走は、作った本人が自分の曲をたたいて${PASS}%以上を取るテストです。自分でもたたけない曲は出題できません。</p>`)}
+function testRun(){
+  startSession({mode:'play',song:App.song,who:App.cfg.col,label:'試走',onEnd:r=>{
+    const ok=r.pct>=PASS;jingle(ok);
+    show(resultHtml(r,App.cfg.col,`<h2>試走 ${ok?'成功！':'失敗…'}</h2>`)+
+    (ok?`<button class="b pri" onclick="App.cfg.onDone(App.song)">この曲で決定</button>`:`<p class="muted" style="text-align:center">${PASS}%に届きませんでした。</p>`)+
+    `<button class="b" onclick="testRun()">もう一度試走</button><button class="b" onclick="composeStart()">撮り直す</button><button class="b" onclick="composeSetup(App.cfg)">設定から作り直す</button>`)},
+    onAbort:composeReview})}
+function previewSong(song,after,who,mate){startSession({mode:'preview',song,who:who||0,mate,label:'お手本',onEnd:()=>after(),onAbort:()=>after()})}
+function saveSong(song,name,by,col){
+  const list=LS.get('songs',[]);
+  const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,by,col:col||0,created:new Date().toISOString().slice(0,10),
+    bpm:song.bpm,prog:song.prog,key:song.key,grid:song.grid,bars:song.bars,notes:song.notes,best:0};
+  list.push(s);LS.set('songs',list);return s}
+
+// ---- 対戦 ----
+function battleSetup(){
+  const b=LS.get('battlecfg',{names:['青ウォンバット','赤ウォンバット'],len:[1,1],hide:[0,0],rounds:0});
+  const pl=i=>`<div class="panel"><div class="talk" style="margin:0">${wbImg({scarf:i})}<div style="flex:1"><label class="f" style="margin-top:0">名前</label><input type="text" id="nm${i}" maxlength="10" value="${esc(b.names[i])}"></div></div>
+    <label class="f">自分がたたく曲の長さ（ハンデ）</label>${seg('len'+i,LENS.map(l=>l.n+'<small>'+l.bars+'小節</small>'),b.len[i])}
+    <label class="f">ノーツの消え方（ハンデ）</label>${seg('hide'+i,HIDE.map(h=>h.n),b.hide[i])}</div>`;
+  show(back('home()','タイトル')+`<h2>ふたりで対戦</h2>
+  <p class="muted">交代で作曲し、相手の曲をたたきます。たたいたときの精度(%)が高い方の勝ち。上手な方にハンデを付けて調整できます。</p>
+  ${pl(0)}${pl(1)}
+  <div class="panel"><label class="f" style="margin-top:0">ラウンド数（1ラウンド＝お互い1曲ずつ）</label>${seg('rounds',['1','2','3'],b.rounds)}</div>
+  <button class="b pri" onclick="battleStart()">はじめる</button>`)}
+function battleStart(){
+  const names=[0,1].map(i=>($('#nm'+i).value.trim()||(i?'赤ウォンバット':'青ウォンバット')).slice(0,10));
+  const cfg={names,len:[segv('len0'),segv('len1')],hide:[segv('hide0'),segv('hide1')],rounds:segv('rounds')};
+  LS.set('battlecfg',cfg);
+  App.B={...cfg,turns:(cfg.rounds+1)*2,turn:0,res:[]};battleTurn()}
+const nmHtml=(B,i)=>`<b class="pcol${i}">${esc(B.names[i])}</b>`;
+function battleTurn(){
+  const B=App.B;if(B.turn>=B.turns)return battleFinal();
+  const c=B.turn%2,p=1-c;
+  show(`<h2>第${Math.floor(B.turn/2)+1}ラウンド${c?'・後半':''}</h2>
+  <div class="panel hand">${wbImg({scarf:c,eye:'happy'})}<p>${nmHtml(B,c)} が作曲して、${nmHtml(B,p)} がたたきます。</p>
+  <p class="muted">${esc(B.names[p])} は画面を見ないでね。</p></div>
+  <button class="b pri" onclick="battleCompose()">${esc(B.names[c])}、作曲をはじめる</button>
+  <button class="b" onclick="battleQuit()">対戦をやめる</button>`)}
+async function battleQuit(){const r=await dlg('対戦をやめますか？',['続ける','やめる']);if(r.i===1)home()}
+function battleCompose(){
+  const B=App.B,c=B.turn%2,p=1-c;
+  composeSetup({who:B.names[c],col:c,bars:LENS[B.len[p]].bars,draft:B.draft&&B.draft[c],
+    onCancel:battleTurn,
+    onDone:song=>{B.draft=B.draft||[];B.draft[c]=App.cfg.draft;
+      App.cur=saveSong(song,`${B.names[c]}の曲（${new Date().toLocaleDateString('ja-JP')}）`,B.names[c],c);battleHandoff()}})}
+function battleHandoff(){
+  const B=App.B,p=1-B.turn%2,h=HIDE[B.hide[p]];
+  show(`<h2>${nmHtml(B,p)} の番</h2><div class="panel hand">${wbImg({scarf:p})}<p>端末を ${nmHtml(B,p)} にわたしてね。</p>
+  <div>${songTags(App.cur)}</div><p class="muted">ハンデ：ノーツが「${h.n}」</p></div>
+  <button class="b" onclick="previewSong(App.cur,battleReady,1-App.B.turn%2)">お手本を見る（1回だけ）</button>
+  <button class="b pri" onclick="battlePlay()">本番スタート</button>`)}
+function battleReady(){
+  const B=App.B,p=1-B.turn%2;
+  show(`<h2>${nmHtml(B,p)} の番</h2><div class="talk">${wbImg({scarf:p,eye:'happy'})}<div class="bubble"><b>お手本はここまで</b>覚えたリズムでたたこう！</div></div>
+  <div class="panel">${songTags(App.cur)}</div><button class="b pri" onclick="battlePlay()">本番スタート</button>`)}
+function battlePlay(){
+  const B=App.B,c=B.turn%2,p=1-c;
+  startSession({mode:'play',song:App.cur,hide:B.hide[p],who:p,label:B.names[p],onAbort:battleHandoff,onEnd:r=>{
+    B.res.push({c,p,pct:r.pct,maxc:r.maxc});B.turn++;jingle(r.pct>=PASS);
+    show(resultHtml(r,p,`<h2>${nmHtml(B,p)} の結果</h2>`)+`<button class="b pri" onclick="battleTurn()">${B.turn>=B.turns?'最終結果へ':'つぎへ'}</button>`)}})}
+function battleFinal(){
+  const B=App.B,sum=[0,0],cnt=[0,0],mc=[0,0];
+  B.res.forEach(r=>{sum[r.p]+=r.pct;cnt[r.p]++;mc[r.p]+=r.maxc});
+  const avg=[0,1].map(i=>cnt[i]?Math.round(sum[i]/cnt[i]*10)/10:0);
+  const w=avg[0]>avg[1]?0:avg[1]>avg[0]?1:(mc[0]>mc[1]?0:mc[1]>mc[0]?1:-1),tie=avg[0]===avg[1];
+  jingle(true);
+  const side=i=>`<div><div class="crown">${w===i?'👑 勝ち':''}</div>${wbImg({scarf:i,eye:w===i?'happy':w<0?undefined:'closed'})}<b class="pcol${i}">${esc(B.names[i])}</b><div class="sc ${w===i?'win':''}">${avg[i]}%</div></div>`;
+  show(`<h2>最終結果</h2><div class="panel"><div class="vs">${side(0)}<div class="muted">VS</div>${side(1)}</div>
+  <p style="text-align:center;font-weight:800;margin:10px 0 0">${w<0?'引き分け！':esc(B.names[w])+' の勝ち！'}</p>
+  ${tie&&w>=0?'<p class="muted" style="text-align:center;margin:2px 0 0">同点のため、最大コンボの合計で決着</p>':''}</div>
+  <div class="panel muted">${B.res.map((r,i)=>`第${Math.floor(i/2)+1}R：${esc(B.names[r.p])} が ${esc(B.names[r.c])} の曲を ${r.pct}%（最大${r.maxc}コンボ）`).join('<br>')}</div>
+  <p class="muted">作った曲はフリープレイに保存されています。</p>
+  <button class="b pri" onclick="battleSetup()">もう一度</button><button class="b" onclick="home()">タイトルへ</button>`)}
+
+// ---- ストーリー（リズム修行） ----
+const STAGES=[
+  {name:'4分のきほん',t:'koala',bpm:90,prog:1,pat:['1...1...1...1...'],bars:4,say:'まずは1拍ずつ。ドン、ドン、ドン、ドン。伴奏の低い音を聞くと、拍が分かるよ。'},
+  {name:'3レーンをめぐる',t:'kangaroo',bpm:90,prog:0,pat:['0...1...2...1...'],bars:4,say:'ぴょん、ぴょん。左・まんなか・右・まんなか。跳ぶみたいに拍にのって移動しよう。'},
+  {name:'8分でならぶ',t:'sparrow',bpm:90,prog:1,pat:['0.1.2.1.0.1.2.1.'],bars:4,say:'チュンチュン！ 1拍を2つに分けると8分音符。いそがず、たんたん、と。'},
+  {name:'休符をかんじる',t:'sloth',bpm:100,prog:3,pat:['0...1...2.......','0.0.1...2.2.1...'],bars:4,say:'……休むのも……リズムのうち……。たたかない所は、心の中で数えて……。'},
+  {name:'裏拍',t:'frog',bpm:100,prog:1,pat:['0.1.0.1.0.1.0.1.','..1...1...1...1.'],bars:4,say:'ケロッ。拍と拍のあいだで鳴くのが裏拍。表で頭をゆらして、裏でたたこう。'},
+  {name:'同時押し',t:'crab',bpm:100,prog:0,pat:['c...1...c...1...','a...2...b...0...'],bars:4,say:'ハサミは2本！ 2つのレーンを同時にタップ。指を2本使ってね。'},
+  {name:'付点のリズム',t:'rabbit',bpm:100,prog:3,pat:['0..1..2.0..1..2.','0..1..2.1...0...'],bars:4,say:'タン・タ・タン、と弾むのが付点のリズム。3・3・2で数えてみて。'},
+  {name:'16分のさざなみ',t:'bee',bpm:90,prog:1,pat:['0.1.2.1.0121....','2.1.0.1.2101....'],bars:4,say:'ブンブン！ 1拍を4つに分ける16分音符。手首の力をぬいて、細かく。'},
+  {name:'シンコペーション',t:'monkey',bpm:110,prog:0,pat:['0..1..1.2...1...','0..2..2.1...b...'],bars:4,say:'拍の少し手前でたたくのがシンコペーション。リズムを先どりする感じ！'},
+  {name:'カノンで総まとめ',t:'echidna',bpm:110,prog:2,pat:['0.1.2.1.c...1...','0..1..2.1.0.2...','..1...1.0.2.1.0.','a...b...c...1...'],bars:8,say:'ここまでの総まとめ。カノン進行で、ぜんぶの技を見せてごらん。'},
+];
+const MULTI={a:[0,1],b:[1,2],c:[0,2]};
+const tname=i=>(ANIMALS[STAGES[i].t]||{}).name||'';
+function stageSong(i){const st=STAGES[i],notes=[];
+  for(let b=0;b<st.bars;b++){const p=st.pat[b%st.pat.length];
+    for(let k=0;k<16;k++){const ch=p[k];if(ch==='.')continue;(MULTI[ch]||[+ch]).forEach(l=>notes.push([b*16+k,l]))}}
+  return {name:st.name,bpm:st.bpm,prog:st.prog,key:0,grid:4,bars:st.bars,notes}}
+function story(){
+  const best=LS.get('story',{}),done=STAGES.filter((s,i)=>(best[i]||0)>=PASS).length;
+  show(back('home()','タイトル')+`<h2>リズム修行</h2>
+  <div class="talk">${anImg('koala')}<div class="bubble"><b>コアラ先生</b>${done>=STAGES.length?'全部クリア！ もう音楽会でも、だいじょうぶ。フリープレイで自分の曲も作ってみよう。':'ユーカリ村の音楽会まで、村の動物たちとリズムを修行しよう。'+PASS+'%以上で次へ進めるよ。'}</div></div>`+
+  STAGES.map((st,i)=>{const open=i===0||(best[i-1]||0)>=PASS,b=best[i];
+    return `<button class="panel stg ${open?'':'lock'}" style="width:100%;text-align:left;cursor:pointer" ${open?`onclick="stage(${i})"`:'disabled'}>${anImg(st.t)}
+    <span class="nm"><b>${i+1}. ${st.name}</b><span class="muted">${tname(i)} ・ ${st.bpm}BPM ・ ${st.bars}小節${b!=null?' ・ ベスト '+b+'%':''}</span></span>
+    <span class="st">${!open?'🔒':b!=null?`<span class="rank ${rankOf(b)}" style="font-size:16px;width:30px;height:30px;padding-top:4px;animation:none">${rankOf(b)}</span>`:''}</span></button>`}).join(''))}
+function stage(i){
+  const st=STAGES[i],s=stageSong(i);
+  show(back('story()','修行の一覧')+`<h2>${i+1}. ${st.name}</h2><div class="talk">${anImg(st.t)}<div class="bubble"><b>${tname(i)}</b>${st.say}</div></div>
+  <div class="panel">${songTags(s)}</div>
+  <button class="b" onclick="previewSong(stageSong(${i}),()=>stage(${i}),0,STAGES[${i}].t)">お手本を見る</button>
+  <button class="b pri" onclick="stagePlay(${i})">挑戦する</button>`)}
+function stagePlay(i){
+  startSession({mode:'play',song:stageSong(i),who:0,mate:STAGES[i].t,label:STAGES[i].name,onAbort:()=>stage(i),onEnd:r=>{
+    const best=LS.get('story',{}),prev=best[i];if(prev==null||r.pct>prev){best[i]=r.pct;LS.set('story',best)}
+    const ok=r.pct>=PASS,next=i+1<STAGES.length;jingle(ok);
+    show(resultHtml(r,0,`<h2>${ok?'クリア！':'もう少し！'}</h2>${prev!=null&&r.pct>prev?'<p class="muted" style="margin:-4px 0 0">ベスト更新</p>':''}`)+
+    `<div class="talk">${anImg(STAGES[i].t)}<div class="bubble"><b>${tname(i)}</b>${ok?(r.pct>=95?'すばらしい！ 文句なし！':'いいね！ その調子。'):'おしい！ お手本をもう一度見てみよう。'}</div></div>
+    ${ok&&next?`<button class="b pri" onclick="stage(${i+1})">次の修行へ</button>`:''}
+    <button class="b" onclick="stagePlay(${i})">もう一度</button><button class="b" onclick="story()">修行の一覧</button>`)}})}
+
+// ---- フリープレイ ----
+function free(){
+  const list=LS.get('songs',[]).slice().reverse();
+  show(back('home()','タイトル')+`<h2>フリープレイ</h2>
+  <button class="b pri" onclick="freeCompose()">ひとりで曲を作る</button>
+  ${list.length?'':'<div class="talk">'+anImg('echidna')+'<div class="bubble"><b>ハリモグラ</b>まだ曲がないね。対戦や「ひとりで曲を作る」で作った曲が、ここにしまわれるよ。</div></div>'}
+  ${list.map(s=>`<div class="panel"><div style="display:flex;gap:10px;align-items:center">${wbImg({scarf:s.col||0},'wsm')}<div style="flex:1;min-width:0"><b>${esc(s.name)}</b><br><span class="muted">${esc(s.by||'')} ・ ${s.created||''} ・ ベスト ${s.best||0}%</span></div></div>${songTags(s)}<br>
+   <button class="b sm" onclick="freeListen('${s.id}')">聴く</button><button class="b sm" onclick="freeTry('${s.id}')">挑戦</button>
+   <button class="b sm" onclick="freeRename('${s.id}')">名前</button><button class="b sm" onclick="freeDel('${s.id}')">削除</button></div>`).join('')}
+  <h3>バックアップ</h3><p class="muted">曲はこのブラウザの中にだけ保存されます。消える前に書き出しておくと安心です。</p>
+  <div class="row"><button class="b" onclick="exportSongs()">書き出す</button><button class="b" onclick="importSongs()">読み込む</button></div>
+  <div id="io"></div>`)}
+const findSong=id=>LS.get('songs',[]).find(s=>s.id===id);
+function freeListen(id){const s=findSong(id);if(s)previewSong(s,free,s.col||0)}
+function freeTry(id){const s=findSong(id);if(!s)return;
+  App.freeHide=App.freeHide||0;
+  show(back('free()','曲の一覧')+`<h2>${esc(s.name)}</h2><div class="panel">${songTags(s)}<p class="muted">ベスト ${s.best||0}%</p>
+  <label class="f">ノーツの消え方</label>${seg('fh',HIDE.map(h=>h.n),App.freeHide)}</div>
+  <button class="b pri" onclick="freeGo('${id}')">スタート</button>`)}
+function freeGo(id){const s=findSong(id);if(!s)return;App.freeHide=document.querySelector('[data-seg="fh"]')?segv('fh'):App.freeHide;
+  startSession({mode:'play',song:s,hide:App.freeHide,who:0,label:s.name,onAbort:()=>freeTry(id),onEnd:r=>{
+    const list=LS.get('songs',[]),t=list.find(x=>x.id===id);let up=false;if(t&&r.pct>(t.best||0)&&App.freeHide===0){t.best=r.pct;up=true;LS.set('songs',list)}
+    jingle(r.pct>=PASS);
+    show(resultHtml(r,0,`<h2>結果</h2>${up?'<p class="muted" style="margin:-4px 0 0">ベスト更新</p>':''}${App.freeHide?'<p class="muted" style="margin:-4px 0 0">ハンデありのためベストには記録されません</p>':''}`)+
+    `<button class="b pri" onclick="freeGo('${id}')">もう一度</button><button class="b" onclick="free()">曲の一覧</button>`)}})}
+async function freeRename(id){const t0=findSong(id);if(!t0)return;
+  const r=await dlg('曲の名前',['キャンセル','決定'],t0.name);const list=LS.get('songs',[]),t=list.find(x=>x.id===id);if(t&&r.i===1&&r.v&&r.v.trim()){t.name=r.v.trim().slice(0,30);LS.set('songs',list)}free()}
+async function freeDel(id){const r=await dlg('この曲を削除しますか？',['やめる','削除する']);if(r.i!==1)return;LS.set('songs',LS.get('songs',[]).filter(x=>x.id!==id));free()}
+function freeCompose(){composeSetup({who:'あなた',col:0,onCancel:free,onDone:song=>{saveSong(song,'わたしの曲（'+new Date().toLocaleDateString('ja-JP')+'）','あなた',0);free()}})}
+function exportSongs(){$('#io').innerHTML=`<p class="muted">下の文字をすべてコピーして保存してください。</p><textarea readonly id="iot">${esc(JSON.stringify(LS.get('songs',[])))}</textarea><button class="b" onclick="copyIO()">コピー</button>`;const t=$('#iot');t.focus();t.select()}
+function copyIO(){const t=$('#iot');try{navigator.clipboard.writeText(t.value).then(()=>dlg('コピーしました'),()=>{t.select();dlg('自動でコピーできませんでした。文字を長押ししてコピーしてください。')})}catch(e){t.select()}}
+function importSongs(){$('#io').innerHTML=`<p class="muted">書き出した文字を貼り付けてください。同じ曲は重複しません。</p><textarea id="iot"></textarea><button class="b" onclick="doImport()">読み込む</button>`}
+function doImport(){
+  try{const arr=JSON.parse($('#iot').value);if(!Array.isArray(arr))throw 0;
+    const list=LS.get('songs',[]),ids=new Set(list.map(s=>s.id));let n=0;
+    for(const s of arr){if(!s||typeof s.id!=='string'||!Array.isArray(s.notes)||!BPMS.includes(s.bpm)||!PROGS[s.prog]||![2,4].includes(s.grid)||![4,8,16].includes(s.bars))continue;
+      if(ids.has(s.id))continue;
+      list.push({id:s.id.slice(0,20).replace(/[^a-z0-9]/gi,''),name:String(s.name||'曲').slice(0,30),by:String(s.by||'').slice(0,10),col:s.col===1?1:0,created:String(s.created||'').slice(0,10),bpm:s.bpm,prog:s.prog,key:KEYS.some(k=>k[1]===s.key)?s.key:0,grid:s.grid,bars:s.bars,
+        notes:s.notes.filter(x=>Array.isArray(x)&&Number.isInteger(x[0])&&x[0]>=0&&x[0]<s.bars*s.grid*4&&[0,1,2].includes(x[1])).map(x=>[x[0],x[1]]),best:Math.max(0,Math.min(100,+s.best||0))});ids.add(s.id);n++}
+    LS.set('songs',list);free();dlg(n+'曲を読み込みました')}catch(e){dlg('読み込めませんでした。文字が欠けていないか確認してください。')}}
+
+// ---- 設定 ----
+function settings(){
+  show(back('home()','タイトル')+`<h2>設定</h2>
+  <div class="panel"><b>タイミング補正</b>：<span id="offv">${OFFMS}</span> ms
+  <p class="muted">タップが判定より遅れて記録されるとき、プラスにします。まずは「自動で測る」がおすすめです。</p>
+  <div class="row"><button class="b sm" onclick="offAdd(-10)">−10</button><button class="b sm" onclick="offAdd(10)">＋10</button><button class="b sm" onclick="offAdd(-OFFMS)">0にする</button></div>
+  <button class="b" onclick="calib()">自動で測る（クリック音に合わせて8回タップ）</button></div>
+  <h3>あそびかた</h3><div class="panel muted">
+  <p>・3つの切り株は左から低・中・高の音。鳴る音は伴奏のコードに合わせて自動で変わるので、どこをたたいても曲になじみます。</p>
+  <p>・<b>対戦</b>：交代で作曲 → 作った人が試走（${PASS}%以上）→ 相手に端末をわたす → お手本を1回見る → 本番。たたいたときの精度が高い方の勝ち。</p>
+  <p>・<b>判定</b>：PERFECT ±50ms（100点）／GREAT ±100ms（70点）／GOOD ±150ms（40点）／MISS（0点）。ノーツがない所をたたく「空打ち」は1回30点減点。精度＝得点÷（ノーツ数×100）。</p>
+  <p>・<b>ランク</b>：S 95%以上／A 85%以上／B 70%以上／C それ未満。</p>
+  <p>・<b>ハンデ</b>：上手な人は「たたく曲の長さ」を長くしたり、「ノーツの消え方」で記憶勝負にしたりできます。</p>
+  <p>・判定の幅や点数は試作用の仮の値です。</p></div>`)}
+function offAdd(v){OFFMS=Math.max(-300,Math.min(300,OFFMS+v));LS.set('offset',OFFMS);const e=$('#offv');if(e)e.textContent=OFFMS}
+function calib(){
+  const song={bpm:100,grid:1,bars:2,prog:1,key:0,notes:[]};
+  startSession({mode:'calib',song,who:0,mate:'sloth',onAbort:settings,onEnd:r=>{
+    const beat=60/100,ds=r.taps.filter(t=>t>-beat/2).map(t=>t-Math.round(t/beat)*beat).filter(d=>Math.abs(d)<0.25).sort((a,b)=>a-b);
+    if(ds.length<4){settings();return dlg('タップが少なかったため測れませんでした')}
+    const med=ds[Math.floor(ds.length/2)];offAdd(Math.round(med*1000));settings();
+    dlg('補正を '+OFFMS+' ms にしました')}})}
+
+home();
+</script>
+</body>
+</html>
