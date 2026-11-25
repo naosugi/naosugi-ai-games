@@ -111,12 +111,130 @@ input[type=number],select{font:inherit;font-size:16px;padding:6px 8px;border:1px
 .sw{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2ef;gap:10px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1e2b2f;color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;z-index:60}
 @media (min-width:700px){.coach canvas{width:120px}}
+/* ===== スマホ向け強化 ===== */
+html,body{touch-action:manipulation;overscroll-behavior-y:none}
+button,.chip,.dx,.skill,.tab{user-select:none;-webkit-user-select:none}
+#app{padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+#app.fx{animation:pageIn .28s ease-out}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.btn{transition:transform .08s}
+.btn:active{transform:scale(.97) translateY(2px)}
+/* 下のタブ */
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:4px 6px calc(4px + env(safe-area-inset-bottom));display:flex;justify-content:center}
+#tabbar .in{display:flex;max-width:560px;width:100%}
+.tab{flex:1;border:0;background:none;font:inherit;font-size:11px;color:var(--sub);padding:4px 0 2px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;position:relative}
+.tab .ic{font-size:21px;line-height:1.2;transition:transform .15s}
+.tab.on{color:var(--pri2);font-weight:800}
+.tab.on .ic{transform:translateY(-2px) scale(1.12)}
+.tab .badge{position:absolute;top:0;right:calc(50% - 20px);background:var(--warn);color:#fff;border-radius:9px;font-size:10px;min-width:16px;padding:0 4px;line-height:16px}
+/* 下に固定する大きなボタン */
+.cta{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));z-index:14;padding:8px 12px;background:linear-gradient(rgba(234,241,236,0),var(--bg) 35%)}
+.cta .btn{max-width:536px;margin:0 auto;font-size:18px;padding:15px}
+.cta .btn.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 3px 0 var(--pri2),0 0 0 0 rgba(63,138,87,.45)}50%{box-shadow:0 3px 0 var(--pri2),0 0 0 10px rgba(63,138,87,0)}}
+/* コーチ（正面） */
+.wbc{image-rendering:pixelated;display:block}
+.hero{display:flex;flex-direction:column;align-items:center;margin:4px 0 2px}
+.hero .bub{position:relative;background:#fff;border-radius:16px;padding:10px 14px;font-size:15px;max-width:100%;min-height:46px;box-shadow:0 2px 8px rgba(30,43,47,.08);margin-bottom:10px}
+.hero .bub:after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-9px;border:9px solid transparent;border-top-color:#fff;border-bottom:0}
+.hero .wbc{width:150px}
+.coach .wbc{width:72px;flex:none}
+.hop{animation:hop 1.6s ease-in-out infinite}
+@keyframes hop{0%,70%,100%{transform:none}80%{transform:translateY(-10%) scaleY(1.04)}90%{transform:translateY(0) scaleY(.94)}}
+.jump{animation:jump .5s ease-in-out infinite}
+@keyframes jump{0%,100%{transform:none}50%{transform:translateY(-14%)}}
+.breath{animation:breath 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes breath{0%,100%{transform:none}50%{transform:scaleY(1.03)}}
+.shadow{width:60%;height:8px;border-radius:50%;background:rgba(30,43,47,.12);margin:-4px auto 0}
+/* ステータス */
+.stat{display:flex;gap:8px}
+.stat>div{flex:1;background:var(--soft);border-radius:10px;padding:6px 8px;text-align:center}
+.stat b{display:block;font-size:20px;line-height:1.2}
+.stat span{font-size:11px;color:var(--sub)}
+.bar>i{transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.stamp b.pop{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+/* ボトムシート */
+#modal{align-items:flex-end;padding:0}
+.mbox{border-radius:20px 20px 0 0;max-height:90vh;padding:10px 16px calc(16px + env(safe-area-inset-bottom));animation:sheetUp .28s cubic-bezier(.2,.8,.2,1)}
+.mbox:before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:#d5dcd7;margin:0 auto 8px}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@media (min-width:700px){#modal{align-items:center;padding:14px}.mbox{border-radius:18px}}
+/* セッション（全画面） */
+#sess{background:#f4f8f5;transition:background .25s}
+#sess.down{background:#e3eef9}#sess.up{background:#fdeee6}#sess.hold{background:#fff7dc}#sess.rest{background:#eaf1ec}
+#sess .in{display:flex;flex-direction:column;min-height:100%;padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+.ringwrap{position:relative;width:min(56vw,220px);margin:6px auto 0}
+.ringwrap svg{display:block;width:100%;transform:rotate(-90deg)}
+.ringwrap .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringwrap .num b{font-size:min(17vw,68px);line-height:1;font-variant-numeric:tabular-nums}
+.ringwrap .num small{font-size:15px;color:var(--sub);font-weight:700}
+.ring-bg{fill:none;stroke:#dfe7e1;stroke-width:9}
+.ring-fg{fill:none;stroke:var(--pri);stroke-width:9;stroke-linecap:round;transition:stroke .2s}
+#sess.down .ring-fg{stroke:#3f86c8}#sess.up .ring-fg{stroke:#e2753f}#sess.hold .ring-fg{stroke:#e2b52a}
+.numpop{animation:numpop .25s ease-out}
+@keyframes numpop{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+.phase{font-size:22px;top:10px;right:12px;transition:transform .15s}
+.phase.flash{transform:scale(1.25)}
+.ctrl{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(12px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center;gap:22px;background:linear-gradient(rgba(244,248,245,0),rgba(244,248,245,.95) 30%);z-index:21}
+.cbtn{border:0;border-radius:50%;width:56px;height:56px;font-size:13px;font-weight:800;background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(30,43,47,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;cursor:pointer}
+.cbtn .ic{font-size:20px}
+.cbtn.main{width:76px;height:76px;background:var(--pri);color:#fff;box-shadow:0 4px 0 var(--pri2)}
+.cbtn:active{transform:scale(.94)}
+.nextcard{animation:slideIn .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.pausecover{position:absolute;inset:0;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;border-radius:16px}
+/* 演出 */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+.feel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.feel button{border:2px solid var(--line);background:#fff;border-radius:14px;padding:10px 4px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.feel button .e{display:block;font-size:30px}
+.feel button.on{border-color:var(--pri);background:#eef7f0;transform:scale(1.04)}
+.lvup{position:fixed;inset:0;z-index:65;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,236,160,.97) 0,rgba(242,194,48,.95) 45%,rgba(200,140,20,.96) 100%);animation:fadeIn .25s}
+.lvup .rays{position:absolute;width:160vmax;height:160vmax;background:repeating-conic-gradient(rgba(255,255,255,.22) 0 8deg,transparent 8deg 22deg);animation:spin 12s linear infinite}
+.lvup h2{position:relative;font-size:44px;color:#fff;text-shadow:0 3px 0 #b07a00,0 0 12px rgba(0,0,0,.15);margin:8px 0 0;animation:zoomIn .5s cubic-bezier(.2,1.6,.4,1)}
+.lvup p{position:relative;font-size:22px;font-weight:800;color:#5a3d00;margin:4px 0 18px}
+.lvup .wbc{position:relative;width:150px}
+.lvup .btn{position:relative;width:auto;padding:12px 40px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes zoomIn{from{transform:scale(.2);opacity:0}to{transform:none;opacity:1}}
+/* 探検シーン */
+.scene{position:relative;height:150px;border-radius:16px;overflow:hidden;margin:6px 0}
+.scene .deco{position:absolute;bottom:24px;white-space:nowrap;font-size:34px;animation:scroll 2.4s linear infinite}
+.scene .deco2{bottom:70px;font-size:24px;opacity:.7;animation-duration:4s}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.scene .walker{position:absolute;left:50%;bottom:14px;width:96px;margin-left:-48px;image-rendering:pixelated;animation:walkbob .35s steps(2) infinite}
+@keyframes walkbob{50%{transform:translateY(-3px)}}
+.scene .bang{position:absolute;left:50%;top:10px;font-size:40px;font-weight:900;color:#c8553d;margin-left:20px;animation:zoomIn .3s cubic-bezier(.2,1.6,.4,1)}
+.reveal{position:relative;display:inline-block}
+.reveal img{width:150px;height:150px;image-rendering:pixelated;transition:filter .6s ease}
+.reveal.hide img{filter:brightness(0) opacity(.25)}
+.reveal .glow{position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,120,.8),rgba(255,226,120,0) 65%);animation:glow 1.2s ease-out}
+@keyframes glow{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
+.reveal.show img{animation:bounceIn .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes bounceIn{from{transform:scale(.5)}to{transform:scale(1)}}
+.newb.big{font-size:18px;padding:2px 12px;animation:zoomIn .4s cubic-bezier(.2,1.6,.4,1)}
+.fact{animation:slideUp .4s ease-out}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.toast{bottom:auto;top:calc(12px + env(safe-area-inset-top));animation:slideDown .25s ease-out}
+@keyframes slideDown{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+.dx{transition:transform .1s}.dx:active{transform:scale(.94)}
+.dx.newin{animation:pop .5s ease-out}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+.cta[hidden],#tabbar[hidden]{display:none}
+.notab .cta{bottom:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.notab #app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.pausecover[hidden]{display:none}
 
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="cta" id="ctaBox" hidden></div>
+<nav id="tabbar" hidden></nav>
 <div id="modal" hidden></div>
+<div id="fx"></div>
 <script id="sprites-animals">
 /* 動物ドット絵（24x24・右向き）。データ込みでこのファイルだけで使える。
  *   drawAnimal(ctx, id, x, y, scale=1, flip=false)   … canvas に描く（flip=true で左向き）
@@ -812,7 +930,7 @@ function duck(on){ if(!AU.bgmG||!AU.ctx) return; const t=AU.ctx.currentTime; AU.
 function say(text,{cancel=true}={}){
   if(!voiceOn()) return false;
   try{ if(cancel) speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(AU.voiceJa) u.voice=AU.voiceJa; u.rate=1.08; u.volume=1;
-    AU.speaking++; duck(true); u.onend=u.onerror=()=>{ AU.speaking=Math.max(0,AU.speaking-1); if(!AU.speaking) duck(false); };
+    AU.speaking++; duck(true); talk(Math.min(4000,text.length*130)); u.onend=u.onerror=()=>{ AU.speaking=Math.max(0,AU.speaking-1); if(!AU.speaking) duck(false); };
     speechSynthesis.speak(u); setTimeout(()=>{ if(AU.speaking&&!speechSynthesis.speaking){ AU.speaking=0; duck(false);} },6000); return true; }catch(e){ return false; }
 }
 function shutUp(){ try{ speechSynthesis.cancel(); }catch(e){} AU.speaking=0; duck(false); }
@@ -848,27 +966,62 @@ async function wakeOn(){ try{ if('wakeLock' in navigator){ WAKE=await navigator.
 function wakeOff(){ try{ if(WAKE) WAKE.release(); }catch(e){} WAKE=null; }
 
 // ================= ドット絵 =================
-const WB_CACHE={};
-function wombatCanvas(eye,flip){ const key=(eye||'')+(flip?'f':'');
-  if(!WB_CACHE[key]){ let c; try{ c=toCanvas(renderWombat({eye})); }catch(e){ c=document.createElement('canvas'); }
-    if(flip){ const m=document.createElement('canvas'); m.width=c.width; m.height=c.height; const x=m.getContext('2d'); x.translate(c.width,0); x.scale(-1,1); x.drawImage(c,0,0); c=m; }
-    WB_CACHE[key]=c; }
-  const s=WB_CACHE[key], o=document.createElement('canvas'); o.width=s.width; o.height=s.height; o.getContext('2d').drawImage(s,0,0); return o; }
-function mountWB(root){ (root||document).querySelectorAll('span.wb').forEach(s=>{ const c=wombatCanvas(s.dataset.eye,s.dataset.f==='1'); s.replaceWith(c); }); }
-const wb=(eye)=>`<span class="wb" data-eye="${eye||''}"></span>`;
+// ウォンバットコーチ：正面顔が基本。まばたき・しゃべる口・気分で表情が変わる
+const REDUCE=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WBF={};
+function wbFrame(o){ const k=JSON.stringify(o); if(!WBF[k]){ try{ WBF[k]=toCanvas(renderFront(o)); }catch(e){ WBF[k]=document.createElement('canvas'); } } return WBF[k]; }
+const WBS={}; // 横向き（探検で歩くとき）
+function wbSide(o){ const k=JSON.stringify(o); if(!WBS[k]){ try{ WBS[k]=toCanvas(renderWombat(o)); }catch(e){ WBS[k]=document.createElement('canvas'); } } return WBS[k]; }
+const COACHES=new Set();
+const MOOD_CLS={cheer:'jump',happy:'hop','':'breath',worry:'breath'};
+function mountWB(root){ (root||document).querySelectorAll('span.wb').forEach(s=>{ const c=document.createElement('canvas'); c.width=FW; c.height=FH;
+  c._mood=s.dataset.mood||''; c._seed=Math.random()*3000; c._talk=0; c.className='wbc '+(s.dataset.cls||MOOD_CLS[c._mood]||'');
+  COACHES.add(c); drawCoach(c,performance.now()); s.replaceWith(c); }); }
+function drawCoach(c,now){ const m=c._mood; let o={};
+  if(m==='happy'||m==='cheer') o={eye:'happy',blush:true}; else if(m==='worry') o={eye:'half'};
+  if(!o.eye&&(now+c._seed)%3400<140) o.eye='closed';
+  if(c._talk>now){ const p=Math.floor(now/170)%2; o.chew=!!p; if(p) o.bob=0.6; }
+  const f=wbFrame(o), x=c.getContext('2d'); x.clearRect(0,0,c.width,c.height); x.drawImage(f,0,0); }
+setInterval(()=>{ const now=performance.now(); COACHES.forEach(c=>{ if(!c.isConnected){ COACHES.delete(c); return; } drawCoach(c,now); }); },90);
+function talk(ms){ const until=performance.now()+ms; COACHES.forEach(c=>{ if(c.isConnected) c._talk=until; }); }
+function setMood(root,mood){ (root||document).querySelectorAll('canvas.wbc').forEach(c=>{ c._mood=mood; c.className='wbc '+(MOOD_CLS[mood]||''); }); }
+const wb=(mood,cls)=>`<span class="wb" data-mood="${mood||''}" data-cls="${cls||''}"></span>`;
+// 吹き出しの文字を1文字ずつ出す（タップで全部出る）
+function typeAll(root){ (root||document).querySelectorAll('[data-type]').forEach(el=>{ el.removeAttribute('data-type'); const html=el.innerHTML;
+  const toks=html.split(/(<[^>]+>|&[a-z]+;)/).flatMap(p=>(p.startsWith('<')||p.startsWith('&'))?[p]:[...p]).filter(Boolean);
+  const n=toks.length; if(REDUCE||!n) return; let i=0; el.innerHTML=''; talk(n*30+150);
+  const step=()=>{ if(!el.isConnected||i>=n) return; i++; el.innerHTML=toks.slice(0,i).join(''); setTimeout(step,28); };
+  el.addEventListener('click',()=>{ i=n; el.innerHTML=html; },{once:true}); step(); }); }
+// 振動（対応している端末だけ）
+const buzz=p=>{ if(SV.vib===false) return; try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} };
+// 紙吹雪
+function confetti(n){ if(REDUCE) return; const fx=$('#fx'); const c=document.createElement('canvas'); c.width=innerWidth; c.height=innerHeight; c.style.cssText='position:absolute;inset:0;width:100%;height:100%'; fx.appendChild(c);
+  const x=c.getContext('2d'), cols=['#f2c230','#3f8a57','#e2753f','#3f86c8','#e889a8','#fff'];
+  const P=[...Array(n||90)].map(()=>({x:c.width/2+(Math.random()-.5)*60,y:c.height*0.35,vx:(Math.random()-.5)*11,vy:-Math.random()*11-4,s:4+Math.random()*5,c:pick(cols),r:Math.random()*6,vr:(Math.random()-.5)*.4}));
+  const t0=performance.now(); (function f(now){ const t=now-t0; x.clearRect(0,0,c.width,c.height);
+    P.forEach(p=>{ p.vy+=0.32; p.vx*=0.99; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; x.save(); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c; x.fillRect(-p.s/2,-p.s/3,p.s,p.s*0.66); x.restore(); });
+    if(t<2200) requestAnimationFrame(f); else c.remove(); })(t0); }
 const spr=(id,cls)=>`<img class="${cls||''}" src="${animalDataURL(id,4)}" alt="">`;
 function poseCanvas(id,t){ const P=POSES[id]; const c=document.createElement('canvas'); paintHuman(c,t?lerpPose(P.A,P.B,t):P.A,P.prop); return c; }
 function mountPoses(root){ (root||document).querySelectorAll('span.pz').forEach(s=>{ const c=poseCanvas(s.dataset.p,+s.dataset.t||0); s.replaceWith(c); }); }
 
 // ================= 共通UI =================
-function render(html){ $('#app').innerHTML=html; mountWB($('#app')); mountPoses($('#app')); window.scrollTo(0,0); }
-function modal(html){ const m=$('#modal'); m.innerHTML=`<div class="mbox">${html}</div>`; m.hidden=false; mountWB(m); mountPoses(m); return m; }
+const TABS=[['home','🏠','ホーム'],['dex','📖','図鑑'],['skills','✨','スキル'],['report','📊','レポート'],['settings','⚙️','設定']];
+function tabbar(cur){ const t=$('#tabbar'); if(!cur){ t.hidden=true; document.body.classList.add('notab'); return; }
+  t.hidden=false; document.body.classList.remove('notab');
+  t.innerHTML=`<div class="in">${TABS.map(([k,ic,nm])=>`<button class="tab ${k===cur?'on':''}" data-go="${k}"><span class="ic">${ic}</span>${nm}${k==='skills'&&SV.sp>0?`<span class="badge">${SV.sp}</span>`:''}</button>`).join('')}</div>`; }
+function render(html,opt){ opt=opt||{}; const app=$('#app'); app.classList.remove('fx'); void app.offsetWidth; app.innerHTML=html; app.classList.add('fx');
+  const cta=$('#ctaBox'); cta.innerHTML=opt.cta||''; cta.hidden=!opt.cta; tabbar(opt.tab||null);
+  [app,cta].forEach(r=>{ mountWB(r); mountPoses(r); }); typeAll(app); window.scrollTo(0,0); }
+function modal(html){ const m=$('#modal'); m.innerHTML=`<div class="mbox">${html}</div>`; m.hidden=false; mountWB(m); mountPoses(m); typeAll(m); return m; }
 function closeModal(){ const m=$('#modal'); m.hidden=true; m.innerHTML=''; }
 function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2200); }
-const coach=(text,eye)=>`<div class="coach">${wb(eye)}<div class="bubble">${text}</div></div>`;
+const coach=(text,mood)=>`<div class="coach">${wb(mood)}<div class="bubble" data-type>${text}</div></div>`;
+const hero=(text,mood)=>`<div class="hero"><div class="bub" data-type>${text}</div>${wb(mood)}<div class="shadow"></div></div>`;
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const header=(title,back)=>`<div class="top">${back?`<a href="#" data-go="home">← もどる</a>`:`<a href="../../trial/">← ゲーム一覧</a>`}<span class="muted">Lv.${SV.level}</span></div>${title?`<h1>${title}</h1>`:''}`;
-document.addEventListener('click',e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); ac(); go(g.dataset.go); } });
+const header=(title,back)=>`<div class="top">${back?`<a href="#" data-go="${back===true?'home':back}">← もどる</a>`:`<a href="../../trial/">← ゲーム一覧</a>`}<span class="muted">Lv.${SV.level}</span></div>${title?`<h1>${title}</h1>`:''}`;
+document.addEventListener('click',e=>{ if(e.target.closest('.btn,.tab,.chip,.cbtn,.feel button,.skill.pick')) buzz(8);
+  const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); ac(); go(g.dataset.go); } });
 function go(scr){ if(scr==='home') home(); else if(scr==='dex') dexScreen(); else if(scr==='skills') skillScreen(); else if(scr==='report') reportScreen(); else if(scr==='settings') settingsScreen(); else if(scr==='pre') preScreen(); else if(scr==='sound') soundScreen(); }
 
 // ================= レベル =================
@@ -881,65 +1034,71 @@ function home(){
   if(!SV.started) return intro();
   bgmPlay('home');
   const ws=weekStart(new Date()), wk=weekSessions(ws).filter(rewarded), days=daysWith(wk);
+  const just=SV._just; SV._just=false;
   const st=[...Array(7)].map((_,i)=>{ const d=addDays(ws,i), k=dkey(d), on=wk.some(s=>s.date===k);
-    return `<div class="stamp">${'月火水木金土日'[i]}<b class="${on?'on':''} ${k===today()?'today':''}">${on?'🐾':''}</b></div>`; }).join('');
+    return `<div class="stamp">${'月火水木金土日'[i]}<b class="${on?'on':''} ${k===today()?'today':''} ${on&&k===today()&&just?'pop':''}">${on?'🐾':''}</b></div>`; }).join('');
   const done=SV.sessions.some(s=>s.date===today()&&s.reward);
-  const line=done?'今日のトレーニングは終わったね。また明日！':pick(COACH_LINES.home);
-  render(`${header('ウォンバット☆きんトレ探検隊')}
-  ${coach(line, done?'happy':'')}
-  <div class="card"><div class="row" style="justify-content:space-between"><b>Lv.${SV.level}</b><span class="small">次のレベルまで ${expNeed(SV.level)-SV.exp} EXP</span></div>
-    <div class="bar"><i style="width:${Math.round(SV.exp/expNeed(SV.level)*100)}%"></i></div>
-    <div class="row" style="justify-content:space-between;margin-top:8px"><span>今週 <b>${days}</b> / ${SV.goal} 回</span><span>図鑑 <b>${dexCount()}</b> / ${TOTAL_DEX}</span></div>
+  const slot=slotOfNow();
+  const line=done?'今日のトレーニングは終わったね。また明日！':days>=SV.goal?`今週の目標は達成ずみ！ ${slot==='夜'?'今夜':'今日'}もやる？`:(slot==='朝'?'おはよう！ ':slot==='夜'?'おつかれさま。 ':'')+pick(COACH_LINES.home);
+  const pct=Math.round(SV.exp/expNeed(SV.level)*100);
+  render(`${header('')}
+  ${hero(line, done?'happy':'')}
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><b>Lv.${SV.level}</b><span class="small">次のレベルまで ${expNeed(SV.level)-SV.exp} EXP</span></div>
+    <div class="bar"><i id="expBar" style="width:0%"></i></div>
+    <div class="stat" style="margin-top:10px"><div><b>${days}<small style="font-size:12px">/${SV.goal}</small></b><span>今週の回数</span></div><div><b>${dexCount()}</b><span>図鑑 /${TOTAL_DEX}</span></div><div><b>${SV.sessions.filter(rewarded).length}</b><span>累計の回数</span></div></div>
     <div class="stamps">${st}</div></div>
-  ${SV.sp>0?`<button class="btn acc" id="spBtn">スキルを覚える（あと${SV.sp}回）</button>`:''}
-  <button class="btn" data-go="pre">${done?'もう一度やる（報酬なし）':'トレーニングを始める（約10分）'}</button>
-  <div class="grid3"><button class="btn sub" data-go="dex">図鑑</button><button class="btn sub" data-go="skills">スキル</button><button class="btn sub" data-go="report">レポート</button></div>
-  <button class="btn sub" data-go="settings">設定・バックアップ</button>
-  ${SAVE_OK?'':'<p class="small" style="color:var(--warn)">このブラウザでは記録を保存できないようです。設定のバックアップで記録を書き出してください。</p>'}`);
+  ${SV.sp>0?`<button class="btn acc" id="spBtn">✨ スキルを覚える（あと${SV.sp}回）</button>`:''}
+  ${SAVE_OK?'':'<p class="small" style="color:var(--warn)">このブラウザでは記録を保存できないようです。設定のバックアップで記録を書き出してください。</p>'}
+  <p class="small" style="text-align:center">ウォンバット☆きんトレ探検隊（試作中）</p>`,
+  {tab:'home',cta:`<button class="btn ${done?'sub':'pulse'}" data-go="pre">${done?'もう一度やる（報酬なし）':'▶ トレーニング開始（約10分）'}</button>`});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ const e=$('#expBar'); if(e) e.style.width=pct+'%'; }));
   const b=$('#spBtn'); if(b) b.onclick=()=>skillChoice(()=>home());
 }
 function intro(){
   bgmStop();
   render(`${header('ウォンバット☆きんトレ探検隊')}
-  ${coach('はじめまして。ぼくはウォンバットコーチ。<br>朝か夜に10分、いっしょに道具なしのきんトレをしよう。がんばったら、いっしょに動物を探しに行くよ。')}
-  <div class="card"><h3>このゲームのしくみ</h3>
+  ${hero('はじめまして。ぼくはウォンバットコーチ。<br>朝か夜に10分、道具なしのきんトレをいっしょにやろう。がんばったら、動物を探しに行くよ。','happy')}
+  <div class="card"><h3 style="margin-top:0">このゲームのしくみ</h3>
   <ul class="tips"><li>1日1回、約10分。朝でも夜でもOK</li><li>運動中は画面を見なくても、音と声で進む</li><li>休けい中に、次の運動のお手本を見せるよ</li><li>終わると経験値。レベルが上がるとスキルを覚えて、探検で動物に出会える</li></ul>
-  <p class="small">高血圧や心臓の病気がある人、ひざ・腰などに痛みがある人は、始める前に医師に相談してください。運動中に痛みや気分の悪さを感じたら、すぐにやめてください。</p></div>
-  <button class="btn" id="go1">音のチェックへ</button>`);
+  <p class="small">高血圧や心臓の病気がある人、ひざ・腰などに痛みがある人は、始める前に医師に相談してください。運動中に痛みや気分の悪さを感じたら、すぐにやめてください。</p></div>`,
+  {cta:'<button class="btn pulse" id="go1">音のチェックへ</button>'});
   $('#go1').onclick=()=>{ ac(); soundScreen(true); };
 }
 
 // ================= 音のチェック =================
 function soundScreen(first){
   bgmStop();
-  render(`${header('音のチェック',!first)}
+  render(`${header('音のチェック',first?false:'settings')}
   ${coach('運動中は画面を見られないから、音で案内するよ。まずは聞こえるか確かめよう。')}
   <div class="card"><h3>1. 声の読み上げ</h3><button class="btn sub" id="tV">声をテスト</button>
   <p class="small" id="vInfo"></p>
-  <div class="row"><button class="btn sm" id="vYes">聞こえた</button><button class="btn sm sub" id="vNo">聞こえない</button></div></div>
+  <div class="row"><button class="btn ${SV.voice!=='off'?'':'sub'}" id="vYes">聞こえた</button><button class="btn ${SV.voice==='off'?'':'sub'}" id="vNo">聞こえない</button></div></div>
   <div class="card"><h3>2. 効果音</h3>
   <p class="small">低い音＝「下げる」、高い音＝「上げる」の合図だよ。</p>
-  <div class="row"><button class="btn sub sm" id="tLo">低い音</button><button class="btn sub sm" id="tHi">高い音</button></div></div>
-  <div class="card"><h3>3. BGM</h3><div class="sw"><span>ファミコン風のBGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="tB">${SV.bgm?'ON':'OFF'}</button></div></div>
-  <div class="card small" id="modeInfo"></div>
-  <button class="btn" id="next">${first?'つぎへ':'もどる'}</button>`);
+  <div class="row"><button class="btn sub" id="tLo">🔵 低い音</button><button class="btn sub" id="tHi">🟠 高い音</button></div></div>
+  <div class="card"><h3>3. 振動</h3><p class="small">合図に合わせてスマホがふるえます（対応している端末だけ。iPhoneのブラウザはふるえません）。</p><div class="sw"><span>振動</span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="tVib">${SV.vib!==false?'ON':'OFF'}</button></div></div>
+  <div class="card"><h3>4. BGM</h3><div class="sw"><span>ファミコン風のBGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="tB">${SV.bgm?'ON':'OFF'}</button></div></div>
+  <div class="card small" id="modeInfo"></div>`,{cta:`<button class="btn" id="next">${first?'つぎへ':'もどる'}</button>`});
   const info=()=>{ $('#modeInfo').innerHTML=SV.voice==='off'?'<b>音だけモード</b>：回数は5回ごとに「ピピッ」、残り2回で「ピピピッ」。キープは10秒ごとに「ピッ」、最後の3秒は「ピッ、ピッ、ピッ」で知らせます。':'<b>声ありモード</b>：回数や残り時間を声で読み上げます。'; };
   info();
   $('#tV').onclick=()=>{ ac(); pickVoice(); const ok=('speechSynthesis' in window)&&(AU.voiceJa||speechSynthesis.getVoices().length>=0);
     const prev=SV.voice; SV.voice='auto'; const r=say('ウォンバットコーチだよ。聞こえるかな？'); if(!r){ SV.voice=prev; }
     $('#vInfo').textContent=r?(AU.voiceJa?'日本語の声：'+AU.voiceJa.name:'日本語の声が見つからないので、別の声で読むかもしれません'):'このブラウザでは読み上げが使えないようです。「聞こえない」を選んでください。'; };
-  $('#vYes').onclick=()=>{ SV.voice='auto'; save(); info(); se('ok'); };
-  $('#vNo').onclick=()=>{ SV.voice='off'; save(); info(); se('ok'); };
-  $('#tLo').onclick=()=>SE.down(); $('#tHi').onclick=()=>SE.up();
+  const sel=()=>{ $('#vYes').className='btn '+(SV.voice!=='off'?'':'sub'); $('#vNo').className='btn '+(SV.voice==='off'?'':'sub'); };
+  $('#vYes').onclick=()=>{ SV.voice='auto'; save(); info(); sel(); se('ok'); };
+  $('#vNo').onclick=()=>{ SV.voice='off'; save(); info(); sel(); se('ok'); };
+  $('#tLo').onclick=()=>{ SE.down(); buzz(40); }; $('#tHi').onclick=()=>{ SE.up(); buzz([20,60,20]); };
+  $('#tVib').onclick=()=>{ SV.vib=SV.vib===false; save(); $('#tVib').textContent=SV.vib?'ON':'OFF'; $('#tVib').className='btn sm '+(SV.vib?'':'sub'); if(SV.vib) buzz(60); };
   $('#tB').onclick=()=>{ SV.bgm=!SV.bgm; save(); soundScreen(first); if(SV.bgm) bgmPlay('home'); };
-  $('#next').onclick=()=>{ SV.sound=true; save(); if(first) starterScreen(); else home(); };
+  $('#next').onclick=()=>{ SV.sound=true; save(); if(first) starterScreen(); else settingsScreen(); };
 }
 function starterScreen(){
   render(`${header('最初のスキル',false)}
   ${coach('探検の準備をしよう。まずは得意な場所をひとつ選んでね。あとからどんどん増やせるよ。')}
   <div id="sk"></div>`);
   $('#sk').innerHTML=['sato','forest','grass','water','sea'].map(k=>skillCard(k,true)).join('');
-  $('#sk').onclick=e=>{ const c=e.target.closest('[data-sk]'); if(!c) return; SV.skills[c.dataset.sk]=1; SV.started=true; save(); se('fanfare'); home(); };
+  $('#sk').onclick=e=>{ const c=e.target.closest('[data-sk]'); if(!c) return; SV.skills[c.dataset.sk]=1; SV.started=true; save(); se('fanfare'); confetti(); home(); };
 }
 function skillCard(k,pickable,showLv){
   const S=SKILLS[k], lv=SV.skills[k]||0, mx=skillMax(k);
@@ -964,11 +1123,11 @@ function skillChoice(after){
 
 // ================= スキル画面 =================
 function skillScreen(){
-  render(`${header('スキル',true)}
-  ${SV.sp>0?`<button class="btn acc" id="spBtn">スキルを覚える（あと${SV.sp}回）</button>`:''}
+  render(`<h1>スキル</h1>
+  ${SV.sp>0?`<button class="btn acc" id="spBtn">✨ スキルを覚える（あと${SV.sp}回）</button>`:''}
   <p class="small">生息地のスキルが高いほど、その場所の動物を見つけやすくなります。★の多い動物は、スキルのレベルが★の数以上ないと出会えません（★はゲーム上の発見難度で、現実の珍しさとは関係ありません）。</p>
   ${Object.keys(SKILLS).map(k=>skillCard(k,false)).join('')}
-  <p class="small">朝にトレーニングした日は昼に活動する動物、夜にトレーニングした日は夜に活動する動物に出会いやすくなります。</p>`);
+  <p class="small">朝にトレーニングした日は昼に活動する動物、夜にトレーニングした日は夜に活動する動物に出会いやすくなります。</p>`,{tab:'skills'});
   const b=$('#spBtn'); if(b) b.onclick=()=>skillChoice(()=>skillScreen());
 }
 
@@ -991,11 +1150,11 @@ function preScreen(){
   <div class="card">${list}</div>
   ${chal?`<div class="card" id="chalBox"><b>挑戦クエスト</b>
     <p style="margin:4px 0">「${EX[menu[chal.idx].id].name}」を <b>${chal.add}${EX[menu[chal.idx].id].type==='rep'?'回':'秒'}</b> ふやしてみる？ 成功したら経験値と探検のチャンスが1回ふえるよ。</p>
-    <div class="row"><button class="btn sm acc" id="cY">挑戦する</button><button class="btn sm sub" id="cN">今日はやめておく</button></div></div>`:''}
-  <div class="card small">体調が悪い日は休もう。痛みが出たらすぐにやめてね。運動中は画面を見なくても、音と声で進みます。</div>
-  <button class="btn" id="start">スタート</button>`);
+    <div class="row"><button class="btn acc" id="cY">🔥 挑戦する</button><button class="btn sub" id="cN">今日はやめておく</button></div></div>`:''}
+  <div class="card small">体調が悪い日は休もう。痛みが出たらすぐにやめてね。運動中は画面を見なくても、音と声で進みます。画面が消えないようにしますが、消えた場合は一時停止します。</div>`,
+  {cta:'<button class="btn pulse" id="start">▶ スタート</button>'});
   if(chal){ const box=$('#chalBox');
-    $('#cY').onclick=()=>{ PLAN.accepted=true; se('ok'); box.innerHTML=`<b>挑戦クエスト：受けた！</b><div class="small">「${EX[menu[chal.idx].id].name}」を${chal.add}${EX[menu[chal.idx].id].type==='rep'?'回':'秒'}ふやしたよ。</div>`; };
+    $('#cY').onclick=()=>{ PLAN.accepted=true; se('ok'); confetti(30); box.innerHTML=`<b>挑戦クエスト：受けた！</b><div class="small">「${EX[menu[chal.idx].id].name}」を${chal.add}${EX[menu[chal.idx].id].type==='rep'?'回':'秒'}ふやしたよ。</div>`; };
     $('#cN').onclick=()=>{ PLAN.accepted=false; box.innerHTML='<div class="small">挑戦はお休み。いつものメニューでいこう。</div>'; }; }
   $('#start').onclick=()=>{ ac(); if(PLAN.accepted){ const m=PLAN.menu[chal.idx]; if(m.reps) m.reps+=chal.add; else m.hold+=chal.add; } startSession(); };
 }
@@ -1003,17 +1162,17 @@ function preScreen(){
 // ================= セッション =================
 let RUN=null;
 function startSession(){
-  const tl=buildTimeline(PLAN.menu);
+  const tl=buildTimeline(PLAN.menu); tl.unshift({kind:'ready',dur:3.6});
   RUN={tl,bi:-1,t0:0,elapsed:0,paused:false,raf:0,timer:0,last:{},log:{reps:{},holds:{},active:0,move:0},startTs:Date.now(),aborted:false};
   const d=document.createElement('div'); d.id='sess'; d.innerHTML=`<div class="in">
     <div class="row" style="justify-content:space-between"><span class="small" id="sTime"></span><span class="small" id="sStep"></span></div>
-    <div class="prog" id="sProg">${tl.filter(b=>b.kind!=='rest').map(()=>'<i></i>').join('')}</div>
+    <div class="prog" id="sProg">${tl.filter(b=>b.kind!=='rest'&&b.kind!=='ready').map(()=>'<i></i>').join('')}</div>
     <div class="blk" id="sName"></div>
-    <div class="stage"><canvas id="sCv" width="64" height="48"></canvas><div class="phase" id="sPh"></div></div>
-    <div class="big" id="sBig"></div>
-    <div id="sSub"></div>
-    <div class="row" style="margin-top:8px"><button class="btn sub" id="sPause">一時停止</button><button class="btn sub" id="sSkip">スキップ</button></div>
-    <button class="btn sub" id="sQuit" style="font-size:14px">やめる</button></div>`;
+    <div class="stage"><canvas id="sCv" width="64" height="48"></canvas><div class="phase" id="sPh"></div><div class="pausecover" id="sCover" hidden>一時停止中</div></div>
+    <div class="ringwrap"><svg viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="44"/><circle class="ring-fg" id="sRing" cx="50" cy="50" r="44" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
+      <div class="num"><b id="sNum"></b><small id="sUnit"></small></div></div>
+    <div id="sSub"></div></div>
+    <div class="ctrl"><button class="cbtn" id="sQuit"><span class="ic">✕</span>やめる</button><button class="cbtn main" id="sPause"><span class="ic">⏸</span>停止</button><button class="cbtn" id="sSkip"><span class="ic">⏭</span>次へ</button></div>`;
   document.body.appendChild(d); document.body.style.overflow='hidden';
   $('#sPause').onclick=togglePause; $('#sSkip').onclick=()=>nextBlock(true);
   $('#sQuit').onclick=()=>{ if(!RUN.paused) togglePause(); modal(`<p>トレーニングをやめますか？ ここまでの運動は記録されますが、経験値はもらえません。</p><div class="row"><button class="btn sub" id="qN">つづける</button><button class="btn warn" id="qY">やめる</button></div>`);
@@ -1022,7 +1181,12 @@ function startSession(){
   nextBlock();
   RUN.timer=setInterval(tick,50); loopDraw();
 }
-function togglePause(){ if(!RUN) return; RUN.paused=!RUN.paused; $('#sPause').textContent=RUN.paused?'再開':'一時停止';
+const RING_C=276.5;
+function setRing(f){ const c=$('#sRing'); if(c) c.style.strokeDashoffset=String(RING_C*(1-Math.max(0,Math.min(1,f)))); }
+function setNum(v,unit,f){ const n=$('#sNum'); if(!n) return; v=String(v); if(n.textContent!==v){ n.textContent=v; if(!REDUCE){ n.classList.remove('numpop'); void n.offsetWidth; n.classList.add('numpop'); } } $('#sUnit').textContent=unit; setRing(f); }
+function setMode(m){ const s=$('#sess'); if(s&&s.className!==m) s.className=m; }
+function phaseFlash(){ const p=$('#sPh'); if(!p||REDUCE) return; p.classList.add('flash'); setTimeout(()=>p.classList.remove('flash'),150); }
+function togglePause(){ if(!RUN) return; RUN.paused=!RUN.paused; $('#sPause').innerHTML=RUN.paused?'<span class="ic">▶</span>再開':'<span class="ic">⏸</span>停止'; $('#sCover').hidden=!RUN.paused;
   if(RUN.paused){ RUN.elapsed+=(performance.now()-RUN.t0)/1000*SPEED; shutUp(); bgmStop(); }
   else { RUN.t0=performance.now(); startBgmFor(RUN.tl[RUN.bi]); } }
 const SPEED=/fast/.test(location.hash)?25:1; // 確認用：#fast で早送り
@@ -1035,15 +1199,18 @@ function nextBlock(skipped){
   RUN.bi++; RUN.elapsed=0; RUN.t0=performance.now(); RUN.last={};
   const b=RUN.tl[RUN.bi]; if(!b) return finishSession();
   startBgmFor(b); shutUp();
-  const segs=[...document.querySelectorAll('#sProg i')]; const pi=RUN.tl.slice(0,RUN.bi+1).filter(x=>x.kind!=='rest').length-1;
-  segs.forEach((s,i)=>{ s.className=i<pi||(i===pi&&b.kind==='rest'&&false)?'done':i===pi?'cur':''; });
-  if(b.kind==='rest') segs.forEach((s,i)=>{ s.className=i<=pi?'done':''; });
+  const segs=[...document.querySelectorAll('#sProg i')]; const pi=RUN.tl.slice(0,RUN.bi+1).filter(x=>x.kind!=='rest'&&x.kind!=='ready').length-1;
+  segs.forEach((s,i)=>{ s.className=i<pi?'done':(i===pi&&b.kind!=='rest')?'cur':(i===pi?'done':''); });
+  const ex=RUN.tl.filter(x=>x.kind==='ex'); $('#sStep').textContent=b.kind==='ex'||b.kind==='rest'?`種目 ${(b.idx||0)+1} / ${ex.length}`:'';
   const sub=$('#sSub');
-  if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; $('#sName').textContent=W.name; sub.innerHTML=`<div class="sline">${wb()}<span id="sLine">${W.lines[0]}</span></div>`; mountWB(sub); say(W.name+'。'+W.lines[0]); }
-  else if(b.kind==='rest'){ const e=EX[b.next.id]; $('#sName').textContent='休けい　次は「'+e.name+'」';
-    sub.innerHTML=`<div class="card" style="margin-top:6px"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">低い音で${e.down}、高い音で${e.up}（${e.tempo[0]}秒ずつ）${e.alt?'・左右交互':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
+  if(b.kind==='ready'){ setMode('rest'); $('#sName').textContent='まもなくスタート'; sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">いっしょにがんばろう！</span></div>`; mountWB(sub); say('準備はいい？ いくよ'); }
+  else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; setMode('rest'); $('#sName').textContent=W.name; sub.innerHTML=`<div class="sline">${wb(b.kind==='cool'?'happy':'')}<span id="sLine">${W.lines[0]}</span></div>`; mountWB(sub); say(W.name+'。'+W.lines[0]); if(b.kind==='cool') se('fanfare'); }
+  else if(b.kind==='rest'){ const e=EX[b.next.id]; setMode('rest'); $('#sName').textContent='休けい　NEXT ▶ '+e.name;
+    sub.innerHTML=`<div class="card nextcard" style="margin-top:6px"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵 低い音で${e.down}、🟠 高い音で${e.up}（${e.tempo[0]}秒ずつ）${e.alt?'・左右交互':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
     say(`休けい。次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}。${e.tips[0]}`); }
-  else { const e=EX[b.m.id]; $('#sName').textContent=e.name; sub.innerHTML=`<div class="sline">${wb()}<span id="sLine">${e.type==='hold'?e.tips[2]:e.tips[0]}</span></div>`; mountWB(sub); se('go');
+  else { const e=EX[b.m.id]; $('#sName').textContent=e.name; setMode(e.type==='hold'?'hold':'down');
+    sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">${e.type==='hold'?e.tips[2]:e.tips[0]}</span></div>`; mountWB(sub); se('go'); buzz(120);
+    setTimeout(()=>setMood($('#sSub'),''),2500);
     if(e.type==='hold') say('スタート。呼吸を止めずに。'); }
 }
 function logBlock(b,sec){ sec=Math.max(0,Math.min(b.dur,sec)); const L=RUN.log;
@@ -1056,44 +1223,49 @@ function once(key){ if(RUN.last[key]) return false; RUN.last[key]=1; return true
 function tick(){
   if(!RUN||RUN.paused) return; const b=RUN.tl[RUN.bi]; if(!b) return; const t=blockT(), left=Math.max(0,b.dur-t);
   const total=RUN.tl.reduce((a,x)=>a+x.dur,0), passed=RUN.tl.slice(0,RUN.bi).reduce((a,x)=>a+x.dur,0)+t;
-  $('#sTime').textContent=`残り約${Math.ceil((total-passed)/60)}分`;
-  const voice=voiceOn();
-  if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; const li=Math.min(W.lines.length-1,Math.floor(t/(b.dur/W.lines.length)));
+  $('#sTime').textContent=`残り約${Math.max(1,Math.ceil((total-passed)/60))}分`;
+  const voice=voiceOn(), ph=$('#sPh');
+  if(b.kind==='ready'){ const c=Math.ceil(left-0.5); setNum(c>0?c:'GO','',left/b.dur); ph.textContent=''; ph.className='phase';
+    if(c>0&&once('r'+c)){ se('tick'); buzz(30); if(voice) say(String(c)); } if(c<=0&&once('rgo')) se('go'); }
+  else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; const li=Math.min(W.lines.length-1,Math.floor(t/(b.dur/W.lines.length)));
     if(once('l'+li)&&li>0){ $('#sLine').textContent=W.lines[li]; say(W.lines[li]); }
     if(b.kind==='warm'&&Math.floor(t)!==RUN.last.sec){ RUN.last.sec=Math.floor(t); if(left>3) tone(RUN.last.sec%2?660:440,0.05,'square',0.12); }
-    $('#sBig').innerHTML=`${Math.ceil(left)}<small>秒</small>`; $('#sPh').textContent=''; $('#sPh').className='phase';
+    setNum(Math.ceil(left),'秒',left/b.dur); ph.textContent=''; ph.className='phase';
     if(left<=3&&left>0&&once('c'+Math.ceil(left))) se('tick');
   } else if(b.kind==='rest'){ const e=EX[b.next.id];
-    $('#sBig').innerHTML=`${Math.ceil(left)}<small>秒</small>`; $('#sPh').textContent='お手本'; $('#sPh').className='phase';
+    setNum(Math.ceil(left),'秒 休けい',left/b.dur); ph.textContent='お手本'; ph.className='phase';
     // 音のお手本：説明のあと1回分
     if(e.type==='rep'&&t>=7&&t<7+e.tempo[0]+e.tempo[1]){ if(once('demoD')) se('down'); if(t>=7+e.tempo[0]&&once('demoU')) se('up'); }
-    if(left<=3&&left>0&&once('c'+Math.ceil(left))){ se('tick'); if(voice) say(String(Math.ceil(left))); }
+    if(left<=3&&left>0&&once('c'+Math.ceil(left))){ se('tick'); buzz(30); if(voice) say(String(Math.ceil(left))); }
   } else { const e=EX[b.m.id];
-    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], i=Math.floor(t/per), ph=(t-i*per)<e.tempo[0]?'down':'up', n=b.m.reps;
+    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], i=Math.floor(t/per), phs=(t-i*per)<e.tempo[0]?'down':'up', n=b.m.reps;
       if(i<n){
-        if(ph==='down'&&once('d'+i)){ se('down'); if(e.sideSwitch&&i===Math.floor(n/2)){ say('足を入れかえて'); $('#sLine').textContent='足を入れかえて、左足を前に'; }
+        if(phs==='down'&&once('d'+i)){ se('down'); buzz(40); phaseFlash(); if(e.sideSwitch&&i===Math.floor(n/2)){ say('足を入れかえて'); $('#sLine').textContent='足を入れかえて、左足を前に'; }
           else if(e.alt&&voice&&i===0) say(e.id==='birddog'?'右手と左足':'右ひざ'); }
-        if(ph==='up'&&once('u'+i)){ se('up'); const c=i+1;
+        if(phs==='up'&&once('u'+i)){ se('up'); buzz([20,50,20]); phaseFlash(); const c=i+1;
+          if(c===n-2&&n>4) setMood($('#sSub'),'cheer'); if(c===n) setMood($('#sSub'),'happy');
           if(voice){ if(c===n-2&&n>4) say(`${c}、あと2回`); else if(c===n) say(`${c}、ここまで`); else say(String(c)); }
           else { if(c===n-2) { se('pip'); setTimeout(()=>se('pip'),120); setTimeout(()=>se('pip'),240); } else if(c%5===0){ se('pip'); setTimeout(()=>se('pip'),120); } } }
-        $('#sBig').innerHTML=`${Math.min(n,i+(ph==='up'?1:0))}<small> / ${n}回</small>`;
-        $('#sPh').textContent=ph==='down'?e.down:e.up; $('#sPh').className='phase '+ph;
+        const done=Math.min(n,i+(phs==='up'?1:0));
+        setNum(done,`/ ${n}回`,(t/per)/n); setMode(phs);
+        ph.textContent=(phs==='down'?'🔵 ':'🟠 ')+(phs==='down'?e.down:e.up); ph.className='phase '+phs;
       }
     } else {
-      const s=Math.ceil(left); $('#sBig').innerHTML=`${s}<small>秒</small>`; $('#sPh').textContent='キープ'; $('#sPh').className='phase';
+      const sc=Math.ceil(left); setNum(sc,'秒 キープ',left/b.dur); ph.textContent='キープ'; ph.className='phase';
       if(voice){ if(b.dur>=30&&Math.abs(t-b.dur/2)<0.1&&once('half')) say('半分。呼吸を続けて');
-        if(left<=10.05&&left>9.8&&b.dur>15&&once('t10')) say('あと10秒');
-        if(left<=3&&left>0&&once('c'+s)) { se('tick'); say(String(s)); } }
-      else { const fl=Math.floor(t); if(fl>0&&fl%10===0&&left>4&&once('p'+fl)) se('pip'); if(left<=3&&left>0&&once('c'+s)) se('tick'); }
+        if(left<=10.05&&left>9.8&&b.dur>15&&once('t10')){ say('あと10秒'); setMood($('#sSub'),'cheer'); }
+        if(left<=3&&left>0&&once('c'+sc)) { se('tick'); buzz(30); say(String(sc)); } }
+      else { const fl=Math.floor(t); if(fl>0&&fl%10===0&&left>4&&once('p'+fl)){ se('pip'); buzz(30); } if(left<=3&&left>0&&once('c'+sc)){ se('tick'); buzz(30); } }
       if(Math.floor(t)>0&&Math.floor(t)%20===0&&left>12&&once('br'+Math.floor(t))) { $('#sLine').textContent='息を止めずに、ふつうに呼吸'; }
     }
   }
-  if(t>=b.dur){ if(b.kind==='ex'){ se('end'); if(EX[b.m.id].type==='hold'&&voiceOn()) say('ここまで'); } nextBlock(false); }
+  if(t>=b.dur){ if(b.kind==='ex'){ se('end'); buzz([60,40,60]); if(EX[b.m.id].type==='hold'&&voiceOn()) say('ここまで'); } nextBlock(false); }
 }
 function loopDraw(){ if(!RUN) return; RUN.raf=requestAnimationFrame(loopDraw); const b=RUN.tl[RUN.bi]; if(!b) return; const cv=$('#sCv'); if(!cv) return;
   const t=blockT(); let id, p=0, P;
   const ease=x=>0.5-0.5*Math.cos(Math.PI*Math.max(0,Math.min(1,x)));
-  if(b.kind==='warm'){ id='march'; p=ease((t%1)); p=Math.floor(t)%2?1-p:p; }
+  if(b.kind==='ready'){ id='march'; p=0; }
+  else if(b.kind==='warm'){ id='march'; p=ease((t%1)); p=Math.floor(t)%2?1-p:p; }
   else if(b.kind==='cool'){ id='stretch'; p=ease((Math.sin(t*Math.PI/4)+1)/2); }
   else { const m=b.kind==='rest'?b.next:b.m, e=EX[m.id]; id=e.pose;
     if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], tt=b.kind==='rest'?Math.max(0,t-7):t, x=tt%per; p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<7) p=0; }
@@ -1112,25 +1284,26 @@ function finishSession(){
   postScreen(rec);
 }
 function updBest(rec){ for(const k in rec.holdMax){ SV.best[k]=Math.max(SV.best[k]||0,rec.holdMax[k]); } }
-function afterNoReward(rec){ bgmPlay('done'); render(`${header('おつかれさま',true)}${coach('2回目もおつかれさま。記録には残しておくね。今日はゆっくり休もう。','happy')}<button class="btn" data-go="home">ホームへ</button>`); }
+function afterNoReward(rec){ bgmPlay('done'); render(`${header('おつかれさま',true)}${hero('2回目もおつかれさま。記録には残しておくね。今日はゆっくり休もう。','happy')}`,{cta:'<button class="btn" data-go="home">ホームへ</button>'}); }
 
 // ================= 終了後 =================
 function postScreen(rec){
-  bgmPlay('done'); se('fanfare');
+  bgmPlay('done'); se('fanfare'); confetti(); buzz([80,60,80]);
   const ch=PLAN.accepted?PLAN.chal:null;
-  render(`${header('おつかれさま！',false)}
-  ${coach(pick(COACH_LINES.done),'happy')}
-  <div class="card"><div class="kv"><span>筋トレ時間（運動ブロック）</span><b>${fmtMin(rec.active)}</b></div>
-  ${Object.entries(rec.reps).map(([k,v])=>`<div class="kv"><span>${EX[k].name}</span><b>${v}回</b></div>`).join('')}
-  ${Object.entries(rec.holds).map(([k,v])=>`<div class="kv"><span>${EX[k].name}</span><b>${v}秒</b></div>`).join('')}</div>
-  <div class="card"><b>今日のきつさは？</b><p class="small">次回の回数や秒数を調整するよ。</p>
-  <div class="grid3" id="feel"><button class="btn sub" data-f="easy">楽</button><button class="btn sub" data-f="ok">ちょうど</button><button class="btn sub" data-f="hard">きつい</button></div></div>
-  ${ch?`<div class="card" id="chq"><b>挑戦クエストはできた？</b><div class="row"><button class="btn sm acc" data-c="1">できた</button><button class="btn sm sub" data-c="0">できなかった</button></div></div>`:''}
-  <button class="btn" id="toExp" disabled>探検に出発！</button>`);
+  const pb=Object.keys(rec.holdMax||{}).filter(k=>rec.holdMax[k]>(SV.best[k]||0)&&(SV.best[k]||0)>0);
+  render(`${hero(pick(COACH_LINES.done),'cheer')}
+  <h1 style="text-align:center">トレーニング完了！</h1>
+  <div class="card"><div class="stat"><div><b>${fmtMin(rec.active)}</b><span>筋トレ時間</span></div><div><b>${Object.values(rec.reps).reduce((a,b)=>a+b,0)}</b><span>回数の合計</span></div><div><b>${Object.values(rec.holds).reduce((a,b)=>a+b,0)}</b><span>キープ秒数</span></div></div>
+  ${pb.map(k=>`<div class="kv"><span>🏅 ${EX[k].name}</span><b style="color:#b07a00">自己ベスト更新 ${rec.holdMax[k]}秒</b></div>`).join('')}</div>
+  <div class="card"><b>今日のきつさは？</b><span class="small">　次回の回数や秒数を調整するよ</span>
+  <div class="feel" id="feel" style="margin-top:8px"><button data-f="easy"><span class="e">😊</span>楽</button><button data-f="ok"><span class="e">🙂</span>ちょうど</button><button data-f="hard"><span class="e">😣</span>きつい</button></div></div>
+  ${ch?`<div class="card" id="chq"><b>🔥 挑戦クエストはできた？</b><div class="row" style="margin-top:6px"><button class="btn sub" data-c="1">できた</button><button class="btn sub" data-c="0">できなかった</button></div></div>`:''}`,
+  {cta:'<button class="btn" id="toExp" disabled>🧭 探検に出発！</button>'});
   let feel=null, cok=ch?null:false;
   const upd=()=>{ $('#toExp').disabled=!(feel&&(cok!==null)); };
-  $('#feel').onclick=e=>{ const f=e.target.closest('[data-f]'); if(!f) return; feel=f.dataset.f; [...$('#feel').children].forEach(x=>x.className='btn '+(x===f?'':'sub')); upd(); };
-  if(ch) $('#chq').onclick=e=>{ const c=e.target.closest('[data-c]'); if(!c) return; cok=c.dataset.c==='1'; [...$('#chq').querySelectorAll('[data-c]')].forEach(x=>x.className='btn sm '+(x===c?'acc':'sub')); upd(); };
+  const upd2=()=>{ upd(); if(!$('#toExp').disabled) $('#toExp').classList.add('pulse'); };
+  $('#feel').onclick=e=>{ const f=e.target.closest('[data-f]'); if(!f) return; feel=f.dataset.f; [...$('#feel').children].forEach(x=>x.className=x===f?'on':''); upd2(); };
+  if(ch) $('#chq').onclick=e=>{ const c=e.target.closest('[data-c]'); if(!c) return; cok=c.dataset.c==='1'; [...$('#chq').querySelectorAll('[data-c]')].forEach(x=>x.className='btn '+(x===c?'acc':'sub')); upd2(); };
   $('#toExp').onclick=()=>{
     SV.lastFeel=feel; SV.d=Math.max(0,SV.d+(feel==='easy'?1:feel==='ok'?0.34:-1));
     rec.feel=feel; rec.chal=ch?{ex:PLAN.menu[ch.idx].id,ok:!!cok}:null;
@@ -1143,7 +1316,7 @@ function postScreen(rec){
     rec.exp=gain; const ups=addExp(gain);
     const found=explore(1+(cok?1:0), rec.slot); rec.found=found.map(f=>f.id);
     const facts=checkFacts();
-    save();
+    SV._just=true; save();
     resultScreen(rec,notes,ups,found,facts);
   };
 }
@@ -1183,20 +1356,42 @@ function checkFacts(){
   return got.filter(Boolean);
 }
 const factHTML=f=>`<div class="fact"><b>💡 ${f.title}</b><div>${f.text}</div><div class="src">出典：${f.src}<br>表示の条件：${f.cond}</div></div>`;
+const SCENE={sato:['linear-gradient(#bfe3ff,#e9f6d6 70%,#cfe6b0)','🏠🌾🌻🏡🌾🌳'],forest:['linear-gradient(#cfe9d6,#9fcf9f 70%,#6fa070)','🌲🌳🍄🌲🌲🌳'],grass:['linear-gradient(#ffe7b8,#f4d78a 70%,#d9b765)','🌾🌵🪨🌾🌾🦴'],
+  water:['linear-gradient(#cdeffc,#a8dcea 65%,#86c4b0)','🌿🪷💧🌿🪨🌾'],sea:['linear-gradient(#bfe6ff,#6fc0e8 65%,#f2dfae)','🌊🐚🪸🌊🌊🐚'],cold:['linear-gradient(#e6f0fa,#cfe0f2 70%,#ffffff)','🏔️❄️🌲⛰️❄️🌲'],fossil:['linear-gradient(#f1dfc4,#d9b98e 70%,#b08a5c)','🪨🦴⛏️🪨🦴🪨']};
+function sceneHTML(hab){ const S=SCENE[hab]||SCENE.forest; const d=S[1].repeat(4);
+  return `<div class="scene" style="background:${S[0]}"><div class="deco deco2">${d}${d}</div><div class="deco">${d}${d}</div><canvas class="walker" id="walker" width="48" height="32"></canvas><div id="bang"></div></div>`; }
+function startWalker(){ const c=$('#walker'); if(!c) return null; let f=0; const x=c.getContext('2d');
+  const draw=()=>{ if(!c.isConnected) return clearInterval(id); x.clearRect(0,0,48,32); x.drawImage(wbSide({walk:true,wp:f%2,eye:''}),0,0); f++; }; draw(); const id=setInterval(draw,180); return id; }
+function levelUpFX(onDone){ se('fanfare'); buzz([100,60,100,60,200]); confetti(140);
+  const d=document.createElement('div'); d.className='lvup'; d.innerHTML=`<div class="rays"></div>${wb('cheer')}<h2>LEVEL UP!</h2><p>Lv.${SV.level} になった</p><button class="btn acc">スキルを選ぶ</button>`;
+  document.body.appendChild(d); mountWB(d); say('レベルアップ！');
+  d.querySelector('button').onclick=()=>{ d.remove(); onDone(); }; }
 function resultScreen(rec,notes,ups,found,facts){
   const steps=[];
-  steps.push(()=>modal(`<h2 style="margin-top:0">経験値 +${rec.exp}</h2>${notes.map(n=>`<div class="kv"><span>${n}</span></div>`).join('')}
-    ${ups?`<p style="text-align:center;font-size:20px;font-weight:800;margin:10px 0">レベルアップ！ Lv.${SV.level}</p>`:''}<button class="btn" id="nx">つぎへ</button>`));
-  if(ups) steps.push(()=>{ skillChoice(()=>run()); return null; });
-  steps.push(()=>modal(`<div class="found">${coach('探検に出発！ なにが見つかるかな……')}<p class="muted">${rec.slot==='朝'?'朝の探検':rec.slot==='夜'?'夜の探検':'昼の探検'}（${found.length}回）</p></div><button class="btn" id="nx">さがす</button>`));
-  found.forEach(f=>steps.push(()=>{
-    if(!f.id){ return modal(`<div class="found">${coach(f.why==='none'?'まだ探せる場所がないみたい。スキルを覚えよう。':`${HABS[f.hab].icon} ${HABS[f.hab].name}を探したけど、足あとだけだった……。`,'half')}</div><button class="btn" id="nx">つぎへ</button>`); }
-    const a=A[f.id], info=FACTS[f.id]||{}; se('find');
-    const reveal=revealText(f.id,f.n,true);
-    return modal(`<div class="found">${f.hime?'<p><b>図鑑が全部うまった！</b></p>':''}${f.isNew?'<span class="newb">NEW!</span>':`<span class="tag">また会えた（${f.n}回目）</span>`}
-      <div>${spr(f.id)}</div><h2 style="margin:4px 0">${a.ext?'化石発見！ ':''}${a.name}</h2><div class="small">${HABS[a.hab].icon} ${HABS[a.hab].name}　発見難度 ${'★'.repeat(a.rank)}</div></div>${reveal}<button class="btn" id="nx">つぎへ</button>`);
-  }));
-  facts.forEach(f=>steps.push(()=>modal(`<h2 style="margin-top:0">ファクト解除</h2>${factHTML(f)}<button class="btn" id="nx">つぎへ</button>`)));
+  steps.push(()=>{ const m=modal(`<h2 style="margin-top:0;text-align:center">経験値 +<span id="expN">0</span></h2>${notes.map(n=>`<div class="kv"><span>${n}</span></div>`).join('')}<button class="btn" id="nx">つぎへ</button>`);
+    let v=0; const tgt=rec.exp; const id=setInterval(()=>{ v=Math.min(tgt,v+Math.ceil(tgt/18)); const e=$('#expN'); if(!e) return clearInterval(id); e.textContent=v; if(v%3===0) tone(1000+v*3,0.03,'square',0.1); if(v>=tgt) clearInterval(id); },40); return m; });
+  if(ups) steps.push(()=>{ closeModal(); levelUpFX(()=>skillChoice(()=>run())); return null; });
+  found.forEach((f,fi)=>steps.push(()=>{
+    const hab=f.id?A[f.id].hab:(f.hab||'forest');
+    const m=modal(`${sceneHTML(hab)}<div id="exRes" style="min-height:120px">${coach(fi===0?'探検に出発！ なにが見つかるかな……':'もう少し探してみよう……')}</div>`);
+    const wid=startWalker(); say(fi===0?'探検に出発！':'もう少し探してみよう');
+    setTimeout(()=>{ if(!$('#exRes')) return; clearInterval(wid);
+      $('.scene .deco').style.animationPlayState='paused'; $('.scene .deco2').style.animationPlayState='paused';
+      if(!f.id){ $('#bang').innerHTML='<div class="bang" style="color:#5b6b6f">…</div>'; se('pip');
+        $('#exRes').innerHTML=coach(f.why==='none'?'まだ探せる場所がないみたい。スキルを覚えよう。':`${HABS[f.hab].icon} ${HABS[f.hab].name}を探したけど、足あとだけだった……🐾`,'worry')+'<button class="btn" id="nx">つぎへ</button>';
+        mountWB($('#exRes')); typeAll($('#exRes')); $('#nx').onclick=run; return; }
+      $('#bang').innerHTML='<div class="bang">！</div>'; se('pip'); buzz(50);
+      setTimeout(()=>{ if(!$('#exRes')) return; const a=A[f.id]; se('find'); buzz([40,40,120]);
+        if(f.isNew) confetti(f.hime?200:70);
+        $('.scene').style.display='none';
+        $('#exRes').innerHTML=`<div class="found">${f.hime?'<p><b>図鑑が全部うまった！</b></p>':''}${f.isNew?'<span class="newb big">NEW!</span>':`<span class="tag">また会えた（${f.n}回目）</span>`}
+          <div><span class="reveal hide" id="rv"><span class="glow"></span>${spr(f.id)}</span></div><h2 style="margin:4px 0">${a.ext?'化石発見！ ':''}${a.name}</h2><div class="small">${HABS[a.hab].icon} ${HABS[a.hab].name}　発見難度 ${'★'.repeat(a.rank)}</div></div>${revealText(f.id,f.n,true)}<button class="btn" id="nx">つぎへ</button>`;
+        setTimeout(()=>{ const r=$('#rv'); if(r) r.className='reveal show'; },350);
+        if(voiceOn()) say((f.isNew?'新しい動物、':'')+a.name+'！');
+        $('#nx').onclick=run; },700);
+    },REDUCE?300:1800);
+    return null; }));
+  facts.forEach(f=>steps.push(()=>{ se('ok'); return modal(`<h2 style="margin-top:0">💡 ファクト解除</h2>${factHTML(f)}<button class="btn" id="nx">つぎへ</button>`); }));
   let i=0;
   function run(){ if(i>=steps.length){ closeModal(); return home(); } const m=steps[i++](); if(m){ const b=m.querySelector('#nx'); if(b) b.onclick=run; } }
   run();
@@ -1213,11 +1408,11 @@ function dexScreen(){
   const list=ANIMALS.filter(a=>a.id!=='himewombat'||SV.dex.himewombat);
   const fl=list.filter(a=>DEXF==='all'||a.hab===DEXF||(DEXF==='fossil'&&a.ext)||(DEXF==='sp'&&a.id==='himewombat'));
   const sorted=fl.slice().sort((x,y)=>(Object.keys(HABS).indexOf(x.hab)-Object.keys(HABS).indexOf(y.hab))||(x.rank-y.rank));
-  render(`${header('どうぶつ図鑑',true)}
+  render(`<h1>どうぶつ図鑑</h1>
   <p class="muted">${dexCount()} / ${TOTAL_DEX} 種</p>
   <div class="filters" id="flt"><span class="chip ${DEXF==='all'?'on':''}" data-f="all">ぜんぶ</span>${Object.entries(HABS).map(([k,h])=>`<span class="chip ${DEXF===k?'on':''}" data-f="${k}">${h.icon}${h.name}</span>`).join('')}</div>
-  <div class="dex" id="dexg">${sorted.map(a=>{ const d=SV.dex[a.id]; return `<div class="dx ${d?'':'no'}" data-id="${a.id}">${spr(a.id)}<div>${d?a.name:'？？？'}</div>${d&&d.n>=4?'<span class="st">★</span>':''}</div>`; }).join('')}</div>
-  <p class="small">図鑑の説明は現実の動物の特徴です（大きさはめやす）。★の発見難度はゲーム上の設定です。動物のドット絵と説明は「ウォンバット☆どうぶつ陣取り」と共通です。</p>`);
+  <div class="dex" id="dexg">${sorted.map(a=>{ const d=SV.dex[a.id]; return `<div class="dx ${d?'':'no'} ${d&&d.first===today()?'newin':''}" data-id="${a.id}">${spr(a.id)}<div>${d?a.name:'？？？'}</div>${d&&d.n>=4?'<span class="st">★</span>':''}</div>`; }).join('')}</div>
+  <p class="small">図鑑の説明は現実の動物の特徴です（大きさはめやす）。★の発見難度はゲーム上の設定です。動物のドット絵と説明は「ウォンバット☆どうぶつ陣取り」と共通です。</p>`,{tab:'dex'});
   $('#flt').onclick=e=>{ const c=e.target.closest('[data-f]'); if(!c) return; DEXF=c.dataset.f; dexScreen(); };
   $('#dexg').onclick=e=>{ const c=e.target.closest('[data-id]'); if(!c) return; const id=c.dataset.id, a=A[id], d=SV.dex[id];
     if(!d){ modal(`<div class="found">${spr(id,'')}<h2>？？？</h2><div class="small">${HABS[a.hab].icon} ${HABS[a.hab].name}　発見難度 ${'★'.repeat(a.rank)}<br>必要なスキル：${SKILLS[a.hab]?SKILLS[a.hab].name:''} Lv.${reqOf(a)}${a.sp?'・図鑑40種以上':''}</div></div><button class="btn" id="cl">とじる</button>`).querySelector('.found img').style.filter='brightness(0) opacity(.2)'; }
@@ -1266,22 +1461,23 @@ function reportScreen(){
     extra+=`<h3>解除したファクト（${fs.length}/${FACTS_CARD.length}）</h3>${fs.map(factHTML).join('')||'<p class="small">まだありません。</p>'}`;
     const lock=FACTS_CARD.filter(f=>!SV.facts[f.id]); if(lock.length) extra+=`<div class="card small">${lock.map(f=>`🔒 ${f.cond}`).join('<br>')}</div>`;
   }
-  render(`${header('レポート',true)}
+  render(`<h1>レポート</h1>
   <div class="tabs" id="rt"><span class="chip ${REP.tab==='week'?'on':''}" data-t="week">週刊</span><span class="chip ${REP.tab==='month'?'on':''}" data-t="month">月刊</span><span class="chip ${REP.tab==='all'?'on':''}" data-t="all">累計</span></div>
   ${REP.tab!=='all'?`<div class="row" style="justify-content:space-between"><button class="btn sm sub" id="rp">◀</button><b>${title}</b><button class="btn sm sub" id="rn" ${REP.off>=0?'disabled':''}>▶</button></div>`:`<h2>${title}</h2>`}
-  ${extra}`);
+  ${extra}`,{tab:'report'});
   $('#rt').onclick=e=>{ const c=e.target.closest('[data-t]'); if(!c) return; REP={tab:c.dataset.t,off:0}; reportScreen(); };
   if($('#rp')){ $('#rp').onclick=()=>{ REP.off--; reportScreen(); }; $('#rn').onclick=()=>{ if(REP.off<0){ REP.off++; reportScreen(); } }; }
 }
 
 // ================= 設定 =================
 function settingsScreen(){
-  render(`${header('設定',true)}
+  render(`<h1>設定</h1>
   <div class="card">
   <div class="sw"><span>週の目標回数</span><select id="sG">${[2,3,4,5,6,7].map(n=>`<option ${n===SV.goal?'selected':''}>${n}</option>`).join('')}</select></div>
   <div class="sw"><span>体重（kg・任意）<br><span class="small">消費エネルギーのめやすに使う。この端末の中だけに保存</span></span><input type="number" id="sW" min="20" max="250" step="0.1" value="${SV.weight||''}" placeholder="未設定"></div>
   <div class="sw"><span>声の読み上げ</span><button class="btn sm ${SV.voice==='off'?'sub':''}" id="sV">${SV.voice==='off'?'OFF（音だけ）':'ON'}</button></div>
   <div class="sw"><span>BGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="sB">${SV.bgm?'ON':'OFF'}</button></div>
+  <div class="sw"><span>振動<br><span class="small">対応している端末だけ</span></span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="sVb">${SV.vib!==false?'ON':'OFF'}</button></div>
   <div class="sw"><span>効果音</span><button class="btn sm ${SV.se?'':'sub'}" id="sS">${SV.se?'ON':'OFF'}</button></div>
   <div class="sw"><span>運動の強さ（自動調整）<br><span class="small">いま：回数${repsFor()}回・キープ${holdFor()}秒</span></span><button class="btn sm sub" id="sD">最初にもどす</button></div>
   </div>
@@ -1289,12 +1485,13 @@ function settingsScreen(){
   <div class="card"><h3 style="margin-top:0">バックアップ</h3><p class="small">記録はこのブラウザの中に保存されています。ブラウザのデータを消すと記録も消えるので、ときどき書き出しておくと安心です。</p>
   <button class="btn sub" id="bE">記録を書き出す（ファイル）</button>
   <label class="btn sub" style="text-align:center">記録を読み込む<input type="file" id="bI" accept="application/json,.json" hidden></label></div>
-  <button class="btn warn" id="bR">すべての記録を消す</button>`);
+  <button class="btn warn" id="bR">すべての記録を消す</button>`,{tab:'settings'});
   $('#sG').onchange=e=>{ SV.goal=+e.target.value; save(); };
   $('#sW').onchange=e=>{ const v=parseFloat(e.target.value); SV.weight=(v>=20&&v<=250)?v:null; save(); toast(SV.weight?'体重を保存しました':'体重を未設定にしました'); };
   $('#sV').onclick=()=>{ SV.voice=SV.voice==='off'?'auto':'off'; save(); settingsScreen(); };
   $('#sB').onclick=()=>{ SV.bgm=!SV.bgm; save(); if(SV.bgm) bgmPlay('home'); else bgmStop(); settingsScreen(); };
   $('#sS').onclick=()=>{ SV.se=!SV.se; save(); settingsScreen(); };
+  $('#sVb').onclick=()=>{ SV.vib=SV.vib===false; save(); if(SV.vib) buzz(60); settingsScreen(); };
   $('#sD').onclick=()=>{ SV.d=0; save(); settingsScreen(); toast('運動の強さを最初にもどしました'); };
   $('#bE').onclick=()=>{ const blob=new Blob([JSON.stringify(SV,null,1)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`wombat-kintore-${today()}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
   $('#bI').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const s=JSON.parse(r.result); if(!s||s.v!==1||!Array.isArray(s.sessions)) throw 0;
