@@ -225,6 +225,8 @@ header a{color:#f6e7cf;text-decoration:none;white-space:nowrap;font-size:12px;op
 .ep .q{font-size:20px}
 .ep .lv{font-size:12px;font-weight:800;color:#9a7a5a;border:2px solid #d8c4a4;border-radius:8px;padding:1px 6px}
 .ep .st2{margin-left:auto;font-size:28px}
+.ep .mid{position:absolute;right:10px;top:-9px;font-size:11px;font-weight:900;color:#fff;background:#e0703a;border-radius:8px;padding:1px 7px}
+.row.choose .b{font-size:20px;min-width:140px}
 .ep.lock{opacity:.5;filter:grayscale(.6)}
 .ep.next{border-color:#e8a33a;box-shadow:0 5px 0 #a8601a}
 .ep.next .st2{color:#e8a33a;animation:hop .9s infinite}
@@ -841,7 +843,10 @@ function showTitle(){
     const sc=document.createElement('span');sc.className='scn '+e.bg;sc.appendChild(img(e.victim));const q=document.createElement('span');q.className='q';q.textContent='❓';sc.appendChild(q);sc.appendChild(img(e.item));b.appendChild(sc);
     const lv=document.createElement('span');lv.className='lv';lv.textContent=['','え','かげ','もじ'][e.lv];b.appendChild(lv);
     const s=document.createElement('span');s.className='st2';s.textContent=done?'⭐':(ok?'▶':'🔒');b.appendChild(s);
-    b.onclick=()=>{ac();if(!ok){SE.wrong();anim(b,'shake');return;}SE.tap();iris(()=>startEp(i));};
+    const mid=save.cur&&save.cur.ep===e.id&&save.cur.phase!=='intro';
+    if(mid){const r=document.createElement('span');r.className='mid';r.textContent='とちゅう';b.appendChild(r);}
+    b.onclick=()=>{ac();if(!ok){SE.wrong();anim(b,'shake');return;}SE.tap();
+      if(mid)chooseStart(e,i);else{if(save.cur&&save.cur.ep===e.id)save.cur=null;iris(()=>startEp(i));}};
     box.appendChild(b);
   });
   const nb=box.querySelector('.ep.next');
@@ -850,6 +855,16 @@ $('#logo-m').onclick=()=>{ac();SE.talk();anim($('#logo-m'),'jump');burst(...cent
 $('#logo-w').onclick=()=>{ac();SE.talk();anim($('#logo-w'),'jump');};
 
 /* ===== エピソード ===== */
+function chooseStart(e,i){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML='<div class="mbox"><div class="mtitle">'+(i+1)+'の おはなし</div><div class="row choose"><button class="b main" id="c-cont">▶ つづきから</button><button class="b" id="c-new">↺ はじめから</button></div><div class="row"><button class="b" id="c-x">もどる</button></div></div>';
+  const lg=document.createElement('div');lg.className='logo2';lg.appendChild(img(e.victim,'',true));lg.appendChild(img(e.item));m.querySelector('.mtitle').after(lg);
+  m.querySelector('#c-cont').onclick=()=>{SE.tap();m.remove();iris(()=>startEp(i));};
+  m.querySelector('#c-new').onclick=()=>{SE.tap();m.remove();save.cur=null;store();iris(()=>startEp(i));};
+  m.querySelector('#c-x').onclick=()=>{SE.tap();m.remove();};
+  m.onclick=ev=>{if(ev.target===m)m.remove();};
+  wrap.appendChild(m);
+}
 function startEp(i){
   EP=EPS[i];
   if(!save.cur||save.cur.ep!==EP.id)save.cur={ep:EP.id,found:[],talked:[],seen:[],phase:'intro',battle:0};
