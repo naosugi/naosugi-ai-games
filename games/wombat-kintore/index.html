@@ -874,8 +874,8 @@ const coolStep=t=>{ let k=0; COOL.steps.forEach((s,i)=>{ if(t>=s.at) k=i; }); re
 // 1回の長さは約10分で固定。強くなるほどキープが伸び、そのぶん休けいが短くなる
 const SESSION_SEC=600, REST_MAX=20, REST_MIN=12, REPS=12, D_MAX=10;
 // 始めるときに選ぶ強さ（プランクが何秒できるか）
-// 強さボーナス：強さ1につき経験値+5（強さ10で+50）。強さはメニューを組んだ時点の値を使う
-const lvBonus=d=>5*Math.max(0,Math.min(D_MAX,Math.floor(d)));
+// 強さボーナス：ちょっとしたおまけ。強さ2につき経験値+1（強さ10で+5＝最大5%）。強さはメニューを組んだ時点の値を使う
+const lvBonus=d=>Math.floor(Math.max(0,Math.min(D_MAX,Math.floor(d)))/2);
 const START_LV=[{d:0,lab:'できない・わからない'},{d:3,lab:'30秒くらい'},{d:6,lab:'60秒くらい'},{d:10,lab:'90秒以上'}];
 
 // 生息地とスキル
@@ -1174,7 +1174,7 @@ function levelScreen(first){
   ${coach('プランク（ひじとつま先で体をまっすぐ支える）は、今どのくらいできそう？ 迷ったら軽いほうを選んでね。')}
   <div id="lvs">${START_LV.map(o=>{ const P=previewLv(o.d); return `<div class="skill pick ${!first&&o===cur?'cur':''}" data-d="${o.d}"><div class="row" style="justify-content:space-between"><b>${o.lab}</b>${!first&&o===cur?'<span class="tag">いまに近い</span>':''}</div>
     <div class="small">${P.plank}・キープ${P.hold}秒／${P.push}／休けい${P.rest}秒／経験値${100+lvBonus(o.d)}</div></div>`; }).join('')}</div>
-  <p class="small" style="margin:4px 2px">ここで決めるのは出発点だけ。毎回の「楽・ちょうど・きつい」で自動で調整していくよ。キープは最長60秒。強くなると種目も難しくなって、もらえる経験値も増えるよ。でも経験値のために無理はしないでね。</p>`);
+  <p class="small" style="margin:4px 2px">ここで決めるのは出発点だけ。毎回の「楽・ちょうど・きつい」で自動で調整していくよ。キープは最長60秒。強くなると種目も難しくなって、経験値もほんの少しおまけがつくよ。無理はしないでね。</p>`);
   $('#lvs').onclick=e=>{ const c=e.target.closest('[data-d]'); if(!c) return; SV.d=+c.dataset.d; save(); se('ok');
     if(first) starterScreen(); else { toast('運動の強さを変えました'); settingsScreen(); } };
 }
