@@ -874,6 +874,8 @@ const coolStep=t=>{ let k=0; COOL.steps.forEach((s,i)=>{ if(t>=s.at) k=i; }); re
 // 1回の長さは約10分で固定。強くなるほどキープが伸び、そのぶん休けいが短くなる
 const SESSION_SEC=600, REST_MAX=20, REST_MIN=12, REPS=12, D_MAX=10;
 // 始めるときに選ぶ強さ（プランクが何秒できるか）
+// 強さボーナス：強さ1につき経験値+5（強さ10で+50）。強さはメニューを組んだ時点の値を使う
+const lvBonus=d=>5*Math.max(0,Math.min(D_MAX,Math.floor(d)));
 const START_LV=[{d:0,lab:'できない・わからない'},{d:3,lab:'30秒くらい'},{d:6,lab:'60秒くらい'},{d:10,lab:'90秒以上'}];
 
 // 生息地とスキル
@@ -1171,8 +1173,8 @@ function levelScreen(first){
   render(`${header('運動の強さ',first?false:'settings')}
   ${coach('プランク（ひじとつま先で体をまっすぐ支える）は、今どのくらいできそう？ 迷ったら軽いほうを選んでね。')}
   <div id="lvs">${START_LV.map(o=>{ const P=previewLv(o.d); return `<div class="skill pick ${!first&&o===cur?'cur':''}" data-d="${o.d}"><div class="row" style="justify-content:space-between"><b>${o.lab}</b>${!first&&o===cur?'<span class="tag">いまに近い</span>':''}</div>
-    <div class="small">${P.plank}・キープ${P.hold}秒／${P.push}／休けい${P.rest}秒</div></div>`; }).join('')}</div>
-  <p class="small" style="margin:4px 2px">ここで決めるのは出発点だけ。毎回の「楽・ちょうど・きつい」で自動で調整していくよ。キープは最長60秒。強くなると種目も難しくなるよ。</p>`);
+    <div class="small">${P.plank}・キープ${P.hold}秒／${P.push}／休けい${P.rest}秒／経験値${100+lvBonus(o.d)}</div></div>`; }).join('')}</div>
+  <p class="small" style="margin:4px 2px">ここで決めるのは出発点だけ。毎回の「楽・ちょうど・きつい」で自動で調整していくよ。キープは最長60秒。強くなると種目も難しくなって、もらえる経験値も増えるよ。でも経験値のために無理はしないでね。</p>`);
   $('#lvs').onclick=e=>{ const c=e.target.closest('[data-d]'); if(!c) return; SV.d=+c.dataset.d; save(); se('ok');
     if(first) starterScreen(); else { toast('運動の強さを変えました'); settingsScreen(); } };
 }
@@ -1222,14 +1224,14 @@ function preScreen(){
   const canChal=!again&&SV.lastFeel!=='hard';
   let chal=null;
   if(canChal){ const r=seeded(today()+'c'); const i=Math.floor(r()*menu.length); const m=menu[i]; chal={idx:i, add:EX[m.id].type==='rep'?2:5}; }
-  PLAN={menu,slot,again,chal,accepted:false};
+  PLAN={menu,slot,again,chal,accepted:false,d:SV.d};
   const tl=buildTimeline(menu), total=tl.reduce((a,b)=>a+b.dur,0);
   const list=menu.map((m,i)=>{ const e=EX[m.id];
     return `<div class="mi"><span class="pz" data-p="${e.pose}" data-t="0.85"></span><div><div class="nm">${i+1}. ${e.name}</div>
     <div class="small">${e.type==='rep'?`${m.reps}回${e.alt?'・左右交互':e.sideSwitch?'・左右':''}`:`${m.hold}秒キープ`}</div></div></div>`; }).join('');
   const cu=chal?(EX[menu[chal.idx].id].type==='rep'?'回':'秒'):'';
   render(`${header('今日のメニュー',true)}
-  <p class="muted" style="margin:0 0 6px">${slot}のトレーニング・約${Math.round(total/60)}分（休けい${restFor(menu)}秒）・用意するのはマット（またはタオル）1枚</p>
+  <p class="muted" style="margin:0 0 6px">${slot}のトレーニング・約${Math.round(total/60)}分（休けい${restFor(menu)}秒）・強さ${Math.floor(SV.d)}${!again&&lvBonus(SV.d)?`（経験値+${lvBonus(SV.d)}）`:''}・用意するのはマット（またはタオル）1枚</p>
   ${again?'<div class="card small" style="margin:6px 0">今日の分はもう終わっています。もう一度やっても経験値や探検はありません。</div>':''}
   <div class="mgrid">${list}</div>
   ${chal?`<div class="card chal" id="chalBox"><div><b>🔥 挑戦クエスト</b>　「${EX[menu[chal.idx].id].name}」を<b>+${chal.add}${cu}</b>。成功で経験値と探検＋1</div>
@@ -1412,7 +1414,7 @@ function postScreen(rec){
     const ws=weekStart(new Date()); const before=daysWith(weekSessions(ws).filter(rewarded));
     SV.sessions.push(rec); updBest(rec);
     const after=daysWith(weekSessions(ws).filter(rewarded));
-    let gain=100, notes=['トレーニング完了 +100'];
+    const lb=lvBonus(PLAN.d); let gain=100+lb, notes=['トレーニング完了 +100']; if(lb) notes.push(`強さボーナス（強さ${Math.floor(PLAN.d)}） +${lb}`);
     if(cok){ gain+=30; notes.push('挑戦クエスト成功 +30'); }
     if(before<SV.goal&&after>=SV.goal){ gain+=50; notes.push('今週の目標達成 +50'); }
     rec.exp=gain; const ups=addExp(gain);
@@ -1581,7 +1583,7 @@ function settingsScreen(){
   <div class="sw"><span>BGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="sB">${SV.bgm?'ON':'OFF'}</button></div>
   <div class="sw"><span>振動<br><span class="small">対応している端末だけ</span></span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="sVb">${SV.vib!==false?'ON':'OFF'}</button></div>
   <div class="sw"><span>効果音</span><button class="btn sm ${SV.se?'':'sub'}" id="sS">${SV.se?'ON':'OFF'}</button></div>
-  <div class="sw"><span>運動の強さ（自動調整）<br><span class="small">いま：キープ${holdFor()}秒・休けい${previewLv(SV.d).rest}秒</span></span><button class="btn sm sub" id="sD">選び直す</button></div>
+  <div class="sw"><span>運動の強さ（自動調整）<br><span class="small">いま：強さ${Math.floor(SV.d)}・キープ${holdFor()}秒・休けい${previewLv(SV.d).rest}秒・経験値${100+lvBonus(SV.d)}</span></span><button class="btn sm sub" id="sD">選び直す</button></div>
   </div>
   <button class="btn sub" data-go="sound">音のチェックをやり直す</button>
   <div class="card"><h3 style="margin-top:0">バックアップ</h3><p class="small">記録はこのブラウザの中に保存されています。ブラウザのデータを消すと記録も消えるので、ときどき書き出しておくと安心です。</p>
