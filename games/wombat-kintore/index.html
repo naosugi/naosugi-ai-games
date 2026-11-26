@@ -799,11 +799,23 @@ const POSES3={
                       B:{pel:[0,.24,-.05],pitch:76.5,head:-6,R:{leg:LIM([-.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.13,.03,.73],[0,-1,0])},L:{leg:LIM([.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.13,.03,.73],[0,-1,0])}}},
   march:{view:'stand',alt:'rep',A:ST({R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:LIM([-.22,.72,.06],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.22,.72,.06],[0,0,-1])}}),
                       B:ST({R:{leg:LIM([-.1,.32,.18],[0,1,1]),arm:LIM([-.22,.76,-.15],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.21,.85,.22],[0,-1,0])}})},
-  stretch:{view:'stand',A:ST({}),B:ST({head:-8,R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:LIM([-.1,1.98,0],[-1,0,0])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.1,1.98,0],[1,0,0])}})}
+  // 整理運動：うでを横から上げて深呼吸（M＝横に広げた途中の形。体の前を通ると腕がたたまれてしまうため）
+  reach:{view:'stand',fn:p=>{ // うでを体の横で弧をえがくように上げる（0=下、1=真上）
+    const th=Math.PI*p, arm=sx=>LIM([sx*(.18+.54*Math.sin(th)),1.45-.54*Math.cos(th),.04],[0,0,-1]);
+    return ST({head:-10*p,R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:arm(-1)},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:arm(1)}}); }},
+  // 太ももの前：右足首を右手で持って後ろに引く（左手は横でバランス）
+  quad:{view:'stand',az:-80,fn:p=>{ // ひざは下に向けたまま、すねを後ろに回して足首を持つ
+    const ph=rad(150*p), knee=[-.1,.47,-.02], ank=[knee[0],knee[1]-.43*Math.cos(ph)+.0,knee[2]-.43*Math.sin(ph)];
+    const q=Math.max(0,(p-.55)/.45), hand=lerpV([-.22,.67,.02],[ank[0]-.04,ank[1]+.02,ank[2]-.03],q);
+    return ST({pel:[0,.93-.03*p,0],R:{leg:LIM(ank,[0,0,1]),arm:LIM(hand,[-.3,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM(lerpV([.22,.67,.02],[.6,1.12,.05],p),[0,-1,0])}}); }},
+  // 太ももの後ろ：右かかとを前に出し、お尻を引いておじぎ（両手は右の太もも）
+  hamstr:{view:'stand',az:-80,A:ST({}),
+    B:ST({pel:[0,.84,-.14],pitch:48,R:{leg:LIM([-.11,.08,.36],[0,0,1],{toe:[0,.09,.08]}),arm:LIM([-.13,.6,.22],[0,0,-1])},L:{leg:LIM([.11,.08,-.12],[0,0,1]),arm:LIM([-.02,.6,.22],[0,0,-1])}})}
 };
 // 種目のポーズ（p=0〜1、side=1で左右入れかえ）を描く
-function drawPose(cv,id,p,side,azOff,opt){ const Q=POSES3[id]; let P=lerp3(Q.A,Q.B,p); if(side) P=mirror3(P);
-  const v=Object.assign({},VIEW[Q.view]); v.az=v.az+(azOff||0); draw3(cv,P,v,opt); }
+function drawPose(cv,id,p,side,azOff,opt){ const Q=POSES3[id];
+  let P=Q.fn?Q.fn(p):lerp3(Q.A,Q.B,p); if(side) P=mirror3(P);
+  const v=Object.assign({},VIEW[Q.view]); v.az=(Q.az!=null?(side?-Q.az:Q.az):v.az)+(azOff||0); draw3(cv,P,v,opt); }
 
 </script>
 <script id="game">
@@ -851,7 +863,13 @@ const SLOTS=[['squat','split'],PUSH,['hiplift','hinge'],['squathold','bridgehold
 const OLD_EX={chairsquat:'椅子スクワット',wallpush:'壁腕立て',deskpush:'机腕立て',wallsit:'空気椅子'};
 Object.entries(OLD_EX).forEach(([k,n])=>{ if(!EX[k]) EX[k]={name:n,old:true,type:k==='wallsit'?'hold':'rep',tempo:[2,2]}; });
 const WARM={name:'準備運動',pose:'march',sec:45,lines:['その場で足ぶみ。うでも軽くふろう','肩を大きく回そう','もう少し足ぶみ']};
-const COOL={name:'整理運動',pose:'stretch',sec:45,lines:['うでを上にのばして、深呼吸','太ももの前や後ろをゆっくりのばそう','おつかれさま。ゆっくり呼吸を整えよう']};
+const COOL={name:'整理運動',sec:45,steps:[
+  {at:0,pose:'reach',line:'うでを横から大きく上げて、深呼吸。下ろすときに息をはこう'},
+  {at:15,pose:'quad',side:0,line:'右足首を右手で持って、太ももの前をのばそう。ふらつくときは、ひざを軽く後ろに引くだけでOK'},
+  {at:22.5,pose:'quad',side:1,line:'左足に交代。左足首を左手で持って'},
+  {at:30,pose:'hamstr',side:0,line:'右のかかとを前に出して、お尻を引く。太ももの後ろをのばそう'},
+  {at:37.5,pose:'hamstr',side:1,line:'左足に交代。ゆっくり呼吸を続けて'}]};
+const coolStep=t=>{ let k=0; COOL.steps.forEach((s,i)=>{ if(t>=s.at) k=i; }); return k; };
 const REST_SEC=20;
 
 // 生息地とスキル
@@ -1255,7 +1273,7 @@ function nextBlock(skipped){
   const ex=RUN.tl.filter(x=>x.kind==='ex'); $('#sStep').textContent=b.kind==='ex'||b.kind==='rest'?`種目 ${(b.idx||0)+1} / ${ex.length}`:'';
   const sub=$('#sSub');
   if(b.kind==='ready'){ setMode('rest'); $('#sName').textContent='まもなくスタート'; sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">いっしょにがんばろう！</span></div>`; mountWB(sub); say('準備はいい？ いくよ'); }
-  else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; setMode('rest'); $('#sName').textContent=W.name; sub.innerHTML=`<div class="sline">${wb(b.kind==='cool'?'happy':'')}<span id="sLine">${W.lines[0]}</span></div>`; mountWB(sub); say(W.name+'。'+W.lines[0]); if(b.kind==='cool') se('fanfare'); }
+  else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; setMode('rest'); $('#sName').textContent=W.name; const l0=b.kind==='cool'?COOL.steps[0].line:W.lines[0]; sub.innerHTML=`<div class="sline">${wb(b.kind==='cool'?'happy':'')}<span id="sLine">${l0}</span></div>`; mountWB(sub); say(W.name+'。'+l0); if(b.kind==='cool') se('fanfare'); }
   else if(b.kind==='rest'){ const e=EX[b.next.id]; setMode('rest'); $('#sName').textContent='休けい　NEXT ▶ '+e.name;
     sub.innerHTML=`<div class="nextcard"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵低い音で${e.down}・🟠高い音で${e.up}${e.alt?'・左右交互':e.sideSwitch?'・途中で左右交代':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
     say(`休けい。次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}。${e.tips[0]}`); }
@@ -1278,8 +1296,9 @@ function tick(){
   const voice=voiceOn(), ph=$('#sPh');
   if(b.kind==='ready'){ const c=Math.ceil(left-0.5); setNum(c>0?c:'GO','',left/b.dur); ph.textContent=''; ph.className='phase';
     if(c>0&&once('r'+c)){ se('tick'); buzz(30); if(voice) say(String(c)); } if(c<=0&&once('rgo')) se('go'); }
-  else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; const li=Math.min(W.lines.length-1,Math.floor(t/(b.dur/W.lines.length)));
-    if(once('l'+li)&&li>0){ $('#sLine').textContent=W.lines[li]; say(W.lines[li]); }
+  else if(b.kind==='warm'||b.kind==='cool'){
+    if(b.kind==='cool'){ const k=coolStep(t); if(k>0&&once('l'+k)){ const L=COOL.steps[k].line; $('#sLine').textContent=L; say(L); } }
+    else { const W=WARM, li=Math.min(W.lines.length-1,Math.floor(t/(b.dur/W.lines.length))); if(once('l'+li)&&li>0){ $('#sLine').textContent=W.lines[li]; say(W.lines[li]); } }
     if(b.kind==='warm'&&Math.floor(t)!==RUN.last.sec){ RUN.last.sec=Math.floor(t); if(left>3) tone(RUN.last.sec%2?660:440,0.05,'square',0.12); }
     setNum(Math.ceil(left),'秒',left/b.dur); ph.textContent=''; ph.className='phase';
     if(left<=3&&left>0&&once('c'+Math.ceil(left))) se('tick');
@@ -1322,7 +1341,10 @@ function loopDraw(){ if(!RUN) return; RUN.raf=requestAnimationFrame(loopDraw); c
   const ease=x=>0.5-0.5*Math.cos(Math.PI*Math.max(0,Math.min(1,x)));
   if(b.kind==='ready'){ id='march'; p=0; }
   else if(b.kind==='warm'){ id='march'; const k=Math.floor(t/0.5); const x=(t%0.5)/0.5; p=ease(x<.5?x*2:2-x*2); side=k%2; }
-  else if(b.kind==='cool'){ id='stretch'; p=ease((Math.sin(t*Math.PI/4)+1)/2); }
+  else if(b.kind==='cool'){ const k=coolStep(t), S=COOL.steps[k], tt=t-S.at; id=S.pose; side=S.side||0;
+    if(id==='reach'){ const c=tt%7.5; p=c<3.5?ease(c/3.5):c<4?1:1-ease((c-4)/3.5); } // 3.5秒で上げて、3.5秒で下ろす
+    else { p=ease(Math.min(1,tt/1.5)); const nx=COOL.steps[k+1]; const end=nx?nx.at:b.dur; if(end-t<1) p=ease(Math.max(0,end-t)); // のばして止める→最後に戻す
+      lab=(side?'左':'右')+'足'; } }
   else { const m=b.kind==='rest'?b.next:b.m, e=EX[m.id]; id=e.pose;
     if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], tt=b.kind==='rest'?Math.max(0,t-7):t, i=Math.floor(tt/per), x=tt-i*per;
       p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<7) p=0;
