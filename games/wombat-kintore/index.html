@@ -267,6 +267,7 @@ button,.chip,.dx,.skill,.tab{user-select:none;-webkit-user-select:none}
   .tab{padding:2px 0 0}.tab .ic{font-size:19px}
 }
 @media (max-height:720px){ .skill{padding:7px 10px;margin:4px 0} .coach .wbc{width:56px} .sw{padding:5px 0} }
+.skill.cur{border-color:var(--pri);background:#f2f8f3}
 
 </style>
 </head>
@@ -832,11 +833,11 @@ const EX={
     tips:['足は肩幅、つま先は少し外向き','ひざとつま先は同じ向きに（内側に入れない）','お尻を後ろに引く。つらくない深さでOK']},
   split:{name:'スプリットスクワット',cat:'脚',type:'rep',tempo:[2,2],pose:'split',down:'下ろす',up:'上げる',sideSwitch:true,sides:['右足が前','左足が前'],
     tips:['足を前後に大きく開いて、まっすぐ腰を下ろす','前半は右足が前、後半は左足が前','ふらつくときは浅めに']},
-  quadpush:{name:'四つんばい腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'quadpush',down:'下ろす',up:'押す',
+  quadpush:{name:'四つんばい腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'quadpush',down:'下ろす',up:'押す',maxD:5,
     tips:['手は肩の下、ひざは腰の下','ひじを曲げて、胸を床に近づける','いちばんやさしい腕立て']},
-  kneepush:{name:'ひざつき腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'kneepush',down:'下ろす',up:'押す',minD:2,
+  kneepush:{name:'ひざつき腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'kneepush',down:'下ろす',up:'押す',minD:3,
     tips:['ひざを床について、頭からひざまで一直線','胸を床に近づけて、押しもどす','きつければ浅めでOK']},
-  pushup:{name:'腕立て伏せ',cat:'押す',type:'rep',tempo:[2,2],pose:'pushup',down:'下ろす',up:'押す',minD:6,
+  pushup:{name:'腕立て伏せ',cat:'押す',type:'rep',tempo:[2,2],pose:'pushup',down:'下ろす',up:'押す',minD:9,
     tips:['つま先で支え、頭からかかとまで一直線','胸を床に近づけて、押しもどす','きつければひざをついてOK']},
   hiplift:{name:'ヒップリフト',cat:'背面',type:'rep',tempo:[2,2],pose:'hiplift',down:'上げる',up:'下ろす',
     tips:['あおむけで、ひざを立てる','お尻を上げて、肩からひざまで一直線に','腰をそらしすぎない']},
@@ -870,7 +871,10 @@ const COOL={name:'整理運動',sec:45,steps:[
   {at:30,pose:'hamstr',side:0,line:'右のかかとを前に出して、お尻を引く。太ももの後ろをのばそう'},
   {at:37.5,pose:'hamstr',side:1,line:'左足に交代。ゆっくり呼吸を続けて'}]};
 const coolStep=t=>{ let k=0; COOL.steps.forEach((s,i)=>{ if(t>=s.at) k=i; }); return k; };
-const REST_SEC=20;
+// 1回の長さは約10分で固定。強くなるほどキープが伸び、そのぶん休けいが短くなる
+const SESSION_SEC=600, REST_MAX=20, REST_MIN=12, REPS=12, D_MAX=10;
+// 始めるときに選ぶ強さ（プランクが何秒できるか）
+const START_LV=[{d:0,lab:'できない・わからない'},{d:3,lab:'30秒くらい'},{d:6,lab:'60秒くらい'},{d:10,lab:'90秒以上'}];
 
 // 生息地とスキル
 const HABS={sato:{name:'里・町',icon:'🏡'},forest:{name:'森',icon:'🌲'},grass:{name:'草原・荒れ地',icon:'🌾'},water:{name:'川・湖・湿地',icon:'💧'},sea:{name:'海',icon:'🌊'},cold:{name:'寒い土地・高い山',icon:'🏔️'},fossil:{name:'化石',icon:'🦴'}};
@@ -943,23 +947,29 @@ function seeded(seed){ let h=2166136261; for(const c of seed){ h^=c.charCodeAt(0
 
 // ================= メニュー =================
 const dInt=()=>Math.max(0,Math.floor(SV.d));
-function repsFor(){ return Math.min(20,12+dInt()); }
-function holdFor(){ return Math.min(60,30+5*dInt()); }
+function repsFor(){ return REPS; }
+// キープの秒数：強さ0→20秒、3→30秒、6→45秒、10→60秒（5秒きざみ、上限60秒）
+function holdFor(d){ d=d==null?SV.d:d; d=Math.max(0,Math.min(D_MAX,d)); const h=d<=3?20+10*d/3:d<=6?30+5*(d-3):45+15*(d-6)/4; return Math.min(60,Math.round(h/5)*5); }
+// 休けい：10分から準備・整理運動と運動の時間を引いた残りを8つに分ける（12〜20秒）
+function restFor(menu){ const act=menu.reduce((a,m)=>a+blockSec(m),0); return Math.max(REST_MIN,Math.min(REST_MAX,Math.round((SESSION_SEC-WARM.sec-COOL.sec-act)/menu.length))); }
+function previewLv(d){ const k=Math.floor(d); const push=PUSH.filter(id=>!(EX[id].minD>k)&&!(EX[id].maxD<k)).map(id=>EX[id].name).join('・');
+  const fake=SLOTS.map(p=>EX[p[0]].type==='rep'?{id:p[0],reps:REPS}:{id:p[0],hold:holdFor(d)});
+  return {hold:holdFor(d),plank:k>=2?'プランク':'ひざつきプランク',push,rest:restFor(fake)}; }
 function buildMenu(){
   const r=seeded(today()+'|'+SV.sessions.filter(s=>s.date===today()).length);
   const used=new Set(), d=dInt();
   return SLOTS.map(pool=>{
-    let cand=pool.filter(id=>!(EX[id].minD>d)&&!used.has(id));
+    let cand=pool.filter(id=>!(EX[id].minD>d)&&!(EX[id].maxD<d)&&!used.has(id));
     if(pool.includes('kneeplank')) cand=[d>=2?'plank':'kneeplank'];
-    if(!cand.length) cand=pool.filter(id=>!(EX[id].minD>d));
+    if(!cand.length) cand=pool.filter(id=>!(EX[id].minD>d)&&!(EX[id].maxD<d));
     const id=cand[Math.floor(r()*cand.length)]; used.add(id);
     const e=EX[id]; return e.type==='rep'?{id,reps:repsFor()}:{id,hold:holdFor()};
   });
 }
 function blockSec(m){ const e=EX[m.id]; return e.type==='rep'?m.reps*(e.tempo[0]+e.tempo[1]):m.hold; }
-function buildTimeline(menu){
+function buildTimeline(menu,rest){ const R=rest||restFor(menu);
   const T=[{kind:'warm',dur:WARM.sec}];
-  menu.forEach((m,i)=>{ T.push({kind:'rest',dur:REST_SEC,next:m,idx:i}); T.push({kind:'ex',dur:blockSec(m),m,idx:i}); });
+  menu.forEach((m,i)=>{ T.push({kind:'rest',dur:R,next:m,idx:i}); T.push({kind:'ex',dur:blockSec(m),m,idx:i}); });
   T.push({kind:'cool',dur:COOL.sec});
   return T;
 }
@@ -1154,7 +1164,17 @@ function soundScreen(first){
   $('#tLo').onclick=()=>{ SE.down(); buzz(40); }; $('#tHi').onclick=()=>{ SE.up(); buzz([20,60,20]); };
   $('#tVib').onclick=()=>{ SV.vib=SV.vib===false; save(); $('#tVib').textContent=SV.vib?'ON':'OFF'; $('#tVib').className='btn sm '+(SV.vib?'':'sub'); if(SV.vib) buzz(60); };
   $('#tB').onclick=()=>{ SV.bgm=!SV.bgm; save(); soundScreen(first); if(SV.bgm) bgmPlay('home'); };
-  $('#next').onclick=()=>{ SV.sound=true; save(); if(first) starterScreen(); else settingsScreen(); };
+  $('#next').onclick=()=>{ SV.sound=true; save(); if(first) levelScreen(true); else settingsScreen(); };
+}
+function levelScreen(first){
+  const cur=START_LV.reduce((b,o)=>Math.abs(o.d-SV.d)<Math.abs(b.d-SV.d)?o:b,START_LV[0]);
+  render(`${header('運動の強さ',first?false:'settings')}
+  ${coach('プランク（ひじとつま先で体をまっすぐ支える）は、今どのくらいできそう？ 迷ったら軽いほうを選んでね。')}
+  <div id="lvs">${START_LV.map(o=>{ const P=previewLv(o.d); return `<div class="skill pick ${!first&&o===cur?'cur':''}" data-d="${o.d}"><div class="row" style="justify-content:space-between"><b>${o.lab}</b>${!first&&o===cur?'<span class="tag">いまに近い</span>':''}</div>
+    <div class="small">${P.plank}・キープ${P.hold}秒／${P.push}／休けい${P.rest}秒</div></div>`; }).join('')}</div>
+  <p class="small" style="margin:4px 2px">ここで決めるのは出発点だけ。毎回の「楽・ちょうど・きつい」で自動で調整していくよ。キープは最長60秒。強くなると種目も難しくなるよ。</p>`);
+  $('#lvs').onclick=e=>{ const c=e.target.closest('[data-d]'); if(!c) return; SV.d=+c.dataset.d; save(); se('ok');
+    if(first) starterScreen(); else { toast('運動の強さを変えました'); settingsScreen(); } };
 }
 function starterScreen(){
   render(`${header('最初のスキル',false)}
@@ -1209,7 +1229,7 @@ function preScreen(){
     <div class="small">${e.type==='rep'?`${m.reps}回${e.alt?'・左右交互':e.sideSwitch?'・左右':''}`:`${m.hold}秒キープ`}</div></div></div>`; }).join('');
   const cu=chal?(EX[menu[chal.idx].id].type==='rep'?'回':'秒'):'';
   render(`${header('今日のメニュー',true)}
-  <p class="muted" style="margin:0 0 6px">${slot}のトレーニング・約${Math.round(total/60)}分・用意するのはマット（またはタオル）1枚</p>
+  <p class="muted" style="margin:0 0 6px">${slot}のトレーニング・約${Math.round(total/60)}分（休けい${restFor(menu)}秒）・用意するのはマット（またはタオル）1枚</p>
   ${again?'<div class="card small" style="margin:6px 0">今日の分はもう終わっています。もう一度やっても経験値や探検はありません。</div>':''}
   <div class="mgrid">${list}</div>
   ${chal?`<div class="card chal" id="chalBox"><div><b>🔥 挑戦クエスト</b>　「${EX[menu[chal.idx].id].name}」を<b>+${chal.add}${cu}</b>。成功で経験値と探検＋1</div>
@@ -1275,8 +1295,8 @@ function nextBlock(skipped){
   if(b.kind==='ready'){ setMode('rest'); $('#sName').textContent='まもなくスタート'; sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">いっしょにがんばろう！</span></div>`; mountWB(sub); say('準備はいい？ いくよ'); }
   else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; setMode('rest'); $('#sName').textContent=W.name; const l0=b.kind==='cool'?COOL.steps[0].line:W.lines[0]; sub.innerHTML=`<div class="sline">${wb(b.kind==='cool'?'happy':'')}<span id="sLine">${l0}</span></div>`; mountWB(sub); say(W.name+'。'+l0); if(b.kind==='cool') se('fanfare'); }
   else if(b.kind==='rest'){ const e=EX[b.next.id]; setMode('rest'); $('#sName').textContent='休けい　NEXT ▶ '+e.name;
-    sub.innerHTML=`<div class="nextcard"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵低い音で${e.down}・🟠高い音で${e.up}${e.alt?'・左右交互':e.sideSwitch?'・途中で左右交代':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
-    say(`休けい。次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}。${e.tips[0]}`); }
+    sub.innerHTML=`<div class="nextcard"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵低い音で${e.down}・🟠高い音で${e.up}${e.alt?'・左右交互':e.sideSwitch?'・途中で左右交代':''}</div>`:''}<ul class="tips">${e.tips.slice(0,b.dur<16?2:3).map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
+    say(b.dur<16?`次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒'}`:`休けい。次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}。${e.tips[0]}`); }
   else { const e=EX[b.m.id]; $('#sName').textContent=e.name; setMode(e.type==='hold'?'hold':'down');
     sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">${e.type==='hold'?e.tips[2]:e.tips[0]}</span></div>`; mountWB(sub); se('go'); buzz(120);
     setTimeout(()=>setMood($('#sSub'),''),2500);
@@ -1305,7 +1325,7 @@ function tick(){
   } else if(b.kind==='rest'){ const e=EX[b.next.id];
     setNum(Math.ceil(left),'秒 休けい',left/b.dur); ph.textContent='お手本'; ph.className='phase';
     // 音のお手本：説明のあと1回分
-    if(e.type==='rep'&&t>=7&&t<7+e.tempo[0]+e.tempo[1]){ if(once('demoD')) se('down'); if(t>=7+e.tempo[0]&&once('demoU')) se('up'); }
+    const da=demoAt(b); if(e.type==='rep'&&t>=da&&t<da+e.tempo[0]+e.tempo[1]){ if(once('demoD')) se('down'); if(t>=da+e.tempo[0]&&once('demoU')) se('up'); }
     if(left<=3&&left>0&&once('c'+Math.ceil(left))){ se('tick'); buzz(30); if(voice) say(String(Math.ceil(left))); }
   } else { const e=EX[b.m.id];
     if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], i=Math.floor(t/per), phs=(t-i*per)<e.tempo[0]?'down':'up', n=b.m.reps;
@@ -1333,6 +1353,7 @@ function tick(){
   if(t>=b.dur){ if(b.kind==='ex'){ se('end'); buzz([60,40,60]); if(EX[b.m.id].type==='hold'&&voiceOn()) say('ここまで'); } nextBlock(false); }
 }
 let AZ=0;
+const demoAt=b=>Math.max(3,Math.min(7,b.dur-8)); // 休けい中に音のお手本を1回鳴らす時刻
 // いま何回目か・左右どちらか（左右入れかえのある種目用）
 function sideOf(e,i,n){ if(e.alt) return i%2; if(e.sideSwitch) return i>=Math.floor(n/2)?1:0; return 0; }
 function loopDraw(){ if(!RUN) return; RUN.raf=requestAnimationFrame(loopDraw); const b=RUN.tl[RUN.bi]; if(!b) return; const cv=$('#sCv'); if(!cv) return;
@@ -1346,8 +1367,8 @@ function loopDraw(){ if(!RUN) return; RUN.raf=requestAnimationFrame(loopDraw); c
     else { p=ease(Math.min(1,tt/1.5)); const nx=COOL.steps[k+1]; const end=nx?nx.at:b.dur; if(end-t<1) p=ease(Math.max(0,end-t)); // のばして止める→最後に戻す
       lab=(side?'左':'右')+'足'; } }
   else { const m=b.kind==='rest'?b.next:b.m, e=EX[m.id]; id=e.pose;
-    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], tt=b.kind==='rest'?Math.max(0,t-7):t, i=Math.floor(tt/per), x=tt-i*per;
-      p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<7) p=0;
+    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], da=b.kind==='rest'?demoAt(b):0, tt=b.kind==='rest'?Math.max(0,t-da):t, i=Math.floor(tt/per), x=tt-i*per;
+      p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<da) p=0;
       side=b.kind==='rest'?(e.alt?i%2:0):sideOf(e,Math.min(i,m.reps-1),m.reps);
       if(e.sides) lab=e.sides[side]; }
     else p=(Math.sin(t*Math.PI)+1)/2; }
@@ -1386,7 +1407,7 @@ function postScreen(rec){
   $('#feel').onclick=e=>{ const f=e.target.closest('[data-f]'); if(!f) return; feel=f.dataset.f; [...$('#feel').children].forEach(x=>x.className=x===f?'on':''); upd2(); };
   if(ch) $('#chq').onclick=e=>{ const c=e.target.closest('[data-c]'); if(!c) return; cok=c.dataset.c==='1'; [...$('#chq').querySelectorAll('[data-c]')].forEach(x=>x.className='btn '+(x===c?'acc':'sub')); upd2(); };
   $('#toExp').onclick=()=>{
-    SV.lastFeel=feel; SV.d=Math.max(0,SV.d+(feel==='easy'?1:feel==='ok'?0.34:-1));
+    SV.lastFeel=feel; SV.d=Math.max(0,Math.min(D_MAX,SV.d+(feel==='easy'?1:feel==='ok'?0.34:-1)));
     rec.feel=feel; rec.chal=ch?{ex:PLAN.menu[ch.idx].id,ok:!!cok}:null;
     const ws=weekStart(new Date()); const before=daysWith(weekSessions(ws).filter(rewarded));
     SV.sessions.push(rec); updBest(rec);
@@ -1560,7 +1581,7 @@ function settingsScreen(){
   <div class="sw"><span>BGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="sB">${SV.bgm?'ON':'OFF'}</button></div>
   <div class="sw"><span>振動<br><span class="small">対応している端末だけ</span></span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="sVb">${SV.vib!==false?'ON':'OFF'}</button></div>
   <div class="sw"><span>効果音</span><button class="btn sm ${SV.se?'':'sub'}" id="sS">${SV.se?'ON':'OFF'}</button></div>
-  <div class="sw"><span>運動の強さ（自動調整）<br><span class="small">いま：回数${repsFor()}回・キープ${holdFor()}秒</span></span><button class="btn sm sub" id="sD">最初にもどす</button></div>
+  <div class="sw"><span>運動の強さ（自動調整）<br><span class="small">いま：キープ${holdFor()}秒・休けい${previewLv(SV.d).rest}秒</span></span><button class="btn sm sub" id="sD">選び直す</button></div>
   </div>
   <button class="btn sub" data-go="sound">音のチェックをやり直す</button>
   <div class="card"><h3 style="margin-top:0">バックアップ</h3><p class="small">記録はこのブラウザの中に保存されています。ブラウザのデータを消すと記録も消えるので、ときどき書き出しておくと安心です。</p>
@@ -1573,7 +1594,7 @@ function settingsScreen(){
   $('#sB').onclick=()=>{ SV.bgm=!SV.bgm; save(); if(SV.bgm) bgmPlay('home'); else bgmStop(); settingsScreen(); };
   $('#sS').onclick=()=>{ SV.se=!SV.se; save(); settingsScreen(); };
   $('#sVb').onclick=()=>{ SV.vib=SV.vib===false; save(); if(SV.vib) buzz(60); settingsScreen(); };
-  $('#sD').onclick=()=>{ SV.d=0; save(); settingsScreen(); toast('運動の強さを最初にもどしました'); };
+  $('#sD').onclick=()=>levelScreen(false);
   $('#bE').onclick=()=>{ const blob=new Blob([JSON.stringify(SV,null,1)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`wombat-kintore-${today()}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
   $('#bI').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const s=JSON.parse(r.result); if(!s||s.v!==1||!Array.isArray(s.sessions)) throw 0;
       modal(`<p>読み込んだ記録（トレーニング${s.sessions.length}回・Lv.${s.level}）で、いまの記録を置きかえますか？</p><div class="row"><button class="btn sub" id="iN">やめる</button><button class="btn" id="iY">置きかえる</button></div>`);
