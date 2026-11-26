@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="作ってみたゲームの発表会（仮）">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="ウォンバット☆きんトレ探検隊（試作中）">
-<meta property="og:description" content="運動不足のデスクワーカー向けの、道具なし10分きんトレ。朝か夜にウォンバットコーチの音声案内でスクワットやプランクをこなし、レベルアップで覚えたスキルで探検して動物図鑑を集める。週刊・月刊レポートつき。">
+<meta property="og:description" content="運動不足のデスクワーカー向けの、マット1枚でできる10分きんトレ。朝か夜にウォンバットコーチの音声案内でスクワットやプランクをこなし、レベルアップで覚えたスキルで探検して動物図鑑を集める。週刊・月刊レポートつき。">
 <meta property="og:url" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-kintore/">
 <meta property="og:image" content="https://naosugi.github.io/naosugi-ai-games/games/wombat-kintore/thumb.jpg">
 <meta property="og:image:width" content="960">
@@ -226,6 +226,47 @@ button,.chip,.dx,.skill,.tab{user-select:none;-webkit-user-select:none}
 .notab .cta{bottom:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 .notab #app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .pausecover[hidden]{display:none}
+/* ===== 縦画面に収める（v3） ===== */
+#sess{overflow:hidden;height:100vh;height:100dvh}
+#sess .in{height:100%;min-height:0;display:flex;flex-direction:column;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+#sess .blk{font-size:18px;margin:2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sess .stage{flex:1 1 0;min-height:150px;position:relative;padding:0;overflow:hidden;touch-action:none}
+#sess .stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+.stage .hint{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:11px;color:#9aa7a1;pointer-events:none}
+.stage .side{position:absolute;left:10px;top:10px;font-size:18px;font-weight:800;padding:2px 10px;border-radius:10px;display:none}
+.stage .side.r{display:block;background:#fde7da;color:#c45a22}.stage .side.l{display:block;background:#dfeaf8;color:#2d68a8}
+.info{flex:none;display:flex;gap:10px;align-items:center;margin:8px 0 4px;min-height:0}
+.info .ringwrap{width:min(34vw,22vh,160px);flex:none;margin:0}
+.info .ringwrap .num b{font-size:min(11vw,7vh,52px)}
+.info .ringwrap .num small{font-size:12px}
+#sSub{flex:1;min-width:0;font-size:14px}
+#sSub .sline{margin:0}
+#sSub .tips{margin:4px 0 0;padding-left:16px;font-size:13px;line-height:1.4}
+#sSub .tips li{margin:1px 0}
+#sSub .small{font-size:12px}
+#sess .ctrl{position:static;flex:none;background:none;padding:2px 0 0;gap:26px}
+#sess .cbtn{width:52px;height:52px}#sess .cbtn.main{width:68px;height:68px}
+/* メニュー一覧（2列） */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mi{background:#fff;border-radius:10px;padding:4px 6px 4px 4px;display:flex;gap:6px;align-items:center;min-width:0}
+.mi .pzc{width:64px;height:52px;flex:none;background:var(--soft);border-radius:8px}
+.mi .nm{font-size:12.5px;font-weight:800;line-height:1.25}
+.mi .small{font-size:11px}
+.chal{padding:8px 10px;margin:6px 0;font-size:13px}
+.chal .row .btn{margin:6px 0 0}
+.pzc{display:block}
+@media (max-height:720px){
+  h1{font-size:18px;margin:2px 0}
+  .card{padding:8px 12px;margin:6px 0}
+  .hero .wbc{width:min(150px,16vh)}
+  .hero .bub{font-size:14px;padding:8px 12px;min-height:0;margin-bottom:6px}
+  .stat b{font-size:17px}
+  .stamp b{width:26px;height:26px;line-height:22px}
+  .cta .btn{padding:12px;font-size:17px}
+  .feel button{padding:6px 4px}.feel button .e{font-size:24px}
+  .tab{padding:2px 0 0}.tab .ic{font-size:19px}
+}
+@media (max-height:720px){ .skill{padding:7px 10px;margin:4px 0} .coach .wbc{width:56px} .sw{padding:5px 0} }
 
 </style>
 </head>
@@ -636,131 +677,133 @@ function toCanvas(R){const c=document.createElement('canvas');c.width=R.W;c.heig
 
 </script>
 <script id="human">
-// ---------- 人間のお手本（ドット絵・横向き・右向き） ----------
-// 骨格の関節位置を2ボーンIKで求め、64×48 のドット格子に描く
-const HW=64, HH=48, GROUND=44;
-const HL={thigh:9, shin:9, torso:12, uarm:6, farm:6, neck:2.2};
-const HPAL={o:'#1e1a18', s:'#f0c08a', sd:'#d49a68', h:'#3a2a1e', t:'#3f86c8', td:'#2d5f92', p:'#3b3f52', pd:'#272a38', k:'#262626',
-  w:'#c9ccd1', wd:'#a9adb4', c:'#a8743f', cd:'#7d5228', m:'#9fd0a8', md:'#7fb48a', f:'#c8b28c'};
-const dirOf=a=>{const r=a*Math.PI/180;return [Math.sin(r),-Math.cos(r)];};
-const lerp=(a,b,t)=>a+(b-a)*t;
-const lerpP=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t)];
-// 2ボーンIK：起点 a から目標 t へ、長さ l1,l2。bend=+1/-1 で曲がる側
-function ik(a,t,l1,l2,bend){
-  let dx=t[0]-a[0], dy=t[1]-a[1]; let d=Math.hypot(dx,dy)||0.001;
-  const maxd=l1+l2-0.01; if(d>maxd){ dx*=maxd/d; dy*=maxd/d; d=maxd; }
-  const end=[a[0]+dx,a[1]+dy];
-  const x=(d*d+l1*l1-l2*l2)/(2*d); const h=Math.sqrt(Math.max(0,l1*l1-x*x));
-  const ux=dx/d, uy=dy/d; // 垂直方向（bend で向き）
-  const px=-uy*bend, py=ux*bend;
-  return {mid:[a[0]+ux*x+px*h, a[1]+uy*x+py*h], end};
+// お手本の3D棒人間
+// ---------- お手本：3Dの棒人間 ----------
+// 単位はメートルくらい。床が y=0、人は +z を向く。+x が本人の左。
+// 右半身＝オレンジ、左半身＝青。指でドラッグすると見る向きを変えられる。
+const BL={thigh:.43, shin:.43, uarm:.29, farm:.27, spine:.52, neck:.15, hipW:.09, shW:.18, head:.1};
+const COL={R:'#e8743b', L:'#3b82c8', body:'#4a5560', joint:'#ffffff', line:'#1e2b2f', mat:'#cfe8d4', matLine:'#b4d6bc', shadow:'rgba(30,43,47,.13)'};
+const V={add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]], sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], mul:(a,k)=>[a[0]*k,a[1]*k,a[2]*k],
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+  len:a=>Math.hypot(a[0],a[1],a[2]), norm:a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];}};
+const rad=d=>d*Math.PI/180;
+// 2ボーンIK（3D）。h は肘・ひざを出したい向きのヒント
+function ik3(root,tgt,l1,l2,h){
+  let d=V.sub(tgt,root), dist=V.len(d); const mx=l1+l2-0.002; if(dist>mx){ d=V.mul(d,mx/dist); dist=mx; }
+  const dn=V.norm(d); let p=V.sub(h,V.mul(dn,V.dot(h,dn))); if(V.len(p)<1e-4) p=[0,1,0]; p=V.norm(p);
+  const x=(dist*dist+l1*l1-l2*l2)/(2*dist), hh=Math.sqrt(Math.max(0,l1*l1-x*x));
+  return {mid:V.add(root,V.add(V.mul(dn,x),V.mul(p,hh))), end:V.add(root,d)};
 }
-// pose: {hip, torso(deg), head(deg 追加の傾き), legs:[{a:[x,y],b:±1}, ...], arms:[{a:[x,y],b:±1}, ...], prop}
-function solvePose(P){
-  const hip=P.hip, sd=dirOf(P.torso);
-  const sh=[hip[0]+sd[0]*HL.torso, hip[1]+sd[1]*HL.torso];
-  const hd=dirOf(P.torso+(P.head||0));
-  const head=[sh[0]+hd[0]*(HL.neck+3.2), sh[1]+hd[1]*(HL.neck+3.2)];
-  const legs=P.legs.map(L=>{ const r=ik(hip,L.a,HL.thigh,HL.shin,L.b); return {hip, knee:r.mid, ankle:r.end, toe:L.toe}; });
-  const arms=P.arms.map(A=>{ const r=ik(sh,A.a,HL.uarm,HL.farm,A.b); return {sh, elbow:r.mid, hand:r.end}; });
-  return {hip, sh, head, legs, arms, torso:P.torso, face:P.face||1};
+// ポーズ → 関節の位置
+function solve3(P){
+  const pt=rad(P.pitch||0), yw=rad(P.yaw||0);
+  const rotY=v=>[v[0]*Math.cos(yw)+v[2]*Math.sin(yw), v[1], -v[0]*Math.sin(yw)+v[2]*Math.cos(yw)];
+  const u=rotY([0,Math.cos(pt),Math.sin(pt)]), f=rotY([0,-Math.sin(pt),Math.cos(pt)]), s=V.cross(u,f); // s = 本人の左
+  const pel=P.pel, neck=V.add(pel,V.mul(u,BL.spine));
+  const hp=rad((P.pitch||0)+(P.head||0)); const hu=rotY([0,Math.cos(hp),Math.sin(hp)]), hf=rotY([0,-Math.sin(hp),Math.cos(hp)]);
+  const head=V.add(neck,V.mul(hu,BL.neck));
+  const J={pel,neck,head,nose:V.add(head,V.mul(hf,BL.head*0.95)),u,f,s};
+  for(const sd of ['R','L']){ const k=sd==='L'?1:-1;
+    const hip=V.add(pel,V.mul(s,k*BL.hipW)), sh=V.add(neck,V.mul(s,k*BL.shW));
+    const L=P[sd].leg, A=P[sd].arm;
+    const lt=L.rel?V.add(pel,L.a):L.a, at=A.rel?V.add(pel,A.a):A.a;
+    const lk=ik3(hip,lt,BL.thigh,BL.shin,L.h), ak=ik3(sh,at,BL.uarm,BL.farm,A.h);
+    const toe=V.add(lk.end, L.toe||[0,-0.04,0.13]);
+    J[sd]={hip,knee:lk.mid,ankle:lk.end,toe,sh,elbow:ak.mid,hand:ak.end};
+  }
+  return J;
 }
-function lerpPose(A,B,t){
-  const mix=(x,y)=>({a:lerpP(x.a,y.a,t), b:x.b, toe:x.toe});
-  return {hip:lerpP(A.hip,B.hip,t), torso:lerp(A.torso,B.torso,t), head:lerp(A.head||0,B.head||0,t),
-    legs:A.legs.map((L,i)=>mix(L,B.legs[i])), arms:A.arms.map((L,i)=>mix(L,B.arms[i])), face:A.face};
+const lerpN=(a,b,t)=>a+(b-a)*t;
+const lerpV=(a,b,t)=>a&&b?[lerpN(a[0],b[0],t),lerpN(a[1],b[1],t),lerpN(a[2],b[2],t)]:(a||b);
+function lerp3(A,B,t){ const lim=(x,y)=>({a:lerpV(x.a,y.a,t),h:lerpV(x.h,y.h,t),toe:lerpV(x.toe,y.toe,t),rel:x.rel});
+  const o={pel:lerpV(A.pel,B.pel,t),pitch:lerpN(A.pitch||0,B.pitch||0,t),yaw:lerpN(A.yaw||0,B.yaw||0,t),head:lerpN(A.head||0,B.head||0,t)};
+  for(const sd of ['R','L']) o[sd]={leg:lim(A[sd].leg,B[sd].leg),arm:lim(A[sd].arm,B[sd].arm)}; return o; }
+// 左右を入れかえる（x を反転して R と L を交換）
+function mirror3(P){ const fx=v=>v&&[-v[0],v[1],v[2]]; const lim=x=>({a:fx(x.a),h:fx(x.h),toe:fx(x.toe),rel:x.rel});
+  return {pel:fx(P.pel),pitch:P.pitch,yaw:-(P.yaw||0),head:P.head,R:{leg:lim(P.L.leg),arm:lim(P.L.arm)},L:{leg:lim(P.R.leg),arm:lim(P.R.arm)}}; }
+
+// ---------- 描画 ----------
+function cam(view,W,H){ const az=rad(view.az), el=rad(view.el), D=view.dist||4.2, f=Math.min(W,H*1.25)*(view.zoom||1)*1.05, t=view.target;
+  return p=>{ const v=V.sub(p,t); const x1=v[0]*Math.cos(az)-v[2]*Math.sin(az), z1=v[0]*Math.sin(az)+v[2]*Math.cos(az);
+    const y2=v[1]*Math.cos(el)-z1*Math.sin(el), z2=v[1]*Math.sin(el)+z1*Math.cos(el); const dep=D-z2;
+    return {x:W/2+f*x1/dep, y:H*0.56-f*y2/dep, d:dep, k:f/dep}; }; }
+function draw3(cv,P,view,opt){
+  opt=opt||{}; const dpr=Math.min(2,window.devicePixelRatio||1);
+  const W=cv.clientWidth||cv.width, H=cv.clientHeight||cv.height;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H);
+  const pr=cam(view,W,H), J=solve3(P);
+  // マット
+  const m=view.mat||[[-.42,-1.05],[.42,1.05]];
+  const poly=(pts,fill,stroke)=>{ x.beginPath(); pts.forEach((p,i)=>{ const q=pr(p); i?x.lineTo(q.x,q.y):x.moveTo(q.x,q.y); }); x.closePath(); if(fill){x.fillStyle=fill;x.fill();} if(stroke){x.strokeStyle=stroke;x.lineWidth=1;x.stroke();} };
+  poly([[m[0][0],0,m[0][1]],[m[1][0],0,m[0][1]],[m[1][0],0,m[1][1]],[m[0][0],0,m[1][1]]],COL.mat,COL.matLine);
+  x.strokeStyle=COL.matLine; x.lineWidth=1;
+  for(let z=m[0][1]+.35;z<m[1][1];z+=.35){ const a=pr([m[0][0],0,z]), b=pr([m[1][0],0,z]); x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); }
+  // 骨（線）と関節を集めて、遠いものから描く
+  const segs=[]; const S=(a,b,c,w)=>segs.push({a,b,c,w});
+  for(const sd of ['R','L']){ const j=J[sd], c=COL[sd];
+    S(j.hip,j.knee,c,.075); S(j.knee,j.ankle,c,.065); S(j.ankle,j.toe,c,.05); S(j.sh,j.elbow,c,.06); S(j.elbow,j.hand,c,.05); }
+  S(J.pel,J.neck,COL.body,.11); S(J.R.hip,J.L.hip,COL.body,.07); S(J.R.sh,J.L.sh,COL.body,.07); S(J.neck,J.head,COL.body,.05);
+  // 影
+  x.lineCap='round';
+  segs.forEach(g=>{ const a=pr([g.a[0],0.001,g.a[2]]), b=pr([g.b[0],0.001,g.b[2]]); x.strokeStyle=COL.shadow; x.lineWidth=Math.max(2,g.w*a.k*0.9); x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); });
+  const items=segs.map(g=>{ const a=pr(g.a), b=pr(g.b); return {d:(a.d+b.d)/2, draw:()=>{ x.strokeStyle=COL.line; x.lineWidth=g.w*((a.k+b.k)/2)+3; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke();
+    x.strokeStyle=g.c; x.lineWidth=g.w*((a.k+b.k)/2); x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); }}; });
+  const joints=[]; for(const sd of ['R','L']){ const j=J[sd]; [j.knee,j.elbow,j.hip,j.sh,j.ankle,j.hand].forEach(p=>joints.push({p,c:COL[sd],r:.032})); }
+  joints.forEach(o=>{ const q=pr(o.p); items.push({d:q.d-0.01, draw:()=>{ x.fillStyle=COL.joint; x.strokeStyle=o.c; x.lineWidth=Math.max(1.5,q.k*.018); x.beginPath(); x.arc(q.x,q.y,Math.max(2.5,o.r*q.k),0,7); x.fill(); x.stroke(); }}); });
+  // 頭（鼻の点で向きがわかる）
+  const hq=pr(J.head), nq=pr(J.nose);
+  items.push({d:hq.d, draw:()=>{ const r=BL.head*hq.k; x.fillStyle='#f6dcc0'; x.strokeStyle=COL.line; x.lineWidth=2; x.beginPath(); x.arc(hq.x,hq.y,r,0,7); x.fill(); x.stroke();
+    if(nq.d<hq.d){ x.fillStyle=COL.line; x.beginPath(); x.arc(lerpN(hq.x,nq.x,.8),lerpN(hq.y,nq.y,.8),Math.max(2,r*.22),0,7); x.fill(); } }});
+  items.sort((a,b)=>b.d-a.d).forEach(i=>i.draw());
+  // ラベル
+  if(opt.labels!==false){ x.font='bold 12px sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+    for(const sd of ['R','L']){ const h=pr(J[sd].knee); const tx=h.x+(h.x<pr(J.pel).x?-13:13); x.fillStyle=COL[sd]; x.strokeStyle='#fff'; x.lineWidth=3; x.strokeText(sd==='R'?'右':'左',tx,h.y); x.fillText(sd==='R'?'右':'左',tx,h.y); } }
 }
-function hgrid(){
-  const g=new Array(HW*HH).fill(0);
-  const S=(x,y,c)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=HW||y>=HH)return;g[y*HW+x]=c;};
-  const disc=(cx,cy,r,c)=>{for(let y=Math.floor(cy-r);y<=Math.ceil(cy+r);y++)for(let x=Math.floor(cx-r);x<=Math.ceil(cx+r);x++){if((x-cx)*(x-cx)+(y-cy)*(y-cy)<=r*r+0.15)S(x,y,c);}};
-  const seg=(a,b,r,c)=>{const n=Math.max(2,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])*3));for(let i=0;i<=n;i++){const t=i/n;disc(lerp(a[0],b[0],t),lerp(a[1],b[1],t),r,c);}};
-  const rect=(x0,y0,x1,y1,c)=>{for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)S(x,y,c);};
-  return {g,S,disc,seg,rect};
-}
-function drawProps(G,prop){
-  const {rect}=G;
-  // 床（マット）
-  if(prop==='mat') rect(4,GROUND,59,GROUND+1,'m'); else rect(0,GROUND,63,GROUND,'f');
-  if(prop==='chair'){ rect(13,32,24,33,'c'); rect(13,34,24,34,'cd'); rect(13,35,14,GROUND-1,'cd'); rect(23,35,24,GROUND-1,'cd'); rect(11,18,12,GROUND-1,'c'); }
-  if(prop==='wall'||prop==='wallL'){ const x0=prop==='wall'?50:4, x1=prop==='wall'?60:18; rect(x0,2,x1,GROUND-1,'w'); for(let y=6;y<GROUND;y+=8) rect(x0,y,x1,y,'wd'); }
-  if(prop==='desk'){ rect(42,29,62,30,'c'); rect(44,31,45,GROUND-1,'cd'); rect(59,31,60,GROUND-1,'cd'); }
-}
-function drawBody(G,B,far){
-  const {seg,disc,S}=G;
-  const c=(n)=>far?n+'d':n;
-  const leg=(L,isFar)=>{ const pc=isFar?'pd':'p'; seg(L.hip,L.knee,1.5,pc); seg(L.knee,L.ankle,1.3,pc);
-    const tx=L.toe==null?B.face:L.toe; if(tx!==0){ const ty=L.toeY||0; seg(L.ankle,[L.ankle[0]+2.2*tx,L.ankle[1]+ty],1,'k'); } else disc(L.ankle[0],L.ankle[1],1.1,'k'); };
-  const arm=(A,isFar)=>{ seg(A.sh,A.elbow,1.2,isFar?'td':'t'); seg(A.elbow,A.hand,1.05,isFar?'sd':'s'); disc(A.hand[0],A.hand[1],1.1,isFar?'sd':'s'); };
-  return {leg,arm};
-}
-function renderHuman(P,prop){
-  const G=hgrid(); drawProps(G,prop);
-  const B=solvePose(P), {seg,disc,S}=G;
-  const D=drawBody(G,B);
-  // 奥の手足 → 胴体 → 頭 → 手前の手足
-  if(B.legs[1]) D.leg(B.legs[1],true);
-  if(B.arms[1]) D.arm(B.arms[1],true);
-  seg(B.hip,B.sh,2.3,'t');
-  disc(B.hip[0],B.hip[1],2.1,'p');
-  // 頭
-  disc(B.head[0],B.head[1],3.3,'s');
-  const hd=dirOf(B.torso+(P.head||0)); // 頭の向き（上方向）
-  // 髪：頭の「上側＋後ろ側」
-  for(let y=-4;y<=4;y++)for(let x=-4;x<=4;x++){ if(x*x+y*y>11.2) continue;
-    const up=-(x*hd[0]+y*hd[1]); // 上方向の成分（負=上）
-    const fx=(x*(-hd[1])+y*(hd[0]))*B.face; // 顔の前方向の成分
-    if(up<-1.0 || fx<-1.6) S(B.head[0]+x,B.head[1]+y,'h'); }
-  // 目
-  const fwd=[-hd[1]*B.face, hd[0]*B.face];
-  S(B.head[0]+fwd[0]*1.6-hd[0]*0.4, B.head[1]+fwd[1]*1.6-hd[1]*0.4, 'o');
-  D.leg(B.legs[0],false);
-  if(B.arms[0]) D.arm(B.arms[0],false);
-  // 輪郭
-  const g=G.g, out=g.slice();
-  for(let y=0;y<HH;y++)for(let x=0;x<HW;x++){ const i=y*HW+x; if(g[i]) continue;
-    const nb=(xx,yy)=>xx>=0&&yy>=0&&xx<HW&&yy<HH&&g[yy*HW+xx]&&!'fmwcd'.includes(g[yy*HW+xx][0]);
-    if(nb(x-1,y)||nb(x+1,y)||nb(x,y-1)||nb(x,y+1)) out[i]='o'; }
-  return out;
-}
-function paintHuman(cv,P,prop){
-  const img=renderHuman(P,prop); cv.width=HW; cv.height=HH; const x=cv.getContext('2d'); x.clearRect(0,0,HW,HH);
-  for(let i=0;i<img.length;i++){ const c=img[i]; if(!c) continue; x.fillStyle=HPAL[c]; x.fillRect(i%HW,Math.floor(i/HW),1,1); }
-}
-// ---------- ポーズ（0=はじめ／1=いちばん動いたところ） ----------
-const STAND={hip:[30,26], torso:0, legs:[{a:[30,GROUND-0.5],b:1},{a:[31,GROUND-0.5],b:1}], arms:[{a:[30,26],b:-1},{a:[31,26],b:-1}]};
-const POSES={
-  chairsquat:{prop:'chair', A:{hip:[28,26],torso:4,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[39,20],b:-1},{a:[40,20],b:-1}]},
-                         B:{hip:[21,31],torso:38,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[40,23],b:-1},{a:[41,23],b:-1}]}},
-  squat:{prop:'floor', A:{hip:[29,26],torso:3,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[38,20],b:-1},{a:[39,20],b:-1}]},
-                 B:{hip:[23,33],torso:36,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[40,25],b:-1},{a:[41,25],b:-1}]}},
-  split:{prop:'floor', A:{hip:[28,27],torso:0,legs:[{a:[36,43.5],b:-1},{a:[20,43],b:-1,toe:0}],arms:[{a:[29,27],b:-1},{a:[29,27],b:-1}]},
-                 B:{hip:[28,32],torso:0,legs:[{a:[36,43.5],b:-1},{a:[20,43],b:-1,toe:0}],arms:[{a:[29,32],b:-1},{a:[29,32],b:-1}]}},
-  wallpush:{prop:'wall', A:{hip:[33,26],torso:22,legs:[{a:[28,43.5],b:-1},{a:[29,43.5],b:-1}],arms:[{a:[49.5,17],b:-1},{a:[49.5,18],b:-1}]},
-                    B:{hip:[36,25],torso:30,legs:[{a:[28,43.5],b:-1},{a:[29,43.5],b:-1}],arms:[{a:[49.5,17],b:-1},{a:[49.5,18],b:-1}]}},
-  deskpush:{prop:'desk', A:{hip:[28,31],torso:62,legs:[{a:[14,43.5],b:-1},{a:[15,43.5],b:-1}],arms:[{a:[43,28],b:-1},{a:[44,28],b:-1}]},
-                    B:{hip:[30,33],torso:68,legs:[{a:[14,43.5],b:-1},{a:[15,43.5],b:-1}],arms:[{a:[43,28],b:-1},{a:[44,28],b:-1}]}},
-  kneepush:{prop:'mat', A:{hip:[27,36],torso:72,legs:[{a:[12,38],b:-1,toe:0},{a:[13,38],b:-1,toe:0}],arms:[{a:[39,43],b:1},{a:[40,43],b:1}]},
-                    B:{hip:[27,38.5],torso:82,legs:[{a:[12,38],b:-1,toe:0},{a:[13,38],b:-1,toe:0}],arms:[{a:[39,43],b:1},{a:[40,43],b:1}]}},
-  hiplift:{prop:'mat', face:1, A:{hip:[27,41.5],torso:-90,head:0,legs:[{a:[38,43],b:-1},{a:[39,43],b:-1}],arms:[{a:[24,43],b:1},{a:[25,43],b:1}]},
-                   B:{hip:[27,35],torso:-120,head:30,legs:[{a:[38,43],b:-1},{a:[39,43],b:-1}],arms:[{a:[22,43],b:1},{a:[23,43],b:1}]}},
-  hinge:{prop:'floor', A:{hip:[29,26],torso:4,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[33,17],b:-1},{a:[34,17],b:-1}]},
-                 B:{hip:[25,28],torso:72,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[38,26],b:-1},{a:[39,26],b:-1}]}},
-  birddog:{prop:'mat', A:{hip:[24,34],torso:90,legs:[{a:[16,43],b:-1,toe:0},{a:[17,43],b:-1,toe:0}],arms:[{a:[36,43],b:1},{a:[37,43],b:1}]},
-                   B:{hip:[24,34],torso:90,legs:[{a:[16,43],b:-1,toe:0},{a:[7,33],b:-1,toe:0}],arms:[{a:[36,43],b:1},{a:[47,31],b:1}]}},
-  kneeup:{prop:'floor', A:{hip:[30,26],torso:0,legs:[{a:[30,43.5],b:-1},{a:[31,43.5],b:-1}],arms:[{a:[27,30],b:-1},{a:[34,31],b:-1}]},
-                  B:{hip:[30,26],torso:-3,legs:[{a:[30,43.5],b:-1},{a:[38,33],b:-1}],arms:[{a:[36,29],b:-1},{a:[26,31],b:-1}]}},
-  wallsit:{prop:'wallL', A:{hip:[22,34],torso:0,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[29,33],b:-1},{a:[30,33],b:-1}]},
-                   B:{hip:[22,34.6],torso:0,head:-2,legs:[{a:[31,43.5],b:-1},{a:[32,43.5],b:-1}],arms:[{a:[29,33.4],b:-1},{a:[30,33.4],b:-1}]}},
-  plank:{prop:'mat', A:{hip:[26,37.2],torso:78,legs:[{a:[9,42],b:-1,toe:0},{a:[10,42],b:-1,toe:0}],arms:[{a:[45,43],b:-1},{a:[46,43],b:-1}]},
-                 B:{hip:[26,37.7],torso:78,legs:[{a:[9,42],b:-1,toe:0},{a:[10,42],b:-1,toe:0}],arms:[{a:[45,43],b:-1},{a:[46,43],b:-1}]}},
-  kneeplank:{prop:'mat', A:{hip:[27,37.4],torso:76,legs:[{a:[13,39],b:-1,toe:0},{a:[14,39],b:-1,toe:0}],arms:[{a:[45,43],b:-1},{a:[46,43],b:-1}]},
-                     B:{hip:[27,37.9],torso:76,legs:[{a:[13,39],b:-1,toe:0},{a:[14,39],b:-1,toe:0}],arms:[{a:[45,43],b:-1},{a:[46,43],b:-1}]}},
-  march:{prop:'floor', A:{hip:[30,26],torso:0,legs:[{a:[30,43.5],b:-1},{a:[33,39],b:-1}],arms:[{a:[25,31],b:-1},{a:[35,31],b:-1}]},
-                 B:{hip:[30,26],torso:0,legs:[{a:[33,39],b:-1},{a:[30,43.5],b:-1}],arms:[{a:[35,31],b:-1},{a:[25,31],b:-1}]}},
-  stretch:{prop:'floor', A:{hip:[30,26],torso:0,legs:[{a:[30,43.5],b:-1},{a:[31,43.5],b:-1}],arms:[{a:[30,26],b:-1},{a:[31,26],b:-1}]},
-                   B:{hip:[30,26],torso:0,head:-6,legs:[{a:[30,43.5],b:-1},{a:[31,43.5],b:-1}],arms:[{a:[31,2],b:1},{a:[32,2],b:1}]}}
+
+// ---------- ポーズ ----------
+// 立った姿勢を作る道具
+const ST=(o)=>Object.assign({pel:[0,.93,0],pitch:0,
+  R:{leg:{a:[-.11,.08,0],h:[0,0,1]},arm:{a:[-.22,.67,.02],h:[0,0,-1]}},
+  L:{leg:{a:[.11,.08,0],h:[0,0,1]},arm:{a:[.22,.67,.02],h:[0,0,-1]}}},o||{});
+const LIM=(a,h,extra)=>Object.assign({a,h},extra||{});
+const VIEW={stand:{az:-38,el:12,target:[0,.86,0],zoom:1.35,mat:[[-.5,-.6],[.5,.7]]}, floor:{az:-64,el:20,target:[0,.3,0],zoom:1.6,mat:[[-.45,-1.1],[.45,1.15]]}, supine:{az:-72,el:22,target:[0,.28,0],zoom:1.6,mat:[[-.45,-1.1],[.45,1.15]]}};
+const POSES3={
+  squat:{view:'stand',A:ST({R:{leg:LIM([-.17,.08,.02],[-.3,0,1],{toe:[-.04,-.04,.12]}),arm:LIM([-.16,1.32,.5],[0,-1,0])},L:{leg:LIM([.17,.08,.02],[.3,0,1],{toe:[.04,-.04,.12]}),arm:LIM([.16,1.32,.5],[0,-1,0])}}),
+                      B:ST({pel:[0,.53,-.24],pitch:38,R:{leg:LIM([-.17,.08,.02],[-.3,0,1],{toe:[-.04,-.04,.12]}),arm:LIM([-.16,1.02,.55],[0,-1,0])},L:{leg:LIM([.17,.08,.02],[.3,0,1],{toe:[.04,-.04,.12]}),arm:LIM([.16,1.02,.55],[0,-1,0])}})},
+  split:{view:'stand',alt:'half',A:ST({pel:[0,.9,-.04],R:{leg:LIM([-.11,.08,.36],[0,0,1]),arm:LIM([-.2,.95,0],[-1,0,-.3])},L:{leg:LIM([.11,.14,-.46],[0,-1,.3],{toe:[0,-.09,.08]}),arm:LIM([.2,.95,0],[1,0,-.3])}}),
+                      B:ST({pel:[0,.52,-.04],R:{leg:LIM([-.11,.08,.36],[0,0,1]),arm:LIM([-.2,.57,0],[-1,0,-.3])},L:{leg:LIM([.11,.14,-.46],[0,-1,.3],{toe:[0,-.09,.08]}),arm:LIM([.2,.57,0],[1,0,-.3])}})},
+  squathold:{view:'stand',A:ST({pel:[0,.63,-.18],pitch:30,R:{leg:LIM([-.17,.08,.02],[-.3,0,1],{toe:[-.04,-.04,.12]}),arm:LIM([-.16,1.1,.55],[0,-1,0])},L:{leg:LIM([.17,.08,.02],[.3,0,1],{toe:[.04,-.04,.12]}),arm:LIM([.16,1.1,.55],[0,-1,0])}}),
+                      B:ST({pel:[0,.615,-.18],pitch:31,R:{leg:LIM([-.17,.08,.02],[-.3,0,1],{toe:[-.04,-.04,.12]}),arm:LIM([-.16,1.09,.55],[0,-1,0])},L:{leg:LIM([.17,.08,.02],[.3,0,1],{toe:[.04,-.04,.12]}),arm:LIM([.16,1.09,.55],[0,-1,0])}})},
+  hinge:{view:'stand',A:ST({pel:[0,.92,0],R:{leg:LIM([-.13,.08,0],[0,0,1]),arm:LIM([-.16,.72,.12],[0,0,-1])},L:{leg:LIM([.13,.08,0],[0,0,1]),arm:LIM([.16,.72,.12],[0,0,-1])}}),
+                      B:ST({pel:[0,.86,-.16],pitch:62,R:{leg:LIM([-.13,.08,0],[0,0,1]),arm:LIM([-.15,.5,.28],[0,0,-1])},L:{leg:LIM([.13,.08,0],[0,0,1]),arm:LIM([.15,.5,.28],[0,0,-1])}})},
+  kneeup:{view:'stand',alt:'rep',A:ST({R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:LIM([-.22,.7,.05],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.22,.7,.05],[0,0,-1])}}),
+                      B:ST({pitch:-3,R:{leg:LIM([-.1,.5,.3],[0,1,1]),arm:LIM([-.22,.78,-.2],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.2,.98,.3],[0,-1,0])}})},
+  quadpush:{view:'floor',A:{pel:[0,.5,0],pitch:90,R:{leg:LIM([-.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.21,.03,.53],[0,0,-1])},L:{leg:LIM([.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.21,.03,.53],[0,0,-1])}},
+                      B:{pel:[0,.48,0],pitch:108,head:-10,R:{leg:LIM([-.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.21,.03,.53],[-1,.3,-.2])},L:{leg:LIM([.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.21,.03,.53],[1,.3,-.2])}}},
+  kneepush:{view:'floor',A:{pel:[0,.33,-.05],pitch:78,head:-8,R:{leg:LIM([-.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.24,.03,.58],[-1,.3,-.3])},L:{leg:LIM([.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.24,.03,.58],[1,.3,-.3])}},
+                      B:{pel:[0,.2,-.05],pitch:85,head:-8,R:{leg:LIM([-.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.24,.03,.58],[-1,.3,-.3])},L:{leg:LIM([.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.24,.03,.58],[1,.3,-.3])}}},
+  pushup:{view:'floor',A:{pel:[0,.4,-.1],pitch:73,head:-6,R:{leg:LIM([-.1,.09,-.93],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([-.24,.03,.55],[-1,.3,-.3])},L:{leg:LIM([.1,.09,-.93],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([.24,.03,.55],[1,.3,-.3])}},
+                      B:{pel:[0,.22,-.1],pitch:84,head:-6,R:{leg:LIM([-.1,.09,-.93],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([-.24,.03,.55],[-1,.3,-.3])},L:{leg:LIM([.1,.09,-.93],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([.24,.03,.55],[1,.3,-.3])}}},
+  hiplift:{view:'supine',A:{pel:[0,.11,.05],pitch:-90,head:0,R:{leg:LIM([-.13,.08,.5],[0,1,0]),arm:LIM([-.27,.03,-.06],[-1,.4,0])},L:{leg:LIM([.13,.08,.5],[0,1,0]),arm:LIM([.27,.03,-.06],[1,.4,0])}},
+                      B:{pel:[0,.37,.05],pitch:-118,head:28,R:{leg:LIM([-.13,.08,.5],[0,1,0]),arm:LIM([-.27,.03,-.06],[-1,.4,0])},L:{leg:LIM([.13,.08,.5],[0,1,0]),arm:LIM([.27,.03,-.06],[1,.4,0])}}},
+  bridgehold:{view:'supine',A:{pel:[0,.36,.05],pitch:-118,head:28,R:{leg:LIM([-.13,.08,.5],[0,1,0]),arm:LIM([-.27,.03,-.06],[-1,.4,0])},L:{leg:LIM([.13,.08,.5],[0,1,0]),arm:LIM([.27,.03,-.06],[1,.4,0])}},
+                      B:{pel:[0,.345,.05],pitch:-117,head:27,R:{leg:LIM([-.13,.08,.5],[0,1,0]),arm:LIM([-.27,.03,-.06],[-1,.4,0])},L:{leg:LIM([.13,.08,.5],[0,1,0]),arm:LIM([.27,.03,-.06],[1,.4,0])}}},
+  birddog:{view:'floor',alt:'rep',A:{pel:[0,.5,0],pitch:90,R:{leg:LIM([-.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.19,.03,.53],[0,0,-1])},L:{leg:LIM([.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.19,.03,.53],[0,0,-1])}},
+                      B:{pel:[0,.5,0],pitch:90,R:{leg:LIM([-.1,.06,-.42],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.19,.56,1.1],[0,1,0])},L:{leg:LIM([.1,.52,-.86],[0,-1,0],{toe:[0,.03,-.13]}),arm:LIM([.19,.03,.53],[0,0,-1])}}},
+  deadbug:{view:'supine',alt:'rep',A:{pel:[0,.11,.05],pitch:-90,R:{leg:LIM([-.11,.52,.46],[0,1,.6]),arm:LIM([-.19,.66,-.47],[0,0,1])},L:{leg:LIM([.11,.52,.46],[0,1,.6]),arm:LIM([.19,.66,-.47],[0,0,1])}},
+                      B:{pel:[0,.11,.05],pitch:-90,R:{leg:LIM([-.11,.52,.46],[0,1,.6]),arm:LIM([-.19,.22,-1.0],[0,1,0])},L:{leg:LIM([.11,.16,.9],[0,1,0]),arm:LIM([.19,.66,-.47],[0,0,1])}}},
+  plank:{view:'floor',A:{pel:[0,.27,-.08],pitch:79,head:-6,R:{leg:LIM([-.1,.09,-.92],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([-.13,.03,.73],[0,-1,0])},L:{leg:LIM([.1,.09,-.92],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([.13,.03,.73],[0,-1,0])}},
+                      B:{pel:[0,.26,-.08],pitch:79.5,head:-6,R:{leg:LIM([-.1,.09,-.92],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([-.13,.03,.73],[0,-1,0])},L:{leg:LIM([.1,.09,-.92],[0,1,0],{toe:[0,-.09,.02]}),arm:LIM([.13,.03,.73],[0,-1,0])}}},
+  kneeplank:{view:'floor',A:{pel:[0,.25,-.05],pitch:76,head:-6,R:{leg:LIM([-.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.13,.03,.73],[0,-1,0])},L:{leg:LIM([.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.13,.03,.73],[0,-1,0])}},
+                      B:{pel:[0,.24,-.05],pitch:76.5,head:-6,R:{leg:LIM([-.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([-.13,.03,.73],[0,-1,0])},L:{leg:LIM([.1,.12,-.72],[0,-1,0],{toe:[0,-.02,-.13]}),arm:LIM([.13,.03,.73],[0,-1,0])}}},
+  march:{view:'stand',alt:'rep',A:ST({R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:LIM([-.22,.72,.06],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.22,.72,.06],[0,0,-1])}}),
+                      B:ST({R:{leg:LIM([-.1,.32,.18],[0,1,1]),arm:LIM([-.22,.76,-.15],[0,0,-1])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.21,.85,.22],[0,-1,0])}})},
+  stretch:{view:'stand',A:ST({}),B:ST({head:-8,R:{leg:LIM([-.11,.08,0],[0,0,1]),arm:LIM([-.1,1.98,0],[-1,0,0])},L:{leg:LIM([.11,.08,0],[0,0,1]),arm:LIM([.1,1.98,0],[1,0,0])}})}
 };
+// 種目のポーズ（p=0〜1、side=1で左右入れかえ）を描く
+function drawPose(cv,id,p,side,azOff,opt){ const Q=POSES3[id]; let P=lerp3(Q.A,Q.B,p); if(side) P=mirror3(P);
+  const v=Object.assign({},VIEW[Q.view]); v.az=v.az+(azOff||0); draw3(cv,P,v,opt); }
 
 </script>
 <script id="game">
@@ -773,36 +816,40 @@ const TOTAL_DEX=ANIMALS.filter(a=>a.id!=='himewombat').length; // 128
 
 // 種目。tempo=[下げる秒, 上げる秒]。alt=左右交互。sideSwitch=途中で左右を入れかえ
 const EX={
-  chairsquat:{name:'椅子スクワット',cat:'脚',type:'rep',tempo:[2,2],pose:'chairsquat',down:'下ろす',up:'立つ',
-    tips:['お尻を後ろに引くように腰を下ろす','椅子に軽くふれたら立ち上がる','ひざとつま先は同じ向きに'],need:'動かない椅子（キャスター付きは避ける）'},
   squat:{name:'スクワット',cat:'脚',type:'rep',tempo:[2,2],pose:'squat',down:'下ろす',up:'立つ',
-    tips:['足は肩幅、つま先は少し外向き','ひざが内側に入らないように','つらくない深さでOK']},
-  split:{name:'スプリットスクワット',cat:'脚',type:'rep',tempo:[2,2],pose:'split',down:'下ろす',up:'上げる',sideSwitch:true,
-    tips:['足を前後に開いて、まっすぐ腰を下ろす','前半は右足が前、後半は左足が前','ふらつくときは壁や机に手をそえる']},
-  wallpush:{name:'壁腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'wallpush',down:'近づく',up:'押す',
-    tips:['壁から一歩はなれて、肩幅に手をつく','頭からかかとまで一直線','胸を壁に近づけて、押しもどす']},
-  deskpush:{name:'机腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'deskpush',down:'近づく',up:'押す',
-    tips:['動かない丈夫な机のふちに手をつく','頭からかかとまで一直線','始める前に机がずれないか確かめる'],need:'動かない丈夫な机'},
-  kneepush:{name:'ひざつき腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'kneepush',down:'下ろす',up:'押す',minD:4,
-    tips:['ひざを床について、頭からひざまで一直線','胸を床に近づけて、押しもどす','床にマットやタオルをしく']},
+    tips:['足は肩幅、つま先は少し外向き','ひざとつま先は同じ向きに（内側に入れない）','お尻を後ろに引く。つらくない深さでOK']},
+  split:{name:'スプリットスクワット',cat:'脚',type:'rep',tempo:[2,2],pose:'split',down:'下ろす',up:'上げる',sideSwitch:true,sides:['右足が前','左足が前'],
+    tips:['足を前後に大きく開いて、まっすぐ腰を下ろす','前半は右足が前、後半は左足が前','ふらつくときは浅めに']},
+  quadpush:{name:'四つんばい腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'quadpush',down:'下ろす',up:'押す',
+    tips:['手は肩の下、ひざは腰の下','ひじを曲げて、胸を床に近づける','いちばんやさしい腕立て']},
+  kneepush:{name:'ひざつき腕立て',cat:'押す',type:'rep',tempo:[2,2],pose:'kneepush',down:'下ろす',up:'押す',minD:2,
+    tips:['ひざを床について、頭からひざまで一直線','胸を床に近づけて、押しもどす','きつければ浅めでOK']},
+  pushup:{name:'腕立て伏せ',cat:'押す',type:'rep',tempo:[2,2],pose:'pushup',down:'下ろす',up:'押す',minD:6,
+    tips:['つま先で支え、頭からかかとまで一直線','胸を床に近づけて、押しもどす','きつければひざをついてOK']},
   hiplift:{name:'ヒップリフト',cat:'背面',type:'rep',tempo:[2,2],pose:'hiplift',down:'上げる',up:'下ろす',
     tips:['あおむけで、ひざを立てる','お尻を上げて、肩からひざまで一直線に','腰をそらしすぎない']},
   hinge:{name:'ヒップヒンジ',cat:'背面',type:'rep',tempo:[2,2],pose:'hinge',down:'たおす',up:'起こす',
     tips:['ひざを軽く曲げ、お尻を後ろに引いておじぎ','背中は丸めずまっすぐ','太ももの裏がのびるところまで']},
-  birddog:{name:'バードドッグ',cat:'体幹',type:'rep',tempo:[2,2],pose:'birddog',down:'のばす',up:'もどす',alt:true,
+  birddog:{name:'バードドッグ',cat:'体幹',type:'rep',tempo:[2,2],pose:'birddog',down:'のばす',up:'もどす',alt:true,sides:['右手と左足','左手と右足'],
     tips:['四つんばいから、対角の手と足をのばす','右手と左足、左手と右足を交互に','腰をそらさず、背中は水平に']},
-  kneeup:{name:'ニーアップ',cat:'体幹',type:'rep',tempo:[2,2],pose:'kneeup',down:'上げる',up:'下ろす',alt:true,
-    tips:['立ったまま、ひざを交互に持ち上げる','上体を後ろにたおさない','ふらつくときは壁や机に手をそえる']},
-  wallsit:{name:'空気椅子',cat:'キープ',type:'hold',pose:'wallsit',
-    tips:['壁に背中をつけて、腰を下ろす','ひざの角度は90度より浅くてOK','息を止めず、ふつうに呼吸を続ける']},
+  kneeup:{name:'ニーアップ',cat:'体幹',type:'rep',tempo:[2,2],pose:'kneeup',down:'上げる',up:'下ろす',alt:true,sides:['右ひざ','左ひざ'],
+    tips:['立ったまま、ひざを交互に持ち上げる','上体を後ろにたおさない','ふらつくときは低めに上げる']},
+  deadbug:{name:'デッドバグ',cat:'体幹',type:'rep',tempo:[2,2],pose:'deadbug',down:'のばす',up:'もどす',alt:true,sides:['右手と左足','左手と右足'],
+    tips:['あおむけで手は天井へ、ひざは曲げて持ち上げる','対角の手と足をゆっくりのばす','腰が床からうかないように']},
+  squathold:{name:'スクワットキープ',cat:'キープ',type:'hold',pose:'squathold',
+    tips:['腰を軽く落として止まる（ひざは90度より浅く）','ひざとつま先は同じ向き','息を止めず、ふつうに呼吸を続ける']},
+  bridgehold:{name:'ヒップリフトキープ',cat:'キープ',type:'hold',pose:'bridgehold',
+    tips:['お尻を上げて、肩からひざまで一直線で止まる','腰をそらしすぎない','息を止めず、ふつうに呼吸を続ける']},
   kneeplank:{name:'ひざつきプランク',cat:'キープ',type:'hold',pose:'kneeplank',
     tips:['ひじを肩の真下について、ひざは床に','頭からひざまで一直線','息を止めず、ふつうに呼吸を続ける']},
   plank:{name:'プランク',cat:'キープ',type:'hold',pose:'plank',minD:2,
     tips:['ひじを肩の真下につく','頭からかかとまで一直線（お尻を上げすぎない）','息を止めず、ふつうに呼吸を続ける']}
 };
-// 1回のメニュー：8つの枠
-const SLOTS=[['chairsquat','squat','split'],['wallpush','deskpush','kneepush'],['hiplift','hinge'],['wallsit'],
-  ['chairsquat','squat','split'],['wallpush','deskpush','kneepush'],['birddog','kneeup'],['kneeplank','plank']];
+// 1回のメニュー：8つの枠（道具はマット1枚だけ）
+const PUSH=['quadpush','kneepush','pushup'];
+const SLOTS=[['squat','split'],PUSH,['hiplift','hinge'],['squathold','bridgehold'],['squat','split'],PUSH,['birddog','kneeup','deadbug'],['kneeplank','plank']];
+const OLD_EX={chairsquat:'椅子スクワット',wallpush:'壁腕立て',deskpush:'机腕立て',wallsit:'空気椅子'};
+Object.entries(OLD_EX).forEach(([k,n])=>{ if(!EX[k]) EX[k]={name:n,old:true,type:k==='wallsit'?'hold':'rep',tempo:[2,2]}; });
 const WARM={name:'準備運動',pose:'march',sec:45,lines:['その場で足ぶみ。うでも軽くふろう','肩を大きく回そう','もう少し足ぶみ']};
 const COOL={name:'整理運動',pose:'stretch',sec:45,lines:['うでを上にのばして、深呼吸','太ももの前や後ろをゆっくりのばそう','おつかれさま。ゆっくり呼吸を整えよう']};
 const REST_SEC=20;
@@ -839,8 +886,8 @@ const FACTS_CARD=[
   {id:'min30',title:'週30分の筋トレ',cond:'1週間の筋トレ時間（運動ブロックの合計）が30分に届いた',
     text:'16件の前向きコホート研究をまとめた分析では、週30〜60分の筋トレをしている人は、していない人より死亡や心血管病・がんなどのリスクが約10〜20%低いという関連が見られました。観察研究なので、筋トレが原因とまでは言えません。また、60分より増やしても上乗せの効果ははっきりしませんでした。',
     src:'Momma H ら（2022）British Journal of Sports Medicine 56:755-763'},
-  {id:'iso',title:'空気椅子と血圧',cond:'空気椅子を10回やった',
-    text:'270件のランダム化試験をまとめた分析では、空気椅子（ウォールスクワット）などの「動かずに力を入れ続ける運動」が、安静時の血圧を下げる効果がいちばん大きい運動として順位づけされました（上の血圧で平均約8、下の血圧で約4mmHg低下）。研究で使われたやり方は、このゲームのメニューとは時間や回数がちがいます。',
+  {id:'iso',title:'キープする運動と血圧',cond:'キープ種目（スクワットキープなど）のある日が10回になった',
+    text:'270件のランダム化試験をまとめた分析では、空気椅子（壁を使うウォールスクワット）などの「動かずに力を入れ続ける運動」が、安静時の血圧を下げる効果がいちばん大きい運動として順位づけされました（上の血圧で平均約8、下の血圧で約4mmHg低下）。このゲームのスクワットキープは壁を使わず、時間や回数も研究のやり方とはちがいます。',
     src:'Edwards JJ ら（2023）British Journal of Sports Medicine（Exercise training and resting blood pressure）'},
   {id:'combo',title:'歩くこともいっしょに',cond:'トレーニングを8回やった',
     text:'筋トレと有酸素性の身体活動（歩くことなど）を組み合わせると、さらなる健康増進効果が期待できるとされています。',
@@ -1002,8 +1049,7 @@ function confetti(n){ if(REDUCE) return; const fx=$('#fx'); const c=document.cre
     P.forEach(p=>{ p.vy+=0.32; p.vx*=0.99; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; x.save(); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c; x.fillRect(-p.s/2,-p.s/3,p.s,p.s*0.66); x.restore(); });
     if(t<2200) requestAnimationFrame(f); else c.remove(); })(t0); }
 const spr=(id,cls)=>`<img class="${cls||''}" src="${animalDataURL(id,4)}" alt="">`;
-function poseCanvas(id,t){ const P=POSES[id]; const c=document.createElement('canvas'); paintHuman(c,t?lerpPose(P.A,P.B,t):P.A,P.prop); return c; }
-function mountPoses(root){ (root||document).querySelectorAll('span.pz').forEach(s=>{ const c=poseCanvas(s.dataset.p,+s.dataset.t||0); s.replaceWith(c); }); }
+function mountPoses(root){ (root||document).querySelectorAll('span.pz').forEach(s=>{ const c=document.createElement('canvas'); c.className='pzc'; s.replaceWith(c); drawPose(c,s.dataset.p,+s.dataset.t||0,0,0,{labels:false}); }); }
 
 // ================= 共通UI =================
 const TABS=[['home','🏠','ホーム'],['dex','📖','図鑑'],['skills','✨','スキル'],['report','📊','レポート'],['settings','⚙️','設定']];
@@ -1070,16 +1116,15 @@ function intro(){
 function soundScreen(first){
   bgmStop();
   render(`${header('音のチェック',first?false:'settings')}
-  ${coach('運動中は画面を見られないから、音で案内するよ。まずは聞こえるか確かめよう。')}
-  <div class="card"><h3>1. 声の読み上げ</h3><button class="btn sub" id="tV">声をテスト</button>
-  <p class="small" id="vInfo"></p>
+  ${coach('運動中は画面を見られないから、音で案内するよ。聞こえるか確かめよう。')}
+  <div class="card"><div class="row" style="justify-content:space-between"><b>1. 声の読み上げ</b><button class="btn sm sub" id="tV">▶ テスト</button></div>
+  <p class="small" id="vInfo" style="margin:2px 0"></p>
   <div class="row"><button class="btn ${SV.voice!=='off'?'':'sub'}" id="vYes">聞こえた</button><button class="btn ${SV.voice==='off'?'':'sub'}" id="vNo">聞こえない</button></div></div>
-  <div class="card"><h3>2. 効果音</h3>
-  <p class="small">低い音＝「下げる」、高い音＝「上げる」の合図だよ。</p>
-  <div class="row"><button class="btn sub" id="tLo">🔵 低い音</button><button class="btn sub" id="tHi">🟠 高い音</button></div></div>
-  <div class="card"><h3>3. 振動</h3><p class="small">合図に合わせてスマホがふるえます（対応している端末だけ。iPhoneのブラウザはふるえません）。</p><div class="sw"><span>振動</span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="tVib">${SV.vib!==false?'ON':'OFF'}</button></div></div>
-  <div class="card"><h3>4. BGM</h3><div class="sw"><span>ファミコン風のBGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="tB">${SV.bgm?'ON':'OFF'}</button></div></div>
-  <div class="card small" id="modeInfo"></div>`,{cta:`<button class="btn" id="next">${first?'つぎへ':'もどる'}</button>`});
+  <div class="card"><b>2. 合図の音</b>　<span class="small">低い音＝下げる、高い音＝上げる</span>
+  <div class="row"><button class="btn sub" id="tLo">🔵 低い音</button><button class="btn sub" id="tHi">🟠 高い音</button></div>
+  <div class="sw"><span>振動 <span class="small">（対応端末のみ。iPhoneのブラウザは不可）</span></span><button class="btn sm ${SV.vib!==false?'':'sub'}" id="tVib">${SV.vib!==false?'ON':'OFF'}</button></div>
+  <div class="sw" style="border:0"><span>ファミコン風のBGM</span><button class="btn sm ${SV.bgm?'':'sub'}" id="tB">${SV.bgm?'ON':'OFF'}</button></div></div>
+  <div class="small" id="modeInfo" style="margin:0 4px"></div>`,{cta:`<button class="btn" id="next">${first?'つぎへ':'もどる'}</button>`});
   const info=()=>{ $('#modeInfo').innerHTML=SV.voice==='off'?'<b>音だけモード</b>：回数は5回ごとに「ピピッ」、残り2回で「ピピピッ」。キープは10秒ごとに「ピッ」、最後の3秒は「ピッ、ピッ、ピッ」で知らせます。':'<b>声ありモード</b>：回数や残り時間を声で読み上げます。'; };
   info();
   $('#tV').onclick=()=>{ ac(); pickVoice(); const ok=('speechSynthesis' in window)&&(AU.voiceJa||speechSynthesis.getVoices().length>=0);
@@ -1142,19 +1187,19 @@ function preScreen(){
   PLAN={menu,slot,again,chal,accepted:false};
   const tl=buildTimeline(menu), total=tl.reduce((a,b)=>a+b.dur,0);
   const list=menu.map((m,i)=>{ const e=EX[m.id];
-    return `<div class="menu-item"><span class="pz" data-p="${e.pose}" data-t="0.85"></span><div><div class="nm">${i+1}. ${e.name}</div>
-    <div class="small">${e.type==='rep'?`${m.reps}回（${e.alt?'左右交互・':''}${e.tempo[0]}秒で${e.down}・${e.tempo[1]}秒で${e.up}）`:`${m.hold}秒キープ`}${e.need?`<br>用意：${e.need}`:''}</div></div></div>`; }).join('');
+    return `<div class="mi"><span class="pz" data-p="${e.pose}" data-t="0.85"></span><div><div class="nm">${i+1}. ${e.name}</div>
+    <div class="small">${e.type==='rep'?`${m.reps}回${e.alt?'・左右交互':e.sideSwitch?'・左右':''}`:`${m.hold}秒キープ`}</div></div></div>`; }).join('');
+  const cu=chal?(EX[menu[chal.idx].id].type==='rep'?'回':'秒'):'';
   render(`${header('今日のメニュー',true)}
-  <p class="muted">${slot==='昼'?'昼':slot}のトレーニング・約${Math.round(total/60)}分（準備運動と整理運動つき）</p>
-  ${again?'<div class="card small">今日の分はもう終わっています。もう一度やることはできますが、経験値や探検はありません。やりすぎには気をつけてね。</div>':''}
-  <div class="card">${list}</div>
-  ${chal?`<div class="card" id="chalBox"><b>挑戦クエスト</b>
-    <p style="margin:4px 0">「${EX[menu[chal.idx].id].name}」を <b>${chal.add}${EX[menu[chal.idx].id].type==='rep'?'回':'秒'}</b> ふやしてみる？ 成功したら経験値と探検のチャンスが1回ふえるよ。</p>
-    <div class="row"><button class="btn acc" id="cY">🔥 挑戦する</button><button class="btn sub" id="cN">今日はやめておく</button></div></div>`:''}
-  <div class="card small">体調が悪い日は休もう。痛みが出たらすぐにやめてね。運動中は画面を見なくても、音と声で進みます。画面が消えないようにしますが、消えた場合は一時停止します。</div>`,
+  <p class="muted" style="margin:0 0 6px">${slot}のトレーニング・約${Math.round(total/60)}分・用意するのはマット（またはタオル）1枚</p>
+  ${again?'<div class="card small" style="margin:6px 0">今日の分はもう終わっています。もう一度やっても経験値や探検はありません。</div>':''}
+  <div class="mgrid">${list}</div>
+  ${chal?`<div class="card chal" id="chalBox"><div><b>🔥 挑戦クエスト</b>　「${EX[menu[chal.idx].id].name}」を<b>+${chal.add}${cu}</b>。成功で経験値と探検＋1</div>
+    <div class="row"><button class="btn sm acc" id="cY">挑戦する</button><button class="btn sm sub" id="cN">やめておく</button></div></div>`:''}
+  <p class="small" style="margin:6px 2px">体調が悪い日は休もう。痛みが出たらすぐにやめてね。運動中は音と声で進みます。</p>`,
   {cta:'<button class="btn pulse" id="start">▶ スタート</button>'});
   if(chal){ const box=$('#chalBox');
-    $('#cY').onclick=()=>{ PLAN.accepted=true; se('ok'); confetti(30); box.innerHTML=`<b>挑戦クエスト：受けた！</b><div class="small">「${EX[menu[chal.idx].id].name}」を${chal.add}${EX[menu[chal.idx].id].type==='rep'?'回':'秒'}ふやしたよ。</div>`; };
+    $('#cY').onclick=()=>{ PLAN.accepted=true; se('ok'); confetti(30); box.innerHTML=`<div><b>🔥 挑戦クエスト：受けた！</b>　「${EX[menu[chal.idx].id].name}」を+${chal.add}${cu}</div>`; };
     $('#cN').onclick=()=>{ PLAN.accepted=false; box.innerHTML='<div class="small">挑戦はお休み。いつものメニューでいこう。</div>'; }; }
   $('#start').onclick=()=>{ ac(); if(PLAN.accepted){ const m=PLAN.menu[chal.idx]; if(m.reps) m.reps+=chal.add; else m.hold+=chal.add; } startSession(); };
 }
@@ -1168,15 +1213,21 @@ function startSession(){
     <div class="row" style="justify-content:space-between"><span class="small" id="sTime"></span><span class="small" id="sStep"></span></div>
     <div class="prog" id="sProg">${tl.filter(b=>b.kind!=='rest'&&b.kind!=='ready').map(()=>'<i></i>').join('')}</div>
     <div class="blk" id="sName"></div>
-    <div class="stage"><canvas id="sCv" width="64" height="48"></canvas><div class="phase" id="sPh"></div><div class="pausecover" id="sCover" hidden>一時停止中</div></div>
-    <div class="ringwrap"><svg viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="44"/><circle class="ring-fg" id="sRing" cx="50" cy="50" r="44" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
+    <div class="stage" id="sStage"><canvas id="sCv"></canvas><div class="phase" id="sPh"></div><div class="side" id="sSide"></div><div class="hint">← ドラッグで向きを変える →</div><div class="pausecover" id="sCover" hidden>一時停止中</div></div>
+    <div class="info"><div class="ringwrap"><svg viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="44"/><circle class="ring-fg" id="sRing" cx="50" cy="50" r="44" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/></svg>
       <div class="num"><b id="sNum"></b><small id="sUnit"></small></div></div>
     <div id="sSub"></div></div>
-    <div class="ctrl"><button class="cbtn" id="sQuit"><span class="ic">✕</span>やめる</button><button class="cbtn main" id="sPause"><span class="ic">⏸</span>停止</button><button class="cbtn" id="sSkip"><span class="ic">⏭</span>次へ</button></div>`;
+    <div class="ctrl"><button class="cbtn" id="sQuit"><span class="ic">✕</span>やめる</button><button class="cbtn main" id="sPause"><span class="ic">⏸</span>停止</button><button class="cbtn" id="sSkip"><span class="ic">⏭</span>次へ</button></div></div>`;
   document.body.appendChild(d); document.body.style.overflow='hidden';
   $('#sPause').onclick=togglePause; $('#sSkip').onclick=()=>nextBlock(true);
   $('#sQuit').onclick=()=>{ if(!RUN.paused) togglePause(); modal(`<p>トレーニングをやめますか？ ここまでの運動は記録されますが、経験値はもらえません。</p><div class="row"><button class="btn sub" id="qN">つづける</button><button class="btn warn" id="qY">やめる</button></div>`);
     $('#qN').onclick=()=>{ closeModal(); togglePause(); }; $('#qY').onclick=()=>{ closeModal(); RUN.aborted=true; finishSession(); }; };
+  // 指でドラッグして見る向きを変える
+  const cv=$('#sCv'); let dx=null;
+  cv.addEventListener('pointerdown',e=>{ dx=e.clientX; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',e=>{ if(dx==null) return; AZ=Math.max(-150,Math.min(150,AZ+(e.clientX-dx)*0.6)); dx=e.clientX; RUN.lastKey=''; });
+  cv.addEventListener('pointerup',()=>{ dx=null; }); cv.addEventListener('pointercancel',()=>{ dx=null; });
+  cv.addEventListener('dblclick',()=>{ AZ=0; });
   wakeOn();
   nextBlock();
   RUN.timer=setInterval(tick,50); loopDraw();
@@ -1206,7 +1257,7 @@ function nextBlock(skipped){
   if(b.kind==='ready'){ setMode('rest'); $('#sName').textContent='まもなくスタート'; sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">いっしょにがんばろう！</span></div>`; mountWB(sub); say('準備はいい？ いくよ'); }
   else if(b.kind==='warm'||b.kind==='cool'){ const W=b.kind==='warm'?WARM:COOL; setMode('rest'); $('#sName').textContent=W.name; sub.innerHTML=`<div class="sline">${wb(b.kind==='cool'?'happy':'')}<span id="sLine">${W.lines[0]}</span></div>`; mountWB(sub); say(W.name+'。'+W.lines[0]); if(b.kind==='cool') se('fanfare'); }
   else if(b.kind==='rest'){ const e=EX[b.next.id]; setMode('rest'); $('#sName').textContent='休けい　NEXT ▶ '+e.name;
-    sub.innerHTML=`<div class="card nextcard" style="margin-top:6px"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵 低い音で${e.down}、🟠 高い音で${e.up}（${e.tempo[0]}秒ずつ）${e.alt?'・左右交互':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
+    sub.innerHTML=`<div class="nextcard"><b>${e.name}　${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}</b>${e.type==='rep'?`<div class="small">🔵低い音で${e.down}・🟠高い音で${e.up}${e.alt?'・左右交互':e.sideSwitch?'・途中で左右交代':''}</div>`:''}<ul class="tips">${e.tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`;
     say(`休けい。次は、${e.name}。${b.next.reps?b.next.reps+'回':b.next.hold+'秒キープ'}。${e.tips[0]}`); }
   else { const e=EX[b.m.id]; $('#sName').textContent=e.name; setMode(e.type==='hold'?'hold':'down');
     sub.innerHTML=`<div class="sline">${wb('cheer')}<span id="sLine">${e.type==='hold'?e.tips[2]:e.tips[0]}</span></div>`; mountWB(sub); se('go'); buzz(120);
@@ -1240,8 +1291,9 @@ function tick(){
   } else { const e=EX[b.m.id];
     if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], i=Math.floor(t/per), phs=(t-i*per)<e.tempo[0]?'down':'up', n=b.m.reps;
       if(i<n){
-        if(phs==='down'&&once('d'+i)){ se('down'); buzz(40); phaseFlash(); if(e.sideSwitch&&i===Math.floor(n/2)){ say('足を入れかえて'); $('#sLine').textContent='足を入れかえて、左足を前に'; }
-          else if(e.alt&&voice&&i===0) say(e.id==='birddog'?'右手と左足':'右ひざ'); }
+        if(phs==='down'&&once('d'+i)){ se('down'); buzz(40); phaseFlash(); if(e.sideSwitch&&i===Math.floor(n/2)){ say('足を入れかえて、左足を前に'); $('#sLine').textContent='足を入れかえて、左足を前に'; }
+          else if(e.sideSwitch&&i===0&&voice) say('右足を前に');
+          else if(e.alt&&voice) say(e.sides[i%2]); }
         if(phs==='up'&&once('u'+i)){ se('up'); buzz([20,50,20]); phaseFlash(); const c=i+1;
           if(c===n-2&&n>4) setMood($('#sSub'),'cheer'); if(c===n) setMood($('#sSub'),'happy');
           if(voice){ if(c===n-2&&n>4) say(`${c}、あと2回`); else if(c===n) say(`${c}、ここまで`); else say(String(c)); }
@@ -1261,17 +1313,24 @@ function tick(){
   }
   if(t>=b.dur){ if(b.kind==='ex'){ se('end'); buzz([60,40,60]); if(EX[b.m.id].type==='hold'&&voiceOn()) say('ここまで'); } nextBlock(false); }
 }
+let AZ=0;
+// いま何回目か・左右どちらか（左右入れかえのある種目用）
+function sideOf(e,i,n){ if(e.alt) return i%2; if(e.sideSwitch) return i>=Math.floor(n/2)?1:0; return 0; }
 function loopDraw(){ if(!RUN) return; RUN.raf=requestAnimationFrame(loopDraw); const b=RUN.tl[RUN.bi]; if(!b) return; const cv=$('#sCv'); if(!cv) return;
-  const t=blockT(); let id, p=0, P;
+  const now=performance.now(); if(RUN.lastDraw&&now-RUN.lastDraw<30) return; RUN.lastDraw=now;
+  const t=blockT(); let id, p=0, side=0, lab='';
   const ease=x=>0.5-0.5*Math.cos(Math.PI*Math.max(0,Math.min(1,x)));
   if(b.kind==='ready'){ id='march'; p=0; }
-  else if(b.kind==='warm'){ id='march'; p=ease((t%1)); p=Math.floor(t)%2?1-p:p; }
+  else if(b.kind==='warm'){ id='march'; const k=Math.floor(t/0.5); const x=(t%0.5)/0.5; p=ease(x<.5?x*2:2-x*2); side=k%2; }
   else if(b.kind==='cool'){ id='stretch'; p=ease((Math.sin(t*Math.PI/4)+1)/2); }
   else { const m=b.kind==='rest'?b.next:b.m, e=EX[m.id]; id=e.pose;
-    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], tt=b.kind==='rest'?Math.max(0,t-7):t, x=tt%per; p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<7) p=0; }
-    else p=(Math.sin(t*Math.PI)+1)/4; }
-  const Q=POSES[id]; P=lerpPose(Q.A,Q.B,p);
-  const key=id+'|'+p.toFixed(2); if(RUN.lastKey===key) return; RUN.lastKey=key; paintHuman(cv,P,Q.prop);
+    if(e.type==='rep'){ const per=e.tempo[0]+e.tempo[1], tt=b.kind==='rest'?Math.max(0,t-7):t, i=Math.floor(tt/per), x=tt-i*per;
+      p=x<e.tempo[0]?ease(x/e.tempo[0]):1-ease((x-e.tempo[0])/e.tempo[1]); if(b.kind==='rest'&&t<7) p=0;
+      side=b.kind==='rest'?(e.alt?i%2:0):sideOf(e,Math.min(i,m.reps-1),m.reps);
+      if(e.sides) lab=e.sides[side]; }
+    else p=(Math.sin(t*Math.PI)+1)/2; }
+  const sd=$('#sSide'); if(sd){ sd.textContent=lab; sd.className='side'+(lab?(side?' l':' r'):''); }
+  drawPose(cv,id,p,side,AZ);
 }
 function endRun(){ if(!RUN) return; clearInterval(RUN.timer); cancelAnimationFrame(RUN.raf); shutUp(); bgmStop(); wakeOff(); const s=$('#sess'); if(s) s.remove(); document.body.style.overflow=''; }
 function finishSession(){
@@ -1352,7 +1411,7 @@ function checkFacts(){
   if(daysWith(wk)>=2) add('jp2');
   const prev=weekSessions(addDays(ws,-7)).filter(rewarded); if(daysWith(wk)>=2&&daysWith(prev)>=2) add('who');
   if(weekSessions(ws).reduce((a,s)=>a+s.active,0)>=1800) add('min30');
-  if(SV.sessions.filter(s=>(s.holds||{}).wallsit>0).length>=10) add('iso');
+  if(SV.sessions.filter(s=>{ const h=s.holds||{}; return h.wallsit>0||h.squathold>0||h.bridgehold>0; }).length>=10) add('iso');
   return got.filter(Boolean);
 }
 const factHTML=f=>`<div class="fact"><b>💡 ${f.title}</b><div>${f.text}</div><div class="src">出典：${f.src}<br>表示の条件：${f.cond}</div></div>`;
