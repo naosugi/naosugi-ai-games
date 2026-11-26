@@ -934,10 +934,12 @@ function battleTurn(B,cmds,r){
       if(c.k==='attack'){const t=pickEnemy(c.t);ev.push({t:'act',side:'p',i:a.i,text:`${m.name}の こうげき！`});physHit(m,t,1);addKiai(m);}
       else if(c.k==='defend'){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は みをまもっている。`});}
       else if(c.k==='run'){
+        ev.push({t:'act',side:'p',i:a.i,text:'みんなは にげだした！',run:true});
         if(B.boss){ev.push({t:'msg',text:'しかし まわりこまれてしまった！'});continue;}
         const ps=aliveParty(B).reduce((s,j)=>s+memberSpd(B,P[j]),0)/aliveParty(B).length;
         const es=aliveEnemies(B).reduce((s,j)=>s+EN[j].spd,0)/aliveEnemies(B).length;
-        if(r()<Math.max(.35,Math.min(.9,.6+.04*(ps-es)))){B.over='run';break;}
+        if(r()<Math.max(.35,Math.min(.9,.6+.04*(ps-es)))){ev.push({t:'msg',text:'うまく にげきれた！',runOk:true});B.over='run';break;}
+        ev.push({t:'msg',text:'しかし まわりこまれてしまった！'});
       } else if(c.k==='item'){
         const it=ITEMS[c.item];if(!(B.inv[c.item]>0))continue;let t=c.t;
         if(it.revive){if(P[t].hp>0){const dd=P.findIndex(x=>x.hp<=0);if(dd<0)continue;t=dd;}}

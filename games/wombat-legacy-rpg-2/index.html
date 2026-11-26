@@ -1089,10 +1089,12 @@ function battleTurn(B,cmds,r){
       if(c.k==='attack'){const t=pickEnemy(c.t);ev.push({t:'act',side:'p',i:a.i,text:`${m.name}の こうげき！`});physHit(m,t,1);addKiai(m);}
       else if(c.k==='defend'){ev.push({t:'act',side:'p',i:a.i,text:`${m.name}は みをまもっている。`});}
       else if(c.k==='run'){
+        ev.push({t:'act',side:'p',i:a.i,text:'みんなは にげだした！',run:true});
         if(B.boss){ev.push({t:'msg',text:'しかし まわりこまれてしまった！'});continue;}
         const ps=aliveParty(B).reduce((s,j)=>s+memberSpd(B,P[j]),0)/aliveParty(B).length;
         const es=aliveEnemies(B).reduce((s,j)=>s+EN[j].spd,0)/aliveEnemies(B).length;
-        if(r()<Math.max(.35,Math.min(.9,.6+.04*(ps-es)))){B.over='run';break;}
+        if(r()<Math.max(.35,Math.min(.9,.6+.04*(ps-es)))){ev.push({t:'msg',text:'うまく にげきれた！',runOk:true});B.over='run';break;}
+        ev.push({t:'msg',text:'しかし まわりこまれてしまった！'});
       } else if(c.k==='item'){
         const it=ITEMS[c.item];if(!(B.inv[c.item]>0))continue;let t=c.t;
         if(it.revive){if(P[t].hp>0){const dd=P.findIndex(x=>x.hp<=0);if(dd<0)continue;t=dd;}}
@@ -2648,7 +2650,7 @@ function newGame2(){
 function title(){
   mode='title';G=null;B=null;F=null;disp=null;showPad(false);playMusic('title');renderParty();updateTop('ウォンバット☆レガシーRPG 2');
   const all=saves(),sv=all.length?all.reduce((a,b)=>(b.g.savedAt||0)>(a.g.savedAt||0)?b:a).g:null;
-  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?`つづきから あそべます。（セーブデータ ${all.length}こ）`:'ボタンを おして はじめよう。');
+  $('overlay').innerHTML='<h1>ウォンバット<span>☆</span><br>レガシーRPG <span>2</span></h1><p>地下50階の 大きな穴</p>'+(sv&&sv.title?`<p class="clr">称号：${esc(sv.title)}</p>`:'')+(sv&&sv.secretDown?'<p class="clr">★★ 完全クリア ★★'+(sv.dbRec&&sv.dbRec.wins>1?`　ドロップベア ${sv.dbRec.wins}勝`:'')+'</p>':sv&&sv.cleared?'<p class="clr">★ クリアずみ ★</p>':'');setMsg(sv?`つづきから あそべます。（セーブデータ ${all.length}こ）`:'ボタンを おして はじめよう。');
   setCmds([{label:'▶ はじめから',sub:all.length?`セーブ${nextSlot()}に 記録`:'',fn:startNew,cls:sv?'':'wide hi'},...(sv?[{label:'▶ つづきから',sub:'セーブを えらぶ',fn:continueMenu,cls:'hi'}]:[])]);
 }
 const nextSlot=()=>Math.max(0,...slotList())+1;
@@ -3084,8 +3086,8 @@ async function onStep(){
   if(G.steps%2===0&&G.party.some(m=>m.poison&&m.hp>1)){G.party.forEach(m=>{if(m.poison&&m.hp>1)m.hp--;});flashT=now-60;renderParty();}
   if(t==='T'&&!G.opened[chestKey(F.px,F.py)]){heldDir=null;busy=true;showPad(false);await openChest();busy=false;fieldIdle();return;}
   if(t==='D'||(t==='B'&&G.bossDown[F.f])){heldDir=null;busy=true;showPad(false);
-    if(F.f>=STAGE_MAX){if(G.cleared&&!G.secretDown){await secretIntro();return;}
-      await talk('ここが 穴の いちばん 下だ。'+(G.secretDown?'\n天井の 大木の 根は、もう しずかだ。':'')+'\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
+    if(F.f>=STAGE_MAX){if(G.cleared){await secretIntro();return;}
+      await talk('ここが 穴の いちばん 下だ。\n（ロープの マスか メニューから 村へ もどれる）');busy=false;fieldIdle();return;}
     snd('stairs');await changeFloor(F.f+1);busy=false;return;}
   if(t==='V'){heldDir=null;busy=true;showPad(false);
     if(!G.flags.digDown){if(!G.flags.tipCrack){G.flags.tipCrack=1;await talk('床に ひびが 入っている。\n下へ ほれそうだけど、かたくて まだ ほれない。');}busy=false;fieldIdle();return;}
@@ -3267,7 +3269,8 @@ async function playEvents(ev){
           if(!pts.length&&S&&S.kind==='buff')G.party.forEach((m,j)=>{if(m.hp>0)pts.push(partyCenter(j));});
           await bwait(250);spawnFx(kind,pts.slice(0,4));if(kind!=='slash')snd(kind==='heal'?'heal':'magic');}
         await bwait(400);if(e.side==='p')BA.p[e.i].step=0;applyVs();break;}
-      case 'msg':if(e.dbFinal){shakeT=now;flashT=performance.now();banner('さいごの たたかい','ドロップベアが きあいで 立ちあがった','#ff5a4a',2200);jingle('C4 C4 G4 C5',.1);}say(e.text);await bwait(e.dbFinal?900:420);break;
+      case 'msg':if(e.runOk){snd('tap');G.party.forEach((m,j)=>{if(BA.p[j])BA.p[j].step=1;});}
+        if(e.dbFinal){shakeT=now;flashT=performance.now();banner('さいごの たたかい','ドロップベアが きあいで 立ちあがった','#ff5a4a',2200);jingle('C4 C4 G4 C5',.1);}say(e.text);await bwait(e.dbFinal?900:420);break;
       case 'hit':
         if(e.side==='e'){if(BA.e[e.i]){BA.e[e.i].flash=now;BA.e[e.i].hp=e.hp;}pop(enemyCenter(e.i),e.dmg,e.weak?'#ffe060':'#ffffff',e.weak||e.crit);snd('hit');if(e.weak||e.crit)shakeT=now;}
         else{disp[e.i].hp=e.hp;BA.p[e.i].shake=now;shakeT=now;pop(partyCenter(e.i),e.dmg,e.poison?'#c98bff':e.magic?'#9ad0ff':'#ff8a8a');snd('phit');renderParty(undefined,e.i);}
@@ -3316,7 +3319,7 @@ async function endBattle(){
         else if(s.includes('きわめた')){jingle('C5 E5 G5 C6 E6',.09);banner('きわめた！',`${m.name}  ${jobName(m.job)}`,'#ffd36b',2000);partySparkle(mi,'#ffd36b');}else snd('lvl');renderParty();await talk(s);}}
     if(G.party.some(m=>m.hp<=0))await talk('（たおれていた 仲間には けいけんちが 入らない）');
     renderParty();
-    if(B.opt.secret){G.secretDown=true;save();await secretDown();return;}
+    if(B.opt.secret){const first=!G.secretDown;G.secretDown=true;const rec=dbRecordWin(B.turn);save();await secretDown(first,rec);return;}
     if(B.opt.boss){G.bossDown[B.opt.f]=true;save();await bossDown(B.opt.f);return;}
     if(B.opt.guard){B=null;BA=null;mode='field';fadeT=now;playMusic(dungeonTrack(F.f));await openGuardChest(F.f);backToField();return;}
     save();backToField();return;
@@ -3380,7 +3383,17 @@ async function raidWin(r){
 }
 
 // ---------- クリア後の隠しボス（ドロップベア） ----------
+// ドロップベアとは 何度でも 戦える。勝つたびに 記録（回数・いちばん早い ターン・勝った 職業の 組み合わせ）を のこす（2026-11-26）
+const jobSetKey=P=>P.map(m=>m.job).sort().join(',');
+function dbRecordWin(turns){const R=G.dbRec=G.dbRec||{wins:0,best:0,sets:{}};R.wins++;const fast=!R.best||turns<R.best;if(fast)R.best=turns;
+  const k=jobSetKey(G.party),isNew=!R.sets[k];if(isNew||turns<R.sets[k])R.sets[k]=turns;return {fast,isNew,turns,sets:Object.keys(R.sets).length};}
+function dbRecordText(){const R=G.dbRec;if(!R||!R.wins)return '';return `これまでの 記録：${R.wins}回 勝利・いちばん早くて ${R.best}ターン・勝った 職業の 組み合わせ ${Object.keys(R.sets).length}とおり`;}
 async function secretIntro(){
+  if(G.secretDown){const k=jobSetKey(G.party),R=G.dbRec||{sets:{}};
+    const c=await ask(`根の あいだで、ドロップベアが こちらを 見ている。また いどむ？\n${dbRecordText()}`+(R.sets[k]?`\n（いまの 職業の 組み合わせでは ${R.sets[k]}ターンで 勝っている）`:'\n（いまの 職業の 組み合わせでは まだ 勝っていない）'),[{label:'⚔ いどむ',cls:'wide hi'},'やめておく']);
+    if(c!==0){busy=false;fieldIdle();return;}
+    stopMusic();await talk('ドロップベアが 根から とびおりてきた！');shakeT=now;snd('enc');
+    startBattle(secretBoss(),{boss:true,secret:true,f:STAGE_MAX});return;}
   await talks(['化石の 部屋の 天井に、太い ユーカリの 根が はりめぐらされている。','…根の あいだで、なにかが じっと こちらを 見ている。']);
   const c=await ask('とても 強い 気配だ。たたかいますか？\n（ぜんめつしても、なにも 失わないよ）',[{label:'⚔ たたかう',cls:'wide hi'},'やめておく']);
   if(c!==0){busy=false;fieldIdle();return;}
@@ -3388,12 +3401,15 @@ async function secretIntro(){
   await talk(`それは… 長老の 昔話に 出てくる「ドロップベア」だった！\n${G.parents[0]}たちが むかし たたかったという、あの…！`);
   startBattle(secretBoss(),{boss:true,secret:true,f:STAGE_MAX});
 }
-async function secretDown(){
+async function secretDown(first=true,rec=null){
   B=null;BA=null;fadeT=now;
+  if(!first){const gold=10000;G.gold+=gold;updateTop();banner(rec&&rec.isNew?'★ 新しい 組み合わせ ★':rec&&rec.fast?'★ 新記録 ★':'★ 勝利 ★','ドロップベアを たおした','#ffd36b',2400);jingle('C5 E5 G5 C6 E6 G6 C7',.09);sparkle(96,60,30,'#ffd36b',40);
+    await talk(`ドロップベアは また 根を つたって 木の上へ かえっていった。\n${rec.turns}ターンで 勝った！`+(rec.fast?'（いちばん 早い！）':'')+(rec.isNew?`\nこの 職業の 組み合わせで はじめて 勝った！（${rec.sets}とおり目）`:'')+`\n${gold}ウォンを 見つけた。`);
+    save();backToField();return;}
   await talks(['ドロップベアは「…まいった」と言うように 両手を あげ、根を つたって 木の上へ かえっていった。',
     `${G.party[0].name}「いまのって、ほんとうに いたんだ…」`,`${G.party[1].name}「ううん、${G.parents[1]}さんたちの 話を、だれかが まねしてたのかも」`,`${G.party[2].name}「どっちでも いいや。いい しょうぶだった！」`]);
   G.gold+=50000;updateTop();banner('★★ 完全クリア ★★','ドロップベアを たおした','#ffd36b',2600);jingle('C5 E5 G5 C6 E6 G6 C7 - G6 C7',.1);sparkle(96,60,40,'#ffd36b',60);
-  await talk('★ ドロップベアを たおした！ ★\nお礼の 50000ウォンを 見つけた。\nタイトルに「完全クリア」の しるしが つくよ。');
+  await talk(`★ ドロップベアを たおした！ ★（${rec?rec.turns:'?'}ターン）\nお礼の 50000ウォンを 見つけた。\nタイトルに「完全クリア」の しるしが つくよ。\n（ドロップベアとは 何度でも 戦える。いろんな 職業で いどんでみよう）`);
   save();backToField();
 }
 async function bossDown(f){
