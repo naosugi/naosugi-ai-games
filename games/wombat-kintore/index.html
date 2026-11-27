@@ -268,6 +268,27 @@ button,.chip,.dx,.skill,.tab{user-select:none;-webkit-user-select:none}
 }
 @media (max-height:720px){ .skill{padding:7px 10px;margin:4px 0} .coach .wbc{width:56px} .sw{padding:5px 0} }
 .skill.cur{border-color:var(--pri);background:#f2f8f3}
+/* 終わりのかけ声 */
+.wonbat{position:fixed;inset:0;z-index:66;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,#3a4a3f 0,#1b241e 75%);overflow:hidden;animation:fadeIn .2s}
+.wonbat .wbw{position:relative;animation:charge 2s ease-in forwards}
+.wonbat .wbc{width:170px}
+.wonbat .wbc.charge{animation:shake .08s linear infinite}
+@keyframes charge{from{transform:scale(.8)}to{transform:scale(1.25)}}
+@keyframes shake{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-2px)}100%{transform:translate(1px,2px)}}
+.wonbat .won{position:relative;font-size:40px;font-weight:900;color:#fff;letter-spacing:.1em;margin-top:12px;animation:wonGrow 2s ease-in forwards;text-shadow:0 0 12px rgba(242,194,48,.6)}
+@keyframes wonGrow{from{transform:scale(.7);opacity:.5}to{transform:scale(1.15);opacity:1}}
+.wonbat .bat{position:relative;font-size:min(9.5vw,60px);font-weight:900;color:#fff;margin-top:8px;white-space:nowrap;text-shadow:0 4px 0 #b07a00,0 0 24px rgba(255,200,40,.9);animation:batIn .45s cubic-bezier(.2,1.8,.4,1)}
+@keyframes batIn{from{transform:scale(3);opacity:0}to{transform:scale(1);opacity:1}}
+.wonbat .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.wonbat.boom{background:radial-gradient(circle,#ffe58a 0,#f2b01e 50%,#c27a08 100%);animation:boomShake .4s}
+.wonbat.boom .flash{animation:flash .5s ease-out}
+.wonbat.boom .wbw{animation:none;transform:scale(1.15)}
+.wonbat.boom .wbc{animation:jump .5s ease-in-out infinite}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+@keyframes boomShake{0%,100%{transform:none}20%{transform:translate(-8px,4px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
+.wonbat .rays{position:absolute;width:160vmax;height:160vmax;background:repeating-conic-gradient(rgba(255,255,255,.25) 0 8deg,transparent 8deg 22deg);animation:spin 10s linear infinite}
+.wonbat .rays[hidden],.wonbat [hidden]{display:none}
+.wonbat .btn{position:relative;width:auto;padding:12px 40px;margin-top:22px}
 
 </style>
 </head>
@@ -1004,9 +1025,16 @@ function pickVoice(){ try{ const vs=speechSynthesis.getVoices(); AU.voiceJa=vs.f
 try{ if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; } }catch(e){}
 const voiceOn=()=>SV.voice!=='off'&&('speechSynthesis' in window)&&!!(AU.voiceJa||pickVoice());
 function duck(on){ if(!AU.bgmG||!AU.ctx) return; const t=AU.ctx.currentTime; AU.bgmG.gain.cancelScheduledValues(t); AU.bgmG.gain.setTargetAtTime(SV.bgm?(on?0.03:0.11):0,t,0.05); }
-function say(text,{cancel=true}={}){
-  if(!voiceOn()) return false;
-  try{ if(cancel) speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(AU.voiceJa) u.voice=AU.voiceJa; u.rate=1.08; u.volume=1;
+// 数字をひらがなにする（声によっては「11」を「イレブン」と英語で読むため）
+const KNUM=['','いち','に','さん','よん','ご','ろく','なな','はち','きゅう'];
+function kanaNum(n){ n=Math.floor(n); if(n===0) return 'ゼロ'; if(n>=1000) return String(n);
+  const h=Math.floor(n/100), t=Math.floor(n%100/10), o=n%10; let r='';
+  if(h) r+=(h===1?'':h===3?'さん':KNUM[h])+(h===3?'びゃく':h===6?'ろっぴゃく':h===8?'はっぴゃく':'ひゃく'); if(h===6) r=r.replace('ろくろっぴゃく','ろっぴゃく'); if(h===8) r=r.replace('はちはっぴゃく','はっぴゃく');
+  if(t) r+=(t===1?'':KNUM[t])+'じゅう'; if(o) r+=KNUM[o]; return r; }
+const kanaText=t=>String(t).replace(/\d+/g,m=>kanaNum(+m));
+function say(text,{cancel=true,rate=1.08,pitch=1}={}){
+  if(!voiceOn()) return false; text=kanaText(text);
+  try{ if(cancel) speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(AU.voiceJa) u.voice=AU.voiceJa; u.rate=rate; u.pitch=pitch; u.volume=1;
     AU.speaking++; duck(true); talk(Math.min(4000,text.length*130)); u.onend=u.onerror=()=>{ AU.speaking=Math.max(0,AU.speaking-1); if(!AU.speaking) duck(false); };
     speechSynthesis.speak(u); setTimeout(()=>{ if(AU.speaking&&!speechSynthesis.speaking){ AU.speaking=0; duck(false);} },6000); return true; }catch(e){ return false; }
 }
@@ -1384,8 +1412,33 @@ function finishSession(){
   const reward=!PLAN.again&&!aborted;
   const rec={date:today(),ts:RUN.startTs,slot:PLAN.slot,active:Math.round(L.active),move:Math.round(L.move),reps:L.reps,holds:L.holds,holdMax:L.holdMax||{},reward,aborted,exp:0,found:[]};
   RUN=null;
-  if(!reward){ SV.sessions.push(rec); updBest(rec); save(); return aborted?home():afterNoReward(rec); }
-  postScreen(rec);
+  if(!reward){ SV.sessions.push(rec); updBest(rec); save(); return aborted?home():wonbatFX(()=>afterNoReward(rec)); }
+  wonbatFX(()=>postScreen(rec));
+}
+// 1日分が終わったときのかけ声：「ウォン……（ためて）バァーッット!!」
+function noiseBurst(dur,vol){ const a=ac(); if(!a||!SV.se) return; const n=Math.floor(a.sampleRate*dur), buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.2);
+  const src=a.createBufferSource(), g=a.createGain(), f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=2400; g.gain.value=vol||0.5;
+  src.buffer=buf; src.connect(f); f.connect(g); g.connect(AU.seG); src.start(); }
+function wonbatFX(next){
+  bgmStop(); shutUp();
+  const d=document.createElement('div'); d.className='wonbat';
+  d.innerHTML=`<div class="rays" hidden></div><div class="flash"></div><div class="wbw">${wb('','charge')}</div><div class="won">ウォン……</div><div class="bat" hidden>バァーーッット!!</div><button class="btn acc" hidden>つぎへ</button>`;
+  document.body.appendChild(d); mountWB(d);
+  const charge=2.0;
+  // ためる：音が上がっていく、ふるえる
+  say('ウォン',{rate:0.6,pitch:0.7});
+  const a=ac(); if(a&&SV.se){ const t=a.currentTime; const o=a.createOscillator(), g=a.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(880,t+charge);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+charge*0.9); g.gain.exponentialRampToValueAtTime(0.0001,t+charge); o.connect(g); g.connect(AU.seG); o.start(t); o.stop(t+charge+0.05); }
+  buzz([60,140,80,120,100,100,140,80,200]);
+  let done=false; const finish=()=>{ if(done) return; done=true; d.remove(); next(); };
+  setTimeout(()=>{ if(!d.isConnected) return;
+    d.classList.add('boom'); d.querySelector('.won').hidden=true; d.querySelector('.bat').hidden=false; d.querySelector('.rays').hidden=false;
+    setMood(d,'cheer'); noiseBurst(0.7,0.55); se('fanfare'); buzz([300]); confetti(180);
+    say('バアーーーット！',{rate:1.15,pitch:1.5});
+    setTimeout(()=>{ const b=d.querySelector('button'); if(b){ b.hidden=false; b.onclick=finish; } },900);
+    setTimeout(finish,4200);
+  },REDUCE?600:charge*1000);
 }
 function updBest(rec){ for(const k in rec.holdMax){ SV.best[k]=Math.max(SV.best[k]||0,rec.holdMax[k]); } }
 function afterNoReward(rec){ bgmPlay('done'); render(`${header('おつかれさま',true)}${hero('2回目もおつかれさま。記録には残しておくね。今日はゆっくり休もう。','happy')}`,{cta:'<button class="btn" data-go="home">ホームへ</button>'}); }
