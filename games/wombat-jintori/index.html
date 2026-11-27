@@ -335,6 +335,7 @@ details.panel summary{cursor:pointer}
 .tmrow.p0{border-color:var(--p0)}.tmrow.p1{border-color:var(--p1);flex-direction:row-reverse;padding:2px 4px 2px 8px}
 .tmu .spr{width:22px;height:22px}
 .tmu.out .spr{filter:grayscale(1) opacity(.35)}
+.tmu.rev{position:relative}.tmu.rev .spr{opacity:.5}.tmu.rev::after{content:attr(data-w);position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font-size:9px;font-weight:900;white-space:nowrap;background:#4F8A76;color:#fff;border-radius:6px;padding:0 3px;line-height:1.4}
 .tl{font-size:11px;font-weight:800;color:var(--muted);margin:0 2px;white-space:nowrap}
 .tmrow.p0 .tl{margin-left:auto}.tmrow.p1 .tl{margin-right:auto}
 .bwrap>.guide{text-align:center;font-size:12.5px;margin:0;min-height:18px}
@@ -457,7 +458,7 @@ details.panel summary{cursor:pointer}
 <li><b>ストーリー</b>：ユーカリ村の「どうぶつ陣取り大会」をCPUと戦いながら勝ちあがる。全5章・18戦。勝つたびに「なかま呼びの笛」（ガチャ）を1回ふける。負けても失うものはなく、何度でも挑戦できる。クリアした戦いにも再挑戦でき、勝てば笛がふける（全員そろうまで）。</li>
 <li><b>裏ストーリー</b>：表のストーリー18戦を全部クリアすると開く。全4章・12戦。この大会がなぜ始まったのかを調べる話。章ごとにきまりがちがう（下の「裏ストーリーのきまり」）。勝つたびに笛が1回ふける。最後の戦いに勝つと、まだなかまになっていない動物が全員なかまになり、番外の「ヒメウォンバット」もなかまになる。</li>
 <li><b>はじめから</b>：最初に笛を2回ふける。そのあと、チュートリアルとストーリーのどちらから始めるか選べる。</li>
-<li><b>チュートリアル</b>：4レッスン（動かして攻撃・ptとランク・フィールドと適性・毒と衰え）。レッスン1はオオカミ1匹とネズミ1匹だけで、動かし方と攻撃のしかただけを練習する。全部クリアすると笛が1回ふける（レッスン4が増える前に3つクリアしていた人は、そのままクリア済み）。</li>
+<li><b>チュートリアル</b>：4レッスン（動かして攻撃・ptとランク・フィールドと適性・毒と衰え）。レッスン1はオオカミ1匹とネズミ1匹だけで、動かし方と攻撃のしかただけを練習する。全部クリアすると笛が1回ふける（ストーリーを始める前にクリアした場合は、ストーリーを始めたときの笛が1回多くなる。チュートリアルの記録は「はじめから」でも引きつぐ。レッスン4が増える前に3つクリアしていた人は、そのままクリア済み）。</li>
 <li><b>対戦（2人で1台）</b>：「全部の動物」か「笛で出た動物だけ」を選ぶ。笛は1人3〜10回（おすすめ5回）で、1回ごとに笛の種類を選べる。</li>
 <li><b>図鑑</b>：全動物のゲーム上の能力と、元になった動物の特徴・すんでいる所・大きさ（めやす）・食べものが見られる。</li>
 <li>記録はブラウザ（localStorage、キー <code>wbjintori_save_v1</code>）に保存する。</li>
@@ -540,7 +541,7 @@ details.panel summary{cursor:pointer}
 
 <h2>勝利条件</h2>
 <ul>
-<li>相手の動物コマを全滅させたら勝ち。</li>
+<li>相手の動物コマを全滅させたら勝ち（盤の上にいる動物で判定。復活待ちの動物は数えない）。</li>
 <li><b>規定ラウンドは12</b>。終わった時点で決着がついていなければ、<b>やられた動物のランク合計が少ない方</b>の勝ち。</li>
 <li>ランク合計が同点なら、<b>先に相手の動物を倒した方</b>（＝先に動物をやられた方の負け）の勝ち。どちらも1体もやられていなければ引き分け。毒や「食べたら毒」で倒した場合も、倒したものとして扱う。</li>
 <li>1ラウンド＝先手の手番＋後手の手番。</li>
@@ -607,7 +608,9 @@ details.panel summary{cursor:pointer}
 <h2>小動物の生存戦略（パッシブ）</h2>
 <ul>
 <li><b>食べたら毒</b>：自分を攻撃した相手（反撃してきた相手も含む）に毒を与える。自分が倒されても発動する。</li>
-<li><b>復活（多産）</b>：倒されると、自陣の端の列の空きマスにHP満タンで復活する。倒されるたびに失点（ランク）が入る。空きマスがなければ、空いた時点の自分の手番開始時に復活する。復活した手番は行動できない。この動物がいる限り全滅はしないが、判定では負けやすい。</li>
+<li><b>復活（多産）</b>：倒されると、いったん盤から消えて「復活待ち」になる。自分の手番が2回まわったとき（2回目の手番のはじめ）に、自陣の端の列の空きマスにHP満タンで復活し、その手番から行動できる。倒されるたびに失点（ランク）が入る。空きマスがなければ、空いたときに復活。画面上の動物の並びに「あと◯」と出る。</li>
+<li>復活待ちの動物は、全滅の判定に数えない。盤の上の味方が全員やられたら、復活待ちがいても全滅で負け。（以前はすぐに復活していたため、復活する動物がいると全滅が起きず、必ず失点の差で勝ち負けが決まっていた）</li>
+<li>調整後の測定（ランダム編成3000試合）：イナゴ45%・ミミズ41%・ベニクラゲ40%（変更前は49%・43%・41%、ランク1平均46%）。差は測定の誤差の範囲なので、数値は変えていない。</li>
 <li>復活する動物の失点は、仲間のパワーアップ（リベンジ）の対象にもなる。</li>
 </ul>
 
@@ -713,7 +716,7 @@ details.panel summary{cursor:pointer}
 // counterLimit: 1手番あたりの反撃回数上限（0=無制限）/ counterMult: 反撃ダメージの全体倍率
 // poisonPct: 毒1スタックあたり毎ターン最大HPの何割 / poisonTurns: 毒の持続ターン / defDownTurns: ぼうぎょダウンの持続
 const CONFIG = { ptsPerTurn:5, firstTurnPts:3, maxRounds:12, minDamage:1, tieRule:'firstblood', teamSize:5, counterLimit:0, counterMult:1.0,
-  poisonPct:0.2, poisonTurns:3, defDownTurns:2, extinctDecay:0.10 };
+  poisonPct:0.2, poisonTurns:3, defDownTurns:2, extinctDecay:0.10, rebirthWait:2 };
 const SIZE = 5;
 const FIELDS = {
   none:  {name:'なし', color:'#E4EBE7'},
@@ -757,7 +760,7 @@ const PASSIVES = {
   spines:'自分を攻撃した相手（反撃してきた相手も含む）に{per}ダメージ。自分が倒されても発動する',
   otterheal:'自分の手番開始時、自分と距離1の味方のうち水辺にいる者のHP+3',
   swap:'移動の代わりに、距離2以内の味方と位置を入れ替えられる',
-  rebirth:'倒されると、自陣の端の列の空きマスにHP満タンで復活する（失点は毎回入る。空きがなければ空いたときに復活）',
+  rebirth:'倒されると、自分の手番が2回まわったとき、自陣の端の列の空きマスにHP満タンで復活する（失点は毎回入る。空きがなければ空いたときに復活。復活待ちの間に盤の味方が全員やられたら全滅）',
 };
 function passiveText(p){ return (PASSIVES[p.id]||'').replace('{per}',p.per).replace('{field}',FIELDS[p.field||'forest'].name); }
 // attack.kind: single=単体 / map=MAP攻撃(area=自分基準の形) / field=フィールド変更のみ
@@ -1117,7 +1120,10 @@ function startTurn(s){
   }
   for(const x of s.units) x._rev=false;
   if(s.reserve&&s.reserve.length){
-    for(const r of s.reserve.filter(r=>r.owner===s.turn)){ const c=reviveCell(s,r.owner,null); if(c){ r.x=c.x; r.y=c.y; r.acted=true; s.units.push(r); s.reserve=s.reserve.filter(x=>x!==r); log(s,`${nm(r)}が端の列に復活した`); } }
+    for(const r of s.reserve.filter(r=>r.owner===s.turn)){
+      if((r.revWait||0)>0) r.revWait--;
+      if(r.revWait>0) continue;
+      const c=reviveCell(s,r.owner,null); if(c){ r.x=c.x; r.y=c.y; r.acted=false; r._rev=false; s.units.push(r); s.reserve=s.reserve.filter(x=>x!==r); log(s,`${nm(r)}が端の列に復活した`); } }
   }
   checkWin(s); if(s.over) return;
   if(!anyActable(s)){ log(s,'行動できる動物がいないため手番終了'); endTurn(s); }
@@ -1147,8 +1153,8 @@ function judge(s){
   log(s,`規定ラウンド終了。失ったランク合計 青${s.lost[0]} / 赤${s.lost[1]}`);
 }
 function checkWin(s){
-  const R=s.reserve||[];
-  const c0=s.units.some(u=>u.owner===0)||R.some(u=>u.owner===0), c1=s.units.some(u=>u.owner===1)||R.some(u=>u.owner===1);
+  // 復活待ちの動物は数えない：盤の上が全員やられたら全滅
+  const c0=s.units.some(u=>u.owner===0), c1=s.units.some(u=>u.owner===1);
   if(c0&&c1) return;
   s.over=true;
   if(!c0&&!c1){ s.reason='相討ち'; s.winner=judgeWinner(s.lost,[0,0],s.cfg.tieRule,s.firstLoss); }
@@ -1221,10 +1227,9 @@ function applyDamage(s,a,t,dmg,pre){
     if(a&&pid(a)==='scavenger'&&a.hp>0&&a.hp<a.maxHp){ const hv=Math.min(A[a.type].passive.per,a.maxHp-a.hp); a.hp+=hv; txt+=`（${nm(a)}はHPが${hv}回復）`; }
     if(s.firstLoss==null) s.firstLoss=t.owner;
     if(pid(t)==='rebirth'){
-      t.deaths=(t.deaths||0)+1; t.hp=t.maxHp; t.poison=[]; t.defDown=0; t.acted=true; t._rev=true;
-      const c=reviveCell(s,t.owner,t);
-      if(c){ t.x=c.x; t.y=c.y; txt+=`、${nm(t)}は倒れたが、端の列に復活した`; }
-      else { s.units=s.units.filter(x=>x!==t); (s.reserve=s.reserve||[]).push(t); txt+=`、${nm(t)}は倒れた（端の列が空いたら復活）`; }
+      t.deaths=(t.deaths||0)+1; t.hp=t.maxHp; t.poison=[]; t.defDown=0; t.asleep=0; t.burrowed=false; t.acted=true; t._rev=true;
+      t.revWait=s.cfg.rebirthWait; s.units=s.units.filter(x=>x!==t); (s.reserve=s.reserve||[]).push(t);
+      txt+=`、${nm(t)}は倒れた（自分の手番が${t.revWait}回まわると、端の列に復活）`;
     } else {
       s.units=s.units.filter(x=>x!==t); s.dead.push(t);
       txt+=`、${nm(t)}は倒れた`;
@@ -2405,6 +2410,7 @@ function playDiff(sn,actor,opt,dest){
       const sts=[]; if((u.poison||[]).length>o.ps) sts.push('毒'); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
       if(sts.length){ fxAt(layer,u.x,u.y,'num st',sts.join(' ')); st=true; }
     }
+    for(const u of G.units) if(!sn.u.has(u.id)&&pid(u)==='rebirth'){ fxAt(layer,u.x,u.y,'spark',''); fxAt(layer,u.x,u.y,'num heal','復活！'); heal=true; }
     G.fields.forEach((f,k)=>{ if(f!==sn.f[k]){ const c=cellEl(k%SIZE,Math.floor(k/SIZE)); if(c){ c.style.animationDelay=(RM?0:(Math.abs(k%SIZE-(ax??2))+Math.abs(Math.floor(k/SIZE)-(ay??2)))*60)+'ms'; c.classList.add('fpulse'); } fld=true; } });
     if(ko) se('ko'); else if(dmg) se('hit'); else if(heal) se('heal'); else if(st) se('status'); else if(fld) se('field');
   },impact);
@@ -2548,13 +2554,16 @@ function renderDevMenu(){
 
 // ---------- はじめから ----------
 function startNewGame(){
-  SV=defSave(); SV.started=true; SV.pend=2; save();
+  // チュートリアルの記録は引きつぐ。ストーリー前にクリアしていたら、そのごほうびの笛を足す
+  const td=SV.tutDone||[], tut=!!SV.tut, owed=tut&&!SV.tutPaid;
+  SV=defSave(); SV.started=true; SV.tutDone=td.slice(); SV.tut=tut; SV.tutPaid=tut; SV.pend=2+(owed?1:0); save();
   renderDialog(STORY_INTRO,()=>storyGacha(()=>renderDialog(STORY_AFTER_START,renderFirstChoice)),'はじまり');
 }
 function renderFirstChoice(){
   play(`<div class="panel"><p>どちらから始める？</p>
-    <button class="b pri big" id="fcT">チュートリアル（おすすめ）</button><div class="muted">遊び方を4つのレッスンで練習。クリアすると笛が1回ふける。</div>
-    <button class="b big" id="fcS" style="margin-top:10px">ストーリー</button><div class="muted">さっそく大会の予選へ。</div></div>`);
+    ${SV.tut?`<button class="b pri big" id="fcS">ストーリー（おすすめ）</button><div class="muted">さっそく大会の予選へ。チュートリアルはクリア済みだよ。</div>
+    <button class="b big" id="fcT" style="margin-top:10px">チュートリアル</button><div class="muted">遊び方をもう一度練習する。</div>`:`<button class="b pri big" id="fcT">チュートリアル（おすすめ）</button><div class="muted">遊び方を4つのレッスンで練習。クリアすると笛が1回ふける。</div>
+    <button class="b big" id="fcS" style="margin-top:10px">ストーリー</button><div class="muted">さっそく大会の予選へ。</div>`}</div>`);
   $('#fcT').onclick=renderTutMenu; $('#fcS').onclick=renderStoryMap;
 }
 
@@ -2755,8 +2764,10 @@ function lessonEnd(L,w){
     if(!SV.tutDone.includes(L.id)) SV.tutDone.push(L.id);
     let msg=[['オババ','よくできたね。']];
     if(!SV.tut&&LESSONS.every(l=>SV.tutDone.includes(l.id))){
-      SV.tut=true; if(SV.started&&GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++;
-      msg=[['オババ','チュートリアルは全部クリアだ。ごほうびに笛をもう1回ふいていいよ。'],['オババ','あとはストーリーで、大会を勝ちあがってごらん。']];
+      SV.tut=true;
+      if(SV.started){ if(GACHA_ALL.some(T=>!SV.owned.includes(T.id))) SV.pend++; SV.tutPaid=true;
+        msg=[['オババ','チュートリアルは全部クリアだ。ごほうびに笛をもう1回ふいていいよ。'],['オババ','あとはストーリーで、大会を勝ちあがってごらん。']]; }
+      else msg=[['オババ','チュートリアルは全部クリアだ。ストーリーを始めたら、ごほうびの笛をいつもより1回多くふけるよ。']];
     }
     save();
     renderDialog(msg,()=>{ if(SV.started&&SV.pend) storyGacha(renderTutMenu); else renderTutMenu(); },'レッスンクリア');
@@ -3045,7 +3056,7 @@ function renderBattle(){
   }
   play(`${hint}<div class="bwrap">
    <div class="status"><span class="rd">R${G.round}/${G.cfg.maxRounds}</span><span class="badge p${G.turn}"><span class="wb" data-f="${G.turn}"></span>${pname(G.turn)}</span><span class="pts">${pts}</span></div>
-   <div class="teams">${[0,1].map(p=>`<div class="tmrow p${p}">${[...G.units,...G.dead,...(G.reserve||[])].filter(u=>u.owner===p).sort((a,b)=>a.id-b.id).map(u=>`<span class="tmu${G.dead.includes(u)?' out':''}">${spr(u.type,'s-tm',p===1)}</span>`).join('')}<span class="tl">失点${G.lost[p]}</span></div>`).join('')}</div>
+   <div class="teams">${[0,1].map(p=>`<div class="tmrow p${p}">${[...G.units,...G.dead,...(G.reserve||[])].filter(u=>u.owner===p).sort((a,b)=>a.id-b.id).map(u=>{ const rv=(G.reserve||[]).includes(u); return `<span class="tmu${G.dead.includes(u)?' out':''}${rv?' rev':''}"${rv?` data-w="あと${u.revWait}"`:''}>${spr(u.type,'s-tm',p===1)}</span>`; }).join('')}<span class="tl">失点${G.lost[p]}</span></div>`).join('')}</div>
    ${guide?`<div class="guide">${sg}${guide}</div>`:''}
    <div class="bholder">${boardHTML(G.fields,viewUnitAt,highlights(),UI.sel,UI.last)}${res}</div>
    ${info?infoStrip(info):'<div class="istrip empty muted">動物をタップすると、くわしい情報が出ます</div>'}
