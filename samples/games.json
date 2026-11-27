@@ -372,6 +372,22 @@
       "controls": "タップ / クリック",
       "playtime": "1試合 約10分・ストーリー全18戦",
       "added": "2026-11-24"
+    },
+    {
+      "id": "wombat-tama-sugoroku",
+      "title": "ウォンバット☆たま旅すごろく",
+      "author": "@naoya_oosugi",
+      "description": "東京・多摩地域の30市町村をめぐるすごろく。スタンプを集めながら名物を手に入れ、駅を守る動物とバトル。人気ニュースや旅の後半ボーナスで逆転も。最大4人・チーム戦・図鑑つき。",
+      "path": "../games/wombat-tama-sugoroku/",
+      "thumbnail": "../games/wombat-tama-sugoroku/thumb.jpg",
+      "tags": [
+        "対戦",
+        "戦略",
+        "知育"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約30分",
+      "added": "2026-11-27"
     }
   ]
 }
