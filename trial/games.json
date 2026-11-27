@@ -63,6 +63,22 @@
       "controls": "タップ / クリック",
       "playtime": "1回 約10分",
       "added": "2026-11-26"
+    },
+    {
+      "id": "wombat-tama-nushi",
+      "title": "ウォンバット☆多摩防衛隊（試作中）",
+      "author": "@naoya_oosugi",
+      "description": "ウォンバットの防衛隊が、多摩の町をもやもやにする「ぬし」とみんなでなかなおりする協力すごろく。サイコロで町をめぐってもやもやをはらい、お礼の名物と手がかりを集めてぬしの寝床へとどける。勝ち負けはなく、なかなおりした数でエンディングが変わる。",
+      "path": "../games/wombat-tama-nushi/",
+      "thumbnail": "../games/wombat-tama-nushi/thumb.jpg",
+      "tags": [
+        "こども",
+        "協力",
+        "知育"
+      ],
+      "controls": "タップ / クリック",
+      "playtime": "約10〜30分（コースによる）",
+      "added": "2026-11-28"
     }
   ]
 }
