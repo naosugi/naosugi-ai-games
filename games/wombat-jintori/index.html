@@ -114,6 +114,9 @@ th:first-child,td:first-child{text-align:left}
 .cell.hl-field{border-color:#8A5CD6;box-shadow:inset 0 0 0 3px rgba(138,92,214,.3)}
 .cell.hl-place{border-color:var(--ok);border-style:dashed}
 .cell.last{outline:2px dashed rgba(30,43,47,.35);outline-offset:-5px}
+.cell .hwarn{position:absolute;left:1px;right:1px;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:1px;z-index:5;pointer-events:none}
+.cell .hwarn span{font-size:9.5px;font-weight:900;line-height:1.25;border-radius:5px;padding:0 3px;max-width:100%;text-align:center;word-break:keep-all;overflow-wrap:anywhere}
+.cell .hwarn .get{background:#6E3596;color:#fff}.cell .hwarn .give{background:#F3E6FA;color:#55267A;border:1px solid #B88AD8}.cell .hwarn .pain{background:#C8402F;color:#fff}
 .cell .hlabel{position:absolute;bottom:1px;left:2px;right:2px;text-align:center;font-size:10px;font-weight:800;background:rgba(255,255,255,.92);color:var(--ink);border-radius:5px}
 .unit{width:86%;height:86%;border-radius:50%;background:#fff;color:var(--ink);border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 2px 4px rgba(30,43,47,.2)}
 .unit.p0{border-color:var(--p0)}.unit.p1{border-color:var(--p1)}
@@ -523,6 +526,7 @@ details.panel summary{cursor:pointer}
 
 <h2>画面と音</h2>
 <ul>
+<li>攻撃する相手を選ぶ赤いマスには、ダメージのめやす（与・反）に加えて、毒や針の予告が出る。「☠もらう×2」＝自分が毒を受ける（フグを攻撃する、毒のある反撃を受けるなど）、「☠あたえる×2」＝相手に毒を入れる、「反撃で☠あたえる×2」＝相手が反撃してきたら相手に毒が入る（フグで攻撃するなど）、「針-3」＝針でダメージを受ける。毒が入ったときは盤に「☠+2」のように増えた数が出る。</li>
 <li>動物を選ぶ画面と図鑑で、笛の種類に加えて、ランクと役割（ちかくを攻撃・遠くを攻撃・まとめて攻撃・フィールドを作る・味方を助ける・毒・かたい・速い）で絞りこめる。役割は、スキルとパッシブから自動で分けている。</li>
 <li>図鑑では、新しく来た動物にNEWが付く（くわしく見ると消える）。笛ごとに、集まった数が出る。</li>
 <li>ページを開くと「タップしてはじめる」画面が出る。ブラウザは、画面を一度さわるまで音を出せない決まりなので、このタップでBGMが鳴り始める。タブを切りかえたり画面を消したりすると音は止まり、もどると続きから鳴る。</li>
@@ -754,7 +758,7 @@ const PASSIVES = {
   aura:'自分の手番開始時、距離1の味方のHP+{per}',
   sloth:'1試合に1回、倒されるダメージを受けてもHP1で耐える。自分の手番開始時に森林にいるとHP+3',
   revenge:'やられた仲間のランク合計×{per}だけ こうげきアップ',
-  toxic:'自分を攻撃した相手（反撃してきた相手も含む）に毒×{per}を与える。自分が倒されても発動する',
+  toxic:'自分にダメージを与えた相手に毒×{per}を与える。自分が攻撃して反撃された場合も、反撃してきた相手に毒が入る。自分が倒されても発動する（毒1つで、その相手は自分の手番のはじめに最大HPの20%のダメージを3回受ける）',
   sniper:'水辺にいるとき、攻撃スキルの射程+1',
   camo:'森林にいる間、距離2以上からの攻撃・反撃の対象にならない（MAP攻撃は受ける）',
   spines:'自分を攻撃した相手（反撃してきた相手も含む）に{per}ダメージ。自分が倒されても発動する',
@@ -2233,7 +2237,7 @@ function boardHTML(fields,getUnit,hl,selId,last){
   for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
     const i=y*SIZE+x,f=fields[i],H=hl[i],u=getUnit(x,y);
     h+=`<div class="cell ${H?H.cls:''}${last&&last.x===x&&last.y===y?' last':''}${u&&selId!=null&&u.id===selId?' selcell':''}" data-x="${x}" data-y="${y}" style="background:${FIELDS[f].color}">`+
-      `<span class="fname">${f!=='none'?FIELDS[f].name:''}</span>${u?unitHTML(u,u.id===selId):''}${H&&H.label?`<span class="hlabel">${H.label}</span>`:''}</div>`;
+      `<span class="fname">${f!=='none'?FIELDS[f].name:''}</span>${u?unitHTML(u,u.id===selId):''}${H&&H.warn?`<span class="hwarn">${H.warn}</span>`:''}${H&&H.label?`<span class="hlabel">${H.label}</span>`:''}</div>`;
   }
   return h+'</div>';
 }
@@ -2407,7 +2411,7 @@ function playDiff(sn,actor,opt,dest){
       if(u.hp<o.hp&&(sn.turn!==G.turn||sn.round!==G.round)&&A[u.type].extinct&&u.owner===G.turn&&!(opt&&opt.target===id)){ fxAt(layer,u.x,u.y,'num decay','⏳-'+(o.hp-u.hp)); fxAt(layer,u.x,u.y,'dust',''); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{filter:'none'},{filter:'grayscale(1) brightness(.75)'},{filter:'none'}],{duration:700}); dmg=true; continue; }
       if(u.hp<o.hp){ fxAt(layer,u.x,u.y,'num dmg','-'+(o.hp-u.hp)); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:360}); if(el){ el.classList.add('hitflash'); setTimeout(()=>el.classList.remove('hitflash'),260); } dmg=true; }
       else if(u.hp>o.hp){ fxAt(layer,u.x,u.y,'num heal','+'+(u.hp-o.hp)); fxAt(layer,u.x,u.y,'spark',''); heal=true; }
-      const sts=[]; if((u.poison||[]).length>o.ps) sts.push('毒'); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
+      const sts=[]; if((u.poison||[]).length>o.ps) sts.push('☠+'+((u.poison||[]).length-o.ps)); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
       if(sts.length){ fxAt(layer,u.x,u.y,'num st',sts.join(' ')); st=true; }
     }
     for(const u of G.units) if(!sn.u.has(u.id)&&pid(u)==='rebirth'){ fxAt(layer,u.x,u.y,'spark',''); fxAt(layer,u.x,u.y,'num heal','復活！'); heal=true; }
@@ -3001,11 +3005,11 @@ function highlights(){
   if(UI.step==='skill'){
     const sk=A[su.type].attack, d=UI.dest;
     for(const o of visOpts()){
-      if(o.type==='single'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk)}; }
-      if(o.type==='alt'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk.alt)}; }
+      if(o.type==='single'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk),warn:sideWarn(su,d,t,sk)}; }
+      if(o.type==='alt'){ const t=byId(G,o.target); hl[t.y*SIZE+t.x]={cls:'hl-target',label:forecast(su,d,t,sk.alt),warn:sideWarn(su,d,t,sk.alt)}; }
       if(o.type==='field') hl[o.y*SIZE+o.x]={cls:'hl-field'};
       if(o.type==='support'){ const t=byId(G,o.target); const p=(t.x===d.x&&t.y===d.y)?{x:su.x,y:su.y}:t; hl[p.y*SIZE+p.x]={cls:'hl-move',label:`回復+${Math.min(sk.heal,t.maxHp-t.hp)}`}; }
-      if(o.type==='map') for(const c of shapeCells(sk.area,d.x,d.y)){ const t=unitAt(G,c.x,c.y); hl[c.y*SIZE+c.x]={cls:'hl-area',label:t&&t.owner!==su.owner&&t.id!==su.id?forecast(su,d,t,sk):''}; }
+      if(o.type==='map') for(const c of shapeCells(sk.area,d.x,d.y)){ const t=unitAt(G,c.x,c.y), en=t&&t.owner!==su.owner&&t.id!==su.id; hl[c.y*SIZE+c.x]={cls:'hl-area',label:en?forecast(su,d,t,sk):'',warn:en?sideWarn(su,d,t,sk):''}; }
     }
   }
   if(UI.step==='skill'&&UI.fprev){
@@ -3017,8 +3021,22 @@ function highlights(){
 function forecast(u,d,t,sk){
   const n=sk.hits||1, dmg=calcDamage(G,u,d,t,t,sk,false), C=A[t.type].counter;
   let txt=`与${dmg}${n>1?'×'+n:''}`;
-  if(dmg*n<t.hp&&C&&dist(t,d)<=C.range&&!t.asleep&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit)) txt+=` 反${calcDamage(G,t,t,u,d,C,true)}`;
+  const counters=dmg*n<t.hp&&C&&dist(t,d)<=C.range&&!t.asleep&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit);
+  if(counters) txt+=` 反${calcDamage(G,t,t,u,d,C,true)}`;
   return txt;
+}
+// 攻撃したときに起きる「毒」「針」を、攻撃する前に赤いマスへ出す
+function sideWarn(u,d,t,sk){
+  const n=sk.hits||1, dmg=calcDamage(G,u,d,t,t,sk,false), C=A[t.type].counter, w=[];
+  const survives=dmg*n<t.hp;
+  const counters=survives&&C&&dist(t,d)<=C.range&&!t.asleep&&!(G.cfg.counterLimit&&(t.countered||0)>=G.cfg.counterLimit);
+  let get=0; if(pid(t)==='toxic') get+=A[t.type].passive.per; if(counters&&C.poison) get+=C.poison;
+  if(get) w.push(`<span class="get">☠もらう×${get}</span>`);
+  if(pid(t)==='spines') w.push(`<span class="pain">針-${A[t.type].passive.per}</span>`);
+  const give1=survives&&sk.poison?sk.poison:0, give2=counters&&pid(u)==='toxic'?A[u.type].passive.per:0;
+  if(give1) w.push(`<span class="give">☠あたえる×${give1}</span>`);
+  if(give2) w.push(`<span class="give">反撃で☠あたえる×${give2}</span>`);
+  return w.join('');
 }
 function renderBattle(){
   if(!G) return;
