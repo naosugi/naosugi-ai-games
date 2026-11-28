@@ -184,7 +184,8 @@ details.hint summary{cursor:pointer;font-weight:800}
 .fxlayer{position:absolute;inset:4px;pointer-events:none;z-index:3}
 .fx{position:absolute;width:20%;height:20%;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .fx.num{font-weight:900;font-size:19px;-webkit-text-stroke:3px #fff;paint-order:stroke fill;animation:fnum 1.2s ease-out both}
-.fx.num.dmg{color:#D63A30}.fx.num.decay{color:#7A5FA0}
+.fx.num.dmg{color:#D63A30}.fx.num.decay{color:#fff;-webkit-text-stroke:0;background:#7A5FA0;border-radius:8px;padding:0 5px;font-size:15px;animation-duration:1.6s!important}
+.unit .st.ex{background:#8A6FA8;color:#fff}
 .fx.dust{width:20%;height:20%;background:radial-gradient(circle,rgba(138,111,168,.55) 0 30%,transparent 70%);animation:fdust .9s ease-out both;pointer-events:none}
 @keyframes fdust{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.4) translateY(-12%);opacity:0}}
 .unit.hime .emo{animation:halo 2.4s ease-in-out infinite}
@@ -483,6 +484,8 @@ details.panel summary{cursor:pointer}
 <li>同じランクのふつうの動物より、こうげき・HPが高い。</li>
 <li><b>衰え</b>：自分の手番のはじめに、最大HPの10%（切り捨て、最低1）のHPがへる。毒と同じく、これで倒れることもある。</li>
 <li>衰えで倒れても、ふつうにやられたのと同じく<b>ランクぶん失点</b>になる。短期決戦で使う動物。</li>
+<li>盤の上の絶滅動物には、いつも紫の「⏳」の印が付く。衰えでHPが減るときは「⏳衰え-3」と出る。</li>
+<li>調整：ヴェロキラプトル（こうげき19→16）、アノマロカリス（18→15）、ニホンオオカミ（16→13）を弱くした。ランダム編成3000試合で、ヴェロキラプトル59〜61%→50〜53%、アノマロカリス60〜65%→55〜56%（ランク3平均46〜47%）、ニホンオオカミ51〜54%→52%（ランク2平均44〜45%）。</li>
 <li>数値は試作段階。衰えの割合は CONFIG.extinctDecay で調整する（0.12・0.10・0.08と、こうげき・HPの上げ幅をシミュレーションで比べて決めた）。</li>
 <li>検証（読み型・ランダム編成3000試合、78種）：採用時勝率は、ティラノサウルス67%・メガロドン68%・マンモス61%（ランク5平均65%）、ダンクルオステウス61%・トリケラトプス58%・ディプロトドン55%・ディメトロドン53%（ランク4平均56%）、アノマロカリス60%・ヴェロキラプトル58%（ランク3平均48%）、ニホンオオカミ54%（ランク2平均46%）。おおむね各ランクの平均〜やや上。1回の測定なので数ポイントの誤差はありうる。</li>
 <li>動物は段階的に増やし、128種になった（ふつう110種・絶滅16種・とくべつ2種）。</li>
@@ -518,6 +521,7 @@ details.panel summary{cursor:pointer}
 
 <h2>対戦モード</h2>
 <ul>
+<li>先手と後手は、コイントスでランダムに決まる（動物を選ぶ前に知らせる）。先手は、さいしょの番だけ3pt。</li>
 <li>相手は「2人で1台」か「CPU（よわい・ふつう・つよい）」を選べる。CPUの強さは、表のストーリーの相手と同じ考え方（見習い型・慎重型・読み型）。</li>
 <li>「きまり」で、裏ストーリーのきまり（ランク制限・合計ランク・地形が決まった盤・太古の日）を使える。「おまかせ」はどれかひとつになる。</li>
 <li>CPUのチームは、きまりの中で、ランクの高さと盤のフィールドへの適性を見て選ぶ。</li>
@@ -1021,15 +1025,15 @@ const ANIMALS = [
   attack:{name:'くちばし',kind:'single',range:1,power:1.2}, counter:{name:'つつく',range:1,power:0.8}, passive:null},
  {id:'meganeura',name:'メガネウラ',emoji:'🪰',rank:2,extinct:true,hp:22,atk:15,def:1,mv:3,aff:{plain:1.3,forest:1.0,water:1.3},
   attack:{name:'急降下',kind:'single',range:2,power:0.9}, counter:null, passive:{id:'fly',name:'飛行'}},
- {id:'jpwolf',name:'ニホンオオカミ',emoji:'🐺',rank:2,extinct:true,hp:29,atk:16,def:2,mv:2,aff:{plain:1.1,forest:1.5,water:0.8},
+ {id:'jpwolf',name:'ニホンオオカミ',emoji:'🐺',rank:2,extinct:true,hp:29,atk:13,def:2,mv:2,aff:{plain:1.1,forest:1.5,water:0.8},
   attack:{name:'かみつく',kind:'single',range:1,power:1.0}, counter:{name:'ひっかく',range:1,power:0.8}, passive:{id:'pack',name:'山の群れ'}},
  {id:'thylacine',name:'フクロオオカミ',emoji:'🐯',rank:3,extinct:true,hp:35,atk:19,def:2,mv:2,aff:{plain:1.3,forest:1.4,water:0.7},
   attack:{name:'かみつく',kind:'single',range:1,power:1.2}, counter:{name:'かみつく',range:1,power:0.9}, passive:{id:'ambush',name:'待ち伏せ'}},
- {id:'raptor',name:'ヴェロキラプトル',emoji:'🦖',rank:3,extinct:true,hp:31,atk:19,def:2,mv:3,aff:{plain:1.5,forest:1.1,water:0.6},
+ {id:'raptor',name:'ヴェロキラプトル',emoji:'🦖',rank:3,extinct:true,hp:31,atk:16,def:2,mv:3,aff:{plain:1.5,forest:1.1,water:0.6},
   attack:{name:'かぎ爪',kind:'single',range:1,power:0.8,hits:2}, counter:null, passive:{id:'pack',name:'群れの狩り'}},
  {id:'pteranodon',name:'プテラノドン',emoji:'🦅',rank:3,extinct:true,hp:29,atk:18,def:1,mv:3,aff:{plain:1.2,forest:0.8,water:1.5},
   attack:{name:'急降下',kind:'single',range:2,power:1.0}, counter:null, passive:{id:'fly',name:'飛行'}},
- {id:'anomalocaris',name:'アノマロカリス',emoji:'🦐',rank:3,extinct:true,hp:33,atk:18,def:2,mv:2,aff:{plain:0.5,forest:0.5,water:2.0},
+ {id:'anomalocaris',name:'アノマロカリス',emoji:'🦐',rank:3,extinct:true,hp:33,atk:15,def:2,mv:2,aff:{plain:0.5,forest:0.5,water:2.0},
   attack:{name:'つかむ触手',kind:'single',range:2,power:1.0}, counter:{name:'つかむ触手',range:1,power:0.8}, passive:{id:'swim',name:'泳ぎ'}},
  {id:'dimetrodon',name:'ディメトロドン',emoji:'🦎',rank:4,extinct:true,hp:53,atk:23,def:4,mv:2,aff:{plain:1.4,forest:1.1,water:0.8},
   attack:{name:'かみつく',kind:'single',range:1,power:1.2}, counter:{name:'かみつく',range:1,power:1.0}, passive:null},
@@ -1075,7 +1079,8 @@ function shapeCells(shape,cx,cy){ return SHAPES[shape].cells.map(([dx,dy])=>({x:
 
 function newGame(teams, cols, cfg){
   const s={cfg:{...CONFIG,...cfg}, fields:cfg&&cfg.fields?cfg.fields.slice():Array(SIZE*SIZE).fill('none'), units:[], dead:[], turn:0, round:1, pts:0,
-    lost:[0,0], teamMax:[0,0], over:false, winner:null, reason:'', log:[], snaps:[], annih:null};
+    lost:[0,0], teamMax:[0,0], over:false, winner:null, reason:'', log:[], snaps:[], annih:null, first:cfg&&cfg.first===1?1:0};
+  s.turn=s.first;
   for(let p=0;p<2;p++) teams[p].forEach((t,i)=>{
     const T=A[t]; s.units.push({id:p*100+i, owner:p, type:t, hp:T.hp, maxHp:T.hp, x:cols[p][i], y:p===0?SIZE-1:0,
       acted:false, endureUsed:false, dealt:0, kills:0});
@@ -1090,8 +1095,9 @@ function canAct(s,u){ return u.owner===s.turn && !u.acted && !u.asleep && A[u.ty
 function anyActable(s){ return s.units.some(u=>canAct(s,u)); }
 
 function startTurn(s){
-  s.pts = (s.round===1&&s.turn===0) ? s.cfg.firstTurnPts : s.cfg.ptsPerTurn;
-  log(s,`【ラウンド${s.round}】${s.turn===0?'先手（青）':'後手（赤）'}の手番（${s.pts}pt）`);
+  const fst=s.first||0;
+  s.pts = (s.round===1&&s.turn===fst) ? s.cfg.firstTurnPts : s.cfg.ptsPerTurn;
+  log(s,`【ラウンド${s.round}】${s.turn===fst?'先手':'後手'}（${s.turn===0?'青':'赤'}）の手番（${s.pts}pt）`);
   for(const u of s.units.slice()){
     u.countered=0;
     if(u.owner!==s.turn) continue;
@@ -1134,7 +1140,7 @@ function startTurn(s){
 }
 function endTurn(s){
   if(s.over) return;
-  if(s.turn===1){
+  if(s.turn!==(s.first||0)){
     s.snaps.push({l:[...s.lost], h:[hpRatio(s,0),hpRatio(s,1)], fb:s.firstLoss});
     if(s.round>=s.cfg.maxRounds){ judge(s); return; }
     s.round++;
@@ -2188,8 +2194,9 @@ const opts=(o,sel)=>Object.entries(o).map(([k,v])=>`<option value="${k}"${k===se
 const spr=(id,cls,flip)=>`<img class="spr ${cls||''}" src="${animalDataURL(id,4,!!flip)}" alt="${(A[id]||{}).name||''}" draggable="false">`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function pname(p){
-  if(UI.names) return UI.names[p]+(p===0?'（先手）':'（後手）');
-  return (p===0?'青ウォンバット（先手）':'赤ウォンバット（後手）')+(UI.mode==='hva'?(UI.humans[p]?'・あなた':'・AI'):'');
+  const fst=G?(G.first||0):(UI.cfg&&UI.cfg.first===1?1:0), fs=p===fst?'（先手）':'（後手）';
+  if(UI.names) return UI.names[p]+fs;
+  return (p===0?'青ウォンバット':'赤ウォンバット')+fs+(UI.mode==='hva'?(UI.humans[p]?'・あなた':'・AI'):'');
 }
 
 // ---------- 画面の切りかえ ----------
@@ -2227,7 +2234,7 @@ function mountWombats(root){ (root||document).querySelectorAll('span.wb').forEac
 // ---------- 共通表示 ----------
 function unitHTML(u,sel){
   const T=A[u.type];
-  const st=(u.poison&&u.poison.length?`<span class="st">☠${u.poison.length}</span>`:'')+(u.defDown>0?'<span class="st dd">防0</span>':'')+(u.asleep?'<span class="st zz">💤</span>':'')+(u.burrowed?'<span class="st bw">地中</span>':'');
+  const st=(T.extinct?'<span class="st ex">⏳</span>':'')+(u.poison&&u.poison.length?`<span class="st">☠${u.poison.length}</span>`:'')+(u.defDown>0?'<span class="st dd">防0</span>':'')+(u.asleep?'<span class="st zz">💤</span>':'')+(u.burrowed?'<span class="st bw">地中</span>':'');
   const ready=G&&!G.over&&UI.humans&&UI.humans[G.turn]&&u.owner===G.turn&&!UI.step&&canAct(G,u);
   return `<div class="unit p${u.owner}${u.type==='himewombat'?' hime':''}${u.acted&&G&&u.owner===G.turn?' acted':''}${sel?' sel':''}${u.burrowed?' under':''}${ready?' ready':''}"><span class="emo">${spr(u.type,'',u.owner===1)}</span><span class="rk">${T.rank}</span>${st?`<span class="sts">${st}</span>`:''}`+
     `<div class="hpbar"><i style="width:${Math.max(0,u.hp/u.maxHp*100)}%"></i></div><span class="hpn">${u.hp}</span></div>`;
@@ -2408,7 +2415,7 @@ function playDiff(sn,actor,opt,dest){
         if(revived){ fxAt(layer,u.x,u.y,'num heal','復活！'); }
         continue;
       }
-      if(u.hp<o.hp&&(sn.turn!==G.turn||sn.round!==G.round)&&A[u.type].extinct&&u.owner===G.turn&&!(opt&&opt.target===id)){ fxAt(layer,u.x,u.y,'num decay','⏳-'+(o.hp-u.hp)); fxAt(layer,u.x,u.y,'dust',''); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{filter:'none'},{filter:'grayscale(1) brightness(.75)'},{filter:'none'}],{duration:700}); dmg=true; continue; }
+      if(u.hp<o.hp&&(sn.turn!==G.turn||sn.round!==G.round)&&A[u.type].extinct&&u.owner===G.turn&&!(opt&&opt.target===id)){ fxAt(layer,u.x,u.y,'num decay','⏳衰え-'+(o.hp-u.hp)); fxAt(layer,u.x,u.y,'dust',''); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{filter:'none'},{filter:'grayscale(1) brightness(.75)'},{filter:'none'}],{duration:700}); dmg=true; continue; }
       if(u.hp<o.hp){ fxAt(layer,u.x,u.y,'num dmg','-'+(o.hp-u.hp)); const el=unitEl(u.x,u.y); if(el&&!RM) el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:360}); if(el){ el.classList.add('hitflash'); setTimeout(()=>el.classList.remove('hitflash'),260); } dmg=true; }
       else if(u.hp>o.hp){ fxAt(layer,u.x,u.y,'num heal','+'+(u.hp-o.hp)); fxAt(layer,u.x,u.y,'spark',''); heal=true; }
       const sts=[]; if((u.poison||[]).length>o.ps) sts.push('☠+'+((u.poison||[]).length-o.ps)); if(u.defDown>0&&!o.dd) sts.push('防0'); if(u.asleep&&!o.as) sts.push('💤'); if(u.burrowed&&!o.bw) sts.push('もぐった');
@@ -2828,6 +2835,7 @@ function renderVersusSetup(){
     const rule=(VS_RULES.find(r=>r[0]===rk)||[])[2]||null, opp=$('#vOpp').value, hvh=opp==='hvh';
     UI.mode=hvh?'hvh':'hva'; UI.humans=[true,hvh]; UI.personas=['planner',hvh?'planner':opp]; UI.speed=450;
     UI.cfg=rule&&rule.type==='field'?{fields:URA_FIELD[rule.fields]}:{};
+    UI.cfg.first=Math.random()<.5?0:1; // 先手はコイントスで決める
     UI.names=hvh?['青ウォンバット','赤ウォンバット']:['あなた','CPU']; UI.cpuTeam=null; UI.last=null;
     UI.ctx={kind:'versus',rule,onEnd:()=>renderVersusSetup()};
     UI.picks=[[],[]]; UI.cols=[[],[]]; UI.pickP=0;
@@ -2838,7 +2846,8 @@ function renderVersusSetup(){
         const extra=shuffle(rulePool(ALL,rule).filter(t=>!pl.includes(t)));
         while((pl.length<5||!cpuPick(pl,rule,'planner')||!teamOk(cpuPick(pl,rule,'planner'),rule))&&extra.length) pl.push(...extra.splice(0,3));
         if(!UI.pools) UI.pools=[null,null]; UI.pools[p]=pl; }
-      const go=()=>{ if(rule) renderDialog([['',`このバトルのきまり：${ruleText(rule)}`]],nextPick,'きまりつき対戦'); else nextPick(); };
+      const fp=UI.cfg.first, coin=hvh?`コイントスの結果、先手は${fp===0?'青':'赤'}ウォンバット！`:(fp===0?'コイントスの結果、あなたが先手！':'コイントスの結果、CPUが先手。あなたは後手だよ。');
+      const go=()=>renderDialog([['',coin+'（先手は、さいしょの番だけ3pt）']].concat(rule?[['',`このバトルのきまり：${ruleText(rule)}`]]:[]),nextPick,rule?'きまりつき対戦':'対戦');
       go();
     };
     if($('#vMode').value==='all'||(rule&&rule.type==='ancient')){ UI.pools=null; finish(); return; }
@@ -2931,7 +2940,7 @@ function renderPick(){
   const opp=UI.ctx&&UI.ctx.showOpp&&UI.cpuTeam?`<div class="opp">相手 ${UI.cpuTeam.map(t=>`<span title="${A[t].name}">${spr(t,'s-opp',true)}</span>`).join('')} <button class="b small" id="oppInfo">相手を見る</button></div>`:'';
   const fl=[['all','全部'],['plain','草原'],['forest','森'],['water','水辺'],['ancient','太古'],['special','とくべつ']].filter(([k])=>k==='all'||all.some(T=>k==='special'?T.special:(!T.special&&themeOf(T)===k)));
   const rOn=UI.ctx&&UI.ctx.rule&&(p===0||UI.ctx.kind==='versus'), rl=rOn?`<div class="rulebar">きまり：${ruleText(UI.ctx.rule)}</div>`:'', smax=rOn&&UI.ctx.rule.type==='sum'?UI.ctx.rule.max:99, ssum=pk.reduce((a,t)=>a+A[t].rank,0);
-  play(`<div class="pickhead">${rl}<div><b>${pname(p)}</b>：5体えらぶ <span class="muted">${p===0?'（先手はさいしょ3pt）':''}</span></div>${opp}
+  play(`<div class="pickhead">${rl}<div><b>${pname(p)}</b>：5体えらぶ <span class="muted">${p===(UI.cfg&&UI.cfg.first===1?1:0)?'（先手はさいしょ3pt）':''}</span></div>${opp}
     <div class="selbar">${[0,1,2,3,4].map(i=>pk[i]?`<span class="slot on" data-i="${i}">${spr(pk[i],'s-slot')}<i>${A[pk[i]].rank}</i></span>`:'<span class="slot"></span>').join('')}<span class="${ssum>smax?'over':'muted'}">合計ランク${ssum}${smax<99?`/${smax}`:''}</span></div>
     <div class="row ftabs">${fl.map(([k,n])=>`<button class="b small pf${PK_FILTER===k?' pri':''}" data-f="${k}">${n}</button>`).join('')}</div>${all.length>12?subFilterBar('pk',PK_R,PK_ROLE):''}</div>
     <div class="tiles">${list.length?'':'<div class="muted" style="grid-column:1/-1;padding:12px">この条件の動物はいません。</div>'}${list.map(T=>animalTile(T,{sel:pk.includes(T.id),badge:pk.includes(T.id)?String(pk.indexOf(T.id)+1):''})).join('')}</div>
